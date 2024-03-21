@@ -1,4 +1,5 @@
 /*[Vertex]*/
+
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 #define PER_PIXEL_LIGHTING
 #endif
@@ -281,7 +282,7 @@ void main()
   #endif
 
 #if defined(USE_LIGHT_VECTOR)
-	vec3 L = u_LocalLightOrigin.xyz - (position * u_LocalLightOrigin.w);
+	vec3 L = u_LocalLightOrigin.xyz;
 #elif defined(PER_PIXEL_LIGHTING)
 	vec3 L = attr_LightDirection * 2.0 - vec3(1.0);
 	L = (u_ModelMatrix * vec4(L, 0.0)).xyz;
