@@ -237,7 +237,8 @@ RE_AddDynamicLightToScene
 
 =====================
 */
-void RE_AddDynamicLightToScene(const vec3_t org, float intensity, float r, float g, float b, int additive) {
+static void RE_AddDynamicLightToScene(const vec3_t org, const float intensity, const float r, const float g, const float b, const int additive)
+{
 	dlight_t* dl;
 
 	if (!tr.registered) {
@@ -261,8 +262,8 @@ void RE_AddDynamicLightToScene(const vec3_t org, float intensity, float r, float
 		float maxValue = MAX(r, MAX(g, b));
 		if (maxValue > 1.0f)
 		{
+			// Renderer expects normalized color, in sdr there was no problem
 			VectorScale(dl->color, 1.0f / maxValue, dl->color);
-			dl->radius *= maxValue;
 		}
 		dl->radius = MIN(dl->radius, 65535.0f);
 	}
