@@ -1231,7 +1231,7 @@ static void jedi_aggression_erosion(const int amt)
 	}
 }
 
-void npc_jedi_rate_new_enemy(const gentity_t* self, const gentity_t* enemy)
+void NPC_Jedi_RateNewEnemy(const gentity_t* self, const gentity_t* enemy)
 {
 	float health_aggression;
 	float weapon_aggression;

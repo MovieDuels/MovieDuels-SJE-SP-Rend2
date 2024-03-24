@@ -11845,7 +11845,7 @@ WP_SaberImpact
 
 ================
 */
-void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
+static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 {
 	gentity_t* other = &g_entities[trace->entityNum];
 
@@ -11911,7 +11911,7 @@ void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 
 	if (saber->s.pos.trType == TR_LINEAR)
 	{
-		if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+		if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (owner->s.number < MAX_CLIENTS || G_ControlledByPlayer(owner)))
 		{
 			//hit a wall?
 			WP_SaberDrop(saber->owner, saber);
@@ -12245,7 +12245,7 @@ void WP_SaberInFlightReflectCheck(gentity_t* self)
 						client->ps.saberEntityState != SES_RETURNING)
 					{
 						//it's on and being controlled
-						if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+						if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (G_ControlledByPlayer(missile_list[x]->owner)))
 						{
 							WP_SaberDrop(missile_list[x]->owner, missile_list[x]);
 						}
@@ -13041,7 +13041,7 @@ void WP_SetSaberOrigin(gentity_t* self, vec3_t new_org)
 
 void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_saber)
 {
-	if (self->flags & FL_NO_SABER_RETURN)
+	if (self->flags & FL_NO_SABER_RETURN && (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)))
 	{
 		return;
 	}
@@ -13141,7 +13141,7 @@ void WP_SaberReturn(const gentity_t* self, gentity_t* saber)
 	const qboolean is_holding_block_button = self->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
 	//Normal Blocking
 
-	if (self->flags & FL_NO_SABER_RETURN)
+	if (self->flags & FL_NO_SABER_RETURN && (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)))
 	{
 		return;
 	}
@@ -13217,7 +13217,7 @@ static void WP_SaberPull(const gentity_t* self, gentity_t* saber)
 	const qboolean is_holding_block_button = self->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
 	//Normal Blocking
 
-	if (self->flags & FL_NO_SABER_RETURN)
+	if (self->flags & FL_NO_SABER_RETURN && (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)))
 	{
 		return;
 	}
@@ -13246,7 +13246,7 @@ static void WP_SaberPull(const gentity_t* self, gentity_t* saber)
 
 static void WP_SaberGrab(const gentity_t* self, gentity_t* saber)
 {
-	if (self->flags & FL_NO_SABER_RETURN)
+	if (self->flags & FL_NO_SABER_RETURN && (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)))
 	{
 		return;
 	}
@@ -13586,7 +13586,7 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 				else
 				{
 					//out of force power, return to me
-					if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+					if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
 					{
 						if (g_SerenityJediEngineMode->integer == 2)
 						{
@@ -13612,7 +13612,7 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 				if (self->client->ps.saber[0].Active())
 				{
 					//still on
-					if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+					if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
 					{
 						if (g_SerenityJediEngineMode->integer == 2)
 						{
@@ -13637,7 +13637,7 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 				if (self->client->ps.saber[0].Active())
 				{
 					//still on
-					if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+					if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
 					{
 						if (g_SerenityJediEngineMode->integer == 2)
 						{
@@ -22635,7 +22635,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 						}
 						else
 						{
-							if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+							if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (G_ControlledByPlayer(push_target[x]->owner)))
 							{
 								WP_SaberDrop(push_target[x]->owner, push_target[x]);
 							}
@@ -24164,7 +24164,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 						}
 						else
 						{
-							if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+							if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (G_ControlledByPlayer(push_target[x]->owner)))
 							{
 								WP_SaberDrop(push_target[x]->owner, push_target[x]);
 							}
@@ -26060,7 +26060,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 							}
 							else
 							{
-								if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+								if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (G_ControlledByPlayer(push_target[x]->owner)))
 								{
 									WP_SaberDrop(push_target[x]->owner, push_target[x]);
 								}
@@ -27110,7 +27110,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 							}
 							else
 							{
-								if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+								if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (G_ControlledByPlayer(push_target[x]->owner)))
 								{
 									WP_SaberDrop(push_target[x]->owner, push_target[x]);
 								}
@@ -28186,7 +28186,7 @@ static void ForceRepulseThrow(gentity_t* self, int charge_time)
 					}
 					else
 					{
-						if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1)
+						if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (G_ControlledByPlayer(push_target[x]->owner)))
 						{
 							WP_SaberDrop(push_target[x]->owner, push_target[x]);
 						}
@@ -29006,6 +29006,11 @@ void ForceTelepathy(gentity_t* self)
 		return;
 	}
 	if (self->health <= 0)
+	{
+		return;
+	}
+
+	if (self->client->ps.weapon == WP_TURRET)
 	{
 		return;
 	}

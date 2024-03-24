@@ -32,7 +32,7 @@ extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce
 extern void G_SetEnemy(gentity_t* self, gentity_t* enemy);
 extern qboolean NPC_CheckLookTarget(const gentity_t* self);
 extern void NPC_ClearLookTarget(const gentity_t* self);
-extern void npc_jedi_rate_new_enemy(const gentity_t* self, const gentity_t* enemy);
+extern void NPC_Jedi_RateNewEnemy(const gentity_t* self, const gentity_t* enemy);
 extern qboolean PM_DroidMelee(int npc_class);
 extern int delayedShutDown;
 extern qboolean G_ValidEnemy(const gentity_t* self, const gentity_t* enemy);
@@ -586,7 +586,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 	if (self->NPC && self->client && self->client->ps.weapon == WP_SABER)
 	{
 		//when get new enemy, set a base aggression based on what that enemy is using, how far they are, etc.
-		npc_jedi_rate_new_enemy(self, enemy);
+		NPC_Jedi_RateNewEnemy(self, enemy);
 	}
 
 	if (self->enemy == nullptr)
@@ -613,10 +613,12 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 		}*/
 
 		// Special case-if player is being hunted by his own people, set the player's team to team_free // jka version
-		if (self->client->playerTeam == TEAM_PLAYER && enemy->client->playerTeam == TEAM_PLAYER
-			&& enemy->s.number == 0 // controlled by player
-			&& enemy->client && enemy->client->ps.weapon != WP_TURRET)
-		{//make the player "evil" so that everyone goes after him
+		if (self->client->playerTeam == TEAM_PLAYER
+			&& enemy->s.number == 0
+			&& enemy->client && enemy->client->ps.weapon != WP_TURRET
+			&& enemy->client->playerTeam == TEAM_PLAYER)
+		{
+			//make the player "evil" so that everyone goes after him
 			enemy->client->enemyTeam = TEAM_FREE;
 			enemy->client->playerTeam = TEAM_FREE;
 		}

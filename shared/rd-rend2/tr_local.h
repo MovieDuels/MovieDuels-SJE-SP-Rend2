@@ -2638,7 +2638,6 @@ typedef struct trGlobals_s {
 	int						numBSPModels;
 	int						currentLevel;
 
-	bool					explicitToneMap;
 } trGlobals_t;
 
 struct glconfigExt_t
