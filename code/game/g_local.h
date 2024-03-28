@@ -393,11 +393,6 @@ void G_SpawnEntitiesFromString(const char* entity_string);
 void AnimateStun(gentity_t* self, gentity_t* inflictor);
 
 //
-// g_cmds.c
-//
-void Cmd_Score_f(gentity_t* ent);
-
-//
 // g_items.c
 //
 void G_RunItem(gentity_t* ent);
@@ -569,17 +564,6 @@ qboolean ConsoleCommand();
 void FireWeapon(gentity_t* ent, qboolean alt_fire);
 
 //
-// p_hud.c
-//
-void MoveClientToIntermission(gentity_t* client);
-void DeathmatchScoreboardMessage(gentity_t* client);
-
-//
-// g_cmds.c
-//
-void G_SayTo(gentity_t* ent, gentity_t* other, int mode, int color, const char* name, const char* message);
-
-//
 // g_pweapon.c
 //
 
@@ -591,7 +575,6 @@ void NORETURN QDECL G_Error(const char* fmt, ...);
 void SetInUse(const gentity_t* ent);
 void ClearInUse(const gentity_t* ent);
 qboolean PInUse(unsigned int entNum);
-qboolean PInUse2(gentity_t* ent);
 void WriteInUseBits();
 void ReadInUseBits();
 
@@ -599,13 +582,6 @@ void ReadInUseBits();
 // g_nav.cpp
 //
 void Svcmd_Nav_f();
-
-//
-// g_squad.cpp
-//
-void Svcmd_Comm_f();
-void Svcmd_Hail_f();
-void Svcmd_Form_f();
 
 //
 // g_utils.cpp

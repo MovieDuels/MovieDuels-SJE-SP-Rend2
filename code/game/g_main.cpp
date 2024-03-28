@@ -102,15 +102,6 @@ qboolean PInUse(const unsigned int entNum)
 	return static_cast<qboolean>((g_entityInUseBits[entNum / 32] & static_cast<unsigned>(1) << (entNum & 0x1f)) != 0);
 }
 
-/*qboolean PInUse2(gentity_t *ent)
-{
-	assert(((unsigned int)ent)>=(unsigned int)g_entities);
-	assert(((unsigned int)ent)<=(unsigned int)(g_entities+MAX_GENTITIES-1));
-	unsigned int entNum=ent-g_entities;
-	return((g_entityInUseBits[entNum/32]&(((unsigned int)1)<<(entNum&0x1f)))!=0);
-}
-*/
-
 void WriteInUseBits()
 {
 	ojk::SavedGameHelper saved_game(
