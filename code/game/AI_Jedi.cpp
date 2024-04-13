@@ -125,8 +125,6 @@ extern cvar_t* com_outcast;
 extern qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc);
 qboolean jedi_evasion_roll(gentity_t* ai_ent);
 extern qboolean NPC_IsOversized(const gentity_t* self);
-static qhandle_t scepter_loop_sound = 0;
-static qboolean registered = qfalse;
 
 extern cvar_t* d_slowmodeath;
 extern cvar_t* g_saberNewControlScheme;
@@ -705,11 +703,6 @@ void npc_tavion_scepter_precache()
 	G_SoundIndex("sound/weapons/scepter/loop.wav");
 	G_SoundIndex("sound/weapons/scepter/slam_warmup.wav");
 	G_SoundIndex("sound/weapons/scepter/beam_warmup.wav");
-	if (!registered)
-	{
-		scepter_loop_sound = G_SoundIndex("sound/weapons/scepter/loop.wav");
-		registered = qtrue;
-	}
 }
 
 void npc_tavion_sith_sword_precache()
@@ -10164,8 +10157,18 @@ static float twins_danger_dist()
 	}
 }
 
+static qhandle_t scepter_loop_sound = 0;
+
 static qboolean jedi_in_special_move()
 {
+	static qboolean registered = qfalse;
+
+	if (!registered)
+	{
+		scepter_loop_sound = G_SoundIndex("sound/weapons/scepter/loop.wav");
+		registered = qtrue;
+	}
+
 	if (NPC->client->ps.torsoAnim == BOTH_KYLE_PA_1
 		|| NPC->client->ps.torsoAnim == BOTH_KYLE_PA_2
 		|| NPC->client->ps.torsoAnim == BOTH_KYLE_PA_3
@@ -10217,13 +10220,12 @@ static qboolean jedi_in_special_move()
 
 	if (NPC->client->ps.torsoAnim == BOTH_SCEPTER_START)
 	{
-		NPC->s.loopSound = scepter_loop_sound;
 
 		if (NPC->client->ps.torsoAnimTimer <= 100)
 		{
 			//go into the hold
-			G_PlayEffect(G_EffectIndex("scepter/beam.efx"), NPC->weaponModel[1], NPC->genericBolt1, NPC->s.number,
-				NPC->currentOrigin, 10000, qtrue);
+
+			G_PlayEffect(G_EffectIndex("scepter/beam.efx"), NPC->weaponModel[1], NPC->genericBolt1, NPC->s.number,NPC->currentOrigin, 10000, qtrue);
 
 			NPC->client->ps.legsAnimTimer = NPC->client->ps.torsoAnimTimer = 0;
 			NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_SCEPTER_HOLD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -10233,6 +10235,7 @@ static qboolean jedi_in_special_move()
 			NPC->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 			VectorClear(NPC->client->ps.velocity);
 			VectorClear(NPC->client->ps.moveDir);
+			NPC->s.loopSound = scepter_loop_sound;
 		}
 		if (NPC->enemy)
 		{
@@ -10735,7 +10738,7 @@ void npc_bs_jedi_default()
 			NPCInfo->charmedTime = Q3_INFINITE;
 			NPC->client->ps.forcePowersActive |= 1 << FP_RAGE;
 			NPC->client->ps.forcePowerDuration[FP_RAGE] = Q3_INFINITE;
-			NPC->s.loopSound = G_SoundIndex("sound/movers/objects/green_beam_lp2.wav"); //test/charm.wav" );
+			NPC->s.loopSound = G_SoundIndex("sound/movers/objects/green_beam_lp2.wav");
 		}
 
 		jedi_attack();

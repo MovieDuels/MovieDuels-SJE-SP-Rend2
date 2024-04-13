@@ -982,7 +982,7 @@ Convenience function for the sound system to be started
 REALLY early on Xbox, helps with memory fragmentation.
 ============================
 */
-void CL_StartSound()
+static void CL_StartSound()
 {
 	if (!cls.soundStarted)
 	{

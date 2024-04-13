@@ -272,12 +272,20 @@ void GL_State(const uint32_t stateBits)
 				break;
 			}
 
-			qglEnable(GL_BLEND);
+			if (!glState.blend)
+			{
+				qglEnable(GL_BLEND);
+				glState.blend = true;
+			}
 			qglBlendFunc(srcFactor, dstFactor);
 		}
 		else
 		{
-			qglDisable(GL_BLEND);
+			if (glState.blend)
+			{
+				qglDisable(GL_BLEND);
+				glState.blend = false;
+			}
 		}
 	}
 
@@ -485,6 +493,23 @@ void GL_SetModelviewMatrix(matrix_t matrix)
 	Matrix16Multiply(glState.projection, glState.modelview, glState.modelviewProjection);
 }
 
+void GL_SetViewportAndScissor(int viewportX, int viewportY, int viewportWidth, int viewportHeight)
+{
+	if (glState.viewportOrigin[0] == viewportX &&
+		glState.viewportOrigin[1] == viewportY &&
+		glState.viewportSize[0] == viewportWidth &&
+		glState.viewportSize[1] == viewportHeight)
+		return;
+
+	qglViewport(viewportX, viewportY, viewportWidth, viewportHeight);
+	qglScissor(viewportX, viewportY, viewportWidth, viewportHeight);
+
+	glState.viewportOrigin[0] = viewportX;
+	glState.viewportOrigin[1] = viewportY;
+	glState.viewportSize[0] = viewportWidth;
+	glState.viewportSize[1] = viewportHeight;
+}
+
 /*
 ================
 RB_Hyperspace
@@ -498,24 +523,12 @@ static void RB_Hyperspace(void) {
 	qglClearBufferfv(GL_COLOR, 0, v);
 }
 
-static void SetViewportAndScissor(void) {
+static void SetViewportAndScissor(void)
+{
 	GL_SetProjectionMatrix(backEnd.viewParms.projectionMatrix);
 
 	// set the window clipping
-	qglViewport(backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
-		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
-
-	if (!backEnd.viewParms.scissorX && !backEnd.viewParms.scissorY &&
-		!backEnd.viewParms.scissorWidth && !backEnd.viewParms.scissorHeight)
-	{
-		qglScissor(backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
-			backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
-	}
-	else
-	{
-		qglScissor(backEnd.viewParms.scissorX, backEnd.viewParms.scissorY,
-			backEnd.viewParms.scissorWidth, backEnd.viewParms.scissorHeight);
-	}
+	GL_SetViewportAndScissor(backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
 }
 
 /*
@@ -1464,7 +1477,8 @@ RB_SetGL2D
 
 ================
 */
-void	RB_SetGL2D(void) {
+void RB_SetGL2D(void) 
+{
 	matrix_t matrix;
 	int width, height;
 
@@ -1486,8 +1500,7 @@ void	RB_SetGL2D(void) {
 	}
 
 	// set 2D virtual screen size
-	qglViewport(0, 0, width, height);
-	qglScissor(0, 0, width, height);
+	GL_SetViewportAndScissor(0, 0, width, height);
 
 	Matrix16Ortho(0, 640, 480, 0, 0, 1, matrix);
 	GL_SetProjectionMatrix(matrix);
@@ -1979,8 +1992,7 @@ static const void* RB_PrefilterEnvMap(const void* data) {
 		GL_BindToTMU(tr.renderCubeImage, TB_CUBEMAP);
 		GLSL_BindProgram(&tr.prefilterEnvMapShader);
 
-		qglViewport(0, 0, width, height);
-		qglScissor(0, 0, width, height);
+		GL_SetViewportAndScissor(0, 0, width, height);
 
 		vec4_t viewInfo{};
 		VectorSet4(viewInfo, 0, level, roughnessMips, level / roughnessMips);
@@ -2001,8 +2013,7 @@ static void RB_RenderSSAO()
 
 	FBO_Bind(tr.quarterFbo[0]);
 
-	qglViewport(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
-	qglScissor(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
+	GL_SetViewportAndScissor(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
 
 	GL_State(GLS_DEPTHTEST_DISABLE);
 
@@ -2015,8 +2026,7 @@ static void RB_RenderSSAO()
 
 	FBO_Bind(tr.quarterFbo[1]);
 
-	qglViewport(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
-	qglScissor(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
+	GL_SetViewportAndScissor(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
 
 	GLSL_BindProgram(&tr.depthBlurShader[0]);
 
@@ -2028,8 +2038,7 @@ static void RB_RenderSSAO()
 
 	FBO_Bind(tr.screenSsaoFbo);
 
-	qglViewport(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
-	qglScissor(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
+	GL_SetViewportAndScissor(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
 
 	GLSL_BindProgram(&tr.depthBlurShader[1]);
 

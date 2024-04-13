@@ -270,8 +270,7 @@ static void RE_Blit(const float fX0, const float fY0, const float fX1, const flo
 	//
 	R_IssuePendingRenderCommands();
 
-	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	GL_SetViewportAndScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
 	GL_State(iGLState);
 	GL_Cull(CT_TWO_SIDED);

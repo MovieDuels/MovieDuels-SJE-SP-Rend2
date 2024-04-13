@@ -312,11 +312,11 @@ qboolean* stub_get_tr_distortionPrePost(void) { return &tr_distortionPrePost; }
 qboolean* stub_get_tr_distortionNegate(void) { return &tr_distortionNegate; }
 
 extern void	RB_SetGL2D(void);
-void R_Splash()
+static void R_Splash()
 {
 	const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	GL_SetViewportAndScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 	qglClearBufferfv(GL_COLOR, 0, black);
 	qglClear(GL_DEPTH_BUFFER_BIT);
 
@@ -1259,6 +1259,7 @@ void GL_SetDefaultState(void)
 	qglEnable(GL_PROGRAM_POINT_SIZE);
 	qglDisable(GL_CULL_FACE);
 	qglDisable(GL_BLEND);
+	glState.blend = false;
 
 	qglEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 

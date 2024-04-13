@@ -1775,8 +1775,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 
 	if (ps->weapon == WP_STUN_BATON || ps->weapon == WP_CONCUSSION)
 	{
-		if (ps->weapon == WP_STUN_BATON && cent->currentState.eFlags & EF_ALT_FIRING && cg_SerenityJediEngineMode.
-			integer == 2)
+		if (ps->weapon == WP_STUN_BATON && cent->currentState.eFlags & EF_ALT_FIRING && cg_SerenityJediEngineMode.integer == 2)
 		{
 			cgi_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->altChargeSound);
 		}
@@ -2264,8 +2263,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 
 	if (ps->weapon == WP_STUN_BATON || ps->weapon == WP_CONCUSSION)
 	{
-		if (ps->weapon == WP_STUN_BATON && cent->currentState.eFlags & EF_ALT_FIRING && cg_SerenityJediEngineMode.
-			integer == 2)
+		if (ps->weapon == WP_STUN_BATON && cent->currentState.eFlags & EF_ALT_FIRING && cg_SerenityJediEngineMode.integer == 2)
 		{
 			cgi_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->altChargeSound);
 		}
