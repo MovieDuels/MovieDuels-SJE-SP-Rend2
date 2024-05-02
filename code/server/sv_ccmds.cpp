@@ -121,6 +121,12 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 		"ladder"
 	};
 
+	char* NoCubeMapping_Maps[] =
+	{
+		"yavin1",
+		"yavin1b"
+	};
+
 	char* map = Cmd_Argv(1);
 	if (!*map)
 	{
@@ -208,6 +214,17 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 	if (debugNPCFreeze->integer >= 0)
 	{
 		Cvar_Set("d_npcfreeze", "0");
+	}
+
+	for (auto& NoCubeMapping_Map : NoCubeMapping_Maps)
+	{
+		if (strcmp(map, NoCubeMapping_Map) == 0)
+		{
+			if (r_cubeMapping->integer != 0)
+			{
+				Cvar_Set("r_cubeMapping", "0");
+			}
+		}
 	}
 
 	if (map[0] != '_')

@@ -1234,6 +1234,10 @@ static void RB_SubmitDrawSurfsForDepthFill(
 			continue;
 		}
 
+		if (shader->useSimpleDepthShader == qtrue)
+			shader = tr.defaultShader;
+
+
 		if (*drawSurf->surface == SF_MDX)
 		{
 			if (((CRenderableSurface*)drawSurf->surface)->boneCache != oldBoneCache)
@@ -2486,7 +2490,7 @@ static void ComputeDeformValues(
 
 void RB_AddShaderToShaderInstanceUBO(shader_t* shader)
 {
-	if (shader->numDeforms != 1 && !shader->portalRange)
+	if (shader->numDeforms != 1 && !shader->portalRange && !shader->timeOffset)
 	{
 		shader->ShaderInstanceUboOffset = -1;
 		return;

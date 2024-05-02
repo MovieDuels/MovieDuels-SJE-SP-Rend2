@@ -70,6 +70,7 @@ cvar_t* g_trueguns;
 cvar_t* g_spskill;
 cvar_t* debugNPCFreeze;
 cvar_t* com_rend2;
+cvar_t* r_cubeMapping;
 
 #ifndef _WIN32
 cvar_t* com_ansiColor = nullptr;
@@ -1178,6 +1179,8 @@ void Com_Init(char* commandLine)
 		com_kotor = Cvar_Get("com_kotor", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 		g_spskill = Cvar_Get("g_spskill", "2", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 		debugNPCFreeze = Cvar_Get("d_npcfreeze", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+
+		r_cubeMapping = Cvar_Get("r_cubeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
 		g_trueguns = Cvar_Get("cg_trueguns", "0", 0);
 
