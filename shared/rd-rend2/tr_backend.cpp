@@ -1203,15 +1203,10 @@ static void RB_PrepareForEntity(int entityNum, float originalTime)
 	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
 }
 
-static void RB_SubmitDrawSurfsForDepthFill(
-	drawSurf_t* drawSurfs,
-	int numDrawSurfs,
-	float originalTime)
+static void RB_SubmitDrawSurfsForDepthFill(drawSurf_t* drawSurfs, int numDrawSurfs, float originalTime)
 {
 	shader_t* oldShader = nullptr;
 	int oldEntityNum = -1;
-	int oldSort = -1;
-	int oldDepthRange = 0;
 	CBoneCache* oldBoneCache = nullptr;
 
 	drawSurf_t* drawSurf = drawSurfs;
@@ -1225,9 +1220,6 @@ static void RB_SubmitDrawSurfsForDepthFill(
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &cubemapIndex, &postRender);
 		assert(shader != nullptr);
 
-		if (shader->useSimpleDepthShader == qtrue)
-			shader = tr.defaultShader;
-
 		if (shader->sort != SS_OPAQUE || shader->useDistortion)
 		{
 			// Don't draw yet, let's see what's to come
@@ -1236,7 +1228,6 @@ static void RB_SubmitDrawSurfsForDepthFill(
 
 		if (shader->useSimpleDepthShader == qtrue)
 			shader = tr.defaultShader;
-
 
 		if (*drawSurf->surface == SF_MDX)
 		{
@@ -1272,8 +1263,6 @@ static void RB_SubmitDrawSurfsForDepthFill(
 			backEnd.pc.c_surfBatches++;
 			oldShader = shader;
 		}
-
-		oldSort = drawSurf->sort;
 
 		// change the modelview matrix if needed
 		if (entityNum != oldEntityNum)
@@ -1381,8 +1370,7 @@ static void RB_SubmitDrawSurfs(
 			oldEntityNum = entityNum;
 		}
 
-		qboolean isDistortionShader = (qboolean)
-			((shader->useDistortion == qtrue) || (backEnd.currentEntity && backEnd.currentEntity->e.renderfx & RF_DISTORTION));
+		qboolean isDistortionShader = (qboolean)((shader->useDistortion == qtrue) || (backEnd.currentEntity && backEnd.currentEntity->e.renderfx & RF_DISTORTION));
 
 		if (backEnd.refractionFill != isDistortionShader)
 			continue;
@@ -1481,7 +1469,7 @@ RB_SetGL2D
 
 ================
 */
-void RB_SetGL2D(void) 
+void RB_SetGL2D(void)
 {
 	matrix_t matrix;
 	int width, height;

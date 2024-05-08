@@ -1271,7 +1271,7 @@ static const netField_t playerStateFields[] =
 	{PSF(saberCollisions), 16},
 	{PSF(kickstartTime), 32},
 	{PSF(kicklaststartTime), 32},
-	
+
 	{PSF(hackingTime), 32 },
 	{PSF(hackingBaseTime), 16 },
 

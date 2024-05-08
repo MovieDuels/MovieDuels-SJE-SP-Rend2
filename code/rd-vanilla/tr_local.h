@@ -1195,7 +1195,6 @@ extern	cvar_t* r_environmentMapping;
 extern	cvar_t* r_ratiofix;
 //====================================================================
 
-
 void R_RenderView(const viewParms_t* parms);
 
 void R_AddMD3Surfaces(trRefEntity_t* ent);

@@ -10220,12 +10220,11 @@ static qboolean jedi_in_special_move()
 
 	if (NPC->client->ps.torsoAnim == BOTH_SCEPTER_START)
 	{
-
 		if (NPC->client->ps.torsoAnimTimer <= 100)
 		{
 			//go into the hold
 
-			G_PlayEffect(G_EffectIndex("scepter/beam.efx"), NPC->weaponModel[1], NPC->genericBolt1, NPC->s.number,NPC->currentOrigin, 10000, qtrue);
+			G_PlayEffect(G_EffectIndex("scepter/beam.efx"), NPC->weaponModel[1], NPC->genericBolt1, NPC->s.number, NPC->currentOrigin, 10000, qtrue);
 
 			NPC->client->ps.legsAnimTimer = NPC->client->ps.torsoAnimTimer = 0;
 			NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_SCEPTER_HOLD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);

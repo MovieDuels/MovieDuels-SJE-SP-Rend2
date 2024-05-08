@@ -5891,7 +5891,7 @@ static void CG_DrawHaqrBar(const float chX, const float chY, const float chW, co
 	const float y = chY + chH + 8.0f;
 	const float percent = ((float)cg.predictedPlayerState.hackingTime - (float)cg.time) / (float)cg.predictedPlayerState.hackingBaseTime * HACK_WIDTH;
 
-	if (percent > HACK_WIDTH ||	percent < 1.0f)
+	if (percent > HACK_WIDTH || percent < 1.0f)
 	{
 		return;
 	}

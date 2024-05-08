@@ -304,7 +304,7 @@ void CM_TestInLeaf(traceWork_t* tw, const cLeaf_t* leaf, const clipMap_t* local)
 			}
 		}
 	}
-}
+	}
 
 /*
 ==================
@@ -612,7 +612,7 @@ void CM_TraceToLeaf(traceWork_t * tw, const cLeaf_t * leaf, const clipMap_t * lo
 			}
 		}
 	}
-}
+	}
 
 //=========================================================================================
 

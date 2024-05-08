@@ -16531,8 +16531,8 @@ static qboolean PM_SaberLocked()
 						}
 					}
 				}
+			}
 		}
-	}
 		else
 		{
 			//FIXME: other ways out of a saberlock?
@@ -16541,7 +16541,7 @@ static qboolean PM_SaberLocked()
 			//roll?
 			//backflip?
 		}
-}
+	}
 	else
 	{
 		//something broke us out of it

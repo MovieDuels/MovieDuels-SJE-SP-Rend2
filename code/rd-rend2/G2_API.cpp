@@ -1517,7 +1517,7 @@ void G2API_AnimateG2ModelsRag(CGhoul2Info_v& ghoul2, const int acurrent_time, CR
 		{
 			G2_Animate_Bone_List(ghoul2, current_time, model, params);
 		}
-}
+	}
 }
 // rww - RAGDOLL_END
 
@@ -1859,7 +1859,7 @@ qboolean G2API_GetBoltMatrix(CGhoul2Info_v& ghoul2, const int modelIndex, const 
 	}
 	Mat3x4_Multiply(matrix, &worldMatrix, (mdxaBone_t*)&identity_matrix);
 	return qfalse;
-					}
+}
 
 void G2API_ListSurfaces(CGhoul2Info* ghlInfo)
 {
@@ -2392,7 +2392,7 @@ qboolean G2_TestModelPointers(CGhoul2Info* ghlInfo) // returns true if the model
 		ghlInfo->aHeader = NULL;
 	}
 	return (qboolean)ghlInfo->mValid;
-				}
+}
 
 #ifdef G2_PERFORMANCE_ANALYSIS
 #include "qcommon/timing.h"
@@ -2477,7 +2477,7 @@ bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is
 	G2Time_G2_SetupModelPointers += G2PerformanceTimer_G2_SetupModelPointers.End();
 #endif
 	return (qboolean)ghlInfo->mValid;
-	}
+}
 
 bool G2_SetupModelPointers(CGhoul2Info_v& ghoul2) // returns true if any model is properly set up
 {
@@ -2488,7 +2488,7 @@ bool G2_SetupModelPointers(CGhoul2Info_v& ghoul2) // returns true if any model i
 		ret = ret || r;
 	}
 	return ret;
-			}
+}
 
 static qboolean G2API_IsGhoul2InfovValid(CGhoul2Info_v& ghoul2)
 {

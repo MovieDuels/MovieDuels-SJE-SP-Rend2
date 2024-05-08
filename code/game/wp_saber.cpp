@@ -262,6 +262,7 @@ extern void g_fatigue_bp_knockaway(gentity_t* blocker);
 void G_Beskar_Attack_Bounce(const gentity_t* self, gentity_t* other);
 extern qboolean Mandalorian_Character(const gentity_t* self);
 extern void jet_fly_stop(gentity_t* self);
+extern qboolean g_standard_humanoid(gentity_t* self);
 
 extern cvar_t* g_saberAutoBlocking;
 extern cvar_t* g_saberRealisticCombat;
@@ -29763,7 +29764,7 @@ void ForceGrip(gentity_t* self)
 			G_SoundOnEnt(self, CHAN_BODY, "sound/weapons/force/grip.wav");
 		}
 	}
-	}
+}
 
 static qboolean ForceLightningCheck2Handed(const gentity_t* self)
 {
@@ -33704,7 +33705,7 @@ void ForceShootLightning(gentity_t* self)
 	if (self->client->ps.forcePowerLevel[FP_LIGHTNING] > FORCE_LEVEL_2)
 	{
 		//arc
-		vec3_t center, mins, maxs, v;
+		vec3_t center, mins{}, maxs{}, v{};
 		constexpr float radius = 512;
 		float dot;
 		gentity_t* entity_list[MAX_GENTITIES];
@@ -33827,11 +33828,11 @@ void ForceShootLightning(gentity_t* self)
 
 			traceEnt = &g_entities[tr.entityNum];
 			//NOTE: only NPCs do this auto-dodge
-			if (traceEnt
-				&& (traceEnt->s.weapon == WP_MELEE || traceEnt->s.weapon == WP_NONE || (traceEnt->client->ps.weapon == WP_SABER && !traceEnt->client->ps.SaberActive()))
+			if (!in_camera && traceEnt
+				&& traceEnt->s.weapon != WP_SABER
 				&& traceEnt->s.number >= MAX_CLIENTS
 				&& traceEnt->client
-				&& traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_2)
+				&& traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0)
 			{
 				if (!jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
 				{
@@ -36671,7 +36672,7 @@ void ForceGrasp(gentity_t* self)
 			//can't grip a vehicle
 			return;
 		}
-}
+	}
 	if (traceEnt->client)
 	{
 		if (traceEnt->client->ps.forceJumpZStart)
@@ -38008,7 +38009,7 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 						if (grip_ent->health > 0)
 						{
 							G_AddEvent(grip_ent, EV_WATER_CLEAR, 0);
-				}
+						}
 						if (grip_ent->client->ps.forcePowerDebounce[FP_PUSH] > level.time)
 						{
 							//they probably pushed out of it
@@ -38070,8 +38071,8 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 								G_AngerAlert(grip_ent);
 							}
 						}
-			}
-		}
+					}
+				}
 				else
 				{
 					grip_ent->s.eFlags &= ~EF_FORCE_GRIPPED;
@@ -38099,10 +38100,10 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 						grip_ent->s.pos.trTime = level.time;
 					}
 				}
-	}
+			}
 			self->s.loopSound = 0;
 			self->client->ps.forceGripEntityNum = ENTITYNUM_NONE;
-}
+		}
 		if (self->client->ps.torsoAnim == BOTH_FORCEGRIP_HOLD)
 		{
 			NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -38319,7 +38320,7 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 						if (grip_ent->health > 0)
 						{
 							G_AddEvent(grip_ent, EV_WATER_CLEAR, 0);
-				}
+						}
 						if (grip_ent->client->ps.forcePowerDebounce[FP_PUSH] > level.time)
 						{
 							//they probably pushed out of it
@@ -38381,8 +38382,8 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 								G_AngerAlert(grip_ent);
 							}
 						}
-			}
-		}
+					}
+				}
 				else
 				{
 					grip_ent->s.eFlags &= ~EF_FORCE_GRASPED;
@@ -38736,7 +38737,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 				{
 					WP_ForcePowerStop(self, FP_GRIP);
 					return;
-		}
+				}
 			if (grip_ent->client && grip_ent->client->moveType == MT_FLYSWIM && VectorLengthSquared(
 				grip_ent->client->ps.velocity) > 300 * 300)
 			{
@@ -39186,7 +39187,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 					}
 				}
 			}
-	}
+		}
 	}
 
 	if (self->client->ps.forcePowersActive & 1 << FP_GRIP)
@@ -39589,7 +39590,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 				{
 					WP_ForcePowerStop(self, FP_GRASP);
 					return;
-		}
+				}
 			if (grip_ent->client && grip_ent->client->moveType == MT_FLYSWIM && VectorLengthSquared(
 				grip_ent->client->ps.velocity) > 300 * 300)
 			{
@@ -39955,8 +39956,8 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 				}
 				grip_ent->painDebounceTime = level.time + 2000;
 			}
+		}
 	}
-}
 	break;
 	case FP_REPULSE:
 	{
@@ -40897,8 +40898,6 @@ qboolean Jedi_DrainReaction(gentity_t* self)
 	}
 	return qfalse;
 }
-
-extern qboolean g_standard_humanoid(gentity_t* self);
 
 void G_SaberBounce(const gentity_t* self, gentity_t* other)
 {

@@ -29,7 +29,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 extern void CG_MiscModelExplosion(vec3_t mins, vec3_t maxs, int size, material_t chunk_type);
 extern void CG_Chunks(int owner, vec3_t origin, const vec3_t mins, const vec3_t maxs, float speed, int num_chunks, material_t chunk_type, int custom_chunk, float base_scale, int custom_sound = 0);
 extern void G_SetEnemy(gentity_t* self, gentity_t* enemy);
-extern gentity_t* G_CreateObject(gentity_t* owner, vec3_t origin, vec3_t angles, int modelIndex, int frame,trType_t tr_type, int effect_id);
+extern gentity_t* G_CreateObject(gentity_t* owner, vec3_t origin, vec3_t angles, int modelIndex, int frame, trType_t tr_type, int effect_id);
 
 extern qboolean player_locked;
 
