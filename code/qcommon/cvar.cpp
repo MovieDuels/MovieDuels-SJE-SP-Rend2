@@ -30,7 +30,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 cvar_t* cvar_vars = nullptr;
 cvar_t* cvar_cheats;
 int cvar_modifiedFlags;
-cvar_t* d_Allowdebuginfo;
 
 #define	MAX_CVARS	8192
 cvar_t cvar_indexes[MAX_CVARS];
@@ -554,7 +553,7 @@ Cvar_Print
 Prints the value, default, and latched string of the given variable
 ============
 */
-void Cvar_Print(const cvar_t* v)
+static void Cvar_Print(const cvar_t* v)
 {
 	Com_Printf(
 		S_COLOR_GREY "Cvar " S_COLOR_WHITE "%s = " S_COLOR_GREY "\"" S_COLOR_WHITE "%s" S_COLOR_GREY "\"" S_COLOR_WHITE,
@@ -740,7 +739,7 @@ void Cvar_SetValue(const char* var_name, const float value)
 Cvar_SetValue2
 ============
 */
-void Cvar_SetValue2(const char* var_name, const float value, const qboolean force)
+static void Cvar_SetValue2(const char* var_name, const float value, const qboolean force)
 {
 	char val[32];
 
@@ -845,7 +844,7 @@ Prints the contents of a cvar
 (preferred over Cvar_Command where cvar names and commands conflict)
 ============
 */
-void Cvar_Print_f()
+static void Cvar_Print_f()
 {
 	if (Cmd_Argc() != 2)
 	{
@@ -871,7 +870,7 @@ Toggles a cvar for easy single key binding, optionally through a list of
 given values
 ============
 */
-void Cvar_Toggle_f()
+static void Cvar_Toggle_f()
 {
 	const int c = Cmd_Argc();
 
@@ -920,7 +919,7 @@ Allows setting and defining of arbitrary cvars from console, even if they
 weren't declared in C code.
 ============
 */
-void Cvar_Set_f()
+static void Cvar_Set_f()
 {
 	const int c = Cmd_Argc();
 	char* cmd = Cmd_Argv(0);
@@ -973,7 +972,7 @@ void Cvar_Set_f()
 Cvar_Reset_f
 ============
 */
-void Cvar_Reset_f()
+static void Cvar_Reset_f()
 {
 	if (Cmd_Argc() != 2)
 	{
@@ -1047,7 +1046,7 @@ void Cvar_WriteVariables(const fileHandle_t f)
 Cvar_List_f
 ============
 */
-void Cvar_List_f()
+static void Cvar_List_f()
 {
 	const cvar_t* var;
 	int i;
@@ -1095,30 +1094,27 @@ void Cvar_List_f()
 		Com_Printf("%i cvar indexes\n", cvar_numIndexes);
 }
 
-void Cvar_SerenityJediEngine_f()
+static void Cvar_SerenityJediEngine_f()
 {
-	if (d_Allowdebuginfo->integer)
-	{
-		Com_Printf("-----A basic guide to player debugging----------\n");
-		Com_Printf("-----------------------------------------------\n");
-		Com_Printf("open console and type seta\n");
-		Com_Printf("--------------------------\n");
-		Com_Printf("Use the following commands\n");
-		Com_Printf("-----------------------------------------------------------------\n");
-		Com_Printf("(d_blockinfo 1)= This will give information on saber blocking input \n");
-		Com_Printf("(d_attackinfo 1)= This will give information on saber attacking input \n");
-		Com_Printf("(d_saberinfo 1)= This will give information on saber blade input \n");
-		Com_Printf("(d_SaberactionInfo 1)= This will give information on saber action input \n");
-		Com_Printf("(d_saberCombat 1)= This will give information on saber Combat input \n");
-		Com_Printf("(d_combatinfo 1)= This will give information on combatinfo input \n");
-		Com_Printf("(d_JediAI 1)= This will give information on NPC input \n");
-		Com_Printf("(g_DebugSaberCombat 1)= This will give  all information available \n");
-		Com_Printf("-----------------------------------------------------------------\n");
-		Com_Printf("-Use these commands to help locate bugs or specific moments in code-\n");
-	}
+	Com_Printf("-----A basic guide to player debugging----------\n");
+	Com_Printf("-----------------------------------------------\n");
+	Com_Printf("open console and type seta\n");
+	Com_Printf("--------------------------\n");
+	Com_Printf("Use the following commands\n");
+	Com_Printf("-----------------------------------------------------------------\n");
+	Com_Printf("(d_blockinfo 1)= This will give information on saber blocking input \n");
+	Com_Printf("(d_attackinfo 1)= This will give information on saber attacking input \n");
+	Com_Printf("(d_saberinfo 1)= This will give information on saber blade input \n");
+	Com_Printf("(d_SaberactionInfo 1)= This will give information on saber action input \n");
+	Com_Printf("(d_saberCombat 1)= This will give information on saber Combat input \n");
+	Com_Printf("(d_combatinfo 1)= This will give information on combatinfo input \n");
+	Com_Printf("(d_JediAI 1)= This will give information on NPC input \n");
+	Com_Printf("(g_DebugSaberCombat 1)= This will give  all information available \n");
+	Com_Printf("-----------------------------------------------------------------\n");
+	Com_Printf("-Use these commands to help locate bugs or specific moments in code-\n");
 }
 
-void Cvar_ListModified_f()
+static void Cvar_ListModified_f()
 {
 	// build a list of cvars that are modified
 	for (const cvar_t* var = cvar_vars;
@@ -1136,7 +1132,7 @@ void Cvar_ListModified_f()
 	}
 }
 
-void Cvar_ListUserCreated_f()
+static void Cvar_ListUserCreated_f()
 {
 	uint32_t count = 0;
 
@@ -1170,7 +1166,7 @@ Unsets a cvar
 ============
 */
 
-cvar_t* Cvar_Unset(cvar_t* cv)
+static cvar_t* Cvar_Unset(cvar_t* cv)
 {
 	cvar_t* next = cv->next;
 
@@ -1213,7 +1209,7 @@ Unsets a userdefined cvar
 ============
 */
 
-void Cvar_Unset_f()
+static void Cvar_Unset_f()
 {
 	if (Cmd_Argc() != 2)
 	{
@@ -1232,7 +1228,7 @@ void Cvar_Unset_f()
 		Com_Printf("Error: %s: Variable %s is not user created.\n", Cmd_Argv(0), cv->name);
 }
 
-void Cvar_UnsetUserCreated_f()
+static void Cvar_UnsetUserCreated_f()
 {
 	cvar_t* curvar = cvar_vars;
 	uint32_t count = 0;
@@ -1452,7 +1448,6 @@ void Cvar_Init()
 	g_trueguns = Cvar_Get("cg_trueguns", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_Weather = Cvar_Get("r_weather", "0", CVAR_ARCHIVE);
-	d_Allowdebuginfo = Cvar_Get("d_Allowdebuginfo", "0", CVAR_ARCHIVE);
 
 	g_update6firststartup = Cvar_Get("g_update6firststartup", "1", 0);
 

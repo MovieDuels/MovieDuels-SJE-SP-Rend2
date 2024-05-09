@@ -910,6 +910,7 @@ static void G_InitCvars()
 	g_lightningdamage = gi.cvar("g_lightningdamage", "0", CVAR_ARCHIVE);
 
 	g_AllowWeaponDropping = gi.cvar("g_AllowWeaponDropping", "1", CVAR_ARCHIVE);
+
 	g_WeaponRemovalTime = gi.cvar("g_WeaponRemovalTime", "10", CVAR_ARCHIVE);
 	//number of seconds weapons stick around for, at least... 0 = never go away
 
