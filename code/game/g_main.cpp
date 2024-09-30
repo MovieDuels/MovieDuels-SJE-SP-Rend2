@@ -317,6 +317,8 @@ cvar_t* com_rend2;
 
 cvar_t* g_overpoweredsaberthrow;
 
+cvar_t* g_autoHealthRegen;
+
 cvar_t* g_AllowWeather;
 
 extern char* G_GetLocationForEnt(const gentity_t* ent);
@@ -947,6 +949,8 @@ static void G_InitCvars()
 	com_rend2 = gi.cvar("com_rend2", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_overpoweredsaberthrow = gi.cvar("g_overpoweredsaberthrow", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+
+	g_autoHealthRegen = gi.cvar("g_autoHealthRegen", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_AllowWeather = gi.cvar("g_AllowWeather", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 

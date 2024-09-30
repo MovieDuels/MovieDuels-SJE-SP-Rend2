@@ -185,6 +185,7 @@ extern qboolean MatrixMode;
 extern qboolean SaberlockCamMode;
 
 extern cvar_t* g_spskill;
+extern cvar_t* g_autoHealthRegen;
 extern cvar_t* g_timescale;
 extern cvar_t* g_saberMoveSpeed;
 extern cvar_t* g_speederControlScheme;
@@ -2082,6 +2083,7 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 			}
 
 			if (g_SerenityJediEngineMode->integer == 2
+				&& g_autoHealthRegen->integer == 1
 				&& (!PM_InAmputateMove(ent->client->ps.legsAnim)
 					&& !PM_InDrainPainMove(ent->client->ps.torsoAnim)
 					&& !ent->client->poisonTime
