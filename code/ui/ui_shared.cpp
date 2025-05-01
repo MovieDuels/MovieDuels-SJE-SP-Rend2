@@ -6544,7 +6544,11 @@ static void Item_TextScroll_Paint(itemDef_t* item)
 Item_ListBox_Paint
 =================
 */
-
+#ifdef NEW_FEEDER
+qhandle_t	mdBorder;
+qhandle_t	mdBorderSel;
+qhandle_t	mdBackground;
+#endif
 static void Item_ListBox_Paint(itemDef_t* item)
 {
 	float x, y, size;
@@ -6617,6 +6621,11 @@ static void Item_ListBox_Paint(itemDef_t* item)
 				// always draw at least one
 				// which may overdraw the box if it is too small for the element
 				image = DC->feederItemImage(item->special, i);
+#ifdef NEW_FEEDER
+				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS)) {
+					DC->drawHandlePic(x + 1, y + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, mdBackground);
+				}
+#endif		
 				if (image)
 				{
 					if (item->window.flags & WINDOW_PLAYERCOLOR)
@@ -6630,6 +6639,12 @@ static void Item_ListBox_Paint(itemDef_t* item)
 					}
 					DC->drawHandlePic(x + 1, y + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, image);
 				}
+
+#ifdef NEW_FEEDER
+				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS)) {
+					DC->drawHandlePic(x + 1, y + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, (i == item->cursorPos) ? mdBorderSel : mdBorder);
+				}
+#endif		
 
 				if (i == item->cursorPos)
 				{
@@ -6691,10 +6706,22 @@ static void Item_ListBox_Paint(itemDef_t* item)
 				// always draw at least one
 				// which may overdraw the box if it is too small for the element
 				image = DC->feederItemImage(item->special, i);
+
+#ifdef NEW_FEEDER
+				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS)) {
+					DC->drawHandlePic(x + 1, y + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, mdBackground);
+				}
+#endif		
 				if (image)
 				{
 					DC->drawHandlePic(x + 1, y + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, image);
 				}
+
+#ifdef NEW_FEEDER
+				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS)) {
+					DC->drawHandlePic(x + 1, y + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, (i == item->cursorPos) ? mdBorderSel : mdBorder);
+				}
+#endif		
 
 				if (i == item->cursorPos)
 				{

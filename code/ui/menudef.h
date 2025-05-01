@@ -99,6 +99,11 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define FEEDER_MOVES_TITLES					0x16			// move titles for the data pad moves screen
 #define FEEDER_LANGUAGES					0x17			// the list of languages
 
+// NEW_FEEDER
+#define FEEDER_MD_FACTION					0x54	// 84
+#define FEEDER_MD_MODELS					0x55	// 85
+#define FEEDER_MD_VARIANTS				    0x56	// 86
+
 #define UI_VERSION				200
 #define UI_HANDICAP				200
 #define UI_EFFECTS				201

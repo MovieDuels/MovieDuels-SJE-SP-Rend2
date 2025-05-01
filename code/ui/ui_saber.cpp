@@ -2917,8 +2917,13 @@ void UI_SaberDrawBlades(itemDef_t* item, vec3_t origin, const float cur_yaw)
 	int saber_model;
 	int num_sabers = 1;
 
+#ifdef NEW_FEEDER
+	if (item->flags & ITF_ISCHARACTER //hacked saber moves sabers in character's hand
+		&& ((uiInfo.movesTitleIndex == 4 /*MD_DUAL_SABERS*/) || (item->flags & ITF_ISSABER2)) )
+#else
 	if (item->flags & ITF_ISCHARACTER //hacked saber moves sabers in character's hand
 		&& uiInfo.movesTitleIndex == 4 /*MD_DUAL_SABERS*/)
+#endif
 	{
 		num_sabers = 2;
 	}

@@ -48,6 +48,689 @@ extern stringID_table_t anim_table[MAX_ANIMATIONS + 1];
 #include "../qcommon/stv_version.h"
 #include "../qcommon/q_shared.h"
 
+#ifdef NEW_FEEDER
+static int uiModelIndex = 0;
+static int uiVariantIndex = 0;
+
+extern qhandle_t mdBorder;
+extern qhandle_t mdBorderSel;
+extern qhandle_t mdBackground;
+
+typedef enum {
+	ERA_REPUBLIC,
+	ERA_EMPIRE,
+	ERA_RESISTANCE,
+	ERA_LEGENDS,
+	TOTAL_ERAS,
+} eraMD_t;
+static int uiEra = 0;
+
+static constexpr char* eraNames[TOTAL_ERAS]{
+	"Age Of The Republic",
+	"Age Of The Empire",
+	"Age Of The Resistance",
+	"Legends",
+	//"TOTAL_ERA",
+};
+
+typedef struct {
+	const char* name;
+	const char* title;
+	const char* icon;
+	const char* npc;
+
+	const char* model;
+	const char* skin;
+
+	const char* saber1;
+	const char* saber2;
+
+	const char* color1;
+	const char* color2;
+
+
+	int				style;
+	int				styleBitFlag;
+
+	eraMD_t			era;
+
+	int 		    selectAnimation;
+	int				plyAnimation;
+	int 		    npcAnimation;
+
+	const char* plySelectSound;
+	const char* npcSelectSound;
+	bool		isSubDiv; // hasSubDiv
+} charMD_t;
+
+static constexpr charMD_t charMD[] = {
+	//name								title									icon			npc								model					skin							saber1						saber2					color1			color2		style	sbFlag	era				
+	{ "Yoda",							"[Episode III]",						"",				"md_yoda",						"yoda",					"model_default",				"yoda",						"",						"green",		"",			5,		32,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Yoda",							"[Episode I-II]",						"",				"md_yoda_ep2",					"yoda",					"model_ep2",					"yoda_ep2",					"",						"green",		"",			5,		32,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Yoda",							"[High Republic]",						"",				"md_yoda_hr",					"yoda",					"model_hr",						"yoda",						"",						"green",		"",			5,		32,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Yoda",							"[Clone Wars]",							"",				"md_yoda_cw",					"yoda",					"model_cw",						"yoda",						"",						"green",		"",			5,		32,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Yoda",							"[Force Ghost]",						"",				"md_yoda_ot",					"yoda",					"model_OT",						"yoda_ep3",					"",						"green",		"",			5,		32,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Mace Windu",						"",										"",				"md_windu",						"macewindu",			"model_default",				"windu",					"",						"purple",		"",			3,		28,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Mace Windu",						"[Robed]",								"",				"md_windu_robed",				"macewindu",			"model_robed",					"windu",					"",						"purple",		"",			3,		28,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Mace Windu",						"[Hooded]",								"",				"md_windu_hooded",				"macewindu",			"model_hooded",					"windu_ep1",				"",						"purple",		"",			3,		28,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Mace Windu",						"[Force Ghost]",						"",				"md_windu_ghost",				"macewindu",			"model_ghost",					"windu",					"",						"purple",		"",			3,		28,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode III]",						"",				"md_obi_ep3",					"obiwan_ep3",			"model_default",				"obiwan_ep3",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Obi-Wan Kenobi",					"[Episode III - Robed]",				"",				"md_obi_ep3_robed",				"obiwan_ep3",			"model_robed",					"obiwan_ep3",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode III - Hooded]",				"",				"md_obi_ep3_hooded",			"obiwan_ep3",			"model_hood",					"obiwan_ep3",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode III - Mustafar Worn]",		"",				"md_obi_ep3_mus",				"obiwan_ep3",			"model_bw",						"oiwan_ep3",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode II]",							"",				"md_obi_ep2",					"obiwan_ep1",			"model_default",				"obiwan_ep1",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode II - Robed]",					"",				"md_obi_ep2",					"obiwan_ep1",			"model_robed",					"obiwan_ep1",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode II - Hooded]",				"",				"md_obi_ep2",					"obiwan_ep1",			"model_hooded",					"obiwan_ep1",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode I]",							"",				"md_obi_ep1",					"obiwan_ep1",			"model_default",				"obiwan_ep1",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode I - Robed]",					"",				"md_obi_ep1_robed",				"obiwan_ep1",			"model_robed",					"obiwan_ep1",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[Episode I - Hooded]",					"",				"md_obi_ep1_hooded",			"obiwan_ep1",			"model_hooded",					"obiwan_ep1",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Anakin Skywalker",				"[Episode III]",						"",				"md_ani_ep3",					"anakin",				"model_default",				"anakin_ep3",				"",						"blue",			"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Anakin Skywalker",				"[Episode III - Robed]",				"",				"md_ani_ep3_robed",				"anakin",				"model_robed",					"anakin_ep3",				"",						"blue",			"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Anakin Skywalker",				"[Episode III - Hooded]",				"",				"md_ani_ep3_hooded",			"anakin",				"model_hood",					"anakin_ep3",				"",						"blue",			"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Anakin Skywalker",				"[Episode II]",							"",				"md_ani_ep2",					"anakin_ep2",			"model_default",				"anakin_ep2",				"",						"blue",			"",			2,		12,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Anakin Skywalker",				"[Episode II - Robed]",					"",				"md_ani_ep2_robed",				"anakin_ep2",			"model_robed",					"anakin_ep2",				"",						"blue",			"",			2,		12,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Anakin Skywalker",				"[Episode II - Dual Lightsabers]",		"",				"md_ani_ep2_dual",				"anakin_ep2",			"model_default",				"obiwan_ep2b",				"anakin_ep2b",			"blue",			"green",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Qui-Gon Jinn",					"",										"",				"md_quigon",					"quigon",				"model_default",				"quigon",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Qui-Gon Jinn",					"[Robed]",								"",				"md_quigon_robed",				"quigon",				"model_robed",					"quigon",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Qui-Gon Jinn",					"[Poncho]",								"",				"md_quigon_poncho",				"quigon",				"model_poncho",					"quigon",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Qui-Gon Jinn",					"[Force Ghost]",						"",				"md_quigon_ghost",				"quigon",				"model_ghost",					"quigon",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kit Fisto",						"",										"",				"md_fisto",						"fisto",				"model_default",				"fisto",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kit Fisto",						"[Robed]",								"",				"md_fisto_robed",				"fisto",				"model_robed",					"fisto",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Cin Drallig",					"",										"",				"md_drallig",					"cin_drallig",			"model_default",				"drallig",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cin Drallig",					"[Legends]",							"",				"md_drallig_old",				"cin_drallig",			"model_old",					"drallig",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Saesee Tiin",					"",										"",				"md_saesee",					"saesee_tiin",			"model_default",				"saesee",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Saesee Tiin",					"[Robed]",								"",				"md_saesee_robed",				"saesee_tiin",			"model_robed",					"saesee",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Ki-Adi Mundi",					"",										"",				"md_mundi",						"ki_adi_mundi",			"model_default",				"mundi",					"",						"blue",			"",			1,		14, 	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Depa Billaba",					"",										"",				"md_depa",						"depabillaba",			"model_default",				"depa",						"",						"green",		"",			1,		14, 	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Aayla Secura",					"",										"",				"md_aayla",						"aayla",				"model_default",				"aayla",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Luminara Unduli",				"",										"",				"md_luminara",					"luminara",				"model_default",				"luminara",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Plo Koon",						"",										"",				"md_plo_koon",					"plo_koon",				"model_default",				"plo_koon",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Plo Koon",						"[Jedi Power Battles]",					"",				"md_plo_jpb",					"plo_koon",				"model_jpb",					"plo_koon",					"",						"yellow",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shaak Ti",						"",										"",				"md_shaak_ti",					"shaak_ti",				"model_default",				"shaak",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Adi Gallia",						"",										"",				"md_adi_gallia",				"adi_gallia",			"model_robed",					"adi_gallia",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Yarael Poof",					"",										"",				"md_yarael",					"yarael",				"model_default",				"yarael",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Yaddle",							"",										"",				"md_yaddle",					"yaddle",				"model_default",				"yaddle",					"",						"green",		"",			5,		32,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Coleman Trebor",					"",										"",				"md_coleman",					"coleman",				"model_default",				"coleman",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "Jocasta Nu",						"",										"",				"md_jocasta",					"jocasta",				"model_default",				"jocasta_nu",				"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Bultar Swan",					"",										"",				"md_bultar",					"bultar",				"model_default",				"shaak",					"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Bultar Swan",					"[Robed]",								"",				"md_bultar_robed",				"bultar",				"model_robed",					"shaak",					"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Agen Kolar",						"",										"",				"md_agen",						"agen_kolar",			"model_default",				"shaak",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Agen Kolar",						"[Robed]",								"",				"md_agen_robed",				"agen_kolar",			"model_robed",					"shaak",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Barris Offee",					"",										"",				"md_barriss",					"barriss_offee",		"model_default",				"barriss",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Pablo Jill",						"",										"",				"md_ongree",					"ongree",				"model_robed",					"coleman",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Sora Bulq",						"",										"",				"md_sora",						"sora_bulq",			"model_default",				"saesee",					"",						"blue",			"",			1,		10,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Serra Keto",						"",										"",				"md_serra",						"serraketo",			"model_default",				"quigon",					"quigon",				"green",		"green",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Stass Allie",					"",										"",				"md_stass_allie",				"stass_allie",			"model_default",				"coleman",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Stass Allie",					"[Robed]",								"",				"md_stass_allie_robed",			"stass_allie",			"model_robed",					"coleman",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Tarados Gon",					"",										"",				"md_tarados",					"tarados_gon",			"model_default",				"luminara",					"",						"blue",			"",			2,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	//{ "Jedi Order",					"[Prequel Era]",						"",	
+	{ "Sarissa Jeng",					"",										"",				"md_sarissa_jeng",				"sarissa_jeng",			"model_default",				"luminara",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ma'kis'shaalas",					"",										"",				"md_jed_nikto",					"jedi_nikto",			"model_default",				"luminara",					"",						"blue",			"",			2,		12,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ma'kis'shaalas",					"[Robed]",								"",				"md_jed_nikto_robed",			"jedi_nikto",			"model_robed",					"luminara",					"",						"blue",			"",			2,		12,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Koffi Arana",					"",										"",				"md_koffi_robed",				"koffi_arana",			"model_robed",					"aayla",					"",						"blue",			"",			3,		12,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "J'oopi She",						"",										"",				"md_joopi_robed",				"joopi_she",			"model_robed",					"coleman",					"",						"blue",			"",			2,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Foul Moudama",					"",										"",				"md_foul_moudama",				"foul_moudama",			"model_default",				"coleman",					"",						"blue",			"",			4,		24,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Micah Giiett",					"",										"",				"md_micah_robed",				"micah_giiett",			"model_robed",					"coleman",					"coleman",				"yellow",		"yellow",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Tsui Choi",						"",										"",				"md_tsuichoi",					"tsuichoi",				"model_default",				"yoda",						"",						"green",		"",			5,		32,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Que-Mars Redath-Gom",			"",										"",				"md_redath_robed",				"redathgom",			"model_robed",					"saesee",					"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Zett Jukassa",					"",										"",				"md_zett_jukassa",				"zett_jukassa",			"model_default",				"coleman",					"",						"blue",			"",			2,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Fi-Ek Sirch",					"",										"",				"md_sirch",						"sirch",				"model_robed",					"luminara",					"",						"blue",			"",			2,		12,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kelleran Beq",					"",										"",				"md_kelleran",					"kelleran_beq",			"model_robed",					"adi_gallia",				"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kelleran Beq",					"[Dual Lightsabers]",					"",				"md_kelleran_dual",				"kelleran_beq",			"model_robed",					"adi_gallia",				"coleman",				"green",		"blue",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Youngling",						"",										"",				"md_youngling",					"youngling",			"model_default",				"youngling",				"",						"blue",			"",			1,		2,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Youngling",						"",										"",				"md_you5",						"youngfem",				"model_default",				"youngling2",				"",						"green",		"",			1,		2,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Youngling",						"",										"",				"md_you4",						"youngshak",			"model_default",				"youngling",				"",						"blue",			"",			2,		4,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Jedi",							"",										"",	
+	{ "Jedi Master",					"",										"",				"md_jed1",						"jedi_spanki",			"|head_b4|torso_a4|lower_f1",	"quinlan",					"",						"green",		"",			2,		4,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Padawan",					"",										"",				"md_jed2",						"jedi_spanki",			"|head_e5|torso_c1|lower_d1",	"shaak",					"",						"blue",			"",			2,		4,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Padawan",					"",										"",				"md_jed3",						"jedi_spanki",			"|head_d5|torso_f1|lower_g1",	"shaak",					"",						"green",		"",			2,		4,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Knight",					"",										"",				"md_jed4",						"jedi_spanki",			"|head_f1|torso_f2|lower_g1",	"shaak",					"",						"green",		"",			3,		8,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Padawan",					"",										"",				"md_jed5",						"jedi_female1",			"|head_d3|torso_f1|lower_e1",	"shaak",					"",						"green",		"",			2,		4,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Knight",					"[Dual Lightsabers]",					"",				"md_jed6",						"jedi_female1",			"|head_c2|torso_d2|lower_f1",	"shaak",					"shaak",				"blue",			"blue",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Knight",					"",										"",				"md_jed8",						"zabrak_rots",			"model_default",				"quigon",					"",						"blue",			"",			2,		12,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Knight",					"",										"",				"md_jed9",						"jedi_spanki",			"|head_d1|torso_g1|lower_d1",	"quinlan",					"",						"blue",			"",			3,		8,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Master",					"",										"",				"md_jed10",						"jedi_spanki",			"|head_b2|torso_a3|lower_a1",	"shaak",					"",						"blue",			"",			3,		8,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Vetern",					"",										"",				"md_jed11",						"jedi_spanki",			"|head_d4|torso_b2|lower_b1",	"quinlan",					"shaak",				"blue",			"green",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Vetern",					"",										"",				"md_jed13",						"jedi_spanki",			"|head_f1|torso_b4|lower_c1",	"shaak",					"quigon",				"green",		"blue",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Knight",					"",										"",				"md_jed15",						"jedi_tf",				"|head_b4|torso_b1|lower_a1",	"saesee",					"",						"blue",			"",			1,		2,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Knight",					"",										"",				"md_jed16",						"jedi_zf",				"|head_c1|torso_b1|lower_a1",	"shaak",					"",						"blue",			"",			3,		8,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Brute",						"",										"",				"md_jbrute",					"jedibrute",			"model_default",				"dual_4",					"",						"green",		"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ti'Ori",							"",										"",				"theory",						"Theory",				"model_default",				"quigon",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Padme Amidala",					"[Queen]",								"",				"queen_amidala",				"queen_amidala",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Padme Amidala",					"[Geonosis]",							"",				"md_pad_ga",					"padme_ep2",			"model_default_bw",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Padme Amidala",					"[Pregnant]",							"",				"md_padme_mus",					"Padme_Mus",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Jar Jar Binks",					"",										"",				"md_jarjar",					"jarjar",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Gungan Warrior",					"",										"",				"md_gungan_warrior",			"gungan",				"model_default",				"gungan_shield",			"gammobaxe",			"",				"",			6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	//{ "Clone Commanders",				"",										"",	
+	{ "Commander Copy",					"",										"",				"md_clo_cody",					"clonetrooper_p2",		"model_212_cody",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Captain Rex",					"",										"",				"md_clo_rex",					"clonetrooper_p2",		"model_501_rex",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Commander Fox",					"",										"",				"md_clo_fox",					"clonetrooper_p2",		"model_fox",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Fives",							"",										"",				"md_clo_fives",					"clonetrooper_p2",		"model_fives",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Commander Neyo",					"",										"",				"md_clo_neyo",					"clonetrooper_p2",		"model_91_neyo",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Commander Vaughn",				"",										"",				"md_clo_vaughn",				"clonetrooper_p2",		"model_332_vaughn",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	//{ "Clone Troopers",				"",										"",	
+	{ "Clone Trooper",					"[Phase 1]",							"",				"md_clo_ep2",					"clonetrooper_p1",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Clone Trooper",					"[212th Battalion]",					"",				"md_clo_212th",					"clonetrooper_p2",		"model_212",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Paratrooper",				"[212th Battalion]",					"",				"md_clo_212_airborne",			"clonetrooper_p2",		"model_212_airborne",			"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Trooper",					"[13th Battalion]",						"",				"md_clo_13th",					"clonetrooper_p2",		"model_13",						"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Sharpshooter",				"",										"",				"md_clo4_rt",					"clonetrooper_p2",		"model_airborne_rgb",			"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Trooper",					"[501st Legion]",						"",				"md_clo1_jt",					"clonetrooper_p2",		"model_501",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Commander",				"[501st Legion]",						"",				"md_clo2_jt",					"clonetrooper_p2",		"model_deviss_rgb",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Shock Trooper",			"",										"",				"md_clo_red_player",			"clonetrooper_p2",		"model_shock",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Commander Deviss",				"",										"",				"md_clo_red2_player",			"clonetrooper_p2",		"model_327_deviss",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Heavy Trooper",			"",										"",				"md_clo6_rt_player",			"clonetrooper_p2",		"model_327_deviss",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Trooper",					"[332nd Company]",						"",				"md_clo_332",					"clonetrooper_p2",		"model_332",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Trooper",					"[327th Star Corps]",					"",				"md_clo_327",					"clonetrooper_p2",		"model_327",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Shadow Trooper",			"",										"",				"md_clo_shadow",				"clonetrooper_p2",		"model_shadow",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Galactic Marine",				"[21st Nova Corps]",					"",				"md_clonemarine",				"clonemarine",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Clone Republic Commandos",		"",										"",	
+	{ "Boss",							"",										"",				"md_clo_boss",					"clonerc2",				"model_boss",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Fixer",							"",										"",				"md_clo_fixer",					"clonerc2",				"model_fixer",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Scorch",							"",										"",				"md_clo_scorch",				"clonerc2",				"model_scorch",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Sev",							"",										"",				"md_clo_sev",					"clonerc2",				"model_sev",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Gregor",							"",										"",				"md_clo_gregor",				"clonerc2",				"model_gregor",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Republic Commando",				"",										"",				"md_clo_rc",					"clonerc2",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Republic Commando",				"[Night Ops Armor]",					"",				"md_clo_rc2",					"clonerc2",				"model_commando",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+
+	//{ "Darth Sidious",																										
+	{ "Darth Sidious",					"[Emperor]",							"",				"md_sidious",					"palpatine",			"model_senate",					"sidious",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Sidious",					"[Episode III]",						"",				"md_sidious_ep3_red",			"palpatine",			"model_sith_hood",				"sidious",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Sidious",					"[Episode III - Robed]",				"",				"md_sidious_ep3_robed",			"palpatine",			"model_sith_hood2",				"sidious2_m",				"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Sidious",					"[EPI - EPII]",							"",				"md_sidious_ep2",				"palpatine",			"model_robed",					"sidious",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Sheev Palpatine",				"",										"",				"md_palpatine",					"palpatine",			"model_default",				"sidious",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Lord Vader",						"",										"",				"md_ani_sith",					"anakin",				"model_shood",					"anakin_ep3",				"",						"",				"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Lord Vader",						"[Mustafar]",							"",				"md_ani_bw",					"anakin",				"model_smus",					"anakin_ep3",				"",						"",				"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Count Dooku",					"",										"",				"md_dooku",						"dooku",				"model_default",				"dooku",					"",						"",				"",			4,		48,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Maul",						"",										"",				"md_maul",						"darthmaul",			"model_default",				"dual_maul",				"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Maul",						"[Robed]",								"",				"md_maul_robed",				"darthmaul",			"model_robed",					"dual_maul",				"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Maul",						"[Hooded]",								"",				"md_maul_hooded",				"darthmaul",			"model_hood",					"dual_maul",				"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Maul",						"[Warrior]",							"",				"md_maul_wots",					"darthmaul",			"model_noshirt_gloves",			"dual_maul",				"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "General Grievous",				"",										"",				"md_grievous",					"grievous",				"model_default",				"single_1",					"single_1",				"blue",			"green",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "General Grievous",				"[Four Arms]",							"",				"md_grievous4",					"grievous4",			"model_default",				"greeveeb4",				"greeveeg4",			"",				"",			6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "General Grievous",				"[Robed]",								"",				"md_grievous_robed",			"grievous",				"model_cape",					"single_1",					"single_1",				"blue",			"green",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Magnaguard",						"",										"",				"md_magnaguard",				"magnaguard",			"model_utapau",					"electrostaff",				"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jango Fett",						"",										"",				"md_jango",						"jangofett",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jango Fett",						"[Geonosis]",							"",				"md_jango_geo",					"jangofett",			"model_jetpack2",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Jango Fett",						"[Dual Pistols]",						"",				"md_jango_dual",				"jangofett",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Clone Assassin",					"",										"",				"md_clone_assassin",			"clonetrooper_p2",		"model_assassin",				"arc_shiv",					"arc_shiv_dual",		"",				"",			6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Tuskan Raider",					"",										"",				"md_tus1_tc",					"tusken_ep1n2",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Tuskan Sniper",					"",										"",				"md_tus2_tc",					"tusken_ep1n2",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Tuskan Chieftain",				"",										"",				"md_tus5_tc",					"tusken_quarak",		"model_ep2",					"tusken_chieftain_gaffi",	"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Neimoidian Guard",				"",										"",				"md_gua_am",					"NeimoidianSecurity",	"model_default",				"electrostaff",				"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Neimoidian Brute",				"",										"",				"md_gua2_am",					"neimoidian_guard",		"model_default",				"gammobaxe",				"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Nute Gunray",					"",										"",				"md_gunray",					"gunray_ep3",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Shu Mai",						"",										"",				"md_shu_mai",					"shu_mai",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Wat Tambor",						"",										"",				"md_wat_tambor",				"wat_tambor",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "B1 Battle Droid",				"",										"",				"battledroid",					"battledroid",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "B1 Battle Droid",				"[Security]",							"",				"battledroid_security",			"battledroid",			"model_security",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "B1 Battle Droid",				"[Pilot]",								"",				"battledroid_pilot",			"battledroid",			"model_pilot",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "B1 Battle Droid",				"[Commander]",							"",				"battledroid_comm",				"battledroid",			"model_comm",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "B1 Battle Droid",				"[Sniper]",								"",				"battledroid_sniper",			"battledroid",			"model_sniper",					"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "B1 Battle Droid",				"[Geonosis]",							"",				"battledroid_geonosis",			"battledroid",			"model_geonosis",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "B2 Super Battle Droid",			"",										"",				"md_sbd_am",					"SBD",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Droideka",						"",										"",				"md_dro_am",					"droideka",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "Obi-Wan Kenobi",					"[TCW - General]",						"",				"md_obi_tcw",					"obiwan_tcw",			"model_default",				"obiwan_ep3",				"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Obi-Wan Kenobi",					"[CW - General]",						"",				"md_obi_cw",					"obiwan_cw",			"model_default",				"obiwan_ep1",				"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan Kenobi",					"[CW - General]",						"",				"md_obi_cw_helmet",				"obiwan_cw",			"model_helmet",					"obiwan_ep1",				"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Anakin Skywalker",				"[TCW - General]",						"",				"md_ani_tcw",					"anakin_tcw",			"model_default",				"anakin_ep3",				"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Anakin Skywalker",				"[CW - General]",						"",				"md_ani_cw",					"anakin_tcw",			"model_cw",						"anakin_ep3",				"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Anakin Skywalker",				"[CW - Nelvaan Trials]",				"",				"md_ani_cw_nelvaan",			"anakin_swolo",			"model_default",				"anakin_ep3",				"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Ahsoka Tano",					"",										"",				"md_ahsoka",					"ahsoka",				"model_default",				"ahsoka",					"ahsoka_short",			"green",		"x66ad0b",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ahsoka Tano",					"[Mandalore]",							"",				"md_ahsoka_s7",					"ahsoka_s7",			"model_default",				"ahsoka_alt",				"ahsoka_short_alt",		"blue",			"blue",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Plo Koon",						"[General]",							"",				"md_plo_tcw",					"plo_tcw",				"model_default",				"plo_koon",					"",						"",				"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Mace Windu",						"[TCW - General]",						"",				"md_windu_tcw",					"macewindu",			"model_cw",						"windu",					"",						"",				"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Mace Windu",						"[CW - General]",						"",				"md_windu_cw",					"macewindu_cw",			"model_default",				"windu",					"",						"",				"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Mace Windu",						"[Tales of the Jedi]",					"",				"md_windu_totj",				"macewindu",			"model_totj",					"windu",					"",						"",				"",			1,		30,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kit Fisto",						"[General]",							"",				"md_fisto_tcw",					"fisto",				"model_cw",						"fisto",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kit Fisto",						"[Shirtless]",							"",				"md_fisto_tcw_noshirt",			"kitfisto_cw",			"model_default",				"fisto",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Adi Gallia",						"[General]",							"",				"md_adi_tcw",					"adi_gallia",			"model_cw",						"adi_gallia",				"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Eeth Koth",						"[General]",							"",				"md_eeth_koth",					"eeth_koth",			"model_cw",						"fisto",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Even Piell",						"",										"",				"md_even_piell",				"even_piell",			"model_default",				"even_piell",				"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Quinlan Vos",					"",										"",				"md_quinlan",					"quinlan_vos",			"model_default",				"quinlan",					"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cin Drallig",					"[TCW]",								"",				"md_drallig_tcw",				"cin_drallig",			"model_cw",						"drallig",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Pong Krell",						"",										"",				"md_pong_krell",				"pong_krell",			"model_default",				"pong_krell",				"pong_krell",			"blue",			"green",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Tiplee",							"",										"",				"md_tiplee",					"tiplee",				"model_default",				"shaak",					"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Tiplar",							"",										"",				"md_tiplar",					"tiplee",				"model_tiplar",					"shaak",					"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Temple Guard",				"",										"",				"md_templeguard",				"jtguard",				"model_default",				"temple_guard",				"",						"yellow",		"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Shakkra Kien",					"",										"",				"md_guardboss_jt",				"jtguard_boss",			"model_default",				"temple_guard",				"",						"orange",		"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Satine Kryze",					"",										"",				"md_duchess_satine",			"satine",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Depa Billaba",					"[TCW - Robed]",						"",				"md_depa_tcw_robed",			"depabillaba_tcw",		"model_robed",					"depa",						"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Depa Billaba",					"[TCW - Hooded]",						"",				"md_depa_tcw_hooded",			"depabillaba_tcw",		"model_hooded",					"depa",						"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Jedi Order",					"[TCW Era]"	
+	{ "Tera Sinube",					"",										"",				"md_tera_sinube",				"tera_sinube",			"model_default",				"sinube",					"",						"x517FCC",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Thongla Jur",					"",										"",				"md_thongla_jur",				"thongla_jur",			"model_default",				"windu",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Oppo Rancisis",					"",										"",				"md_oppo_rancisis",				"oppo_rancisis",		"model_default",				"oppo",						"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Halsey",							"",										"",				"md_halsey",					"halsey",				"model_cw",						"shaak",					"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Knox",							"",										"",				"md_knox",						"knox",					"model_default",				"rig",						"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Bolla Ropal",					"",										"",				"md_bolla_ropal",				"bolla_ropal",			"model_default",				"aayla",					"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ima-Gun Di",						"",										"",				"md_ima_gundi",					"ima_gundi",			"model_default",				"saesee",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Nahdar Vebb",					"",										"",				"md_nahdar",					"nahdar",				"model_default",				"quigon",					"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Nahdar Vebb",					"[Robed]",								"",				"md_nahdar_robed",				"nahdar",				"model_robed",					"quigon",					"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Eekar Oki",						"",										"",				"md_eekar",						"eekar",				"model_default",				"quigon",					"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "Darth Sidious",					"[TCW]",								"",				"md_sidious_tcw",				"palpatine",			"model_robed_tcw",				"sidious2",					"sidious",				"red",			"red",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Count Dooku",					"[TCW]",								"",				"md_dooku_tcw_unrobed",			"dooku_tcw",			"model_unrobed",				"dooku",					"",						"",				"",			4,		48,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Dooku",							"[TCW - Robed]",						"",				"md_dooku_tcw",					"dooku_tcw",			"model_default",				"dooku",					"",						"",				"",			4,		48,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Dooku",							"[Tales of the Jedi]",					"",				"md_dooku_totj",				"dooku_totj",			"model_default",				"dooku_jedi",				"",						"blue",			"",			4,		48,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Maul",						"[TCW]",								"",				"md_maul_tcw",					"maul_tcw",				"model_default",				"single_maul",				"",						"red",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Maul",							"[TCW - Reborn]",						"",				"md_maul_cyber_tcw",			"maul_cyber_tcw",		"model_default",				"single_maul",				"",						"red",			"",			1,		14,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Maul",							"[TCW - Darksaber]",					"",				"md_maul_tcw_dual",				"maul_tcw",				"model_default",				"single_maul",				"darksaber_tcw",		"red",			"black",	6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Maul",							"[TCW - Staff]",						"",				"md_maul_tcw_staff",			"maul_tcw",				"model_default",				"maul_tcw",					"",						"red",			"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Savage Opress",					"",										"",				"md_savage",					"savage_opress",		"model_default",				"dual_opress",				"",						"red",			"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Asajj Ventress",					"",										"",				"md_ventress",					"asajj",				"model_default",				"ventress_tcw",				"ventress_tcw",			"red",			"red",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Asajj Ventress",					"[Staff]",								"",				"md_ven_dual",					"asajj",				"model_default",				"ventress_tcw_dual",		"",						"red",			"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Asajj Ventress",					"[Nightsister]",						"",				"md_ven_ns",					"asajj",				"model_ns",						"ventress_tcw",				"ventress_tcw",			"red",			"red",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Asajj Ventress",					"[Bounty Hunter]",						"",				"md_ven_bh",					"asajj_bh",				"model_default",				"ventress_tcw",				"ventress_tcw",			"red",			"red",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Asajj Ventress",					"[Disguised]",							"",				"md_ven_dg",					"asajj_bh",				"model_disguise",				"ventress_tcw",				"ventress_tcw",			"red",			"red",		6,		64,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Mother Talzin",					"",										"",				"md_mother_talzin",				"MotherTalzin",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Magnaguard TCW",					"[Dooku's Bodyguard]",					"",				"md_magnaguard_tcw",			"magnaguard",			"model_tcw",					"electrostaff2",			"",						"",				"",			7,		128,	ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Hondo Ohnaka",					"",										"",				"md_hondo",						"hondo",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cad Bane",						"",										"",				"md_cadbane",					"cadbane",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Embo",							"",										"",				"md_embo",						"embo",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Durge",							"",										"",				"md_durge",						"durge",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Durge",							"[Jetpack]",							"",				"md_durge_jetpack",				"durge",				"model_jetpack",				"",							"",						"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+
+	//{ "Ben Kenobi"
+	{ "Obi-Wan",						"[Jabiim]",								"",				"md_obi_jabiim",				"obiwan_jabiim",		"model_default",				"obiwan_owk",				"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Obi-Wan",						"[Jabiim - Robed]",						"",				"md_obi_jabiim_robed",			"obiwan_jabiim",		"model_robed",					"obiwan_owk",				"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan",						"[Pre-ANH]",							"",				"md_obi_preanh",				"obiwan_jabiim",		"model_defaultb",				"obiwan_owk",				"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan",						"[Pre-ANH - Desert]",					"",				"md_obi_preanh_desert",			"obiwan_jabiim",		"model_robedc",					"obiwan_owk",				"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Ben",							"[Hooded]",								"",				"md_ben_hooded",				"obiwan_ot",			"model_default_hooded",			"obiwan_ep4",				"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Ben",							"[Robed]",								"",				"md_ben_robed",					"obiwan_ot",			"model_default_robed",			"obiwan_ep4",				"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Obi-Wan",						"[Exiled]",								"",				"md_obi_exile",					"obiwan_ep3",			"model_exile",					"obiwan_owk",				"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Ben",							"[Force Ghost]",						"",				"md_ben_ghost",					"obiwan_ot",			"model_ghost",					"obiwan_ep4",				"",						"blue",			"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	#if 1
+	//{ "Luke Skywalker"
+	{ "Luke Skywalker",					"[Jedi - Hooded]",						"",				"md_luke_hooded",				"luke_rotj",			"model_tunic_hood",				"luke_ep6",					"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Luke Skywalker",					"[Jedi - Robed]",						"",				"md_luke_robed",				"luke_rotj",			"model_tunic_robe",				"luke_ep6",					"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Jedi - Tunic]",						"",				"md_luke_tunic",				"luke_rotj",			"model_tunic",					"luke_ep6",					"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Endor Camouflage]",					"",				"md_luke_endor",				"luke_rotj",			"model_endor",					"luke_ep6",					"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Endor Camo, Helmetless]",				"",				"md_luke_endor2",				"luke_rotj",			"model_endor_nohelmet",			"luke_ep6",					"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Jedi Knight]",						"",				"md_luke_rotj",					"luke_rotj",			"model_default",				"luke_ep6",					"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Jedi - Exposed Flap]",				"",				"md_luke_fd",					"luke_rotj",			"model_default_fd",				"luke_ep6",					"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Hoth]",								"",				"md_luke_hoth",					"luke_hoth",			"model_default",				"luke_ep5",					"",						"",				"",			2,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Pilot]",								"",				"md_luke_pilot",				"luke_pilot",			"model_default",				"luke_ep5",					"",						"",				"",			2,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Dagobah]",							"",				"md_luke_dago",					"luke_esb_dago",		"model_default",				"luke_ep5",					"",						"",				"",			2,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Dagobah - Yoda In Backpack]",			"",				"md_luke_dago_backpack",		"luke_esb_dago",		"model_backpack",				"luke_ep5",					"",						"",				"",			2,		6, 		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Bespin]",								"",				"md_luke_esb",					"luke_esb",				"model_default",				"luke_ep5",					"",						"",				"",			2,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Yavin Ceremony]",						"",				"md_luke_yavin",				"luke_yavin",			"model_default",				"luke_ep4",					"",						"",				"",			2,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Farm Boy]",							"",				"md_luke_anh",					"luke_anh",				"model_default",				"luke_ep4",					"",						"",				"",			2,		4,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Leia Organa"
+	{ "Princess Leia",					"",										"",				"md_leia_anh",					"leia_anh",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Leia",							"[Hoth]",								"",				"md_leia_esb_hoth",				"leia_esb",				"model_hoth",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Leia",							"[Bespin]",								"",				"md_leia_esb",					"leia_esb",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Leia",							"[Jabba's Slave]",						"",				"md_leia_slave",				"leia_slave",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Leia",							"[Endor]",								"",				"md_leia_endor",				"leia_endor",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Leia",							"[Endor - Poncho]",						"",				"md_leia_endor_poncho",			"leia_endor",			"model_poncho",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Han Solo",						"",										"",				"md_han_anh",					"captain_solo",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Han Solo",						"[Empire Strikes Back]",				"",				"md_han_esb",					"captain_solo",			"model_esb",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Han Solo",						"[Return of the Jedi]",					"",				"md_han_rotj",					"captain_solo",			"model_rotj",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Han Solo",						"[Young]",								"",				"md_han_young",					"han_young",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Chewbacca",						"",										"",				"md_chewie",					"chewbacca",			"model_ot",						"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Chewbacca",						"[Bespin]",								"",				"md_chewie_bespin",				"chewbacca",			"model_bespin",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "R2-D2",							"",										"",				"md_r2d2_char",					"r2d2",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "C-3PO",							"",										"",				"md_c3po_char",					"protocol",				"model_ep3",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "GNK Droid",						"",										"",				"gonk",							"gonk",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Lando Calrissian",				"",										"",				"md_lando",						"landoT",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Lando Calrissian",				"[Bespin Administrator]",				"",				"md_lando_bespin",				"landoT",				"model_bespin",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Lando Calrissian",				"[Alliance General]",					"",				"md_lando_endor",				"landoT",				"model_endor",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Lando Calrissian",				"[Jabba's Palace Disguise]",			"",				"md_lando_jabba",				"landoskiff",			"model_default",				"tusken_chieftain_gaffi",	"",						"",				"",			2,		4,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Nien Nunb",						"",										"",				"md_nien_nunb",					"niennunb",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Bail Organa",					"",										"",				"md_bail_organa_tfu",			"bailorgana",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Mon Mothma",						"",										"",				"md_mon_mothma",				"monmothma",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Mon Mothma",						"[Young]",								"",				"md_mon_mothma_young",			"mothma_young",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Admiral Ackbar",					"",										"",				"md_ackbar",					"ackbar",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Rebel Alliance Trooper",			"",										"",				"rebel2",						"rebel",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kota's Militia",					"[Saboteur]",							"",				"militiasaboteur",				"militiasaboteur",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kota's Militia",					"[Trooper]",							"",				"militiatrooper",				"militiatrooper",		"model_default",				"militia_baton",			"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rebel Alliance Pilot",			"",										"",				"md_rebel_pilot",				"rebel_pilot_tfu",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Bespin Security",				"",										"",				"bespincop",					"bespin_cop",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Rogue One"
+	{ "Jyn Erso",						"",										"",				"md_jyn_erso",					"jynerso",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cassian Andor",					"",										"",				"md_cassian",					"cassian",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cassian Andor",					"[Parka Jacket]",						"",				"md_cassian_parka",				"cassian",				"model_parka",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cassian Andor",					"[Protective Vest]",					"",				"md_cassian_vest",				"cassian",				"model_vest",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cassian Andor",					"[Scarif]",								"",				"md_cassian_scarif",			"cassian",				"model_scarif",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Bodhi Rook",						"",										"",				"md_bodhi",						"bodhi",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Chirrut Imwe",					"",										"",				"md_chirrut",					"Chirrut",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Baze Malbus",					"",										"",				"md_baze_malbus",				"Baze",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "K-2SO",							"",										"",				"md_k2so",						"k2so",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cal Kestis",						"",										"",				"cal_kestis",					"cal_kestis",			"model_default",				"cal",						"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cal Kestis",						"[Poncho]",								"",				"cal_kestis_cape",				"cal_kestis",			"model_cape",					"cal",						"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Cal Kestis",						"[Staff]",								"",				"cal_kestis_staff",				"cal_kestis",			"model_default2",				"cal_staff",				"",						"blue",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Cal Kestis",						"[Padawan]",							"",				"cal_kestis_jedi",				"cal_kestis_jedi",		"model_default",				"cal",						"",						"blue",			"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Inquisitor Kestis",				"",										"",				"cal_inquisitor",				"cal_inquisitor",		"model_default",				"cal_staff",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Cal Kestis",						"[Jedi: Survivor]",						"",				"cal_survivor",					"cal_survivor",			"model_default",				"cal",						"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Jaro Tapal",						"",										"",				"jaro_tapal",					"jaro_tapal",			"model_default",				"cal_staff",				"",						"blue",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	//{ "Darth Vader"
+	{ "Darth Vader",					"[Episode III]",						"",				"md_vader_ep3",					"darthvader",			"model_ep3",					"vader_ro_m",				"",						"",				"",			1,		30,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Vader",					"[Episode IV]",							"",				"md_vader_anh",					"darthvader",			"model_anh",					"vader_ep4_m",				"",						"",				"",			1,		30,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Vader",					"[Episode V-VI]",						"",				"md_vader",						"darthvader",			"model_default",				"vader_m",					"",						"",				"",			1,		30,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Vader",					"[Battle Damaged]",						"",				"md_vader_bw",					"darthvader",			"model_battle",					"vader_ro_m",				"",						"",				"",			1,		30,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Vader",					"[Kenobi Damaged]",						"",				"md_vader_tv",					"darthvader",			"model_tv",						"vader_ro_m",				"",						"",				"",			1,		30,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Emperor Palpatine",				"",										"",				"md_emperor",					"palpatine_fa",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Emperor Palpatine",				"[Lightsaber]",							"",				"md_emperor2",					"palpatine_fa",			"model_default",				"sidious_m",				"",						"",				"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Imperial Royal Guard",			"",										"",				"md_royalguard",				"royal",				"model_default",				"forcepike",				"",						"",				"",			3,		8,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Imperial Shadow Guard",			"",										"",				"md_shadowguard",				"royal",				"model_default_b",				"pikesaber",				"",						"",				"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Royal Combat Guard",				"",										"",				"md_royalcombat",				"royalcombatguard",		"model_default",				"pikesaber",				"",						"",				"",			3,		8,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Grand Moff Tarkin",				"",										"",				"md_tarkin",					"tarkin",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Boba Fett",						"[The Empire Strikes Back]",			"",				"boba_fett_esb",				"bobafett",				"model_ESB",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Boba Fett",						"[Return of the Jedi]",					"",				"boba_fett_rotj",				"bobafett",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Imperial Army"
+	{ "Stormtrooper",					"",										"",				"stormtrooper",					"stormtrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Stormtrooper",					"[Officer]",							"",				"stofficer",					"stormtrooper",			"model_officer",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Scout Trooper",					"",										"",				"scouttrooper",					"scouttrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Scout Trooper Commander",		"",										"",				"scouttrooper_officer",			"scouttrooper",			"model_captain",				"militia_baton",			"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shock Trooper",					"",										"",				"stshock",						"stshock",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shock Trooper Commander",		"",										"",				"stshock2",						"stshock",				"model_commander",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Stormtrooper",					"[Vader's Fist]",						"",				"501st_st",						"501st_stormie",		"model_stcommando",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Stormtrooper",					"[Officer - Vader's Fist]",				"",				"501st_stofficer",				"501st_stormie",		"model_officer",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shadow Trooper",					"",										"",				"shadowst",						"shadow_stormtrooper",	"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Imperial Evo Trooper",			"",										"",				"evotrooper",					"evotrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shadow Evo Trooper",				"",										"",				"evoshadow",					"evotrooper",			"model_shadow",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Imperial Jumptrooper",	?
+	//{ "ATST" ?
+	#endif
+	{ "Bossk",							"",										"",				"md_bossk",						"bossk",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Greedo",							"",										"",				"md_greedo",					"greedo",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Gamorrean Gaurd",				"",										"",				"gamorrean",					"gamorrean",			"model_default",				"gammobaxe",				"",						"",				"",			2,		12,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Vizam",							"",										"",				"vizam_tgpoc",					"vizam",				"model_default",				"tusken_chieftain_gaffi",	"",						"",				"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Weequay",						"[Gunner]",								"",				"weequay",						"weequay",				"model_sp",						"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Director Orson Krennic",			"",										"",				"md_krennic",					"krennic",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Death Trooper",					"",										"",				"md_deathtrooper",				"deathtrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Death Trooper",					"[Commander]",							"",				"md_deathtrooper_commander",	"deathtrooper",			"model_commander",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shoretrooper",					"",										"",				"md_shoretrooper",				"shoretrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Shoretrooper Elite",				"",										"",				"md_shoretrooper_elite",		"shoretrooper",			"model_elite",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Tank Trooper",					"",										"",				"md_tanktrooper",				"shoretrooper",			"model_tank",					"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Second Sister",					"",										"",				"md_2ndsister",					"secondsister",			"model_default",				"saber_trilla",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ninth Sister",					"",										"",				"md_9thsister",					"9thsister",			"model_default",				"inquisitor5",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Third Sister / Reva Sevander",	"",										"",				"md_reva",						"reva",					"model_default",				"saber_trilla",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Taron Malicos",					"",										"",				"md_malicos",					"taron_malicos",		"model_default",				"malicos",					"malicos",				"red",			"red",		6,		64,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Purge Trooper",					"",										"",				"purge_trooper",				"purgetrooper",			"model_staff",					"electrostaff",				"",						"",				"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Purge Trooper",					"[Commander]",							"",				"purge_trooper_comm",			"purgetrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+
+	{ "Kanan Jarrus",					"",										"",				"md_kanan",						"kanan",				"model_default",				"kanan",					"",						"blue",			"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kanan Jarrus",					"[Blind]",								"",				"md_kanan_blind",				"kanan",				"model_blind",					"kanan",					"",						"blue",			"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Caleb Dume",						"",										"",				"md_caleb",						"caleb_dume",			"model_default",				"kanan_tbb",				"",						"blue",			"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Caleb Dume",						"[Robed]",								"",				"md_caleb_robed",				"caleb_dume",			"model_robed",					"kanan_tbb",				"",						"blue",			"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Caleb Dume",						"[Hooded]",								"",				"md_caleb_hooded",				"caleb_dume",			"model_hooded",					"kanan_tbb",				"",						"blue",			"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Ezra Bridger",					"[Seasons 1-2]",						"",				"md_ezra_s1",					"ezra",					"model_default",				"ezra",						"",						"blue",			"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ezra Bridger",					"[Seasons 3-4]",						"",				"md_ezra",						"ezrabridger",			"model_default",				"ezra2",					"",						"green",		"",			1,		14,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Sabine Wren",					"",										"",				"md_sabine",					"sabine",				"model_default",				"darksaber_reb",			"",						"",				"",			1,		6,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Hera Syndulla",					"",										"",				"md_hera",						"hera",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ahsoka Tano",					"[Rebels]",								"",				"md_ahsoka_rebels",				"ahsoka_rebels",		"model_default",				"ahsoka_reb1",				"ahsoka_reb2",			"white",		"white",	6,		64,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Captain Rex",					"[Old]",								"",				"md_rex_old",					"rex_old",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Captain Rex",					"[Endor - Old]",						"",				"md_rex_endor",					"rex_endor",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+
+	{ "Grand Admiral Thrawn",			"",										"",				"md_thrawn",					"thrawn",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "The Grand Inquisitor",			"",										"",				"md_inquisitor",				"grandinquisitor",		"model_default",				"inquisitor",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "The Seventh Sister",				"",										"",				"md_7thsister",					"7thsister",			"model_default",				"inquisitor3",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "The Fifth Brother",				"",										"",				"md_5thbrother",				"5thbrother",			"model_default",				"inquisitor2",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "The Eighth Brother",				"",										"",				"md_8thbrother",				"8thbrother",			"model_default",				"inquisitor4",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Maul",							"[Rebels]",								"",				"md_maul_rebels",				"maul_rebels",			"model_default",				"maul_rebels",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Maul",							"[Hooded]",								"",				"md_maul_rebels3",				"maul_rebels",			"model_shirtless_hooded",		"maul_rebels",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Maul",							"[Cowel]",								"",				"md_maul_rebels4",				"maul_rebels",			"model_shirtless_cowelbase",	"maul_rebels",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Maul",							"[Coweless]",							"",				"md_maul_rebels2",				"maul_rebels",			"model_shirtless",				"maul_rebels",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Maul",							"[Tatooine]",							"",				"md_maul_rebels5",				"maul_rebels",			"model_desert",					"maul_rebels",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Maul",							"[Twin Suns Duel]",						"",				"md_maul_rebels6",				"maul_rebels",			"model_twinsuns",				"maul_rebels",				"",						"red",			"",			7,		128,	ERA_EMPIRE,			BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+
+	{ "Din Djarin",						"",										"",				"md_dindjarin",					"dindjarin",			"model_default",				"darksaber_tm",				"",						"black",		"",			2,		4,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Din Djarin",						"[Jetpack]",							"",				"md_dindjarin_s3",				"dindjarin",			"model_jetpack",				"darksaber_tm",				"",						"black",		"",			2,		4,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Grogu",							"",										"",				"md_grogu",						"grogu",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Greef Karga",					"",										"",				"md_greef",						"greef",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Cara Dune",						"",										"",				"md_cara_dune",					"caradune",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kuiil",							"",										"",				"md_kuiil",						"kuiil",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "New Republic Soldier",			"",										"",				"nrep_sold",					"nrep_sold",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "New Republic Security Droid",	"",										"",				"md_new_rep_sec_droid",			"NRSD",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Ahsoka Tano",					"[The Mandolorian]",					"",				"md_ahsoka_tm",					"ahsoka_tm",			"model_default",				"ahsoka_reb1",				"ahsoka_reb2",			"white",		"white",	6,		64,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	//{ "Boba Fett",					"[TM & TBOBF]"
+	{ "Boba Fett",						"[Worn Armor]",							"",				"boba_fett_mand1",				"bobafett",				"model_mand1",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Boba Fett",						"[Worn Armor - No Helmet]",				"",				"boba_fett_nohelmet",			"bobafett",				"model_nohelm",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Boba Fett",						"[Re-armored]",							"",				"boba_fett_mand2",				"bobafett",				"model_mand2",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Boba Fett",						"[Re-armored - No Helmet]",				"",				"boba_fett_nohelmet2",			"bobafett",				"model_nohelm2",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Fennec Shand",					"",										"",				"md_fennec_helmet",				"fennec",				"model_helmet",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Fennec Shand",					"[No Helmet]",							"",				"md_fennec",					"fennec",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Black Krrsantan",				"",										"",				"md_krrsantan",					"krrsantan",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Bo-Katan Kryze",					"",										"",				"bokatan",						"bokatan",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Bo-Katan Kryze",					"[No Helmet]",							"",				"bokatan_nohelm",				"bokatan",				"model_nohelm",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "The Armorer",					"",										"",				"armorer",						"mando_arm",			"model_default",				"mando_arm",				"mando_arm2",			"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "The Armorer",					"[Jetpack]",							"",				"armorer_jet",					"mando_arm",			"model_jetpack",				"mando_arm",				"mando_arm2",			"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Paz Vizsla",						"",										"",				"pazvizsla",					"pazvizsla",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "Luke Skywalker",					"[Jedi Master]",						"",				"md_luke_tbobf",				"luke_tbobf",			"model_default",				"luke_ep6",					"",						"",				"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Luke Skywalker",					"[Battlefront 2, 2017]",				"",				"md_luke_bf2",					"luke_rotj",			"model_tm_tunic",				"luke_ep6",					"",						"",				"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Jedi Master - Hooded]",				"",				"md_luke_hooded_tm",			"luke_tbobf",			"model_hood",					"luke_ep6",					"",						"",				"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Jedi Master - Robed]",				"",				"md_luke_robed_tm",				"luke_tbobf",			"model_robe",					"luke_ep6",					"",						"",				"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Jedi Master - TROKR]",				"",				"md_luke_jedi_master",			"luke_rotj",			"model_master",					"luke_ep6",					"",						"",				"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Ach-to - Robed]",						"",				"md_luke_tfa",					"luke_tfa",				"model_cloak_glove",			"luke",						"",						"green",		"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Ach-to - Hooded]",					"",				"md_luke_tfa_hooded",			"luke_tfa",				"model_hood_glove",				"luke",						"",						"green",		"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Luke Skywalker",					"[Crait Illusion]",						"",				"md_luke_crait",				"luke_crait",			"model_default",				"rey_ep7",					"",						"blue",			"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rey",							"[Jakku]",								"",				"md_rey",						"rey",					"model_default",				"rey_ep7",					"",						"blue",			"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Rey",							"[Resistance Scout]",					"",				"md_rey_res",					"rey",					"model_resistance",				"rey_ep7",					"",						"blue",			"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rey",							"[Grey Jedi Wrap]",						"",				"md_rey_jedi",					"rey",					"model_jedi",					"rey_ep7",					"",						"blue",			"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rey",							"[White Jedi Wrap]",					"",				"md_rey_ros",					"rey_skywalker",		"model_default",				"rey_ep9",					"",						"blue",			"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rey",							"[White Jedi Wrap - Hooded]",			"",				"md_rey_ros_hooded",			"rey_skywalker",		"model_hood",					"rey_ep9",					"",						"blue",			"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rey Skywalker",					"",										"",				"md_rey_skywalker",				"rey_skywalker",		"model_default",				"rey2_ep9",					"",						"yellow",		"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Finn",							"",										"",				"md_finn",						"finn",					"model_default",				"rey_ep7",					"",						"blue",			"",			1,		14,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Poe Dameron",					"",										"",				"md_poe_resistance",			"poe",					"model_resistance",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Poe Dameron",					"[Officer]",							"",				"md_poe_officer",				"poe",					"model_officer",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Poe Dameron",					"[Pilot]",								"",				"md_poe",						"poe",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Poe Dameron",					"[Pilot - Helmet]",						"",				"md_poe_helmet",				"poe",					"model_helmet",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rose Tico",						"",										"",				"md_rose_tico",					"rose_tico",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "Moff Gideon",					"",										"",				"md_gideon",					"gideon",				"model_default",				"darksaber_tm",				"",						"black",		"",			2,		4,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Dark Trooper",					"[The Mandalorian]",					"",				"md_darktrooper",				"darktrooper_tv",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Baylan Skoll",					"",										"",				"md_baylan",					"baylan",				"model_default",				"baylan",					"",						"xff3f00",		"",			2,		12,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Baylan Skoll",					"[Robed]",								"",				"md_baylan_robed",				"baylan",				"model_cape",					"baylan",					"",						"xff3f00",		"",			2,		12,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Baylan Skoll",					"[Hooded]",								"",				"md_baylan_hooded",				"baylan",				"model_hood",					"baylan",					"",						"xff3f00",		"",			2,		12,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shin Hati",						"",										"",				"md_shin",						"shin",					"model_default",				"shin",						"",						"xff3f00",		"",			1,		6,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Shin Hati",						"[Robed]",								"",				"md_shin_robed",				"shin",					"model_cloak",					"shin",						"",						"xff3f00",		"",			1,		6,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shin Hati",						"[Hooded]",								"",				"md_shin_hooded",				"shin",					"model_hood",					"shin",						"",						"xff3f00",		"",			1,		6,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TFA - No Helmet]",					"",				"md_kylo_tfa",					"kylo_ren",				"model_nomask",					"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kylo Ren",						"[TFA - Helmet]",						"",				"md_kylo_tfa_helmet",			"kylo_ren",				"model_nohood",					"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TFA - Hooded]",						"",				"md_kylo_tfa_hooded",			"kylo_ren",				"model_default",				"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TLJ - No Helmet]",					"",				"md_kylo_tlj",					"kylo_ren",				"model_tlj_nomaskb",			"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TLJ - Helmet]",						"",				"md_kylo_tlj_helmet",			"kylo_ren",				"model_tlj",					"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TLJ - Shirtless]",					"",				"md_kylo_shirtless",			"ben_swolo",			"model_default",				"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TLJ - Robed]",						"",				"md_kylo_tlj_cape",				"kylo_ren",				"model_tlj_nomaska",			"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TROS - Robed]",						"",				"md_kylo_ros_cape",				"kylo_ren",				"model_ros_nomask",				"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TROS - Helmet]",						"",				"md_kylo_ros_helmet",			"kylo_ren",				"model_ros",					"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TROS - Hooded]",						"",				"md_kylo_ros_hooded",			"kylo_ren",				"model_ros_hood",				"kylo_ren",					"",						"unstable_red",	"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kylo Ren",						"[TROS - Redeemed]",					"",				"md_ben_solo",					"ben_solo",				"model_default",				"rey_ep9",					"",						"blue",			"",			1,		46,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Armitage Hux",					"",										"",				"md_hux",						"hux",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Armitage Hux",					"[Coat]",								"",				"md_hux_coat",					"hux",					"model_coat",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Armitage Hux",					"[Coat & Hat]",							"",				"md_hux_coat_hat",				"hux",					"model_coat_hat",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Captain Phasma",					"",										"",				"md_phasma",					"phasma",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Stormtrooper",					"[First Order]",						"",				"stormie_tfa",					"stormie_tfa",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Stormtrooper",					"[Officer - First Order]",				"",				"stormie_tfa_officer",			"stormie_tfa",			"model_pauldron",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Riot Stormtrooper",				"[First Order]",						"",				"stormie_tfa_riot",				"stormie_tfa",			"model_default",				"riot_baton",				"riot_shield",			"",				"",			6,		64,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Sith Trooper",					"[Final Order]",						"",				"md_sithtrooper",				"sithtrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Sith Trooper",					"[Commander - Final Order]",			"",				"md_sithtrooper_commander",		"sithtrooper",			"model_officer",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Supreme Leader Snoke",			"",										"",				"md_snoke",						"snoke",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Emperor Palpatine",				"[Clone - Blind]",						"",				"md_emperor_ros_blind",			"palpatine_ros",		"model_blind",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Emperor Palpatine",				"[Clone - Reborn]",						"",				"md_emperor_ros_blind",			"palpatine_ros",		"model_blind",					"",							"",						"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Praetorian Guard",				"[Lance]",								"",				"md_pguard",					"praetorian_guard",		"model_default",				"vibro-voluge",				"",						"",				"",			2,		4,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Praetorian Guard",				"[Axe]",								"",				"md_pguard2",					"praetorian_guard",		"model_thirdguard",				"electro-bisento",			"",						"",				"",			3,		8,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Praetorian Guard",				"[Sword]",								"",				"md_pguard3",					"praetorian_guard",		"model_thirdguard",				"electro-chain_whip",		"",						"",				"",			1,		2,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Praetorian Guard",				"[Vibroaxe]",							"",				"md_pguard4",					"praetorian_guard",		"model_secondguard",			"vibro-arbir_blades",		"vibro-arbir_blades",	"",				"",			6,		64,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Praetorian Guard",				"[Vibrostaff]",							"",				"md_pguard5",					"praetorian_guard",		"model_secondguard",			"vibro-arbir_blades_staff",	"",						"",				"",			7,		128,	ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Ren",							"",										"",				"md_ren",						"ren",					"model_default",				"ren",						"",						"red",			"",			3,		12,		ERA_RESISTANCE,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	//{ "Kyle Katarn",
+	{ "Kyle Katarn",					"[Mercenary]",							"",				"md_kyle_df1",					"kyleDF1",				"model_default",				"stunbaton",				"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kyle Katarn",					"[Dark Forces 2 - Coat]",				"",				"md_kyle_df2_coat",				"kyleDF2",				"model_coat",					"rahn",						"",						"green",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Dark Forces 2]",						"",				"md_kyle_df2",					"kyleDF2",				"model_default",				"rahn",						"",						"green",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Mysteries of the Sith]",				"",				"md_kyle_mots",					"kyle_mots",			"model_default",				"yun",						"",						"orange",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Jedi Outcast / Academy]",				"",				"md_kyle",						"kyle",					"model_default",				"Kyle",						"",						"blue",			"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Dark]",								"",				"md_kyle_alt",					"kyle_alternate",		"model_default",				"Kyle",						"",						"blue",			"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Stealth Jedi Gear]",					"",				"md_kyle_sj",					"kyle_SJ",				"model_default",				"Kyle",						"",						"blue",			"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Jedi Master]",						"",				"md_kyle_jm",					"kyle_jedimaster",		"model_default",				"Kyle",						"",						"blue",			"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Emperor Katarn",					"",										"",				"md_kyle_emp",					"kyle_jedimaster",		"model_default_emperor",		"rahn",						"",						"red",			"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[DF2 In-Game]",						"",				"md_kyle_df2ig",				"kyle_lowRemake",		"model_default",				"yun",						"",						"yellow",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Imperial Officer]",					"",				"md_kyle_officer",				"Kyle_officer",			"model_default",				"stunbaton",				"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[1997 Low-Poly]",						"",				"md_kyle_df2lowpoly",			"kyle_df2low",			"model_default",				"yun",						"",						"yellow",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Kyle Katarn",					"[Old]",								"",				"md_kyle_old",					"kyle_old",				"model_default",				"Kyle",						"",						"blue",			"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Jan Ors",						"",										"",				"jan",							"jan",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jan Ors",						"[Dark Forces 2]",						"",				"md_jan_df2",					"jan",					"model_df2",					"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Mara Jade",						"",										"",				"md_mara",						"mara_jumpsuit",		"model_nocape",					"mara",						"",						"purple",		"",			1,		6,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Mara Jade",						"[Mysteries of the Sith]",				"",				"md_mara_mots",					"mara",					"model_default",				"mara_mots",				"",						"purple",		"",			1,		6,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Qu Rahn",						"",										"",				"md_rahn",						"Qu_Rahn",				"model_default",				"rahn",						"",						"green",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Yun",							"",										"",				"md_yun",						"yun",					"model_default",				"Yun",						"",						"yellow",		"",			2,		4,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	// New Jedi Order
+	{ "Luke",							"[Grand Master]",						"",				"luke_gm",						"luke_gm",				"model_robed",					"luke_ep6",					"",						"",				"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi",							"",										"",				"jedi",							"jedi",					"model_default",				"single_2",					"",						"yellow",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi 2",							"",										"",				"jedi2",						"jedi",					"model_j2",						"single_7",					"",						"orange",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Master",					"",										"",				"jedimaster",					"jedi",					"model_master",					"dual_3",					"",						"green",		"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jedi Trainer",					"",										"",				"jeditrainer",					"jeditrainer",			"model_default",				"jedi",						"jedi",					"purple",		"purple",	6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Rosh Penin",						"",										"",				"rosh_penin",					"rosh_penin_new",		"model_default",				"training",					"",						"",				"",			3,		8,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jerec",							"",										"",				"md_jerec",						"jerec",				"model_robed",					"jerec",					"",						"red",			"",			5,		32,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Jerec",							"[No Cape]",							"",				"md_jerec_valley",				"jerec",				"model_default",				"jerec",					"",						"red",			"",			5,		32,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Jerec",							"[DF2 In-Game]",						"",				"md_jerec_classic",				"jerec",				"model_classic",				"jerec",					"",						"red",			"",			5,		32,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Jerec",							"[1997 Low Poly]",						"",				"md_jerec_lowpoly",				"jerec_lowpoly",		"model_default",				"jerec",					"",						"red",			"",			5,		32,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Sariss",							"",										"",				"md_sariss",					"sariss",				"model_default",				"sariss",					"",						"blue",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Sariss",							"[Cloaked]",							"",				"md_sariss_cape",				"sariss",				"model_cape",					"sariss",					"",						"blue",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Boc",							"",										"",				"md_boc",						"boc",					"model_default",				"boc",						"boc",					"purple",		"purple",	6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Maw",							"",										"",				"md_maw_legs",					"maw_intro",			"model_default",				"Maw",						"",						"xff3f00",		"",			4,		16,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Maw",							"[Dismembered]",						"",				"md_maw",						"Maw",					"model_default",				"Maw",						"",						"xff3f00",		"",			4,		16,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Pic",							"",										"",				"md_pic",						"Pic",					"model_default",				"Pic",						"",						"orange",		"",			1,		2,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Gorc",							"",										"",				"md_gorc",						"Gorc",					"model_default",				"Gorc",						"",						"orange",		"",			3,		8,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "Desann",							"",										"",				"md_desann",					"desann",				"model_default",				"desann",					"",						"red",			"",			4,		16, 	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Lord Desann",					"",										"",				"md_desann_robed",				"desann",				"model_robed",					"desann",					"",						"red",			"",			4,		16,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Tavion Axmis",					"",										"",				"tavion",						"tavion",				"model_default",				"tavion",					"",						"red",			"",			5,		32,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Tavion Axmis",					"[Cult of Ragnos]",						"",				"tavion_new",					"tavion_new",			"model_default",				"tavion",					"",						"red",			"",			5,		32,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Tavion Axmis",					"[Ragnos' Scepter]",					"",				"tavion_scepter",				"tavion_new",			"model_default",				"tavion",					"",						"red",			"",			6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Tavion Axmis",					"[Alternate]",							"",				"tavion2",						"reborn_concept",		"model_tavion",					"tavion",					"",						"red",			"",			5,		32,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Alora",							"",										"",				"alora_dual",					"alora",				"model_default",				"single_4",					"single_4",				"red",			"red",		6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Reborn",							"",										"",				"reborn",						"reborn",				"model_default",				"reborn",					"",						"",				"",			1,		2,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Reborn",							"[Force User]",							"",				"rebornforceuser",				"reborn",				"model_forceuser",				"reborn",					"",						"",				"",			2,		4,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Reborn",							"[Acrobat]",							"",				"rebornacrobat",				"reborn",				"model_acrobat",				"reborn",					"",						"red",			"",			2,		4,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Reborn",							"[Fencer]",								"",				"rebornfencer",					"reborn",				"model_fencer",					"reborn",					"",						"",				"",			1,		2,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Reborn",							"[Boss]",								"",				"rebornboss",					"reborn",				"model_boss",					"shadowtrooper",			"",						"",				"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Reborn",							"[Dual Lightsabers]",					"",				"reborn_dual",					"reborn_new_f",			"model_red",					"reborn",					"reborn",				"",				"",			6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Reborn",							"[Lightsaber Staff]",					"",				"reborn_staff",					"reborn_new",			"model_red",					"dual_1",					"",						"red",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Reborn",							"[Master]",								"",				"rebornmaster",					"reborn_twin",			"model_boss",					"rebornmaster",				"",						"",				"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	//{ "Imperial Remnant"
+	{ "Galak Fyyar",					"",										"",				"galak",						"imperial",				"model_galak",					"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Reborn Shadowtrooper",			"",										"",				"shadowtrooper",				"shadowtrooper",		"model_default",				"shadowtrooper",			"",						"",				"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Swamptrooper",					"",										"",				"swamptrooper",					"swamptrooper",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Imperial Worker",				"",										"",				"impworker",					"imperial_worker",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Rax Joris",						"",										"",				"rax",							"rax_joris",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Saboteur",						"",										"",				"saboteur",						"saboteur",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Rockettrooper",					"",										"",				"rockettrooper2officer",		"rockettrooper",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Hazardtrooper",					"",										"",				"hazardtrooperconcussion",		"hazardtrooper",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "Galen Marek",					"[Jedi Adventure Robes]",				"",				"md_galen",						"stk_adventure_robes",	"model_default",				"starkiller_m",				"",						"blue",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Galen Marek",					"[Temple Exploration Gear]",			"",				"md_galen_jt",					"stk_temple_eg",		"model_default",				"starkiller_m",				"",						"blue",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Galen Marek",					"[Corellian Flight Suit]",				"",				"md_galen_cor",					"stk_corellian_fs",		"model_default",				"starkiller_m",				"",						"blue",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Galen Marek",					"[Ceremonial Jedi Robes]",				"",				"md_galencjr",					"stk_ceremonial_robes",	"model_default",				"galenmarek_cjr_m",			"",						"green",		"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Galen Marek",					"[Test Subject Garments]",				"",				"md_galen_kamino",				"starkiller_tfu2",		"model_kamino_tsg",				"galenmarek",				"galenmarek",			"red",			"red",		6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Galen Marek",					"[Tie Flightsuit]",						"",				"md_galen_tie",					"starkiller_tfu2",		"model_tie_fs",					"galenmarek",				"galenmarek",			"red",			"red",		6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Galen Marek",					"[Arena Combat Gear]",					"",				"md_galen_arena",				"starkiller_tfu2",		"model_default",				"galenmarek",				"galenmarek",			"blue",			"blue",		6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Galen Marek",					"[Hero's Armor]",						"",				"md_galen_hero",				"starkiller_tfu2",		"model_hero_armor",				"galenmarek",				"galenmarek",			"blue",			"blue",		6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+
+	{ "Starkiller",						"",										"",				"md_starkiller",				"stk_training_gear",	"model_default",				"starkiller_m",				"",						"red",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Starkiller",						"[Sith Stalker Armor]",					"",				"md_sithstalker",				"sithstalker",			"model_default",				"sith_stalker",				"",						"red",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Lord Starkiller",				"",										"",				"md_stk_lord",					"lord_stk",				"model_default",				"sith_stalker",				"",						"red",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Lord Starkiller",				"[Tatooine]",							"",				"md_stk_tat",					"lord_stk_tat",			"model_default",				"sith_stalker",				"",						"red",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rahm Kota",						"",										"",				"md_kota",						"kota",					"model_default",				"kota",						"",						"green",		"",			2,		36,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Rahm Kota",						"[Drunken]",							"",				"md_kota_drunk",				"kota_drunk",			"model_default",				"kota",						"",						"green",		"",			2,		36,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Rahm Kota",						"[Alliance General]",					"",				"md_kota_blind",				"kota",					"model_blind",					"kota",						"",						"green",		"",			2,		36,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Shaak Ti",						"[Exiled - Felucia]",					"",				"md_shaakti_tfu",				"shaakti_TFU",			"model_default",				"shaak",					"",						"",				"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kento Marek",					"",										"",				"md_kento_marek",				"kentomarek",			"model_default",				"drallig",					"",						"blue",			"",			1,		38,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Kento Marek",					"[Alternate Design]",					"",				"md_kento_marek2",				"kentomarek",			"model_wii",					"drallig",					"",						"blue",			"",			1,		38,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Phobos",					"",										"",				"darthphobos",					"darthphobos",			"model_default",				"phobos",					"",						"red",			"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Desolous",					"",										"",				"darthdesolous",				"darthdesolous",		"model_default",				"desolous",					"desolous_shield",		"red",			"",			6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Saber Training Droid",			"",										"",				"sabertraining_droid",			"sabertraining_droid",	"model_default",				"training",					"",						"blue",			"",			2,		4,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Force Training Droid",			"",										"",				"combattraining_droid",			"sabertraining_droid",	"model_default",				"",							"",						"",				"",			0,		0,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "A'Sharad Hett",					"",										"",				"md_asharad",					"asharad_hett",			"model_default",				"asharad",					"asharad2",				"green",		"green",	6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "A'Sharad Hett",					"[Tusken Mask]",						"",				"md_asharad_tus",				"asharad_hett",			"model_tusken",					"asharad",					"asharad2",				"green",		"green",	6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Krayt",					"[Emperor]",							"",				"md_krayt",						"darthkrayt",			"model_default",				"asharad",					"asharad2",				"red",			"red",		6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Krayt",					"[Reborn]",								"",				"md_krayt_reborn",				"darthkrayt_r",			"model_default",				"asharad",					"asharad2",				"red",			"green",	6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Maul",						"[Old Wounds]",							"",				"md_mau_luke",					"cyber_maul",			"model_default",				"dual_maul",				"",						"",				"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Maul",						"[Robed - Old Wounds]",					"",				"md_mau_luke_robed",			"cyber_maul",			"model_robed",					"dual_maul",				"",						"",				"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Maul",						"[Hooded - Old Wounds]",				"",				"md_mau_luke_hooded",			"cyber_maul",			"model_hood",					"dual_maul",				"",						"",				"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Cade Skywalker",					"",										"",				"md_cade",						"cade",					"model_default",				"anakin_ep3",				"",						"green",		"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Talon",					"",										"",				"md_talon",						"darthtalon",			"model_default",				"talon",					"",						"red",			"",			1,		38,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Plaguesis",				"",										"",				"md_plagueis",					"darthplagueis",		"model_default",				"yarael",					"",						"red",			"",			1,		14,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Revan",					"",										"",				"md_revan",						"revan",				"model_default",				"revan",					"",						"red",			"",			1,		30,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+	{ "Darth Revan",					"[Dual Lightsabers]",					"",				"md_revan_dual",				"revan",				"model_default",				"revan",					"revan",				"red",			"purple",	6,		64,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Darth Revan",					"[Redeemed Jedi]",						"",				"md_revan_jedi",				"revan_jedi",			"model_default",				"revan",					"",						"purple",		"",			1,		30,		ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			 qtrue },
+	{ "Bastila Shan",					"",										"",				"md_bastila",					"bastila",				"model_default",				"bastila_staff",			"",						"",				"",			7,		128,	ERA_LEGENDS,		BOTH_WALK1,			BOTH_PAIN1,			BOTH_WALK1,			"",			"",			qfalse },
+
+	{ "",								"",										"",				"",								"",						"",								"",							"",						"",				"",			0,		0,		TOTAL_ERAS,			0,					0,					0,					"",			"",			qfalse },
+};
+constexpr int NO_OF_MD_MODELS = sizeof(charMD) / sizeof(charMD[0]);
+
+static qhandle_t mdHeadIcons[NO_OF_MD_MODELS];
+
+static int eraIndex[TOTAL_ERAS + 1];
+static void MD_BG_GenerateEraIndexes(void) {
+	int i = 0;
+	int factionMD = 0;
+	eraIndex[factionMD] = 0;
+
+	for (i = 0; i < NO_OF_MD_MODELS; i++)
+	{ // Search only in our index location, we have been given a class
+		if (charMD[i].era != factionMD) {
+			factionMD++;
+			eraIndex[factionMD] = i;
+		}
+	}
+	//	eraIndex[factionMD + 1] = i; // Set up out of bounds case.
+}
+
+static const char* MD_UI_SelectedTeamHead(int index, int* actual) {
+	int i, c = 0;
+	for (i = eraIndex[uiEra]; i < eraIndex[uiEra + 1]; i++) {
+		if (i >= eraIndex[uiEra] && i < eraIndex[uiEra + 1]) {
+			if (c == index) {
+				*actual = i;
+				return charMD[i].model;
+			}
+			else {
+				c++;
+			}
+		}
+	}
+	return "";
+}
+
+static const char* MD_UI_SelectedTeamHead_SubDivs(int index, int* actual) {
+	int i, c = 0;
+
+	for (i = eraIndex[uiEra]; i < eraIndex[uiEra + 1]; i++) {
+		if (i >= eraIndex[uiEra] && i < eraIndex[uiEra + 1]) {
+
+			if (!charMD[i].isSubDiv) { // hasSubDiv
+				int k;
+				for (k = 1; k < NO_OF_MD_MODELS; k++) {
+					if (charMD[i + k].isSubDiv)
+						c--;
+					else
+						k = NO_OF_MD_MODELS;
+				}
+			}
+
+			if (c == index) {
+				while (charMD[i].isSubDiv)
+					i--;
+
+				*actual = i;
+				return charMD[i].model;
+			}
+			else {
+				c++;
+			}
+
+		}
+	}
+	return "";
+}
+#endif
+
 extern qboolean ItemParse_model_g2anim_go(itemDef_t* item, const char* animName);
 extern qboolean ItemParse_asset_model_go(itemDef_t* item, const char* name);
 extern qboolean ItemParse_model_g2skin_go(itemDef_t* item, const char* skinName);
@@ -404,6 +1087,10 @@ vmCvar_t ui_hudFiles;
 
 vmCvar_t ui_char_anim;
 vmCvar_t ui_char_model;
+#ifdef NEW_FEEDER
+vmCvar_t ui_char_skin;
+vmCvar_t ui_model;
+#endif
 vmCvar_t ui_char_skin_head;
 vmCvar_t ui_char_skin_torso;
 vmCvar_t ui_char_skin_legs;
@@ -534,6 +1221,10 @@ static cvarTable_t cvarTable[] =
 	{&ui_char_anim, "ui_char_anim", "BOTH_MENUIDLE1", nullptr, 0},
 
 	{&ui_char_model, "ui_char_model", "", nullptr, 0}, //these are filled in by the "g_*" versions on load
+#ifdef NEW_FEEDER
+	{&ui_char_skin, "ui_char_skin", "", nullptr, 0},
+	{&ui_model, "ui_model", "", nullptr, 0},
+#endif
 	{&ui_char_skin_head, "ui_char_skin_head", "", nullptr, 0},
 	//the "g_*" versions are initialized in UI_Init, ui_atoms.cpp
 	{&ui_char_skin_torso, "ui_char_skin_torso", "", nullptr, 0},
@@ -954,11 +1645,24 @@ static const char* UI_FeederItemText(const float feederID, const int index, cons
 			return uiInfo.modList[index].mod_name;
 		}
 	}
+#ifdef NEW_FEEDER
+	else if (feederID == FEEDER_MD_FACTION)
+	{ 
+		if (index >= 0 && index < TOTAL_ERAS) 
+		{ 
+			return eraNames[index]; 
+		} 
+	} 
+#endif
 
 	return "";
 }
 
+#ifdef NEW_FEEDER
+static qhandle_t UI_FeederItemImage(const float feederID, int index)
+#else
 static qhandle_t UI_FeederItemImage(const float feederID, const int index)
+#endif
 {
 	if (feederID == FEEDER_PLAYER_SKIN_HEAD)
 	{
@@ -1012,6 +1716,42 @@ static qhandle_t UI_FeederItemImage(const float feederID, const int index)
 			}
 		}
 	*/
+#ifdef NEW_FEEDER
+	else if ((feederID == FEEDER_MD_MODELS) || (feederID == FEEDER_MD_VARIANTS))
+	{
+		int actual = 0;
+		int start = eraIndex[uiEra];
+		int end = eraIndex[uiEra + 1];
+
+		if (feederID == FEEDER_MD_MODELS)
+			MD_UI_SelectedTeamHead_SubDivs(index, &actual);
+		else
+			MD_UI_SelectedTeamHead(index, &actual);
+		index = actual;
+
+		if (feederID == FEEDER_MD_VARIANTS)
+		{
+			int i = 1;
+			for (i = 1; i < NO_OF_MD_MODELS; i++) {
+				if (!charMD[uiModelIndex + i].isSubDiv)
+					break;
+			}
+
+			start = uiModelIndex;
+			end = uiModelIndex + i;
+
+			index += uiModelIndex - eraIndex[uiEra];
+		}
+
+		if (index >= start && index < end)
+		{
+			if (!mdHeadIcons[index])
+				mdHeadIcons[index] = ui.R_RegisterShaderNoMip(va("menu/feeder/%s", ((!strcmp(charMD[index].icon,"")) ? charMD[index].npc : charMD[index].icon)));//(va("models/players/%s/%s", charMD[index].model, charMD[index].icon));
+
+			return mdHeadIcons[index];
+		}
+	}
+#endif
 	return 0;
 }
 
@@ -1250,6 +1990,66 @@ static qboolean UI_RunMenuScript(const char** args)
 
 			UI_CheckVid1Data(menuName, warningMenuName);
 		}
+#ifdef NEW_FEEDER
+		else if (Q_stricmp(name, "md_char") == 0) 
+		{
+			//Cvar_Set("ui_md_name", charMD[uiModelIndex].name);
+			//Cvar_Set("ui_md_title", charMD[uiModelIndex].title);
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && !strcmp(menu->window.name, "ui_md"))
+			{
+				{
+					const auto item = Menu_FindItemByName(menu, "char_name");
+					if (item) {
+						item->text = (char*)charMD[uiVariantIndex].name;
+					}
+				}
+				{
+					const auto item = Menu_FindItemByName(menu, "char_title");
+					if (item) {
+						item->text = (char*)charMD[uiVariantIndex].title;
+					}
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_npc") == 0) 
+		{
+			ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s\n", charMD[uiVariantIndex].npc));
+
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && !strcmp(menu->window.name, "ui_md"))
+			{
+				const auto item = Menu_FindItemByName(menu, "character");
+				if (item) {
+					ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].npcAnimation].name);
+					uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
+				}
+			}
+
+			if (strcmp(charMD[uiVariantIndex].npcSelectSound, ""))
+				DC->startLocalSound(DC->registerSound(charMD[uiVariantIndex].npcSelectSound, qfalse), CHAN_VOICE);
+		}
+		else if (Q_stricmp(name, "md_player") == 0)
+		{
+			UI_ClearWeapons();
+			ui.Cmd_ExecuteText(EXEC_APPEND, va("playermodel %s\n", charMD[uiVariantIndex].npc));
+
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && !strcmp(menu->window.name, "ui_md"))
+			{
+				const auto item = Menu_FindItemByName(menu, "character");
+				if (item) {
+					ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].plyAnimation].name);
+					uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
+				}
+			}
+
+			if (strcmp(charMD[uiVariantIndex].plySelectSound, ""))
+				DC->startLocalSound(DC->registerSound(charMD[uiVariantIndex].plySelectSound, qfalse), CHAN_VOICE);
+
+			ui.Cmd_ExecuteText(EXEC_APPEND, va("setsaberstances %i %i\n", charMD[uiVariantIndex].style, charMD[uiVariantIndex].styleBitFlag));
+		}
+#endif
 		else if (Q_stricmp(name, "startgame") == 0)
 		{
 			Menus_CloseAll();
@@ -2228,6 +3028,31 @@ static int UI_FeederCount(const float feederID)
 	{
 		return uiInfo.playerSpecies[uiInfo.playerSpeciesIndex].ColorCount;
 	}
+#ifdef NEW_FEEDER
+	if (feederID == FEEDER_MD_FACTION) 
+	{
+		return TOTAL_ERAS;
+	}
+	if (feederID == FEEDER_MD_MODELS)
+	{
+		int finalCount = eraIndex[uiEra + 1] - eraIndex[uiEra];
+		int count = eraIndex[uiEra + 1] - eraIndex[uiEra];
+
+		for (int i = 0; i < count; i++) {
+			if (charMD[eraIndex[uiEra] + i].isSubDiv)
+				finalCount--;
+		}
+		return finalCount;
+	}
+	if (feederID == FEEDER_MD_VARIANTS)
+	{
+		for (int i = 1; i < NO_OF_MD_MODELS; i++) {
+			if (!charMD[uiModelIndex + i].isSubDiv)
+				return i;
+		}
+		return 1; // Should not happen...
+	}
+#endif
 
 	return 0;
 }
@@ -2237,7 +3062,11 @@ static int UI_FeederCount(const float feederID)
 UI_FeederSelection
 =================
 */
+#ifdef NEW_FEEDER
+static void UI_FeederSelection(const float feederID, int index, itemDef_t* item)
+#else
 static void UI_FeederSelection(const float feederID, const int index, itemDef_t* item)
+#endif
 {
 	if (feederID == FEEDER_SAVEGAMES)
 	{
@@ -2400,6 +3229,43 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 			uiInfo.demoIndex = index;
 		}
 	*/
+#ifdef NEW_FEEDER
+	else if (feederID == FEEDER_MD_FACTION) 
+	{ 
+		uiEra = index; 
+		return;
+	} 
+	else if ((feederID == FEEDER_MD_MODELS) || (feederID == FEEDER_MD_VARIANTS))
+	{
+		int actual = 0;
+		if (feederID == FEEDER_MD_MODELS)
+			MD_UI_SelectedTeamHead_SubDivs(index, &actual);
+		else
+			MD_UI_SelectedTeamHead(index, &actual);
+
+		if (feederID == FEEDER_MD_VARIANTS) {
+			index = uiModelIndex + index;
+			uiVariantIndex = index;
+		}
+		if (feederID != FEEDER_MD_VARIANTS) {
+			uiModelIndex = actual;
+			uiVariantIndex = actual;
+			index = actual;
+		}
+
+		if (index >= eraIndex[uiEra] && index < eraIndex[uiEra + 1]) {
+			// GCJ_MOVIEDUELS
+			if (Q_strncmp(charMD[index].skin, "model_", 6) == 0)
+				Cvar_Set("ui_model", va("%s/%s", charMD[index].model, &charMD[index].skin[6])); //standard model // strip model_
+			else
+				Cvar_Set("ui_model", va("%s/%s", charMD[index].model, charMD[index].skin));
+
+			Cvar_Set("ui_char_model", charMD[index].model);//UI_Cvar_VariableString("ui_model"));
+			Cvar_Set("ui_char_skin", charMD[index].skin);//
+		}
+	} 
+#endif
+
 }
 
 void Key_KeynumToStringBuf(int keynum, char* buf, int buflen);
@@ -3129,6 +3995,14 @@ void _UI_Init(const qboolean inGameLoad)
 #ifndef JK2_MODE
 	//FIXME hack to prevent error in jk2 by disabling
 	trap_S_RegisterSound("sound/interface/weapon_deselect", qfalse);
+#endif
+
+#ifdef NEW_FEEDER
+	memset(mdHeadIcons, 0, sizeof(mdHeadIcons));
+	MD_BG_GenerateEraIndexes();
+	mdBorder = ui.R_RegisterShaderNoMip("menu/feeder/icon_border.tga");
+	mdBorderSel = ui.R_RegisterShaderNoMip("menu/feeder/icon_border_gold.tga");
+	mdBackground = ui.R_RegisterShaderNoMip("menu/feeder/icon_background.tga");
 #endif
 }
 
@@ -7107,6 +7981,16 @@ static void UI_UpdateCharacterSkin()
 		Com_Error(ERR_FATAL, "UI_UpdateCharacterSkin: Could not find item (character) in menu (%s)", menu->window.name);
 	}
 
+#ifdef NEW_FEEDER
+	if (!strcmp(menu->window.name,"ui_md") && !strchr(UI_Cvar_VariableString("ui_model"), '|')) // Not a multipart custom character
+	{
+		Com_sprintf(skin, sizeof skin, "models/players/%s/%s.skin",
+			Cvar_VariableString("ui_char_model"),
+			Cvar_VariableString("ui_char_skin")
+		);
+	}
+	else
+#endif
 	Com_sprintf(skin, sizeof skin, "models/players/%s/|%s|%s|%s",
 		Cvar_VariableString("ui_char_model"),
 		Cvar_VariableString("ui_char_skin_head"),
@@ -7115,6 +7999,66 @@ static void UI_UpdateCharacterSkin()
 	);
 
 	ItemParse_model_g2skin_go(item, skin);
+
+#ifdef NEW_FEEDER // Saber
+	if (!strcmp(menu->window.name, "ui_md"))
+	{
+		//UI_SaberAttachToChar(item);
+
+		int num_sabers = 1;
+
+		if (item->ghoul2.size() > 2 && item->ghoul2[2].mModelindex >= 0)
+			DC->g2_RemoveGhoul2Model(item->ghoul2, 2); //remove any extra models
+		if (item->ghoul2.size() > 1 && item->ghoul2[1].mModelindex >= 0)
+			DC->g2_RemoveGhoul2Model(item->ghoul2, 1); //remove any extra models
+
+		if (!strcmp(charMD[uiVariantIndex].saber1, "")) {
+			item->flags &= ~ITF_ISSABER;
+			item->flags &= ~ITF_ISSABER2;
+			return;
+		}
+
+		item->flags |= ITF_ISSABER;
+		if (strcmp(charMD[uiVariantIndex].saber2, ""))//(uiInfo.movesTitleIndex == 4 /*MD_DUAL_SABERS*/)
+		{
+			num_sabers = 2;
+			item->flags |= ITF_ISSABER2;
+		}
+
+		Cvar_Set("ui_saber", charMD[uiVariantIndex].saber1);
+		Cvar_Set("ui_saber2", charMD[uiVariantIndex].saber2);
+		Cvar_Set("g_saber", charMD[uiVariantIndex].saber1);
+		Cvar_Set("g_saber2", charMD[uiVariantIndex].saber2);
+
+		Cvar_Set("ui_saber_color", charMD[uiVariantIndex].color1);
+		Cvar_Set("ui_saber2_color", charMD[uiVariantIndex].color2);
+		Cvar_Set("g_saber_color", charMD[uiVariantIndex].color1);
+		Cvar_Set("g_saber2_color", charMD[uiVariantIndex].color2);
+
+		for (int saber_num = 0; saber_num < num_sabers; saber_num++)
+		{
+			//bolt sabers
+			char model_path[MAX_QPATH];
+
+			if (UI_SaberModelForSaber(saber_num ? charMD[uiVariantIndex].saber2 : charMD[uiVariantIndex].saber1, model_path))
+			{ //successfully found a model
+				const int g2_saber = DC->g2_InitGhoul2Model(item->ghoul2, model_path, 0, 0, 0, 0, 0); //add the model
+				if (g2_saber) {
+					DC->g2_SetSkin(&item->ghoul2[g2_saber], -1, 0); //turn off custom skin, only use default for sabers and guns
+					re.G2API_AttachG2Model(&item->ghoul2[g2_saber], &item->ghoul2[0], DC->g2_AddBolt(&item->ghoul2[0], saber_num ? "*r_hand" : "*l_hand"), 0);
+				}
+			}
+		}
+
+		 // Play the Select Animation
+		//uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
+		//ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
+		//const modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
+		//if (modelPtr->g2anim)
+		//	uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", modelPtr->g2anim, qtrue);
+
+	}
+#endif
 }
 
 static void UI_UpdateCharacter(const qboolean changedModel)
@@ -7135,6 +8079,14 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 		Com_Error(ERR_FATAL, "UI_UpdateCharacter: Could not find item (character) in menu (%s)", menu->window.name);
 	}
 
+#ifdef NEW_FEEDER // Animation
+	if (!strcmp(menu->window.name, "ui_md")) 
+	{
+		ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
+		uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
+	}
+	else
+#endif
 	ItemParse_model_g2anim_go(item, ui_char_anim.string);
 
 	Com_sprintf(modelPath, sizeof modelPath, "models/players/%s/model.glm", Cvar_VariableString("ui_char_model"));

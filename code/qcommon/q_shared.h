@@ -313,6 +313,7 @@ constexpr auto GIANTCHAR_WIDTH = 32;
 constexpr auto GIANTCHAR_HEIGHT = 48;
 
 #define GCJ_VS_2013
+#define NEW_FEEDER
 
 // Player weapons effects
 using saber_colors_t = enum

@@ -195,6 +195,14 @@ UI_ConsoleCommand
 void UI_Load(); //in UI_main.cpp
 #endif
 
+#ifdef NEW_FEEDER
+void UI_OpenMenu_f(void) {
+	Menus_CloseAll();
+	if (Menus_ActivateByName(UI_Argv(1)))
+		trap_Key_SetCatcher(KEYCATCH_UI);
+}
+#endif
+
 qboolean UI_ConsoleCommand()
 {
 	if (!ui.SG_GameAllowedToSaveHere(qtrue)) //only check if incamera
@@ -235,6 +243,13 @@ qboolean UI_ConsoleCommand()
 	if (Q_stricmp(cmd, "ui_load") == 0)
 	{
 		UI_Load();
+		return qtrue;
+	}
+#endif
+#ifdef NEW_FEEDER
+	if (Q_stricmp(cmd, "ui_openmenu") == 0)
+	{
+		UI_OpenMenu_f();
 		return qtrue;
 	}
 #endif

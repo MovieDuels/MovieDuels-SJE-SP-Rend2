@@ -2956,6 +2956,17 @@ void ClientCommand(const int client_num)
 			cg.saberAnimLevelPending = ent->client->ps.saber_anim_level = setStyle;
 		}
 	}
+#ifdef NEW_FEEDER
+	else if (Q_stricmp(cmd, "setsaberstances") == 0)
+	{
+		ent = G_GetSelfForPlayerCmd();
+		if (!ent || !ent->client) {
+			return;
+		}
+		cg.saberAnimLevelPending = ent->client->ps.saber_anim_level = atoi(gi.argv(1));
+		ent->client->ps.saberStylesKnown = atoi(gi.argv(2));
+	}
+#endif
 	else if (Q_stricmp(cmd, "saberdown") == 0)
 	{
 		if (IsHoldingReloadableGun(ent) && g_AllowReload->integer == 1) //SP
