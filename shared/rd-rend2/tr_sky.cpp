@@ -450,10 +450,13 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 		UNIFORM_DIFFUSETEXMATRIX, 1.0f, 0.0f, 0.0f, 1.0f);
 	uniformDataWriter.SetUniformVec4(
 		UNIFORM_DIFFUSETEXOFFTURB, 0.0f, 0.0f, 0.0f, 0.0f);
+	uniformDataWriter.SetUniformVec4(
+		UNIFORM_ENABLETEXTURES, 0.0f, 0.0f, 0.0f, 0.0f);
 
 	samplerBindingsWriter.AddStaticImage(image, TB_DIFFUSEMAP);
 
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo;
+	const byte currentFrameScene = backEndData->current_frame->currentScene;
+	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
 	const UniformBlockBinding uniformBlockBindings[] = {
 		{ currentFrameUbo, tr.skyEntityUboOffset, UNIFORM_BLOCK_ENTITY },
 		{ currentFrameUbo, tr.cameraUboOffsets[tr.viewParms.currentViewParm], UNIFORM_BLOCK_CAMERA }

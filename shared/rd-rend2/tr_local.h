@@ -145,6 +145,9 @@ extern cvar_t* r_arb_half_float_pixel;
 extern cvar_t* r_ext_framebuffer_multisample;
 extern cvar_t* r_arb_seamless_cube_map;
 
+extern cvar_t* r_smaa;
+extern cvar_t* r_smaa_quality;
+
 extern cvar_t* r_cameraExposure;
 
 extern cvar_t* r_hdr;
@@ -459,6 +462,7 @@ typedef struct VBO_s
 	uint32_t		offsets[ATTR_INDEX_MAX];
 	uint32_t		strides[ATTR_INDEX_MAX];
 	uint32_t		sizes[ATTR_INDEX_MAX];
+	uint32_t		stepRates[ATTR_INDEX_MAX];
 } VBO_t;
 
 typedef struct IBO_s
@@ -776,6 +780,19 @@ struct EntityBlock
 	float fxVolumetricBase;
 	vec3_t modelLightDir;
 	float vertexLerp;
+	bool operator == (const EntityBlock& other) const
+	{
+		return (
+			Matrix16Compare(this->modelMatrix, other.modelMatrix) == qtrue &&
+			VectorCompare4(this->lightOrigin, other.lightOrigin) == qtrue &&
+			VectorCompare(this->ambientLight, other.ambientLight) == qtrue &&
+			this->entityTime == other.entityTime &&
+			VectorCompare(this->directedLight, other.directedLight) == qtrue &&
+			this->fxVolumetricBase == other.fxVolumetricBase &&
+			VectorCompare(this->modelLightDir, other.modelLightDir) == qtrue &&
+			this->vertexLerp == other.vertexLerp
+			);
+	}
 };
 
 struct ShaderInstanceBlock
@@ -791,6 +808,15 @@ struct ShaderInstanceBlock
 struct SkeletonBoneMatricesBlock
 {
 	mat3x4_t matrices[MAX_G2_BONES];
+};
+
+struct TemporalBlock
+{
+	matrix_t previousViewProjectionMatrix;
+	vec2_t currentJitter;
+	vec2_t previousJitter;
+	float previousTime;
+	float pad0[3];
 };
 
 struct surfaceSprite_t
@@ -882,6 +908,7 @@ enum AlphaTestType
 	ALPHA_TEST_LT128,
 	ALPHA_TEST_GE128,
 	ALPHA_TEST_GE192,
+	ALPHA_TEST_E255,
 };
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
@@ -1112,6 +1139,8 @@ enum
 
 	GLS_POLYGON_OFFSET_FILL = (1 << 28),
 
+	GLS_COLORMASK_BUF1 = (1 << 29),
+
 	GLS_DEFAULT = GLS_DEPTHMASK_TRUE
 };
 
@@ -1175,13 +1204,21 @@ enum
 
 enum
 {
+	TEXCOLORDEF_USE_VERTICES = 0x0000,
+	TEXCOLORDEF_SCREEN_TRIANGLE = 0x0001,
+
+	TEXCOLORDEF_ALL = 0x0001,
+	TEXCOLORDEF_COUNT = TEXCOLORDEF_ALL + 1,
+};
+
+enum
+{
 	GENERICDEF_USE_DEFORM_VERTEXES = 0x0001,
 	GENERICDEF_USE_TCGEN_AND_TCMOD = 0x0002,
 	GENERICDEF_USE_FOG = 0x0004,
 	GENERICDEF_USE_RGBAGEN = 0x0008,
 	GENERICDEF_USE_SKELETAL_ANIMATION = 0x0010,
-	GENERICDEF_USE_GLOW_BUFFER = 0x0020,
-	GENERICDEF_USE_ALPHA_TEST = 0x0040,
+	//GENERICDEF_USE_ALPHA_TEST = 0x0040,
 #ifdef REND2_SP_MD3
 	GENERICDEF_USE_VERTEX_ANIMATION = 0x0080,
 	GENERICDEF_ALL = 0x00FF,
@@ -1210,6 +1247,23 @@ enum
 
 enum
 {
+	VELOCITYDEF_USE_DEFORM_VERTEXES = 0x0001,
+	VELOCITYDEF_USE_SKELETAL_ANIMATION = 0x0002,
+	VELOCITYDEF_USE_TCGEN_AND_TCMOD = 0x0004,
+	VELOCITYDEF_USE_RGBAGEN = 0x0008,
+	VELOCITYDEF_USE_PARALLAXMAP = 0x0010,
+	//VELOCITYDEF_USE_ALPHA_TEST		= 0x0004,
+#ifdef REND2_SP_MD3
+	VELOCITYDEF_USE_VERTEX_ANIMATION = 0x0004,
+	VELOCITYDEF_ALL = 0x0007,
+#else
+	VELOCITYDEF_ALL = 0x001F,
+#endif // REND2_SP
+	VELOCITYDEF_COUNT = VELOCITYDEF_ALL + 1,
+};
+
+enum
+{
 	REFRACTIONDEF_USE_DEFORM_VERTEXES = 0x0001,
 	REFRACTIONDEF_USE_TCGEN_AND_TCMOD = 0x0002,
 	REFRACTIONDEF_USE_RGBAGEN = 0x0004,
@@ -1233,12 +1287,10 @@ enum
 	LIGHTDEF_USE_LIGHT_VERTEX = 0x0003,
 	LIGHTDEF_USE_TCGEN_AND_TCMOD = 0x0004,
 	LIGHTDEF_USE_PARALLAXMAP = 0x0008,
-	//	LIGHTDEF_USE_SHADOWMAP       		= 0x0010,
 	LIGHTDEF_USE_SKELETAL_ANIMATION = 0x0010,
-	LIGHTDEF_USE_GLOW_BUFFER = 0x0020,
-	LIGHTDEF_USE_ALPHA_TEST = 0x0040,
-	LIGHTDEF_USE_CLOTH_BRDF = 0x0080,
-	LIGHTDEF_USE_SPEC_GLOSS = 0x0100,
+	//LIGHTDEF_USE_ALPHA_TEST = 0x0040,
+	LIGHTDEF_USE_CLOTH_BRDF = 0x0020,
+	LIGHTDEF_USE_SPEC_GLOSS = 0x0040,
 
 	LIGHTDEF_LIGHTTYPE_MASK = LIGHTDEF_USE_LIGHTMAP |
 	LIGHTDEF_USE_LIGHT_VECTOR |
@@ -1257,13 +1309,14 @@ enum
 enum
 {
 	SSDEF_FACE_CAMERA = 0x01,
-	SSDEF_ALPHA_TEST = 0x02,
-	SSDEF_FACE_UP = 0x04,
-	SSDEF_FX_SPRITE = 0x08,
-	SSDEF_USE_FOG = 0x10,
-	SSDEF_FOG_MODULATE = 0x20,
-	SSDEF_ADDITIVE = 0x40,
-	SSDEF_FLATTENED = 0x80,
+	//SSDEF_ALPHA_TEST					= 0x02,
+	SSDEF_FACE_UP = 0x02,
+	SSDEF_FX_SPRITE = 0x04,
+	SSDEF_USE_FOG = 0x08,
+	SSDEF_FOG_MODULATE = 0x10,
+	SSDEF_ADDITIVE = 0x20,
+	SSDEF_FLATTENED = 0x40,
+	SSDEF_VELOCITY = 0x80,
 
 	SSDEF_ALL = 0xFF,
 	SSDEF_COUNT = SSDEF_ALL + 1
@@ -1287,8 +1340,11 @@ enum uniformBlock_t
 	UNIFORM_BLOCK_LIGHTS,
 	UNIFORM_BLOCK_FOGS,
 	UNIFORM_BLOCK_ENTITY,
+	UNIFORM_BLOCK_PREVIOUS_ENTITY,
 	UNIFORM_BLOCK_SHADER_INSTANCE,
 	UNIFORM_BLOCK_BONES,
+	UNIFORM_BLOCK_PREVIOUS_BONES,
+	UNIFORM_BLOCK_TEMPORAL_INFO,
 	UNIFORM_BLOCK_SURFACESPRITE,
 	UNIFORM_BLOCK_COUNT
 };
@@ -1353,6 +1409,12 @@ typedef enum
 
 	UNIFORM_SCREENIMAGEMAP,
 	UNIFORM_SCREENDEPTHMAP,
+
+	UNIFORM_EDGEMAP,
+	UNIFORM_AREAMAP,
+	UNIFORM_SEARCHMAP,
+	UNIFORM_BLENDMAP,
+	UNIFORM_VELOCITYMAP,
 
 	UNIFORM_SHADOWMAP,
 	UNIFORM_SHADOWMAP2,
@@ -1422,6 +1484,8 @@ typedef enum
 	UNIFORM_ENVFORCE,
 	UNIFORM_RANDOMOFFSET,
 	UNIFORM_CHUNK_PARTICLES,
+
+	UNIFORM_BLOOMSTRENGTH,
 
 	UNIFORM_COUNT
 } uniform_t;
@@ -2189,6 +2253,8 @@ constexpr auto MAX_SKINS = 1024;
 constexpr auto MAX_DRAWSURFS = 0x10000;
 #define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
 
+#define MAX_INSTANCES			256
+
 extern	int gl_filter_min, gl_filter_max;
 
 /*
@@ -2248,7 +2314,6 @@ typedef struct glstate_s {
 	uint32_t        vertexAttribsNewFrame;
 	uint32_t        vertexAttribsOldFrame;
 	float           vertexAttribsInterpolation;
-	int				vertexAttribsTexCoordOffset[2];
 	qboolean        vertexAnimation;
 	qboolean		skeletalAnimation;
 	qboolean		genShadows;
@@ -2435,6 +2500,9 @@ typedef struct trGlobals_s {
 
 	image_t* renderImage;
 	image_t* glowImage;
+	image_t* velocityImage;
+	image_t* temporalResolveImage;
+	image_t* historyImage;
 	image_t* glowImageScaled[6];
 	image_t* sunRaysImage;
 	image_t* renderDepthImage;
@@ -2446,7 +2514,6 @@ typedef struct trGlobals_s {
 	image_t* fixedLevelsImage;
 	image_t* sunShadowArrayImage;
 	image_t* pointShadowArrayImage;
-	image_t* screenShadowImage;
 	image_t* screenSsaoImage;
 	image_t* hdrDepthImage;
 	image_t* renderCubeImage;
@@ -2454,10 +2521,17 @@ typedef struct trGlobals_s {
 	image_t* envBrdfImage;
 	image_t* textureDepthImage;
 	image_t* weatherDepthImage;
+	image_t* smaaSearchImage;
+	image_t* smaaAreaImage;
+	image_t* smaaEdgeImage;
+	image_t* smaaBlendImage;
+	image_t* smaaResolveImage;
 
 	FBO_t* renderFbo;
+	FBO_t* depthVelocityFbo;
 	FBO_t* glowFboScaled[6];
 	FBO_t* msaaResolveFbo;
+	FBO_t* msaaResolveVelocityFbo;
 	FBO_t* sunRaysFbo;
 	FBO_t* depthFbo;
 	FBO_t* pshadowFbos[MAX_DRAWN_PSHADOWS];
@@ -2467,12 +2541,16 @@ typedef struct trGlobals_s {
 	FBO_t* calcLevelsFbo;
 	FBO_t* targetLevelsFbo;
 	FBO_t* sunShadowFbo[3];
-	FBO_t* screenShadowFbo;
 	FBO_t* screenSsaoFbo;
 	FBO_t* hdrDepthFbo;
 	FBO_t* renderCubeFbo[6];
 	FBO_t* filterCubeFbo;
 	FBO_t* weatherDepthFbo;
+	FBO_t* smaaEdgeFbo;
+	FBO_t* smaaBlendFbo;
+	FBO_t* smaaResolveFbo;
+	FBO_t* temporalResolveFbo;
+	FBO_t* historyFbo;
 
 	shader_t* defaultShader;
 	shader_t* shadowShader;
@@ -2508,8 +2586,9 @@ typedef struct trGlobals_s {
 	shaderProgram_t splashScreenShader;
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
 	shaderProgram_t refractionShader[REFRACTIONDEF_COUNT];
-	shaderProgram_t textureColorShader;
+	shaderProgram_t textureColorShader[TEXCOLORDEF_COUNT];
 	shaderProgram_t fogShader[FOGDEF_COUNT];
+	shaderProgram_t velocityShader[VELOCITYDEF_COUNT];
 	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
 	shaderProgram_t pshadowShader;
 	shaderProgram_t volumeShadowShader;
@@ -2518,6 +2597,7 @@ typedef struct trGlobals_s {
 	shaderProgram_t tonemapShader[2];
 	shaderProgram_t calclevels4xShader[2];
 	shaderProgram_t ssaoShader;
+	shaderProgram_t highpassShader;
 	shaderProgram_t depthBlurShader[2];
 	shaderProgram_t testcubeShader;
 	shaderProgram_t prefilterEnvMapShader;
@@ -2528,6 +2608,10 @@ typedef struct trGlobals_s {
 	shaderProgram_t spriteShader[SSDEF_COUNT];
 	shaderProgram_t weatherUpdateShader;
 	shaderProgram_t weatherShader;
+	shaderProgram_t smaaEdgeShader;
+	shaderProgram_t smaaBlendShader;
+	shaderProgram_t smaaResolveShader;
+	shaderProgram_t smaaTemporalResolveShader;
 
 	GLuint staticUbo;
 	GLuint spriteUbos[MAX_SUB_BSP + 1];
@@ -2544,11 +2628,14 @@ typedef struct trGlobals_s {
 
 	int cameraUboOffsets[3 + MAX_DLIGHTS * 6 + 3 + MAX_DRAWN_PSHADOWS];
 	int sceneUboOffset;
+	int temporalInfoUboOffset;
 	int lightsUboOffset;
 	int fogsUboOffset;
 	int skyEntityUboOffset;
 	int entityUboOffsets[REFENTITYNUM_WORLD + 1];
+	int previousEntityUboOffsets[REFENTITYNUM_WORLD + 1];
 	int animationBoneUboOffset;
+	int previousAnimationBoneUboOffset;
 
 	// -----------------------------------------
 
@@ -2816,6 +2903,7 @@ extern cvar_t* r_dynamicGlowIntensity;
 extern cvar_t* r_dynamicGlowSoft;
 extern cvar_t* r_dynamicGlowWidth;
 extern cvar_t* r_dynamicGlowHeight;
+extern cvar_t* r_dynamicGlowBloom;
 
 extern cvar_t* r_debugContext;
 extern cvar_t* r_debugWeather;
@@ -3209,6 +3297,7 @@ struct VertexArraysProperties
 	int strides[ATTR_INDEX_MAX];
 	int streamStrides[ATTR_INDEX_MAX];
 	void* streams[ATTR_INDEX_MAX];
+	int stepRates[ATTR_INDEX_MAX];
 };
 
 uint32_t R_VboPackTangent(vec4_t v);
@@ -3431,6 +3520,7 @@ void R_AddGhoulSurfaces(trRefEntity_t* ent, int entityNum);
 void RB_SurfaceGhoul(CRenderableSurface* surf);
 void RB_TransformBones(const trRefEntity_t* ent, const trRefdef_t* refdef, int currentFrameNum, gpuFrame_t* frame);
 int RB_GetBoneUboOffset(CRenderableSurface* surf);
+int RB_GetPreviousBoneUboOffset(CRenderableSurface* surf);
 void RB_SetBoneUboOffset(CRenderableSurface* surf, int offset, int currentFrameNum);
 void RB_FillBoneBlock(CRenderableSurface* surf, mat3x4_t* outMatrices);
 /*
@@ -3649,15 +3739,35 @@ struct screenshotReadback_t
 	char filename[MAX_QPATH];
 };
 
+struct ghoul2UboCache_t
+{
+	void* ghoulPointer;
+	qhandle_t model;
+	int boltIndex;
+	int boneUboOffset;
+};
+
+struct modelUboCache_t
+{
+	modtype_t type;
+	qhandle_t hModel;
+	void* ghoulPointer;
+	vec3_t    origin;
+	vec3_t    velocity;
+	int       modelUboOffset;
+};
+
 #define MAX_GPU_TIMERS (512)
+#define MAX_SCENES (3)
 struct gpuFrame_t
 {
 	GLsync sync;
-	GLuint ubo;
-	size_t uboWriteOffset;
-	size_t uboSize;
-	size_t uboMapBase;
-	void* uboMemory;
+	byte   currentScene;
+	GLuint ubo[MAX_SCENES];
+	size_t uboWriteOffset[MAX_SCENES];
+	size_t uboSize[MAX_SCENES];
+	size_t uboMapBase[MAX_SCENES];
+	void* uboMemory[MAX_SCENES];
 
 	screenshotReadback_t screenshotReadback;
 
@@ -3674,6 +3784,15 @@ struct gpuFrame_t
 	int numTimers;
 	int numTimedBlocks;
 
+	int numCachedGhoulUboOffsets;
+	ghoul2UboCache_t cachedGhoulUboOffsets[MAX_GENTITIES];
+
+	int numCachedModelUboOffsets;
+	modelUboCache_t cachedModelUboOffsets[MAX_REFENTITIES];
+
+	matrix_t viewProjectionMatrix;
+	float    time;
+
 	gpuTimer_t timers[MAX_GPU_TIMERS];
 	gpuTimedBlock_t timedBlocks[MAX_GPU_TIMERS / 2]; // Each block will need 2 timer queries.
 };
@@ -3688,8 +3807,13 @@ typedef struct backEndData_s {
 	unsigned realFrameNumber;
 	gpuFrame_t frames[MAX_FRAMES];
 	gpuFrame_t* current_frame;
+	gpuFrame_t* previousFrame;
 	Allocator* perFrameMemory;
 	Pass* currentPass;
+
+	bool cachePreviousFrameUbos;
+	uint32_t numFrameUbos;
+	GLuint* frameUbos;
 
 	drawSurf_t	drawSurfs[MAX_DRAWSURFS];
 	dlight_t	dlights[MAX_DLIGHTS];

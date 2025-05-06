@@ -265,6 +265,8 @@ static void ParseAlphaTestFunc(shaderStage_t* stage, const char* funcname)
 		stage->alphaTestType = ALPHA_TEST_GE128;
 	else if (!Q_stricmp(funcname, "GE192"))
 		stage->alphaTestType = ALPHA_TEST_GE192;
+	else if (!Q_stricmp(funcname, "E255"))
+		stage->alphaTestType = ALPHA_TEST_E255;
 	else
 		ri.Printf(PRINT_WARNING,
 			"WARNING: invalid alphaFunc name '%s' in shader '%s'\n",
@@ -1547,6 +1549,7 @@ static qboolean ParseStage(shaderStage_t* stage, const char** text)
 			else if (!Q_stricmp(token, "equal"))
 			{
 				depthFuncBits = GLS_DEPTHFUNC_EQUAL;
+				depthMaskBits = 0;
 			}
 			else if (!Q_stricmp(token, "disable"))
 			{
@@ -3246,14 +3249,14 @@ static void CollapseStagesToLightall(shaderStage_t* stage, shaderStage_t* lightm
 		defs |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
 	}
 
-	if (stage->glow)
-		defs |= LIGHTDEF_USE_GLOW_BUFFER;
+	/*if (stage->glow)
+		defs |= LIGHTDEF_USE_GLOW_BUFFER;*/
 
 	if (stage->cloth)
 		defs |= LIGHTDEF_USE_CLOTH_BRDF;
 
-	if (stage->alphaTestType != ALPHA_TEST_NONE)
-		defs |= LIGHTDEF_USE_ALPHA_TEST;
+	/*if (stage->alphaTestType != ALPHA_TEST_NONE)
+		defs |= LIGHTDEF_USE_ALPHA_TEST;*/
 
 	//ri.Printf(PRINT_ALL, ".\n");
 
@@ -4230,6 +4233,13 @@ static shader_t* FinishShader(void) {
 	if (stage > 1 && (r_vertexLight->integer && !r_uiFullScreen->integer)) {
 		VertexLightingCollapse();
 		hasLightmapStage = qfalse;
+	}
+
+	// Handle special glow case
+	if (stage == 1 && stages[0].glow && shader.sort < SS_OPAQUE)
+	{
+		shader.sort = SS_BLEND1;
+		stages[0].stateBits |= GLS_COLORMASK_BUF1;
 	}
 
 	//

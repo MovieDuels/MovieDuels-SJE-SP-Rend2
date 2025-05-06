@@ -12,6 +12,17 @@ in uvec4 attr_BoneIndexes;
 in vec4 attr_BoneWeights;
 #endif
 
+layout(std140) uniform Scene
+ {
+ 	vec4 u_PrimaryLightOrigin;
+ 	vec3 u_PrimaryLightAmbient;
+ 	int  u_globalFogIndex;
+ 	vec3 u_PrimaryLightColor;
+ 	float u_PrimaryLightRadius;
+ 	float u_frameTime;
+ 	float u_deltaTime;
+ };
+
 layout(std140) uniform Camera
 {
 	mat4 u_viewProjectionMatrix;
@@ -103,10 +114,17 @@ vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 			float bulgeWidth = u_DeformParams0.z; // phase
 			float bulgeSpeed = u_DeformParams0.w; // frequency
 
-			float scale = CalculateDeformScale( WF_SIN, u_Time, bulgeWidth * st.x, bulgeSpeed );
+			float scale = CalculateDeformScale( WF_SIN, (u_entityTime + u_frameTime + u_Time), bulgeWidth * st.x, bulgeSpeed );
 
 			return pos + normal * scale * bulgeHeight;
 		}
+
+		case DEFORM_BULGE_UNIFORM:
+ 		{
+ 			float bulgeHeight = u_DeformParams0.y; // amplitude
+ 
+ 			return pos + normal * bulgeHeight;
+ 		}
 
 		case DEFORM_WAVE:
 		{
@@ -117,7 +135,7 @@ vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 			float spread = u_DeformParams1.x;
 
 			float offset = dot( pos.xyz, vec3( spread ) );
-			float scale = CalculateDeformScale( u_DeformFunc, u_Time, phase + offset, frequency );
+			float scale = CalculateDeformScale( u_DeformFunc, (u_entityTime + u_frameTime + u_Time), phase + offset, frequency );
 
 			return pos + normal * (base + scale * amplitude);
 		}
@@ -130,7 +148,7 @@ vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 			float frequency = u_DeformParams0.w;
 			vec3 direction = u_DeformParams1.xyz;
 
-			float scale = CalculateDeformScale( u_DeformFunc, u_Time, phase, frequency );
+			float scale = CalculateDeformScale( u_DeformFunc, (u_entityTime + u_frameTime + u_Time), phase, frequency );
 
 			return pos + direction * (base + scale * amplitude);
 		}
@@ -165,7 +183,7 @@ vec3 DeformNormal( const in vec3 position, const in vec3 normal )
 
 	vec3 outNormal = normal;
 	const float scale = 0.98;
-	
+
 	outNormal.x += amplitude * GetNoiseValue(
 		position.x * scale,
 		position.y * scale,
@@ -204,25 +222,27 @@ void main()
 {
 #if defined(USE_VERTEX_ANIMATION)
 	vec3 position = mix(attr_Position, attr_Position2, u_VertexLerp);
-	vec3 normal   = mix(attr_Normal,   attr_Normal2,   u_VertexLerp);
-	normal = normalize(normal - vec3(0.5));
 #elif defined(USE_SKELETAL_ANIMATION)
 	mat4x3 influence =
 		GetBoneMatrix(attr_BoneIndexes[0]) * attr_BoneWeights[0] +
         GetBoneMatrix(attr_BoneIndexes[1]) * attr_BoneWeights[1] +
         GetBoneMatrix(attr_BoneIndexes[2]) * attr_BoneWeights[2] +
         GetBoneMatrix(attr_BoneIndexes[3]) * attr_BoneWeights[3];
-
     vec3 position = influence * vec4(attr_Position, 1.0);
-    vec3 normal = normalize(influence * vec4(attr_Normal - vec3(0.5), 0.0));
 #else
 	vec3 position = attr_Position;
-	vec3 normal   = attr_Normal * 2.0 - vec3(1.0);
 #endif
 
 #if defined(USE_DEFORM_VERTEXES)
+	#if defined(USE_VERTEX_ANIMATION)
+		vec3 normal   = mix(attr_Normal,   attr_Normal2,   u_VertexLerp);
+		normal = normalize(normal - vec3(0.5));
+	#elif defined(USE_SKELETAL_ANIMATION)
+		vec3 normal = normalize(influence * vec4(attr_Normal - vec3(0.5), 0.0));
+	#else
+		vec3 normal   = attr_Normal * 2.0 - vec3(1.0);
+	#endif
 	position = DeformPosition(position, normal, attr_TexCoord0.st);
-	normal = DeformNormal( position, normal );
 #endif
 
 	vec4 wsPosition = u_ModelMatrix * vec4(position, 1.0);
@@ -364,13 +384,13 @@ void main()
 		if (alpha < 0.75)
 			discard;
 	}
+	else if (u_AlphaTestType == ALPHA_TEST_E255)
+	{
+		if (alpha < 1.00)
+			discard;
+	}
 #endif
 	Fog fog = u_Fogs[u_FogIndex];
 	out_Color = CalcFog(u_ViewOrigin, var_WSPosition, fog);
-
-#if defined(USE_GLOW_BUFFER)
-	out_Glow = out_Color;
-#else
 	out_Glow = vec4(0.0, 0.0, 0.0, out_Color.a);
-#endif
 }

@@ -2922,7 +2922,7 @@ static void R_LoadEntities(world_t* worldData, lump_t* l)
 	w->lightGridSize[1] = 64;
 	w->lightGridSize[2] = 128;
 
-	tr.distanceCull = 6000;//DEFAULT_DISTANCE_CULL;
+	tr.distanceCull = 12000;//DEFAULT_DISTANCE_CULL;
 
 	p = (char*)(fileBase + l->fileofs);
 
@@ -3809,7 +3809,8 @@ static int R_CreateSurfaceSpritesVertexData(
 	const srfVert_t* verts = bspSurf->verts;
 	const glIndex_t* indexes = bspSurf->indexes;
 
-	vec4_t color = { 1.0, 1.0, 1.0, 1.0 };
+#if 0
+	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	if (stage->rgbGen == CGEN_CONST)
 	{
 		color[0] = stage->constantColor[0];
@@ -3821,6 +3822,13 @@ static int R_CreateSurfaceSpritesVertexData(
 		stage->rgbGen == CGEN_EXACT_VERTEX ||
 		stage->rgbGen == CGEN_VERTEX_LIT ||
 		stage->rgbGen == CGEN_EXACT_VERTEX_LIT);
+#else
+	// Vanilla behaviour is always: color by vertex color of the emitting surface
+	// even just the blue component used for all three color channels to be exact
+	// in pseudo code: outVert.rgb = inVert.bbb;
+	bool vertexLit = true;
+	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
+#endif
 
 	int numSprites = 0;
 	for (int i = 0, numIndexes = bspSurf->numIndexes; i < numIndexes; i += 3)
@@ -4373,12 +4381,12 @@ void RE_LoadWorldMap(const char* name) {
 	VectorNormalize(tr.sunDirection);
 
 	// set default autoexposure settings
-	tr.autoExposureMinMax[0] = -2.0f;
-	tr.autoExposureMinMax[1] = 2.0f;
+	tr.autoExposureMinMax[0] = -3.0f;
+	tr.autoExposureMinMax[1] = 1.0f;
 
 	// set default tone mapping settings
 	tr.toneMinAvgMaxLevel[0] = -8.0f;
-	tr.toneMinAvgMaxLevel[1] = -2.0f;
+	tr.toneMinAvgMaxLevel[1] = -1.0f;
 	tr.toneMinAvgMaxLevel[2] = 0.0f;
 
 	world_t* world = R_LoadBSP(name);

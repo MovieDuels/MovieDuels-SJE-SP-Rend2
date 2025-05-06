@@ -461,6 +461,7 @@ public:
 	}
 
 	bool Update() override;
+	virtual bool Cull();
 
 	void SetOrigin2(const vec3_t org2) { VectorCopy(org2, mOrigin2); }
 };

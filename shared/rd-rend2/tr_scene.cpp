@@ -472,10 +472,10 @@ void RE_BeginScene(const refdef_t* fd)
 		// Don't update constants yet. Store everything and render everything next scene
 		return;
 	}
-	else
+	else if (backEndData->current_frame->currentScene == 0)
 	{
-		// pasted this from SP
 		// cdr - only change last time for the real render, not the portal
+		// nor other scenes to be rendered like ui scenes
 		tr.refdef.lastTime = fd->time;
 	}
 
@@ -505,6 +505,11 @@ void RE_EndScene()
 	tr.refdef.doLAGoggles = false;
 	tr.refdef.doFullbright = false;
 #endif
+	backEndData->current_frame->currentScene++;
+	if (backEndData->current_frame->currentScene > MAX_SCENES)
+	{
+		ri.Error(ERR_DROP, "Tried to render to many subscenes per frame");
+	}
 }
 
 /*

@@ -32,8 +32,11 @@ const uniformBlockInfo_t uniformBlocksInfo[UNIFORM_BLOCK_COUNT] = {
 	{ 2, "Lights", sizeof(LightsBlock) },
 	{ 3, "Fogs", sizeof(FogsBlock) },
 	{ 4, "Entity", sizeof(EntityBlock) },
-	{ 5, "ShaderInstance", sizeof(ShaderInstanceBlock) },
-	{ 6, "Bones", sizeof(SkeletonBoneMatricesBlock) },
+	{ 5, "PreviousEntity", sizeof(EntityBlock) },
+	{ 6, "ShaderInstance", sizeof(ShaderInstanceBlock) },
+	{ 7, "Bones", sizeof(SkeletonBoneMatricesBlock) },
+	{ 8, "PreviousBones", sizeof(SkeletonBoneMatricesBlock) },
+	{ 9, "TemporalInfo", sizeof(TemporalBlock) },
 	{ 10, "SurfaceSprite", sizeof(SurfaceSpriteBlock) },
 };
 
@@ -62,6 +65,12 @@ static uniformInfo_t uniformsInfo[] =
 
 	{ "u_ScreenImageMap", GLSL_INT, 1 },
 	{ "u_ScreenDepthMap", GLSL_INT, 1 },
+
+	{ "u_EdgeMap", GLSL_INT, 1 },
+	{ "u_AreaMap", GLSL_INT, 1 },
+	{ "u_SearchMap", GLSL_INT, 1 },
+	{ "u_BlendMap", GLSL_INT, 1 },
+	{ "u_VelocityMap", GLSL_INT, 1 },
 
 	{ "u_ShadowMap",  GLSL_INT, 1 },
 	{ "u_ShadowMap2", GLSL_INT, 1 },
@@ -131,6 +140,7 @@ static uniformInfo_t uniformsInfo[] =
 	{ "u_EnvForce",				GLSL_VEC3, 1 },
 	{ "u_RandomOffset",			GLSL_VEC4, 1 },
 	{ "u_ChunkParticles",		GLSL_INT, 1 },
+	{ "u_BloomStrength",		GLSL_FLOAT, 1 },
 };
 
 static void GLSL_PrintProgramInfoLog(GLuint object, qboolean developerOnly)
@@ -338,14 +348,16 @@ static size_t GLSL_GetShaderHeader(
 			AGEN_PORTAL));
 
 	Q_strcat(dest, size,
-		va("#define ALPHA_TEST_GT0 %d\n"
-			"#define ALPHA_TEST_LT128 %d\n"
-			"#define ALPHA_TEST_GE128 %d\n"
-			"#define ALPHA_TEST_GE192 %d\n",
+		va("#define ALPHA_TEST_GT0 %i\n"
+			"#define ALPHA_TEST_LT128 %i\n"
+			"#define ALPHA_TEST_GE128 %i\n"
+			"#define ALPHA_TEST_GE192 %i\n"
+			"#define ALPHA_TEST_E255 %i\n",
 			ALPHA_TEST_GT0,
 			ALPHA_TEST_LT128,
 			ALPHA_TEST_GE128,
-			ALPHA_TEST_GE192));
+			ALPHA_TEST_GE192,
+			ALPHA_TEST_E255));
 
 	Q_strcat(dest, size,
 		va("#define MAX_G2_BONES %i\n",
@@ -368,19 +380,19 @@ static size_t GLSL_GetShaderHeader(
 			fbufWidthScale,
 			fbufHeightScale));
 
+	if (r_deluxeSpecular->value > 0.000001f)
+		Q_strcat(dest, size, va("#define r_deluxeSpecular %f\n", r_deluxeSpecular->value));
+
 	if (r_cubeMapping->integer)
 	{
 		Q_strcat(dest, size, va("#define CUBEMAP_RESOLUTION float(%i)\n", CUBE_MAP_SIZE));
 		Q_strcat(dest, size, va("#define ROUGHNESS_MIPS float(%i)\n", CUBE_MAP_ROUGHNESS_MIPS));
 	}
 
+	Q_strcat(dest, size, "#define USE_ALPHA_TEST\n");
+
 	if (r_ssao->integer)
 		Q_strcat(dest, size, "#define USE_SSAO\n");
-
-	if (r_deluxeSpecular->value > 0.000001f)
-	{
-		Q_strcat(dest, size, va("#define r_deluxeSpecular %f\n", r_deluxeSpecular->value));
-	}
 
 	if (r_hdr->integer && (r_toneMap->integer || r_forceToneMap->integer))
 		Q_strcat(dest, size, "#define USE_TONEMAPPING\n");
@@ -1474,11 +1486,8 @@ static int GLSL_LoadGPUProgramGeneric(
 		if (i & GENERICDEF_USE_RGBAGEN)
 			Q_strcat(extradefines, sizeof(extradefines), "#define USE_RGBAGEN\n");
 
-		if (i & GENERICDEF_USE_GLOW_BUFFER)
-			Q_strcat(extradefines, sizeof(extradefines), "#define USE_GLOW_BUFFER\n");
-
-		if (i & GENERICDEF_USE_ALPHA_TEST)
-			Q_strcat(extradefines, sizeof(extradefines), "#define USE_ALPHA_TEST\n");
+		/*if (i & GENERICDEF_USE_ALPHA_TEST)
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_ALPHA_TEST\n");*/
 
 		if (!GLSL_LoadGPUShader(builder, &tr.genericShader[i], "generic", attribs, NO_XFB_VARS,
 			extradefines, *programDesc))
@@ -1557,6 +1566,79 @@ static int GLSL_LoadGPUProgramFogPass(
 		qglUseProgram(0);
 
 		GLSL_FinishGPUShader(&tr.fogShader[i]);
+
+		++numPrograms;
+	}
+
+	return numPrograms;
+}
+
+static int GLSL_LoadGPUProgramVelocityPass(
+	ShaderProgramBuilder& builder,
+	Allocator& scratchAlloc)
+{
+	int numPrograms = 0;
+	Allocator allocator(scratchAlloc.Base(), scratchAlloc.GetSize());
+
+	char extradefines[1200];
+	const GPUProgramDesc* programDesc =
+		LoadProgramSource("velocity", allocator, fallback_velocityProgram);
+	for (int i = 0; i < VELOCITYDEF_COUNT; i++)
+	{
+		if (!GLSL_IsValidPermutationForFog(i))
+		{
+			continue;
+		}
+
+		uint32_t attribs =
+			(ATTR_POSITION | ATTR_NORMAL | ATTR_TEXCOORD0);
+		extradefines[0] = '\0';
+
+		if (i & VELOCITYDEF_USE_DEFORM_VERTEXES)
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_DEFORM_VERTEXES\n");
+#ifdef REND2_SP_MD3
+		if (i & FOGDEF_USE_VERTEX_ANIMATION)
+		{
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_VERTEX_ANIMATION\n");
+			attribs |= ATTR_POSITION2 | ATTR_NORMAL2;
+		}
+#endif // REND2_SP
+		if (i & VELOCITYDEF_USE_SKELETAL_ANIMATION)
+		{
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_SKELETAL_ANIMATION\n");
+			attribs |= ATTR_BONE_INDEXES | ATTR_BONE_WEIGHTS;
+		}
+
+		if (i & VELOCITYDEF_USE_TCGEN_AND_TCMOD)
+		{
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_TCGEN\n");
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_TCMOD\n");
+		}
+
+		if (i & VELOCITYDEF_USE_RGBAGEN)
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_RGBAGEN\n");
+
+		if (i & VELOCITYDEF_USE_PARALLAXMAP && r_parallaxMapping->integer)
+		{
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_PARALLAXMAP\n");
+			attribs |= ATTR_TANGENT;
+		}
+
+		if (!GLSL_LoadGPUShader(builder, &tr.velocityShader[i], "velocity", attribs, NO_XFB_VARS,
+			extradefines, *programDesc))
+		{
+			ri.Error(ERR_FATAL, "Could not load velocity shader!");
+		}
+
+		GLSL_InitUniforms(&tr.velocityShader[i]);
+
+		qglUseProgram(tr.velocityShader[i].program);
+		//if (i & FOGDEF_USE_ALPHA_TEST)
+		GLSL_SetUniformInt(&tr.velocityShader[i], UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP);
+		GLSL_SetUniformInt(&tr.velocityShader[i], UNIFORM_NORMALMAP, TB_NORMALMAP);
+		qglUseProgram(0);
+
+		GLSL_FinishGPUShader(&tr.velocityShader[i]);
 
 		++numPrograms;
 	}
@@ -1769,11 +1851,11 @@ static int GLSL_LoadGPUProgramLightAll(
 				attribs |= ATTR_BONE_INDEXES | ATTR_BONE_WEIGHTS;
 			}
 
-		if (i & LIGHTDEF_USE_ALPHA_TEST)
-			Q_strcat(extradefines, sizeof(extradefines), "#define USE_ALPHA_TEST\n");
+		/*if (i & LIGHTDEF_USE_ALPHA_TEST)
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_ALPHA_TEST\n");*/
 
-		if (i & LIGHTDEF_USE_GLOW_BUFFER)
-			Q_strcat(extradefines, sizeof(extradefines), "#define USE_GLOW_BUFFER\n");
+			/*if (i & LIGHTDEF_USE_GLOW_BUFFER)
+				Q_strcat(extradefines, sizeof(extradefines), "#define USE_GLOW_BUFFER\n");*/
 
 		if (!GLSL_LoadGPUShader(builder, &tr.lightallShader[i], "lightall", attribs, NO_XFB_VARS,
 			extradefines, *programDesc))
@@ -1857,22 +1939,41 @@ static int GLSL_LoadGPUProgramTextureColor(
 	ShaderProgramBuilder& builder,
 	Allocator& scratchAlloc)
 {
-	GLSL_LoadGPUProgramBasic(
+	const char* extradefines = "#define USE_VERTICES\n";
+	GLSL_LoadGPUProgramBasicWithDefinitions(
 		builder,
 		scratchAlloc,
-		&tr.textureColorShader,
+		&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES],
 		"texturecolor",
-		fallback_texturecolorProgram);
+		fallback_texturecolorProgram,
+		extradefines);
 
-	GLSL_InitUniforms(&tr.textureColorShader);
+	GLSL_InitUniforms(&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES]);
 
-	qglUseProgram(tr.textureColorShader.program);
-	GLSL_SetUniformInt(&tr.textureColorShader, UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
+	qglUseProgram(tr.textureColorShader[TEXCOLORDEF_USE_VERTICES].program);
+	GLSL_SetUniformInt(&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES], UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
 	qglUseProgram(0);
 
-	GLSL_FinishGPUShader(&tr.textureColorShader);
+	GLSL_FinishGPUShader(&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES]);
 
-	return 1;
+	GLSL_LoadGPUProgramBasicWithDefinitions(
+		builder,
+		scratchAlloc,
+		&tr.textureColorShader[TEXCOLORDEF_SCREEN_TRIANGLE],
+		"texturecolor",
+		fallback_texturecolorProgram,
+		"",
+		0);
+
+	GLSL_InitUniforms(&tr.textureColorShader[TEXCOLORDEF_SCREEN_TRIANGLE]);
+
+	qglUseProgram(tr.textureColorShader[TEXCOLORDEF_SCREEN_TRIANGLE].program);
+	GLSL_SetUniformInt(&tr.textureColorShader[TEXCOLORDEF_SCREEN_TRIANGLE], UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
+	qglUseProgram(0);
+
+	GLSL_FinishGPUShader(&tr.textureColorShader[TEXCOLORDEF_SCREEN_TRIANGLE]);
+
+	return 2;
 }
 
 static int GLSL_LoadGPUProgramPShadow(
@@ -1982,6 +2083,18 @@ static int GLSL_LoadGPUProgramTonemap(
 	const uint32_t attribs = ATTR_POSITION | ATTR_TEXCOORD0;
 
 	extradefines[0] = '\0';
+	if (r_smaa->integer == 1)
+	{
+		Q_strcat(extradefines, sizeof(extradefines),
+			va("#define USE_SMAA\n"
+				"#define SMAA_RT_METRICS vec4(1.0 / %f, 1.0 / %f, %f, %f)\n",
+				(float)glConfig.vidWidth,
+				(float)glConfig.vidHeight,
+				(float)glConfig.vidWidth,
+				(float)glConfig.vidHeight));
+
+	}
+
 	if (!GLSL_LoadGPUShader(builder, &tr.tonemapShader[0], "tonemap", attribs, NO_XFB_VARS,
 		extradefines, *programDesc))
 	{
@@ -2001,6 +2114,9 @@ static int GLSL_LoadGPUProgramTonemap(
 		qglUseProgram(tr.tonemapShader[i].program);
 		GLSL_SetUniformInt(&tr.tonemapShader[i], UNIFORM_TEXTUREMAP, TB_COLORMAP);
 		GLSL_SetUniformInt(&tr.tonemapShader[i], UNIFORM_LEVELSMAP, TB_LEVELSMAP);
+		if (r_smaa->integer == 1)
+			GLSL_SetUniformInt(&tr.tonemapShader[i], UNIFORM_BLENDMAP, 2);
+
 		qglUseProgram(0);
 		GLSL_FinishGPUShader(&tr.tonemapShader[i]);
 	}
@@ -2043,6 +2159,28 @@ static int GLSL_LoadGPUProgramCalcLuminanceLevel(
 	}
 
 	return numPrograms;
+}
+
+static int GLSL_LoadGPUProgramHighPass(
+	ShaderProgramBuilder& builder,
+	Allocator& scratchAlloc)
+{
+	GLSL_LoadGPUProgramBasic(
+		builder,
+		scratchAlloc,
+		&tr.highpassShader,
+		"highpass",
+		fallback_highpassProgram);
+
+	GLSL_InitUniforms(&tr.highpassShader);
+
+	qglUseProgram(tr.highpassShader.program);
+	GLSL_SetUniformInt(&tr.highpassShader, UNIFORM_SCREENIMAGEMAP, TB_COLORMAP);
+	qglUseProgram(0);
+
+	GLSL_FinishGPUShader(&tr.highpassShader);
+
+	return 1;
 }
 
 static int GLSL_LoadGPUProgramSSAO(
@@ -2237,13 +2375,17 @@ static int GLSL_LoadGPUProgramSurfaceSprites(
 			Q_strcat(extradefines, sizeof(extradefines),
 				"#define USE_FOG\n");
 
-		if (i & SSDEF_ALPHA_TEST)
+		/*if ( i & SSDEF_ALPHA_TEST )
 			Q_strcat(extradefines, sizeof(extradefines),
-				"#define ALPHA_TEST\n");
+					"#define USE_ALPHA_TEST\n");*/
 
 		if (i & SSDEF_ADDITIVE)
 			Q_strcat(extradefines, sizeof(extradefines),
 				"#define ADDITIVE_BLEND\n");
+
+		if (i & SSDEF_VELOCITY)
+			Q_strcat(extradefines, sizeof(extradefines),
+				"#define VELOCITY_PASS\n");
 
 		shaderProgram_t* program = tr.spriteShader + i;
 		if (!GLSL_LoadGPUShader(builder, program, "surface_sprites", attribs, NO_XFB_VARS,
@@ -2292,6 +2434,143 @@ static int GLSL_LoadGPUProgramWeather(
 	GLSL_FinishGPUShader(&tr.weatherUpdateShader);
 
 	return 2;
+}
+
+static int GLSL_LoadGPUProgramSMAA(
+	ShaderProgramBuilder& builder,
+	Allocator& scratchAlloc)
+{
+	char extradefines[1200];
+	extradefines[0] = '\0';
+
+	Q_strcat(extradefines, sizeof(extradefines),
+		va("#define SMAA_LOCAL_CONTRAST_ADAPTATION_FACTOR 2.0\n"
+			"#define SMAA_REPROJECTION_WEIGHT_SCALE 30.0\n"
+			"#define SMAA_RT_METRICS vec4(1.0 / %f, 1.0 / %f, %f, %f)\n",
+			(float)glConfig.vidWidth,
+			(float)glConfig.vidHeight,
+			(float)glConfig.vidWidth,
+			(float)glConfig.vidHeight));
+	if (r_smaa_quality->integer == 0)
+	{
+		Q_strcat(extradefines, sizeof(extradefines),
+			"#define SMAA_THRESHOLD 0.15\n"
+			"#define SMAA_MAX_SEARCH_STEPS 4\n"
+			"#define SMAA_DISABLE_DIAG_DETECTION\n"
+			"#define SMAA_DISABLE_CORNER_DETECTION\n"
+		);
+	}
+	else if (r_smaa_quality->integer == 1)
+	{
+		Q_strcat(extradefines, sizeof(extradefines),
+			"#define SMAA_THRESHOLD 0.1\n"
+			"#define SMAA_MAX_SEARCH_STEPS 8\n"
+			"#define SMAA_DISABLE_DIAG_DETECTION\n"
+			"#define SMAA_DISABLE_CORNER_DETECTION\n"
+		);
+	}
+	else if (r_smaa_quality->integer == 2)
+	{
+		Q_strcat(extradefines, sizeof(extradefines),
+			"#define SMAA_THRESHOLD 0.1\n"
+			"#define SMAA_MAX_SEARCH_STEPS 16\n"
+			"#define SMAA_MAX_SEARCH_STEPS_DIAG 8\n"
+			"#define SMAA_CORNER_ROUNDING 25\n"
+		);
+	}
+	else
+	{
+		Q_strcat(extradefines, sizeof(extradefines),
+			"#define SMAA_THRESHOLD 0.05\n"
+			"#define SMAA_MAX_SEARCH_STEPS 32\n"
+			"#define SMAA_MAX_SEARCH_STEPS_DIAG 16\n"
+			"#define SMAA_CORNER_ROUNDING 25\n"
+		);
+	}
+
+	if (r_smaa->integer == 2)
+	{
+		Q_strcat(extradefines, sizeof(extradefines),
+			"#define SMAA_REPROJECTION 1\n"
+		);
+	}
+
+	{
+		GLSL_LoadGPUProgramBasicWithDefinitions(
+			builder,
+			scratchAlloc,
+			&tr.smaaEdgeShader,
+			"smaaBlendWeight",
+			fallback_smaaBlendWeightProgram,
+			extradefines);
+
+		GLSL_InitUniforms(&tr.smaaEdgeShader);
+
+		qglUseProgram(tr.smaaEdgeShader.program);
+		GLSL_SetUniformInt(&tr.smaaEdgeShader, UNIFORM_SCREENIMAGEMAP, 0);
+		qglUseProgram(0);
+
+		GLSL_FinishGPUShader(&tr.smaaEdgeShader);
+	}
+	{
+		GLSL_LoadGPUProgramBasicWithDefinitions(
+			builder,
+			scratchAlloc,
+			&tr.smaaBlendShader,
+			"smaaBlend",
+			fallback_smaaBlendProgram,
+			extradefines);
+
+		GLSL_InitUniforms(&tr.smaaBlendShader);
+
+		qglUseProgram(tr.smaaBlendShader.program);
+		GLSL_SetUniformInt(&tr.smaaBlendShader, UNIFORM_EDGEMAP, 0);
+		GLSL_SetUniformInt(&tr.smaaBlendShader, UNIFORM_AREAMAP, 1);
+		GLSL_SetUniformInt(&tr.smaaBlendShader, UNIFORM_SEARCHMAP, 2);
+		qglUseProgram(0);
+
+		GLSL_FinishGPUShader(&tr.smaaBlendShader);
+	}
+	{
+		GLSL_LoadGPUProgramBasicWithDefinitions(
+			builder,
+			scratchAlloc,
+			&tr.smaaResolveShader,
+			"smaaResolve",
+			fallback_smaaResolveProgram,
+			extradefines);
+
+		GLSL_InitUniforms(&tr.smaaResolveShader);
+
+		qglUseProgram(tr.smaaResolveShader.program);
+		GLSL_SetUniformInt(&tr.smaaResolveShader, UNIFORM_TEXTUREMAP, 0);
+		GLSL_SetUniformInt(&tr.smaaResolveShader, UNIFORM_BLENDMAP, 1);
+		if (r_smaa->integer == 2)
+			GLSL_SetUniformInt(&tr.smaaResolveShader, UNIFORM_VELOCITYMAP, 2);
+		qglUseProgram(0);
+
+		GLSL_FinishGPUShader(&tr.smaaResolveShader);
+	}
+	{
+		GLSL_LoadGPUProgramBasicWithDefinitions(
+			builder,
+			scratchAlloc,
+			&tr.smaaTemporalResolveShader,
+			"smaaTemporalResolve",
+			fallback_smaaTemporalResolveProgram,
+			extradefines);
+
+		GLSL_InitUniforms(&tr.smaaTemporalResolveShader);
+
+		qglUseProgram(tr.smaaTemporalResolveShader.program);
+		GLSL_SetUniformInt(&tr.smaaTemporalResolveShader, UNIFORM_TEXTUREMAP, 0);
+		GLSL_SetUniformInt(&tr.smaaTemporalResolveShader, UNIFORM_BLENDMAP, 1);
+		GLSL_SetUniformInt(&tr.smaaTemporalResolveShader, UNIFORM_VELOCITYMAP, 2);
+		qglUseProgram(0);
+
+		GLSL_FinishGPUShader(&tr.smaaTemporalResolveShader);
+	}
+	return 4;
 }
 
 void GLSL_LoadGPUShaders()
@@ -2363,6 +2642,7 @@ void GLSL_LoadGPUShaders()
 	numGenShaders += GLSL_LoadGPUProgramGeneric(builder, allocator);
 	numLightShaders += GLSL_LoadGPUProgramLightAll(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramFogPass(builder, allocator);
+	numEtcShaders += GLSL_LoadGPUProgramVelocityPass(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramRefraction(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramTextureColor(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramPShadow(builder, allocator);
@@ -2371,6 +2651,7 @@ void GLSL_LoadGPUShaders()
 	numEtcShaders += GLSL_LoadGPUProgramBokeh(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramTonemap(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramCalcLuminanceLevel(builder, allocator);
+	numEtcShaders += GLSL_LoadGPUProgramHighPass(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramSSAO(builder, allocator);
 	if (r_cubeMapping->integer)
 		numEtcShaders += GLSL_LoadGPUProgramPrefilterEnvMap(builder, allocator);
@@ -2380,6 +2661,9 @@ void GLSL_LoadGPUShaders()
 	numEtcShaders += GLSL_LoadGPUProgramDynamicGlowDownsample(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramSurfaceSprites(builder, allocator);
 	numEtcShaders += GLSL_LoadGPUProgramWeather(builder, allocator);
+	if (r_smaa->integer)
+		numEtcShaders += GLSL_LoadGPUProgramSMAA(builder, allocator);
+
 
 	ri.Printf(PRINT_ALL, "loaded %i GLSL shaders (%i gen %i light %i etc) in %5.2f seconds\n",
 		numGenShaders + numLightShaders + numEtcShaders, numGenShaders, numLightShaders,
@@ -2405,10 +2689,14 @@ void GLSL_ShutdownGPUShaders(void)
 	for (i = 0; i < REFRACTIONDEF_COUNT; i++)
 		GLSL_DeleteGPUShader(&tr.refractionShader[i]);
 
-	GLSL_DeleteGPUShader(&tr.textureColorShader);
+	for (i = 0; i < TEXCOLORDEF_COUNT; i++)
+		GLSL_DeleteGPUShader(&tr.textureColorShader[i]);
 
 	for (i = 0; i < FOGDEF_COUNT; i++)
 		GLSL_DeleteGPUShader(&tr.fogShader[i]);
+
+	for (i = 0; i < VELOCITYDEF_COUNT; i++)
+		GLSL_DeleteGPUShader(&tr.velocityShader[i]);
 
 	for (i = 0; i < LIGHTDEF_COUNT; i++)
 		GLSL_DeleteGPUShader(&tr.lightallShader[i]);
@@ -2424,6 +2712,7 @@ void GLSL_ShutdownGPUShaders(void)
 	for (i = 0; i < 2; i++)
 		GLSL_DeleteGPUShader(&tr.calclevels4xShader[i]);
 
+	GLSL_DeleteGPUShader(&tr.highpassShader);
 	GLSL_DeleteGPUShader(&tr.ssaoShader);
 
 	for (i = 0; i < 2; i++)
@@ -2444,6 +2733,11 @@ void GLSL_ShutdownGPUShaders(void)
 
 	GLSL_DeleteGPUShader(&tr.weatherUpdateShader);
 	GLSL_DeleteGPUShader(&tr.weatherShader);
+
+	GLSL_DeleteGPUShader(&tr.smaaEdgeShader);
+	GLSL_DeleteGPUShader(&tr.smaaBlendShader);
+	GLSL_DeleteGPUShader(&tr.smaaResolveShader);
+	GLSL_DeleteGPUShader(&tr.smaaTemporalResolveShader);
 
 	glState.currentProgram = 0;
 	qglUseProgram(0);
@@ -2558,7 +2852,7 @@ void GL_VertexArraysToAttribs(
 		attrib.normalize = attributes[attributeIndex].normalize;
 		attrib.stride = vertexArrays->strides[attributeIndex];
 		attrib.offset = vertexArrays->offsets[attributeIndex];
-		attrib.stepRate = 0;
+		attrib.stepRate = vertexArrays->stepRates[attributeIndex];
 	}
 }
 
@@ -2580,8 +2874,8 @@ shaderProgram_t* GLSL_GetGenericShaderProgram(int stage)
 	shaderStage_t* pStage = tess.xstages[stage];
 	int shaderAttribs = 0;
 
-	if (pStage->alphaTestType != ALPHA_TEST_NONE)
-		shaderAttribs |= GENERICDEF_USE_ALPHA_TEST;
+	/*if (pStage->alphaTestType != ALPHA_TEST_NONE)
+		shaderAttribs |= GENERICDEF_USE_ALPHA_TEST;*/
 
 	if (backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2))
 		shaderAttribs |= GENERICDEF_USE_RGBAGEN;
@@ -2638,10 +2932,10 @@ shaderProgram_t* GLSL_GetGenericShaderProgram(int stage)
 		shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
 	}
 
-	if (pStage->glow)
+	/*if (pStage->glow)
 	{
 		shaderAttribs |= GENERICDEF_USE_GLOW_BUFFER;
-	}
+	}*/
 
 	return &tr.genericShader[shaderAttribs];
 }

@@ -44,7 +44,7 @@ int goreModelIndex;
 
 static cvar_t* cg_g2MarksAllModels = nullptr;
 
-static inline void DestroyGoreTexCoordinates(int tag)
+static inline void DestroyR2GoreTexCoordinates(int tag)
 {
 	R2GoreTextureCoordinates* gTC = FindR2GoreRecord(tag);
 	if (!gTC)
@@ -111,19 +111,9 @@ R2GoreTextureCoordinates* FindR2GoreRecord(int tag)
 	return 0;
 }
 
-GoreTextureCoordinates* FindGoreRecord(const int tag)
-{
-	std::map<int, R2GoreTextureCoordinates>::iterator i = GoreRecords.find(tag);
-	if (i != GoreRecords.end())
-	{
-		return (GoreTextureCoordinates*)(&(*i).second);
-	}
-	return 0;
-}
-
 static void* G2_GetGoreRecord(const int tag)
 {
-	return FindGoreRecord(tag);
+	return FindR2GoreRecord(tag);
 }
 
 void DeleteR2GoreRecord(int tag)
@@ -133,7 +123,7 @@ void DeleteR2GoreRecord(int tag)
 
 void DeleteGoreRecord(const int tag)
 {
-	DestroyGoreTexCoordinates(tag);
+	DestroyR2GoreTexCoordinates(tag);
 	GoreRecords.erase(tag);
 }
 
@@ -180,7 +170,7 @@ CGoreSet::~CGoreSet()
 	std::multimap<int, SGoreSurface>::iterator i;
 	for (i = mGoreRecords.begin(); i != mGoreRecords.end(); i++)
 	{
-		DeleteGoreRecord((*i).second.mGoreTag);
+		DeleteR2GoreRecord((*i).second.mGoreTag);
 	}
 };
 #endif // _SOF2

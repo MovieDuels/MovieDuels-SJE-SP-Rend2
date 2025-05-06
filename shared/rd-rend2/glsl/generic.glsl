@@ -523,6 +523,8 @@ uniform sampler2D u_DiffuseMap;
 uniform int u_AlphaTestType;
 #endif
 uniform int u_FogIndex;
+// x = glow out, y = deluxe, z = screen shadow, w = cube
+uniform vec4 u_EnableTextures;
 
 in vec2 var_DiffuseTex;
 in vec4 var_Color;
@@ -568,7 +570,7 @@ float CalcFog(in vec3 viewOrigin, in vec3 position, in Fog fog)
 void main()
 {
 	vec4 color  = texture(u_DiffuseMap, var_DiffuseTex);
-	color.a *= var_Color.a;
+	color *= var_Color;
 #if defined(USE_ALPHA_TEST)
 	if (u_AlphaTestType == ALPHA_TEST_GT0)
 	{
@@ -590,6 +592,11 @@ void main()
 		if (color.a < 0.75)
 			discard;
 	}
+	else if (u_AlphaTestType == ALPHA_TEST_E255)
+ 	{
+ 		if (color.a < 1.00)
+ 			discard;
+ 	}
 #endif
 
 #if defined(USE_FOG)
@@ -598,11 +605,6 @@ void main()
 	color *= vec4(1.0) - u_FogColorMask * fogFactor;
 #endif
 
-	out_Color = vec4(color.rgb * var_Color.rgb, color.a);
-
-#if defined(USE_GLOW_BUFFER)
-	out_Glow = out_Color;
-#else
-	out_Glow = vec4(0.0);
-#endif
+	out_Color = color;
+ 	out_Glow = mix(vec4(0.0, 0.0, 0.0, color.a), color, u_EnableTextures.x);
 }

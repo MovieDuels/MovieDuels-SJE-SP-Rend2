@@ -537,6 +537,7 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 		return;
 	}
 
+	backEndData->previousFrame = backEndData->current_frame;
 	int frameNumber = backEndData->realFrameNumber;
 	gpuFrame_t* thisFrame = &backEndData->frames[frameNumber % MAX_FRAMES];
 	backEndData->current_frame = thisFrame;
@@ -558,7 +559,10 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 					qglDeleteSync(sync);
 					thisFrame->sync = NULL;
 
-					thisFrame->uboWriteOffset = 0;
+					for (byte i = 0; i < MAX_SCENES; i++)
+					{
+						thisFrame->uboWriteOffset[i] = 0;
+					}
 
 					thisFrame->dynamicIboCommitOffset = 0;
 					thisFrame->dynamicIboWriteOffset = 0;
@@ -581,9 +585,18 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 			R_SaveScreenshot(&thisFrame->screenshotReadback);
 
 		// Resets resources
-		qglBindBuffer(GL_UNIFORM_BUFFER, thisFrame->ubo);
-		glState.currentGlobalUBO = thisFrame->ubo;
-		thisFrame->uboWriteOffset = 0;
+		for (byte i = 0; i < MAX_SCENES; i++)
+		{
+			if (backEndData->cachePreviousFrameUbos)
+				thisFrame->ubo[i] = backEndData->frameUbos[(frameNumber % (MAX_FRAMES + 1) * (MAX_FRAMES + 1)) + i];
+
+			qglBindBuffer(GL_UNIFORM_BUFFER, thisFrame->ubo[i]);
+			glState.currentGlobalUBO = thisFrame->ubo[i];
+			thisFrame->uboWriteOffset[i] = 0;
+		}
+
+		thisFrame->numCachedGhoulUboOffsets = 0;
+		thisFrame->numCachedModelUboOffsets = 0;
 
 		thisFrame->dynamicIboCommitOffset = 0;
 		thisFrame->dynamicIboWriteOffset = 0;
@@ -787,6 +800,7 @@ void R_NewFrameSync()
 
 	assert(!current_frame->sync);
 	current_frame->sync = qglFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	current_frame->currentScene = 0;
 
 	backEndData->realFrameNumber++;
 	backEnd.framePostProcessed = qfalse;

@@ -190,10 +190,11 @@ void RE_GetScreenShot(byte* buffer, const int w, const int h)
 					b += src[2];
 				}
 			}
-			byte* dst = buffer + 3 * (y * w + x);
+			byte* dst = buffer + 4 * ((h - y - 1) * w + x);
 			dst[0] = r / 12;
 			dst[1] = g / 12;
 			dst[2] = b / 12;
+			dst[3] = 255;
 		}
 	}
 
