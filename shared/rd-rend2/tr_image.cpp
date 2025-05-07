@@ -2464,6 +2464,8 @@ image_t* R_CreateImage(const char* name, byte* pic, int width, int height, imgTy
 			qglGenerateMipmap(GL_TEXTURE_2D);
 	}
 
+	if (glRefConfig.annotateResources) qglObjectLabel(GL_TEXTURE, image->texnum, -1, image->imgName);
+
 	GL_SelectTexture(0);
 
 	hash = generateHashValue(name);
@@ -2559,12 +2561,72 @@ image_t* R_Create2DImageArray(const char* name, byte* pic, int width, int height
 		qglTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, glWrapClampMode);
 		break;
 	}
+
+	if (glRefConfig.annotateResources) qglObjectLabel(GL_TEXTURE, image->texnum, -1, image->imgName);
 	qglBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	GL_SelectTexture(0);
 
 	hash = generateHashValue(name);
 	image->next = hashTable[hash];
 	hashTable[hash] = image;
+
+	return image;
+}
+
+image_t* R_CreateImage3D(const char* name, byte* data, int width, int height, int depth, int internalFormat)
+{
+	image_t* image;
+	long hash;
+
+	if (strlen(name) >= MAX_QPATH) {
+		ri.Error(ERR_DROP, "R_CreateImage3D: \"%s\" is too long", name);
+	}
+
+	image = R_AllocImage();
+	qglGenTextures(1, &image->texnum);
+
+	int dataFormat = GL_RGBA;
+	int dataType = GL_UNSIGNED_BYTE;
+	if (internalFormat == GL_RGB16F)
+	{
+		dataFormat = GL_RGBA;
+		dataType = GL_HALF_FLOAT;
+	}
+
+	image->type = IMGTYPE_COLORALPHA;
+	image->flags = IMGFLAG_3D;
+
+	Q_strncpyz(image->imgName, name, sizeof(image->imgName));
+
+	image->width = width;
+	image->height = height;
+	image->layers = depth;
+
+	GL_Bind(image);
+	if (ShouldUseImmutableTextures(image->flags, internalFormat))
+	{
+		qglTexStorage3D(GL_TEXTURE_3D, 1, internalFormat, width, height, depth);
+		if (data)
+			qglTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, width, height, depth, dataFormat, dataType, data);
+	}
+	else
+	{
+		qglTexImage3D(GL_TEXTURE_3D, 0, internalFormat, width, height, depth, 0, dataFormat, dataType, data);
+	}
+
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	hash = generateHashValue(name);
+	image->next = hashTable[hash];
+	hashTable[hash] = image;
+
+	if (glRefConfig.annotateResources) qglObjectLabel(GL_TEXTURE, image->texnum, -1, image->imgName);
+	qglBindTexture(GL_TEXTURE_3D, 0);
+	GL_SelectTexture(0);
 
 	return image;
 }
@@ -3343,6 +3405,13 @@ void R_CreateBuiltinImages(void) {
 		"*white", (byte*)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE,
 		GL_RGBA8);
 
+	if (r_volumetricFog->integer)
+	{
+		tr.whiteImage3D = R_CreateImage3D(
+			"*white3D", (byte*)data, 8, 8, 1, GL_RGBA8
+		);
+	}
+
 	if (r_dlightMode->integer >= 2)
 	{
 		tr.pointShadowArrayImage = R_Create2DImageArray(
@@ -3394,7 +3463,7 @@ void R_CreateBuiltinImages(void) {
 	int rgbFormat = GL_RGBA8;
 
 	tr.renderImage = R_CreateImage(
-		"_render", NULL, width, height, IMGTYPE_COLORALPHA,
+		"*render", NULL, width, height, IMGTYPE_COLORALPHA,
 		IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat);
 
 	tr.glowImage = R_CreateImage(

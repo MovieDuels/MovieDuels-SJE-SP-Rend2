@@ -62,10 +62,11 @@ typedef unsigned int glIndex_t;
 // 14 bits
 // can't be increased without changing bit packing for drawsurfs
 // see QSORT_SHADERNUM_SHIFT
+#define MAX_FRAMES (2)
 #define SHADERNUM_BITS	14
 #define MAX_SHADERS		(1<<SHADERNUM_BITS)
 
-#define	MAX_FBOS      256
+#define	MAX_FBOS      512
 #define MAX_VISCOUNTS 5
 #define MAX_VBOS      4096
 #define MAX_IBOS      4096
@@ -129,6 +130,11 @@ extern cvar_t* r_nocull;
 extern cvar_t* r_facePlaneCull;
 extern cvar_t* r_showcluster;
 extern cvar_t* r_nocurves;
+
+extern cvar_t* r_volumetricFog;
+extern cvar_t* r_volumetricFogDefaultScale;
+extern cvar_t* r_volumetricFogSamples;
+extern cvar_t* r_volumetricFogScale;
 
 extern cvar_t* r_allowExtensions;
 
@@ -309,6 +315,16 @@ Ghoul2 Insert End
 /*
 End Cvars
 */
+
+typedef enum
+{
+	AL_NONE,
+	AL_SCENE,
+	AL_VIEW,
+	AL_STAGE
+} annotationLayer_t;
+
+void R_PushDebugGroup(annotationLayer_t layer, const char* name);
 
 typedef enum
 {
@@ -979,6 +995,12 @@ typedef struct {
 	float	depthForOpaque;
 } fogParms_t;
 
+typedef enum {
+	DEPTHPREPASS_ALPHATESTED,
+	DEPTHPREPASS_SIMPLE,
+	DEPTHPREPASS_SKIP
+} depthPrepass_t;
+
 typedef struct shader_s {
 	char		name[MAX_QPATH];		// game path, including extension
 	int			lightmapIndex[MAXLIGHTMAPS];	// for a shader to match, both name and all lightmapIndex must match
@@ -1031,7 +1053,7 @@ typedef struct shader_s {
 
 	void		(*optimalStageIteratorFunc)(void);
 	qboolean	isHDRLit;
-	qboolean	useSimpleDepthShader;
+	depthPrepass_t	depthPrepass;
 	qboolean	useDistortion;
 
 	float clampTime;                                  // time this shader is clamped to
@@ -1140,6 +1162,8 @@ enum
 	GLS_POLYGON_OFFSET_FILL = (1 << 28),
 
 	GLS_COLORMASK_BUF1 = (1 << 29),
+
+	GLS_DEPTH_CLAMP = (1 << 30),
 
 	GLS_DEFAULT = GLS_DEPTHMASK_TRUE
 };
@@ -1393,6 +1417,7 @@ struct GPUProgramDesc
 	GPUShaderDesc* shaders;
 };
 
+// Needs to stay in sync with uniformInfo_t in tr_glsl.cpp
 typedef enum
 {
 	UNIFORM_DIFFUSEMAP = 0,
@@ -1415,6 +1440,11 @@ typedef enum
 	UNIFORM_SEARCHMAP,
 	UNIFORM_BLENDMAP,
 	UNIFORM_VELOCITYMAP,
+
+	UNIFORM_VOLUMETRICLIGHTMAP,
+
+	UNIFORM_LIGHTGRIDORIGIN,
+	UNIFORM_LIGHTGRIDCELLINVERSESIZE,
 
 	UNIFORM_SHADOWMAP,
 	UNIFORM_SHADOWMAP2,
@@ -1568,10 +1598,10 @@ typedef struct {
 
 	float       autoExposureMinMax[2];
 	float       toneMinAvgMaxLinear[3];
-#ifdef REND2_SP
+
 	bool		doLAGoggles;
 	bool		doFullbright;
-#endif
+
 } trRefdef_t;
 
 //=================================================================================
@@ -1805,6 +1835,9 @@ typedef struct srfG2GoreSurface_s
 	// BSP VBO offsets
 	int             firstVert;
 	int             firstIndex;
+
+	// VBO cache info
+	bool			cachedInFrame[MAX_FRAMES];
 } srfG2GoreSurface_t;
 #endif
 
@@ -2079,6 +2112,8 @@ typedef struct {
 	mgrid_t* lightGridData;
 	word* lightGridArray;
 	int			numGridArrayElements;
+
+	image_t* volumetricLightMaps[MAXLIGHTMAPS];
 
 	int			skyboxportal;
 	int			numClusters;
@@ -2374,6 +2409,8 @@ typedef struct {
 	qboolean timerQuery;
 
 	qboolean floatLightmap;
+
+	qboolean annotateResources;
 } glRefConfig_t;
 
 enum
@@ -2436,6 +2473,7 @@ typedef struct {
 	backEndCounters_t	pc;
 	trRefEntity_t* currentEntity;
 	qboolean	skyRenderedThisView;	// flag for drawing sun
+	uint32_t	skyNumber;
 
 	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
 	float		color2D[4];
@@ -2496,6 +2534,7 @@ typedef struct trGlobals_s {
 	image_t* dlightImage;	// inverse-quare highlight for projective adding
 	image_t* flareImage;
 	image_t* whiteImage;			// full of 0xff
+	image_t* whiteImage3D;
 	image_t* identityLightImage;	// full of tr.identityLightByte
 
 	image_t* renderImage;
@@ -2562,6 +2601,8 @@ typedef struct trGlobals_s {
 	shader_t* sunShader;
 	shader_t* sunFlareShader;
 
+	shader_t* volumetricFogCapShader;
+
 	int						numLightmaps;
 	int						lightmapSize;
 	image_t** lightmaps;
@@ -2599,10 +2640,8 @@ typedef struct trGlobals_s {
 	shaderProgram_t ssaoShader;
 	shaderProgram_t highpassShader;
 	shaderProgram_t depthBlurShader[2];
-	shaderProgram_t testcubeShader;
 	shaderProgram_t prefilterEnvMapShader;
 	shaderProgram_t gaussianBlurShader[2];
-	shaderProgram_t glowCompositeShader;
 	shaderProgram_t dglowDownsample;
 	shaderProgram_t dglowUpsample;
 	shaderProgram_t spriteShader[SSDEF_COUNT];
@@ -2642,6 +2681,7 @@ typedef struct trGlobals_s {
 	viewParms_t				viewParms;
 	viewParms_t				cachedViewParms[3 + MAX_DLIGHTS * 6 + 3 + MAX_DRAWN_PSHADOWS];
 	int						numCachedViewParms;
+	qboolean				portalRenderedThisFrame;
 
 	viewParms_t				skyPortalParms;
 	byte					skyPortalAreaMask[MAX_MAP_AREA_BYTES];
@@ -2663,6 +2703,8 @@ typedef struct trGlobals_s {
 	qboolean                sunShadows;
 	vec3_t					sunLight;			// from the sky shader for this level
 	vec3_t					sunDirection;
+
+	float					volumetricFogScale;
 
 	frontEndCounters_t		pc;
 	int						frontEndMsec;		// not in pc due to clearing issue
@@ -2691,13 +2733,6 @@ typedef struct trGlobals_s {
 
 	int						numIBOs;
 	IBO_t* ibos[MAX_IBOS];
-
-#ifdef _G2_GORE
-	VBO_t* goreVBO;
-	int						goreVBOCurrentIndex;
-	IBO_t* goreIBO;
-	int						goreIBOCurrentIndex;
-#endif
 
 	// shader indexes from other modules will be looked up in tr.shaders[]
 	// shader indexes from drawsurfs will be looked up in sortedShaders[]
@@ -3305,8 +3340,8 @@ uint32_t R_VboPackNormal(vec3_t v);
 void R_VboUnpackTangent(vec4_t v, uint32_t b);
 void R_VboUnpackNormal(vec3_t v, uint32_t b);
 
-VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage);
-IBO_t* R_CreateIBO(byte* indexes, int indexesSize, vboUsage_t usage);
+VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage, const char* debugName);
+IBO_t* R_CreateIBO(byte* indexes, int indexesSize, vboUsage_t usage, const char* debugName);
 
 void            R_BindVBO(VBO_t* vbo);
 void            R_BindNullVBO(void);
@@ -3320,7 +3355,7 @@ void            R_VBOList_f(void);
 
 void            RB_UpdateVBOs(unsigned int attribBits);
 #ifdef _G2_GORE
-void			RB_UpdateGoreVBO(srfG2GoreSurface_t* goreSurface);
+void			RB_UpdateGoreVertexData(struct gpuFrame_t* currentFrame, srfG2GoreSurface_t* goreSurface, bool updateFirstVertAndIndex);
 #endif
 void			RB_CommitInternalBufferData();
 
@@ -3621,13 +3656,11 @@ typedef struct rotatePicCommand_s {
 	float	a;
 } rotatePicCommand_t;
 
-#ifdef REND2_SP
 typedef struct scissorCommand_s {
 	int	commandId;
 	float x, y;
 	float w, h;
 } scissorCommand_t;
-#endif
 
 typedef struct drawSurfsCommand_s {
 	int		commandId;
@@ -3781,6 +3814,13 @@ struct gpuFrame_t
 	size_t dynamicIboWriteOffset;
 	size_t dynamicIboCommitOffset;
 
+#ifdef _G2_GORE
+	VBO_t* goreVBO;
+	int						goreVBOCurrentIndex;
+	IBO_t* goreIBO;
+	int						goreIBOCurrentIndex;
+#endif
+
 	int numTimers;
 	int numTimedBlocks;
 
@@ -3799,7 +3839,6 @@ struct gpuFrame_t
 
 // all of the information needed by the back end must be
 // contained in a backEndData_t.
-#define MAX_FRAMES (2)
 #define PER_FRAME_MEMORY_BYTES (32 * 1024 * 1024)
 class Allocator;
 struct Pass;
@@ -3889,6 +3928,7 @@ qhandle_t RE_RegisterShader(const char* name);
 qhandle_t RE_RegisterShaderNoMip(const char* name);
 const char* RE_ShaderNameFromIndex(int index);
 image_t* R_CreateImage(const char* name, byte* pic, int width, int height, imgType_t type, int flags, int internalFormat);
+image_t* R_CreateImage3D(const char* name, byte* data, int width, int height, int depth, int internalFormat);
 
 float ProjectRadius(float r, vec3_t location);
 void RE_RegisterModels_StoreShaderRequest(const char* psModelFileName, const char* psShaderName, int* piShaderIndexPoke);
@@ -4072,6 +4112,7 @@ void RB_FillDrawCommand(
 	const shaderCommands_t* input
 );
 
+uint32_t RB_CreateSkySortKey(const DrawItem& item, int stage, int skyNumber, int layer);
 uint32_t RB_CreateSortKey(const DrawItem& item, int stage, int layer);
 void RB_AddDrawItem(Pass* pass, uint32_t sortKey, const DrawItem& drawItem);
 DepthRange RB_GetDepthRange(const trRefEntity_t* re, const shader_t* shader);

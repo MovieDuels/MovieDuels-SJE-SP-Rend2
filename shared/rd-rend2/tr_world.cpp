@@ -400,11 +400,7 @@ void R_AddBrushModelSurfaces(trRefEntity_t* ent, int entityNum) {
 	for (int i = 0; i < bmodel->numSurfaces; i++) {
 		int surf = bmodel->firstSurface + i;
 
-		if (world->surfacesViewCount[surf] != tr.viewCount)
-		{
-			world->surfacesViewCount[surf] = tr.viewCount;
-			R_AddWorldSurface(world->surfaces + surf, ent, entityNum, ent->needDlights, 0);
-		}
+		R_AddWorldSurface(world->surfaces + surf, ent, entityNum, ent->needDlights, 0);
 	}
 }
 
@@ -728,7 +724,7 @@ static mnode_t* R_PointInLeaf(const vec3_t p) {
 		}
 		plane = node->plane;
 		d = DotProduct(p, plane->normal) - plane->dist;
-		if (d > 0) {
+		if (d >= 0) {
 			node = node->children[0];
 		}
 		else {

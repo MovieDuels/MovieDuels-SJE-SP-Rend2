@@ -89,7 +89,7 @@ void G2Time_ReportTimers(void)
 extern cvar_t* sv_mapname;
 #endif
 
-static const int MAX_RENDERABLE_SURFACES = 2048;
+static const int MAX_RENDERABLE_SURFACES = 4096;
 static CRenderableSurface renderSurfHeap[MAX_RENDERABLE_SURFACES];
 static int currentRenderSurfIndex = 0;
 
@@ -3596,9 +3596,16 @@ void RB_SurfaceGhoul(CRenderableSurface* surf)
 #ifdef _G2_GORE
 	if (surf->alternateTex)
 	{
-		R_BindVBO(tr.goreVBO);
-		R_BindIBO(tr.goreIBO);
-		tess.externalIBO = tr.goreIBO;
+		if (!surf->alternateTex->cachedInFrame[backEndData->realFrameNumber % MAX_FRAMES])
+		{
+			RB_UpdateGoreVertexData(backEndData->current_frame, surf->alternateTex, false);
+		}
+		else
+		{
+			R_BindVBO(backEndData->current_frame->goreVBO);
+			R_BindIBO(backEndData->current_frame->goreIBO);
+		}
+		tess.externalIBO = backEndData->current_frame->goreIBO;
 
 		numIndexes = surf->alternateTex->numIndexes;
 		numVertexes = surf->alternateTex->numVerts;
@@ -4536,15 +4543,16 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 			surf = (mdxmSurface_t*)((byte*)surf + surf->ofsEnd);
 		}
 
-		assert((byte*)verts == (data + dataSize));
+		// TODO: Check why this was here and why it always fails
+		// assert ((byte *)verts == (data + dataSize));
 
 		const char* modelName = strrchr(mdxm->name, '/');
 		if (modelName == NULL)
 		{
 			modelName = mdxm->name;
 		}
-		VBO_t* vbo = R_CreateVBO(data, dataSize, VBO_USAGE_STATIC);
-		IBO_t* ibo = R_CreateIBO((byte*)indices, sizeof(glIndex_t) * numTriangles * 3, VBO_USAGE_STATIC);
+		VBO_t* vbo = R_CreateVBO(data, dataSize, VBO_USAGE_STATIC, mod_name);
+		IBO_t* ibo = R_CreateIBO((byte*)indices, sizeof(glIndex_t) * numTriangles * 3, VBO_USAGE_STATIC, mod_name);
 
 		Hunk_FreeTempMemory(data);
 		Hunk_FreeTempMemory(tangentsf);

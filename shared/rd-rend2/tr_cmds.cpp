@@ -492,7 +492,6 @@ static void R_SetColorMode(GLboolean* rgba, stereoFrame_t stereoFrame, int color
 	}
 }
 
-#ifdef REND2_SP
 void RE_LAGoggles(void)
 {
 	tr.refdef.doLAGoggles = true;
@@ -518,7 +517,6 @@ void RE_Scissor(const float x, const float y, const float w, const float h)
 	cmd->w = w;
 	cmd->h = h;
 }
-#endif
 
 /*
 ====================
@@ -570,6 +568,11 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 					thisFrame->dynamicVboCommitOffset = 0;
 					thisFrame->dynamicVboWriteOffset = 0;
 
+#ifdef _G2_GORE
+					thisFrame->goreVBOCurrentIndex = 0;
+					thisFrame->goreIBOCurrentIndex = 0;
+#endif // _G2_GORE
+
 					backEndData->perFrameMemory->Reset();
 
 					ri.Error(ERR_DROP, "OpenGL: Failed to wait for fence. Context lost. (0x%x)\n", qglGetError());
@@ -603,6 +606,11 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 
 		thisFrame->dynamicVboCommitOffset = 0;
 		thisFrame->dynamicVboWriteOffset = 0;
+
+#ifdef _G2_GORE
+		thisFrame->goreVBOCurrentIndex = backEndData->previousFrame->goreVBOCurrentIndex;
+		thisFrame->goreIBOCurrentIndex = backEndData->previousFrame->goreIBOCurrentIndex;
+#endif
 
 		backEndData->perFrameMemory->Reset();
 	}

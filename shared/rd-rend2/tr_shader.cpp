@@ -3393,6 +3393,34 @@ static qboolean CollapseStagesToGLSL(void)
 					continue;
 			}
 
+			// Convert glow stages with parallax depth to a lightall stage
+			if (pStage->glow)
+			{
+				if (pStage->bundle[TB_NORMALMAP].image[0])
+				{
+					if (pStage->bundle[TB_NORMALMAP].image[0]->type == IMGTYPE_NORMALHEIGHT &&
+						r_parallaxMapping->integer)
+					{
+						int defs = LIGHTDEF_USE_LIGHT_VERTEX | LIGHTDEF_USE_PARALLAXMAP;
+						pStage->normalScale[0] =
+							pStage->normalScale[1] = 0.f;
+						pStage->specularScale[0] = 0.f;
+						pStage->specularScale[1] = 0.f;
+						pStage->specularScale[2] = 1.f;
+						pStage->specularScale[3] = 1.f;
+
+						if (pStage->bundle[0].numTexMods)
+						{
+							defs |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+						}
+
+						pStage->glslShaderGroup = tr.lightallShader;
+						pStage->glslShaderIndex = defs;
+					}
+				}
+				continue;
+			}
+
 			diffuse = pStage;
 			parallax = qfalse;
 			lightmap = NULL;
@@ -3786,7 +3814,7 @@ static shader_t* GeneratePermanentShader(void) {
 	if (newShader->fogPass == FP_EQUAL)
 	{
 		newShader->fogPass = FP_LE;
-		bool allPassesAlpha = true;
+		bool allPassesModulate = true;
 		for (int stage = 0; stage < MAX_SHADER_STAGES; stage++) {
 			shaderStage_t* pStage = &stages[stage];
 
@@ -3796,8 +3824,8 @@ static shader_t* GeneratePermanentShader(void) {
 			if (pStage->glow && stage > 0)
 				continue;
 
-			if (pStage->adjustColorsForFog != ACFF_MODULATE_ALPHA)
-				allPassesAlpha = false;
+			if (pStage->adjustColorsForFog == ACFF_NONE)
+				allPassesModulate = false;
 
 			if (pStage->stateBits & GLS_DEPTHMASK_TRUE)
 			{
@@ -3806,7 +3834,7 @@ static shader_t* GeneratePermanentShader(void) {
 			}
 		}
 
-		if (allPassesAlpha)
+		if (allPassesModulate)
 			newShader->fogPass = FP_NONE;
 	}
 
@@ -4262,6 +4290,7 @@ static shader_t* FinishShader(void) {
 	if (stage == 0 && !shader.isSky)
 		shader.sort = SS_FOG;
 
+	shader.depthPrepass = DEPTHPREPASS_ALPHATESTED;
 	// determain if the shader can be simplified when beeing rendered to depth
 	if (shader.sort == SS_OPAQUE &&
 		shader.numDeforms == 0)
@@ -4273,10 +4302,13 @@ static shader_t* FinishShader(void) {
 				continue;
 
 			if (pStage->stateBits & (GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS))
+			{
+				shader.depthPrepass = DEPTHPREPASS_SKIP;
 				break;
+			}
 
 			if (pStage->alphaTestType == ALPHA_TEST_NONE)
-				shader.useSimpleDepthShader = qtrue;
+				shader.depthPrepass = DEPTHPREPASS_SIMPLE;
 			break;
 		}
 	}
@@ -5218,6 +5250,15 @@ static void CreateInternalShaders(void)
 	Q_strncpyz(shader.name, "<weather>", sizeof(shader.name));
 	shader.sort = SS_SEE_THROUGH;
 	tr.weatherInternalShader = FinishShader();
+
+	// volumetric fog cap shader
+	Q_strncpyz(shader.name, "<volumetric fog cap>", sizeof(shader.name));
+	shader.sort = SS_ENVIRONMENT;
+	shader.isSky = qfalse;
+	shader.fogPass = FP_LE;
+	stages[0].bundle[0].image[0] = tr.whiteImage;
+	stages[0].stateBits = GLS_DEPTH_CLAMP;
+	tr.volumetricFogCapShader = FinishShader();
 }
 
 static void CreateExternalShaders(void)

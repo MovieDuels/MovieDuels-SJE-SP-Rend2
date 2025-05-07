@@ -1824,7 +1824,7 @@ void R_AddDrawSurf(surfaceType_t* surface, int entityNum, const shader_t* shader
 		fogIndex = 0;
 	}
 
-	if (tr.refdef.doLAGoggles)
+	else if (tr.refdef.doLAGoggles)
 	{
 		fogIndex = tr.world->numfogs;
 	}
@@ -1846,7 +1846,7 @@ void R_AddDrawSurf(surfaceType_t* surface, int entityNum, const shader_t* shader
 	surf->surface = surface;
 
 	if (tr.viewParms.flags & VPF_DEPTHSHADOW &&
-		shader->useSimpleDepthShader == qtrue)
+		shader->depthPrepass == DEPTHPREPASS_SIMPLE)
 	{
 		surf->sort = R_CreateSortKey(entityNum, tr.defaultShader->sortedIndex, 0, 0);
 		surf->dlightBits = 0;
@@ -2293,8 +2293,8 @@ void R_SetupPshadowMaps(trRefdef_t* refdef)
 		if ((ent->e.renderfx & (RF_FIRST_PERSON | RF_NOSHADOW | RF_DEPTHHACK)))
 			continue;
 
-		//if((ent->e.renderfx & RF_THIRD_PERSON))
-			//continue;
+		if ((ent->e.renderfx & RF_THIRD_PERSON))
+			continue;
 
 		if (ent->e.reType == RT_MODEL)
 		{
@@ -2508,6 +2508,7 @@ void R_RenderCubemapSide(int cubemapIndex, int cubemapSide, bool bounce)
 			if (!bounce)
 				tr.cachedViewParms[i].flags |= VPF_NOCUBEMAPS;
 		}
+		R_PushDebugGroup(AL_VIEW, va("Cubemap %i, side %i", cubemapIndex, cubemapSide));
 		R_RenderView(&tr.cachedViewParms[i]);
 		R_IssuePendingRenderCommands();
 		tr.refdef.numDrawSurfs = 0;
