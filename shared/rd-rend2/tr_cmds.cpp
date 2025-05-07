@@ -535,10 +535,10 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 		return;
 	}
 
-	backEndData->previousFrame = backEndData->current_frame;
+	backEndData->previousFrame = backEndData->currentFrame;
 	int frameNumber = backEndData->realFrameNumber;
 	gpuFrame_t* thisFrame = &backEndData->frames[frameNumber % MAX_FRAMES];
-	backEndData->current_frame = thisFrame;
+	backEndData->currentFrame = thisFrame;
 	if (thisFrame->sync)
 	{
 		GLsync sync = thisFrame->sync;
@@ -804,7 +804,7 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 
 void R_NewFrameSync()
 {
-	gpuFrame_t* current_frame = backEndData->current_frame;
+	gpuFrame_t* current_frame = backEndData->currentFrame;
 
 	assert(!current_frame->sync);
 	current_frame->sync = qglFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);

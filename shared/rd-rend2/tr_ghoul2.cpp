@@ -3598,14 +3598,14 @@ void RB_SurfaceGhoul(CRenderableSurface* surf)
 	{
 		if (!surf->alternateTex->cachedInFrame[backEndData->realFrameNumber % MAX_FRAMES])
 		{
-			RB_UpdateGoreVertexData(backEndData->current_frame, surf->alternateTex, false);
+			RB_UpdateGoreVertexData(backEndData->currentFrame, surf->alternateTex, false);
 		}
 		else
 		{
-			R_BindVBO(backEndData->current_frame->goreVBO);
-			R_BindIBO(backEndData->current_frame->goreIBO);
+			R_BindVBO(backEndData->currentFrame->goreVBO);
+			R_BindIBO(backEndData->currentFrame->goreIBO);
 		}
-		tess.externalIBO = backEndData->current_frame->goreIBO;
+		tess.externalIBO = backEndData->currentFrame->goreIBO;
 
 		numIndexes = surf->alternateTex->numIndexes;
 		numVertexes = surf->alternateTex->numVerts;

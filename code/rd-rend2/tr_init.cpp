@@ -1919,7 +1919,7 @@ static void R_InitBackEndFrameData()
 		}
 	}
 
-	backEndData->current_frame = backEndData->frames;
+	backEndData->currentFrame = backEndData->frames;
 }
 
 static void R_InitStaticConstants()

@@ -76,13 +76,13 @@ static void RB_CheckVBOandIBO(VBO_t* vbo, IBO_t* ibo)
 		R_BindIBO(ibo);
 	}
 
-	if (vbo != backEndData->current_frame->dynamicVbo &&
-		ibo != backEndData->current_frame->dynamicIbo)
+	if (vbo != backEndData->currentFrame->dynamicVbo &&
+		ibo != backEndData->currentFrame->dynamicIbo)
 	{
 		tess.useInternalVBO = qfalse;
 	}
 
-	if (ibo != backEndData->current_frame->dynamicIbo)
+	if (ibo != backEndData->currentFrame->dynamicIbo)
 	{
 		tess.externalIBO = ibo;
 	}
@@ -386,7 +386,7 @@ static void RB_SurfaceVertsAndIndexes(int numVerts, srfVert_t* verts, int numInd
 	uint32_t* tangent;
 	glIndex_t* outIndex;
 	float* color;
-	gpuFrame_t* current_frame = backEndData->current_frame;
+	gpuFrame_t* current_frame = backEndData->currentFrame;
 
 	RB_CheckVBOandIBO(current_frame->dynamicVbo, current_frame->dynamicIbo);
 
@@ -2645,8 +2645,8 @@ static void RB_SurfaceSprites(srfSprites_t* surf)
 		}
 	}
 
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	const GLuint currentSpriteUbo = shader->spriteUbo;
 	const UniformBlockBinding uniformBlockBindings[] = {
 		{ currentSpriteUbo, ss->spriteUboOffset, UNIFORM_BLOCK_SURFACESPRITE },

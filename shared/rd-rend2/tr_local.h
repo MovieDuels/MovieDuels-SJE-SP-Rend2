@@ -3845,7 +3845,7 @@ struct Pass;
 typedef struct backEndData_s {
 	unsigned realFrameNumber;
 	gpuFrame_t frames[MAX_FRAMES];
-	gpuFrame_t* current_frame;
+	gpuFrame_t* currentFrame;
 	gpuFrame_t* previousFrame;
 	Allocator* perFrameMemory;
 	Pass* currentPass;

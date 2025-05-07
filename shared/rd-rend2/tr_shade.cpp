@@ -45,7 +45,7 @@ R_DrawElements
 void R_DrawElementsVBO(int numIndexes, glIndex_t firstIndex, glIndex_t minIndex, glIndex_t maxIndex)
 {
 	int offset = firstIndex * sizeof(glIndex_t) +
-		(tess.useInternalVBO ? backEndData->current_frame->dynamicIboCommitOffset : 0);
+		(tess.useInternalVBO ? backEndData->currentFrame->dynamicIboCommitOffset : 0);
 
 	GL_DrawIndexed(GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, offset, 1, 0);
 }
@@ -686,7 +686,7 @@ void RB_FillDrawCommand(
 	else
 	{
 		int offset = input->firstIndex * sizeof(glIndex_t) +
-			(input->useInternalVBO ? backEndData->current_frame->dynamicIboCommitOffset : 0);
+			(input->useInternalVBO ? backEndData->currentFrame->dynamicIboCommitOffset : 0);
 
 		drawCmd.type = DRAW_COMMAND_INDEXED;
 		drawCmd.params.indexed.indexType = GL_INDEX_TYPE;
@@ -699,8 +699,8 @@ void RB_FillDrawCommand(
 static UniformBlockBinding GetCameraBlockUniformBinding(
 	const trRefEntity_t* refEntity)
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.block = UNIFORM_BLOCK_CAMERA;
 
@@ -724,8 +724,8 @@ static UniformBlockBinding GetCameraBlockUniformBinding(
 
 static UniformBlockBinding GetLightsBlockUniformBinding()
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.block = UNIFORM_BLOCK_LIGHTS;
 
@@ -744,8 +744,8 @@ static UniformBlockBinding GetLightsBlockUniformBinding()
 
 static UniformBlockBinding GetSceneBlockUniformBinding()
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.block = UNIFORM_BLOCK_SCENE;
 
@@ -764,8 +764,8 @@ static UniformBlockBinding GetSceneBlockUniformBinding()
 
 static UniformBlockBinding GetTemporalBlockUniformBinding()
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.block = UNIFORM_BLOCK_TEMPORAL_INFO;
 	binding.ubo = currentFrameUbo;
@@ -783,8 +783,8 @@ static UniformBlockBinding GetTemporalBlockUniformBinding()
 
 static UniformBlockBinding GetFogsBlockUniformBinding()
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.block = UNIFORM_BLOCK_FOGS;
 
@@ -804,8 +804,8 @@ static UniformBlockBinding GetFogsBlockUniformBinding()
 static UniformBlockBinding GetEntityBlockUniformBinding(
 	const trRefEntity_t* refEntity)
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.block = UNIFORM_BLOCK_ENTITY;
 
@@ -842,7 +842,7 @@ static UniformBlockBinding GetEntityBlockUniformBinding(
 static UniformBlockBinding GetPreviousEntityBlockUniformBinding(
 	const trRefEntity_t* refEntity)
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
 	const GLuint currentFrameUbo = backEndData->previousFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.block = UNIFORM_BLOCK_PREVIOUS_ENTITY;
@@ -862,7 +862,7 @@ static UniformBlockBinding GetPreviousEntityBlockUniformBinding(
 		binding.ubo = currentFrameUbo;
 		if (!refEntity || refEntity == &tr.worldEntity)
 		{
-			binding.ubo = backEndData->current_frame->ubo[currentFrameScene];
+			binding.ubo = backEndData->currentFrame->ubo[currentFrameScene];
 			binding.offset = tr.entityUboOffsets[REFENTITYNUM_WORLD];
 		}
 		else
@@ -880,8 +880,8 @@ static UniformBlockBinding GetPreviousEntityBlockUniformBinding(
 
 static UniformBlockBinding GetBonesBlockUniformBinding()
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.ubo = currentFrameUbo;
 	binding.block = UNIFORM_BLOCK_BONES;
@@ -899,7 +899,7 @@ static UniformBlockBinding GetBonesBlockUniformBinding()
 
 static UniformBlockBinding GetPreviousBonesBlockUniformBinding()
 {
-	const byte frameScene = backEndData->current_frame->currentScene;
+	const byte frameScene = backEndData->currentFrame->currentScene;
 	const GLuint frameUbo = backEndData->previousFrame->ubo[frameScene];
 	UniformBlockBinding binding = {};
 	binding.ubo = frameUbo;
@@ -919,8 +919,8 @@ static UniformBlockBinding GetPreviousBonesBlockUniformBinding()
 static UniformBlockBinding GetShaderInstanceBlockUniformBinding(
 	const trRefEntity_t* refEntity, const shader_t* shader)
 {
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	UniformBlockBinding binding = {};
 	binding.ubo = tr.shaderInstanceUbo;
 	binding.block = UNIFORM_BLOCK_SHADER_INSTANCE;
@@ -993,7 +993,7 @@ static void DrawTris(shaderCommands_t* input, const VertexArraysProperties* vert
 		item.renderState.cullType = RB_GetCullType(&backEnd.viewParms, backEnd.currentEntity, input->shader->cullType);
 		item.renderState.depthRange = RB_GetDepthRange(backEnd.currentEntity, input->shader);
 		item.program = sp;
-		item.ibo = input->externalIBO ? input->externalIBO : backEndData->current_frame->dynamicIbo;
+		item.ibo = input->externalIBO ? input->externalIBO : backEndData->currentFrame->dynamicIbo;
 		item.uniformData = uniformDataWriter.Finish(frameAllocator);
 		item.samplerBindings = samplerBindingsWriter.Finish(
 			frameAllocator, &item.numSamplerBindings);
@@ -1088,7 +1088,7 @@ static void ProjectPshadowVBOGLSL(const shaderCommands_t* input, const VertexArr
 		item.renderState.cullType = cullType;
 		item.program = sp;
 		item.renderState.depthRange = RB_GetDepthRange(backEnd.currentEntity, input->shader);
-		item.ibo = input->externalIBO ? input->externalIBO : backEndData->current_frame->dynamicIbo;
+		item.ibo = input->externalIBO ? input->externalIBO : backEndData->currentFrame->dynamicIbo;
 
 		item.numAttributes = vertexArrays->numVertexArrays;
 		item.attributes = ojkAllocArray<vertexAttribute_t>(
@@ -1223,7 +1223,7 @@ static void RB_FogPass(shaderCommands_t* input, const VertexArraysProperties* ve
 	item.renderState.depthRange = RB_GetDepthRange(backEnd.currentEntity, input->shader);
 	item.program = sp;
 	item.uniformData = uniformDataWriter.Finish(frameAllocator);
-	item.ibo = input->externalIBO ? input->externalIBO : backEndData->current_frame->dynamicIbo;
+	item.ibo = input->externalIBO ? input->externalIBO : backEndData->currentFrame->dynamicIbo;
 	item.samplerBindings = samplerBindingsWriter.Finish(
 		frameAllocator, &item.numSamplerBindings);
 
@@ -1553,7 +1553,7 @@ void RB_ShadowTessEnd(shaderCommands_t* input, const VertexArraysProperties* ver
 	DepthRange range = { 0.0f, 1.0f };
 	item.renderState.depthRange = range;
 	item.program = &tr.volumeShadowShader;
-	item.ibo = input->externalIBO ? input->externalIBO : backEndData->current_frame->dynamicIbo;
+	item.ibo = input->externalIBO ? input->externalIBO : backEndData->currentFrame->dynamicIbo;
 
 	DrawItemSetVertexAttributes(
 		item, attribs, vertexArrays->numVertexArrays, frameAllocator);
@@ -2043,7 +2043,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		item.renderState.cullType = forceRefraction ? CT_TWO_SIDED : cullType;
 		item.renderState.depthRange = RB_GetDepthRange(backEnd.currentEntity, input->shader);
 		item.program = sp;
-		item.ibo = input->externalIBO ? input->externalIBO : backEndData->current_frame->dynamicIbo;
+		item.ibo = input->externalIBO ? input->externalIBO : backEndData->currentFrame->dynamicIbo;
 		item.uniformData = uniformDataWriter.Finish(frameAllocator);
 		item.samplerBindings = samplerBindingsWriter.Finish(
 			frameAllocator, &item.numSamplerBindings);
@@ -2119,7 +2119,7 @@ void RB_StageIteratorGeneric(void)
 		for (int i = 0; i < vertexArrays.numVertexArrays; i++)
 		{
 			int attributeIndex = vertexArrays.enabledAttributes[i];
-			vertexArrays.offsets[attributeIndex] += backEndData->current_frame->dynamicVboCommitOffset;
+			vertexArrays.offsets[attributeIndex] += backEndData->currentFrame->dynamicVboCommitOffset;
 		}
 	}
 	else

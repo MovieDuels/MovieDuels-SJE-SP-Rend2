@@ -1095,11 +1095,11 @@ static void G2_GorePolys(const mdxmSurface_t* surface, CTraceSurface& TS, const 
 		goreSurface->indexes = (glIndex_t*)R_Malloc(sizeof(glIndex_t) * newNumTris * 3, TAG_GHOUL2_GORE, qtrue);
 		for (j = 0; j < newNumTris * 3; j++)
 		{
-			goreSurface->indexes[j] = GoreIndecies[j] + backEndData->current_frame->goreVBOCurrentIndex;
+			goreSurface->indexes[j] = GoreIndecies[j] + backEndData->currentFrame->goreVBOCurrentIndex;
 		}
 		goreSurface->numIndexes = newNumTris * 3;
 
-		RB_UpdateGoreVertexData(backEndData->current_frame, goreSurface, true);
+		RB_UpdateGoreVertexData(backEndData->currentFrame, goreSurface, true);
 	}
 }
 #else

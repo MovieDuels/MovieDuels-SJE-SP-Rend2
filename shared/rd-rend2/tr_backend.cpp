@@ -2788,7 +2788,7 @@ static void RB_UpdateGhoul2Constants(gpuFrame_t* frame, const trRefdef_t* refdef
 
 void RB_UpdateConstants(const trRefdef_t* refdef)
 {
-	gpuFrame_t* frame = backEndData->current_frame;
+	gpuFrame_t* frame = backEndData->currentFrame;
 	RB_BeginConstantsUpdate(frame);
 
 	RB_UpdateCameraConstants(frame);

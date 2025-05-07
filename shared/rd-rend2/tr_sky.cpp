@@ -429,7 +429,7 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 	{
 		int attributeIndex = vertexArrays.enabledAttributes[i];
 		vertexArrays.offsets[attributeIndex] +=
-			backEndData->current_frame->dynamicVboCommitOffset;
+			backEndData->currentFrame->dynamicVboCommitOffset;
 	}
 
 	vertexAttribute_t attribs[ATTR_INDEX_MAX] = {};
@@ -457,8 +457,8 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 
 	samplerBindingsWriter.AddStaticImage(image, TB_DIFFUSEMAP);
 
-	const byte currentFrameScene = backEndData->current_frame->currentScene;
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	const UniformBlockBinding uniformBlockBindings[] = {
 		{ currentFrameUbo, tr.skyEntityUboOffset, UNIFORM_BLOCK_ENTITY },
 		{ currentFrameUbo, tr.cameraUboOffsets[tr.viewParms.currentViewParm], UNIFORM_BLOCK_CAMERA }
@@ -469,7 +469,7 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 	item.renderState.cullType = CT_TWO_SIDED;
 	item.renderState.depthRange = RB_GetDepthRange(backEnd.currentEntity, tess.shader);
 	item.program = sp;
-	item.ibo = backEndData->current_frame->dynamicIbo;
+	item.ibo = backEndData->currentFrame->dynamicIbo;
 	item.uniformData = uniformDataWriter.Finish(frameAllocator);
 
 	item.samplerBindings = samplerBindingsWriter.Finish(

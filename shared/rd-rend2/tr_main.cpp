@@ -2055,7 +2055,7 @@ void R_GenerateDrawSurfs(viewParms_t* viewParms, trRefdef_t* refdef) {
 
 	if (tr.viewParms.viewParmType > VPT_POINT_SHADOWS &&
 		tr.world &&
-		backEndData->current_frame->currentScene == 0)
+		backEndData->currentFrame->currentScene == 0)
 	{
 		R_AddWeatherSurfaces();
 	}

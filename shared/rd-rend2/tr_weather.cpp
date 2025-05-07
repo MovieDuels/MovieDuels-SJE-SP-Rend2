@@ -472,8 +472,8 @@ namespace
 
 		item.uniformData = uniformDataWriter.Finish(*backEndData->perFrameMemory);
 
-		const byte currentFrameScene = backEndData->current_frame->currentScene;
-		const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+		const byte currentFrameScene = backEndData->currentFrame->currentScene;
+		const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 		const UniformBlockBinding uniformBlockBindings[] = {
 			{ currentFrameUbo, tr.sceneUboOffset, UNIFORM_BLOCK_SCENE }
 		};
@@ -1169,8 +1169,8 @@ void RB_SurfaceWeather(srfWeather_t* surf)
 		{
 			for (int x = -1; x <= 1; ++x, ++currentIndex)
 			{
-				const byte currentFrameScene = backEndData->current_frame->currentScene;
-				const GLuint currentFrameUbo = backEndData->current_frame->ubo[currentFrameScene];
+				const byte currentFrameScene = backEndData->currentFrame->currentScene;
+				const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 				const UniformBlockBinding uniformBlockBindings[] = {
 					{ currentFrameUbo, tr.cameraUboOffsets[tr.viewParms.currentViewParm], UNIFORM_BLOCK_CAMERA }
 				};

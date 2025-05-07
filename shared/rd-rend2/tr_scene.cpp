@@ -472,7 +472,7 @@ void RE_BeginScene(const refdef_t* fd)
 		// Don't update constants yet. Store everything and render everything next scene
 		return;
 	}
-	else if (backEndData->current_frame->currentScene == 0)
+	else if (backEndData->currentFrame->currentScene == 0)
 	{
 		// cdr - only change last time for the real render, not the portal
 		// nor other scenes to be rendered like ui scenes
@@ -492,7 +492,7 @@ void RE_BeginScene(const refdef_t* fd)
 	R_GatherFrameViews(&tr.refdef);
 	RB_UpdateConstants(&tr.refdef);
 
-	R_PushDebugGroup(AL_SCENE, va("Scene_%i", backEndData->current_frame->currentScene));
+	R_PushDebugGroup(AL_SCENE, va("Scene_%i", backEndData->currentFrame->currentScene));
 }
 
 void RE_EndScene()
@@ -508,8 +508,8 @@ void RE_EndScene()
 	tr.refdef.doLAGoggles = false;
 	tr.refdef.doFullbright = false;
 
-	backEndData->current_frame->currentScene++;
-	if (backEndData->current_frame->currentScene > MAX_SCENES)
+	backEndData->currentFrame->currentScene++;
+	if (backEndData->currentFrame->currentScene > MAX_SCENES)
 	{
 		ri.Error(ERR_DROP, "Tried to render to many subscenes per frame");
 	}

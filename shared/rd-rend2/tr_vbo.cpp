@@ -593,7 +593,7 @@ Update the default VBO to replace the client side vertex arrays
 */
 void RB_UpdateVBOs(unsigned int attribBits)
 {
-	gpuFrame_t* current_frame = backEndData->current_frame;
+	gpuFrame_t* current_frame = backEndData->currentFrame;
 
 	GLimp_LogComment("--- RB_UpdateVBOs ---\n");
 
@@ -739,7 +739,7 @@ void RB_UpdateGoreVertexData(gpuFrame_t* currentFrame, srfG2GoreSurface_t* goreS
 
 void RB_CommitInternalBufferData()
 {
-	gpuFrame_t* current_frame = backEndData->current_frame;
+	gpuFrame_t* current_frame = backEndData->currentFrame;
 
 	current_frame->dynamicIboCommitOffset = current_frame->dynamicIboWriteOffset;
 	current_frame->dynamicVboCommitOffset = current_frame->dynamicVboWriteOffset;
@@ -769,7 +769,7 @@ void RB_BindUniformBlock(GLuint ubo, uniformBlock_t block, int offset)
 int RB_BindAndUpdateFrameUniformBlock(uniformBlock_t block, void* data)
 {
 	const uniformBlockInfo_t* blockInfo = uniformBlocksInfo + block;
-	gpuFrame_t* thisFrame = backEndData->current_frame;
+	gpuFrame_t* thisFrame = backEndData->currentFrame;
 	const byte currentFrameScene = thisFrame->currentScene;
 	const int offset = thisFrame->uboWriteOffset[currentFrameScene];
 
