@@ -80,7 +80,7 @@ static GLenum GetGLBufferUsage(vboUsage_t usage)
 R_CreateVBO
 ============
 */
-VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage)
+VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage, const char* debugName)
 {
 	VBO_t* vbo;
 
@@ -99,6 +99,7 @@ VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage)
 	tr.numVBOs++;
 
 	qglBindBuffer(GL_ARRAY_BUFFER, vbo->vertexesVBO);
+	if (glRefConfig.annotateResources) qglObjectLabel(GL_BUFFER, vbo->vertexesVBO, -1, va("%s_VBO", debugName));
 	if (glRefConfig.immutableBuffers)
 	{
 		GLbitfield creationFlags = 0;
@@ -129,7 +130,7 @@ VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage)
 R_CreateIBO
 ============
 */
-IBO_t* R_CreateIBO(byte* indexes, int indexesSize, vboUsage_t usage)
+IBO_t* R_CreateIBO(byte* indexes, int indexesSize, vboUsage_t usage, const char* debugName)
 {
 	IBO_t* ibo;
 
@@ -146,6 +147,7 @@ IBO_t* R_CreateIBO(byte* indexes, int indexesSize, vboUsage_t usage)
 	tr.numIBOs++;
 
 	qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo->indexesVBO);
+	if (glRefConfig.annotateResources) qglObjectLabel(GL_BUFFER, ibo->indexesVBO, -1, va("%s_IBO", debugName));
 	if (glRefConfig.immutableBuffers)
 	{
 		GLbitfield creationFlags = 0;
@@ -198,8 +200,6 @@ void R_BindVBO(VBO_t* vbo)
 		glState.vertexAttribsInterpolation = 0;
 		glState.vertexAttribsOldFrame = 0;
 		glState.vertexAttribsNewFrame = 0;
-		glState.vertexAttribsTexCoordOffset[0] = 0;
-		glState.vertexAttribsTexCoordOffset[1] = 1;
 		glState.vertexAnimation = qfalse;
 		glState.skeletalAnimation = qfalse;
 
@@ -293,6 +293,7 @@ void R_InitGPUBuffers(void)
 
 	qglBindBuffer(GL_UNIFORM_BUFFER, tr.shaderInstanceUbo);
 	glState.currentGlobalUBO = tr.shaderInstanceUbo;
+	if (glRefConfig.annotateResources) qglObjectLabel(GL_BUFFER, tr.shaderInstanceUbo, -1, "ShaderInstanceUBO");
 	qglBufferData(
 		GL_UNIFORM_BUFFER,
 		MAX_SHADERS * alignedBlockSize,
@@ -404,6 +405,7 @@ static void AddVertexArray(
 	size_t size,
 	int stride,
 	int offset,
+	int stepRate,
 	void* stream,
 	int streamStride)
 {
@@ -414,6 +416,7 @@ static void AddVertexArray(
 	properties->strides[attributeIndex] = stride;
 	properties->streams[attributeIndex] = stream;
 	properties->streamStrides[attributeIndex] = streamStride;
+	properties->stepRates[attributeIndex] = stepRate;
 
 	properties->numVertexArrays++;
 }
@@ -444,6 +447,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.xyz[0]),
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.xyz,
 				sizeof(tess.xyz[0]));
 
@@ -454,6 +458,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.texCoords[0][0]),
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.texCoords[0][0],
 				sizeof(tess.texCoords[0][0]) * NUM_TESS_TEXCOORDS);
 
@@ -464,6 +469,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.texCoords[0][1]),
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.texCoords[0][1],
 				sizeof(tess.texCoords[0][0]) * NUM_TESS_TEXCOORDS);
 
@@ -474,6 +480,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.texCoords[0][2]) * 2,
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.texCoords[0][2],
 				sizeof(tess.texCoords[0][0]) * NUM_TESS_TEXCOORDS);
 		;
@@ -485,8 +492,10 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.texCoords[0][3]) * 2,
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.texCoords[0][3],
 				sizeof(tess.texCoords[0][0]) * NUM_TESS_TEXCOORDS);
+
 
 		if (attributes & ATTR_TEXCOORD4)
 			AddVertexArray(
@@ -495,6 +504,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.texCoords[0][4]) * 2,
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.texCoords[0][4],
 				sizeof(tess.texCoords[0][0]) * NUM_TESS_TEXCOORDS);
 
@@ -505,6 +515,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.normal[0]),
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.normal,
 				sizeof(tess.normal[0]));
 
@@ -515,6 +526,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.tangent[0]),
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.tangent,
 				sizeof(tess.tangent[0]));
 
@@ -525,6 +537,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.vertexColors[0]),
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.vertexColors,
 				sizeof(tess.vertexColors[0]));
 
@@ -535,6 +548,7 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				sizeof(tess.lightdir[0]),
 				0,
 				properties->vertexDataSize,
+				0,
 				tess.lightdir,
 				sizeof(tess.lightdir[0]));
 	}
@@ -562,6 +576,7 @@ void CalculateVertexArraysFromVBO(
 				vbo->sizes[i],
 				vbo->strides[i],
 				vbo->offsets[i],
+				vbo->stepRates[i],
 				NULL,
 				0);
 	}
@@ -578,7 +593,7 @@ Update the default VBO to replace the client side vertex arrays
 */
 void RB_UpdateVBOs(unsigned int attribBits)
 {
-	gpuFrame_t* current_frame = backEndData->current_frame;
+	gpuFrame_t* current_frame = backEndData->currentFrame;
 
 	GLimp_LogComment("--- RB_UpdateVBOs ---\n");
 
@@ -678,40 +693,53 @@ void RB_UpdateVBOs(unsigned int attribBits)
 }
 
 #ifdef _G2_GORE
-void RB_UpdateGoreVBO(srfG2GoreSurface_t* goreSurface)
+void RB_UpdateGoreVertexData(gpuFrame_t* currentFrame, srfG2GoreSurface_t* goreSurface, bool updateFirstVertAndIndex)
 {
-	goreSurface->firstVert = tr.goreVBOCurrentIndex;
-	goreSurface->firstIndex = tr.goreIBOCurrentIndex;
+	if (updateFirstVertAndIndex)
+	{
+		goreSurface->firstVert = currentFrame->goreVBOCurrentIndex;
+		goreSurface->firstIndex = currentFrame->goreIBOCurrentIndex;
 
-	if (tr.goreVBOCurrentIndex + goreSurface->numVerts >= (MAX_LODS * MAX_GORE_RECORDS * MAX_GORE_VERTS * MAX_FRAMES))
-		tr.goreVBOCurrentIndex = 0;
+		if (currentFrame->goreVBOCurrentIndex + goreSurface->numVerts >= (MAX_GORE_RECORDS * MAX_GORE_VERTS))
+			currentFrame->goreVBOCurrentIndex = 0;
+	}
 
-	R_BindVBO(tr.goreVBO);
+	R_BindVBO(currentFrame->goreVBO);
 	qglBufferSubData(
 		GL_ARRAY_BUFFER,
-		sizeof(g2GoreVert_t) * tr.goreVBOCurrentIndex,
+		sizeof(g2GoreVert_t) * goreSurface->firstVert,
 		sizeof(g2GoreVert_t) * goreSurface->numVerts,
 		goreSurface->verts
 	);
-	tr.goreVBOCurrentIndex += goreSurface->numVerts;
 
-	if (tr.goreIBOCurrentIndex + goreSurface->numVerts >= (MAX_LODS * MAX_GORE_RECORDS * MAX_GORE_INDECIES * MAX_FRAMES))
-		tr.goreIBOCurrentIndex = 0;
+	if (updateFirstVertAndIndex)
+	{
+		currentFrame->goreVBOCurrentIndex += goreSurface->numVerts;
 
-	R_BindIBO(tr.goreIBO);
+		if (currentFrame->goreIBOCurrentIndex + goreSurface->numIndexes >= (MAX_GORE_RECORDS * MAX_GORE_INDECIES))
+			currentFrame->goreIBOCurrentIndex = 0;
+	}
+
+	R_BindIBO(currentFrame->goreIBO);
 	qglBufferSubData(
 		GL_ELEMENT_ARRAY_BUFFER,
-		sizeof(glIndex_t) * tr.goreIBOCurrentIndex,
+		sizeof(glIndex_t) * goreSurface->firstIndex,
 		sizeof(glIndex_t) * goreSurface->numIndexes,
 		goreSurface->indexes
 	);
-	tr.goreIBOCurrentIndex += goreSurface->numIndexes;
+
+	if (updateFirstVertAndIndex)
+	{
+		currentFrame->goreIBOCurrentIndex += goreSurface->numIndexes;
+	}
+
+	goreSurface->cachedInFrame[backEndData->realFrameNumber % MAX_FRAMES] = true;
 }
 #endif
 
 void RB_CommitInternalBufferData()
 {
-	gpuFrame_t* current_frame = backEndData->current_frame;
+	gpuFrame_t* current_frame = backEndData->currentFrame;
 
 	current_frame->dynamicIboCommitOffset = current_frame->dynamicIboWriteOffset;
 	current_frame->dynamicVboCommitOffset = current_frame->dynamicVboWriteOffset;
@@ -741,17 +769,18 @@ void RB_BindUniformBlock(GLuint ubo, uniformBlock_t block, int offset)
 int RB_BindAndUpdateFrameUniformBlock(uniformBlock_t block, void* data)
 {
 	const uniformBlockInfo_t* blockInfo = uniformBlocksInfo + block;
-	gpuFrame_t* thisFrame = backEndData->current_frame;
-	const int offset = thisFrame->uboWriteOffset;
+	gpuFrame_t* thisFrame = backEndData->currentFrame;
+	const byte currentFrameScene = thisFrame->currentScene;
+	const int offset = thisFrame->uboWriteOffset[currentFrameScene];
 
-	RB_BindUniformBlock(thisFrame->ubo, block, offset);
+	RB_BindUniformBlock(thisFrame->ubo[currentFrameScene], block, offset);
 
 	qglBufferSubData(GL_UNIFORM_BUFFER,
-		thisFrame->uboWriteOffset, blockInfo->size, data);
+		thisFrame->uboWriteOffset[currentFrameScene], blockInfo->size, data);
 
 	const int alignment = glRefConfig.uniformBufferOffsetAlignment - 1;
 	const size_t alignedBlockSize = (blockInfo->size + alignment) & ~alignment;
-	thisFrame->uboWriteOffset += alignedBlockSize;
+	thisFrame->uboWriteOffset[currentFrameScene] += alignedBlockSize;
 
 	return offset;
 }
@@ -777,10 +806,11 @@ int RB_AddShaderInstanceBlock(void* data)
 
 void RB_BeginConstantsUpdate(gpuFrame_t* frame)
 {
-	if (glState.currentGlobalUBO != frame->ubo)
+	const byte currentFrameScene = frame->currentScene;
+	if (glState.currentGlobalUBO != frame->ubo[currentFrameScene])
 	{
-		qglBindBuffer(GL_UNIFORM_BUFFER, frame->ubo);
-		glState.currentGlobalUBO = frame->ubo;
+		qglBindBuffer(GL_UNIFORM_BUFFER, frame->ubo[currentFrameScene]);
+		glState.currentGlobalUBO = frame->ubo[currentFrameScene];
 	}
 
 	const GLbitfield mapFlags =
@@ -788,35 +818,37 @@ void RB_BeginConstantsUpdate(gpuFrame_t* frame)
 		GL_MAP_UNSYNCHRONIZED_BIT |
 		GL_MAP_FLUSH_EXPLICIT_BIT;
 
-	frame->uboMapBase = frame->uboWriteOffset;
-	frame->uboMemory = qglMapBufferRange(
+	frame->uboMapBase[currentFrameScene] = frame->uboWriteOffset[currentFrameScene];
+	frame->uboMemory[currentFrameScene] = qglMapBufferRange(
 		GL_UNIFORM_BUFFER,
-		frame->uboWriteOffset,
-		frame->uboSize - frame->uboWriteOffset,
+		frame->uboWriteOffset[currentFrameScene],
+		frame->uboSize[currentFrameScene] - frame->uboWriteOffset[currentFrameScene],
 		mapFlags);
 }
 
 int RB_AppendConstantsData(
 	gpuFrame_t* frame, const void* data, size_t dataSize)
 {
-	const size_t writeOffset = frame->uboWriteOffset;
-	const size_t relativeOffset = writeOffset - frame->uboMapBase;
+	const byte currentFrameScene = frame->currentScene;
+	const size_t writeOffset = frame->uboWriteOffset[currentFrameScene];
+	const size_t relativeOffset = writeOffset - frame->uboMapBase[currentFrameScene];
 
-	memcpy((char*)frame->uboMemory + relativeOffset, data, dataSize);
+	memcpy((char*)frame->uboMemory[currentFrameScene] + relativeOffset, data, dataSize);
 
 	const int alignment = glRefConfig.uniformBufferOffsetAlignment - 1;
 	const size_t alignedBlockSize = (dataSize + alignment) & ~alignment;
 
-	frame->uboWriteOffset += alignedBlockSize;
-	assert(frame->uboWriteOffset > 0);
+	frame->uboWriteOffset[currentFrameScene] += alignedBlockSize;
+	assert(frame->uboWriteOffset[currentFrameScene] > 0);
 	return writeOffset;
 }
 
 void RB_EndConstantsUpdate(const gpuFrame_t* frame)
 {
+	const byte currentFrameScene = frame->currentScene;
 	qglFlushMappedBufferRange(
 		GL_UNIFORM_BUFFER,
-		frame->uboMapBase,
-		frame->uboWriteOffset - frame->uboMapBase);
+		frame->uboMapBase[currentFrameScene],
+		frame->uboWriteOffset[currentFrameScene] - frame->uboMapBase[currentFrameScene]);
 	qglUnmapBuffer(GL_UNIFORM_BUFFER);
 }

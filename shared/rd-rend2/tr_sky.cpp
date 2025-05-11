@@ -429,7 +429,7 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 	{
 		int attributeIndex = vertexArrays.enabledAttributes[i];
 		vertexArrays.offsets[attributeIndex] +=
-			backEndData->current_frame->dynamicVboCommitOffset;
+			backEndData->currentFrame->dynamicVboCommitOffset;
 	}
 
 	vertexAttribute_t attribs[ATTR_INDEX_MAX] = {};
@@ -450,20 +450,26 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 		UNIFORM_DIFFUSETEXMATRIX, 1.0f, 0.0f, 0.0f, 1.0f);
 	uniformDataWriter.SetUniformVec4(
 		UNIFORM_DIFFUSETEXOFFTURB, 0.0f, 0.0f, 0.0f, 0.0f);
+	uniformDataWriter.SetUniformVec4(
+		UNIFORM_ENABLETEXTURES, 0.0f, 0.0f, 0.0f, 0.0f);
+	uniformDataWriter.SetUniformInt(
+		UNIFORM_ALPHA_TEST_TYPE, ALPHA_TEST_NONE);
 
 	samplerBindingsWriter.AddStaticImage(image, TB_DIFFUSEMAP);
 
-	const GLuint currentFrameUbo = backEndData->current_frame->ubo;
+	const byte currentFrameScene = backEndData->currentFrame->currentScene;
+	const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 	const UniformBlockBinding uniformBlockBindings[] = {
 		{ currentFrameUbo, tr.skyEntityUboOffset, UNIFORM_BLOCK_ENTITY },
 		{ currentFrameUbo, tr.cameraUboOffsets[tr.viewParms.currentViewParm], UNIFORM_BLOCK_CAMERA }
 	};
 
 	DrawItem item = {};
+	item.renderState.stateBits = tr.portalRenderedThisFrame ? 0 : GLS_DEPTHTEST_DISABLE;
 	item.renderState.cullType = CT_TWO_SIDED;
 	item.renderState.depthRange = RB_GetDepthRange(backEnd.currentEntity, tess.shader);
 	item.program = sp;
-	item.ibo = backEndData->current_frame->dynamicIbo;
+	item.ibo = backEndData->currentFrame->dynamicIbo;
 	item.uniformData = uniformDataWriter.Finish(frameAllocator);
 
 	item.samplerBindings = samplerBindingsWriter.Finish(
@@ -477,7 +483,7 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 	RB_FillDrawCommand(item.draw, GL_TRIANGLES, 1, &tess);
 	item.draw.params.indexed.numIndices -= tess.firstIndex;
 
-	uint32_t key = RB_CreateSortKey(item, 0, SS_ENVIRONMENT);
+	uint32_t key = RB_CreateSkySortKey(item, 0, backEnd.skyNumber, SS_ENVIRONMENT);
 	RB_AddDrawItem(backEndData->currentPass, key, item);
 
 	RB_CommitInternalBufferData();
@@ -858,4 +864,5 @@ void RB_StageIteratorSky(void) {
 
 	// note that sky was drawn so we will draw a sun later
 	backEnd.skyRenderedThisView = qtrue;
+	backEnd.skyNumber++;
 }

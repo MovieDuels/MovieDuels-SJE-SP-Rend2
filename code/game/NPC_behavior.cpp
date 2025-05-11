@@ -1743,7 +1743,7 @@ qboolean NPC_BSFlee()
 			NPCInfo->goalEntity = found_weap; // Change Our Target Goal
 			NPCInfo->goalRadius = 30.0f; // 30 good enough?
 
-			TIMER_Set(NPC, "CheckForWeaponToPickup", Q_irand(10000, 50000));
+			TIMER_Set(NPC, "CheckForWeaponToPickup", Q_irand(1000, 5000) * 10);
 		}
 
 		// Look Again Soon

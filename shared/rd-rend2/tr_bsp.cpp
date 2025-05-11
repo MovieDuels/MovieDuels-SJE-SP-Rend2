@@ -2217,8 +2217,8 @@ static void R_CreateWorldVBOs(world_t* worldData)
 
 		R_CalcMikkTSpaceBSPSurface(numIndexes / 3, verts, indexes);
 
-		vbo = R_CreateVBO((byte*)verts, sizeof(packedVertex_t) * numVerts, VBO_USAGE_STATIC);
-		ibo = R_CreateIBO((byte*)indexes, numIndexes * sizeof(glIndex_t), VBO_USAGE_STATIC);
+		vbo = R_CreateVBO((byte*)verts, sizeof(packedVertex_t) * numVerts, VBO_USAGE_STATIC, va("%s_%i", worldData->baseName, k));
+		ibo = R_CreateIBO((byte*)indexes, numIndexes * sizeof(glIndex_t), VBO_USAGE_STATIC, va("%s_%i", worldData->baseName, k));
 
 		// Setup the offsets and strides
 		vbo->offsets[ATTR_INDEX_POSITION] = offsetof(packedVertex_t, position);
@@ -2922,7 +2922,7 @@ static void R_LoadEntities(world_t* worldData, lump_t* l)
 	w->lightGridSize[1] = 64;
 	w->lightGridSize[2] = 128;
 
-	tr.distanceCull = 6000;//DEFAULT_DISTANCE_CULL;
+	tr.distanceCull = 12000;//DEFAULT_DISTANCE_CULL;
 
 	p = (char*)(fileBase + l->fileofs);
 
@@ -2996,6 +2996,12 @@ static void R_LoadEntities(world_t* worldData, lump_t* l)
 		// check for auto exposure
 		if (!Q_stricmp(keyname, "autoExposureMinMax")) {
 			sscanf(value, "%f %f", &tr.autoExposureMinMax[0], &tr.autoExposureMinMax[1]);
+			continue;
+		}
+
+		// check for volumetric fog scale
+		if (!Q_stricmp(keyname, "volumetricFogScale")) {
+			sscanf(value, "%f", &tr.volumetricFogScale);
 			continue;
 		}
 	}
@@ -3809,7 +3815,8 @@ static int R_CreateSurfaceSpritesVertexData(
 	const srfVert_t* verts = bspSurf->verts;
 	const glIndex_t* indexes = bspSurf->indexes;
 
-	vec4_t color = { 1.0, 1.0, 1.0, 1.0 };
+#if 0
+	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	if (stage->rgbGen == CGEN_CONST)
 	{
 		color[0] = stage->constantColor[0];
@@ -3821,6 +3828,13 @@ static int R_CreateSurfaceSpritesVertexData(
 		stage->rgbGen == CGEN_EXACT_VERTEX ||
 		stage->rgbGen == CGEN_VERTEX_LIT ||
 		stage->rgbGen == CGEN_EXACT_VERTEX_LIT);
+#else
+	// Vanilla behaviour is always: color by vertex color of the emitting surface
+	// even just the blue component used for all three color channels to be exact
+	// in pseudo code: outVert.rgb = inVert.bbb;
+	bool vertexLit = true;
+	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
+#endif
 
 	int numSprites = 0;
 	for (int i = 0, numIndexes = bspSurf->numIndexes; i < numIndexes; i += 3)
@@ -4019,6 +4033,7 @@ static void R_GenerateSurfaceSprites(const world_t* world, int worldIndex)
 	if (glState.currentGlobalUBO != tr.spriteUbos[worldIndex])
 	{
 		qglBindBuffer(GL_UNIFORM_BUFFER, tr.spriteUbos[worldIndex]);
+		if (glRefConfig.annotateResources) qglObjectLabel(GL_BUFFER, tr.spriteUbos[worldIndex], -1, va("SpriteUBO_%i", worldIndex));
 		glState.currentGlobalUBO = tr.spriteUbos[worldIndex];
 	}
 	qglBufferData(
@@ -4085,11 +4100,12 @@ static void R_GenerateSurfaceSprites(const world_t* world, int worldIndex)
 			int vert_index = face_indices[i % 6] + (int(i / 6) * 4);
 			sprites_index_data.push_back(vert_index);
 		}
-		ibo = R_CreateIBO((byte*)sprites_index_data.data(), sprites_index_data.size() * sizeof(uint16_t), VBO_USAGE_STATIC);
+		ibo = R_CreateIBO((byte*)sprites_index_data.data(), sprites_index_data.size() * sizeof(uint16_t), VBO_USAGE_STATIC, "Quads");
 	}
 
 	std::vector<srfSprites_t*> currentBatch;
 	currentBatch.reserve(65535); // worst case, theres at least 65535 surfaces with exactly one sprite
+	int numSpriteVbos = 0;
 
 	for (int i = 0, numSurfaces = world->numsurfaces; i < numSurfaces; ++i)
 	{
@@ -4132,7 +4148,8 @@ static void R_GenerateSurfaceSprites(const world_t* world, int worldIndex)
 				if ((sprites_data.size() + numCurrentSurfaceSprites * 4) > 65535)
 				{
 					VBO_t* vbo = R_CreateVBO((byte*)sprites_data.data(),
-						sizeof(sprite_t) * sprites_data.size(), VBO_USAGE_STATIC);
+						sizeof(sprite_t) * sprites_data.size(), VBO_USAGE_STATIC, va("Sprites_%i", numSpriteVbos));
+					numSpriteVbos++;
 
 					for (srfSprites_t* sp : currentBatch)
 					{
@@ -4165,7 +4182,8 @@ static void R_GenerateSurfaceSprites(const world_t* world, int worldIndex)
 		return;
 
 	VBO_t* vbo = R_CreateVBO((byte*)sprites_data.data(),
-		sizeof(sprite_t) * sprites_data.size(), VBO_USAGE_STATIC);
+		sizeof(sprite_t) * sprites_data.size(), VBO_USAGE_STATIC, va("Sprites_%i", numSpriteVbos));
+	numSpriteVbos++;
 
 	for (srfSprites_t* sp : currentBatch)
 	{
@@ -4176,6 +4194,103 @@ static void R_GenerateSurfaceSprites(const world_t* world, int worldIndex)
 		sp->attributes[2].vbo = vbo;
 		sp->attributes[3].vbo = vbo;
 	}
+}
+
+static void R_BuildLightGridTexture(world_t* world)
+{
+	if (!r_volumetricFog->integer)
+	{
+		return;
+	}
+
+	// Upload light grid as a 3D texture
+	// For volumetric fog, we don't need directionality, so just merge ambient and direct contributions
+	// I tried using the directionality with phase function and it looked bad. Created like visable noodles in the air.
+	// Potentiall add the seperated 3d images for other things, but currently there's no need.
+	byte* lightBase;
+	uint16_t* lightHDRBase;
+	if (world->hdrLightGrid)
+	{
+		lightHDRBase = (uint16_t*)Z_Malloc(world->numGridArrayElements * sizeof(uint16_t) * 4, TAG_TEMP_WORKSPACE, qtrue);
+	}
+	else
+	{
+		lightBase = (byte*)Z_Malloc(world->numGridArrayElements * sizeof(byte) * 4, TAG_TEMP_WORKSPACE, qtrue);
+	}
+
+	if (world->lightGridData)
+	{
+		uint16_t* lightHDR;
+		byte* light;
+		if (world->hdrLightGrid)
+		{
+			lightHDR = lightHDRBase;
+		}
+		else
+		{
+			light = lightBase;
+		}
+
+		for (int i = 0; i < world->numGridArrayElements; i++)
+		{
+			if (world->hdrLightGrid)
+			{
+				float* hdrData = world->hdrLightGrid + (i * 6);
+
+				lightHDR[0] = FloatToHalf(hdrData[0] + hdrData[3]);
+				lightHDR[1] = FloatToHalf(hdrData[1] + hdrData[4]);
+				lightHDR[2] = FloatToHalf(hdrData[2] + hdrData[5]);
+				lightHDR[3] = FloatToHalf(1.0f);
+
+				lightHDR += 4;
+			}
+			else
+			{
+				mgrid_t* data = world->lightGridData + world->lightGridArray[i];
+
+				light[0] = MAX(data->ambientLight[0][0], data->directLight[0][0]);
+				light[1] = MAX(data->ambientLight[0][1], data->directLight[0][1]);
+				light[2] = MAX(data->ambientLight[0][2], data->directLight[0][2]);
+				light[3] = 255;
+
+				light += 4;
+			}
+		}
+
+		if (world->hdrLightGrid)
+		{
+			world->volumetricLightMaps[0] = R_CreateImage3D(
+				"*volumetricLightmap0", (byte*)lightHDRBase,
+				world->lightGridBounds[0],
+				world->lightGridBounds[1],
+				world->lightGridBounds[2],
+				GL_RGB16F);
+		}
+		else
+		{
+			world->volumetricLightMaps[0] = R_CreateImage3D(
+				"*volumetricLightmap0", lightBase,
+				world->lightGridBounds[0],
+				world->lightGridBounds[1],
+				world->lightGridBounds[2],
+				GL_RGB8);
+		}
+	}
+	else
+	{
+		world->volumetricLightMaps[0] = NULL;
+	}
+
+	if (world->hdrLightGrid)
+	{
+		Z_Free(lightHDRBase);
+	}
+	else
+	{
+		Z_Free(lightBase);
+	}
+
+	return;
 }
 
 world_t* R_LoadBSP(const char* name, int* bspIndex)
@@ -4272,6 +4387,21 @@ world_t* R_LoadBSP(const char* name, int* bspIndex)
 	R_LoadLightGrid(worldData, &header->lumps[LUMP_LIGHTGRID]);
 	R_LoadLightGridArray(worldData, &header->lumps[LUMP_LIGHTARRAY]);
 
+	// Add a plane to the volumetric fog to see skyboxes and stuff
+	// This bascially makes it a height fog
+	if (r_volumetricFog->integer && worldData->globalFog)
+	{
+		worldData->fogs[worldData->globalFogIndex].hasSurface = qtrue;
+
+		VectorSet4(
+			worldData->fogs[worldData->globalFogIndex].surface,
+			0.0f,
+			0.0f,
+			-1.0f,
+			-worldData->bmodels[0].bounds[1][2]
+		);
+	}
+
 	// determine vertex light directions
 	R_CalcVertexLightDirs(worldData);
 
@@ -4284,6 +4414,8 @@ world_t* R_LoadBSP(const char* name, int* bspIndex)
 	R_LoadWeatherImages();
 
 	R_GenerateSurfaceSprites(worldData, worldIndex + 1);
+
+	R_BuildLightGridTexture(worldData);
 
 	// load cubemaps
 	if (r_cubeMapping->integer && bspIndex == nullptr)
@@ -4373,13 +4505,15 @@ void RE_LoadWorldMap(const char* name) {
 	VectorNormalize(tr.sunDirection);
 
 	// set default autoexposure settings
-	tr.autoExposureMinMax[0] = -2.0f;
-	tr.autoExposureMinMax[1] = 2.0f;
+	tr.autoExposureMinMax[0] = -3.0f;
+	tr.autoExposureMinMax[1] = 1.0f;
 
 	// set default tone mapping settings
 	tr.toneMinAvgMaxLevel[0] = -8.0f;
-	tr.toneMinAvgMaxLevel[1] = -2.0f;
+	tr.toneMinAvgMaxLevel[1] = -1.0f;
 	tr.toneMinAvgMaxLevel[2] = 0.0f;
+
+	tr.volumetricFogScale = r_volumetricFogDefaultScale->value;
 
 	world_t* world = R_LoadBSP(name);
 	if (world == nullptr)
@@ -4393,6 +4527,8 @@ void RE_LoadWorldMap(const char* name) {
 	tr.worldMapLoaded = qtrue;
 	tr.world = world;
 
+	R_PushDebugGroup(AL_SCENE, "World loading");
+	R_PushDebugGroup(AL_VIEW, "Weather depth");
 	R_InitWeatherForMap();
 
 	// Render all cubemaps
