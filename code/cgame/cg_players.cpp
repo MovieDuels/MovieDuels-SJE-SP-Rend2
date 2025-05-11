@@ -7684,9 +7684,7 @@ static void CG_DoEp1Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -8243,9 +8241,7 @@ static void CG_DoEp2Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -8803,9 +8799,7 @@ static void CG_DoEp3Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -9354,9 +9348,7 @@ static void CG_DoSFXSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -9937,9 +9929,7 @@ static void CG_DoOTSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, ve
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -10487,9 +10477,7 @@ static void CG_DoRotJSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, 
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -11037,9 +11025,7 @@ static void CG_DoTFASaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -11237,9 +11223,7 @@ static void CG_DoCloakedSaber(vec3_t origin, vec3_t dir, float length, float len
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -11459,9 +11443,7 @@ static void CG_DoSaber(vec3_t origin, vec3_t dir, float length, float length_max
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -12064,9 +12046,7 @@ static void CG_DoUnstableSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_t
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -12266,9 +12246,7 @@ static void CG_DoSaberUnstable(vec3_t origin, vec3_t dir, float length, float le
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -12824,9 +12802,7 @@ static void CG_DoRebelsSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
