@@ -8205,6 +8205,7 @@ void PM_TorsoAnimation()
 					break;
 
 				case WP_CLONERIFLE:
+				case WP_Z6_ROTARY_CANNON:
 				case WP_ROCKET_LAUNCHER:
 				case WP_CONCUSSION:
 				case WP_DEMP2:
@@ -8939,6 +8940,7 @@ void PM_TorsoAnimation()
 					break;
 
 				case WP_CLONERIFLE:
+				case WP_Z6_ROTARY_CANNON:
 				case WP_ROCKET_LAUNCHER:
 				case WP_CONCUSSION:
 				case WP_DEMP2:

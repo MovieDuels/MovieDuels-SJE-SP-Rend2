@@ -773,6 +773,10 @@ static void cg_drawweapontype(const centity_t* cent)
 	{
 		wp_index = OHB_CLONECOMMANDO;
 	}
+	else if (cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
+	{
+		wp_index = OHB_Z6_ROTARY_CANNON;
+	}
 	else if (cent->currentState.weapon == WP_REBELRIFLE)
 	{
 		if (cg_com_kotor.integer == 1) //playing kotor
@@ -6637,6 +6641,7 @@ static void CG_DrawCrosshair(vec3_t world_point)
 				cg.snap->ps.weapon == WP_CLONECARBINE ||
 				cg.snap->ps.weapon == WP_CLONERIFLE ||
 				cg.snap->ps.weapon == WP_CLONECOMMANDO ||
+				cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON ||
 				cg.snap->ps.weapon == WP_BOBA ||
 				cg.snap->ps.weapon == WP_REBELRIFLE)
 			{

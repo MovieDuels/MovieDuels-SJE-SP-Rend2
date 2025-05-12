@@ -394,7 +394,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
 	}
 	else if (NPC->client->ps.weapon == WP_CLONECARBINE || NPC->client->ps.weapon == WP_CLONERIFLE ||
-		NPC->client->ps.weapon == WP_CLONECOMMANDO || NPC->client->ps.weapon == WP_REBELRIFLE)
+		NPC->client->ps.weapon == WP_CLONECOMMANDO || NPC->client->ps.weapon == WP_Z6_ROTARY_CANNON || NPC->client->ps.weapon == WP_REBELRIFLE)
 	{
 		ent->NPC->scriptFlags |= SCF_ALT_FIRE | SCF_CHASE_ENEMIES;
 	}

@@ -414,6 +414,19 @@ static void G_AttackDelay(const gentity_t* self, const gentity_t* enemy)
 			}
 			break;
 
+		case WP_Z6_ROTARY_CANNON:
+			if (self->NPC->scriptFlags & SCF_ALT_FIRE)
+			{
+				//rapid-fire blasters
+				att_delay += Q_irand(0, 500);
+			}
+			else
+			{
+				//regular blaster
+				att_delay -= Q_irand(0, 500);
+			}
+			break;
+
 		case WP_REBELRIFLE:
 			if (self->NPC->scriptFlags & SCF_ALT_FIRE)
 			{
@@ -709,6 +722,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 			self->s.weapon == WP_REBELBLASTER ||
 			self->s.weapon == WP_CLONERIFLE ||
 			self->s.weapon == WP_CLONECOMMANDO ||
+			self->s.weapon == WP_Z6_ROTARY_CANNON ||
 			self->s.weapon == WP_REBELRIFLE ||
 			self->s.weapon == WP_BOBA)
 		{
@@ -1358,6 +1372,22 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 				ent->NPC->burstSpacing = 750; //attack debounce
 			else
 				ent->NPC->burstSpacing = 600; //attack debounce
+		}
+		break;
+
+	case WP_Z6_ROTARY_CANNON:
+		if (ent->NPC->scriptFlags & SCF_ALT_FIRE)
+		{
+			ent->NPC->aiFlags |= NPCAI_BURST_WEAPON;
+			ent->NPC->burstMin = 15;
+			ent->NPC->burstMean = 25;
+			ent->NPC->burstMax = 35;
+			ent->NPC->burstSpacing = 400; //attack debounce
+		}
+		else
+		{
+			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
+			ent->NPC->burstSpacing = 100; //attack debounce
 		}
 		break;
 

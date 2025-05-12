@@ -6624,6 +6624,7 @@ static qboolean GunisMassive(const gentity_t* ent)
 	case WP_TUSKEN_RIFLE:
 	case WP_TUSKEN_STAFF:
 	case WP_CLONERIFLE:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_FLECHETTE:
 	case WP_ROCKET_LAUNCHER:
 	case WP_REPEATER:
@@ -7878,6 +7879,7 @@ qboolean IsHoldingReloadableGun(const gentity_t* ent)
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_REBELRIFLE:
 	case WP_REY:
 	case WP_JANGO:
@@ -7921,7 +7923,13 @@ static int magazine_size(const gentity_t* ent, const int ammo)
 	case AMMO_POWERCELL:
 		return 50;
 	case AMMO_METAL_BOLTS:
+	{
+		if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			return 150;
+		}
 		return 75;
+	}
 	case AMMO_ROCKETS:
 		return 3;
 	default:;
@@ -8091,6 +8099,7 @@ void WP_ReloadGun(gentity_t* ent)
 				ent->s.weapon == WP_CLONECARBINE ||
 				ent->s.weapon == WP_CLONERIFLE ||
 				ent->s.weapon == WP_CLONECOMMANDO ||
+				ent->s.weapon == WP_Z6_ROTARY_CANNON ||
 				ent->s.weapon == WP_CLONEPISTOL)
 			{
 				if (ent->client->ps.ammo[AMMO_METAL_BOLTS] < clip_size(AMMO_METAL_BOLTS))
@@ -8102,7 +8111,8 @@ void WP_ReloadGun(gentity_t* ent)
 						ent->s.weapon == WP_CONCUSSION ||
 						ent->s.weapon == WP_CLONECARBINE ||
 						ent->s.weapon == WP_CLONERIFLE ||
-						ent->s.weapon == WP_CLONECOMMANDO)
+						ent->s.weapon == WP_CLONECOMMANDO ||
+						ent->s.weapon == WP_Z6_ROTARY_CANNON)
 					{
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
