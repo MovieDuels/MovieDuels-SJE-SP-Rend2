@@ -1376,19 +1376,10 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		break;
 
 	case WP_Z6_ROTARY_CANNON:
-		if (ent->NPC->scriptFlags & SCF_ALT_FIRE)
-		{
-			ent->NPC->aiFlags |= NPCAI_BURST_WEAPON;
-			ent->NPC->burstMin = 15;
-			ent->NPC->burstMean = 25;
-			ent->NPC->burstMax = 35;
-			ent->NPC->burstSpacing = 400; //attack debounce
-		}
-		else
-		{
-			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
-			ent->NPC->burstSpacing = 100; //attack debounce
-		}
+		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
+		ent->NPC->rotaryCannonShotsFired = 0;
+		ent->NPC->rotaryCannonCooldownTime = 0;
+		ent->NPC->burstSpacing = 200; //attack debounce
 		break;
 
 	case WP_REBELRIFLE:
@@ -1808,6 +1799,34 @@ static void ShootThink()
 	NPC->attackDebounceTime = level.time + NPC_AttackDebounceForWeapon();
 }
 
+// WP_Z6_ROTARY_CANNON shoot think
+static void rotaryCannonShootThink()
+{
+	// If cooling down, do not fire
+	if (level.time < NPCInfo->rotaryCannonCooldownTime)
+	{
+		ucmd.buttons &= ~BUTTON_ATTACK;
+		return;
+	}
+
+	// Fire a shot
+	ucmd.buttons |= BUTTON_ATTACK;
+	NPCInfo->rotaryCannonShotsFired++;
+
+	// If reached max shots, start cooldown
+	if (NPCInfo->rotaryCannonShotsFired >= 35)
+	{
+		NPCInfo->rotaryCannonCooldownTime = level.time + 2500; // 2.5 seconds cooldown
+		NPCInfo->rotaryCannonShotsFired = 0;
+	}
+
+	// Set normal shot delay (fire rate)
+	int delay = NPCInfo->burstSpacing + Q_irand(-50, 50);
+	NPCInfo->shotTime = level.time + delay;
+	NPC->attackDebounceTime = level.time + NPC_AttackDebounceForWeapon();
+}
+
+
 /*
 static void WeaponThink()
 FIXME makes this so there's a delay from event that caused us to check to actually doing it
@@ -1907,7 +1926,11 @@ void WeaponThink()
 	}
 
 	ucmd.weapon = client->ps.weapon;
-	ShootThink();
+
+	if (client->ps.weapon == WP_Z6_ROTARY_CANNON)
+		rotaryCannonShootThink();
+	else 
+		ShootThink();
 }
 
 /*

@@ -1174,6 +1174,42 @@ void Boba_Fire()
 			}
 			break;
 
+		case WP_BLASTER_PISTOL:
+
+			if (TIMER_Done(NPC, "nextBlasterAltFireDecide"))
+			{
+				if (Q_irand(0, NPC->count * 2 + 3) > 2)
+				{
+					TIMER_Set(NPC, "nextBlasterAltFireDecide", Q_irand(3000, 8000));
+					if (!(NPCInfo->scriptFlags & SCF_ALT_FIRE))
+					{
+						Boba_Printf("ALT FIRE On");
+						NPCInfo->scriptFlags |= SCF_ALT_FIRE;
+						NPC_ChangeWeapon(WP_BLASTER_PISTOL); // Update Delay Timers
+					}
+				}
+				else
+				{
+					TIMER_Set(NPC, "nextBlasterAltFireDecide", Q_irand(2000, 5000));
+					if (NPCInfo->scriptFlags & SCF_ALT_FIRE)
+					{
+						Boba_Printf("ALT FIRE Off");
+						NPCInfo->scriptFlags &= ~SCF_ALT_FIRE;
+						NPC_ChangeWeapon(WP_BLASTER_PISTOL); // Update Delay Timers
+					}
+				}
+			}
+
+			// Occasionally Alt Fire
+			//-----------------------
+			if (NPCInfo->scriptFlags & SCF_ALT_FIRE && !Q_irand(0, 3))
+			{
+				ucmd.buttons &= ~BUTTON_ATTACK;
+				ucmd.buttons |= BUTTON_ALT_ATTACK;
+				NPC->client->fireDelay = Q_irand(1000, 3000);
+			}
+			break;
+
 		case WP_BOBA:
 
 			if (Distance(NPC->currentOrigin, NPC->enemy->currentOrigin) > 400.0f)
@@ -1380,6 +1416,9 @@ void Boba_FireDecide()
 		case WP_DISRUPTOR:
 			Boba_Fire();
 			break;
+		case WP_BLASTER_PISTOL:
+			Boba_Fire();
+			break;
 		case WP_BOBA:
 			Boba_Fire();
 			break;
@@ -1560,7 +1599,7 @@ void Boba_TacticsSelect()
 				}
 				else
 				{
-					Boba_ChangeWeapon(WP_CLONECARBINE);
+					Boba_ChangeWeapon(WP_BLASTER_PISTOL);
 				}
 			}
 			break;

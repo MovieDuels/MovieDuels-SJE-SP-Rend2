@@ -1798,7 +1798,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 				{
 					ent->client->cloneFired++;
 
-					if (ent->client->cloneFired == 5)
+					if (ent->client->cloneFired == 4)
 					{
 						G_AddBlasterAttackChainCount(ent, BLASTERMISHAPLEVEL_MIN);
 
