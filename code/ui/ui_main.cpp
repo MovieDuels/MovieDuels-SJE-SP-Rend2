@@ -69,6 +69,19 @@ typedef enum {
 } eraMD_t;
 static int uiEra = 0;
 
+#ifdef NEW_FEEDER_V1
+stringID_table_t era_table[TOTAL_ERAS] = {
+	ENUM2STRING(ERA_OLD_REPUBLIC),
+	ENUM2STRING(ERA_SITH_EMPIRE),
+	ENUM2STRING(ERA_REPUBLIC),
+	ENUM2STRING(ERA_SEPARATIST),
+	ENUM2STRING(ERA_REBELS),
+	ENUM2STRING(ERA_EMPIRE),
+	ENUM2STRING(ERA_RESISTANCE),
+	ENUM2STRING(ERA_FIRST_ORDER),
+};
+#endif
+
 static constexpr char* eraNames[TOTAL_ERAS]{
 	"Old Republic",
 	"Sith Empire",
@@ -1849,6 +1862,35 @@ static qboolean UI_RunMenuScript(const char** args)
 
 	if (String_Parse(args, &name))
 	{
+#ifdef NEW_FEEDER_V1
+		for (int i = 0; i < TOTAL_ERAS; i++) {
+			if (Q_stricmp(name, era_table[i].name) == 0) {
+				uiEra = i;
+
+				uiModelIndex = eraIndex[uiEra];
+				uiVariantIndex = eraIndex[uiEra];
+
+				if (Q_strncmp(charMD[eraIndex[uiEra]].skin, "model_", 6) == 0)
+					Cvar_Set("ui_model", va("%s/%s", charMD[eraIndex[uiEra]].model, &charMD[eraIndex[uiEra]].skin[6])); //standard model // strip model_
+				else
+					Cvar_Set("ui_model", va("%s/%s", charMD[eraIndex[uiEra]].model, charMD[eraIndex[uiEra]].skin));
+
+				Cvar_Set("ui_char_model", charMD[eraIndex[uiEra]].model);//UI_Cvar_VariableString("ui_model"));
+				Cvar_Set("ui_char_skin", charMD[eraIndex[uiEra]].skin);//
+		
+				menuDef_t* menu = Menus_FindByName("ui_md");
+				if (menu) {
+					itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
+					listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
+					if (listPtr) {
+						listPtr->cursorPos = 0;
+					}
+					itemFeeder->cursorPos = 0;
+				}
+				return qtrue;
+			}
+		}
+#endif
 		if (Q_stricmp(name, "resetdefaults") == 0)
 		{
 			UI_ResetDefaults();
@@ -3266,10 +3308,20 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 			uiModelIndex = actual;
 			uiVariantIndex = actual;
 			index = actual;
+#ifdef NEW_FEEDER_V1
+			menuDef_t* menu = Menus_FindByName("ui_md");
+			if (menu) {
+				itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
+				listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
+				if (listPtr) {
+					listPtr->cursorPos = 0;
+				}
+				itemFeeder->cursorPos = 0;
+			}
+#endif
 		}
 
 		if (index >= eraIndex[uiEra] && index < eraIndex[uiEra + 1]) {
-			// GCJ_MOVIEDUELS
 			if (Q_strncmp(charMD[index].skin, "model_", 6) == 0)
 				Cvar_Set("ui_model", va("%s/%s", charMD[index].model, &charMD[index].skin[6])); //standard model // strip model_
 			else

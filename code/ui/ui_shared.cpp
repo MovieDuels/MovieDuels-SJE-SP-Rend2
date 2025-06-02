@@ -6551,6 +6551,119 @@ qhandle_t	mdBackground;
 #endif
 static void Item_ListBox_Paint(itemDef_t* item)
 {
+#ifdef NEW_FEEDER_V1
+	float x, y;
+	int count = DC->feederCount(item->special);
+	auto* listPtr = static_cast<listBoxDef_t*>(item->typeData);
+
+	// Clamp startPos and cursorPos
+	if (listPtr->startPos > (count > 0 ? count - 1 : 0))
+		listPtr->startPos = 0;
+	if (item->cursorPos > (count > 0 ? count - 1 : 0)) {
+		item->cursorPos = (count > 0 ? count - 1 : 0);
+		DC->feederSelection(item->special, item->cursorPos, nullptr);
+	}
+
+	// Draw scrollbar if needed
+	if (!listPtr->scrollhidden && Item_ListBox_MaxScroll(item) > 0) {
+		if (item->window.flags & WINDOW_HORIZONTAL) {
+			x = item->window.rect.x + 1;
+			y = item->window.rect.y + item->window.rect.h - SCROLLBAR_SIZE - 1;
+			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowLeft);
+			x += SCROLLBAR_SIZE - 1;
+			float sizeWidth = item->window.rect.w - (SCROLLBAR_SIZE * 2);
+			DC->drawHandlePic(x, y, sizeWidth + 1, SCROLLBAR_SIZE, DC->Assets.scrollBar);
+			x += sizeWidth - 1;
+			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowRight);
+			float thumb = Item_ListBox_ThumbDrawPosition(item);
+			if (thumb > x - SCROLLBAR_SIZE - 1)
+				thumb = x - SCROLLBAR_SIZE - 1;
+			DC->drawHandlePic(thumb, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarThumb);
+		} else {
+			x = item->window.rect.x + item->window.rect.w - SCROLLBAR_SIZE - 1;
+			y = item->window.rect.y + 1;
+			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowUp);
+			y += SCROLLBAR_SIZE - 1;
+			float sizeHeight = item->window.rect.h - (SCROLLBAR_SIZE * 2);
+			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, sizeHeight + 1, DC->Assets.scrollBar);
+			y += sizeHeight - 1;
+			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowDown);
+			float thumb = Item_ListBox_ThumbDrawPosition(item);
+			if (thumb > y - SCROLLBAR_SIZE - 1)
+				thumb = y - SCROLLBAR_SIZE - 1;
+			DC->drawHandlePic(x, thumb, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarThumb);
+		}
+	}
+
+	// Calculate available area for items
+	float availW = item->window.rect.w - 2;
+	float availH = item->window.rect.h - 2;
+	if (!(item->window.flags & WINDOW_HORIZONTAL))
+		availW -= SCROLLBAR_SIZE;
+	else
+		availH -= SCROLLBAR_SIZE;
+
+	// Determine how many columns and rows fit
+	int cols = 1, rows = 1;
+	if (listPtr->elementStyle == LISTBOX_IMAGE) {
+		cols = std::max(1, static_cast<int>(availW / listPtr->elementWidth));
+		rows = std::max(1, static_cast<int>(availH / listPtr->elementHeight));
+	}
+
+	// Paint items
+	int drawn = 0;
+	listPtr->endPos = listPtr->startPos;
+	x = item->window.rect.x + 1;
+	y = item->window.rect.y + 1;
+
+	for (int idx = listPtr->startPos; idx < count; ) {
+		float curX = x, curY = y;
+		for (int r = 0; r < rows && idx < count; ++r) {
+			curX = x;
+			for (int c = 0; c < cols && idx < count; ++c, ++idx) {
+				qhandle_t image = DC->feederItemImage(item->special, idx);
+#ifdef NEW_FEEDER
+				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS))
+					DC->drawHandlePic(curX + 1, curY + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, mdBackground);
+#endif		
+				if (image) {
+					if (item->window.flags & WINDOW_PLAYERCOLOR) {
+						vec4_t color;
+						color[0] = ui_char_color_red.integer / 255.0f;
+						color[1] = ui_char_color_green.integer / 255.0f;
+						color[2] = ui_char_color_blue.integer / 255.0f;
+						color[3] = 1.0f;
+						DC->setColor(color);
+					}
+					DC->drawHandlePic(curX + 1, curY + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, image);
+				}
+#ifdef NEW_FEEDER
+				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS))
+					DC->drawHandlePic(curX + 1, curY + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, (idx == item->cursorPos) ? mdBorderSel : mdBorder);
+#endif		
+				if (idx == item->cursorPos) {
+					DC->drawRect(curX, curY, listPtr->elementWidth - 1, listPtr->elementHeight - 1, item->window.borderSize, item->window.borderColor);
+				}
+				curX += listPtr->elementWidth;
+				listPtr->endPos++;
+				drawn++;
+			}
+			curY += listPtr->elementHeight;
+		}
+		break; // Only one page of items is drawn
+	}
+
+	// Calculate drawPadding for the last row/column
+	if (listPtr->elementStyle == LISTBOX_IMAGE) {
+		if (item->window.flags & WINDOW_HORIZONTAL) {
+			int itemsInRow = std::min(cols, count - listPtr->startPos);
+			listPtr->drawPadding = availW - (itemsInRow * listPtr->elementWidth);
+		} else {
+			int itemsInCol = std::min(rows, count - listPtr->startPos);
+			listPtr->drawPadding = availH - (itemsInCol * listPtr->elementHeight);
+		}
+	}
+#else
 	float x, y, size;
 	int i, thumb;
 	qhandle_t image;
@@ -6825,6 +6938,7 @@ static void Item_ListBox_Paint(itemDef_t* item)
 			}
 		}
 	}
+#endif
 }
 
 /*
@@ -8947,6 +9061,51 @@ Item_ListBox_MouseEnter
 */
 static void Item_ListBox_MouseEnter(itemDef_t* item, const float x, const float y)
 {
+#ifdef NEW_FEEDER_V1
+	rectDef_t r{};
+	auto* listPtr = static_cast<listBoxDef_t*>(item->typeData);
+
+	item->window.flags &= ~(WINDOW_LB_LEFTARROW | WINDOW_LB_RIGHTARROW | WINDOW_LB_THUMB | WINDOW_LB_PGUP | WINDOW_LB_PGDN);
+	item->window.flags |= Item_ListBox_OverLB(item, x, y);
+
+	// Only process if not over arrows/thumb/page buttons
+	if (item->window.flags & (WINDOW_LB_LEFTARROW | WINDOW_LB_RIGHTARROW | WINDOW_LB_THUMB | WINDOW_LB_PGUP | WINDOW_LB_PGDN))
+		return;
+
+	// Set up the selection rectangle
+	r.x = item->window.rect.x;
+	r.y = item->window.rect.y;
+	r.w = item->window.rect.w - ((item->window.flags & WINDOW_HORIZONTAL) ? listPtr->drawPadding : SCROLLBAR_SIZE);
+	r.h = item->window.rect.h - ((item->window.flags & WINDOW_HORIZONTAL) ? SCROLLBAR_SIZE : listPtr->drawPadding);
+
+	if (!Rect_ContainsPoint(&r, x, y))
+		return;
+
+	// Multiple rows and columns for image listboxes
+	if (listPtr->elementStyle == LISTBOX_IMAGE &&
+		item->window.rect.w > (listPtr->elementWidth * 2) &&
+		item->window.rect.h > (listPtr->elementHeight * 2))
+	{
+		int row = static_cast<int>((y - r.y) / listPtr->elementHeight);
+		int col = static_cast<int>((x - r.x) / listPtr->elementWidth);
+		int rowLength = static_cast<int>(r.w / listPtr->elementWidth);
+
+		listPtr->cursorPos = row * rowLength + col + listPtr->startPos;
+		if (listPtr->cursorPos > listPtr->endPos)
+			listPtr->cursorPos = listPtr->endPos;
+		return;
+	}
+
+	// Single row/column logic
+	if (item->window.flags & WINDOW_HORIZONTAL) {
+		listPtr->cursorPos = static_cast<int>((x - r.x) / listPtr->elementWidth) + listPtr->startPos;
+	}
+	else {
+		listPtr->cursorPos = static_cast<int>((y - r.y) / listPtr->elementHeight) + listPtr->startPos;
+	}
+	if (listPtr->cursorPos > listPtr->endPos)
+		listPtr->cursorPos = listPtr->endPos;
+#else
 	rectDef_t r{};
 	const auto listPtr = static_cast<listBoxDef_t*>(item->typeData);
 
@@ -8997,6 +9156,7 @@ static void Item_ListBox_MouseEnter(itemDef_t* item, const float x, const float 
 			}
 		}
 	}
+#endif
 }
 
 /*
@@ -10066,7 +10226,11 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 		if (item->window.flags & WINDOW_HORIZONTAL)
 		{
 			viewmax = item->window.rect.w / listPtr->elementWidth;
+#ifdef NEW_FEEDER_V1
+			if (key == A_CURSOR_LEFT || key == A_KP_4 || key == A_MWHEELUP)
+#else
 			if (key == A_CURSOR_LEFT || key == A_KP_4)
+#endif
 			{
 				if (!listPtr->notselectable)
 				{
@@ -10097,7 +10261,11 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 				}
 				return qtrue;
 			}
+#ifdef NEW_FEEDER_V1
+			if (key == A_CURSOR_RIGHT || key == A_KP_6 || key == A_MWHEELDOWN)
+#else
 			if (key == A_CURSOR_RIGHT || key == A_KP_6)
+#endif
 			{
 				if (!listPtr->notselectable)
 				{
