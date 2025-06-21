@@ -6489,7 +6489,11 @@ static void Item_TextScroll_Paint(itemDef_t* item)
 	const float count = scrollPtr->iLineCount;
 
 	// Draw scroll bar if text goes beyond bottom
-	if (scrollPtr->iLineCount * scrollPtr->lineHeight > size)
+	if (
+#ifdef NEW_FEEDER_V2
+		Q_stricmp(item->window.name, "char_desc") && // Dont show this...
+#endif
+		scrollPtr->iLineCount * scrollPtr->lineHeight > size)
 	{
 		// draw scrollbar to right side of the window
 		x = item->window.rect.x + item->window.rect.w - SCROLLBAR_SIZE - 1;
@@ -9091,20 +9095,29 @@ static void Item_ListBox_MouseEnter(itemDef_t* item, const float x, const float 
 		int rowLength = static_cast<int>(r.w / listPtr->elementWidth);
 
 		listPtr->cursorPos = row * rowLength + col + listPtr->startPos;
+#ifdef NEW_FEEDER_V2
+		if (listPtr->cursorPos >= listPtr->endPos)
+			listPtr->cursorPos = item->cursorPos;
+#else
 		if (listPtr->cursorPos > listPtr->endPos)
 			listPtr->cursorPos = listPtr->endPos;
+#endif
 		return;
 	}
 
 	// Single row/column logic
 	if (item->window.flags & WINDOW_HORIZONTAL) {
 		listPtr->cursorPos = static_cast<int>((x - r.x) / listPtr->elementWidth) + listPtr->startPos;
-	}
-	else {
+	} else {
 		listPtr->cursorPos = static_cast<int>((y - r.y) / listPtr->elementHeight) + listPtr->startPos;
 	}
+#ifdef NEW_FEEDER_V2
+	if (listPtr->cursorPos >= listPtr->endPos)
+		listPtr->cursorPos = item->cursorPos;
+#else
 	if (listPtr->cursorPos > listPtr->endPos)
 		listPtr->cursorPos = listPtr->endPos;
+#endif
 #else
 	rectDef_t r{};
 	const auto listPtr = static_cast<listBoxDef_t*>(item->typeData);
