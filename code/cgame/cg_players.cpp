@@ -13413,23 +13413,13 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 											//ugh, need to have a real sound debouncer... or do this game-side
 											cent->gent->client->ps.saberHitWallSoundDebounceTime = cg.time;
 
-											if (cg_SerenityJediEngineMode.integer == 2)
+											if (PM_SaberInAttack(cent->gent->client->ps.saber_move)
+												|| pm_saber_in_special_attack(cent->gent->client->ps.torsoAnim))
 											{
-												if (PM_SaberInAttack(cent->gent->client->ps.saber_move)
-													|| pm_saber_in_special_attack(cent->gent->client->ps.torsoAnim))
-												{
-													cgi_S_StartSound(cent->lerpOrigin, cent->currentState.client_num,
-														CHAN_ITEM, cgi_S_RegisterSound(
-															va("sound/weapons/saber/saberstrikewall%d.mp3",
-																Q_irand(1, 17))));
-												}
-												else
-												{
-													cgi_S_StartSound(cent->lerpOrigin, cent->currentState.client_num,
-														CHAN_ITEM, cgi_S_RegisterSound(
-															va("sound/weapons/saber/saberhitwall%d.wav",
-																Q_irand(1, 3))));
-												}
+												cgi_S_StartSound(cent->lerpOrigin, cent->currentState.client_num,
+													CHAN_ITEM, cgi_S_RegisterSound(
+														va("sound/weapons/saber/saberstrikewall%d.mp3",
+															Q_irand(1, 17))));
 											}
 											else
 											{

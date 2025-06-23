@@ -1847,125 +1847,111 @@ static void WP_SaberHitSound(const gentity_t* ent, const int saber_num, const in
 	}
 	else
 	{
-		if (g_SerenityJediEngineMode->integer)
+		if (saber_in_stab_down)
 		{
-			if (g_SerenityJediEngineMode->integer == 2)
+			G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberstabdown%d.mp3", index_stab)));
+			if (g_SerenityJediEngineMode->integer == 2 && (d_SaberactionInfo->integer || g_DebugSaberCombat->integer))
 			{
-				if (saber_in_stab_down)
-				{
-					G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberstabdown%d.mp3", index_stab)));
-					if (d_SaberactionInfo->integer || g_DebugSaberCombat->integer)
-					{
-						gi.Printf(S_COLOR_RED"AMD Mode saberstabdownsound\n");
-					}
-				}
-				else if (saber_in_special && !saber_in_roll_stab || (saber_in_over_head_attack || saber_in_kata)
-					&& (ent->enemy && ent->enemy->health >= 15))
-				{
-					G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_md%d.mp3", indexspecial)));
-					if (d_SaberactionInfo->integer || g_DebugSaberCombat->integer)
-					{
-						gi.Printf(S_COLOR_RED"AMD Mode saberspecialhitsound\n");
-					}
-				}
-				else if (ent->enemy && ent->enemy->health <= 5
-					|| saber_in_back_attack
-					|| saber_in_lunge_attack
-					|| saber_in_roll_stab
-					|| saber_in_lock_win
-					|| (saber_in_over_head_attack || saber_in_kata) && (ent->enemy && ent->enemy->health <= 15))
-				{
-					if (ent->client->NPC_class == CLASS_ATST
-						|| ent->client->NPC_class == CLASS_GONK
-						|| ent->client->NPC_class == CLASS_INTERROGATOR
-						|| ent->client->NPC_class == CLASS_MARK1
-						|| ent->client->NPC_class == CLASS_MARK2
-						|| ent->client->NPC_class == CLASS_MOUSE
-						|| ent->client->NPC_class == CLASS_PROBE
-						|| ent->client->NPC_class == CLASS_PROTOCOL
-						|| ent->client->NPC_class == CLASS_R2D2
-						|| ent->client->NPC_class == CLASS_R5D2
-						|| ent->client->NPC_class == CLASS_SEEKER
-						|| ent->client->NPC_class == CLASS_SENTRY
-						|| ent->client->NPC_class == CLASS_SBD
-						|| ent->client->NPC_class == CLASS_BATTLEDROID
-						|| ent->client->NPC_class == CLASS_DROIDEKA
-						|| ent->client->NPC_class == CLASS_OBJECT
-						|| ent->client->NPC_class == CLASS_ASSASSIN_DROID
-						|| ent->client->NPC_class == CLASS_SABER_DROID)
-					{
-						G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_droid_md%d.mp3", indexdroidkill)));
+				gi.Printf(S_COLOR_RED"AMD Mode saberstabdownsound\n");
+			}
+		}
+		else if (saber_in_special && !saber_in_roll_stab || (saber_in_over_head_attack || saber_in_kata)
+			&& (ent->enemy && ent->enemy->health >= 15))
+		{
+			G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_md%d.mp3", indexspecial)));
+			if (g_SerenityJediEngineMode->integer == 2 && (d_SaberactionInfo->integer || g_DebugSaberCombat->integer))
+			{
+				gi.Printf(S_COLOR_RED"AMD Mode saberspecialhitsound\n");
+			}
+		}
+		else if (ent->enemy && ent->enemy->health <= 5
+			|| saber_in_back_attack
+			|| saber_in_lunge_attack
+			|| saber_in_roll_stab
+			|| saber_in_lock_win
+			|| (saber_in_over_head_attack || saber_in_kata) && (ent->enemy && ent->enemy->health <= 15))
+		{
+			if (ent->client->NPC_class == CLASS_ATST
+				|| ent->client->NPC_class == CLASS_GONK
+				|| ent->client->NPC_class == CLASS_INTERROGATOR
+				|| ent->client->NPC_class == CLASS_MARK1
+				|| ent->client->NPC_class == CLASS_MARK2
+				|| ent->client->NPC_class == CLASS_MOUSE
+				|| ent->client->NPC_class == CLASS_PROBE
+				|| ent->client->NPC_class == CLASS_PROTOCOL
+				|| ent->client->NPC_class == CLASS_R2D2
+				|| ent->client->NPC_class == CLASS_R5D2
+				|| ent->client->NPC_class == CLASS_SEEKER
+				|| ent->client->NPC_class == CLASS_SENTRY
+				|| ent->client->NPC_class == CLASS_SBD
+				|| ent->client->NPC_class == CLASS_BATTLEDROID
+				|| ent->client->NPC_class == CLASS_DROIDEKA
+				|| ent->client->NPC_class == CLASS_OBJECT
+				|| ent->client->NPC_class == CLASS_ASSASSIN_DROID
+				|| ent->client->NPC_class == CLASS_SABER_DROID)
+			{
+				G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_droid_md%d.mp3", indexdroidkill)));
 
-						if (d_SaberactionInfo->integer || g_DebugSaberCombat->integer)
-						{
-							gi.Printf(S_COLOR_RED"AMD Mode saberDroidkillsound\n");
-						}
-					}
-					else
-					{
-						G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberkill%d.mp3", index_kill)));
-
-						if (d_SaberactionInfo->integer || g_DebugSaberCombat->integer)
-						{
-							gi.Printf(S_COLOR_RED"AMD Mode saberkillsound\n");
-						}
-					}
-				}
-				else if (ent->enemy && ent->enemy->health <= 5 && saber_in_lunge_attack)
+				if (g_SerenityJediEngineMode->integer == 2 && (d_SaberactionInfo->integer || g_DebugSaberCombat->integer))
 				{
-					if (ent->client->NPC_class == CLASS_ATST
-						|| ent->client->NPC_class == CLASS_GONK
-						|| ent->client->NPC_class == CLASS_INTERROGATOR
-						|| ent->client->NPC_class == CLASS_MARK1
-						|| ent->client->NPC_class == CLASS_MARK2
-						|| ent->client->NPC_class == CLASS_MOUSE
-						|| ent->client->NPC_class == CLASS_PROBE
-						|| ent->client->NPC_class == CLASS_PROTOCOL
-						|| ent->client->NPC_class == CLASS_R2D2
-						|| ent->client->NPC_class == CLASS_R5D2
-						|| ent->client->NPC_class == CLASS_SEEKER
-						|| ent->client->NPC_class == CLASS_SENTRY
-						|| ent->client->NPC_class == CLASS_SBD
-						|| ent->client->NPC_class == CLASS_BATTLEDROID
-						|| ent->client->NPC_class == CLASS_DROIDEKA
-						|| ent->client->NPC_class == CLASS_OBJECT
-						|| ent->client->NPC_class == CLASS_ASSASSIN_DROID
-						|| ent->client->NPC_class == CLASS_SABER_DROID)
-					{
-						G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_droid_md%d.mp3", indexdroidkill)));
-
-						if (d_SaberactionInfo->integer || g_DebugSaberCombat->integer)
-						{
-							gi.Printf(S_COLOR_RED"AMD Mode saberDroidkillsound\n");
-						}
-					}
-					else
-					{
-						G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberkill%d.mp3", index_kill)));
-
-						if (d_SaberactionInfo->integer || g_DebugSaberCombat->integer)
-						{
-							gi.Printf(S_COLOR_RED"AMD Mode saberkillsound\n");
-						}
-					}
-				}
-				else
-				{
-					G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_md%d.mp3", indexspecial)));
-					if (d_SaberactionInfo->integer || g_DebugSaberCombat->integer)
-					{
-						gi.Printf(S_COLOR_RED"AMD Mode saberhitsound\n");
-					}
+					gi.Printf(S_COLOR_RED"AMD Mode saberDroidkillsound\n");
 				}
 			}
 			else
 			{
-				G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit%d.mp3", index)));
+				G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberkill%d.mp3", index_kill)));
+
+				if (g_SerenityJediEngineMode->integer == 2 && (d_SaberactionInfo->integer || g_DebugSaberCombat->integer))
+				{
+					gi.Printf(S_COLOR_RED"AMD Mode saberkillsound\n");
+				}
+			}
+		}
+		else if (ent->enemy && ent->enemy->health <= 5 && saber_in_lunge_attack)
+		{
+			if (ent->client->NPC_class == CLASS_ATST
+				|| ent->client->NPC_class == CLASS_GONK
+				|| ent->client->NPC_class == CLASS_INTERROGATOR
+				|| ent->client->NPC_class == CLASS_MARK1
+				|| ent->client->NPC_class == CLASS_MARK2
+				|| ent->client->NPC_class == CLASS_MOUSE
+				|| ent->client->NPC_class == CLASS_PROBE
+				|| ent->client->NPC_class == CLASS_PROTOCOL
+				|| ent->client->NPC_class == CLASS_R2D2
+				|| ent->client->NPC_class == CLASS_R5D2
+				|| ent->client->NPC_class == CLASS_SEEKER
+				|| ent->client->NPC_class == CLASS_SENTRY
+				|| ent->client->NPC_class == CLASS_SBD
+				|| ent->client->NPC_class == CLASS_BATTLEDROID
+				|| ent->client->NPC_class == CLASS_DROIDEKA
+				|| ent->client->NPC_class == CLASS_OBJECT
+				|| ent->client->NPC_class == CLASS_ASSASSIN_DROID
+				|| ent->client->NPC_class == CLASS_SABER_DROID)
+			{
+				G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_droid_md%d.mp3", indexdroidkill)));
+
+				if (g_SerenityJediEngineMode->integer == 2 && (d_SaberactionInfo->integer || g_DebugSaberCombat->integer))
+				{
+					gi.Printf(S_COLOR_RED"AMD Mode saberDroidkillsound\n");
+				}
+			}
+			else
+			{
+				G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberkill%d.mp3", index_kill)));
+
+				if (g_SerenityJediEngineMode->integer == 2 && (d_SaberactionInfo->integer || g_DebugSaberCombat->integer))
+				{
+					gi.Printf(S_COLOR_RED"AMD Mode saberkillsound\n");
+				}
 			}
 		}
 		else
 		{
-			G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit%d.mp3", index)));
+			G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberhit_md%d.mp3", indexspecial)));
+			if (g_SerenityJediEngineMode->integer == 2 && (d_SaberactionInfo->integer || g_DebugSaberCombat->integer))
+			{
+				gi.Printf(S_COLOR_RED"AMD Mode saberhitsound\n");
+			}
 		}
 	}
 }
