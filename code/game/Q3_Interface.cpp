@@ -691,6 +691,8 @@ stringID_table_t setTable[] =
 
 	ENUM2STRING(SET_MORELIGHT_PLAYER),
 
+	ENUM2STRING(SET_CONSOLE_COMMAND),
+
 	ENUM2STRING(SET_UNDYINGPLAYERVICTORYSCRIPT),
 
 	ENUM2STRING(SET_FFAMODE),
@@ -10243,6 +10245,10 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 			Q3_SetMoreLightnpc(entID, qtrue);
 		else
 			Q3_SetMoreLightnpc(entID, qfalse);
+		break;
+
+	case SET_CONSOLE_COMMAND:
+		gi.SendConsoleCommand(va("cl_noprint 1; helpusobi 1; %s ; cl_noprint 0\n", const_cast<char*>(data)));
 		break;
 
 	case SET_FFAMODE:
