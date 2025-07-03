@@ -1869,6 +1869,15 @@ static qboolean UI_RunMenuScript(const char** args)
 
 				menuDef_t* menu = Menus_FindByName("ui_md");
 				if (menu) {
+#ifdef NEW_FEEDER_V3
+					itemDef_t* item = Menu_FindItemByName(menu, "modellist");
+					listBoxDef_t* list = static_cast<listBoxDef_t*>(item->typeData);
+					if (list) {
+						list->cursorPos = 0;
+					}
+					item->cursorPos = 0;
+#endif
+
 					itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
 					listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
 					if (listPtr) {

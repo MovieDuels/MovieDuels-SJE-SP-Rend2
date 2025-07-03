@@ -8922,6 +8922,13 @@ int Item_ListBox_MaxScroll(const itemDef_t* item)
 	const int count = DC->feederCount(item->special);
 	int max;
 
+#ifdef NEW_FEEDER_V3
+	if (item->special == FEEDER_MD_MODELS)
+	{
+		max = count - item->window.rect.w / listPtr->elementWidth;
+	}
+	else
+#endif
 	if (item->window.flags & WINDOW_HORIZONTAL)
 	{
 		max = count - item->window.rect.w / listPtr->elementWidth + 1;
@@ -10314,7 +10321,16 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 		}
 		else
 		{
+#ifdef NEW_FEEDER_V3
+			// Multiple rows and columns (since it's more than twice as wide as an element)
+			if ((item->window.rect.w > (listPtr->elementWidth * 2)) && (listPtr->elementStyle == LISTBOX_IMAGE)) {
+				viewmax = (item->window.rect.w / listPtr->elementWidth);
+			} else {
+				viewmax = (item->window.rect.h / listPtr->elementHeight);
+			}
+#else
 			viewmax = item->window.rect.h / listPtr->elementHeight;
+#endif
 			if (key == A_CURSOR_UP || key == A_KP_8)
 			{
 				if (!listPtr->notselectable)
@@ -10324,10 +10340,16 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 					if (listPtr->cursorPos < 0)
 					{
 						listPtr->cursorPos = 0;
+#ifdef NEW_FEEDER_V3
+						return qfalse;
+#endif
 					}
 					if (listPtr->cursorPos < listPtr->startPos)
 					{
 						listPtr->startPos = listPtr->cursorPos;
+#ifdef NEW_FEEDER_V3
+						return qfalse;
+#endif
 					}
 					if (listPtr->cursorPos >= listPtr->startPos + viewmax)
 					{
@@ -10356,10 +10378,16 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 					if (listPtr->cursorPos < listPtr->startPos)
 					{
 						listPtr->startPos = listPtr->cursorPos;
+#ifdef NEW_FEEDER_V3
+						return qfalse;
+#endif
 					}
 					if (listPtr->cursorPos >= count)
 					{
 						listPtr->cursorPos = count - 1;
+#ifdef NEW_FEEDER_V3
+						return qfalse;
+#endif
 					}
 					if (listPtr->cursorPos >= listPtr->startPos + viewmax)
 					{
@@ -10384,7 +10412,11 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 			//Raz: Added
 			if (key == A_MWHEELUP)
 			{
+#ifdef NEW_FEEDER_V3
+				listPtr->startPos -= static_cast<int>(item->special) == FEEDER_MD_MODELS ? viewmax : 1;
+#else
 				listPtr->startPos -= static_cast<int>(item->special) == FEEDER_Q3HEADS ? viewmax : 1;
+#endif
 				if (listPtr->startPos < 0)
 				{
 					listPtr->startPos = 0;
@@ -10396,13 +10428,25 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 			}
 			if (key == A_MWHEELDOWN)
 			{
+#ifdef NEW_FEEDER_V3
+				listPtr->startPos += static_cast<int>(item->special) == FEEDER_MD_MODELS ? viewmax : 1;
+				int maxStartPos = (count > viewmax) ? (count - viewmax) : 0;
+				if (listPtr->startPos > maxStartPos)
+				{
+					listPtr->startPos = maxStartPos;
+					Display_MouseMove(nullptr, DC->cursorx, DC->cursory);
+					return qfalse;
+				}
+#else
 				listPtr->startPos += static_cast<int>(item->special) == FEEDER_Q3HEADS ? viewmax : 1;
+
 				if (listPtr->startPos > max)
 				{
 					listPtr->startPos = max;
 					Display_MouseMove(nullptr, DC->cursorx, DC->cursory);
 					return qfalse;
 				}
+#endif
 				Display_MouseMove(nullptr, DC->cursorx, DC->cursory);
 				return qtrue;
 			}
