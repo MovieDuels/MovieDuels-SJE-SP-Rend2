@@ -1790,6 +1790,28 @@ static void ShootThink()
 			}
 		}
 	}
+	// Custom rotary cannon handling
+	else if (client->ps.weapon == WP_Z6_ROTARY_CANNON) { 
+		// If cooling down, do not fire
+		if (level.time < NPCInfo->rotaryCannonCooldownTime)
+		{
+			ucmd.buttons &= ~BUTTON_ATTACK;
+			return;
+		}
+
+		// Fire a shot
+		//ucmd.buttons |= BUTTON_ATTACK;
+		NPCInfo->rotaryCannonShotsFired++;
+
+		// If reached max shots, start cooldown
+		if (NPCInfo->rotaryCannonShotsFired >= 35)
+		{
+			NPCInfo->rotaryCannonCooldownTime = level.time + 2500; // 2.5 seconds cooldown
+			NPCInfo->rotaryCannonShotsFired = 0;
+		}
+
+		delay = NPCInfo->burstSpacing + Q_irand(-50, 50);
+	}
 	else
 	{
 		delay = NPCInfo->burstSpacing + Q_irand(-150, 150);
@@ -1798,34 +1820,6 @@ static void ShootThink()
 	NPCInfo->shotTime = level.time + delay;
 	NPC->attackDebounceTime = level.time + NPC_AttackDebounceForWeapon();
 }
-
-// WP_Z6_ROTARY_CANNON shoot think
-static void rotaryCannonShootThink()
-{
-	// If cooling down, do not fire
-	if (level.time < NPCInfo->rotaryCannonCooldownTime)
-	{
-		ucmd.buttons &= ~BUTTON_ATTACK;
-		return;
-	}
-
-	// Fire a shot
-	ucmd.buttons |= BUTTON_ATTACK;
-	NPCInfo->rotaryCannonShotsFired++;
-
-	// If reached max shots, start cooldown
-	if (NPCInfo->rotaryCannonShotsFired >= 35)
-	{
-		NPCInfo->rotaryCannonCooldownTime = level.time + 2500; // 2.5 seconds cooldown
-		NPCInfo->rotaryCannonShotsFired = 0;
-	}
-
-	// Set normal shot delay (fire rate)
-	int delay = NPCInfo->burstSpacing + Q_irand(-50, 50);
-	NPCInfo->shotTime = level.time + delay;
-	NPC->attackDebounceTime = level.time + NPC_AttackDebounceForWeapon();
-}
-
 
 /*
 static void WeaponThink()
@@ -1926,11 +1920,7 @@ void WeaponThink()
 	}
 
 	ucmd.weapon = client->ps.weapon;
-
-	if (client->ps.weapon == WP_Z6_ROTARY_CANNON)
-		rotaryCannonShootThink();
-	else 
-		ShootThink();
+	ShootThink();
 }
 
 /*

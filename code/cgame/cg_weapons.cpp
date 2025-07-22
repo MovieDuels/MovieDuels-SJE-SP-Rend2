@@ -4471,6 +4471,10 @@ void CG_NextWeapon_f()
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
 		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+		}
 		else
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -4747,6 +4751,10 @@ void CG_PrevWeapon_f()
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
 		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+		}
 		else
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -4925,6 +4933,10 @@ void CG_ChangeWeapon(const int num)
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
 		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+		}
 		else
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -5071,6 +5083,10 @@ void CG_Weapon_f()
 			cg_entities[0].gent->s.weapon == WP_REBELBLASTER)
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
 		}
 		else
 		{

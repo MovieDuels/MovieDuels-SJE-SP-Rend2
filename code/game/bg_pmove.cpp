@@ -8112,6 +8112,8 @@ qboolean PM_WeponRestAnim(const int anim)
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND9IDLE1:
 		//
+	case BOTH_STANCE_MINIGUN_IDLE:
+		//
 	case BOTH_WALK_BLASTER:
 	case BOTH_WALK_BAZOOKA:
 	case BOTH_WALK_HEAVY:
@@ -21585,7 +21587,8 @@ static void PM_Weapon()
 			pm->ps->torsoAnim == BOTH_PISTOLFAIL ||
 			pm->ps->torsoAnim == BOTH_RIFLEFAIL ||
 			pm->ps->torsoAnim == BOTH_ROCKETFAIL ||
-			pm->ps->torsoAnim == BOTH_2PISTOLFAIL)
+			pm->ps->torsoAnim == BOTH_2PISTOLFAIL ||
+			pm->ps->torsoAnim == BOTH_RELOAD_FAIL_MINIGUN)
 		{
 			// No Anims if on Veh
 		}
@@ -21866,7 +21869,6 @@ static void PM_Weapon()
 			case WP_CONCUSSION:
 			case WP_BOWCASTER:
 			case WP_DEMP2:
-			case WP_Z6_ROTARY_CANNON:
 				if (cg.renderingThirdPerson)
 				{
 					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
@@ -21879,6 +21881,11 @@ static void PM_Weapon()
 				}
 				break;
 
+			case WP_Z6_ROTARY_CANNON:
+				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_MINIGUN,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+				break;
+
 			case WP_BLASTER:
 			case WP_THEFIRSTORDER:
 			case WP_BOBA:
@@ -21886,7 +21893,6 @@ static void PM_Weapon()
 			case WP_CLONECARBINE:
 			case WP_BATTLEDROID:
 			case WP_CLONECOMMANDO:
-
 				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
 				{
 					if (cg.renderingThirdPerson)
