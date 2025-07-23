@@ -859,19 +859,11 @@ G_SetClientSound
 */
 static void G_SetClientSound(gentity_t* ent)
 {
-	if (ent->client && ent->client->isHacking)
-	{ //loop hacking sound
-		//ent->s.loopSound = G_SoundIndex("sound/player/hacking.mp3");
-		ent->s.loopSound = G_SoundIndex("sound/player/coding.mp3");
-	}
-	else if (ent->client)
-	{
-		ent->s.loopSound = 0;
-	}
-	else
-	{
-		ent->s.loopSound = 0;
-	}
+	//	if (ent->waterlevel && (ent->watertype&(CONTENTS_LAVA|CONTENTS_SLIME)) )
+	//		ent->s.loopSound = G_SoundIndex("sound/weapons/stasis/electricloop.wav");
+
+	//	else
+	//		ent->s.loopSound = 0;
 }
 
 //==============================================================
@@ -10078,7 +10070,7 @@ void ClientEndFrame(gentity_t* ent)
 
 	ent->client->ps.stats[STAT_HEALTH] = ent->health; // FIXME: get rid of ent->health...
 
-	G_SetClientSound(ent);
+	// G_SetClientSound(ent);
 }
 
 qboolean NPC_IsNotHavingEnoughForceSight(const gentity_t* self)
