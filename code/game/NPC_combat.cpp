@@ -1128,9 +1128,13 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		break;
 
 	case WP_MELEE:
-	case WP_TUSKEN_STAFF:
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 		ent->NPC->burstSpacing = 1000; //attackdebounce
+		break;
+
+	case WP_TUSKEN_STAFF:
+		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
+		ent->NPC->burstSpacing = 2500; //attackdebounce
 		break;
 
 	case WP_ATST_MAIN:
