@@ -1379,7 +1379,8 @@ static shaderProgram_t* SelectShaderProgram(int stageIndex, shaderStage_t* stage
 				index |= VELOCITYDEF_USE_RGBAGEN;
 			if (backEnd.currentEntity->e.renderfx & RF_DISINTEGRATE2)
 				index |= VELOCITYDEF_USE_DEFORM_VERTEXES;
-			if (glslShaderGroup == tr.lightallShader &&
+			if (r_parallaxMapping->integer &&
+				glslShaderGroup == tr.lightallShader &&
 				stage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP &&
 				stage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK && // TODO: remove light requirement
 				!(backEnd.viewParms.flags & VPF_DEPTHSHADOW)) // Don't use expensive parallax shaders in shadows
@@ -1420,8 +1421,10 @@ static shaderProgram_t* SelectShaderProgram(int stageIndex, shaderStage_t* stage
 				index |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
 
 			// TODO: remove light vertex def and fix parallax usage on unlit stages like glow stages
-			if (stage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP &&
-				stage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK)
+			if (r_parallaxMapping->integer &&
+				stage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP &&
+				stage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK && // TODO: remove light requirement
+				!(backEnd.viewParms.flags & VPF_DEPTHSHADOW)) // Don't use expensive parallax shaders in shadows
 				index |= LIGHTDEF_USE_PARALLAXMAP | LIGHTDEF_USE_LIGHT_VERTEX;
 
 			result = &stage->glslShaderGroup[index];
@@ -1470,6 +1473,12 @@ static shaderProgram_t* SelectShaderProgram(int stageIndex, shaderStage_t* stage
 	else if (stage->glslShaderGroup == tr.lightallShader)
 	{
 		index = stage->glslShaderIndex;
+
+		if (!r_parallaxMapping->integer &&
+			stage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP)
+		{
+			index &= ~LIGHTDEF_USE_PARALLAXMAP;
+		}
 
 		if (r_lightmap->integer && (index & LIGHTDEF_USE_LIGHTMAP) && !(index & LIGHTDEF_USE_LIGHT_VERTEX))
 		{
@@ -1858,7 +1867,8 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 				samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[TB_COLORMAP], TB_COLORMAP);
 
 			// TODO: remove light requirement
-			if (pStage->glslShaderGroup == tr.lightallShader &&
+			if (r_parallaxMapping->integer &&
+				pStage->glslShaderGroup == tr.lightallShader &&
 				pStage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP &&
 				pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK &&
 				!(backEnd.viewParms.flags & VPF_DEPTHSHADOW))
