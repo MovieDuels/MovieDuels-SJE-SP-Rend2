@@ -432,7 +432,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 	}
 	else if (ent->client->NPC_class == CLASS_ASSASSIN_DROID)
 	{
-		ent->client->ps.stats[STAT_ARMOR] = 250; // start with full armor
+		ent->client->ps.stats[STAT_ARMOR] = 100; // start with full armor
 		if (ent->s.weapon == WP_BLASTER)
 		{
 			ent->NPC->scriptFlags |= SCF_ALT_FIRE;
@@ -445,7 +445,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		{
 			ent->NPC->scriptFlags |= SCF_ALT_FIRE;
 		}
-		ent->client->ps.stats[STAT_ARMOR] = 250; // start with full armor
+		ent->client->ps.stats[STAT_ARMOR] = 100; // start with full armor
 		ent->flags |= FL_NO_KNOCKBACK;
 		ent->NPC->scriptFlags = SCF_CHASE_ENEMIES | SCF_LOOK_FOR_ENEMIES | SCF_DONT_FLEE;
 	}
