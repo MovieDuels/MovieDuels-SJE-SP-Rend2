@@ -6627,8 +6627,15 @@ static void Item_ListBox_Paint(itemDef_t* item)
 			for (int c = 0; c < cols && idx < count; ++c, ++idx) {
 				qhandle_t image = DC->feederItemImage(item->special, idx);
 #ifdef NEW_FEEDER
+#ifdef NEW_FEEDER_V4
+				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS)) {
+					DC->setColor(colorTable[CT_WHITE]);
+					DC->drawHandlePic(curX + 1, curY + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, mdBackground);
+				}
+#else
 				if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS))
 					DC->drawHandlePic(curX + 1, curY + 1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, mdBackground);
+#endif
 #endif		
 				if (image) {
 					if (item->window.flags & WINDOW_PLAYERCOLOR) {
@@ -10429,6 +10436,22 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 			if (key == A_MWHEELDOWN)
 			{
 #ifdef NEW_FEEDER_V3
+#ifdef NEW_FEEDER_V4
+				int lengthMax = (item->window.rect.h / listPtr->elementHeight);
+				int viewChunkSize = lengthMax * viewmax;
+				int removeRemaining = count % viewmax;
+
+				if (count <= viewChunkSize) // Entire List fits in chunk, prevent scrolling all together
+					return qfalse;
+
+				listPtr->startPos += static_cast<int>(item->special) == FEEDER_MD_MODELS ? viewmax : 1;
+				int maxStartPos = (count > viewmax) ? (count - viewmax) : 0;
+				if (listPtr->startPos > maxStartPos - removeRemaining) {
+					listPtr->startPos = maxStartPos - removeRemaining;
+					Display_MouseMove(nullptr, DC->cursorx, DC->cursory);
+					return qfalse;
+				}
+#else
 				listPtr->startPos += static_cast<int>(item->special) == FEEDER_MD_MODELS ? viewmax : 1;
 				int maxStartPos = (count > viewmax) ? (count - viewmax) : 0;
 				if (listPtr->startPos > maxStartPos)
@@ -10437,6 +10460,7 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 					Display_MouseMove(nullptr, DC->cursorx, DC->cursory);
 					return qfalse;
 				}
+#endif
 #else
 				listPtr->startPos += static_cast<int>(item->special) == FEEDER_Q3HEADS ? viewmax : 1;
 

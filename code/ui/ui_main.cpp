@@ -8193,12 +8193,28 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 	}
 
 #ifdef NEW_FEEDER // Animation
+#ifdef NEW_FEEDER_V4
+	static int mdSelected = -1;
+	if (!strcmp(menu->window.name, "ui_md"))
+	{
+		if (uiVariantIndex != mdSelected) 
+		{
+			mdSelected = uiVariantIndex;
+			ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
+			uiInfo.moveAnimTime += uiInfo.uiDC.realTime; 
+		}
+		else
+			return;
+	}
+	else
+#else
 	if (!strcmp(menu->window.name, "ui_md")) 
 	{
 		ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
 		uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 	}
 	else
+#endif
 #endif
 	ItemParse_model_g2anim_go(item, ui_char_anim.string);
 
