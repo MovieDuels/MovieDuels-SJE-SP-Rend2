@@ -959,6 +959,7 @@ void CG_DrawInformation()
 			|| strcmp(s, "01nar") == 0
 			|| strcmp(s, "md2_bd_ch") == 0
 			|| strcmp(s, "md_sn_intro_jedi") == 0
+			|| strcmp(s, "md_sn_intro_jedi2") == 0
 			|| strcmp(s, "md_ch_battledroids") == 0
 			|| strcmp(s, "md_ep4_intro") == 0
 			|| strcmp(s, "secbase") == 0
