@@ -6555,7 +6555,9 @@ qhandle_t	mdBackground;
 #endif
 static void Item_ListBox_Paint(itemDef_t* item)
 {
-#ifdef NEW_FEEDER_V1
+#ifdef NEW_FEEDER_V5
+	if ((item->special == FEEDER_MD_MODELS) || (item->special == FEEDER_MD_VARIANTS)) 
+	{
 	float x, y;
 	int count = DC->feederCount(item->special);
 	auto* listPtr = static_cast<listBoxDef_t*>(item->typeData);
@@ -6674,7 +6676,10 @@ static void Item_ListBox_Paint(itemDef_t* item)
 			listPtr->drawPadding = availH - (itemsInCol * listPtr->elementHeight);
 		}
 	}
-#else
+	}
+	else
+	{
+#endif
 	float x, y, size;
 	int i, thumb;
 	qhandle_t image;
@@ -6948,6 +6953,8 @@ static void Item_ListBox_Paint(itemDef_t* item)
 				// fit++;
 			}
 		}
+	}
+#ifdef NEW_FEEDER_V5
 	}
 #endif
 }

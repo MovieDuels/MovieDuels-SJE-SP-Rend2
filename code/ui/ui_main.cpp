@@ -429,8 +429,8 @@ static constexpr charMD_t charMD[] = {
 	{ "Jan Ors",						"",										"",				"jan",							"jan",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JAN_ORS",					qfalse },
 	{ "Jan Ors",						"[Dark Forces 2]",						"",				"md_jan_df2",					"jan",					"model_df2",					"",							"",						"",				"",			0,		0,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JAN_ORS",					 qtrue },
 	{ "Jaro Tapal",						"",										"",				"jaro_tapal",					"jaro_tapal",			"model_default",				"cal_staff",				"",						"blue",			"",			7,		128,	ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JARO_TAPAL",					qfalse },
-	{ "Jedi Knight",							"",										"",				"jedi",							"jedi",					"model_default",				"single_2",					"",						"yellow",		"",			1,		14,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JEDI_KNIGHT",		qfalse },
-	{ "Jedi Knight",							"",										"",				"jedi2",						"jedi",					"model_j2",						"single_7",					"",						"orange",		"",			1,		14,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JEDI_KNIGHT",		 qtrue },
+	{ "Jedi Knight",					"",										"",				"jedi",							"jedi",					"model_default",				"single_2",					"",						"yellow",		"",			1,		14,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JEDI_KNIGHT",		qfalse },
+	{ "Jedi Knight",					"",										"",				"jedi2",						"jedi",					"model_j2",						"single_7",					"",						"orange",		"",			1,		14,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JEDI_KNIGHT",		 qtrue },
 	{ "Jedi Master",					"",										"",				"jedimaster",					"jedi",					"model_master",					"dual_3",					"",						"green",		"",			7,		128,	ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JEDI_MASTER",				 qtrue },
 	{ "Jedi Trainer",					"",										"",				"jeditrainer",					"jeditrainer",			"model_default",				"jedi",						"jedi",					"purple",		"purple",	6,		64,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JEDI_TRAINER",				 qtrue },
 	{ "Jyn Erso",						"",										"",				"md_jyn_erso",					"jynerso",				"model_default",				"",							"",						"",				"",			0,		0,		ERA_REBELS,			BOTH_MENUIDLE1,			BOTH_PAIN1,			BOTH_MENUIDLE1,			"",			"",		1.0f,	"@MD_CHAR_DESC_JYN_ERSO",					qfalse },
@@ -1839,6 +1839,29 @@ static qboolean UI_DeferMenuScript(const char** args)
 	return qfalse;
 }
 
+#ifdef NEW_FEEDER_V5
+static void UI_ClearForce()
+{
+	// Get player state
+	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
+
+	if (!cl) // No client, get out
+	{
+		return;
+	}
+
+	if (cl->gentity && cl->gentity->client)
+	{
+		playerState_t* pState = cl->gentity->client;
+
+		memset(pState->forcePowerLevel, 0, sizeof(pState->forcePowerLevel));
+		pState->forcePowersKnown = 0;
+		pState->saberStylesKnown = 0;
+	}
+}
+#endif
+
+
 /*
 ===============
 UI_RunMenuScript
@@ -2095,6 +2118,10 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "md_player") == 0)
 		{
+#ifdef NEW_FEEDER_V5
+			UI_ClearInventory();
+			UI_ClearForce();
+#endif
 			UI_ClearWeapons();
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("playermodel %s\n", charMD[uiVariantIndex].npc));
 
@@ -8108,6 +8135,14 @@ static void UI_UpdateCharacterSkin()
 #ifdef NEW_FEEDER // Saber
 	if (!strcmp(menu->window.name, "ui_md"))
 	{
+#ifdef NEW_FEEDER_V5 // Saber
+		modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
+		if (modelPtr) { // Using divide instead so its consistant
+			modelPtr->fov_x = (32.0f / charMD[uiVariantIndex].fov);
+			modelPtr->fov_y = (32.0f / charMD[uiVariantIndex].fov);
+		}
+#endif
+
 		//UI_SaberAttachToChar(item);
 
 		int num_sabers = 1;
@@ -8154,15 +8189,21 @@ static void UI_UpdateCharacterSkin()
 				}
 			}
 		}
-
+#ifdef NEW_FEEDER_V5
+#else
 #ifdef NEW_FEEDER_V2
 		modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
 		if (modelPtr) {
+#ifdef NEW_FEEDER_V5_C // Using divide instead so its consistant
+			modelPtr->fov_x = (32.0f / charMD[uiVariantIndex].fov);
+			modelPtr->fov_y = (32.0f / charMD[uiVariantIndex].fov);
+#else
 			modelPtr->fov_x = (32.0f * charMD[uiVariantIndex].fov);
 			modelPtr->fov_y = (32.0f * charMD[uiVariantIndex].fov);
+#endif
 		}
 #endif
-
+#endif
 		 // Play the Select Animation
 		//uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
 		//ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
@@ -8200,6 +8241,9 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 		if (uiVariantIndex != mdSelected) 
 		{
 			mdSelected = uiVariantIndex;
+#ifdef NEW_FEEDER_V5
+			uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
+#endif
 			ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
 			uiInfo.moveAnimTime += uiInfo.uiDC.realTime; 
 		}
