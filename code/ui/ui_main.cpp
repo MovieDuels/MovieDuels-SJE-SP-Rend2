@@ -116,8 +116,8 @@ typedef struct {
 	eraMD_t			era;
 
 	int 		    selectAnimation;
-	int				plyAnimation;
-	int 		    npcAnimation;
+	int				plyAnimation; // Disabled as menu closes on selection
+	int 		    npcAnimation; // Disabled as menu closes on selection 
 
 	const char* plySelectSound;
 	const char* npcSelectSound;
@@ -2103,6 +2103,7 @@ static qboolean UI_RunMenuScript(const char** args)
 #ifdef NEW_FEEDER_V2
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s\n", charMD[uiVariantIndex].npc));
 #endif
+			/*
 			const menuDef_t* menu = Menu_GetFocused();
 			if (menu && !strcmp(menu->window.name, "ui_md"))
 			{
@@ -2112,6 +2113,7 @@ static qboolean UI_RunMenuScript(const char** args)
 					uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				}
 			}
+			*/
 
 			if (strcmp(charMD[uiVariantIndex].npcSelectSound, ""))
 				DC->startLocalSound(DC->registerSound(charMD[uiVariantIndex].npcSelectSound, qfalse), CHAN_VOICE);
@@ -2125,6 +2127,7 @@ static qboolean UI_RunMenuScript(const char** args)
 			UI_ClearWeapons();
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("playermodel %s\n", charMD[uiVariantIndex].npc));
 
+			/*
 			const menuDef_t* menu = Menu_GetFocused();
 			if (menu && !strcmp(menu->window.name, "ui_md"))
 			{
@@ -2134,6 +2137,7 @@ static qboolean UI_RunMenuScript(const char** args)
 					uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				}
 			}
+			*/
 
 			if (strcmp(charMD[uiVariantIndex].plySelectSound, ""))
 				DC->startLocalSound(DC->registerSound(charMD[uiVariantIndex].plySelectSound, qfalse), CHAN_VOICE);
