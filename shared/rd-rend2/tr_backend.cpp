@@ -2104,7 +2104,7 @@ static void RB_RenderSSAO()
 
 	FBO_Bind(tr.screenSsaoFbo);
 
-	GL_SetViewportAndScissor(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
+	GL_SetViewportAndScissor(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
 
 	GLSL_BindProgram(&tr.depthBlurShader[1]);
 

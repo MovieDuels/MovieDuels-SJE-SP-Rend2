@@ -402,7 +402,7 @@ static void CG_LoadBar()
 		{
 			if (cg_com_rend2.integer == 1) //rend2 is on
 			{
-				cgi_R_Font_DrawString(40, 2, va("Warning: When using Quality mode, longer loading times can be expected."), colorTable[CT_WHITE], cgs.media.qhFontSmall, -1, 1.0f);
+				cgi_R_Font_DrawString(10, 10, va("Longer loading times can be expected with Rend2 enabled."), colorTable[CT_WHITE], cgs.media.qhFontMedium, -1, 0.5f);
 			}
 		}
 		constexpr int x = (640 - LOADBAR_CLIP_WIDTH) / 2;
