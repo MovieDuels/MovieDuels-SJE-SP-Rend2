@@ -4680,7 +4680,7 @@ void UI_MainMenu()
 	}
 }
 
-int SCREENSHOT_TOTAL = -1;
+int SCREENSHOT_TOTAL = 8;
 int SCREENSHOT_CHOICE = 0;
 int SCREENSHOT_NEXT_UPDATE_TIME = 0;
 
@@ -4690,32 +4690,8 @@ static char* UI_GetCurrentLevelshot()
 
 	if (SCREENSHOT_NEXT_UPDATE_TIME < time)
 	{
-		if (SCREENSHOT_TOTAL < 0)
-		{
-			// Count and register them...
-			SCREENSHOT_TOTAL = 0;
-
-			while (true)
-			{
-				char screenShot[128] = { 0 };
-
-				strcpy(screenShot, va("menu/art/unknownmap%i", SCREENSHOT_TOTAL));
-
-				if (!ui.R_RegisterShaderNoMip(screenShot))
-				{
-					break;
-				}
-				SCREENSHOT_TOTAL++;
-			}
-			SCREENSHOT_TOTAL--;
-		}
 		SCREENSHOT_NEXT_UPDATE_TIME = time + 5000;
-		SCREENSHOT_CHOICE++;
-
-		if (SCREENSHOT_CHOICE > SCREENSHOT_TOTAL)
-		{
-			SCREENSHOT_CHOICE = 0;
-		}
+		SCREENSHOT_CHOICE = Q_irand(0, SCREENSHOT_TOTAL);
 	}
 
 	return va("menu/art/unknownmap%i", SCREENSHOT_CHOICE);
@@ -4733,7 +4709,7 @@ void Menu_Cache()
 	uis.whiteShader = ui.R_RegisterShader("white");
 	//uis.menuBackShader = ui.R_RegisterShaderNoMip( "menu/art/unknownmap" );
 	//uis.menuBackShader = ui.R_RegisterShaderNoMip(UI_GetCurrentLevelshot());
-	uis.menuBackShader = ui.R_RegisterShaderNoMip(va("menu/art/unknownmap%d", Q_irand(0, 10)));
+	uis.menuBackShader = ui.R_RegisterShaderNoMip(va("menu/art/unknownmap%d", Q_irand(0, SCREENSHOT_TOTAL)));
 }
 
 /*

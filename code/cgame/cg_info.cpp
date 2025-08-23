@@ -833,7 +833,7 @@ static void LoadTips(void)
 	}
 }
 
-int SCREENSHOT_TOTAL = -1;
+int SCREENSHOT_TOTAL = 8;
 int SCREENSHOT_CHOICE = 0;
 int SCREENSHOT_NEXT_UPDATE_TIME = 0;
 char SCREENSHOT_CURRENT[64] = { 0 };
@@ -853,27 +853,8 @@ static char* cg_GetCurrentLevelshot1(const char* s)
 
 	if (SCREENSHOT_NEXT_UPDATE_TIME < time || SCREENSHOT_NEXT_UPDATE_TIME == 0)
 	{
-		if (SCREENSHOT_TOTAL < 0)
-		{
-			// Count and register them...
-			SCREENSHOT_TOTAL = 0;
-
-			while (true)
-			{
-				char screen_shot[128] = { 0 };
-
-				strcpy(screen_shot, va("menu/art/unknownmap%i", SCREENSHOT_TOTAL));
-
-				if (!cgi_R_RegisterShaderNoMip(screen_shot))
-				{
-					break;
-				}
-				SCREENSHOT_TOTAL++;
-			}
-			SCREENSHOT_TOTAL--;
-		}
 		SCREENSHOT_NEXT_UPDATE_TIME = time + 10000;
-		SCREENSHOT_CHOICE = Q_flrand(0, SCREENSHOT_TOTAL);
+		SCREENSHOT_CHOICE = Q_irand(0, SCREENSHOT_TOTAL);
 		memset(SCREENSHOT_CURRENT, 0, sizeof SCREENSHOT_CURRENT);
 		strcpy(SCREENSHOT_CURRENT, va("menu/art/unknownmap%i", SCREENSHOT_CHOICE));
 	}
@@ -895,27 +876,8 @@ static char* cg_GetCurrentLevelshot2(const char* s)
 
 	if (SCREENSHOT_NEXT_UPDATE_TIME < time || SCREENSHOT_NEXT_UPDATE_TIME == 0)
 	{
-		if (SCREENSHOT_TOTAL < 0)
-		{
-			// Count and register them...
-			SCREENSHOT_TOTAL = 0;
-
-			while (true)
-			{
-				char screen_shot[128] = { 0 };
-
-				strcpy(screen_shot, va("menu/art/unknownmap%i", SCREENSHOT_TOTAL));
-
-				if (!cgi_R_RegisterShaderNoMip(screen_shot))
-				{
-					break;
-				}
-				SCREENSHOT_TOTAL++;
-			}
-			SCREENSHOT_TOTAL--;
-		}
 		SCREENSHOT_NEXT_UPDATE_TIME = time + 2500;
-		SCREENSHOT_CHOICE = Q_flrand(0, SCREENSHOT_TOTAL);
+		SCREENSHOT_CHOICE = Q_irand(0, SCREENSHOT_TOTAL);
 		memset(SCREENSHOT_CURRENT, 0, sizeof SCREENSHOT_CURRENT);
 		strcpy(SCREENSHOT_CURRENT, va("menu/art/unknownmap%i", SCREENSHOT_CHOICE));
 	}
