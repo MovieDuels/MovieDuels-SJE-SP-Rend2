@@ -35,6 +35,7 @@ color4ub_t	styleColors[MAX_LIGHT_STYLES];
 
 void RB_BinTriangleCounts(void);
 
+
 /*
 ==================
 R_DrawElements
@@ -50,6 +51,7 @@ void R_DrawElementsVBO(int numIndexes, glIndex_t firstIndex, glIndex_t minIndex,
 	GL_DrawIndexed(GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, offset, 1, 0);
 }
 
+
 static void R_DrawMultiElementsVBO(int multiDrawPrimitives, glIndex_t* multiDrawMinIndex, glIndex_t* multiDrawMaxIndex,
 	GLsizei* multiDrawNumIndexes, glIndex_t** multiDrawFirstIndex)
 {
@@ -60,6 +62,7 @@ static void R_DrawMultiElementsVBO(int multiDrawPrimitives, glIndex_t* multiDraw
 		multiDrawPrimitives);
 }
 
+
 /*
 =============================================================
 
@@ -69,6 +72,7 @@ SURFACE SHADERS
 */
 
 shaderCommands_t	tess;
+
 
 /*
 =================
@@ -135,8 +139,8 @@ because a surface may be forced to perform a RB_End due
 to overflow.
 ==============
 */
-void RB_BeginSurface(shader_t* shader, const int fogNum, const int cubemapIndex)
-{
+void RB_BeginSurface(shader_t* shader, int fogNum, int cubemapIndex) {
+
 	shader_t* state = (shader->remappedShader) ? shader->remappedShader : shader;
 
 	tess.numIndexes = 0;
@@ -165,8 +169,11 @@ void RB_BeginSurface(shader_t* shader, const int fogNum, const int cubemapIndex)
 	}
 }
 
+
+
 extern float EvalWaveForm(const waveForm_t* wf);
 extern float EvalWaveFormClamped(const waveForm_t* wf);
+
 
 static void ComputeTexMods(shaderStage_t* pStage, int bundleNum, float* outMatrix, float* outOffTurb)
 {
@@ -188,6 +195,7 @@ static void ComputeTexMods(shaderStage_t* pStage, int bundleNum, float* outMatri
 	for (tm = 0; tm < bundle->numTexMods; tm++) {
 		switch (bundle->texMods[tm].type)
 		{
+
 		case TMOD_NONE:
 			tm = TR_MAX_TEXMODS;		// break out of for loop
 			break;
@@ -945,6 +953,7 @@ Draws triangle outlines for debugging
 ================
 */
 static void DrawTris(shaderCommands_t* input, const VertexArraysProperties* vertexArrays) {
+
 	Allocator& frameAllocator = *backEndData->perFrameMemory;
 	vertexAttribute_t attribs[ATTR_INDEX_MAX] = {};
 	GL_VertexArraysToAttribs(attribs, ARRAY_LEN(attribs), vertexArrays);
@@ -1142,9 +1151,9 @@ static void RB_FogPass(shaderCommands_t* input, const VertexArraysProperties* ve
 		input->shader->sort != SS_FOG)
 		shaderBits |= FOGDEF_USE_FALLBACK_GLOBAL_FOG;
 
-	if (input->numPasses > 0)
+	/*if (input->numPasses > 0)
 		if (input->xstages[0]->alphaTestType != ALPHA_TEST_NONE)
-			shaderBits |= FOGDEF_USE_ALPHA_TEST;
+			shaderBits |= FOGDEF_USE_ALPHA_TEST;*/
 
 	shaderProgram_t* sp = tr.fogShader + shaderBits;
 
@@ -1195,7 +1204,8 @@ static void RB_FogPass(shaderCommands_t* input, const VertexArraysProperties* ve
 		GetEntityBlockUniformBinding(backEnd.currentEntity),
 		GetShaderInstanceBlockUniformBinding(
 			backEnd.currentEntity, input->shader),
-		GetBonesBlockUniformBinding()
+		GetBonesBlockUniformBinding(),
+		GetSceneBlockUniformBinding()
 	};
 
 	SamplerBindingsWriter samplerBindingsWriter;
@@ -1260,7 +1270,7 @@ static void RB_FogPass(shaderCommands_t* input, const VertexArraysProperties* ve
 		UniformDataWriter uniformDataWriterBack;
 		uniformDataWriterBack.Start(sp);
 		uniformDataWriterBack.SetUniformInt(UNIFORM_FOGINDEX, tr.world->globalFogIndex - 1);
-		
+
 		// Fog planes shouldn't have any form of blending or alpha testing
 		if (r_volumetricFog->integer)
 		{
@@ -1348,7 +1358,7 @@ static shaderProgram_t* SelectShaderProgram(int stageIndex, shaderStage_t* stage
 		if (stage->bundle[0].tcGen != TCGEN_TEXTURE || (stage->bundle[0].numTexMods))
 			index |= REFRACTIONDEF_USE_TCGEN_AND_TCMOD;
 
-		if (!useAlphaTestGE192)
+		/*if (!useAlphaTestGE192)
 		{
 			if (stage->alphaTestType != ALPHA_TEST_NONE)
 				index |= REFRACTIONDEF_USE_TCGEN_AND_TCMOD | REFRACTIONDEF_USE_ALPHA_TEST;
@@ -1356,7 +1366,7 @@ static shaderProgram_t* SelectShaderProgram(int stageIndex, shaderStage_t* stage
 		else
 		{
 			index |= REFRACTIONDEF_USE_ALPHA_TEST;
-		}
+		}*/
 
 		if (tr.hdrLighting == qtrue)
 			index |= REFRACTIONDEF_USE_SRGB_TRANSFORM;
@@ -1389,86 +1399,86 @@ static shaderProgram_t* SelectShaderProgram(int stageIndex, shaderStage_t* stage
 		}
 		else
 			if (glslShaderGroup == tr.lightallShader)
-		{
-			index = 0;
-
-			if (backEnd.currentEntity && backEnd.currentEntity != &tr.worldEntity)
 			{
+				index = 0;
+
+				if (backEnd.currentEntity && backEnd.currentEntity != &tr.worldEntity)
+				{
+#ifdef REND2_SP_MD3
+					if (glState.vertexAnimation)
+					{
+						index |= LIGHTDEF_USE_VERTEX_ANIMATION;
+					}
+					else
+#endif // REND2_SP
+						if (glState.skeletalAnimation)
+						{
+							index |= LIGHTDEF_USE_SKELETAL_ANIMATION;
+						}
+				}
+
+				/*if ( !useAlphaTestGE192 )
+				{
+					if (stage->alphaTestType != ALPHA_TEST_NONE)
+						index |= LIGHTDEF_USE_ALPHA_TEST;
+				}
+				else
+				{
+					index |= LIGHTDEF_USE_ALPHA_TEST;
+				}*/
+
+				if (stage->bundle[0].tcGen != TCGEN_TEXTURE || (stage->bundle[0].numTexMods))
+					index |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+
+				// TODO: remove light vertex def and fix parallax usage on unlit stages like glow stages
+				if (r_parallaxMapping->integer &&
+					stage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP &&
+					stage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK && // TODO: remove light requirement
+					!(backEnd.viewParms.flags & VPF_DEPTHSHADOW)) // Don't use expensive parallax shaders in shadows
+					index |= LIGHTDEF_USE_PARALLAXMAP | LIGHTDEF_USE_LIGHT_VERTEX;
+
+				result = &stage->glslShaderGroup[index];
+				backEnd.pc.c_lightallDraws++;
+			}
+			else
+			{
+				index = 0;
+
+				if (tess.shader->numDeforms && !ShaderRequiresCPUDeforms(tess.shader))
+				{
+					index |= GENERICDEF_USE_DEFORM_VERTEXES;
+				}
 #ifdef REND2_SP_MD3
 				if (glState.vertexAnimation)
 				{
-					index |= LIGHTDEF_USE_VERTEX_ANIMATION;
+					index |= GENERICDEF_USE_VERTEX_ANIMATION;
 				}
 				else
 #endif // REND2_SP
 					if (glState.skeletalAnimation)
 					{
-						index |= LIGHTDEF_USE_SKELETAL_ANIMATION;
+						index |= GENERICDEF_USE_SKELETAL_ANIMATION;
 					}
-			}
 
-			/*if ( !useAlphaTestGE192 )
-			{
-				if (stage->alphaTestType != ALPHA_TEST_NONE)
-					index |= LIGHTDEF_USE_ALPHA_TEST;
-			}
-			else
-			{
-				index |= LIGHTDEF_USE_ALPHA_TEST;
-			}*/
-
-			if (stage->bundle[0].tcGen != TCGEN_TEXTURE || (stage->bundle[0].numTexMods))
-				index |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
-
-			// TODO: remove light vertex def and fix parallax usage on unlit stages like glow stages
-			if (r_parallaxMapping->integer &&
-				stage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP &&
-				stage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK && // TODO: remove light requirement
-				!(backEnd.viewParms.flags & VPF_DEPTHSHADOW)) // Don't use expensive parallax shaders in shadows
-				index |= LIGHTDEF_USE_PARALLAXMAP | LIGHTDEF_USE_LIGHT_VERTEX;
-
-			result = &stage->glslShaderGroup[index];
-			backEnd.pc.c_lightallDraws++;
-		}
-		else
-		{
-			index = 0;
-
-			if (tess.shader->numDeforms && !ShaderRequiresCPUDeforms(tess.shader))
-			{
-				index |= GENERICDEF_USE_DEFORM_VERTEXES;
-			}
-#ifdef REND2_SP_MD3
-			if (glState.vertexAnimation)
-			{
-				index |= GENERICDEF_USE_VERTEX_ANIMATION;
-			}
-			else
-#endif // REND2_SP
-				if (glState.skeletalAnimation)
+				/*if ( !useAlphaTestGE192 )
 				{
-					index |= GENERICDEF_USE_SKELETAL_ANIMATION;
+					if (stage->alphaTestType != ALPHA_TEST_NONE)
+						index |= GENERICDEF_USE_TCGEN_AND_TCMOD | GENERICDEF_USE_ALPHA_TEST;
 				}
+				else
+				{
+					index |= GENERICDEF_USE_ALPHA_TEST;
+				}*/
 
-			/*if ( !useAlphaTestGE192 )
-			{
-				if (stage->alphaTestType != ALPHA_TEST_NONE)
-					index |= GENERICDEF_USE_TCGEN_AND_TCMOD | GENERICDEF_USE_ALPHA_TEST;
+				if (backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2))
+					index |= GENERICDEF_USE_RGBAGEN;
+
+				if (backEnd.currentEntity->e.renderfx & RF_DISINTEGRATE2)
+					index |= GENERICDEF_USE_DEFORM_VERTEXES;
+
+				result = &tr.genericShader[index];
+				backEnd.pc.c_genericDraws++;
 			}
-			else
-			{
-				index |= GENERICDEF_USE_ALPHA_TEST;
-			}*/
-
-			if (backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2))
-				index |= GENERICDEF_USE_RGBAGEN;
-
-			if (backEnd.currentEntity->e.renderfx & RF_DISINTEGRATE2)
-				index |= GENERICDEF_USE_DEFORM_VERTEXES;
-
-			result = &tr.genericShader[index];
-			backEnd.pc.c_genericDraws++;
-		}
 	}
 	else if (stage->glslShaderGroup == tr.lightallShader)
 	{
@@ -1651,6 +1661,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 			if (backEnd.currentEntity->e.renderfx & RF_FORCE_ENT_ALPHA)
 			{
 				stateBits = GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+#ifndef REND2_SP
 				if (backEnd.currentEntity->e.renderfx & RF_ALPHA_DEPTH)
 				{
 					// depth write, so faces through the model will be stomped
@@ -1659,7 +1670,9 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 					// standard alpha surfs.
 					stateBits |= GLS_DEPTHMASK_TRUE;
 				}
+#endif
 			}
+#ifdef REND2_SP
 			if (backEnd.currentEntity->e.renderfx & RF_ALPHA_FADE)
 			{
 				if (backEnd.currentEntity->e.shaderRGBA[3] < 255)
@@ -1668,6 +1681,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 					forceAlphaGen = AGEN_ENTITY;
 				}
 			}
+#endif
 		}
 
 		if (backEnd.viewParms.flags & VPF_POINTSHADOW)
@@ -1877,7 +1891,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 				if (pStage->bundle[TB_NORMALMAP].image[0])
 				{
 					samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[TB_NORMALMAP], TB_NORMALMAP);
-					enableTextures[0] = 1.0f;
 				}
 				else if (r_normalMapping->integer)
 				{
@@ -1890,6 +1903,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		{
 			int i;
 			vec4_t enableTextures = {};
+			enableTextures[0] = (float)pStage->glow;
 
 			bool enableCubeMaps = (r_cubeMapping->integer
 				&& !(tr.viewParms.flags & VPF_NOCUBEMAPS)
@@ -1967,7 +1981,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 					if (pStage->bundle[TB_NORMALMAP].image[0])
 					{
 						samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[TB_NORMALMAP], TB_NORMALMAP);
-						enableTextures[0] = 1.0f;
 					}
 					else if (r_normalMapping->integer)
 					{
@@ -2014,6 +2027,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 						samplerBindingsWriter.AddStaticImage(tr.screenSsaoImage, TB_SSAOMAP);
 					else if (r_ssao->integer)
 						samplerBindingsWriter.AddStaticImage(tr.whiteImage, TB_SSAOMAP);
+
 				}
 			}
 
@@ -2023,6 +2037,10 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		{
 			samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[0], 0);
 			samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[1], 1);
+
+			vec4_t enableTextures = {};
+			enableTextures[0] = (float)pStage->glow;
+			uniformDataWriter.SetUniformVec4(UNIFORM_ENABLETEXTURES, enableTextures);
 		}
 		else
 		{
@@ -2030,6 +2048,9 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 			// set state
 			//
 			samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[0], 0);
+			vec4_t enableTextures = {};
+			enableTextures[0] = (float)pStage->glow;
+			uniformDataWriter.SetUniformVec4(UNIFORM_ENABLETEXTURES, enableTextures);
 		}
 
 		CaptureDrawData(input, pStage, index, stage);
