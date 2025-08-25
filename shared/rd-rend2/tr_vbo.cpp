@@ -80,7 +80,7 @@ static GLenum GetGLBufferUsage(vboUsage_t usage)
 R_CreateVBO
 ============
 */
-VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage, const char* debugName)
+VBO_t* R_CreateVBO(byte* vertexes, size_t vertexesSize, vboUsage_t usage, const char* debugName)
 {
 	VBO_t* vbo;
 
@@ -130,7 +130,7 @@ VBO_t* R_CreateVBO(byte* vertexes, int vertexesSize, vboUsage_t usage, const cha
 R_CreateIBO
 ============
 */
-IBO_t* R_CreateIBO(byte* indexes, int indexesSize, vboUsage_t usage, const char* debugName)
+IBO_t* R_CreateIBO(byte* indexes, size_t indexesSize, vboUsage_t usage, const char* debugName)
 {
 	IBO_t* ibo;
 
@@ -356,11 +356,11 @@ R_VBOList_f
 */
 void R_VBOList_f(void)
 {
-	int             i;
+	int    i;
 	VBO_t* vbo;
 	IBO_t* ibo;
-	int             vertexesSize = 0;
-	int             indexesSize = 0;
+	size_t vertexesSize = 0;
+	size_t indexesSize = 0;
 
 	ri.Printf(PRINT_ALL, " vertex buffers\n");
 	ri.Printf(PRINT_ALL, "----------------\n\n");
@@ -403,11 +403,11 @@ static void AddVertexArray(
 	VertexArraysProperties* properties,
 	int attributeIndex,
 	size_t size,
-	int stride,
-	int offset,
-	int stepRate,
+	size_t stride,
+	size_t offset,
+	size_t stepRate,
 	void* stream,
-	int streamStride)
+	size_t streamStride)
 {
 	properties->enabledAttributes[properties->numVertexArrays] = attributeIndex;
 	properties->offsets[attributeIndex] = offset;
@@ -607,7 +607,7 @@ void RB_UpdateVBOs(unsigned int attribBits)
 		VertexArraysProperties vertexArrays = {};
 		CalculateVertexArraysProperties(attribBits, &vertexArrays);
 
-		int totalVertexDataSize = tess.numVertexes * vertexArrays.vertexDataSize;
+		size_t totalVertexDataSize = tess.numVertexes * vertexArrays.vertexDataSize;
 		backEnd.pc.c_dynamicVboTotalSize += totalVertexDataSize;
 
 		if ((current_frame->dynamicVboWriteOffset + totalVertexDataSize) > frameVbo->vertexesSize)
@@ -638,7 +638,7 @@ void RB_UpdateVBOs(unsigned int attribBits)
 			{
 				const int attributeIndex = vertexArrays.enabledAttributes[j];
 				const size_t attribSize = vertexArrays.sizes[attributeIndex];
-				const int streamStride = vertexArrays.streamStrides[attributeIndex];
+				const size_t streamStride = vertexArrays.streamStrides[attributeIndex];
 				void* stream = vertexArrays.streams[attributeIndex];
 
 				memcpy(writePtr, (byte*)stream + i * streamStride, attribSize);
@@ -745,7 +745,7 @@ void RB_CommitInternalBufferData()
 	current_frame->dynamicVboCommitOffset = current_frame->dynamicVboWriteOffset;
 }
 
-void RB_BindUniformBlock(GLuint ubo, uniformBlock_t block, int offset)
+void RB_BindUniformBlock(GLuint ubo, uniformBlock_t block, size_t offset)
 {
 	const uniformBlockInfo_t* blockInfo = uniformBlocksInfo + block;
 
@@ -766,12 +766,12 @@ void RB_BindUniformBlock(GLuint ubo, uniformBlock_t block, int offset)
 	}
 }
 
-int RB_BindAndUpdateFrameUniformBlock(uniformBlock_t block, void* data)
+size_t RB_BindAndUpdateFrameUniformBlock(uniformBlock_t block, void* data)
 {
 	const uniformBlockInfo_t* blockInfo = uniformBlocksInfo + block;
 	gpuFrame_t* thisFrame = backEndData->currentFrame;
 	const byte currentFrameScene = thisFrame->currentScene;
-	const int offset = thisFrame->uboWriteOffset[currentFrameScene];
+	const size_t offset = thisFrame->uboWriteOffset[currentFrameScene];
 
 	RB_BindUniformBlock(thisFrame->ubo[currentFrameScene], block, offset);
 
@@ -785,7 +785,7 @@ int RB_BindAndUpdateFrameUniformBlock(uniformBlock_t block, void* data)
 	return offset;
 }
 
-int RB_AddShaderInstanceBlock(void* data)
+size_t RB_AddShaderInstanceBlock(void* data)
 {
 	if (glState.currentGlobalUBO != tr.shaderInstanceUbo)
 	{
@@ -826,7 +826,7 @@ void RB_BeginConstantsUpdate(gpuFrame_t* frame)
 		mapFlags);
 }
 
-int RB_AppendConstantsData(
+size_t RB_AppendConstantsData(
 	gpuFrame_t* frame, const void* data, size_t dataSize)
 {
 	const byte currentFrameScene = frame->currentScene;

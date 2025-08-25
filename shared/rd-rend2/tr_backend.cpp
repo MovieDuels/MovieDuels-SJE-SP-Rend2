@@ -463,7 +463,7 @@ void GL_DrawIndexed(
 	GLenum primitiveType,
 	int numIndices,
 	GLenum indexType,
-	int offset,
+	size_t offset,
 	int numInstances,
 	int baseVertex)
 {
