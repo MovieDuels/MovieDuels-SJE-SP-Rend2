@@ -9841,25 +9841,34 @@ static void jedi_attack()
 			//NPC will return your gesture
 			if (NPC->s.weapon == WP_SABER)
 			{
-				switch (NPC->client->ps.saber_anim_level)
-				{
-				case SS_FAST:
-				case SS_TAVION:
-				case SS_MEDIUM:
-				case SS_STRONG:
-				case SS_DESANN:
+				if (NPC->client->friendlyfaction == FACTION_NEUTRAL)
+				{ 
+					// No force powers so do basic taunt
 					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				case SS_DUAL:
-					NPC->client->ps.SaberActivate();
-					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_DUAL_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				case SS_STAFF:
-					NPC->client->ps.SaberActivate();
-					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAFF_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				default:;
 				}
+				else 
+				{
+					switch (NPC->client->ps.saber_anim_level)
+					{
+					case SS_FAST:
+					case SS_TAVION:
+					case SS_MEDIUM:
+					case SS_STRONG:
+					case SS_DESANN:
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					case SS_DUAL:
+						NPC->client->ps.SaberActivate();
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_DUAL_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					case SS_STAFF:
+						NPC->client->ps.SaberActivate();
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAFF_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					default:;
+					}
+				}
+
 				if (TIMER_Done(NPC, "talkDebounce") && !Q_irand(0, 10))
 				{
 					if (NPCInfo->enemyCheckDebounceTime < 8)

@@ -7439,6 +7439,13 @@ void PM_TorsoAnimation()
 			PM_SetAnim(pm, SETANIM_BOTH, BOTH_ALORA_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			//SETANIM_FLAG_NORMAL
 		}
+		else if (pm->ps->weapon == WP_SABER && pm->gent->client->friendlyfaction == FACTION_NEUTRAL && PM_HasAnimation(
+			pm->gent, BOTH_ENGAGETAUNT))
+		{
+			// No force powers so do basic taunt
+			PM_SetAnim(pm, SETANIM_BOTH, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			//SETANIM_FLAG_NORMAL
+		}
 		else if (pm->ps->weapon == WP_SABER && pm->ps->saber_anim_level == SS_DUAL && PM_HasAnimation(
 			pm->gent, BOTH_DUAL_TAUNT))
 		{

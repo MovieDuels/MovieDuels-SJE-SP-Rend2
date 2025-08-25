@@ -1933,6 +1933,10 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					}
 				}
 			}
+			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
+				// No force powers so do basic taunt
+				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 			else if (ent->client->ps.saber[0].tauntAnim != -1)
 			{
 				anim = ent->client->ps.saber[0].tauntAnim;
@@ -2143,6 +2147,10 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					}
 				}
 			}
+			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
+				// No force powers so do basic taunt
+				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 			else if (ent->client->ps.saber[0].flourishAnim != -1)
 			{
 				anim = ent->client->ps.saber[0].flourishAnim;
@@ -2261,6 +2269,10 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 						}
 					}
 				}
+			}
+			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
+				// No force powers so do basic taunt
+				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_VICTORY_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 			else if (ent->client->ps.saber[0].gloatAnim != -1)
 			{
