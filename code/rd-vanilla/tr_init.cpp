@@ -1998,9 +1998,9 @@ GetRefAPI
 */
 extern void R_LoadImage(const char* shortname, byte** pic, int* width, int* height);
 extern void RE_WorldEffectCommand(const char* command);
-extern qboolean R_inPVS(vec3_t p1, vec3_t p2);
 extern void RE_GetModelBounds(const refEntity_t* ref_ent, vec3_t bounds1, vec3_t bounds2);
 extern void G2API_AnimateG2Models(CGhoul2Info_v& ghoul2, const int acurrent_time, CRagDollUpdateParams* params);
+extern qboolean R_inPVS(const vec3_t p1, const vec3_t p2, byte* mask);
 extern qboolean G2API_GetRagBonePos(CGhoul2Info_v& ghoul2, const char* boneName, vec3_t pos, vec3_t entAngles, vec3_t ent_pos, vec3_t entScale);
 extern qboolean G2API_RagEffectorKick(CGhoul2Info_v& ghoul2, const char* boneName, vec3_t velocity);
 extern qboolean G2API_RagForceSolve(CGhoul2Info_v& ghoul2, const qboolean force);
@@ -2117,7 +2117,7 @@ extern "C" Q_EXPORT refexport_t * QDECL GetRefAPI(const int api_version, const r
 
 	re.R_InitWorldEffects = R_InitWorldEffects;
 	re.R_ClearStuffToStopGhoul2CrashingThings = R_ClearStuffToStopGhoul2CrashingThings;
-	re.R_inPVS = R_inPVS;
+	re.inPVS = R_inPVS;
 
 	re.tr_distortionAlpha = get_tr_distortionAlpha;
 	re.tr_distortionStretch = get_tr_distortionStretch;

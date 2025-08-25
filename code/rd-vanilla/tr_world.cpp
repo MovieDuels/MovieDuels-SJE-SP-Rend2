@@ -608,7 +608,7 @@ static void R_RecursiveWorldNode(mnode_t* node, int planeBits, int dlightBits) {
 R_PointInLeaf
 ===============
 */
-static mnode_t* R_PointInLeaf(vec3_t p) {
+static mnode_t* R_PointInLeaf(const vec3_t p) {
 	if (!tr.world) {
 		Com_Error(ERR_DROP, "R_PointInLeaf: bad model");
 	}
@@ -651,12 +651,14 @@ R_inPVS
 =================
 */
 
-qboolean R_inPVS(vec3_t p1, vec3_t p2) {
-	const mnode_t* leaf = R_PointInLeaf(p1);
-	const byte* vis = ri.CM_ClusterPVS(leaf->cluster);
+qboolean R_inPVS(const vec3_t p1, const vec3_t p2, byte* mask) {
+	mnode_t* leaf;
+
+	leaf = R_PointInLeaf(p1);
+	mask = ri.CM_ClusterPVS(leaf->cluster);
 	leaf = R_PointInLeaf(p2);
 
-	if (!(vis[leaf->cluster >> 3] & 1 << (leaf->cluster & 7))) {
+	if (!(mask[leaf->cluster >> 3] & (1 << (leaf->cluster & 7)))) {
 		return qfalse;
 	}
 	return qtrue;
