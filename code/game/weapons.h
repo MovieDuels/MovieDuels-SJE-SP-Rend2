@@ -225,8 +225,8 @@ using ammoData_t = struct ammoData_s
 	int max; // Max amount player can hold of ammo
 };
 
-#define RUNNING_SPREAD			1.7f
-#define WALKING_SPREAD			1.4f
+#define RUNNING_SPREAD			1.3f
+#define WALKING_SPREAD			1.2f
 
 // Bryar Pistol
 //--------
@@ -236,9 +236,9 @@ using ammoData_t = struct ammoData_s
 
 // E11 Blaster
 //---------
-#define BLASTER_MAIN_SPREAD			0.8f
-#define BLASTER_ALT_SPREAD			1.2f
-#define BLASTER_NPC_SPREAD			0.5f
+#define BLASTER_MAIN_SPREAD			1.0f
+#define BLASTER_ALT_SPREAD			1.0f
+#define BLASTER_NPC_SPREAD			1.8f
 #define BLASTER_VELOCITY			2300
 #define BLASTER_NPC_VEL_CUT			0.5f
 #define BLASTER_NPC_HARD_VEL_CUT	0.7f
@@ -250,9 +250,9 @@ using ammoData_t = struct ammoData_s
 
 // DC-15
 //---------
-#define CLONERIFLE_MAIN_SPREAD			0.1f
-#define CLONERIFLE_ALT_SPREAD			0.8f
-#define CLONERIFLE_NPC_SPREAD			0.1f
+#define CLONERIFLE_MAIN_SPREAD			1.0f
+#define CLONERIFLE_ALT_SPREAD			1.0f
+#define CLONERIFLE_NPC_SPREAD			1.0f
 #define CLONERIFLE_VELOCITY				2300
 #define CLONERIFLE_NPC_VEL_CUT			0.5f
 #define CLONERIFLE_NPC_HARD_VEL_CUT		0.7f
@@ -263,8 +263,8 @@ using ammoData_t = struct ammoData_s
 
 // DH-17
 //---------
-#define REBELBLASTER_MAIN_SPREAD			1.5f
-#define REBELBLASTER_ALT_SPREAD				2.5f
+#define REBELBLASTER_MAIN_SPREAD			1.0f
+#define REBELBLASTER_ALT_SPREAD				1.0f
 #define REBELBLASTER_NPC_SPREAD				1.0f
 #define REBELBLASTER_VELOCITY				2000
 #define REBELBLASTER_NPC_VEL_CUT			0.5f
@@ -276,9 +276,9 @@ using ammoData_t = struct ammoData_s
 
 // DC-17
 //---------
-#define CLONECOMMANDO_MAIN_SPREAD			0.1f
-#define CLONECOMMANDO_ALT_SPREAD			0.1f
-#define CLONECOMMANDO_NPC_SPREAD			0.1f
+#define CLONECOMMANDO_MAIN_SPREAD			1.0f
+#define CLONECOMMANDO_ALT_SPREAD			1.0f
+#define CLONECOMMANDO_NPC_SPREAD			1.0f
 #define CLONECOMMANDO_VELOCITY				3500
 #define CLONECOMMANDO_NPC_VEL_CUT			0.5f
 #define CLONECOMMANDO_NPC_HARD_VEL_CUT		0.7f
@@ -289,9 +289,9 @@ using ammoData_t = struct ammoData_s
 
 // A280
 //---------
-#define REBELRIFLE_MAIN_SPREAD			0.1f
-#define REBELRIFLE_ALT_SPREAD			0.1f
-#define REBELRIFLE_NPC_SPREAD			0.1f
+#define REBELRIFLE_MAIN_SPREAD			1.0f
+#define REBELRIFLE_ALT_SPREAD			1.0f
+#define REBELRIFLE_NPC_SPREAD			1.0f
 #define REBELRIFLE_VELOCITY				1250
 #define REBELRIFLE_NPC_VEL_CUT			0.5f
 #define REBELRIFLE_NPC_HARD_VEL_CUT		0.7f
@@ -308,9 +308,9 @@ using ammoData_t = struct ammoData_s
 
 // Westar 34
 //--------
-#define JANGO_MAIN_SPREAD			0.1f
-#define JANGO_ALT_SPREAD			0.1f
-#define JANGO_NPC_SPREAD			0.1f
+#define JANGO_MAIN_SPREAD			1.0f
+#define JANGO_ALT_SPREAD			1.0f
+#define JANGO_NPC_SPREAD			1.0f
 #define JANGO_VELOCITY				3800
 #define JANGO_NPC_VEL_CUT			0.5f
 #define JANGO_NPC_HARD_VEL_CUT		0.7f
@@ -321,15 +321,15 @@ using ammoData_t = struct ammoData_s
 
 // EE-3 Carbine Rifle
 //---------
-#define BOBA_MAIN_SPREAD			0.5f
-#define BOBA_ALT_SPREAD			0.5f
-#define BOBA_NPC_SPREAD			0.5f
-#define BOBA_VELOCITY			2500
+#define BOBA_MAIN_SPREAD			1.0f
+#define BOBA_ALT_SPREAD				1.0f
+#define BOBA_NPC_SPREAD				1.0f
+#define BOBA_VELOCITY				2500
 #define BOBA_NPC_VEL_CUT			0.5f
-#define BOBA_NPC_HARD_VEL_CUT	0.7f
-#define BOBA_DAMAGE				35
+#define BOBA_NPC_HARD_VEL_CUT		0.7f
+#define BOBA_DAMAGE					35
 #define	BOBA_NPC_DAMAGE_EASY		25
-#define	BOBA_NPC_DAMAGE_NORMAL	30 // 14
+#define	BOBA_NPC_DAMAGE_NORMAL		30 // 14
 #define	BOBA_NPC_DAMAGE_HARD		35 // 18
 
 // DC-17 Hand Pistol
@@ -363,14 +363,14 @@ using ammoData_t = struct ammoData_s
 #define BOWCASTER_SPLASH_RADIUS		0
 #define BOWCASTER_SIZE				2
 
-#define BOWCASTER_ALT_SPREAD		2.0f
+#define BOWCASTER_MAIN_SPREAD		1.5f
 #define BOWCASTER_VEL_RANGE			0.3f
 #define BOWCASTER_CHARGE_UNIT		200.0f	// bowcaster charging gives us one more unit every 200ms--if you change this, you'll have to do the same in bg_pmove
 
 // Heavy Repeater
 //----------
-#define REPEATER_SPREAD				1.4f
-#define REPEATER_NPC_SPREAD			0.7f
+#define REPEATER_SPREAD				1.1f
+#define REPEATER_NPC_SPREAD			1.2f
 #define	REPEATER_DAMAGE				10
 #define	REPEATER_VELOCITY			1600
 #define	REPEATER_NPC_DAMAGE_EASY	2
@@ -404,7 +404,7 @@ using ammoData_t = struct ammoData_s
 // Golan Arms Flechette
 //---------
 #define FLECHETTE_SHOTS				6
-#define FLECHETTE_SPREAD			4.0f
+#define FLECHETTE_SPREAD			3.0f
 #define FLECHETTE_DAMAGE			15
 #define FLECHETTE_VEL				3500
 #define FLECHETTE_SIZE				1
@@ -439,7 +439,7 @@ using ammoData_t = struct ammoData_s
 //primary
 #define	CONC_VELOCITY				3000
 #define	CONC_DAMAGE					150
-#define CONC_NPC_SPREAD				0.9f
+#define CONC_NPC_SPREAD				1.0f
 #define	CONC_NPC_DAMAGE_EASY		15
 #define	CONC_NPC_DAMAGE_NORMAL		30
 #define	CONC_NPC_DAMAGE_HARD		50
