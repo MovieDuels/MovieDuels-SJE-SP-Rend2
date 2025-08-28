@@ -319,6 +319,7 @@ constexpr auto GIANTCHAR_HEIGHT = 48;
 #define NEW_FEEDER_V3
 #define NEW_FEEDER_V4
 #define NEW_FEEDER_V5
+#define NEW_FEEDER_V6
 
 // Player weapons effects
 using saber_colors_t = enum

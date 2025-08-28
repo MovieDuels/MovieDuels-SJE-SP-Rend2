@@ -1107,6 +1107,9 @@ vmCvar_t ui_char_model;
 vmCvar_t ui_char_skin;
 vmCvar_t ui_model;
 #endif
+#ifdef NEW_FEEDER_V6
+vmCvar_t ui_char_team_select;
+#endif
 vmCvar_t ui_char_skin_head;
 vmCvar_t ui_char_skin_torso;
 vmCvar_t ui_char_skin_legs;
@@ -1240,6 +1243,9 @@ static cvarTable_t cvarTable[] =
 #ifdef NEW_FEEDER
 	{&ui_char_skin, "ui_char_skin", "", nullptr, 0},
 	{&ui_model, "ui_model", "", nullptr, 0},
+#endif
+#ifdef NEW_FEEDER_V6
+	{&ui_char_team_select, "ui_char_team_select", "", nullptr, 0},
 #endif
 	{&ui_char_skin_head, "ui_char_skin_head", "", nullptr, 0},
 	//the "g_*" versions are initialized in UI_Init, ui_atoms.cpp
@@ -1860,7 +1866,9 @@ static void UI_ClearForce()
 	}
 }
 #endif
-
+#ifdef NEW_FEEDER_V6
+static bool firstTimeLoad = false;
+#endif
 
 /*
 ===============
@@ -1874,10 +1882,22 @@ static qboolean UI_RunMenuScript(const char** args)
 	if (String_Parse(args, &name))
 	{
 #ifdef NEW_FEEDER_V1
+#ifdef NEW_FEEDER_V6
+		if (Q_stricmp(name, "md_char_init") == 0)
+		{
+			if (!firstTimeLoad) {
+				firstTimeLoad = true;
+				goto runEra;
+			}
+			return qtrue;
+		}
+#endif
 		for (int i = 0; i < TOTAL_ERAS; i++) {
 			if (Q_stricmp(name, era_table[i].name) == 0) {
 				uiEra = i;
-
+#ifdef NEW_FEEDER_V6
+runEra:
+#endif
 				uiModelIndex = eraIndex[uiEra];
 				uiVariantIndex = eraIndex[uiEra];
 
@@ -2099,10 +2119,27 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "md_npc") == 0) 
 		{
-			ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s\n", charMD[uiVariantIndex].npc));
-#ifdef NEW_FEEDER_V2
-			ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s\n", charMD[uiVariantIndex].npc));
-#endif
+			const char* targetname = va("%s%d", charMD[uiVariantIndex].npc, Q_irand(0, 99999));
+			const char* team;
+
+			switch (ui_char_team_select.integer)
+			{
+				case 1: team = "TEAM_PLAYER";	break;
+				case 2: team = "TEAM_ENEMY";	break;
+				case 3: team = "TEAM_SOLO";		break;
+				case 4: team = "TEAM_NEUTRAL";	break;
+				default: team = nullptr;		break;
+			}
+
+			if (!team) {
+				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s\n", charMD[uiVariantIndex].npc, targetname));
+				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s\n", charMD[uiVariantIndex].npc, targetname));
+			}
+			else {
+				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s %s\n", charMD[uiVariantIndex].npc, targetname, team));
+				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s %s\n", charMD[uiVariantIndex].npc, targetname, team));
+			}
+			
 			/*
 			const menuDef_t* menu = Menu_GetFocused();
 			if (menu && !strcmp(menu->window.name, "ui_md"))
@@ -2126,6 +2163,16 @@ static qboolean UI_RunMenuScript(const char** args)
 #endif
 			UI_ClearWeapons();
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("playermodel %s\n", charMD[uiVariantIndex].npc));
+
+			switch (ui_char_team_select.integer)
+			{
+				case 1:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam player\n");			break;
+				case 2:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam enemy\n");			break;
+				case 3:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam solo\n");			break;
+				case 4:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam neutral\n");		break;
+
+				default: break;
+			}
 
 			/*
 			const menuDef_t* menu = Menu_GetFocused();
@@ -4379,6 +4426,10 @@ void UI_Load()
 	}
 
 	String_Init();
+
+#ifdef NEW_FEEDER_V6
+//	firstTimeLoad = false;
+#endif
 
 	UI_LoadMenus(menuSet, qtrue);
 	Menus_CloseAll();
