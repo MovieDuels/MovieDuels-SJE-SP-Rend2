@@ -1447,6 +1447,7 @@ struct gentity_s
 	char* NPC_targetname;
 	char* NPC_target;
 	team_t NPC_overrideTeam;
+	int NPC_overrideHealth;
 
 	//Variables used by movers (most likely exclusively by them)
 	moverState_t moverState;

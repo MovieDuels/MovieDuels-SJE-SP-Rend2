@@ -1109,6 +1109,7 @@ vmCvar_t ui_model;
 #endif
 #ifdef NEW_FEEDER_V6
 vmCvar_t ui_char_team_select;
+vmCvar_t ui_char_npc_health_select;
 #endif
 vmCvar_t ui_char_skin_head;
 vmCvar_t ui_char_skin_torso;
@@ -1246,6 +1247,7 @@ static cvarTable_t cvarTable[] =
 #endif
 #ifdef NEW_FEEDER_V6
 	{&ui_char_team_select, "ui_char_team_select", "", nullptr, 0},
+	{&ui_char_npc_health_select, "ui_char_npc_health_select", "0", nullptr, 0},
 #endif
 	{&ui_char_skin_head, "ui_char_skin_head", "", nullptr, 0},
 	//the "g_*" versions are initialized in UI_Init, ui_atoms.cpp
@@ -2119,25 +2121,28 @@ runEra:
 		}
 		else if (Q_stricmp(name, "md_npc") == 0) 
 		{
-			const char* targetname = va("%s%d", charMD[uiVariantIndex].npc, Q_irand(0, 99999));
+			const char* targetname = va("%s%d", charMD[uiVariantIndex].npc, Q_irand(0, 9999));
 			const char* team;
+			const int npcHealth = ui_char_npc_health_select.integer;
 
 			switch (ui_char_team_select.integer)
 			{
-				case 1: team = "TEAM_PLAYER";	break;
-				case 2: team = "TEAM_ENEMY";	break;
-				case 3: team = "TEAM_SOLO";		break;
-				case 4: team = "TEAM_NEUTRAL";	break;
-				default: team = nullptr;		break;
+				case 1: team = "TEAM_PLAYER";		break;
+				case 2: team = "TEAM_ENEMY";		break;
+				case 3: team = "TEAM_SOLO";			break;
+				case 4: team = "TEAM_NEUTRAL";		break;
+				default: team = "TEAM_PROJECTION";	break; // Will use default team
 			}
-
-			if (!team) {
+			
+			if (strcmp(team, "TEAM_PROJECTION") == 0 && npcHealth == 0) {
+				// Default npc spawn
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s\n", charMD[uiVariantIndex].npc, targetname));
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s\n", charMD[uiVariantIndex].npc, targetname));
 			}
 			else {
-				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s %s\n", charMD[uiVariantIndex].npc, targetname, team));
-				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s %s\n", charMD[uiVariantIndex].npc, targetname, team));
+				// Spawn NPC with set team and health
+				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s %s %d\n", charMD[uiVariantIndex].npc, targetname, team, npcHealth));
+				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s %s %d\n", charMD[uiVariantIndex].npc, targetname, team, npcHealth));
 			}
 			
 			/*

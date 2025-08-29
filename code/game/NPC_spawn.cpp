@@ -2614,7 +2614,7 @@ gentity_t* NPC_Spawn_Do(gentity_t* ent, const qboolean fullSpawnNow)
 
 	newent->NPC->eventualGoal = ent->enemy;
 
-	// Overide player and enemy teams if set by spawn command
+	// Overide player and enemy teams if set by npc spawn command
 	if (ent->NPC_overrideTeam != TEAM_PROJECTION)
 	{
 		newent->client->playerTeam = ent->NPC_overrideTeam;
@@ -2630,6 +2630,13 @@ gentity_t* NPC_Spawn_Do(gentity_t* ent, const qboolean fullSpawnNow)
 				newent->client->enemyTeam = ent->NPC_overrideTeam;
 				break;
 		}
+	}
+
+	// Overide health if set by npc spawn command
+	if (ent->NPC_overrideHealth)
+	{
+		newent->health = ent->NPC_overrideHealth;
+		newent->NPC_overrideHealth = ent->NPC_overrideHealth;
 	}
 
 	for (int index = BSET_FIRST; index < NUM_BSETS; index++)
@@ -5301,6 +5308,7 @@ static void NPC_Spawn_f()
 	qboolean isVehicle = qfalse;
 	char* target;
 	team_t overrideTeam = TEAM_PROJECTION; // Don't override by default
+	int overridehealth = 0; // Don't override by default
 
 	if (!NPCspawner)
 	{
@@ -5352,8 +5360,14 @@ static void NPC_Spawn_f()
 				overrideTeam = team;
 			}
 			else {
-				gi.Printf(S_COLOR_RED"Error: Unknown team '%s'\n", teamStr);
+				gi.Printf(S_COLOR_RED"Error, expected TEAM_PLAYER, TEAM_ENEMY, TEAM_SOLO or TEAM_NEUTRAL\n", teamStr);
+				return;
 			}
+		}
+
+		// Check for health argument
+		if (gi.argc() > 5) {
+			overridehealth = atoi(gi.argv(5));
 		}
 	}
 
@@ -5387,6 +5401,8 @@ static void NPC_Spawn_f()
 	NPCspawner->wait = 500;
 
 	NPCspawner->NPC_overrideTeam = overrideTeam;
+
+	NPCspawner->NPC_overrideHealth = overridehealth;
 
 	if (isVehicle)
 	{
