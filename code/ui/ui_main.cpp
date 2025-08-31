@@ -1109,7 +1109,8 @@ vmCvar_t ui_model;
 #endif
 #ifdef NEW_FEEDER_V6
 vmCvar_t ui_char_team_select;
-vmCvar_t ui_char_npc_health_select;
+vmCvar_t ui_char_health_select;
+vmCvar_t ui_char_mute_voice_line;
 #endif
 vmCvar_t ui_char_skin_head;
 vmCvar_t ui_char_skin_torso;
@@ -1247,7 +1248,8 @@ static cvarTable_t cvarTable[] =
 #endif
 #ifdef NEW_FEEDER_V6
 	{&ui_char_team_select, "ui_char_team_select", "", nullptr, 0},
-	{&ui_char_npc_health_select, "ui_char_npc_health_select", "0", nullptr, 0},
+	{&ui_char_health_select, "ui_char_health_select", "0", nullptr, 0},
+	{&ui_char_mute_voice_line, "ui_char_mute_voice_line", "0", nullptr, CVAR_ARCHIVE},
 #endif
 	{&ui_char_skin_head, "ui_char_skin_head", "", nullptr, 0},
 	//the "g_*" versions are initialized in UI_Init, ui_atoms.cpp
@@ -2123,7 +2125,7 @@ runEra:
 		{
 			const char* targetname = va("%s%d", charMD[uiVariantIndex].npc, Q_irand(0, 9999));
 			const char* team;
-			const int npcHealth = ui_char_npc_health_select.integer;
+			const int npcHealth = ui_char_health_select.integer;
 
 			switch (ui_char_team_select.integer)
 			{
@@ -2157,7 +2159,7 @@ runEra:
 			}
 			*/
 
-			if (strcmp(charMD[uiVariantIndex].npcSelectSound, ""))
+			if (strcmp(charMD[uiVariantIndex].npcSelectSound, "") && ui_char_mute_voice_line.integer == 0)
 				DC->startLocalSound(DC->registerSound(charMD[uiVariantIndex].npcSelectSound, qfalse), CHAN_VOICE);
 		}
 		else if (Q_stricmp(name, "md_player") == 0)
@@ -2178,6 +2180,19 @@ runEra:
 
 				default: break;
 			}
+			
+			const int playerHealth = ui_char_health_select.integer;
+			if (playerHealth != 0)
+			{
+				// Set player health
+				ui.Cmd_ExecuteText(EXEC_APPEND, va("give maxhealth %d\n", playerHealth));
+			}
+			else
+			{
+				// Make sure player starts with full health
+				ui.Cmd_ExecuteText(EXEC_APPEND, "give health\n");
+				ui.Cmd_ExecuteText(EXEC_APPEND, "give armor\n");
+			}
 
 			/*
 			const menuDef_t* menu = Menu_GetFocused();
@@ -2191,7 +2206,7 @@ runEra:
 			}
 			*/
 
-			if (strcmp(charMD[uiVariantIndex].plySelectSound, ""))
+			if (strcmp(charMD[uiVariantIndex].plySelectSound, "") && ui_char_mute_voice_line.integer == 0)
 				DC->startLocalSound(DC->registerSound(charMD[uiVariantIndex].plySelectSound, qfalse), CHAN_VOICE);
 
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("setsaberstances %i %i\n", charMD[uiVariantIndex].style, charMD[uiVariantIndex].styleBitFlag));

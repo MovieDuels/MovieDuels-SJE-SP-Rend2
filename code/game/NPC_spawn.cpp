@@ -5360,7 +5360,7 @@ static void NPC_Spawn_f()
 				overrideTeam = team;
 			}
 			else {
-				gi.Printf(S_COLOR_RED"Error, expected TEAM_PLAYER, TEAM_ENEMY, TEAM_SOLO or TEAM_NEUTRAL\n", teamStr);
+				gi.Printf(S_COLOR_RED"Error, expected TEAM_PLAYER, TEAM_ENEMY, TEAM_SOLO or TEAM_NEUTRAL\n");
 				return;
 			}
 		}

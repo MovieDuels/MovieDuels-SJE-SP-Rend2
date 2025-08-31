@@ -232,6 +232,26 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 			return;
 	}
 
+	if (!Q_stricmp(name, "maxhealth"))
+	{
+		// Set a new max health value
+		if (argc == 3)
+		{
+			int newMaxHealth = Com_Clampi(1, 999, atoi(args));
+			ent->health = newMaxHealth;
+			ent->max_health = newMaxHealth;
+			if (ent->client)
+			{
+				ent->client->ps.stats[STAT_HEALTH] = ent->client->ps.stats[STAT_MAX_HEALTH] = newMaxHealth;
+				ent->client->ps.stats[STAT_ARMOR] = newMaxHealth;
+			}
+		}
+		else
+			ent->health = ent->client->ps.stats[STAT_MAX_HEALTH];
+		if (!give_all)
+			return;
+	}
+
 	if (cg_trueguns.integer > 0)
 	{
 		gi.cvar_set("cg_trueguns", "0");
