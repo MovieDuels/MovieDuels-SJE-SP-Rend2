@@ -1050,6 +1050,11 @@ static void SG_WriteScreenshot(qboolean qbAutosave, const char* psMapName)
 
 	if (!pbRawScreenShot)
 	{
+		if (byBlank != NULL)
+		{
+			delete[] byBlank;
+		}
+
 		const size_t bySize = SG_SCR_WIDTH * SG_SCR_HEIGHT * 3;
 
 		byBlank = new byte[bySize];
