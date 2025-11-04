@@ -1192,48 +1192,57 @@ And: Take any string, look for "/mr_" replace with "/ms_" based on "sex"
 returns qtrue if changed to ms
 =============
 */
+#define JADEN_VOICES_CUSTOM
 static qboolean G_AddSexToPlayerString(char* string, const qboolean qDoBoth)
 {
-	if VALIDSTRING(string)
-	{
-		char* start;
-		if (g_sex->string[0] == 'f')
+	char* start;
+	bool bUseCustomDirectory = false;
+
+	if VALIDSTRING(string) {
+		char snddir[MAX_QPATH];
+#ifdef JADEN_VOICES_CUSTOM
+		gi.Cvar_VariableStringBuffer("snd", snddir, MAX_QPATH);
+		bUseCustomDirectory = strlen(snddir) == 10 && !Q_stricmpn(snddir, "jaden_", 6);
+#endif
+		if (!bUseCustomDirectory)
 		{
-			start = strstr(string, "jaden_male/");
-			if (start != nullptr)
-			{
-				strncpy(start, "jaden_fmle", 10);
+			Q_strncpyz(snddir, "jaden_fmle", MAX_QPATH);
+		}
+
+		if (bUseCustomDirectory || g_sex->string[0] == 'f')
+		{
+			char* start = strstr(string, "jaden_male/");
+
+			if (start != NULL) {
+				strncpy(start, snddir, 10);
 				return qtrue;
 			}
-			start = strrchr(string, '/'); //get the last slash before the wav
-			if (start != nullptr)
-			{
-				if (strncmp(start, "/mr_", 4) == 0)
-				{
-					if (qDoBoth)
-					{
-						//we want to change mr to ms
-						start[2] = 's'; //change mr to ms
-						return qtrue;
+			else {
+				start = strrchr(string, '/');		//get the last slash before the wav
+				if (start != NULL) {
+					if (!strncmp(start, "/mr_", 4)) {
+						if (qDoBoth) {	//we want to change mr to ms
+							start[2] = 's';	//change mr to ms
+							return qtrue;
+						}
+						else {	//IF qDoBoth
+							return qfalse;	//don't want this one
+						}
 					}
-					//IF qDoBoth
-					return qfalse; //don't want this one
-				}
-			} //IF found slash
-		} //IF Female
-		else
+				}	//IF found slash
+			}
+		}	//IF Female
+		else if (!bUseCustomDirectory)
 		{
 			//i'm male
-			start = strrchr(string, '/'); //get the last slash before the wav
-			if (start != nullptr)
-			{
-				if (strncmp(start, "/ms_", 4) == 0)
-				{
-					return qfalse; //don't want this one
+			start = strrchr(string, '/');		//get the last slash before the wav
+			if (start != NULL) {
+				if (!strncmp(start, "/ms_", 4)) {
+					return qfalse;	//don't want this one
 				}
-			} //IF found slash
+			}	//IF found slash
 		}
-	} //if VALIDSTRING
+	}	//if VALIDSTRING
 	return qtrue;
 }
 
