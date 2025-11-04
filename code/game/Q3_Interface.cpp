@@ -1202,22 +1202,26 @@ static qboolean G_AddSexToPlayerString(char* string, const qboolean qDoBoth)
 		char snddir[MAX_QPATH];
 #ifdef JADEN_VOICES_CUSTOM
 		gi.Cvar_VariableStringBuffer("snd", snddir, MAX_QPATH);
-		bUseCustomDirectory = strlen(snddir) == 10 && !Q_stricmpn(snddir, "jaden_", 6);
+		bUseCustomDirectory = (strlen(snddir) == 10 && !Q_stricmpn(snddir, "jaden_", 6));
 #endif
 		if (!bUseCustomDirectory)
 		{
 			Q_strncpyz(snddir, "jaden_fmle", MAX_QPATH);
 		}
 
+		//Quake3Game()->DebugPrint(IGameInterface::WL_WARNING, "bUseCustomDirectory: %d snddir: %s\n", (int)bUseCustomDirectory, snddir);
+
 		if (bUseCustomDirectory || g_sex->string[0] == 'f')
 		{
 			char* start = strstr(string, "jaden_male/");
 
+			qboolean bChanged = qfalse;
 			if (start != NULL) {
 				strncpy(start, snddir, 10);
-				return qtrue;
+				bChanged = qtrue;
 			}
-			else {
+			if (qDoBoth && g_sex->string[0] == 'f')
+			{
 				start = strrchr(string, '/');		//get the last slash before the wav
 				if (start != NULL) {
 					if (!strncmp(start, "/mr_", 4)) {
@@ -1226,11 +1230,12 @@ static qboolean G_AddSexToPlayerString(char* string, const qboolean qDoBoth)
 							return qtrue;
 						}
 						else {	//IF qDoBoth
-							return qfalse;	//don't want this one
+							return bChanged;	//don't want this one
 						}
 					}
 				}	//IF found slash
 			}
+			return bChanged;
 		}	//IF Female
 		else if (!bUseCustomDirectory)
 		{
@@ -1245,6 +1250,7 @@ static qboolean G_AddSexToPlayerString(char* string, const qboolean qDoBoth)
 	}	//if VALIDSTRING
 	return qtrue;
 }
+
 
 /*
 =============
