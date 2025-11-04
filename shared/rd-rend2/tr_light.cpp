@@ -390,9 +390,9 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 			}
 			else
 			{
-				ent->ambientLight[0] += tr.identityLight * 96;
-				ent->ambientLight[1] += tr.identityLight * 96;
-				ent->ambientLight[2] += tr.identityLight * 96;
+				ent->ambientLight[0] += tr.identityLight * 76; // was 96
+				ent->ambientLight[1] += tr.identityLight * 76; // was 96
+				ent->ambientLight[2] += tr.identityLight * 76; // was 96
 			}
 		}
 		else
