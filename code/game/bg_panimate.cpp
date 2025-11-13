@@ -6845,7 +6845,8 @@ static void PM_TorsoAnimLightsaber()
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
 			pm->ps->saber_move = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL)
@@ -6895,7 +6896,8 @@ static void PM_TorsoAnimLightsaber()
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
 			pm->ps->saber_move = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_PISTOL)
@@ -6935,7 +6937,8 @@ static void PM_TorsoAnimLightsaber()
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
 			pm->ps->saber_move = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_PISTOL)
@@ -7701,7 +7704,8 @@ void PM_TorsoAnimation()
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN && !weapon_busy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL && !weapon_busy)
 		{
@@ -7745,7 +7749,8 @@ void PM_TorsoAnimation()
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN && !weapon_busy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_PISTOL && !weapon_busy)
 		{
@@ -7777,7 +7782,8 @@ void PM_TorsoAnimation()
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN && !weapon_busy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_PISTOL && !weapon_busy)
 		{
@@ -8210,6 +8216,7 @@ void PM_TorsoAnimation()
 				case WP_ROCKET_LAUNCHER:
 				case WP_CONCUSSION:
 				case WP_DEMP2:
+				case WP_Z6_ROTARY_CANNON:
 					if (weapon_busy)
 					{
 						if (cg.renderingThirdPerson)
@@ -8240,7 +8247,7 @@ void PM_TorsoAnimation()
 					}
 					break;
 
-				case WP_Z6_ROTARY_CANNON:
+				/*case WP_Z6_ROTARY_CANNON:
 					if (weapon_busy)
 					{
 						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
@@ -8255,7 +8262,7 @@ void PM_TorsoAnimation()
 					{
 						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
 					}
-					break;
+					break;*/
 
 				case WP_BLASTER:
 				case WP_THEFIRSTORDER:
@@ -8963,6 +8970,7 @@ void PM_TorsoAnimation()
 				case WP_ROCKET_LAUNCHER:
 				case WP_CONCUSSION:
 				case WP_DEMP2:
+				case WP_Z6_ROTARY_CANNON:
 
 					if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
 					{
@@ -9004,7 +9012,7 @@ void PM_TorsoAnimation()
 					}
 					break;
 
-				case WP_Z6_ROTARY_CANNON:
+				/*case WP_Z6_ROTARY_CANNON:
 
 					if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
 					{
@@ -9037,7 +9045,7 @@ void PM_TorsoAnimation()
 					{
 						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN_IDLE, SETANIM_FLAG_NORMAL);
 					}
-					break;
+					break;*/
 
 				case WP_BLASTER:
 				case WP_THEFIRSTORDER:

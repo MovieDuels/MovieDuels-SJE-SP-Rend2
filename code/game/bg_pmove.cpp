@@ -11151,12 +11151,13 @@ static void PM_Footsteps()
 					{
 						if (pm->cmd.buttons & BUTTON_BLOCK && pm->ps->sprintFuel > 15)
 						{
-							if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
+							/*if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_MINIGUN, set_anim_flags);
 							}
 							else {
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_HEAVY, set_anim_flags);
-							}
+							}*/
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_HEAVY, set_anim_flags);
 
 							if (pm->ps->PlayerEffectFlags & 1 << PEF_SPRINTING)
 							{
@@ -11178,9 +11179,9 @@ static void PM_Footsteps()
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
 							}
-							else if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
+							/*else if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_JOG_MINIGUN, set_anim_flags);
-							}
+							}*/
 							else
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_JOG_HEAVY, set_anim_flags);
@@ -11563,9 +11564,9 @@ static void PM_Footsteps()
 						{
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, set_anim_flags);
 						}
-						else if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
+						/*else if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_MINIGUN, set_anim_flags);
-						}
+						}*/
 						else
 						{
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_HEAVY, set_anim_flags);
@@ -21869,6 +21870,7 @@ static void PM_Weapon()
 			case WP_CONCUSSION:
 			case WP_BOWCASTER:
 			case WP_DEMP2:
+			case WP_Z6_ROTARY_CANNON:
 				if (cg.renderingThirdPerson)
 				{
 					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
@@ -21881,10 +21883,10 @@ static void PM_Weapon()
 				}
 				break;
 
-			case WP_Z6_ROTARY_CANNON:
+			/*case WP_Z6_ROTARY_CANNON:
 				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_MINIGUN,
 					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
-				break;
+				break;*/
 
 			case WP_BLASTER:
 			case WP_THEFIRSTORDER:

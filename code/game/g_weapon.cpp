@@ -1559,10 +1559,10 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		{
 			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_DEKA, SETANIM_AFLAG_BLOCKPACE);
 		}
-		else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+		/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
 		{
 			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
-		}
+		}*/
 		else
 		{
 			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
