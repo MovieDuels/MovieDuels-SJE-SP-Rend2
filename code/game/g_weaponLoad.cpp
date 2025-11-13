@@ -184,6 +184,7 @@ qboolean playerUsableWeapons[WP_NUM_WEAPONS] =
 	qtrue, //WP_REBELBLASTER,
 	qtrue, //WP_CLONERIFLE,
 	qtrue, //WP_CLONECOMMANDO,
+	qtrue, //WP_Z6_ROTARY_CANNON,
 	qtrue, //WP_REBELRIFLE,
 	qtrue, //WP_REY,
 	qtrue, //WP_JANGO,
@@ -313,6 +314,8 @@ const int defaultDamage[] = {
 
 	CLONECOMMANDO_DAMAGE, // WP_CLONERIFLE
 
+	Z6_ROTARY_CANNON_DAMAGE, // WP_Z6_ROTARY_CANNON
+
 	REBELRIFLE_DAMAGE, // WP_REBELRIFLE
 
 	REY_DAMAGE, // WP_REY
@@ -377,6 +380,8 @@ const int defaultAltDamage[] = {
 
 	CLONECOMMANDO_DAMAGE, // WP_REBELBLASTER
 
+	Z6_ROTARY_CANNON_DAMAGE, // WP_Z6_ROTARY_CANNON
+
 	REBELRIFLE_DAMAGE, // WP_REBELRIFLE
 
 	REY_DAMAGE, // WP_REY
@@ -434,6 +439,7 @@ const int defaultSplashDamage[] = {
 	0, // WP_REBELBLASTER
 	0, // WP_CLONERIFLE
 	0, // WP_CLONECOMMANDO
+	0, // WP_Z6_ROTARY_CANNON
 	0, // WP_REBELRIFLE
 	0, // WP_REY
 	0, // WP_JANGO
@@ -487,6 +493,7 @@ constexpr float defaultSplashRadius[] = {
 	0.0f, // WP_REBELBLASTER
 	0.0f, // WP_CLONERIFLE
 	0.0f, // WP_CLONECOMMANDO
+	0.0f, // WP_Z6_ROTARY_CANNON
 	0.0f, // WP_REBELRIFLE
 	0.0f, // WP_REY
 	0.0f, // WP_JANGO
@@ -540,6 +547,7 @@ const int defaultAltSplashDamage[] = {
 	0, // WP_REBELBLASTER
 	0, // WP_CLONERIFLE
 	0, // WP_CLONECOMMANDO
+	0, // WP_Z6_ROTARY_CANNON
 	0, // WP_REBELRIFLE
 	0, // WP_REY
 	0, // WP_JANGO
@@ -593,6 +601,7 @@ constexpr float defaultAltSplashRadius[] = {
 	0.0f, // WP_REBELBLASTER
 	0.0f, // WP_CLONERIFLE
 	0.0f, // WP_CLONECOMMANDO
+	0.0f, // WP_Z6_ROTARY_CANNON
 	0.0f, // WP_REBELRIFLE
 	0.0f, // WP_REY
 	0.0f, // WP_JANGO
@@ -755,6 +764,8 @@ void WPN_WeaponType(const char** hold_buf)
 		weaponNum = WP_CLONERIFLE;
 	else if (!Q_stricmp(token_str, "WP_CLONECOMMANDO"))
 		weaponNum = WP_CLONECOMMANDO;
+	else if (!Q_stricmp(token_str, "WP_Z6_ROTARY_CANNON"))
+		weaponNum = WP_Z6_ROTARY_CANNON;
 	else if (!Q_stricmp(token_str, "WP_REBELRIFLE"))
 		weaponNum = WP_REBELRIFLE;
 	else if (!Q_stricmp(token_str, "WP_REY"))

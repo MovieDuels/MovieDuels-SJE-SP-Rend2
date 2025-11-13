@@ -1021,6 +1021,7 @@ static qboolean self_is_gunner(const gentity_t* self)
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_WRIST_BLASTER:
 	case WP_REBELRIFLE:
 	case WP_REY:
@@ -7395,6 +7396,7 @@ static void jedi_combat_timers_update(const int enemy_dist)
 			case WP_REBELBLASTER:
 			case WP_CLONERIFLE:
 			case WP_CLONECOMMANDO:
+			case WP_Z6_ROTARY_CANNON:
 			case WP_WRIST_BLASTER:
 			case WP_REBELRIFLE:
 			case WP_REY:

@@ -88,6 +88,7 @@ float weaponSpeed[WP_NUM_WEAPONS][2] =
 	{CLONERIFLE_VELOCITY, CLONERIFLE_VELOCITY}, // WP_CLONERIFLE
 	{REBELBLASTER_VELOCITY, REBELBLASTER_VELOCITY}, // WP_REBELBLASTER
 	{CLONECOMMANDO_VELOCITY, CLONECOMMANDO_VELOCITY}, // WP_CLONECOMMANDO
+	{Z6_ROTARY_CANNON_VELOCITY, Z6_ROTARY_CANNON_VELOCITY}, // WP_Z6_ROTARY_CANNON
 	{REBELRIFLE_VELOCITY, REBELRIFLE_VELOCITY}, // WP_REBELRIFLE
 	{REY_VEL,REY_VEL}, //WP_REY,
 	{JANGO_VELOCITY, JANGO_VELOCITY}, // WP_JANGO
@@ -374,6 +375,7 @@ qboolean W_AccuracyLoggableWeapon(const int weapon, const qboolean alt_fire, con
 		case MOD_CLONERIFLE_ALT:
 		case MOD_CLONECOMMANDO:
 		case MOD_CLONECOMMANDO_ALT:
+		case MOD_Z6_ROTARY_CANNON:
 		case MOD_REBELRIFLE:
 		case MOD_REBELRIFLE_ALT:
 		case MOD_REY:
@@ -425,6 +427,7 @@ qboolean W_AccuracyLoggableWeapon(const int weapon, const qboolean alt_fire, con
 		case WP_REBELBLASTER:
 		case WP_CLONERIFLE:
 		case WP_CLONECOMMANDO:
+		case WP_Z6_ROTARY_CANNON:
 		case WP_REBELRIFLE:
 		case WP_REY:
 		case WP_JANGO:
@@ -637,6 +640,19 @@ void CalcMuzzlePoint(gentity_t* const ent, vec3_t forward_vec, vec3_t muzzle_poi
 		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
 		break;
 
+	case WP_Z6_ROTARY_CANNON:
+		ViewHeightFix(ent);
+		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
+		muzzle_point[2] -= 1;
+		if (ent->s.number == 0)
+			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
+		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
+		else
+			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
+		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
+		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
+		break;
+
 	case WP_REBELRIFLE:
 		ViewHeightFix(ent);
 		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
@@ -780,6 +796,7 @@ vec3_t WP_MuzzlePoint[WP_NUM_WEAPONS] =
 	{12, 6, -6}, // WP_REBELBLASTER,
 	{12, 6, -6}, // WP_CLONERIFLE,
 	{12, 6, -6}, // WP_CLONECOMMANDO,
+	{12, 6, -6}, // WP_Z6_ROTARY_CANNON,
 	{12, 6, -6}, // WP_REBELRIFLE,
 	{12, 6, -6}, // WP_REY,
 	{12, 6, -6}, // WP_JANGO,
@@ -1542,6 +1559,10 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		{
 			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_DEKA, SETANIM_AFLAG_BLOCKPACE);
 		}
+		/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+		}*/
 		else
 		{
 			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -1777,6 +1798,17 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 						ent->client->cloneFired = 0;
 					}
 				}
+				else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+				{
+					ent->client->cloneFired++;
+
+					if (ent->client->cloneFired == 4)
+					{
+						G_AddBlasterAttackChainCount(ent, BLASTERMISHAPLEVEL_MIN);
+
+						ent->client->cloneFired = 0;
+					}
+				}
 				else if (ent->s.weapon == WP_DROIDEKA)
 				{
 					ent->client->DekaFired++;
@@ -2007,6 +2039,10 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 
 	case WP_CLONECOMMANDO:
 		WP_FireCloneCommando(ent, alt_fire);
+		break;
+
+	case WP_Z6_ROTARY_CANNON:
+		WP_FireZ6RotaryCannon(ent);
 		break;
 
 	case WP_REBELRIFLE:

@@ -14621,6 +14621,7 @@ int BasicWeaponBlockCosts[NUM_MODS] =
 	20, //MOD_REBELBLASTER_ALT,
 	20, //MOD_CLONECOMMANDO,
 	20, //MOD_CLONECOMMANDO_ALT,
+	20, //MOD_Z6_ROTARY_CANNON,
 	20, //MOD_REBELRIFLE,
 	20, //MOD_REBELRIFLE_ALT,
 	20, //MOD_REY,
@@ -30208,6 +30209,7 @@ static qboolean ThisGuyIsAGunner(const gentity_t* self)
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_REBELRIFLE:
 	case WP_REY:
 	case WP_JANGO:

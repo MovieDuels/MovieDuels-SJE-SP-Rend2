@@ -111,6 +111,7 @@ using weapon_t = enum //# weapon_e
 	//pistol
 	WP_CLONERIFLE,
 	WP_CLONECOMMANDO,
+	WP_Z6_ROTARY_CANNON,
 	WP_REBELRIFLE,
 	WP_REY,
 	//pistol
@@ -286,6 +287,16 @@ using ammoData_t = struct ammoData_s
 #define	CLONECOMMANDO_NPC_DAMAGE_EASY		10
 #define	CLONECOMMANDO_NPC_DAMAGE_NORMAL		13
 #define	CLONECOMMANDO_NPC_DAMAGE_HARD		15
+
+//  Z-6 Rotary Cannon (Minigun)
+//---------
+#define Z6_ROTARY_CANNON_VELOCITY  2200
+#define Z6_ROTARY_CANNON_DAMAGE    12
+#define Z6_ROTARY_CANNON_NPC_VEL_CUT 0.7f
+#define Z6_ROTARY_CANNON_NPC_HARD_VEL_CUT 0.5f
+#define Z6_ROTARY_CANNON_NPC_DAMAGE_EASY   8
+#define Z6_ROTARY_CANNON_NPC_DAMAGE_NORMAL 10
+#define Z6_ROTARY_CANNON_NPC_DAMAGE_HARD   12
 
 // A280
 //---------

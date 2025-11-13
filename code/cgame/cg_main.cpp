@@ -1991,6 +1991,7 @@ HUDMenuItem_t otherHUDBits[] =
 	{"righthud", "weapontype_rebelblaster", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_REBELBLASTER
 	{"righthud", "weapontype_clonerifle", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CLONERIFLE
 	{"righthud", "weapontype_clonecommando", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{"righthud", "weapontype_z6rotarycannon", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_Z6_ROTARY_CANNON
 	// OHB_CLONECOMMANDO
 	{"righthud", "weapontype_rebelrifle", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_REBELRIFLE
 	{"righthud", "weapontype_rey", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_REY

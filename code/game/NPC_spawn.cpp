@@ -396,7 +396,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 	else if (NPC->client->ps.weapon == WP_CLONECARBINE || NPC->client->ps.weapon == WP_CLONERIFLE ||
 		NPC->client->ps.weapon == WP_CLONECOMMANDO || NPC->client->ps.weapon == WP_REBELRIFLE)
 	{
-		ent->NPC->scriptFlags |= SCF_ALT_FIRE | SCF_CHASE_ENEMIES;
+		ent->NPC->scriptFlags |= SCF_CHASE_ENEMIES;
 	}
 	else if (ent->client->NPC_class == CLASS_ROCKETTROOPER)
 	{

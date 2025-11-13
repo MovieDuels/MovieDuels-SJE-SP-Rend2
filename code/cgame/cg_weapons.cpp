@@ -850,6 +850,7 @@ void CG_RegisterWeapon(const int weapon_num)
 	case WP_CLONECARBINE:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_WRIST_BLASTER:
 		cgs.effects.wristShotEffect = theFxScheduler.RegisterEffect("wrist/wristprojectile");
 		cgs.effects.cloneShotEffect = theFxScheduler.RegisterEffect("clone/projectile");
@@ -2671,6 +2672,7 @@ const char* weaponDesc[WP_NUM_WEAPONS - 1] =
 	"REBELBLASTER_DESC",
 	"CLONERIFLE_DESC",
 	"CLONECOMMANDO_DESC",
+	"Z6_ROTARY_CANNON_DESC",
 	"REBELRIFLE_DESC",
 	"REY_DESC",
 	"JANGO_DESC",
@@ -3337,6 +3339,7 @@ void CG_DrawWeaponSelect()
 				|| i == WP_REBELBLASTER
 				|| i == WP_CLONERIFLE
 				|| i == WP_CLONECOMMANDO
+				|| i == WP_Z6_ROTARY_CANNON
 				|| i == WP_REBELRIFLE
 				|| i == WP_REY
 				|| i == WP_JANGO
@@ -3469,6 +3472,7 @@ void CG_DrawWeaponSelect()
 				i != WP_REBELBLASTER &&
 				i != WP_CLONERIFLE &&
 				i != WP_CLONECOMMANDO &&
+				i != WP_Z6_ROTARY_CANNON &&
 				i != WP_REBELRIFLE &&
 				i != WP_REY &&
 				i != WP_JANGO &&
@@ -3624,6 +3628,7 @@ void CG_DrawWeaponSelect()
 				i != WP_REBELBLASTER &&
 				i != WP_CLONERIFLE &&
 				i != WP_CLONECOMMANDO &&
+				i != WP_Z6_ROTARY_CANNON &&
 				i != WP_REBELRIFLE &&
 				i != WP_REY &&
 				i != WP_JANGO &&
@@ -3777,6 +3782,7 @@ void CG_DrawWeaponSelect_kotor()
 				|| i == WP_REBELBLASTER
 				|| i == WP_CLONERIFLE
 				|| i == WP_CLONECOMMANDO
+				|| i == WP_Z6_ROTARY_CANNON
 				|| i == WP_REBELRIFLE
 				|| i == WP_REY
 				|| i == WP_JANGO
@@ -3909,6 +3915,7 @@ void CG_DrawWeaponSelect_kotor()
 				i != WP_REBELBLASTER &&
 				i != WP_CLONERIFLE &&
 				i != WP_CLONECOMMANDO &&
+				i != WP_Z6_ROTARY_CANNON &&
 				i != WP_REBELRIFLE &&
 				i != WP_REY &&
 				i != WP_JANGO &&
@@ -4064,6 +4071,7 @@ void CG_DrawWeaponSelect_kotor()
 				i != WP_REBELBLASTER &&
 				i != WP_CLONERIFLE &&
 				i != WP_CLONECOMMANDO &&
+				i != WP_Z6_ROTARY_CANNON &&
 				i != WP_REBELRIFLE &&
 				i != WP_REY &&
 				i != WP_JANGO &&
@@ -4204,6 +4212,7 @@ void CG_DrawWeaponSelect_text()
 				|| i == WP_REBELBLASTER
 				|| i == WP_CLONERIFLE
 				|| i == WP_CLONECOMMANDO
+				|| i == WP_Z6_ROTARY_CANNON
 				|| i == WP_REBELRIFLE
 				|| i == WP_REY
 				|| i == WP_JANGO
@@ -4314,6 +4323,7 @@ static qboolean CG_WeaponSelectable(int i, const int original, const qboolean dp
 			i != WP_REBELBLASTER &&
 			i != WP_CLONERIFLE &&
 			i != WP_CLONECOMMANDO &&
+			i != WP_Z6_ROTARY_CANNON &&
 			i != WP_REBELRIFLE &&
 			i != WP_REY &&
 			i != WP_JANGO &&
@@ -4460,6 +4470,11 @@ void CG_NextWeapon_f()
 			cg_entities[0].gent->s.weapon == WP_REBELBLASTER)
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			//NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
 		}
 		else
 		{
@@ -4737,6 +4752,11 @@ void CG_PrevWeapon_f()
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
 		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			//NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
+		}
 		else
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -4915,6 +4935,11 @@ void CG_ChangeWeapon(const int num)
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
 		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			//NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
+		}
 		else
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -5061,6 +5086,11 @@ void CG_Weapon_f()
 			cg_entities[0].gent->s.weapon == WP_REBELBLASTER)
 		{
 			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+		}
+		else if (cg_entities[0].gent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			//NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+			NPC_SetAnim(cg_entities[0].gent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
 		}
 		else
 		{
@@ -5702,6 +5732,7 @@ void CG_MissileHitWall(const centity_t* cent, const int weapon, vec3_t origin, v
 		break;
 
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_WRIST_BLASTER:
 		FX_CloneWeaponHitWall(origin, dir);
 		break;
@@ -5947,6 +5978,7 @@ void CG_MissileHitPlayer(const centity_t* cent, const int weapon, vec3_t origin,
 		break;
 
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_WRIST_BLASTER:
 		FX_CloneWeaponHitPlayer(other, origin, dir, humanoid);
 		break;

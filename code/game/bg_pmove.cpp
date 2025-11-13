@@ -8112,6 +8112,8 @@ qboolean PM_WeponRestAnim(const int anim)
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND9IDLE1:
 		//
+	case BOTH_STANCE_MINIGUN_IDLE:
+		//
 	case BOTH_WALK_BLASTER:
 	case BOTH_WALK_BAZOOKA:
 	case BOTH_WALK_HEAVY:
@@ -10681,7 +10683,8 @@ static void PM_Footsteps()
 					pm->ps->weapon == WP_ROCKET_LAUNCHER ||
 					pm->ps->weapon == WP_BOWCASTER ||
 					pm->ps->weapon == WP_FLECHETTE ||
-					pm->ps->weapon == WP_DEMP2)
+					pm->ps->weapon == WP_DEMP2 ||
+					pm->ps->weapon == WP_Z6_ROTARY_CANNON)
 				{
 					PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK_HEAVY, set_anim_flags);
 				}
@@ -10850,7 +10853,8 @@ static void PM_Footsteps()
 					pm->ps->weapon == WP_ROCKET_LAUNCHER ||
 					pm->ps->weapon == WP_BOWCASTER ||
 					pm->ps->weapon == WP_FLECHETTE ||
-					pm->ps->weapon == WP_DEMP2)
+					pm->ps->weapon == WP_DEMP2 ||
+					pm->ps->weapon == WP_Z6_ROTARY_CANNON)
 				{
 					PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK_HEAVY, set_anim_flags);
 				}
@@ -11142,10 +11146,17 @@ static void PM_Footsteps()
 						pm->ps->weapon == WP_ROCKET_LAUNCHER ||
 						pm->ps->weapon == WP_BOWCASTER ||
 						pm->ps->weapon == WP_FLECHETTE ||
-						pm->ps->weapon == WP_DEMP2)
+						pm->ps->weapon == WP_DEMP2 ||
+						pm->ps->weapon == WP_Z6_ROTARY_CANNON)
 					{
 						if (pm->cmd.buttons & BUTTON_BLOCK && pm->ps->sprintFuel > 15)
 						{
+							/*if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_MINIGUN, set_anim_flags);
+							}
+							else {
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_HEAVY, set_anim_flags);
+							}*/
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_HEAVY, set_anim_flags);
 
 							if (pm->ps->PlayerEffectFlags & 1 << PEF_SPRINTING)
@@ -11168,6 +11179,9 @@ static void PM_Footsteps()
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
 							}
+							/*else if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_JOG_MINIGUN, set_anim_flags);
+							}*/
 							else
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_JOG_HEAVY, set_anim_flags);
@@ -11543,12 +11557,16 @@ static void PM_Footsteps()
 						}
 					}
 					else if (pm->ps->weapon == WP_CONCUSSION ||
-						pm->ps->weapon == WP_ROCKET_LAUNCHER)
+						pm->ps->weapon == WP_ROCKET_LAUNCHER ||
+						pm->ps->weapon == WP_Z6_ROTARY_CANNON)
 					{
 						if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_HAZARD_TROOPER)
 						{
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, set_anim_flags);
 						}
+						/*else if (pm->ps->weapon == WP_Z6_ROTARY_CANNON) {
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_MINIGUN, set_anim_flags);
+						}*/
 						else
 						{
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_HEAVY, set_anim_flags);
@@ -21156,6 +21174,7 @@ static qboolean PM_IsFatiguedGunner()
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_REBELRIFLE:
 	case WP_REY:
 	case WP_JANGO:
@@ -21569,7 +21588,8 @@ static void PM_Weapon()
 			pm->ps->torsoAnim == BOTH_PISTOLFAIL ||
 			pm->ps->torsoAnim == BOTH_RIFLEFAIL ||
 			pm->ps->torsoAnim == BOTH_ROCKETFAIL ||
-			pm->ps->torsoAnim == BOTH_2PISTOLFAIL)
+			pm->ps->torsoAnim == BOTH_2PISTOLFAIL ||
+			pm->ps->torsoAnim == BOTH_RELOAD_FAIL_MINIGUN)
 		{
 			// No Anims if on Veh
 		}
@@ -21850,6 +21870,7 @@ static void PM_Weapon()
 			case WP_CONCUSSION:
 			case WP_BOWCASTER:
 			case WP_DEMP2:
+			case WP_Z6_ROTARY_CANNON:
 				if (cg.renderingThirdPerson)
 				{
 					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
@@ -21862,6 +21883,11 @@ static void PM_Weapon()
 				}
 				break;
 
+			/*case WP_Z6_ROTARY_CANNON:
+				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_MINIGUN,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+				break;*/
+
 			case WP_BLASTER:
 			case WP_THEFIRSTORDER:
 			case WP_BOBA:
@@ -21869,7 +21895,6 @@ static void PM_Weapon()
 			case WP_CLONECARBINE:
 			case WP_BATTLEDROID:
 			case WP_CLONECOMMANDO:
-
 				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
 				{
 					if (cg.renderingThirdPerson)
@@ -22856,6 +22881,7 @@ static qboolean PM_WeaponOkOnVehicle(const int weapon)
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_REBELRIFLE:
 	case WP_REY:
 	case WP_JANGO:
@@ -23478,6 +23504,7 @@ void Pmove(pmove_t* pmove)
 			|| pm->ps->weapon == WP_REBELBLASTER
 			|| pm->ps->weapon == WP_CLONERIFLE
 			|| pm->ps->weapon == WP_CLONECOMMANDO
+			|| pm->ps->weapon == WP_Z6_ROTARY_CANNON
 			|| pm->ps->weapon == WP_REBELRIFLE
 			|| pm->ps->weapon == WP_REY
 			|| pm->ps->weapon == WP_JANGO
@@ -23819,6 +23846,7 @@ static qboolean PM_IsMerc()
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_REBELRIFLE:
 	case WP_REY:
 	case WP_JANGO:

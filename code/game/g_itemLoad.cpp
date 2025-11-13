@@ -162,6 +162,8 @@ static void IT_Name(const char** hold_buf)
 		itemNum = ITM_CLONERIFLE_PICKUP;
 	else if (!Q_stricmp(token_str, "ITM_CLONECOMMANDO_PICKUP"))
 		itemNum = ITM_CLONECOMMANDO_PICKUP;
+	else if (!Q_stricmp(token_str, "ITM_Z6_ROTARY_CANNON_PICKUP"))
+		itemNum = ITM_Z6_ROTARY_CANNON_PICKUP;
 	else if (!Q_stricmp(token_str, "ITM_REBELRIFLE_PICKUP"))
 		itemNum = ITM_REBELRIFLE_PICKUP;
 	else if (!Q_stricmp(token_str, "ITM_REY_PICKUP"))
@@ -416,6 +418,8 @@ static void IT_Tag(const char** hold_buf)
 		tag = WP_CLONERIFLE;
 	else if (!Q_stricmp(token_str, "WP_CLONECOMMANDO"))
 		tag = WP_CLONECOMMANDO;
+	else if (!Q_stricmp(token_str, "WP_Z6_ROTARY_CANNON"))
+		tag = WP_Z6_ROTARY_CANNON;
 	else if (!Q_stricmp(token_str, "WP_REBELRIFLE"))
 		tag = WP_REBELRIFLE;
 	else if (!Q_stricmp(token_str, "WP_REY"))

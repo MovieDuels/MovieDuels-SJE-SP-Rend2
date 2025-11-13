@@ -269,6 +269,8 @@ public:
 	int burstSpacing;
 	int attackHold;
 	int attackHoldTime;
+	int rotaryCannonShotsFired;
+	int rotaryCannonCooldownTime;
 	vec3_t shootAngles; //Angles to where bot is shooting - fixme: make he torso turn to reflect these
 
 	//extra character info
@@ -433,6 +435,8 @@ public:
 		saved_game.write<int32_t>(burstSpacing);
 		saved_game.write<int32_t>(attackHold);
 		saved_game.write<int32_t>(attackHoldTime);
+		saved_game.write<int32_t>(rotaryCannonShotsFired);
+		saved_game.write<int32_t>(rotaryCannonCooldownTime);
 		saved_game.write<float>(shootAngles);
 		saved_game.write<int32_t>(rank);
 		saved_game.write<int32_t>(behaviorState);
@@ -552,6 +556,8 @@ public:
 		saved_game.read<int32_t>(burstSpacing);
 		saved_game.read<int32_t>(attackHold);
 		saved_game.read<int32_t>(attackHoldTime);
+		saved_game.read<int32_t>(rotaryCannonShotsFired);
+		saved_game.read<int32_t>(rotaryCannonCooldownTime);
 		saved_game.read<float>(shootAngles);
 		saved_game.read<int32_t>(rank);
 		saved_game.read<int32_t>(behaviorState);

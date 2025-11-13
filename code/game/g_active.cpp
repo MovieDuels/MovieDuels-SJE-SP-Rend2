@@ -6616,6 +6616,7 @@ static qboolean GunisMassive(const gentity_t* ent)
 	case WP_TUSKEN_RIFLE:
 	case WP_TUSKEN_STAFF:
 	case WP_CLONERIFLE:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_FLECHETTE:
 	case WP_ROCKET_LAUNCHER:
 	case WP_REPEATER:
@@ -6686,6 +6687,7 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			case TORSO_WEAPONREST4:
 			case TORSO_WEAPONIDLE2:
 			case BOTH_WEAPONREST2P:
+			case BOTH_STANCE_MINIGUN_IDLE:
 				ent->client->ps.legsAnimTimer = 0;
 				break;
 			default:;
@@ -6705,6 +6707,7 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			case TORSO_WEAPONREST4:
 			case TORSO_WEAPONIDLE2:
 			case BOTH_WEAPONREST2P:
+			case BOTH_STANCE_MINIGUN_IDLE:
 				ent->client->ps.torsoAnimTimer = 0;
 				break;
 			default:;
@@ -6774,7 +6777,11 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 	{
 		//been idle for 2 seconds
 
-		constexpr int idle_anim = TORSO_WEAPONREST4;
+		int idle_anim = TORSO_WEAPONREST4;
+
+		/*if (ent->s.weapon == WP_Z6_ROTARY_CANNON) {
+			idle_anim = BOTH_STANCE_MINIGUN_IDLE;
+		}*/
 
 		if (PM_HasAnimation(ent, idle_anim))
 		{
@@ -7870,6 +7877,7 @@ qboolean IsHoldingReloadableGun(const gentity_t* ent)
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_REBELRIFLE:
 	case WP_REY:
 	case WP_JANGO:
@@ -7913,7 +7921,13 @@ static int magazine_size(const gentity_t* ent, const int ammo)
 	case AMMO_POWERCELL:
 		return 50;
 	case AMMO_METAL_BOLTS:
+	{
+		if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			return 150;
+		}
 		return 75;
+	}
 	case AMMO_ROCKETS:
 		return 3;
 	default:;
@@ -7968,6 +7982,10 @@ void WP_ReloadGun(gentity_t* ent)
 			{
 				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_DEKA, SETANIM_AFLAG_BLOCKPACE);
 			}
+			/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+			{
+				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
+			}*/
 			else
 			{
 				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -8019,6 +8037,10 @@ void WP_ReloadGun(gentity_t* ent)
 					{
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_DEKA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_MINIGUN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}*/
 					else
 					{
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -8048,6 +8070,10 @@ void WP_ReloadGun(gentity_t* ent)
 								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
 					}
+					/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RECHARGE_MINIGUN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}*/
 					else
 					{
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -8083,6 +8109,7 @@ void WP_ReloadGun(gentity_t* ent)
 				ent->s.weapon == WP_CLONECARBINE ||
 				ent->s.weapon == WP_CLONERIFLE ||
 				ent->s.weapon == WP_CLONECOMMANDO ||
+				ent->s.weapon == WP_Z6_ROTARY_CANNON ||
 				ent->s.weapon == WP_CLONEPISTOL)
 			{
 				if (ent->client->ps.ammo[AMMO_METAL_BOLTS] < clip_size(AMMO_METAL_BOLTS))
@@ -8094,10 +8121,15 @@ void WP_ReloadGun(gentity_t* ent)
 						ent->s.weapon == WP_CONCUSSION ||
 						ent->s.weapon == WP_CLONECARBINE ||
 						ent->s.weapon == WP_CLONERIFLE ||
-						ent->s.weapon == WP_CLONECOMMANDO)
+						ent->s.weapon == WP_CLONECOMMANDO ||
+						ent->s.weapon == WP_Z6_ROTARY_CANNON)
 					{
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
+					/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_MINIGUN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}*/
 					else if (ent->s.weapon == WP_CLONEPISTOL)
 					{
 						if (ent->weaponModel[1] > 0)
@@ -8129,6 +8161,10 @@ void WP_ReloadGun(gentity_t* ent)
 								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
 					}
+					/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RECHARGE_MINIGUN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}*/
 					else
 					{
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
