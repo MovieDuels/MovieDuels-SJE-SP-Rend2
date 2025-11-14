@@ -596,31 +596,26 @@ void WP_FireZ6RotaryCannon(gentity_t* ent)
 	{//force sight 2+ gives perfect aim
 		if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
 		{
-			if (PM_CrouchAnim(ent->client->ps.legsAnim))
-			{// firing position
-				angs[PITCH] += Q_flrand(-0.5f, 0.5f);
-				angs[YAW] += Q_flrand(-0.5f, 0.5f);
-			}
-			else if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+			if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
 			{// running or very fatigued
-				angs[PITCH] += Q_flrand(-2.0f, 2.0f);
-				angs[YAW] += Q_flrand(-2.0f, 2.0f);
+				angs[PITCH] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
+				angs[YAW] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
 			}
 			else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVY)
 			{// walking or fatigued a bit
-				angs[PITCH] += Q_flrand(-1.5f, 1.5f);
-				angs[YAW] += Q_flrand(-1.5f, 1.5f);
+				angs[PITCH] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
+				angs[YAW] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
 			}
 			else
 			{// just standing
-				angs[PITCH] += Q_flrand(-1.0f, 1.0f);
-				angs[YAW] += Q_flrand(-1.0f, 1.0f);
+				angs[PITCH] += Q_flrand(-1.0f, 1.0f) * Z6_ROTARY_CANNON_SPREAD;
+				angs[YAW] += Q_flrand(-1.0f, 1.0f) * Z6_ROTARY_CANNON_SPREAD;
 			}
 		}
 		else
 		{// add some slop to the alt-fire direction for NPC,s
-			angs[PITCH] += Q_flrand(-1.0f, 1.0f);
-			angs[YAW] += Q_flrand(-1.0f, 1.0f);
+			angs[PITCH] += Q_flrand(-1.0f, 1.0f) * Z6_ROTARY_CANNON_NPC_SPREAD;
+			angs[YAW] += Q_flrand(-1.0f, 1.0f) * Z6_ROTARY_CANNON_NPC_SPREAD;
 		}
 	}
 
