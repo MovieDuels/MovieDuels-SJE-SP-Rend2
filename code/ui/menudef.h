@@ -99,6 +99,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define FEEDER_MOVES_TITLES					0x16			// move titles for the data pad moves screen
 #define FEEDER_LANGUAGES					0x17			// the list of languages
 
+#define FEEDER_DUEL_MAPS					0x57			// 87 - duel maps
+
 #define UI_VERSION				200
 #define UI_HANDICAP				200
 #define UI_EFFECTS				201
@@ -157,3 +159,4 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define UI_PREVIEWCINEMATIC		254
 #define UI_STARTMAPCINEMATIC	255
 #define UI_MAPS_SELECTION		256
+#define UI_DUELMAPS_SELECTION	257
