@@ -100,6 +100,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define FEEDER_LANGUAGES					0x17			// the list of languages
 
 #define FEEDER_DUEL_MAPS					0x57			// 87 - duel maps
+#define FEEDER_SINGLE_SABER_HILTS			0x58			// 88 - single saber hilts
+#define FEEDER_STAFF_SABER_HILTS			0x59			// 89 - staff saber hilts
 
 #define UI_VERSION				200
 #define UI_HANDICAP				200

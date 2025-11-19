@@ -250,6 +250,147 @@ static constexpr duelMaps_t duelMaps[] = {
 };
 constexpr int NO_OF_DUEL_MAPS = sizeof(duelMaps) / sizeof(duelMaps[0]);
 
+static int saberHiltIndex = 1;
+
+typedef struct {
+	const char* singleSaberHiltName;
+	const char* singleSaberHilt;
+} singleSaberHilts_t;
+
+static constexpr singleSaberHilts_t singleSaberHilts[] = {
+	// singleSaberHiltName					// singleSaberHilt
+	{ "@MENUS_SINGLE_HILT1",				"single_1"				},
+	{ "@MENUS_SINGLE_HILT2",				"single_2"				},
+	{ "@MENUS_SINGLE_HILT3",				"single_3"				},
+	{ "@MENUS_SINGLE_HILT4",				"single_4"				},
+	{ "@MENUS_SINGLE_HILT5",				"single_5"				},
+	{ "@MENUS_SINGLE_HILT6",				"single_6"				},
+	{ "@MENUS_SINGLE_HILT7",				"single_7"				},
+	{ "@MENUS_SINGLE_HILT8",				"single_8"				},
+	{ "@MENUS_SINGLE_HILT9",				"single_9"				},
+	{ "@MD_MENU_SABER_AAYLA",				"aayla"					},
+	{ "@MD_MENU_SABER_AHSOKA",				"ahsoka"				},
+	{ "@MD_MENU_SABER_AHSOKA_SHORT",		"ahsoka_short"			},
+	{ "@MD_MENU_SABER_AHSOKA_REBELS",		"ahsoka_reb1"			},
+	{ "@MD_MENU_SABER_AHSOKA_REBELS_SHORT", "ahsoka_reb2"			},
+	{ "@MD_MENU_SABER_ANAKIN_EP2",			"anakin_ep2"			},
+	{ "@MD_MENU_SABER_ANAKIN_EP3",			"anakin_ep3"			},
+	{ "@MD_MENU_SABER_VENTRESS_CW",			"ventress_cw"			},
+	{ "@MD_MENU_SABER_VENTRESS_TCW",		"ventress_tcw"			},
+	{ "@MD_MENU_SABER_VENTRESS_TCW",		"ventress2_tcw"			},
+	{ "@MD_MENU_SABER_ASHARAD",				"asharad"				},
+	{ "@MD_MENU_SABER_ASHARAD_ALT",			"asharad2"				},
+	{ "@MD_MENU_SABER_BARRISS",				"barriss"				},
+	{ "@MD_MENU_SABER_BOC",					"boc"					},
+	{ "@MD_MENU_SABER_CAL_KESTIS",			"cal"					},
+	{ "@MD_MENU_SABER_COLEMAN",				"coleman"				},
+	{ "@MD_MENU_SABER_COUNT_DOOKU",			"dooku2"				},
+	{ "@MD_MENU_SABER_COUNT_DOOKU_TFU",		"dooku_tfu"				},
+	{ "@MD_MENU_SABER_DARKSABER_TCW",		"darksaber_tcw"			},
+	{ "@MD_MENU_SABER_DARKSABER_REBELS",	"darksaber_reb"			},
+	{ "@MD_MENU_SABER_DARKSABER_TM",		"darksaber_tm"			},
+	{ "@MD_MENU_SABER_D_DESOLOUS",			"desolous"				},
+	{ "@MD_MENU_SABER_D_MAUL",				"single_maul"			},
+	{ "@MD_MENU_SABER_D_SIDIOUS",			"sidious"				},
+	{ "@MD_MENU_SABER_D_SIDIOUS_ALT",		"sidious2"				},
+	{ "@MD_MENU_SABER_D_VADER_EP3",			"vader_ro"				},
+	{ "@MD_MENU_SABER_D_VADER_EP4",			"vader_ep4"				},
+	{ "@MD_MENU_SABER_D_VADER_EP5",			"vader"					},
+	{ "@MD_MENU_SABER_D_VADER_EP6",			"vader_ep6"				},
+	{ "@MD_MENU_SABER_DEPA",				"depa"					},
+	{ "@MD_MENU_SABER_EVEN",				"even_piell"			},
+	{ "@MD_MENU_SABER_EZRA",				"ezra"					},
+	{ "@MD_MENU_SABER_EZRA_S3",				"ezra2"					},
+	{ "@MD_MENU_SABER_GALEN_MAREK",			"galenmarek"			},
+	{ "@MD_MENU_SABER_GALEN_MAREK_ALT",		"galenmarek_alt"		},
+	{ "@MD_MENU_SABER_GALEN_MAREK_CJR",		"galenmarek_cjr"		},
+	{ "@MD_MENU_SABER_GORC",				"gorc"					},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR",		"inquisitor_single"		},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR_OWK", "inquisitor_owk_single" },
+	{ "@MD_MENU_SABER_FIFTHBROTHER",		"inquisitor2_single"	},
+	{ "@MD_MENU_SABER_SEVENTHSISTER",		"inquisitor3_single"	},
+	{ "@MD_MENU_SABER_JEREC",				"jerec"					},
+	{ "@MD_MENU_SABER_KANAN",				"kanan"					},
+	{ "@MD_MENU_SABER_KYLE",				"kyle"					},
+	{ "@MD_MENU_SABER_KI_ADI",				"mundi"					},
+	{ "@MD_MENU_SABER_KYLO",				"kylo_ren"				},
+	{ "@MD_MENU_SABER_LEIA_EP9",			"leia_ep9"				},
+	{ "@MD_MENU_SABER_LUKE_EP4",			"luke_ep4"				},
+	{ "@MD_MENU_SABER_LUKE_EP5",			"luke_ep5"				},
+	{ "@MD_MENU_SABER_LUKE_EP6",			"luke_ep6"				},
+	{ "@MD_MENU_SABER_LUMINARA",			"luminara"				},
+	{ "@MD_MENU_SABER_MACE_EP1",			"windu_ep1"				},
+	{ "@MD_MENU_SABER_MACE",				"windu"					},
+	{ "@MD_MENU_SABER_MARA",				"mara"					},
+	{ "@MD_MENU_SABER_MARA_MOTS",			"mara_mots"				},
+	{ "@MD_MENU_SABER_MAW",					"maw"					},
+	{ "@MD_MENU_SABER_OBI_EP1",				"obiwan_ep1"			},
+	{ "@MD_MENU_SABER_OBI_EP3",				"obiwan_ep3"			},
+	{ "@MD_MENU_SABER_OBI_OWK",				"obiwan_owk"			},
+	{ "@MD_MENU_SABER_OBI_EP4",				"obiwan_ep4"			},
+	{ "@MD_MENU_SABER_OPPO",				"oppo"					},
+	{ "@MD_MENU_SABER_PIC",					"pic"					},
+	{ "@MD_MENU_SABER_PLO",					"plo_koon"				},
+	{ "@MD_MENU_SABER_QUI",					"quigon"				},
+	{ "@MD_MENU_SABER_QUINLAN",				"quinlan"				},
+	{ "@MD_MENU_SABER_RAHN",				"rahn"					},
+	{ "@MD_MENU_SABER_KOTA",				"kota"					},
+	{ "@MD_MENU_SABER_REY_EP7",				"rey_ep7"				},
+	{ "@MD_MENU_SABER_REY_EP8",				"rey_ep8"				},
+	{ "@MD_MENU_SABER_REY_EP9",				"rey_ep9"				},
+	{ "@MD_MENU_SABER_REY2_EP9",			"rey2_ep9"				},
+	{ "@MD_MENU_SABER_REY_DARKFOLD_EP9",	"rey_darkfold_ep9"		},
+	{ "@MD_MENU_SABER_REVAN",				"revan"					},
+	{ "@MD_MENU_SABER_RIG_NEMA",			"rig"					},
+	{ "@MD_MENU_SABER_SAESSEE",				"saesee"				},
+	{ "@MD_MENU_SABER_SARISS",				"sariss"				},
+	{ "@MD_MENU_SABER_SHAAK",				"shaak"					},
+	{ "@MD_MENU_SABER_STALKER",				"sith_stalker"			},
+	{ "@MD_MENU_SABER_STALKER2",			"sith_stalker2"			},
+	{ "@MD_MENU_SABER_STARKILLER",			"starkiller"			},
+	{ "@MD_MENU_SABER_TARON",				"malicos"				},
+	{ "@MD_MENU_SABER_TAVION",				"tavion"				},
+	{ "@MD_MENU_SABER_YARAEL",				"yarael"				},
+	{ "@MD_MENU_SABER_YODA",				"yoda"					},
+	{ "@MD_MENU_SABER_YUN",					"yun"					},
+
+	{ "",									""						},
+};
+constexpr int NO_OF_SINGLE_SABER_HILTS = sizeof(singleSaberHilts) / sizeof(singleSaberHilts[0]);
+
+typedef struct {
+	const char* staffSaberHiltName;
+	const char* staffSaberHilt;
+} staffSaberHilts_t;
+
+static constexpr staffSaberHilts_t staffSaberHilts[] = {
+	// staffSaberHiltName					// staffSaberHilt
+	{ "@MENUS_STAFF_HILT1",					"dual_1"				},
+	{ "@MENUS_STAFF_HILT2",					"dual_2"				},
+	{ "@MENUS_STAFF_HILT3",					"dual_3"				},
+	{ "@MENUS_STAFF_HILT4",					"dual_4"				},
+	{ "@MENUS_STAFF_HILT5",					"dual_5"				},
+	{ "@MD_MENU_SABER_VENTRESS_CW",			"ventress_cw_dual"		},
+	{ "@MD_MENU_SABER_VENTRESS_TCW",		"ventress_tcw_dual"		},
+	{ "@MD_MENU_SABER_CAL_KESTIS",			"cal_staff"				},
+	{ "@MD_MENU_SABER_D_MAUL_STAFF",		"dual_maul"				},
+	{ "@MD_MENU_SABER_D_MAUL_TCW",			"maul_tcw"				},
+	{ "@MD_MENU_SABER_D_MAUL_REBELS",		"maul_rebels"			},
+	{ "@MD_MENU_SABER_D_PHOBOS",			"phobos"				},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR",		"inquisitor"			},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR_OWK", "inquisitor_owk"		},
+	{ "@MD_MENU_SABER_FIFTHBROTHER",		"inquisitor2"			},
+	{ "@MD_MENU_SABER_SEVENTHSISTER",		"inquisitor3"			},
+	{ "@MD_MENU_SABER_EIGHTHBROTHER",		"inquisitor4"			},
+	{ "@MD_MENU_SABER_REY_DARKSTAFF_EP9",	"rey_darkstaff_ep9"		},
+	{ "@MD_MENU_SABER_SAVAGE",				"dual_opress"			},
+	{ "@MD_MENU_SABER_JT_GUARD",			"temple_guard"			},
+	{ "@MD_MENU_SABER_BASTILA",				"bastila_staff"			},
+
+	{ "",									""						},
+};
+constexpr int NO_OF_STAFF_SABER_HILTS = sizeof(staffSaberHilts) / sizeof(staffSaberHilts[0]);
+
 extern qboolean ItemParse_model_g2anim_go(itemDef_t* item, const char* animName);
 extern qboolean ItemParse_asset_model_go(itemDef_t* item, const char* name);
 extern qboolean ItemParse_model_g2skin_go(itemDef_t* item, const char* skinName);
@@ -1163,6 +1304,20 @@ static const char* UI_FeederItemText(const float feederID, const int index, cons
 			return duelMaps[index].duelMapName;
 		}
 	}
+	else if (feederID == FEEDER_SINGLE_SABER_HILTS)
+	{
+		if (index >= 0 && index < NO_OF_SINGLE_SABER_HILTS)
+		{
+			return singleSaberHilts[index].singleSaberHiltName;
+		}
+	}
+	else if (feederID == FEEDER_STAFF_SABER_HILTS)
+	{
+		if (index >= 0 && index < NO_OF_STAFF_SABER_HILTS)
+		{
+			return staffSaberHilts[index].staffSaberHiltName;
+		}
+	}
 
 	return "";
 }
@@ -1480,6 +1635,99 @@ static qboolean UI_RunMenuScript(const char** args)
 					Menus_CloseAll();
 					ui.Cmd_ExecuteText(EXEC_APPEND, va("devmap %s\n", duelMaps[duelMapIndex].duelMapBSP));
 					duelMapIndex = 1; // Reset index back to 1
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_assignsaber1") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			// These menus affect JKA character saber cvars
+			if (menu && (!strcmp(menu->window.name, "saberMenu") || !strcmp(menu->window.name, "ingamespsaberMenu") || !strcmp(menu->window.name, "challengesaberMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist");
+				if (item) {
+					Cvar_Set("ui_saber", singleSaberHilts[saberHiltIndex].singleSaberHilt);
+				}
+			}
+
+			// Player saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamesabercustomizationMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("saber %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+
+			// NPC saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamespawncommandsMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("workshop_set_sabersingle %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+					Cvar_Set("npc_recent_command", va("aiworkshop; cl_noprint 1; workshop_select; workshop_set_sabersingle %s; aiworkshop; wait 10; cl_noprint 0", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_assignsaber2") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			// These menus affect JKA character saber cvars
+			if (menu && (!strcmp(menu->window.name, "saberMenu") || !strcmp(menu->window.name, "ingamespsaberMenu") || !strcmp(menu->window.name, "challengesaberMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist2");
+				if (item) {
+					Cvar_Set("ui_saber2", singleSaberHilts[saberHiltIndex].singleSaberHilt);
+				}
+			}
+
+			// Play saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamesabercustomizationMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist2");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("saber %s %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt, singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+
+			// NPC saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamespawncommandsMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist2");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("workshop_set_sabersecond none %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+					Cvar_Set("npc_recent_command", va("aiworkshop; cl_noprint 1; workshop_select; workshop_set_sabersecond none %s; aiworkshop; wait 10; cl_noprint 0", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_assignsaberstaff") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			// These menus affect JKA character saber cvars
+			if (menu && (!strcmp(menu->window.name, "saberMenu") || !strcmp(menu->window.name, "ingamespsaberMenu") || !strcmp(menu->window.name, "challengesaberMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "staffsaberhiltslist");
+				if (item && saberHiltIndex < NO_OF_STAFF_SABER_HILTS) {
+					Cvar_Set("ui_saber", staffSaberHilts[saberHiltIndex].staffSaberHilt);
+				}
+			}
+
+			// Player saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamesabercustomizationMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "staffsaberhiltslist");
+				if (item && saberHiltIndex < NO_OF_STAFF_SABER_HILTS) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("saber %s\n", staffSaberHilts[saberHiltIndex].staffSaberHilt));
+				}
+			}
+
+			// NPC saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamespawncommandsMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "staffsaberhiltslist");
+				if (item && saberHiltIndex < NO_OF_STAFF_SABER_HILTS) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("workshop_set_sabersingle %s\n", staffSaberHilts[saberHiltIndex].staffSaberHilt));
+					Cvar_Set("npc_recent_command", va("aiworkshop; cl_noprint 1; workshop_select; workshop_set_sabersingle %s; aiworkshop; wait 10; cl_noprint 0", staffSaberHilts[saberHiltIndex].staffSaberHilt));
 				}
 			}
 		}
@@ -2465,6 +2713,14 @@ static int UI_FeederCount(const float feederID)
 	{
 		return NO_OF_DUEL_MAPS;
 	}
+	if (feederID == FEEDER_SINGLE_SABER_HILTS)
+	{
+		return NO_OF_SINGLE_SABER_HILTS;
+	}
+	if (feederID == FEEDER_STAFF_SABER_HILTS)
+	{
+		return NO_OF_STAFF_SABER_HILTS;
+	}
 
 	return 0;
 }
@@ -2642,6 +2898,20 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 		// Don't change the index if heading/empty space is selected
 		if (duelMaps[index].duelMapBSP != "") {
 			duelMapIndex = index;
+		}
+	}
+	else if (feederID == FEEDER_SINGLE_SABER_HILTS)
+	{
+		if (singleSaberHilts[index].singleSaberHilt != "") {
+			saberHiltIndex = index;
+			DC->startLocalSound(DC->registerSound("sound/interface/choose_hilt.wav", qfalse), CHAN_LOCAL);
+		}
+	}
+	else if (feederID == FEEDER_STAFF_SABER_HILTS)
+	{
+		if (staffSaberHilts[index].staffSaberHilt != "") {
+			saberHiltIndex = index;
+			DC->startLocalSound(DC->registerSound("sound/interface/choose_hilt.wav", qfalse), CHAN_LOCAL);
 		}
 	}
 }
