@@ -6871,7 +6871,7 @@ static void CG_StopWeaponSounds(centity_t* cent)
 		return;
 	}
 
-	if (!(cent->currentState.eFlags & EF_FIRING))
+	if (!(cent->currentState.eFlags & (EF_FIRING | EF_ALT_FIRING)))
 	{
 		if (cent->pe.lightningFiring)
 		{
@@ -6891,6 +6891,10 @@ static void CG_StopWeaponSounds(centity_t* cent)
 		{
 			cgi_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->altFiringSound);
 		}
+		cent->pe.lightningFiring = qtrue;
+	}
+	else if (cent->currentState.eFlags & EF_FIRING)
+	{
 		cent->pe.lightningFiring = qtrue;
 	}
 }
