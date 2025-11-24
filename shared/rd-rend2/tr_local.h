@@ -2981,7 +2981,7 @@ void R_AddPolygonSurfaces(const trRefdef_t* refdef);
 
 void R_DecomposeSort(uint32_t sort, int* entityNum, shader_t** shader, int* cubemap, int* postRender);
 uint32_t R_CreateSortKey(int entityNum, int sortedShaderIndex, int cubemapIndex, int postRender);
-void R_AddDrawSurf(surfaceType_t* surface, int entityNum, const shader_t* shader, int fogIndex, const int dlightMap, int postRender, int cubemap);
+void R_AddDrawSurf(surfaceType_t* surface, int entityNum, shader_t* shader, int fogIndex, int dlightMap, int postRender, int cubemap);
 bool R_IsPostRenderEntity(const trRefEntity_t* refEntity);
 
 void R_CalcMikkTSpaceBSPSurface(int numSurfaces, packedVertex_t* vertices, glIndex_t* indices);
