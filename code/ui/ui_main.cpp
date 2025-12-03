@@ -482,6 +482,7 @@ static void UI_HighLightThrowSelection();
 static void UI_ClearInventory();
 static void UI_GiveInventory(int itemIndex, int amount);
 static void UI_ForcePowerWeaponsButton(qboolean activeFlag);
+static void UI_ViewWeaponWheel();
 static void UI_UpdateCharacterSkin();
 static void UI_UpdateCharacter(qboolean changedModel);
 static void UI_UpdateSaberType();
@@ -1729,6 +1730,14 @@ static qboolean UI_RunMenuScript(const char** args)
 					ui.Cmd_ExecuteText(EXEC_APPEND, va("workshop_set_sabersingle %s\n", staffSaberHilts[saberHiltIndex].staffSaberHilt));
 					Cvar_Set("npc_recent_command", va("aiworkshop; cl_noprint 1; workshop_select; workshop_set_sabersingle %s; aiworkshop; wait 10; cl_noprint 0", staffSaberHilts[saberHiltIndex].staffSaberHilt));
 				}
+			}
+		}
+		else if (Q_stricmp(name, "md_viewweaponwheel") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && !strcmp(menu->window.name, "ingameWeaponWheelMenu"))
+			{
+				UI_ViewWeaponWheel();
 			}
 		}
 		else if (Q_stricmp(name, "startgame") == 0)
@@ -5796,6 +5805,73 @@ static void UI_ForcePowerWeaponsButton(qboolean activeFlag)
 		else
 		{
 			item->window.flags |= WINDOW_INACTIVE;
+		}
+	}
+}
+
+static void UI_ViewWeaponWheel() {
+	struct WeaponIcon
+	{
+		const char* iconName;
+		int weaponIndex;
+	};
+	const WeaponIcon weaponIcons[] = {
+		{"melee_icon", 14},
+		{"saber_icon", 1},
+		{"stun_baton_icon", 17},
+		{"noghristick_icon", 33},
+		{"blaster_pistol_icon", 2},
+		{"clone_pistol_icon", 45},
+		{"lpann14_icon", 42},
+		{"westar_icon", 43},
+		{"briar_icon", 18},
+		{"dh17_icon", 37},
+		{"blaster_icon", 3},
+		{"a280_icon", 41},
+		{"clone_rifle_icon", 38},
+		{"dc15s_icon", 36},
+		{"dc17m_icon", 39},
+		{"e5_icon", 34},
+		{"ee3_icon", 44},
+		{"f11d_icon", 35},
+		{"repeater_icon", 6},
+		{"rotary_cannon_icon", 40},
+		{"bowcaster_icon", 5},
+		{"rocket_launcher_icon", 9},
+		{"demp2_icon", 7},
+		{"concussion_icon", 13},
+		{"flechette_icon", 8},
+		{"disruptor_icon", 4},
+		{"thermal_icon", 10},
+		{"trip_mine_icon", 11},
+		{"det_pack_icon", 12},
+	};
+
+	// Get player state
+	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
+
+	if (!cl)
+	{
+		return; // No client, get out
+	}
+
+	const playerState_t* pState = cl->gentity->client;
+	const menuDef_t* menu = Menu_GetFocused();
+
+	// Enable/disable weapon icons if in player inventory
+	for (const auto& weaponIcon : weaponIcons)
+	{
+		const auto item = Menu_FindItemByName(menu, weaponIcon.iconName);
+		if (item)
+		{
+			if (pState->weapons[weaponIcon.weaponIndex]) {
+				item->disabled = qfalse;
+				item->window.foreColor[3] = 1.0f;
+			}
+			else {
+				item->disabled = qtrue;
+				item->window.foreColor[3] = 0.4f;
+			}
 		}
 	}
 }

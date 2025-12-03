@@ -5145,7 +5145,11 @@ void CG_Weapon_f()
 
 	if (num < WP_NONE || num >= WP_NUM_WEAPONS)
 	{
-		return;
+		// Hack to allow the weapon wheel to equip explosives
+		if (num < WP_THERMAL + 1000 || num > WP_DET_PACK + 1000)
+		{
+			return;
+		}
 	}
 
 	if (num == WP_SABER)
@@ -5230,7 +5234,7 @@ void CG_Weapon_f()
 				}
 			}
 		}
-	}
+	}	
 	else if (num >= WP_THERMAL && num <= WP_DET_PACK) // these weapons cycle
 	{
 		int weap, i = 0;
@@ -5299,6 +5303,11 @@ void CG_Weapon_f()
 			}
 			i++;
 		}
+	}
+
+	// Hack to allow the weapon wheel to equip explosives
+	if (num > 1000) {
+		num -= 1000;
 	}
 
 	if (!CG_WeaponSelectable(num, cg.snap->ps.weapon, qfalse))
