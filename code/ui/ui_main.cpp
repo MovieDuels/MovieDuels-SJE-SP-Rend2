@@ -839,7 +839,11 @@ static void UI_ClearInventory();
 static void UI_GiveInventory(int itemIndex, int amount);
 static void UI_ForcePowerWeaponsButton(qboolean activeFlag);
 static void UI_UpdateCharacterSkin();
+#ifdef NEW_FEEDER_V7
+static void UI_UpdateCharacter(qboolean changedModel, qboolean newLoad);
+#else
 static void UI_UpdateCharacter(qboolean changedModel);
+#endif
 static void UI_UpdateSaberType();
 static void UI_UpdateSaberHilt(qboolean secondSaber);
 //static void		UI_UpdateSaberColor( qboolean secondSaber );
@@ -1120,6 +1124,13 @@ vmCvar_t ui_saber;
 vmCvar_t ui_saber2;
 vmCvar_t ui_saber_color;
 vmCvar_t ui_saber2_color;
+#ifdef NEW_FEEDER_V9
+vmCvar_t ui_saber_type_md;
+vmCvar_t ui_saber_md;
+vmCvar_t ui_saber2_md;
+vmCvar_t ui_saber_color_md;
+vmCvar_t ui_saber2_color_md;
+#endif
 vmCvar_t ui_char_color_red;
 vmCvar_t ui_char_color_green;
 vmCvar_t ui_char_color_blue;
@@ -1261,6 +1272,14 @@ static cvarTable_t cvarTable[] =
 	{&ui_saber2, "ui_saber2", "", nullptr, 0},
 	{&ui_saber_color, "ui_saber_color", "", nullptr, 0},
 	{&ui_saber2_color, "ui_saber2_color", "", nullptr, 0},
+
+#ifdef NEW_FEEDER_V9
+	{&ui_saber_type_md, "ui_saber_type_md", "single", nullptr, 0},
+	{&ui_saber_md, "ui_saber_md", "single_1", nullptr, 0},
+	{&ui_saber2_md, "ui_saber2_md", "", nullptr, 0},
+	{&ui_saber_color_md, "ui_saber_color_md", "yellow", nullptr, 0},
+	{&ui_saber2_color_md, "ui_saber2_color_md", "yellow", nullptr, 0},
+#endif
 
 	{&ui_char_color_red, "ui_char_color_red", "", nullptr, 0},
 	{&ui_char_color_green, "ui_char_color_green", "", nullptr, 0},
@@ -1885,12 +1904,16 @@ static qboolean UI_RunMenuScript(const char** args)
 
 	if (String_Parse(args, &name))
 	{
+
 #ifdef NEW_FEEDER_V1
 #ifdef NEW_FEEDER_V6
 		if (Q_stricmp(name, "md_char_init") == 0)
 		{
 			if (!firstTimeLoad) {
+#ifdef NEW_FEEDER_V7
+#else
 				firstTimeLoad = true;
+#endif
 				goto runEra;
 			}
 			return qtrue;
@@ -1902,6 +1925,40 @@ static qboolean UI_RunMenuScript(const char** args)
 #ifdef NEW_FEEDER_V6
 runEra:
 #endif
+#ifdef NEW_FEEDER_V7
+				int select = eraIndex[uiEra];
+				int positionM = 0;
+				int positionV = 0;
+
+				if (!firstTimeLoad) {
+					int actual = 0;
+					for (int j = eraIndex[uiEra]; j < uiModelIndex; j++) {
+						if (charMD[j].isSubDiv) // hasSubDiv
+							actual++;
+					}
+					positionM = uiModelIndex - eraIndex[uiEra] - actual;
+					positionV = uiVariantIndex - uiModelIndex;
+					select = uiVariantIndex;
+				}
+				else
+				{
+					uiModelIndex = eraIndex[uiEra];
+					uiVariantIndex = eraIndex[uiEra];
+				}
+
+				if (Q_strncmp(charMD[select].skin, "model_", 6) == 0)
+					Cvar_Set("ui_model", va("%s/%s", charMD[select].model, &charMD[select].skin[6]));
+				else
+					Cvar_Set("ui_model", va("%s/%s", charMD[select].model, charMD[select].skin));
+
+				Cvar_Set("ui_char_model", charMD[select].model);
+				Cvar_Set("ui_char_skin", charMD[select].skin);
+
+				if (!firstTimeLoad)
+					UI_UpdateCharacter(qtrue, qtrue);
+
+				firstTimeLoad = true;
+#else
 				uiModelIndex = eraIndex[uiEra];
 				uiVariantIndex = eraIndex[uiEra];
 
@@ -1912,25 +1969,38 @@ runEra:
 
 				Cvar_Set("ui_char_model", charMD[eraIndex[uiEra]].model);//UI_Cvar_VariableString("ui_model"));
 				Cvar_Set("ui_char_skin", charMD[eraIndex[uiEra]].skin);//
-
-
+#endif
 				menuDef_t* menu = Menus_FindByName("ui_md");
 				if (menu) {
 #ifdef NEW_FEEDER_V3
 					itemDef_t* item = Menu_FindItemByName(menu, "modellist");
 					listBoxDef_t* list = static_cast<listBoxDef_t*>(item->typeData);
+#ifdef NEW_FEEDER_V7
+					if (list) {
+						list->cursorPos = positionM;
+					}
+					item->cursorPos = positionM;
+#else
 					if (list) {
 						list->cursorPos = 0;
 					}
 					item->cursorPos = 0;
 #endif
+#endif
 
 					itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
 					listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
+#ifdef NEW_FEEDER_V7
+					if (listPtr) {
+						listPtr->cursorPos = positionV;
+					}
+					itemFeeder->cursorPos = positionV;
+#else
 					if (listPtr) {
 						listPtr->cursorPos = 0;
 					}
 					itemFeeder->cursorPos = 0;
+#endif
 
 #ifdef NEW_FEEDER_V2
 					itemDef_t* itemDesc = Menu_FindItemByName(menu, "char_desc");
@@ -1943,6 +2013,7 @@ runEra:
 			}
 		}
 #endif
+
 		if (Q_stricmp(name, "resetdefaults") == 0)
 		{
 			UI_ResetDefaults();
@@ -2170,7 +2241,13 @@ runEra:
 #endif
 			UI_ClearWeapons();
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("playermodel %s\n", charMD[uiVariantIndex].npc));
+#ifdef NEW_FEEDER_V8
+			Cvar_Set("g_saber", Cvar_VariableString("ui_saber"));
+			Cvar_Set("g_saber2", Cvar_VariableString("ui_saber2"));
 
+			Cvar_Set("g_saber_color", Cvar_VariableString("ui_saber_color"));
+			Cvar_Set("g_saber2_color", Cvar_VariableString("ui_saber2_color"));
+#endif
 			switch (ui_char_team_select.integer)
 			{
 				case 1:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam player\n");			break;
@@ -2455,11 +2532,19 @@ runEra:
 		}
 		else if (Q_stricmp(name, "character") == 0)
 		{
+#ifdef NEW_FEEDER_V7
+			UI_UpdateCharacter(qfalse, qfalse);
+#else
 			UI_UpdateCharacter(qfalse);
+#endif
 		}
 		else if (Q_stricmp(name, "characterchanged") == 0)
 		{
+#ifdef NEW_FEEDER_V7
+			UI_UpdateCharacter(qtrue, qfalse);
+#else
 			UI_UpdateCharacter(qtrue);
+#endif
 		}
 		else if (Q_stricmp(name, "char_skin") == 0)
 		{
@@ -4186,6 +4271,20 @@ void _UI_Init(const qboolean inGameLoad)
 	mdBorder = ui.R_RegisterShaderNoMip("menu/feeder/icon_border.tga");
 	mdBorderSel = ui.R_RegisterShaderNoMip("menu/feeder/icon_border_gold.tga");
 	mdBackground = ui.R_RegisterShaderNoMip("menu/feeder/icon_background.tga");
+#endif
+#ifdef NEW_FEEDER_V6
+	firstTimeLoad = false;
+#endif
+#ifdef NEW_FEEDER_V9
+	uiEra = 0;
+	uiModelIndex = 0;
+	uiVariantIndex = 0;
+
+	Cvar_Set("g_saber_type", Cvar_VariableString("ui_saber_type_md"));
+	Cvar_Set("g_saber", Cvar_VariableString("ui_saber_md"));
+	Cvar_Set("g_saber2", Cvar_VariableString("ui_saber2_md"));
+	Cvar_Set("g_saber_color", Cvar_VariableString("ui_saber_color_md"));
+	Cvar_Set("g_saber2_color", Cvar_VariableString("ui_saber2_color_md"));
 #endif
 }
 
@@ -5973,6 +6072,13 @@ static void UI_UpdateSaberCvars()
 		Cvar_Set("g_saber2", Cvar_VariableString("ui_saber2"));
 		Cvar_Set("g_saber_color", Cvar_VariableString("ui_saber_color"));
 		Cvar_Set("g_saber2_color", Cvar_VariableString("ui_saber2_color"));
+#ifdef NEW_FEEDER_V9
+		Cvar_Set("ui_saber_type_md", Cvar_VariableString("ui_saber_type"));
+		Cvar_Set("ui_saber_md", Cvar_VariableString("ui_saber"));
+		Cvar_Set("ui_saber2_md", Cvar_VariableString("ui_saber2"));
+		Cvar_Set("ui_saber_color_md", Cvar_VariableString("ui_saber_color"));
+		Cvar_Set("ui_saber2_color_md", Cvar_VariableString("ui_saber2_color"));
+#endif
 	}
 	else
 	{
@@ -8106,6 +8212,13 @@ static void UI_GetSaberCvars()
 		Cvar_Set("ui_saber2", Cvar_VariableString("g_saber2"));
 		Cvar_Set("ui_saber_color", Cvar_VariableString("g_saber_color"));
 		Cvar_Set("ui_saber2_color", Cvar_VariableString("g_saber2_color"));
+#ifdef NEW_FEEDER_V9
+		Cvar_Set("ui_saber_type", Cvar_VariableString("ui_saber_type_md"));
+		Cvar_Set("ui_saber", Cvar_VariableString("ui_saber_md"));
+		Cvar_Set("ui_saber2", Cvar_VariableString("ui_saber2_md"));
+		Cvar_Set("ui_saber_color", Cvar_VariableString("ui_saber_color_md"));
+		Cvar_Set("ui_saber2_color", Cvar_VariableString("ui_saber2_color_md"));
+#endif
 	}
 	else
 	{
@@ -8242,13 +8355,18 @@ static void UI_UpdateCharacterSkin()
 
 		Cvar_Set("ui_saber", charMD[uiVariantIndex].saber1);
 		Cvar_Set("ui_saber2", charMD[uiVariantIndex].saber2);
+#ifdef NEW_FEEDER_V8
+#else
 		Cvar_Set("g_saber", charMD[uiVariantIndex].saber1);
 		Cvar_Set("g_saber2", charMD[uiVariantIndex].saber2);
-
+#endif
 		Cvar_Set("ui_saber_color", charMD[uiVariantIndex].color1);
 		Cvar_Set("ui_saber2_color", charMD[uiVariantIndex].color2);
+#ifdef NEW_FEEDER_V8
+#else
 		Cvar_Set("g_saber_color", charMD[uiVariantIndex].color1);
 		Cvar_Set("g_saber2_color", charMD[uiVariantIndex].color2);
+#endif
 
 		for (int saber_num = 0; saber_num < num_sabers; saber_num++)
 		{
@@ -8290,7 +8408,11 @@ static void UI_UpdateCharacterSkin()
 #endif
 }
 
+#ifdef NEW_FEEDER_V7
+static void UI_UpdateCharacter(qboolean changedModel, qboolean newLoad)
+#else
 static void UI_UpdateCharacter(const qboolean changedModel)
+#endif
 {
 	char modelPath[MAX_QPATH];
 
@@ -8313,7 +8435,11 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 	static int mdSelected = -1;
 	if (!strcmp(menu->window.name, "ui_md"))
 	{
+#ifdef NEW_FEEDER_V7
+		if ((uiVariantIndex != mdSelected) || newLoad)
+#else
 		if (uiVariantIndex != mdSelected) 
+#endif
 		{
 			mdSelected = uiVariantIndex;
 #ifdef NEW_FEEDER_V5
