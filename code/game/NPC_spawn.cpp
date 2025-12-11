@@ -2614,6 +2614,31 @@ gentity_t* NPC_Spawn_Do(gentity_t* ent, const qboolean fullSpawnNow)
 
 	newent->NPC->eventualGoal = ent->enemy;
 
+	// Overide player and enemy teams if set by npc spawn command
+	if (ent->NPC_overrideTeam != TEAM_PROJECTION)
+	{
+		newent->client->playerTeam = ent->NPC_overrideTeam;
+		switch (newent->client->playerTeam)
+		{
+			case TEAM_PLAYER:
+				newent->client->enemyTeam = TEAM_ENEMY;
+				break;
+			case TEAM_ENEMY:
+				newent->client->enemyTeam = TEAM_PLAYER;
+				break;
+			default: // Solo, free and neutral
+				newent->client->enemyTeam = ent->NPC_overrideTeam;
+				break;
+		}
+	}
+
+	// Overide health if set by npc spawn command
+	if (ent->NPC_overrideHealth)
+	{
+		newent->health = ent->NPC_overrideHealth;
+		newent->NPC_overrideHealth = ent->NPC_overrideHealth;
+	}
+
 	for (int index = BSET_FIRST; index < NUM_BSETS; index++)
 	{
 		if (ent->behaviorSet[index])
@@ -5282,6 +5307,8 @@ static void NPC_Spawn_f()
 	trace_t trace;
 	qboolean isVehicle = qfalse;
 	char* target;
+	team_t overrideTeam = TEAM_PROJECTION; // Don't override by default
+	int overridehealth = 0; // Don't override by default
 
 	if (!NPCspawner)
 	{
@@ -5324,6 +5351,24 @@ static void NPC_Spawn_f()
 	else
 	{
 		target = G_NewString(gi.argv(3));
+
+		// Check for team argument
+		if (gi.argc() > 4) {
+			const char* teamStr = gi.argv(4);
+			team_t team = static_cast<team_t>(GetIDForString(TeamTable, teamStr));
+			if (team != static_cast<team_t>(-1)) {
+				overrideTeam = team;
+			}
+			else {
+				gi.Printf(S_COLOR_RED"Error, expected TEAM_PLAYER, TEAM_ENEMY, TEAM_SOLO or TEAM_NEUTRAL\n");
+				return;
+			}
+		}
+
+		// Check for health argument
+		if (gi.argc() > 5) {
+			overridehealth = atoi(gi.argv(5));
+		}
 	}
 
 	//Spawn it at spot of first player
@@ -5354,6 +5399,10 @@ static void NPC_Spawn_f()
 	NPCspawner->delay = 0;
 
 	NPCspawner->wait = 500;
+
+	NPCspawner->NPC_overrideTeam = overrideTeam;
+
+	NPCspawner->NPC_overrideHealth = overridehealth;
 
 	if (isVehicle)
 	{

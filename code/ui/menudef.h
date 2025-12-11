@@ -99,6 +99,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define FEEDER_MOVES_TITLES					0x16			// move titles for the data pad moves screen
 #define FEEDER_LANGUAGES					0x17			// the list of languages
 
+// NEW_FEEDER
+#define FEEDER_MD_FACTION					0x54	// 84
+#define FEEDER_MD_MODELS					0x55	// 85
+#define FEEDER_MD_VARIANTS				    0x56	// 86
 #define FEEDER_DUEL_MAPS					0x57			// 87 - duel maps
 #define FEEDER_SINGLE_SABER_HILTS			0x58			// 88 - single saber hilts
 #define FEEDER_STAFF_SABER_HILTS			0x59			// 89 - staff saber hilts
