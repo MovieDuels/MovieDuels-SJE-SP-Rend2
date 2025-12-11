@@ -2911,6 +2911,15 @@ void UI_GetSaberForMenu(char* saber, const int saber_num)
 	}
 }
 
+#ifdef NEW_FEEDER_V10
+void UI_GetSaberForMD(char* saber, const int saber_num) {
+	if (saber_num == 0)
+		DC->getCVarString("ui_saber", saber, MAX_QPATH);
+	else
+		DC->getCVarString("ui_saber2", saber, MAX_QPATH);
+}
+#endif
+
 void UI_SaberDrawBlades(itemDef_t* item, vec3_t origin, const float cur_yaw)
 {
 	//NOTE: only allows one saber type in view at a time
@@ -2933,6 +2942,19 @@ void UI_SaberDrawBlades(itemDef_t* item, vec3_t origin, const float cur_yaw)
 		char saber[MAX_QPATH];
 		if (item->flags & ITF_ISCHARACTER)
 		{
+#ifdef NEW_FEEDER_V10
+			qboolean isMD = qfalse;
+			if (item->parent)
+			{
+				menuDef_t* parent = (menuDef_t*)item->parent;
+				if (!Q_stricmp(parent->window.name, "ui_md"))
+					isMD = qtrue;
+			}
+
+			if (isMD)
+				UI_GetSaberForMD(saber, saber_num);
+			else
+#endif
 			UI_GetSaberForMenu(saber, saber_num);
 			saber_model = saber_num + 1;
 		}
