@@ -1746,13 +1746,14 @@ void pas_think(gentity_t* ent)
 		ent->s.loopSound = 0;
 	}
 
-	if (ent->enemy && ent->attackDebounceTime < level.time && Q_flrand(0.0f, 1.0f) > 0.3f)
+	if (ent->enemy && ent->attackDebounceTime < level.time && Q_flrand(0.0f, 1.0f) > 0.4f)
 	{
 		ent->count--;
 
 		if (ent->count)
 		{
 			pas_fire(ent);
+			ent->attackDebounceTime = level.time + ent->delay;
 			ent->fly_sound_debounce_time = level.time; //used as lastShotTime
 		}
 		else
@@ -1836,6 +1837,8 @@ void SP_PAS(gentity_t* base)
 	base->e_UseFunc = useF_pas_use;
 
 	base->damage = 0; // start animation flag
+
+	base->delay = 400.f;
 
 	base->contents = CONTENTS_SHOTCLIP | CONTENTS_CORPSE; //for certain traces
 	VectorSet(base->mins, -8, -8, 0);

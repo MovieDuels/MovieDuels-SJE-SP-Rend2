@@ -402,7 +402,7 @@ static void CG_LoadBar()
 		{
 			if (cg_com_rend2.integer == 1) //rend2 is on
 			{
-				cgi_R_Font_DrawString(40, 2, va("Warning: When using Quality mode, longer loading times can be expected."), colorTable[CT_WHITE], cgs.media.qhFontSmall, -1, 1.0f);
+				cgi_R_Font_DrawString(10, 10, va("Longer loading times can be expected with Rend2 enabled."), colorTable[CT_WHITE], cgs.media.qhFontMedium, -1, 0.5f);
 			}
 		}
 		constexpr int x = (640 - LOADBAR_CLIP_WIDTH) / 2;
@@ -833,7 +833,7 @@ static void LoadTips(void)
 	}
 }
 
-int SCREENSHOT_TOTAL = -1;
+int SCREENSHOT_TOTAL = 8;
 int SCREENSHOT_CHOICE = 0;
 int SCREENSHOT_NEXT_UPDATE_TIME = 0;
 char SCREENSHOT_CURRENT[64] = { 0 };
@@ -853,27 +853,8 @@ static char* cg_GetCurrentLevelshot1(const char* s)
 
 	if (SCREENSHOT_NEXT_UPDATE_TIME < time || SCREENSHOT_NEXT_UPDATE_TIME == 0)
 	{
-		if (SCREENSHOT_TOTAL < 0)
-		{
-			// Count and register them...
-			SCREENSHOT_TOTAL = 0;
-
-			while (true)
-			{
-				char screen_shot[128] = { 0 };
-
-				strcpy(screen_shot, va("menu/art/unknownmap%i", SCREENSHOT_TOTAL));
-
-				if (!cgi_R_RegisterShaderNoMip(screen_shot))
-				{
-					break;
-				}
-				SCREENSHOT_TOTAL++;
-			}
-			SCREENSHOT_TOTAL--;
-		}
 		SCREENSHOT_NEXT_UPDATE_TIME = time + 10000;
-		SCREENSHOT_CHOICE = Q_flrand(0, SCREENSHOT_TOTAL);
+		SCREENSHOT_CHOICE = Q_irand(0, SCREENSHOT_TOTAL);
 		memset(SCREENSHOT_CURRENT, 0, sizeof SCREENSHOT_CURRENT);
 		strcpy(SCREENSHOT_CURRENT, va("menu/art/unknownmap%i", SCREENSHOT_CHOICE));
 	}
@@ -895,27 +876,8 @@ static char* cg_GetCurrentLevelshot2(const char* s)
 
 	if (SCREENSHOT_NEXT_UPDATE_TIME < time || SCREENSHOT_NEXT_UPDATE_TIME == 0)
 	{
-		if (SCREENSHOT_TOTAL < 0)
-		{
-			// Count and register them...
-			SCREENSHOT_TOTAL = 0;
-
-			while (true)
-			{
-				char screen_shot[128] = { 0 };
-
-				strcpy(screen_shot, va("menu/art/unknownmap%i", SCREENSHOT_TOTAL));
-
-				if (!cgi_R_RegisterShaderNoMip(screen_shot))
-				{
-					break;
-				}
-				SCREENSHOT_TOTAL++;
-			}
-			SCREENSHOT_TOTAL--;
-		}
 		SCREENSHOT_NEXT_UPDATE_TIME = time + 2500;
-		SCREENSHOT_CHOICE = Q_flrand(0, SCREENSHOT_TOTAL);
+		SCREENSHOT_CHOICE = Q_irand(0, SCREENSHOT_TOTAL);
 		memset(SCREENSHOT_CURRENT, 0, sizeof SCREENSHOT_CURRENT);
 		strcpy(SCREENSHOT_CURRENT, va("menu/art/unknownmap%i", SCREENSHOT_CHOICE));
 	}
@@ -959,6 +921,7 @@ void CG_DrawInformation()
 			|| strcmp(s, "01nar") == 0
 			|| strcmp(s, "md2_bd_ch") == 0
 			|| strcmp(s, "md_sn_intro_jedi") == 0
+			|| strcmp(s, "md_sn_intro_jedi2") == 0
 			|| strcmp(s, "md_ch_battledroids") == 0
 			|| strcmp(s, "md_ep4_intro") == 0
 			|| strcmp(s, "secbase") == 0

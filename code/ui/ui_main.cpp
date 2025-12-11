@@ -746,6 +746,348 @@ static const char* MD_UI_SelectedTeamHead_SubDivs(int index, int* actual) {
 	return "";
 }
 #endif
+static int duelMapIndex = 1;
+
+typedef struct {
+	const char* duelMapName;
+	const char* duelMapDesc;
+	const char* duelMapBSP;
+	const char* duelMapImage;
+} duelMaps_t;
+
+static constexpr duelMaps_t duelMaps[] = {
+	// duelMapName							// duelMapDesc							// duelMapBSP					// duelMapImage
+	// Episode 1
+	{ "@MD_MENU_MAIN_DM_EPISODE_1",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_N_TFF",				"@MD_MENU_MAIN_DM_N_TFF_DESC",			"duel_tradefed",				"levelshots/bg_tradefed"			},
+	{ "@MD_MENU_MAIN_DM_N_COT",				"@MD_MENU_MAIN_DM_N_COT_DESC",			"duel_theed",					"levelshots/bg_theed"				},
+	{ "@MD_MENU_MAIN_DM_N_OG",				"@MD_MENU_MAIN_DM_N_OG_DESC",			"duel_otoh_gunga",				"levelshots/bg_otoh_gunga"			},
+	{ "@MD_MENU_MAIN_DM_T_MES",				"@MD_MENU_MAIN_DM_T_MES_DESC",			"duel_mos_espa",				"levelshots/bg_mos_espa"			},
+	{ "@MD_MENU_MAIN_DM_N_TGC",				"@MD_MENU_MAIN_DM_N_TGC_DESC",			"duel_dotf",					"levelshots/bg_dotf"				},
+	{ "@MD_MENU_MAIN_DM_N_QGF",				"@MD_MENU_MAIN_DM_N_QGF_DESC",			"duel_quigonfuneral",			"levelshots/bg_quigonfuneral"		},
+
+	// Episode 2
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_2",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_K_CF",				"@MD_MENU_MAIN_DM_K_CF_DESC",			"duel_kamino",					"levelshots/bg_kamino"				},
+	{ "@MD_MENU_MAIN_DM_K_LP",				"@MD_MENU_MAIN_DM_K_LP_DESC",			"duel_kamino_lp",				"levelshots/bg_kamino_lp"			},
+	{ "@MD_MENU_MAIN_DM_T_TC",				"@MD_MENU_MAIN_DM_T_TC_DESC",			"duel_tusken",					"levelshots/bg_tusken"				},
+	{ "@MD_MENU_MAIN_DM_G_PA",				"@MD_MENU_MAIN_DM_G_PA_DESC",			"duel_geonosis_arena",			"levelshots/bg_geonosis_arena"		},
+	{ "@MD_MENU_MAIN_DM_G_B",				"@MD_MENU_MAIN_DM_G_B_DESC",			"duel_geonosis_battle",			"levelshots/bg_geonosis_battle"		},
+	{ "@MD_MENU_MAIN_DM_G_DSH",				"@MD_MENU_MAIN_DM_G_DSH_DESC",			"duel_geonosis_hangar",			"levelshots/bg_geonosis_hangar"		},
+
+	// Episode 3
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_3",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_C_TIH",				"@MD_MENU_MAIN_DM_C_TIH_DESC",			"duel_invisible_hand",			"levelshots/bg_invisible_hand"		},
+	{ "@MD_MENU_MAIN_DM_U_PC",				"@MD_MENU_MAIN_DM_U_PC_DESC",			"duel_utapau",					"levelshots/bg_utapau"				},
+	{ "@MD_MENU_MAIN_DM_U_SLP",				"@MD_MENU_MAIN_DM_U_SLP_DESC",			"duel_utapau_lp",				"levelshots/bg_utapau_lp"			},
+	{ "@MD_MENU_MAIN_DM_M_B",				"@MD_MENU_MAIN_DM_M_B_DESC",			"duel_mygeeto",					"levelshots/bg_mygeeto"				},
+	{ "@MD_MENU_MAIN_DM_C_C",				"@MD_MENU_MAIN_DM_C_C_DESC",			"duel_coruscantcity",			"levelshots/bg_coruscantcity"		},
+	{ "@MD_MENU_MAIN_DM_C_PA",				"@MD_MENU_MAIN_DM_C_PA_DESC",			"duel_padme_home",				"levelshots/bg_padme_home"			},
+	{ "@MD_MENU_MAIN_DM_C_PO",				"@MD_MENU_MAIN_DM_C_PO_DESC",			"duel_office",					"levelshots/bg_office"				},
+	{ "@MD_MENU_MAIN_DM_C_JTO",				"@MD_MENU_MAIN_DM_C_JTO_DESC",			"duel_jt_outside",				"levelshots/bg_jt_outside"			},
+	{ "@MD_MENU_MAIN_DM_C_JT",				"@MD_MENU_MAIN_DM_C_JT_DESC",			"duel_jeditemple",				"levelshots/bg_jeditemple"			},
+	{ "@MD_MENU_MAIN_DM_JT_TR",				"@MD_MENU_MAIN_DM_JT_TR_DESC",			"duel_jt_training",				"levelshots/bg_jt_training"			},
+	{ "@MD_MENU_MAIN_DM_C_SC",				"@MD_MENU_MAIN_DM_C_SC_DESC",			"duel_senate",					"levelshots/bg_senate"				},
+	{ "@MD_MENU_MAIN_DM_M_MF",				"@MD_MENU_MAIN_DM_M_MF_DESC",			"duel_mustafar",				"levelshots/bg_mustafar"			},
+	{ "@MD_MENU_MAIN_DM_M_MFD",				"@MD_MENU_MAIN_DM_M_MFD_DESC",			"duel_mus_both",				"levelshots/bg_mus_both"			},
+
+	// Clone Wars and Rebels
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_CW_REBELS",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_M_SPD",				"@MD_MENU_MAIN_DM_M_SPD_DESC",			"duel_mandalore",				"levelshots/bg_mandalore"			},
+	{ "@MD_MENU_MAIN_DM_M_SPN",				"@MD_MENU_MAIN_DM_M_SPN_DESC",			"duel_mandalore_night",			"levelshots/bg_mandalore_night"		},
+	{ "@MD_MENU_MAIN_DM_JT_D",				"@MD_MENU_MAIN_DM_JT_D_DESC",			"duel_jedi_dojo",				"levelshots/bg_jedi_dojo"			},
+	{ "@MD_MENU_MAIN_DM_S_WBW",				"@MD_MENU_MAIN_DM_S_WBW_DESC",			"duel_wbw",						"levelshots/bg_wbw"					},
+
+	// The Force Unleashed
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_THE_FORCE_UNLEASHED", "",									"",								""									},
+	{ "@MD_MENU_MAIN_DM_RS_TR",				"@MD_MENU_MAIN_DM_RS_TR_DESC",			"duel_rogue_tr",				"levelshots/bg_rogue_tr"			},
+	{ "@MD_MENU_MAIN_DM_JT_LP",				"@MD_MENU_MAIN_DM_JT_LP_DESC",			"duel_coruscantlp",				"levelshots/bg_coruscantlp"			},
+	{ "@MD_MENU_MAIN_DM_JT_LA",				"@MD_MENU_MAIN_DM_JT_LA_DESC",			"duel_jt_tfu",					"levelshots/bg_jt_library"			},
+	{ "@MD_MENU_MAIN_DM_DS_TFU",			"@MD_MENU_MAIN_DM_DS_TFU_DESC",			"duel_deathstar_tfu",			"levelshots/bg_deathstar_tfu"		},
+	{ "@MD_MENU_MAIN_DM_SD_TFH",			"@MD_MENU_MAIN_DM_SD_TFH_DESC",			"duel_tfu_tie_hangar",			"levelshots/bg_tfu_tie_hangar"		},
+	{ "@MD_MENU_MAIN_DM_K_TC",				"@MD_MENU_MAIN_DM_K_TC_DESC",			"duel_tfu2_kamino",				"levelshots/bg_tfu2_kamino"			},
+
+	// Rogue One
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_ROGUE_ONE",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_J_HC",				"@MD_MENU_MAIN_DM_J_HC_DESC",			"duel_jedhacity",				"levelshots/bg_jedhacity"			},
+	{ "@MD_MENU_MAIN_DM_M_VC",				"@MD_MENU_MAIN_DM_M_VC_DESC",			"duel_vad_castle",				"levelshots/bg_vad_castle"			},
+	{ "@MD_MENU_MAIN_DM_S_ISC",				"@MD_MENU_MAIN_DM_S_ISC_DESC",			"duel_scarif",					"levelshots/bg_scarif"				},
+	{ "@MD_MENU_MAIN_DM_SC_PH",				"@MD_MENU_MAIN_DM_SC_PH_DESC",			"duel_profundity",				"levelshots/bg_profundity"			},
+
+	// Episode 4
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_4",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_T_TS",				"@MD_MENU_MAIN_DM_T_TS_DESC",			"duel_twinsuns",				"levelshots/bg_twinsuns"			},
+	{ "@MD_MENU_MAIN_DM_T_LHD",				"@MD_MENU_MAIN_DM_T_LHD_DESC",			"duel_lars_homestead_day",		"levelshots/bg_lars_homestead_day"	},
+	{ "@MD_MENU_MAIN_DM_T_LHS",				"@MD_MENU_MAIN_DM_T_LHS_DESC",			"duel_lars_homestead_sunset",	"levelshots/bg_lars_homestead_sunset" },
+	{ "@MD_MENU_MAIN_DM_T_LHN",				"@MD_MENU_MAIN_DM_T_LHN_DESC",			"duel_lars_homestead_night",	"levelshots/bg_lars_homestead_night" },
+	{ "@MD_MENU_MAIN_DM_T_LHO",				"@MD_MENU_MAIN_DM_T_LHO_DESC",			"duel_luke",					"levelshots/bg_luke"				},
+	{ "@MD_MENU_MAIN_DM_T_O",				"@MD_MENU_MAIN_DM_T_O_DESC",			"duel_tatooine_outpost",		"levelshots/bg_tatooine_outpost"	},
+	{ "@MD_MENU_MAIN_DM_T_RBR",				"@MD_MENU_MAIN_DM_T_RBR_DESC",			"duel_tantiveiv",				"levelshots/bg_tantiveiv"			},
+	{ "@MD_MENU_MAIN_DM_TE_MC",				"@MD_MENU_MAIN_DM_TE_MC_DESC",			"duel_executor",				"levelshots/bg_executor"			},
+	{ "@MD_MENU_MAIN_DM_DS_SS",				"@MD_MENU_MAIN_DM_DS_SS_DESC",			"duel_deathstar",				"levelshots/bg_deathstar"			},
+	{ "@MD_MENU_MAIN_DM_Y_TGT",				"@MD_MENU_MAIN_DM_Y_TGT_DESC",			"duel_yavin",					"levelshots/bg_yavin"				},
+	{ "@MD_MENU_MAIN_DM_Y_CH",				"@MD_MENU_MAIN_DM_Y_CH_DESC",			"duel_yavin_jk2",				"levelshots/bg_yavin_jk2"			},
+
+	// Episode 5
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_5",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_H_EB",				"@MD_MENU_MAIN_DM_H_EB_DESC",			"duel_hoth",					"levelshots/bg_hoth"				},
+	{ "@MD_MENU_MAIN_DM_B_CC",				"@MD_MENU_MAIN_DM_B_CC_DESC",			"duel_cloudcity",				"levelshots/bg_cloudcity"			},
+	{ "@MD_MENU_MAIN_DM_B_CFC",				"@MD_MENU_MAIN_DM_B_CFC_DESC",			"duel_carbon",					"levelshots/bg_carbon"				},
+
+	// Episode 6
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_6",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_T_JPD",				"@MD_MENU_MAIN_DM_T_JPD_DESC",			"duel_jabba",					"levelshots/bg_jabba"				},
+	{ "@MD_MENU_MAIN_DM_T_JPN",				"@MD_MENU_MAIN_DM_T_JPN_DESC",			"duel_jabba_night",				"levelshots/bg_jabba_night"			},
+	{ "@MD_MENU_MAIN_DM_T_GPOC",			"@MD_MENU_MAIN_DM_T_GPOC_DESC",			"duel_sarlacc",					"levelshots/bg_sarlacc"				},
+	{ "@MD_MENU_MAIN_DM_DS_ETR",			"@MD_MENU_MAIN_DM_DS_ETR_DESC",			"duel_emperor",					"levelshots/bg_emperor"				},
+
+	// Episode 7
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_7",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_J_T",				"@MD_MENU_MAIN_DM_J_T_DESC",			"duel_jakku",					"levelshots/bg_jakku"				},
+	{ "@MD_MENU_MAIN_DM_E_BF",				"@MD_MENU_MAIN_DM_E_BF_DESC",			"duel_eravana",					"levelshots/bg_eravana"				},
+	{ "@MD_MENU_MAIN_DM_SB_C",				"@MD_MENU_MAIN_DM_SB_C_DESC",			"duel_star_base",				"levelshots/bg_star_base"			},
+	{ "@MD_MENU_MAIN_DM_SB_F",				"@MD_MENU_MAIN_DM_SB_F_DESC",			"duel_star_basef",				"levelshots/bg_star_basef"			},
+
+	// Episode 8
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_8",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_TS_STR",			"@MD_MENU_MAIN_DM_TS_STR_DESC",			"duel_supremacy",				"levelshots/bg_supremacy"			},
+	{ "@MD_MENU_MAIN_DM_C_RO",				"@MD_MENU_MAIN_DM_C_RO_DESC",			"duel_crait",					"levelshots/bg_crait"				},
+
+	// Episode 9
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EPISODE_9",			"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_E_SC",				"@MD_MENU_MAIN_DM_E_SC_DESC",			"duel_exegol",					"levelshots/bg_exegol"				},
+
+	// KOTOR
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_KOTOR",				"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_DA_EN",				"@MD_MENU_MAIN_DM_DA_EN_DESC",			"duel_dantooine_enclave",		"levelshots/bg_dantooine_enclave"	},
+	{ "@MD_MENU_MAIN_DM_K_SA",				"@MD_MENU_MAIN_DM_K_SA_DESC",			"duel_korriban_sith_academy",	"levelshots/bg_korriban_sith_academy" },
+	{ "@MD_MENU_MAIN_DM_L_B",				"@MD_MENU_MAIN_DM_L_B_DESC",			"duel_leviathan_bridge",		"levelshots/bg_leviathan_bridge"	},
+	{ "@MD_MENU_MAIN_DM_M_TA",				"@MD_MENU_MAIN_DM_M_TA_DESC",			"duel_malachor_trayus_academy",	"levelshots/bg_malachor_trayus_academy" },
+	{ "@MD_MENU_MAIN_DM_M_TC",				"@MD_MENU_MAIN_DM_M_TC_DESC",			"duel_malachor_trayus_core",	"levelshots/bg_malachor_trayus_core" },
+	{ "@MD_MENU_MAIN_DM_I_OP",				"@MD_MENU_MAIN_DM_I_OP_DESC",			"duel_onderon_palace",			"levelshots/bg_onderon_palace"		},
+	{ "@MD_MENU_MAIN_DM_P_OD",				"@MD_MENU_MAIN_DM_P_OD_DESC",			"duel_peragus_observation_deck","levelshots/bg_peragus_observation_deck" },
+	{ "@MD_MENU_MAIN_DM_R_OD",				"@MD_MENU_MAIN_DM_R_OD_DESC",			"duel_ravager",					"levelshots/bg_ravager"				},
+	{ "@MD_MENU_MAIN_DM_SF_OD",				"@MD_MENU_MAIN_DM_SF_OD_DESC",			"duel_starforge",				"levelshots/bg_starforge"			},
+	{ "@MD_MENU_MAIN_DM_T_H",				"@MD_MENU_MAIN_DM_T_H_DESC",			"duel_taris_horizons",			"levelshots/bg_taris_horizons"		},
+	{ "@MD_MENU_MAIN_DM_T_CS",				"@MD_MENU_MAIN_DM_T_CS_DESC",			"duel_telos_citadel_station",	"levelshots/bg_telos_citadel_station" },
+	{ "@MD_MENU_MAIN_DM_T_PA",				"@MD_MENU_MAIN_DM_T_PA_DESC",			"duel_telos_polar_academy",		"levelshots/bg_telos_polar_academy" },
+
+	// Extra
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_EXTRA",				"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_C_CA",				"@MD_MENU_MAIN_DM_C_CA_DESC",			"duel_calodan",					"levelshots/bg_calodan"				},
+	{ "@MD_MENU_MAIN_DM_K_F",				"@MD_MENU_MAIN_DM_K_F_DESC",			"duel_khofar",					"levelshots/bg_khofar"				},
+	{ "@MD_MENU_MAIN_DM_YV_DA",				"@MD_MENU_MAIN_DM_YV_DA_DESC",			"duel_vong",					"levelshots/bg_vong"				},
+
+	// Dark Force 2
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_DARK_FORCES_2",		"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_DF2_SC",			"@MD_MENU_MAIN_DM_DF2_SC_DESC",			"duel_sithcatacombs",			"levelshots/bg_sithcatacombs"		},
+	{ "@MD_MENU_MAIN_DM_DF2_TV",			"@MD_MENU_MAIN_DM_DF2_TV_DESC",			"duel_vengeance",				"levelshots/bg_vengeance"			},
+	{ "@MD_MENU_MAIN_DM_DF2_DP",			"@MD_MENU_MAIN_DM_DF2_DP_DESC",			"duel_dark_palace",				"levelshots/bg_dark_palace"			},
+	{ "@MD_MENU_MAIN_DM_DF2_SS",			"@MD_MENU_MAIN_DM_DF2_SS_DESC",			"duel_sulon_star",				"levelshots/bg_sulon_star"			},
+	{ "@MD_MENU_MAIN_DM_DF2_JB",			"@MD_MENU_MAIN_DM_DF2_JB_DESC",			"duel_jedi_battleground",		"levelshots/bg_jedi_battleground"	},
+	{ "@MD_MENU_MAIN_DM_DF2_R",				"@MD_MENU_MAIN_DM_DF2_R_DESC",			"duel_tower",					"levelshots/bg_tower"				},
+	{ "@MD_MENU_MAIN_DM_R_VOTJ",			"@MD_MENU_MAIN_DM_R_VOTJ_DESC",			"duel_votj",					"levelshots/bg_votj"				},
+
+	// Jedi Outcast
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_JEDI_OUTCAST",		"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_JKO_D_BA",			"@MD_MENU_MAIN_DM_JKO_D_BA_DESC",		"duel_bay",						"levelshots/bg_duel_bay"			},
+	{ "@MD_MENU_MAIN_DM_JKO_D_BE",			"@MD_MENU_MAIN_DM_JKO_D_BE_DESC",		"duel_bespin",					"levelshots/bg_duel_bespin"			},
+	{ "@MD_MENU_MAIN_DM_JKO_D_HA",			"@MD_MENU_MAIN_DM_JKO_D_HA_DESC",		"duel_hangar",					"levelshots/bg_duel_hangar"			},
+	{ "@MD_MENU_MAIN_DM_JKO_D_PI",			"@MD_MENU_MAIN_DM_JKO_D_PI_DESC",		"duel_pit",						"levelshots/bg_duel_pit"			},
+	{ "@MD_MENU_MAIN_DM_JKO_F_BE",			"@MD_MENU_MAIN_DM_JKO_F_BE_DESC",		"ffa_bespin",					"levelshots/bg_ffa_bespin"			},
+	{ "@MD_MENU_MAIN_DM_JKO_F_DE",			"@MD_MENU_MAIN_DM_JKO_F_DE_DESC",		"ffa_deathstar",				"levelshots/bg_ffa_deathstar"		},
+	{ "@MD_MENU_MAIN_DM_JKO_F_IM",			"@MD_MENU_MAIN_DM_JKO_F_IM_DESC",		"ffa_imperial",					"levelshots/bg_ffa_imperial"		},
+	{ "@MD_MENU_MAIN_DM_JKO_F_NH",			"@MD_MENU_MAIN_DM_JKO_F_NH_DESC",		"ffa_ns_hideout",				"levelshots/bg_ffa_ns_hideout"		},
+	{ "@MD_MENU_MAIN_DM_JKO_F_NS",			"@MD_MENU_MAIN_DM_JKO_F_NS_DESC",		"ffa_ns_streets",				"levelshots/bg_ffa_ns_streets"		},
+	{ "@MD_MENU_MAIN_DM_JKO_F_RA",			"@MD_MENU_MAIN_DM_JKO_F_RA_DESC",		"ffa_raven",					"levelshots/bg_ffa_raven"			},
+	{ "@MD_MENU_MAIN_DM_JKO_F_YA",			"@MD_MENU_MAIN_DM_JKO_F_YA_DESC",		"ffa_yavin",					"levelshots/bg_ffa_yavin"			},
+	{ "@MD_MENU_MAIN_DM_JKO_C_IM",			"@MD_MENU_MAIN_DM_JKO_C_IM_DESC",		"ctf_imperial",					"levelshots/bg_ctf_imperial"		},
+	{ "@MD_MENU_MAIN_DM_JKO_C_YA",			"@MD_MENU_MAIN_DM_JKO_C_YA_DESC",		"ctf_yavin",					"levelshots/bg_ctf_yavin"			},
+
+	// Jedi Academy
+	{ "",									"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_JEDI_ACADEMY",		"",										"",								""									},
+	{ "@MD_MENU_MAIN_DM_K_TOR",				"@MD_MENU_MAIN_DM_K_TOR_DESC",			"duel_kor",						"levelshots/bg_kor"					},
+	{ "@MD_MENU_MAIN_DM_D1_BC",				"@MD_MENU_MAIN_DM_D1_BC_DESC",			"mp/duel1",						"levelshots/mp/duel1"				},
+	{ "@MD_MENU_MAIN_DM_D3_IS",				"@MD_MENU_MAIN_DM_D3_IS_DESC",			"mp/duel3",						"levelshots/mp/duel3"				},
+	{ "@MD_MENU_MAIN_DM_D4_ICR",			"@MD_MENU_MAIN_DM_D4_ICR_DESC",			"mp/duel4",						"levelshots/mp/duel4"				},
+	{ "@MD_MENU_MAIN_DM_D5_TL",				"@MD_MENU_MAIN_DM_D5_TL_DESC",			"mp/duel5",						"levelshots/mp/duel5"				},
+	{ "@MD_MENU_MAIN_DM_D6_YTG",			"@MD_MENU_MAIN_DM_D6_YTG_DESC",			"mp/duel6",						"levelshots/mp/duel6"				},
+	{ "@MD_MENU_MAIN_DM_D7_RP",				"@MD_MENU_MAIN_DM_D7_RP_DESC",			"mp/duel7",						"levelshots/mp/duel7"				},
+	{ "@MD_MENU_MAIN_DM_D8_AC",				"@MD_MENU_MAIN_DM_D8_AC_DESC",			"mp/duel8",						"levelshots/mp/duel8"				},
+	{ "@MD_MENU_MAIN_DM_D10_VFP",			"@MD_MENU_MAIN_DM_D10_VFP_DESC",		"mp/duel10",					"levelshots/mp/duel10"				},
+	{ "@MD_MENU_MAIN_DM_CTF1_IDZ",			"@MD_MENU_MAIN_DM_CTF1_IDZ_DESC",		"mp/ctf1",						"levelshots/mp/ctf1"				},
+	{ "@MD_MENU_MAIN_DM_CF2_HW",			"@MD_MENU_MAIN_DM_CF2_HW_DESC",			"mp/ctf2",						"levelshots/mp/ctf2"				},
+	{ "@MD_MENU_MAIN_DM_CF3_YH",			"@MD_MENU_MAIN_DM_CF3_YH_DESC",			"mp/ctf3",						"levelshots/mp/ctf3"				},
+	{ "@MD_MENU_MAIN_DM_CF4_CS",			"@MD_MENU_MAIN_DM_CF4_CS_DESC",			"mp/ctf4",						"levelshots/mp/ctf4"				},
+	{ "@MD_MENU_MAIN_DM_CF5_F",				"@MD_MENU_MAIN_DM_CF5_F_DESC",			"mp/ctf5",						"levelshots/mp/ctf5"				},
+	{ "@MD_MENU_MAIN_DM_FFA1_VS",			"@MD_MENU_MAIN_DM_FFA1_VS_DESC",		"mp/ffa1",						"levelshots/mp/ffa1"				},
+	{ "@MD_MENU_MAIN_DM_FFA2_K",			"@MD_MENU_MAIN_DM_FFA2_K_DESC",			"mp/ffa2",						"levelshots/mp/ffa2"				},
+	{ "@MD_MENU_MAIN_DM_FFA3_T",			"@MD_MENU_MAIN_DM_FFA3_T_DESC",			"mp/ffa3",						"levelshots/mp/ffa3"				},
+	{ "@MD_MENU_MAIN_DM_FFA4_RS",			"@MD_MENU_MAIN_DM_FFA4_RS_DESC",		"mp/ffa4",						"levelshots/mp/ffa4"				},
+	{ "@MD_MENU_MAIN_DM_FFA5_T",			"@MD_MENU_MAIN_DM_FFA5_T_DESC",			"mp/ffa5",						"levelshots/mp/ffa5"				},
+	{ "@MD_MENU_MAIN_DM_SIEGE_DR",			"@MD_MENU_MAIN_DM_SIEGE_DR_DESC",		"mp/siege_desert",				"levelshots/mp/siege_desert"		},
+	{ "@MD_MENU_MAIN_DM_SIEGE_K",			"@MD_MENU_MAIN_DM_SIEGE_K_DESC",		"mp/siege_korriban",			"levelshots/mp/siege_korriban"		},
+
+	{ "",									"",										"",								""									},
+};
+constexpr int NO_OF_DUEL_MAPS = sizeof(duelMaps) / sizeof(duelMaps[0]);
+
+static int saberHiltIndex = 1;
+
+typedef struct {
+	const char* singleSaberHiltName;
+	const char* singleSaberHilt;
+} singleSaberHilts_t;
+
+static constexpr singleSaberHilts_t singleSaberHilts[] = {
+	// singleSaberHiltName					// singleSaberHilt
+	{ "@MENUS_SINGLE_HILT1",				"single_1"				},
+	{ "@MENUS_SINGLE_HILT2",				"single_2"				},
+	{ "@MENUS_SINGLE_HILT3",				"single_3"				},
+	{ "@MENUS_SINGLE_HILT4",				"single_4"				},
+	{ "@MENUS_SINGLE_HILT5",				"single_5"				},
+	{ "@MENUS_SINGLE_HILT6",				"single_6"				},
+	{ "@MENUS_SINGLE_HILT7",				"single_7"				},
+	{ "@MENUS_SINGLE_HILT8",				"single_8"				},
+	{ "@MENUS_SINGLE_HILT9",				"single_9"				},
+	{ "@MD_MENU_SABER_AAYLA",				"aayla"					},
+	{ "@MD_MENU_SABER_AHSOKA",				"ahsoka"				},
+	{ "@MD_MENU_SABER_AHSOKA_SHORT",		"ahsoka_short"			},
+	{ "@MD_MENU_SABER_AHSOKA_REBELS",		"ahsoka_reb1"			},
+	{ "@MD_MENU_SABER_AHSOKA_REBELS_SHORT", "ahsoka_reb2"			},
+	{ "@MD_MENU_SABER_ANAKIN_EP2",			"anakin_ep2"			},
+	{ "@MD_MENU_SABER_ANAKIN_EP3",			"anakin_ep3"			},
+	{ "@MD_MENU_SABER_VENTRESS_CW",			"ventress_cw"			},
+	{ "@MD_MENU_SABER_VENTRESS_TCW",		"ventress_tcw"			},
+	{ "@MD_MENU_SABER_VENTRESS_TCW",		"ventress2_tcw"			},
+	{ "@MD_MENU_SABER_ASHARAD",				"asharad"				},
+	{ "@MD_MENU_SABER_ASHARAD_ALT",			"asharad2"				},
+	{ "@MD_MENU_SABER_BARRISS",				"barriss"				},
+	{ "@MD_MENU_SABER_BOC",					"boc"					},
+	{ "@MD_MENU_SABER_CAL_KESTIS",			"cal"					},
+	{ "@MD_MENU_SABER_COLEMAN",				"coleman"				},
+	{ "@MD_MENU_SABER_COUNT_DOOKU",			"dooku2"				},
+	{ "@MD_MENU_SABER_COUNT_DOOKU_TFU",		"dooku_tfu"				},
+	{ "@MD_MENU_SABER_DARKSABER_TCW",		"darksaber_tcw"			},
+	{ "@MD_MENU_SABER_DARKSABER_REBELS",	"darksaber_reb"			},
+	{ "@MD_MENU_SABER_DARKSABER_TM",		"darksaber_tm"			},
+	{ "@MD_MENU_SABER_D_DESOLOUS",			"desolous"				},
+	{ "@MD_MENU_SABER_D_MAUL",				"single_maul"			},
+	{ "@MD_MENU_SABER_D_SIDIOUS",			"sidious"				},
+	{ "@MD_MENU_SABER_D_SIDIOUS_ALT",		"sidious2"				},
+	{ "@MD_MENU_SABER_D_VADER_EP3",			"vader_ro"				},
+	{ "@MD_MENU_SABER_D_VADER_EP4",			"vader_ep4"				},
+	{ "@MD_MENU_SABER_D_VADER_EP5",			"vader"					},
+	{ "@MD_MENU_SABER_D_VADER_EP6",			"vader_ep6"				},
+	{ "@MD_MENU_SABER_DEPA",				"depa"					},
+	{ "@MD_MENU_SABER_EVEN",				"even_piell"			},
+	{ "@MD_MENU_SABER_EZRA",				"ezra"					},
+	{ "@MD_MENU_SABER_EZRA_S3",				"ezra2"					},
+	{ "@MD_MENU_SABER_GALEN_MAREK",			"galenmarek"			},
+	{ "@MD_MENU_SABER_GALEN_MAREK_ALT",		"galenmarek_alt"		},
+	{ "@MD_MENU_SABER_GALEN_MAREK_CJR",		"galenmarek_cjr"		},
+	{ "@MD_MENU_SABER_GORC",				"gorc"					},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR",		"inquisitor_single"		},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR_OWK", "inquisitor_owk_single" },
+	{ "@MD_MENU_SABER_FIFTHBROTHER",		"inquisitor2_single"	},
+	{ "@MD_MENU_SABER_SEVENTHSISTER",		"inquisitor3_single"	},
+	{ "@MD_MENU_SABER_JEREC",				"jerec"					},
+	{ "@MD_MENU_SABER_KANAN",				"kanan"					},
+	{ "@MD_MENU_SABER_KYLE",				"kyle"					},
+	{ "@MD_MENU_SABER_KI_ADI",				"mundi"					},
+	{ "@MD_MENU_SABER_KYLO",				"kylo_ren"				},
+	{ "@MD_MENU_SABER_LEIA_EP9",			"leia_ep9"				},
+	{ "@MD_MENU_SABER_LUKE_EP4",			"luke_ep4"				},
+	{ "@MD_MENU_SABER_LUKE_EP5",			"luke_ep5"				},
+	{ "@MD_MENU_SABER_LUKE_EP6",			"luke_ep6"				},
+	{ "@MD_MENU_SABER_LUMINARA",			"luminara"				},
+	{ "@MD_MENU_SABER_MACE_EP1",			"windu_ep1"				},
+	{ "@MD_MENU_SABER_MACE",				"windu"					},
+	{ "@MD_MENU_SABER_MARA",				"mara"					},
+	{ "@MD_MENU_SABER_MARA_MOTS",			"mara_mots"				},
+	{ "@MD_MENU_SABER_MAW",					"maw"					},
+	{ "@MD_MENU_SABER_OBI_EP1",				"obiwan_ep1"			},
+	{ "@MD_MENU_SABER_OBI_EP3",				"obiwan_ep3"			},
+	{ "@MD_MENU_SABER_OBI_OWK",				"obiwan_owk"			},
+	{ "@MD_MENU_SABER_OBI_EP4",				"obiwan_ep4"			},
+	{ "@MD_MENU_SABER_OPPO",				"oppo"					},
+	{ "@MD_MENU_SABER_PIC",					"pic"					},
+	{ "@MD_MENU_SABER_PLO",					"plo_koon"				},
+	{ "@MD_MENU_SABER_QUI",					"quigon"				},
+	{ "@MD_MENU_SABER_QUINLAN",				"quinlan"				},
+	{ "@MD_MENU_SABER_RAHN",				"rahn"					},
+	{ "@MD_MENU_SABER_KOTA",				"kota"					},
+	{ "@MD_MENU_SABER_REY_EP7",				"rey_ep7"				},
+	{ "@MD_MENU_SABER_REY_EP8",				"rey_ep8"				},
+	{ "@MD_MENU_SABER_REY_EP9",				"rey_ep9"				},
+	{ "@MD_MENU_SABER_REY2_EP9",			"rey2_ep9"				},
+	{ "@MD_MENU_SABER_REY_DARKFOLD_EP9",	"rey_darkfold_ep9"		},
+	{ "@MD_MENU_SABER_REVAN",				"revan"					},
+	{ "@MD_MENU_SABER_RIG_NEMA",			"rig"					},
+	{ "@MD_MENU_SABER_SAESSEE",				"saesee"				},
+	{ "@MD_MENU_SABER_SARISS",				"sariss"				},
+	{ "@MD_MENU_SABER_SHAAK",				"shaak"					},
+	{ "@MD_MENU_SABER_STALKER",				"sith_stalker"			},
+	{ "@MD_MENU_SABER_STALKER2",			"sith_stalker2"			},
+	{ "@MD_MENU_SABER_STARKILLER",			"starkiller"			},
+	{ "@MD_MENU_SABER_TARON",				"malicos"				},
+	{ "@MD_MENU_SABER_TAVION",				"tavion"				},
+	{ "@MD_MENU_SABER_YARAEL",				"yarael"				},
+	{ "@MD_MENU_SABER_YODA",				"yoda"					},
+	{ "@MD_MENU_SABER_YUN",					"yun"					},
+
+	{ "",									""						},
+};
+constexpr int NO_OF_SINGLE_SABER_HILTS = sizeof(singleSaberHilts) / sizeof(singleSaberHilts[0]);
+
+typedef struct {
+	const char* staffSaberHiltName;
+	const char* staffSaberHilt;
+} staffSaberHilts_t;
+
+static constexpr staffSaberHilts_t staffSaberHilts[] = {
+	// staffSaberHiltName					// staffSaberHilt
+	{ "@MENUS_STAFF_HILT1",					"dual_1"				},
+	{ "@MENUS_STAFF_HILT2",					"dual_2"				},
+	{ "@MENUS_STAFF_HILT3",					"dual_3"				},
+	{ "@MENUS_STAFF_HILT4",					"dual_4"				},
+	{ "@MENUS_STAFF_HILT5",					"dual_5"				},
+	{ "@MD_MENU_SABER_VENTRESS_CW",			"ventress_cw_dual"		},
+	{ "@MD_MENU_SABER_VENTRESS_TCW",		"ventress_tcw_dual"		},
+	{ "@MD_MENU_SABER_CAL_KESTIS",			"cal_staff"				},
+	{ "@MD_MENU_SABER_D_MAUL_STAFF",		"dual_maul"				},
+	{ "@MD_MENU_SABER_D_MAUL_TCW",			"maul_tcw"				},
+	{ "@MD_MENU_SABER_D_MAUL_REBELS",		"maul_rebels"			},
+	{ "@MD_MENU_SABER_D_PHOBOS",			"phobos"				},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR",		"inquisitor"			},
+	{ "@MD_MENU_SABER_GRANDINQUISITOR_OWK", "inquisitor_owk"		},
+	{ "@MD_MENU_SABER_FIFTHBROTHER",		"inquisitor2"			},
+	{ "@MD_MENU_SABER_SEVENTHSISTER",		"inquisitor3"			},
+	{ "@MD_MENU_SABER_EIGHTHBROTHER",		"inquisitor4"			},
+	{ "@MD_MENU_SABER_REY_DARKSTAFF_EP9",	"rey_darkstaff_ep9"		},
+	{ "@MD_MENU_SABER_SAVAGE",				"dual_opress"			},
+	{ "@MD_MENU_SABER_JT_GUARD",			"temple_guard"			},
+	{ "@MD_MENU_SABER_BASTILA",				"bastila_staff"			},
+
+	{ "",									""						},
+};
+constexpr int NO_OF_STAFF_SABER_HILTS = sizeof(staffSaberHilts) / sizeof(staffSaberHilts[0]);
 
 extern qboolean ItemParse_model_g2anim_go(itemDef_t* item, const char* animName);
 extern qboolean ItemParse_asset_model_go(itemDef_t* item, const char* name);
@@ -838,6 +1180,7 @@ static void UI_HighLightThrowSelection();
 static void UI_ClearInventory();
 static void UI_GiveInventory(int itemIndex, int amount);
 static void UI_ForcePowerWeaponsButton(qboolean activeFlag);
+static void UI_ViewWeaponWheel();
 static void UI_UpdateCharacterSkin();
 #ifdef NEW_FEEDER_V7
 static void UI_UpdateCharacter(qboolean changedModel, qboolean newLoad);
@@ -1699,6 +2042,27 @@ static const char* UI_FeederItemText(const float feederID, const int index, cons
 		} 
 	} 
 #endif
+	else if (feederID == FEEDER_DUEL_MAPS)
+	{
+		if (index >= 0 && index < NO_OF_DUEL_MAPS)
+		{
+			return duelMaps[index].duelMapName;
+		}
+	}
+	else if (feederID == FEEDER_SINGLE_SABER_HILTS)
+	{
+		if (index >= 0 && index < NO_OF_SINGLE_SABER_HILTS)
+		{
+			return singleSaberHilts[index].singleSaberHiltName;
+		}
+	}
+	else if (feederID == FEEDER_STAFF_SABER_HILTS)
+	{
+		if (index >= 0 && index < NO_OF_STAFF_SABER_HILTS)
+		{
+			return staffSaberHilts[index].staffSaberHiltName;
+		}
+	}
 
 	return "";
 }
@@ -2289,6 +2653,131 @@ runEra:
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("setsaberstances %i %i\n", charMD[uiVariantIndex].style, charMD[uiVariantIndex].styleBitFlag));
 		}
 #endif
+		else if (Q_stricmp(name, "md_updateduelmap") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && (!strcmp(menu->window.name, "duelmapsMenu") || !strcmp(menu->window.name, "ingameduelmapsMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "duelmapdesc");
+				if (item && duelMaps[duelMapIndex].duelMapBSP != "") {
+					item->text = (char*)duelMaps[duelMapIndex].duelMapDesc;
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_playduelmap") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && (!strcmp(menu->window.name, "duelmapsMenu") || !strcmp(menu->window.name, "ingameduelmapsMenu")))
+			{
+				if (duelMaps[duelMapIndex].duelMapBSP != "")
+				{
+					Menus_CloseAll();
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("devmap %s\n", duelMaps[duelMapIndex].duelMapBSP));
+					duelMapIndex = 1; // Reset index back to 1
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_assignsaber1") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			// These menus affect JKA character saber cvars
+			if (menu && (!strcmp(menu->window.name, "saberMenu") || !strcmp(menu->window.name, "ingamespsaberMenu") || !strcmp(menu->window.name, "challengesaberMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist");
+				if (item) {
+					Cvar_Set("ui_saber", singleSaberHilts[saberHiltIndex].singleSaberHilt);
+				}
+			}
+
+			// Player saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamesabercustomizationMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("saber %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+
+			// NPC saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamespawncommandsMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("workshop_set_sabersingle %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+					Cvar_Set("npc_recent_command", va("aiworkshop; cl_noprint 1; workshop_select; workshop_set_sabersingle %s; aiworkshop; wait 10; cl_noprint 0", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_assignsaber2") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			// These menus affect JKA character saber cvars
+			if (menu && (!strcmp(menu->window.name, "saberMenu") || !strcmp(menu->window.name, "ingamespsaberMenu") || !strcmp(menu->window.name, "challengesaberMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist2");
+				if (item) {
+					Cvar_Set("ui_saber2", singleSaberHilts[saberHiltIndex].singleSaberHilt);
+				}
+			}
+
+			// Play saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamesabercustomizationMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist2");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("saber %s %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt, singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+
+			// NPC saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamespawncommandsMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "singlesaberhiltslist2");
+				if (item) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("workshop_set_sabersecond none %s\n", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+					Cvar_Set("npc_recent_command", va("aiworkshop; cl_noprint 1; workshop_select; workshop_set_sabersecond none %s; aiworkshop; wait 10; cl_noprint 0", singleSaberHilts[saberHiltIndex].singleSaberHilt));
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_assignsaberstaff") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			// These menus affect JKA character saber cvars
+			if (menu && (!strcmp(menu->window.name, "saberMenu") || !strcmp(menu->window.name, "ingamespsaberMenu") || !strcmp(menu->window.name, "challengesaberMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "staffsaberhiltslist");
+				if (item && saberHiltIndex < NO_OF_STAFF_SABER_HILTS) {
+					Cvar_Set("ui_saber", staffSaberHilts[saberHiltIndex].staffSaberHilt);
+				}
+			}
+
+			// Player saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamesabercustomizationMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "staffsaberhiltslist");
+				if (item && saberHiltIndex < NO_OF_STAFF_SABER_HILTS) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("saber %s\n", staffSaberHilts[saberHiltIndex].staffSaberHilt));
+				}
+			}
+
+			// NPC saber cheat menu
+			if (menu && (!strcmp(menu->window.name, "ingamespawncommandsMenu")))
+			{
+				const auto item = Menu_FindItemByName(menu, "staffsaberhiltslist");
+				if (item && saberHiltIndex < NO_OF_STAFF_SABER_HILTS) {
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("workshop_set_sabersingle %s\n", staffSaberHilts[saberHiltIndex].staffSaberHilt));
+					Cvar_Set("npc_recent_command", va("aiworkshop; cl_noprint 1; workshop_select; workshop_set_sabersingle %s; aiworkshop; wait 10; cl_noprint 0", staffSaberHilts[saberHiltIndex].staffSaberHilt));
+				}
+			}
+		}
+		else if (Q_stricmp(name, "md_viewweaponwheel") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && !strcmp(menu->window.name, "ingameWeaponWheelMenu"))
+			{
+				UI_ViewWeaponWheel();
+			}
+		}
 		else if (Q_stricmp(name, "startgame") == 0)
 		{
 			Menus_CloseAll();
@@ -3300,6 +3789,18 @@ static int UI_FeederCount(const float feederID)
 		return 1; // Should not happen...
 	}
 #endif
+	if (feederID == FEEDER_DUEL_MAPS)
+	{
+		return NO_OF_DUEL_MAPS;
+	}
+	if (feederID == FEEDER_SINGLE_SABER_HILTS)
+	{
+		return NO_OF_SINGLE_SABER_HILTS;
+	}
+	if (feederID == FEEDER_STAFF_SABER_HILTS)
+	{
+		return NO_OF_STAFF_SABER_HILTS;
+	}
 
 	return 0;
 }
@@ -3534,6 +4035,27 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 	} 
 #endif
 
+	else if (feederID == FEEDER_DUEL_MAPS)
+	{
+		// Don't change the index if heading/empty space is selected
+		if (duelMaps[index].duelMapBSP != "") {
+			duelMapIndex = index;
+		}
+	}
+	else if (feederID == FEEDER_SINGLE_SABER_HILTS)
+	{
+		if (singleSaberHilts[index].singleSaberHilt != "") {
+			saberHiltIndex = index;
+			DC->startLocalSound(DC->registerSound("sound/interface/choose_hilt.wav", qfalse), CHAN_LOCAL);
+		}
+	}
+	else if (feederID == FEEDER_STAFF_SABER_HILTS)
+	{
+		if (staffSaberHilts[index].staffSaberHilt != "") {
+			saberHiltIndex = index;
+			DC->startLocalSound(DC->registerSound("sound/interface/choose_hilt.wav", qfalse), CHAN_LOCAL);
+		}
+	}
 }
 
 void Key_KeynumToStringBuf(int keynum, char* buf, int buflen);
@@ -4480,14 +5002,14 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 
 	Com_Printf("----- Client Initialization -----\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("----- Genuine MovieDuels SerenityJediEngine(Solaris Edition)-----\n");
-	Com_Printf("---------------- MovieDuels-SJE-1.0-SP---------------------------\n");
+	Com_Printf("---- Genuine MovieDuels SerenityJediEngine (Solaris Edition) ----\n");
+	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("------------------------Update 6.5.2-----------------------------\n");
-	Com_Printf("------------------Build Date 14/05/2024--------------------------\n");
+	Com_Printf("------------------------- Update 7.0.0 --------------------------\n");
+	Com_Printf("-------------------- Build Date 14/11/2025 ----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("------------------------LightSaber-------------------------------\n");
-	Com_Printf("-----------An elegant weapon for a more civilized age------------\n");
+	Com_Printf("---------------------------LightSaber----------------------------\n");
+	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("This mod improves the hit detection and alters the saber traces.\n");
 	Com_Printf("Additionally,the first part of a swing will now do damage.\n");
@@ -4499,12 +5021,12 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("To make up for the beginning of the swing's shortcomings\n");
 	Com_Printf("I added a 50 percent increase to end-phase damage.\n");
 	Com_Printf("More damage at the end of the swing should maintain the fast-paced feel.\n");
-	Com_Printf("Well-timed and well-aimed slashes are more effective than on basejka.\n");
-	Com_Printf("This could potentially improve the way we play MovieDuels quite a lot.\n");
+	Com_Printf("Well-timed and well-aimed slashes are more effective than on base JKA.\n");
+	Com_Printf("This could potentially improve the way we play Movie Duels quite a lot.\n");
 	Com_Printf("Less spam-friendly, and more accurate hit detection could make the game more movie like.\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("------Type (seta cl_noprint 0) to see text------\n");
-	Com_Printf("------Type (Debuginfo) to open debug command list------\n");
+	//Com_Printf("------Type (seta cl_noprint 0) to see text------\n");
+	//Com_Printf("------Type (Debuginfo) to open debug command list------\n");
 
 	ui.FS_FreeFile(buffer); //let go of the buffer
 }
@@ -5558,6 +6080,20 @@ static void UI_OwnerDraw(float x, float y, float w, float h, const float text_x,
 	case UI_KEYBINDSTATUS:
 		UI_DrawKeyBindStatus(&rect, scale, color, textStyle, iFontIndex);
 		break;
+	case UI_DUELMAPS_SELECTION: // Duel maps
+
+		int duelMapImage;
+		duelMapImage = ui.
+			R_RegisterShaderNoMip(duelMaps[duelMapIndex].duelMapImage);
+			if (duelMapImage)
+			{
+				ui.R_DrawStretchPic(x, y, w, h, 0, 0, 1, 1, duelMapImage);
+			}
+			else
+			{
+				UI_DrawHandlePic(x, y, w, h, uis.menuBackShader);
+			}
+		break;
 	default:
 		break;
 	}
@@ -5840,7 +6376,7 @@ void UI_MainMenu()
 	}
 }
 
-int SCREENSHOT_TOTAL = -1;
+int SCREENSHOT_TOTAL = 8;
 int SCREENSHOT_CHOICE = 0;
 int SCREENSHOT_NEXT_UPDATE_TIME = 0;
 
@@ -5850,32 +6386,8 @@ static char* UI_GetCurrentLevelshot()
 
 	if (SCREENSHOT_NEXT_UPDATE_TIME < time)
 	{
-		if (SCREENSHOT_TOTAL < 0)
-		{
-			// Count and register them...
-			SCREENSHOT_TOTAL = 0;
-
-			while (true)
-			{
-				char screenShot[128] = { 0 };
-
-				strcpy(screenShot, va("menu/art/unknownmap%i", SCREENSHOT_TOTAL));
-
-				if (!ui.R_RegisterShaderNoMip(screenShot))
-				{
-					break;
-				}
-				SCREENSHOT_TOTAL++;
-			}
-			SCREENSHOT_TOTAL--;
-		}
 		SCREENSHOT_NEXT_UPDATE_TIME = time + 5000;
-		SCREENSHOT_CHOICE++;
-
-		if (SCREENSHOT_CHOICE > SCREENSHOT_TOTAL)
-		{
-			SCREENSHOT_CHOICE = 0;
-		}
+		SCREENSHOT_CHOICE = Q_irand(0, SCREENSHOT_TOTAL);
 	}
 
 	return va("menu/art/unknownmap%i", SCREENSHOT_CHOICE);
@@ -5893,7 +6405,7 @@ void Menu_Cache()
 	uis.whiteShader = ui.R_RegisterShader("white");
 	//uis.menuBackShader = ui.R_RegisterShaderNoMip( "menu/art/unknownmap" );
 	//uis.menuBackShader = ui.R_RegisterShaderNoMip(UI_GetCurrentLevelshot());
-	uis.menuBackShader = ui.R_RegisterShaderNoMip(va("menu/art/unknownmap%d", Q_irand(0, 10)));
+	uis.menuBackShader = ui.R_RegisterShaderNoMip(va("menu/art/unknownmap%d", Q_irand(0, SCREENSHOT_TOTAL)));
 }
 
 /*
@@ -6459,6 +6971,73 @@ static void UI_ForcePowerWeaponsButton(qboolean activeFlag)
 		else
 		{
 			item->window.flags |= WINDOW_INACTIVE;
+		}
+	}
+}
+
+static void UI_ViewWeaponWheel() {
+	struct WeaponIcon
+	{
+		const char* iconName;
+		int weaponIndex;
+	};
+	const WeaponIcon weaponIcons[] = {
+		{"melee_icon", 14},
+		{"saber_icon", 1},
+		{"stun_baton_icon", 17},
+		{"noghristick_icon", 33},
+		{"blaster_pistol_icon", 2},
+		{"clone_pistol_icon", 45},
+		{"lpann14_icon", 42},
+		{"westar_icon", 43},
+		{"briar_icon", 18},
+		{"dh17_icon", 37},
+		{"blaster_icon", 3},
+		{"a280_icon", 41},
+		{"clone_rifle_icon", 38},
+		{"dc15s_icon", 36},
+		{"dc17m_icon", 39},
+		{"e5_icon", 34},
+		{"ee3_icon", 44},
+		{"f11d_icon", 35},
+		{"repeater_icon", 6},
+		{"rotary_cannon_icon", 40},
+		{"bowcaster_icon", 5},
+		{"rocket_launcher_icon", 9},
+		{"demp2_icon", 7},
+		{"concussion_icon", 13},
+		{"flechette_icon", 8},
+		{"disruptor_icon", 4},
+		{"thermal_icon", 10},
+		{"trip_mine_icon", 11},
+		{"det_pack_icon", 12},
+	};
+
+	// Get player state
+	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
+
+	if (!cl)
+	{
+		return; // No client, get out
+	}
+
+	const playerState_t* pState = cl->gentity->client;
+	const menuDef_t* menu = Menu_GetFocused();
+
+	// Enable/disable weapon icons if in player inventory
+	for (const auto& weaponIcon : weaponIcons)
+	{
+		const auto item = Menu_FindItemByName(menu, weaponIcon.iconName);
+		if (item)
+		{
+			if (pState->weapons[weaponIcon.weaponIndex]) {
+				item->disabled = qfalse;
+				item->window.foreColor[3] = 1.0f;
+			}
+			else {
+				item->disabled = qtrue;
+				item->window.foreColor[3] = 0.4f;
+			}
 		}
 	}
 }

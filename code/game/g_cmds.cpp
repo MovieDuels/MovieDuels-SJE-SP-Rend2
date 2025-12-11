@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 extern bool in_camera;
 extern stringID_table_t SaberStyleTable[];
+extern stringID_table_t WPTable[];
 extern cvar_t* com_outcast;
 
 extern void SP_fx_runner(gentity_t* ent);
@@ -449,6 +450,19 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 	if (!give_all && !Q_stricmp(name, "weaponnum"))
 	{
 		ent->client->ps.weapons[atoi(args)] = 1;
+		return;
+	}
+
+	if (!give_all && !Q_stricmp(name, "weapon"))
+	{
+		int weaponNum = GetIDForString(WPTable, gi.argv(2));
+		if (weaponNum == -1)
+		{
+			gi.Printf("Invalid weapon. Maybe try WP_MELEE, or WP_BLASTER for instance?\n");
+			return;
+		}
+		ent->client->ps.weapons[weaponNum] = 1;
+		G_Give(ent, "ammo", "", 0); // Give weapon ammo
 		return;
 	}
 
@@ -1939,6 +1953,10 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					}
 				}
 			}
+			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
+				// No force powers so do basic taunt
+				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 			else if (ent->client->ps.saber[0].tauntAnim != -1)
 			{
 				anim = ent->client->ps.saber[0].tauntAnim;
@@ -2149,6 +2167,10 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					}
 				}
 			}
+			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
+				// No force powers so do basic taunt
+				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 			else if (ent->client->ps.saber[0].flourishAnim != -1)
 			{
 				anim = ent->client->ps.saber[0].flourishAnim;
@@ -2267,6 +2289,10 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 						}
 					}
 				}
+			}
+			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
+				// No force powers so do basic taunt
+				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_VICTORY_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 			else if (ent->client->ps.saber[0].gloatAnim != -1)
 			{

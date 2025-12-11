@@ -40,7 +40,7 @@ static bool BubbleShield_IsOn()
 ////////////////////////////////////////////////////////////////////////////////////////
 void BubbleShield_TurnOn()
 {
-	if (!BubbleShield_IsOn() && !NPC->client->ps.powerups[PW_STUNNED])
+	if (!BubbleShield_IsOn() && !NPC->client->ps.powerups[PW_STUNNED] && TIMER_Done(NPC, "ShieldsDown"))
 	{
 		NPC->flags |= FL_SHIELDED;
 		NPC->client->ps.powerups[PW_GALAK_SHIELD] = Q3_INFINITE;
@@ -197,151 +197,111 @@ static void deka_bubble_shield_push_radius_ents()
 ////////////////////////////////////////////////////////////////////////////////////////
 void bubble_shield_update()
 {
-	// Shields Go When You Die
-	//-------------------------
+	// Turn shield off if NPC is dead
 	if (NPC->health <= 0)
 	{
-		if (BubbleShield_IsOn())
-		{
-			BubbleShield_TurnOff();
-		}
+		BubbleShield_TurnOff();
 		return;
 	}
 
-	// Recharge Shields
-	//------------------
-	NPC->client->ps.stats[STAT_ARMOR] += 1;
-	if (NPC->client->ps.stats[STAT_ARMOR] > 250)
-	{
-		NPC->client->ps.stats[STAT_ARMOR] = 250;
-	}
-
-	// If We Have Enough Armor And Are Not Shooting Right Now, Kick The Shield On
-	//----------------------------------------------------------------------------
-	if (NPC->client->ps.stats[STAT_ARMOR] > 100 && TIMER_Done(NPC, "ShieldsDown"))
-	{
-		// Check On Timers To Raise And Lower Shields
-		//--------------------------------------------
-		if (level.time - NPCInfo->enemyLastSeenTime < 1000 && TIMER_Done(NPC, "ShieldsUp"))
-		{
-			TIMER_Set(NPC, "ShieldsDown", 2000); // Drop Shields
-			TIMER_Set(NPC, "ShieldsUp", Q_irand(4000, 5000)); // Then Bring Them Back Up For At Least 3 sec
-		}
-
-		BubbleShield_TurnOn();
-
-		if (BubbleShield_IsOn())
-		{
-			// Update Our Shader Value
-			//-------------------------
-			NPC->client->renderInfo.customRGBA[0] =
-				NPC->client->renderInfo.customRGBA[1] =
-				NPC->client->renderInfo.customRGBA[2] =
-				NPC->client->renderInfo.customRGBA[3] = NPC->client->ps.stats[STAT_ARMOR] - 100;
-
-			// If Touched By An Enemy, ALWAYS Shove Them
-			//-------------------------------------------
-			if (NPC->enemy && NPCInfo->touchedByPlayer == NPC->enemy)
-			{
-				vec3_t dir;
-				VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, dir);
-				VectorNormalize(dir);
-				BubbleShield_PushEnt(NPC->enemy, dir);
-			}
-
-			// Push Anybody Else Near
-			//------------------------
-			BubbleShield_PushRadiusEnts();
-		}
-	}
-
-	// Shields Gone
-	//--------------
-	else
+	// Turn shield off if NPC is stunned
+	if (NPC->client->ps.powerups[PW_STUNNED])
 	{
 		BubbleShield_TurnOff();
+		return;
+	}
+
+	// Turn shield off if ShieldsUp timer is done
+	if (BubbleShield_IsOn() && TIMER_Done(NPC, "ShieldsUp"))
+	{
+		BubbleShield_TurnOff();
+		TIMER_Set(NPC, "ShieldsDown", 2000); // 2 second cooldown
+		return;
+	}
+
+	// Turn shield OFF if shield health is 0
+	if (BubbleShield_IsOn() && NPC->client->ps.stats[STAT_ARMOR] <= 0)
+	{
+		BubbleShield_TurnOff();
+		TIMER_Set(NPC, "ShieldsDown", 2000); // 2 second cooldown
+		return;
+	}
+
+	// Turn shield on at full health once ShieldsDown timer is done
+	if (!BubbleShield_IsOn() && TIMER_Done(NPC, "ShieldsDown") && (level.time - NPCInfo->enemyLastSeenTime < 1000))
+	{
+		NPC->client->ps.stats[STAT_ARMOR] = 100;
+		BubbleShield_TurnOn();
+		TIMER_Set(NPC, "ShieldsUp", Q_irand(3000, 5000)); // Shield stays up for 3-5 seconds
+
+		// Update shader value
+		NPC->client->renderInfo.customRGBA[0] =
+			NPC->client->renderInfo.customRGBA[1] =
+			NPC->client->renderInfo.customRGBA[2] =
+			NPC->client->renderInfo.customRGBA[3] = NPC->client->ps.stats[STAT_ARMOR];
+
+		// If Touched By An Enemy, ALWAYS Shove Them
+			//-------------------------------------------
+		if (NPC->enemy && NPCInfo->touchedByPlayer == NPC->enemy)
+		{
+			vec3_t dir;
+			VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, dir);
+			VectorNormalize(dir);
+			BubbleShield_PushEnt(NPC->enemy, dir);
+		}
+
+		// Push Anybody Else Near
+		//------------------------
+		BubbleShield_PushRadiusEnts();
 	}
 }
+
 
 //extern cvar_t* g_allowgunnerbash;
 //extern cvar_t* g_SerenityJediEngineMode;
 void deka_bubble_shield_update()
 {
-	// Shields Go When You Die
-	//-------------------------
+	// Turn shield off if NPC is dead
 	if (NPC->health <= 0)
 	{
-		if (BubbleShield_IsOn())
-		{
-			BubbleShield_TurnOff();
-		}
+		BubbleShield_TurnOff();
 		return;
 	}
 
+	// Turn shield off if NPC is stunned
 	if (NPC->client->ps.powerups[PW_STUNNED])
 	{
-		if (BubbleShield_IsOn())
-		{
-			BubbleShield_TurnOff();
-		}
+		BubbleShield_TurnOff();
 		return;
 	}
 
-	// Recharge Shields
-	//------------------
-	NPC->client->ps.stats[STAT_ARMOR] += 1;
-
-	if (NPC->client->ps.stats[STAT_ARMOR] > 250)
-	{
-		NPC->client->ps.stats[STAT_ARMOR] = 250;
-	}
-
-	// If We Have Enough Armor And Are Not Shooting Right Now, Kick The Shield On
-	//----------------------------------------------------------------------------
-	if (NPC->client->ps.stats[STAT_ARMOR] > 100 && TIMER_Done(NPC, "ShieldsDown"))
-	{
-		// Check On Timers To Raise And Lower Shields
-		//--------------------------------------------
-		if (level.time - NPCInfo->enemyLastSeenTime < 1000 && TIMER_Done(NPC, "ShieldsUp"))
-		{
-			TIMER_Set(NPC, "ShieldsDown", 2000); // Drop Shields
-			TIMER_Set(NPC, "ShieldsUp", Q_irand(8000, 16000)); // Then Bring Them Back Up For At Least 3 sec
-		}
-
-		BubbleShield_TurnOn();
-
-		if (BubbleShield_IsOn() && NPC->client->ps.stats[STAT_ARMOR] > 50)
-		{
-			// Update Our Shader Value
-			//-------------------------
-			NPC->client->renderInfo.customRGBA[0] =
-				NPC->client->renderInfo.customRGBA[1] =
-				NPC->client->renderInfo.customRGBA[2] =
-				NPC->client->renderInfo.customRGBA[3] = NPC->client->ps.stats[STAT_ARMOR] - 100;
-
-			//if (g_SerenityJediEngineMode->integer == 2 && g_allowgunnerbash->integer > 0)
-			//{
-			//	// If Touched By An Enemy, ALWAYS Shove Them
-			//	//-------------------------------------------
-			//	if (NPC->enemy && NPCInfo->touchedByPlayer == NPC->enemy)
-			//	{
-			//		vec3_t dir;
-			//		VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, dir);
-			//		VectorNormalize(dir);
-			//		deka_bubble_shield_push_ent(NPC->enemy, dir);
-			//	}
-
-			//	// Push Anybody Else Near
-			//	//------------------------
-			//	deka_bubble_shield_push_radius_ents();
-			//}
-		}
-	}
-
-	// Shields Gone
-	//--------------
-	else
+	// Turn shield off if ShieldsUp timer is done
+	if (BubbleShield_IsOn() && TIMER_Done(NPC, "ShieldsUp"))
 	{
 		BubbleShield_TurnOff();
+		TIMER_Set(NPC, "ShieldsDown", 2500); // 2.5 second cooldown
+		return;
+	}
+
+	// Turn shield OFF if shield health is 0
+	if (BubbleShield_IsOn() && NPC->client->ps.stats[STAT_ARMOR] <= 0)
+	{
+		BubbleShield_TurnOff();
+		TIMER_Set(NPC, "ShieldsDown", 2500); // 2.5 second cooldown
+		return;
+	}
+
+	// Turn shield on at full health once ShieldsDown timer is done
+	if (!BubbleShield_IsOn() && TIMER_Done(NPC, "ShieldsDown") && (level.time - NPCInfo->enemyLastSeenTime < 1000))
+	{
+		NPC->client->ps.stats[STAT_ARMOR] = 100;
+		BubbleShield_TurnOn();
+		TIMER_Set(NPC, "ShieldsUp", Q_irand(6000, 8000)); // Shield stays up for 6-8 seconds
+
+		// Update shader value
+		NPC->client->renderInfo.customRGBA[0] =
+			NPC->client->renderInfo.customRGBA[1] =
+			NPC->client->renderInfo.customRGBA[2] =
+			NPC->client->renderInfo.customRGBA[3] = NPC->client->ps.stats[STAT_ARMOR];
 	}
 }

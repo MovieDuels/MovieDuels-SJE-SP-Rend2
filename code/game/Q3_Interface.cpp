@@ -305,6 +305,7 @@ stringID_table_t WPTable[] =
 	ENUM2STRING(WP_REBELBLASTER),
 	ENUM2STRING(WP_CLONERIFLE),
 	ENUM2STRING(WP_CLONECOMMANDO),
+	ENUM2STRING(WP_Z6_ROTARY_CANNON),
 	ENUM2STRING(WP_REBELRIFLE),
 	ENUM2STRING(WP_REY),
 	ENUM2STRING(WP_JANGO),
@@ -690,6 +691,8 @@ stringID_table_t setTable[] =
 	ENUM2STRING(SET_ENDLESS_BP),
 
 	ENUM2STRING(SET_MORELIGHT_PLAYER),
+
+	ENUM2STRING(SET_CONSOLE_COMMAND),
 
 	ENUM2STRING(SET_UNDYINGPLAYERVICTORYSCRIPT),
 
@@ -1190,50 +1193,65 @@ And: Take any string, look for "/mr_" replace with "/ms_" based on "sex"
 returns qtrue if changed to ms
 =============
 */
+#define JADEN_VOICES_CUSTOM
 static qboolean G_AddSexToPlayerString(char* string, const qboolean qDoBoth)
 {
-	if VALIDSTRING(string)
-	{
-		char* start;
-		if (g_sex->string[0] == 'f')
+	char* start;
+	bool bUseCustomDirectory = false;
+
+	if VALIDSTRING(string) {
+		char snddir[MAX_QPATH];
+#ifdef JADEN_VOICES_CUSTOM
+		gi.Cvar_VariableStringBuffer("snd", snddir, MAX_QPATH);
+		bUseCustomDirectory = (strlen(snddir) == 10 && !Q_stricmpn(snddir, "jaden_", 6));
+#endif
+		if (!bUseCustomDirectory)
 		{
-			start = strstr(string, "jaden_male/");
-			if (start != nullptr)
-			{
-				strncpy(start, "jaden_fmle", 10);
-				return qtrue;
+			Q_strncpyz(snddir, "jaden_fmle", MAX_QPATH);
+		}
+
+		//Quake3Game()->DebugPrint(IGameInterface::WL_WARNING, "bUseCustomDirectory: %d snddir: %s\n", (int)bUseCustomDirectory, snddir);
+
+		if (bUseCustomDirectory || g_sex->string[0] == 'f')
+		{
+			char* start = strstr(string, "jaden_male/");
+
+			qboolean bChanged = qfalse;
+			if (start != NULL) {
+				strncpy(start, snddir, 10);
+				bChanged = qtrue;
 			}
-			start = strrchr(string, '/'); //get the last slash before the wav
-			if (start != nullptr)
+			if (qDoBoth && g_sex->string[0] == 'f')
 			{
-				if (strncmp(start, "/mr_", 4) == 0)
-				{
-					if (qDoBoth)
-					{
-						//we want to change mr to ms
-						start[2] = 's'; //change mr to ms
-						return qtrue;
+				start = strrchr(string, '/');		//get the last slash before the wav
+				if (start != NULL) {
+					if (!strncmp(start, "/mr_", 4)) {
+						if (qDoBoth) {	//we want to change mr to ms
+							start[2] = 's';	//change mr to ms
+							return qtrue;
+						}
+						else {	//IF qDoBoth
+							return bChanged;	//don't want this one
+						}
 					}
-					//IF qDoBoth
-					return qfalse; //don't want this one
-				}
-			} //IF found slash
-		} //IF Female
-		else
+				}	//IF found slash
+			}
+			return bChanged;
+		}	//IF Female
+		else if (!bUseCustomDirectory)
 		{
 			//i'm male
-			start = strrchr(string, '/'); //get the last slash before the wav
-			if (start != nullptr)
-			{
-				if (strncmp(start, "/ms_", 4) == 0)
-				{
-					return qfalse; //don't want this one
+			start = strrchr(string, '/');		//get the last slash before the wav
+			if (start != NULL) {
+				if (!strncmp(start, "/ms_", 4)) {
+					return qfalse;	//don't want this one
 				}
-			} //IF found slash
+			}	//IF found slash
 		}
-	} //if VALIDSTRING
+	}	//if VALIDSTRING
 	return qtrue;
 }
+
 
 /*
 =============
@@ -10243,6 +10261,10 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 			Q3_SetMoreLightnpc(entID, qtrue);
 		else
 			Q3_SetMoreLightnpc(entID, qfalse);
+		break;
+
+	case SET_CONSOLE_COMMAND:
+		gi.SendConsoleCommand(va("cl_noprint 1; helpusobi 1; %s ; cl_noprint 0\n", const_cast<char*>(data)));
 		break;
 
 	case SET_FFAMODE:

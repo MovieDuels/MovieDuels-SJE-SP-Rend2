@@ -251,7 +251,7 @@ using refexport_t = struct
 	// Misc
 	void (*R_InitWorldEffects)();
 	void (*R_ClearStuffToStopGhoul2CrashingThings)();
-	qboolean(*R_inPVS)(vec3_t p1, vec3_t p2);
+	qboolean(*inPVS)(const vec3_t p1, const vec3_t p2, byte* mask);
 
 	void (*SVModelInit)();
 

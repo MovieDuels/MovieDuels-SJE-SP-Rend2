@@ -103,6 +103,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define FEEDER_MD_FACTION					0x54	// 84
 #define FEEDER_MD_MODELS					0x55	// 85
 #define FEEDER_MD_VARIANTS				    0x56	// 86
+#define FEEDER_DUEL_MAPS					0x57			// 87 - duel maps
+#define FEEDER_SINGLE_SABER_HILTS			0x58			// 88 - single saber hilts
+#define FEEDER_STAFF_SABER_HILTS			0x59			// 89 - staff saber hilts
 
 #define UI_VERSION				200
 #define UI_HANDICAP				200
@@ -162,3 +165,4 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define UI_PREVIEWCINEMATIC		254
 #define UI_STARTMAPCINEMATIC	255
 #define UI_MAPS_SELECTION		256
+#define UI_DUELMAPS_SELECTION	257

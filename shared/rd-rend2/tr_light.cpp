@@ -95,7 +95,7 @@ void R_DlightBmodel(const bmodel_t* bmodel, trRefEntity_t* ent)
 	// set the dlight bits in all the surfaces
 	for (i = 0; i < bmodel->numSurfaces; i++)
 	{
-		surf = tr.world->surfaces + bmodel->firstSurface + i;
+		surf = world->surfaces + bmodel->firstSurface + i;
 
 		switch (*surf->data)
 		{
@@ -390,9 +390,9 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 			}
 			else
 			{
-				ent->ambientLight[0] += tr.identityLight * 96;
-				ent->ambientLight[1] += tr.identityLight * 96;
-				ent->ambientLight[2] += tr.identityLight * 96;
+				ent->ambientLight[0] += tr.identityLight * 76; // was 96
+				ent->ambientLight[1] += tr.identityLight * 76; // was 96
+				ent->ambientLight[2] += tr.identityLight * 76; // was 96
 			}
 		}
 		else

@@ -27,7 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 void RE_GetScreenShot(byte* buffer, const int w, const int h)
 {
-	byte* source, * allsource;
+	byte* source;
 	byte* src, * dst;
 	size_t offset = 0, memcount;
 	int padlen;
@@ -37,10 +37,12 @@ void RE_GetScreenShot(byte* buffer, const int w, const int h)
 	float		xScale, yScale;
 	int			xx, yy;
 
-	allsource = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
-	source = allsource + offset;
-
+	source = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
 	memcount = (glConfig.vidWidth * 3 + padlen) * glConfig.vidHeight;
+
+	// gamma correct
+	if (glConfig.deviceSupportsGamma)
+		R_GammaCorrect(source + offset, memcount);
 
 	// resample from source
 	xScale = glConfig.vidWidth / (4.0 * w);
@@ -50,24 +52,20 @@ void RE_GetScreenShot(byte* buffer, const int w, const int h)
 			r = g = b = 0;
 			for (yy = 0; yy < 3; yy++) {
 				for (xx = 0; xx < 4; xx++) {
-					src = source + 3 * (glConfig.vidWidth * (int)((y * 3 + yy) * yScale) + (int)((x * 4 + xx) * xScale));
+					src = source + offset + 3 * (glConfig.vidWidth * (int)((y * 3 + yy) * yScale) + (int)((x * 4 + xx) * xScale));
 					r += src[0];
 					g += src[1];
 					b += src[2];
 				}
 			}
-			dst = buffer + 4 * (h * w - y * w + x);
+			dst = buffer + 4 * ((h - y - 1) * w + x);
 			dst[0] = r / 12;
 			dst[1] = g / 12;
 			dst[2] = b / 12;
 		}
 	}
 
-	// gamma correct
-	if (glConfig.deviceSupportsGamma)
-		R_GammaCorrect(buffer, w * h * 4);
-
-	Hunk_FreeTempMemory(allsource);
+	Z_Free(source);
 }
 
 // this is just a chunk of code from RE_TempRawImage_ReadFromFile() below, subroutinised so I can call it
@@ -276,7 +274,8 @@ static void RE_Blit(const float fX0, const float fY0, const float fX1, const flo
 	GL_Cull(CT_TWO_SIDED);
 	GL_BindToTMU(pImage, TB_COLORMAP);
 
-	shaderProgram_t* shaderProgram = atest ? &tr.genericShader[GENERICDEF_USE_ALPHA_TEST] : &tr.genericShader[0];
+	//shaderProgram_t *shaderProgram = atest ? &tr.genericShader[GENERICDEF_USE_ALPHA_TEST] : &tr.genericShader[0];
+ 	shaderProgram_t *shaderProgram = &tr.genericShader[0];
 	GLSL_BindProgram(shaderProgram);
 
 	RB_BindUniformBlock(tr.staticUbo, UNIFORM_BLOCK_CAMERA, tr.camera2DUboOffset);

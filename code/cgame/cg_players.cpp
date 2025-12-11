@@ -6871,7 +6871,7 @@ static void CG_StopWeaponSounds(centity_t* cent)
 		return;
 	}
 
-	if (!(cent->currentState.eFlags & EF_FIRING))
+	if (!(cent->currentState.eFlags & (EF_FIRING | EF_ALT_FIRING)))
 	{
 		if (cent->pe.lightningFiring)
 		{
@@ -6891,6 +6891,10 @@ static void CG_StopWeaponSounds(centity_t* cent)
 		{
 			cgi_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->altFiringSound);
 		}
+		cent->pe.lightningFiring = qtrue;
+	}
+	else if (cent->currentState.eFlags & EF_FIRING)
+	{
 		cent->pe.lightningFiring = qtrue;
 	}
 }
@@ -7684,9 +7688,7 @@ static void CG_DoEp1Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -8243,9 +8245,7 @@ static void CG_DoEp2Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -8803,9 +8803,7 @@ static void CG_DoEp3Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -9354,9 +9352,7 @@ static void CG_DoSFXSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -9937,9 +9933,7 @@ static void CG_DoOTSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, ve
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -10487,9 +10481,7 @@ static void CG_DoRotJSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, 
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -11037,9 +11029,7 @@ static void CG_DoTFASaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -11237,9 +11227,7 @@ static void CG_DoCloakedSaber(vec3_t origin, vec3_t dir, float length, float len
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -11459,9 +11447,7 @@ static void CG_DoSaber(vec3_t origin, vec3_t dir, float length, float length_max
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -12064,9 +12050,7 @@ static void CG_DoUnstableSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_t
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -12266,9 +12250,7 @@ static void CG_DoSaberUnstable(vec3_t origin, vec3_t dir, float length, float le
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -12824,9 +12806,7 @@ static void CG_DoRebelsSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip
 		else
 		{
 			saber.customShader = ignite;
-			cgi_R_AddRefEntityToScene(&saber);
 		}
-		saber.customShader = ignite;
 		saber.radius = ignite_radius * 0.25f;
 		saber.shaderRGBA[0] = 0xff;
 		saber.shaderRGBA[1] = 0xff;
@@ -13437,23 +13417,13 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 											//ugh, need to have a real sound debouncer... or do this game-side
 											cent->gent->client->ps.saberHitWallSoundDebounceTime = cg.time;
 
-											if (cg_SerenityJediEngineMode.integer == 2)
+											if (PM_SaberInAttack(cent->gent->client->ps.saber_move)
+												|| pm_saber_in_special_attack(cent->gent->client->ps.torsoAnim))
 											{
-												if (PM_SaberInAttack(cent->gent->client->ps.saber_move)
-													|| pm_saber_in_special_attack(cent->gent->client->ps.torsoAnim))
-												{
-													cgi_S_StartSound(cent->lerpOrigin, cent->currentState.client_num,
-														CHAN_ITEM, cgi_S_RegisterSound(
-															va("sound/weapons/saber/saberstrikewall%d.mp3",
-																Q_irand(1, 17))));
-												}
-												else
-												{
-													cgi_S_StartSound(cent->lerpOrigin, cent->currentState.client_num,
-														CHAN_ITEM, cgi_S_RegisterSound(
-															va("sound/weapons/saber/saberhitwall%d.wav",
-																Q_irand(1, 3))));
-												}
+												cgi_S_StartSound(cent->lerpOrigin, cent->currentState.client_num,
+													CHAN_ITEM, cgi_S_RegisterSound(
+														va("sound/weapons/saber/saberstrikewall%d.mp3",
+															Q_irand(1, 17))));
 											}
 											else
 											{

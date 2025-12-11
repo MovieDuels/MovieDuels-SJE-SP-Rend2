@@ -1021,6 +1021,7 @@ static qboolean self_is_gunner(const gentity_t* self)
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_WRIST_BLASTER:
 	case WP_REBELRIFLE:
 	case WP_REY:
@@ -7395,6 +7396,7 @@ static void jedi_combat_timers_update(const int enemy_dist)
 			case WP_REBELBLASTER:
 			case WP_CLONERIFLE:
 			case WP_CLONECOMMANDO:
+			case WP_Z6_ROTARY_CANNON:
 			case WP_WRIST_BLASTER:
 			case WP_REBELRIFLE:
 			case WP_REY:
@@ -9841,25 +9843,34 @@ static void jedi_attack()
 			//NPC will return your gesture
 			if (NPC->s.weapon == WP_SABER)
 			{
-				switch (NPC->client->ps.saber_anim_level)
-				{
-				case SS_FAST:
-				case SS_TAVION:
-				case SS_MEDIUM:
-				case SS_STRONG:
-				case SS_DESANN:
+				if (NPC->client->friendlyfaction == FACTION_NEUTRAL)
+				{ 
+					// No force powers so do basic taunt
 					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				case SS_DUAL:
-					NPC->client->ps.SaberActivate();
-					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_DUAL_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				case SS_STAFF:
-					NPC->client->ps.SaberActivate();
-					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAFF_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				default:;
 				}
+				else 
+				{
+					switch (NPC->client->ps.saber_anim_level)
+					{
+					case SS_FAST:
+					case SS_TAVION:
+					case SS_MEDIUM:
+					case SS_STRONG:
+					case SS_DESANN:
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					case SS_DUAL:
+						NPC->client->ps.SaberActivate();
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_DUAL_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					case SS_STAFF:
+						NPC->client->ps.SaberActivate();
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAFF_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					default:;
+					}
+				}
+
 				if (TIMER_Done(NPC, "talkDebounce") && !Q_irand(0, 10))
 				{
 					if (NPCInfo->enemyCheckDebounceTime < 8)
@@ -10157,18 +10168,8 @@ static float twins_danger_dist()
 	}
 }
 
-static qhandle_t scepter_loop_sound = 0;
-
 static qboolean jedi_in_special_move()
 {
-	static qboolean registered = qfalse;
-
-	if (!registered)
-	{
-		scepter_loop_sound = G_SoundIndex("sound/weapons/scepter/loop.wav");
-		registered = qtrue;
-	}
-
 	if (NPC->client->ps.torsoAnim == BOTH_KYLE_PA_1
 		|| NPC->client->ps.torsoAnim == BOTH_KYLE_PA_2
 		|| NPC->client->ps.torsoAnim == BOTH_KYLE_PA_3
@@ -10223,7 +10224,6 @@ static qboolean jedi_in_special_move()
 		if (NPC->client->ps.torsoAnimTimer <= 100)
 		{
 			//go into the hold
-
 			G_PlayEffect(G_EffectIndex("scepter/beam.efx"), NPC->weaponModel[1], NPC->genericBolt1, NPC->s.number, NPC->currentOrigin, 10000, qtrue);
 
 			NPC->client->ps.legsAnimTimer = NPC->client->ps.torsoAnimTimer = 0;
@@ -10234,7 +10234,6 @@ static qboolean jedi_in_special_move()
 			NPC->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 			VectorClear(NPC->client->ps.velocity);
 			VectorClear(NPC->client->ps.moveDir);
-			NPC->s.loopSound = scepter_loop_sound;
 		}
 		if (NPC->enemy)
 		{
@@ -10251,6 +10250,7 @@ static qboolean jedi_in_special_move()
 	{
 		if (NPC->client->ps.torsoAnimTimer <= 100)
 		{
+			NPC->s.loopSound = 0;
 			G_StopEffect(G_EffectIndex("scepter/beam.efx"), NPC->weaponModel[1], NPC->genericBolt1, NPC->s.number);
 			NPC->client->ps.legsAnimTimer = NPC->client->ps.torsoAnimTimer = 0;
 			NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_SCEPTER_STOP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -10262,6 +10262,7 @@ static qboolean jedi_in_special_move()
 		}
 		else
 		{
+			NPC->s.loopSound = G_SoundIndex("sound/weapons/scepter/loop.wav");
 			tavion_scepter_damage();
 		}
 		if (NPC->enemy)

@@ -376,6 +376,9 @@ gentity_t* TossClientItems(gentity_t* self)
 				case WP_WRIST_BLASTER:
 					dropped->count = 15;
 					break;
+				case WP_Z6_ROTARY_CANNON:
+					dropped->count = 100;
+					break;
 				case WP_REBELRIFLE:
 					dropped->count = 15;
 					break;
@@ -7437,6 +7440,9 @@ void G_TrackWeaponUsage(const gentity_t* self, const gentity_t* inflictor, const
 		case MOD_CLONECOMMANDO_ALT:
 			weapon = WP_CLONECOMMANDO;
 			break;
+		case MOD_Z6_ROTARY_CANNON:
+			weapon = WP_Z6_ROTARY_CANNON;
+			break;
 		case MOD_REBELRIFLE:
 		case MOD_REBELRIFLE_ALT:
 			weapon = WP_REBELRIFLE;
@@ -8191,6 +8197,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 				case MOD_CLONERIFLE_ALT:
 				case MOD_CLONECOMMANDO:
 				case MOD_CLONECOMMANDO_ALT:
+				case MOD_Z6_ROTARY_CANNON:
 				case MOD_REBELRIFLE:
 				case MOD_REBELRIFLE_ALT:
 				case MOD_REY:

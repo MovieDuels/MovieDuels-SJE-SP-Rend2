@@ -414,6 +414,19 @@ static void G_AttackDelay(const gentity_t* self, const gentity_t* enemy)
 			}
 			break;
 
+		case WP_Z6_ROTARY_CANNON:
+			if (self->NPC->scriptFlags & SCF_ALT_FIRE)
+			{
+				//rapid-fire blasters
+				att_delay += Q_irand(0, 500);
+			}
+			else
+			{
+				//regular blaster
+				att_delay -= Q_irand(0, 500);
+			}
+			break;
+
 		case WP_REBELRIFLE:
 			if (self->NPC->scriptFlags & SCF_ALT_FIRE)
 			{
@@ -567,6 +580,11 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 			//Probably a damn script!
 			return;
 		}
+
+		// Fix TEAM_ENEMY NPCs trying to target the player who is on their team
+		if (self->client->playerTeam != TEAM_FREE && self->client->playerTeam != TEAM_SOLO) {
+			return;
+		}
 	}
 
 	if (g_ffamode->integer)
@@ -709,6 +727,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 			self->s.weapon == WP_REBELBLASTER ||
 			self->s.weapon == WP_CLONERIFLE ||
 			self->s.weapon == WP_CLONECOMMANDO ||
+			self->s.weapon == WP_Z6_ROTARY_CANNON ||
 			self->s.weapon == WP_REBELRIFLE ||
 			self->s.weapon == WP_BOBA)
 		{
@@ -1128,9 +1147,13 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		break;
 
 	case WP_MELEE:
-	case WP_TUSKEN_STAFF:
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 		ent->NPC->burstSpacing = 1000; //attackdebounce
+		break;
+
+	case WP_TUSKEN_STAFF:
+		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
+		ent->NPC->burstSpacing = 2500; //attackdebounce
 		break;
 
 	case WP_ATST_MAIN:
@@ -1359,6 +1382,13 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			else
 				ent->NPC->burstSpacing = 600; //attack debounce
 		}
+		break;
+
+	case WP_Z6_ROTARY_CANNON:
+		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
+		ent->NPC->rotaryCannonShotsFired = 0;
+		ent->NPC->rotaryCannonCooldownTime = 0;
+		ent->NPC->burstSpacing = 200; //attack debounce
 		break;
 
 	case WP_REBELRIFLE:
@@ -1768,6 +1798,28 @@ static void ShootThink()
 				}
 			}
 		}
+	}
+	// Custom rotary cannon handling
+	else if (client->ps.weapon == WP_Z6_ROTARY_CANNON) { 
+		// If cooling down, do not fire
+		if (level.time < NPCInfo->rotaryCannonCooldownTime)
+		{
+			ucmd.buttons &= ~BUTTON_ATTACK;
+			return;
+		}
+
+		// Fire a shot
+		//ucmd.buttons |= BUTTON_ATTACK;
+		NPCInfo->rotaryCannonShotsFired++;
+
+		// If reached max shots, start cooldown
+		if (NPCInfo->rotaryCannonShotsFired >= 35)
+		{
+			NPCInfo->rotaryCannonCooldownTime = level.time + 2500; // 2.5 seconds cooldown
+			NPCInfo->rotaryCannonShotsFired = 0;
+		}
+
+		delay = NPCInfo->burstSpacing + Q_irand(-50, 50);
 	}
 	else
 	{

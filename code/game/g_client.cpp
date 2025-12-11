@@ -666,7 +666,7 @@ char* ClientConnect(const int client_num, const qboolean first_time,
 			client->playerTeam = TEAM_PLAYER;
 			//set these now because after an auto_load kyle can see your team for a bit before you really join.
 			client->enemyTeam = TEAM_ENEMY;
-			client->friendlyfaction = FACTION_KOTOR;
+			client->friendlyfaction = FACTION_LIGHT;
 			client->enemyfaction = FACTION_DARK;
 		}
 	}
@@ -3325,7 +3325,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		}
 		client->playerTeam = TEAM_PLAYER;
 		client->enemyTeam = TEAM_ENEMY;
-		client->friendlyfaction = FACTION_KOTOR;
+		client->friendlyfaction = FACTION_LIGHT;
 		client->enemyfaction = FACTION_DARK;
 		ent->contents = CONTENTS_BODY;
 		ent->clipmask = MASK_PLAYERSOLID;

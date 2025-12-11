@@ -358,7 +358,7 @@ static void Howler_Howl()
 //------------------------------
 static void Howler_Attack(const float enemy_dist, const qboolean howl)
 {
-	const int dmg = NPCInfo->localState == LSTATE_BERZERK ? 5 : 2;
+	const int dmg = NPCInfo->localState == LSTATE_BERZERK ? 4 : 2;
 
 	if (!TIMER_Exists(NPC, "attacking"))
 	{
@@ -470,7 +470,7 @@ static void Howler_Combat()
 			|| NPC->client->ps.legsAnim == BOTH_INAIR1)
 		{
 			//flying through the air with the greatest of ease, etc
-			Howler_TryDamage(10, qfalse, qfalse);
+			Howler_TryDamage(2, qfalse, qfalse);
 		}
 	}
 	else

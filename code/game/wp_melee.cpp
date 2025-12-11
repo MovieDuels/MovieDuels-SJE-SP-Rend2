@@ -35,7 +35,7 @@ void WP_Melee(gentity_t* ent)
 {
 	trace_t tr;
 	vec3_t mins, maxs, end;
-	int damage = ent->s.number ? g_spskill->integer * 2 + 1 : 3;
+	int damage = ent->s.number ? g_spskill->integer + 1 : 3; // Was g_spskill->integer * 2 + 1 : 3;
 	const float range = ent->s.number ? 64 : 32;
 	const qboolean isBobaPlayer = !ent->s.number && ent->client->NPC_class == CLASS_BOBAFETT && ent->client->ps.
 		forcePowerDuration[missileStates[BOBA_MISSILE_VIBROBLADE].dummyForcePower]
@@ -74,14 +74,14 @@ void WP_Melee(gentity_t* ent)
 
 	if (ent->client && !PM_DroidMelee(ent->client->NPC_class))
 	{
-		if (ent->s.number || ent->alt_fire)
-		{
-			damage *= Q_irand(2, 3);
-		}
-		else
-		{
-			damage *= Q_irand(1, 2);
-		}
+		//if (ent->s.number || ent->alt_fire)
+		//{
+		//	damage *= Q_irand(2, 3);
+		//}
+		//else
+		//{
+		damage *= Q_irand(1, 2); // Make damage more balanced for NPC and player
+		//}
 	}
 
 	if (isBobaPlayer)

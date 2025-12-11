@@ -1326,8 +1326,7 @@ void FinishSpawningItem(gentity_t* ent)
 			}
 			else
 			{
-				gi.Printf(S_COLOR_RED"FinishSpawningItem: removing %s startsolid at %s (in a %s)\n", ent->classname,
-					vtos(ent->s.origin));
+				gi.Printf(S_COLOR_RED"FinishSpawningItem: removing %s startsolid at %s\n", ent->classname, vtos(ent->s.origin));
 			}
 			//assert( 0 && "item starting in solid");//jacesolaris removed for debugging
 			if (!g_entities[ENTITYNUM_WORLD].s.radius)
@@ -1999,6 +1998,7 @@ static qboolean HeHasGun(const gentity_t* ent)
 	case WP_REBELBLASTER:
 	case WP_CLONERIFLE:
 	case WP_CLONECOMMANDO:
+	case WP_Z6_ROTARY_CANNON:
 	case WP_REBELRIFLE:
 	case WP_REY:
 	case WP_JANGO:

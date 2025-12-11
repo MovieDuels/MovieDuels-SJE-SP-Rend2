@@ -75,9 +75,7 @@ namespace
 
 	void GenerateRainModel(weatherObject_t& ws, const int maxParticleCount)
 	{
-		const int mapExtentZ = (int)(tr.world->bmodels[0].bounds[1][2] - tr.world->bmodels[0].bounds[0][2]);
-		const int PARTICLE_COUNT = (int)(maxParticleCount * mapExtentZ / CHUNK_EXTENDS);
-		std::vector<rainVertex_t> rainVertices(PARTICLE_COUNT * CHUNK_COUNT);
+		std::vector<rainVertex_t> rainVertices(maxParticleCount * CHUNK_COUNT);
 
 		for (int i = 0; i < rainVertices.size(); ++i)
 		{
@@ -93,11 +91,11 @@ namespace
 		ws.lastVBO = R_CreateVBO(
 			nullptr,
 			sizeof(rainVertex_t) * rainVertices.size(),
-			VBO_USAGE_XFB);
+			VBO_USAGE_XFB, "Weather_ping");
 		ws.vbo = R_CreateVBO(
 			(byte*)rainVertices.data(),
 			sizeof(rainVertex_t) * rainVertices.size(),
-			VBO_USAGE_XFB);
+			VBO_USAGE_XFB, "Weather_pong");
 		ws.vboLastUpdateFrame = 0;
 
 		ws.attribsTemplate[0].index = ATTR_INDEX_POSITION;
@@ -175,23 +173,22 @@ namespace
 			FBO_Bind(tr.weatherDepthFbo);
 
 			GL_SetViewportAndScissor(0, 0, tr.weatherDepthFbo->width, tr.weatherDepthFbo->height);
+			uint32_t glState = GLS_DEPTHMASK_TRUE;
 
 			if (tr.weatherSystem->weatherBrushType == WEATHER_BRUSHES_OUTSIDE) // used outside brushes
 			{
 				qglClearDepth(0.0f);
-				GL_State(GLS_DEPTHMASK_TRUE | GLS_DEPTHFUNC_GREATER);
+				glState = GLS_DEPTHMASK_TRUE | GLS_DEPTHFUNC_GREATER;
 			}
 			else // used inside brushes
 			{
 				qglClearDepth(1.0f);
-				GL_State(GLS_DEPTHMASK_TRUE);
 			}
 
+			GL_State(glState);
 			qglClear(GL_DEPTH_BUFFER_BIT);
 			qglClearDepth(1.0f);
-			qglEnable(GL_DEPTH_CLAMP);
 
-			GL_Cull(CT_TWO_SIDED);
 			vec4_t color = { 0.0f, 0.0f, 0.0f, 1.0f };
 			backEnd.currentEntity = &tr.worldEntity;
 
@@ -202,13 +199,13 @@ namespace
 			};
 
 			vec3_t up = {
-				stepSize[0] * 0.5f,
+				stepSize[0] * 1.05f,
 				0.0f,
 				0.0f
 			};
 			vec3_t left = {
 				0.0f,
-				stepSize[1] * 0.5f,
+				stepSize[1] * 1.05f,
 				0.0f
 			};
 			vec3_t traceVec = {
@@ -220,6 +217,11 @@ namespace
 			for (int i = 0; i < tr.weatherSystem->numWeatherBrushes; i++)
 			{
 				RE_BeginFrame(STEREO_CENTER);
+
+				GL_State(glState);
+				qglEnable(GL_DEPTH_CLAMP);
+				GL_Cull(CT_TWO_SIDED);
+
 				weatherBrushes_t* currentWeatherBrush = &tr.weatherSystem->weatherBrushes[i];
 
 				// RBSP brushes actually store their bounding box in the first 6 planes! Nice
@@ -304,9 +306,9 @@ namespace
 						{
 							RB_UpdateVBOs(ATTR_POSITION);
 							GLSL_VertexAttribsState(ATTR_POSITION, NULL);
-							GLSL_BindProgram(&tr.textureColorShader);
+							GLSL_BindProgram(&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES]);
 							GLSL_SetUniformMatrix4x4(
-								&tr.textureColorShader,
+								&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES],
 								UNIFORM_MODELVIEWPROJECTIONMATRIX,
 								tr.weatherSystem->weatherMVP);
 							R_DrawElementsVBO(tess.numIndexes, tess.firstIndex, tess.minIndex, tess.maxIndex);
@@ -320,7 +322,34 @@ namespace
 							tess.externalIBO = nullptr;
 						}
 
-						RB_AddQuadStamp(rayPos, left, up, color);
+						int ndx = tess.numVertexes;
+
+						tess.indexes[tess.numIndexes] = ndx;
+						tess.indexes[tess.numIndexes + 1] = ndx + 1;
+						tess.indexes[tess.numIndexes + 2] = ndx + 3;
+
+						tess.indexes[tess.numIndexes + 3] = ndx + 3;
+						tess.indexes[tess.numIndexes + 4] = ndx + 1;
+						tess.indexes[tess.numIndexes + 5] = ndx + 2;
+
+						tess.xyz[ndx][0] = rayPos[0] - left[0];
+						tess.xyz[ndx][1] = rayPos[1] - left[1];
+						tess.xyz[ndx][2] = rayPos[2] - left[2];
+
+						tess.xyz[ndx + 1][0] = rayPos[0] + up[0];
+						tess.xyz[ndx + 1][1] = rayPos[1] + up[1];
+						tess.xyz[ndx + 1][2] = rayPos[2] + up[2];
+
+						tess.xyz[ndx + 2][0] = rayPos[0] + left[0];
+						tess.xyz[ndx + 2][1] = rayPos[1] + left[1];
+						tess.xyz[ndx + 2][2] = rayPos[2] + left[2];
+
+						tess.xyz[ndx + 3][0] = rayPos[0] - up[0];
+						tess.xyz[ndx + 3][1] = rayPos[1] - up[1];
+						tess.xyz[ndx + 3][2] = rayPos[2] - up[2];
+
+						tess.numVertexes += 4;
+						tess.numIndexes += 6;
 					}
 				}
 				R_NewFrameSync();
@@ -329,9 +358,9 @@ namespace
 			// draw remaining quads
 			RB_UpdateVBOs(ATTR_POSITION);
 			GLSL_VertexAttribsState(ATTR_POSITION, NULL);
-			GLSL_BindProgram(&tr.textureColorShader);
+			GLSL_BindProgram(&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES]);
 			GLSL_SetUniformMatrix4x4(
-				&tr.textureColorShader,
+				&tr.textureColorShader[TEXCOLORDEF_USE_VERTICES],
 				UNIFORM_MODELVIEWPROJECTIONMATRIX,
 				tr.weatherSystem->weatherMVP);
 			R_DrawElementsVBO(tess.numIndexes, tess.firstIndex, tess.minIndex, tess.maxIndex);
@@ -443,7 +472,8 @@ namespace
 
 		item.uniformData = uniformDataWriter.Finish(*backEndData->perFrameMemory);
 
-		const GLuint currentFrameUbo = backEndData->current_frame->ubo;
+		const byte currentFrameScene = backEndData->currentFrame->currentScene;
+		const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 		const UniformBlockBinding uniformBlockBindings[] = {
 			{ currentFrameUbo, tr.sceneUboOffset, UNIFORM_BLOCK_SCENE }
 		};
@@ -705,6 +735,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 
 		tr.weatherSystem->weatherSlots[WEATHER_RAIN].velocityOrientationScale = 1.0f;
 
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_RAIN].drawImage = R_FindImageFile("gfx/world/rain.jpg", type, flags);
+
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_RAIN].color, 0.5f, 0.5f, 0.5f, 0.5f);
 		VectorScale(
 			tr.weatherSystem->weatherSlots[WEATHER_RAIN].color,
@@ -728,6 +762,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		tr.weatherSystem->weatherSlots[WEATHER_RAIN].size[1] = 14.0f;
 
 		tr.weatherSystem->weatherSlots[WEATHER_RAIN].velocityOrientationScale = 1.0f;
+
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_RAIN].drawImage = R_FindImageFile("gfx/world/rain.jpg", type, flags);
 
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_RAIN].color, 0.5f, 0.5f, 0.5f, 0.5f);
 		VectorScale(
@@ -753,7 +791,9 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 
 		tr.weatherSystem->weatherSlots[WEATHER_RAIN].velocityOrientationScale = 1.0f;
 
-		tr.weatherSystem->pain = 0.1f;
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_RAIN].drawImage = R_FindImageFile("gfx/world/rain.jpg", type, flags);
 
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_RAIN].color, 0.34f, 0.7f, 0.34f, 0.7f);
 		VectorScale(
@@ -779,6 +819,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 
 		tr.weatherSystem->weatherSlots[WEATHER_RAIN].velocityOrientationScale = 1.0f;
 
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_RAIN].drawImage = R_FindImageFile("gfx/world/rain", type, flags);
+
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_RAIN].color, 0.5f, 0.5f, 0.5f, 0.5f);
 		VectorScale(
 			tr.weatherSystem->weatherSlots[WEATHER_RAIN].color,
@@ -803,6 +847,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 
 		tr.weatherSystem->weatherSlots[WEATHER_SNOW].velocityOrientationScale = 0.0f;
 
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_SNOW].drawImage = R_FindImageFile("gfx/effects/snowflake1", type, flags);
+
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_SNOW].color, 0.75f, 0.75f, 0.75f, 0.75f);
 		VectorScale(
 			tr.weatherSystem->weatherSlots[WEATHER_SNOW].color,
@@ -821,7 +869,7 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		if (!tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].active)
 			tr.weatherSystem->activeWeatherTypes++;
 
-		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].particleCount = 1200;
+		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].particleCount = count;
 		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].active = true;
 		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].gravity = 0.0f;
 		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].fadeDistance = 3000.f;
@@ -830,6 +878,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].size[1] = 2.5f;
 
 		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].velocityOrientationScale = 0.0f;
+
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].drawImage = R_FindImageFile("gfx/effects/snowpuff1", type, flags);
 
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_SPACEDUST].color, 0.75f, 0.75f, 0.75f, 0.75f);
 		VectorScale(
@@ -845,7 +897,7 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		if (!tr.weatherSystem->weatherSlots[WEATHER_SAND].active)
 			tr.weatherSystem->activeWeatherTypes++;
 
-		tr.weatherSystem->weatherSlots[WEATHER_SAND].particleCount = 1200;
+		tr.weatherSystem->weatherSlots[WEATHER_SAND].particleCount = 400;
 		tr.weatherSystem->weatherSlots[WEATHER_SAND].active = true;
 		tr.weatherSystem->weatherSlots[WEATHER_SAND].gravity = 0.0f;
 		tr.weatherSystem->weatherSlots[WEATHER_SAND].fadeDistance = 2400.f;
@@ -854,6 +906,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		tr.weatherSystem->weatherSlots[WEATHER_SAND].size[1] = 300.f;
 
 		tr.weatherSystem->weatherSlots[WEATHER_SAND].velocityOrientationScale = 0.0f;
+
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_SAND].drawImage = R_FindImageFile("gfx/effects/alpha_smoke2b", type, flags);
 
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_SAND].color, 0.9f, 0.6f, 0.0f, 0.5f);
 	}
@@ -865,7 +921,7 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		if (!tr.weatherSystem->weatherSlots[WEATHER_FOG].active)
 			tr.weatherSystem->activeWeatherTypes++;
 
-		tr.weatherSystem->weatherSlots[WEATHER_FOG].particleCount = 1200;
+		tr.weatherSystem->weatherSlots[WEATHER_FOG].particleCount = 60;
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].active = true;
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].gravity = 0.0f;
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].fadeDistance = 2400.f;
@@ -874,6 +930,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].size[1] = 300.f;
 
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].velocityOrientationScale = 0.0f;
+
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_FOG].drawImage = R_FindImageFile("gfx/effects/alpha_smoke2b", type, flags);
 
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_FOG].color, 0.2f, 0.2f, 0.2f, 0.2f);
 		VectorScale(tr.weatherSystem->weatherSlots[WEATHER_FOG].color, 0.2f, tr.weatherSystem->weatherSlots[WEATHER_FOG].color);
@@ -886,7 +946,7 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		if (!tr.weatherSystem->weatherSlots[WEATHER_FOG].active)
 			tr.weatherSystem->activeWeatherTypes++;
 
-		tr.weatherSystem->weatherSlots[WEATHER_FOG].particleCount = 210;
+		tr.weatherSystem->weatherSlots[WEATHER_FOG].particleCount = 70;
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].active = true;
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].gravity = 0.0f;
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].fadeDistance = 2400.f;
@@ -895,6 +955,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].size[1] = 300.f;
 
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].velocityOrientationScale = 0.0f;
+
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_FOG].drawImage = R_FindImageFile("gfx/effects/alpha_smoke2b", type, flags);
 
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_FOG].color, 0.3f, 0.3f, 0.3f, 0.3f);
 		VectorScale(tr.weatherSystem->weatherSlots[WEATHER_FOG].color, 0.3f, tr.weatherSystem->weatherSlots[WEATHER_FOG].color);
@@ -916,6 +980,10 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].size[1] = 300.f;
 
 		tr.weatherSystem->weatherSlots[WEATHER_FOG].velocityOrientationScale = 0.0f;
+
+		imgType_t type = IMGTYPE_COLORALPHA;
+		int flags = IMGFLAG_CLAMPTOEDGE;
+		tr.weatherSystem->weatherSlots[WEATHER_FOG].drawImage = R_FindImageFile("gfx/effects/alpha_smoke2b", type, flags);
 
 		VectorSet4(tr.weatherSystem->weatherSlots[WEATHER_FOG].color, 0.19f, 0.6f, 0.7f, 0.12f);
 		VectorScale(tr.weatherSystem->weatherSlots[WEATHER_FOG].color, 0.12f, tr.weatherSystem->weatherSlots[WEATHER_FOG].color);
@@ -1056,12 +1124,8 @@ void RB_SurfaceWeather(srfWeather_t* surf)
 		{
 			for (int x = -1; x <= 1; ++x, ++currentIndex)
 			{
-				chunkIndex = (int(centerZoneOffsetX + numMinZonesX) + x + 1) % 3;
-				chunkIndex += (int(centerZoneOffsetY + numMinZonesY) + y + 1) % 3 * 3;
-
-				if (chunkIndex < 0) {
-					chunkIndex += 9;
-				}
+				chunkIndex = ((int(centerZoneOffsetX + numMinZonesX) + x + 1) % 3 + 3) % 3;
+				chunkIndex += (((int(centerZoneOffsetY + numMinZonesY) + y + 1) % 3 + 3) % 3) * 3;
 
 				VectorSet2(
 					zoneOffsets[chunkIndex],
@@ -1139,7 +1203,8 @@ void RB_SurfaceWeather(srfWeather_t* surf)
 		{
 			for (int x = -1; x <= 1; ++x, ++currentIndex)
 			{
-				const GLuint currentFrameUbo = backEndData->current_frame->ubo;
+				const byte currentFrameScene = backEndData->currentFrame->currentScene;
+				const GLuint currentFrameUbo = backEndData->currentFrame->ubo[currentFrameScene];
 				const UniformBlockBinding uniformBlockBindings[] = {
 					{ currentFrameUbo, tr.cameraUboOffsets[tr.viewParms.currentViewParm], UNIFORM_BLOCK_CAMERA }
 				};

@@ -5529,6 +5529,7 @@ static const char* g_bindCommands[] =
 	"vstr opencharactermenu",
 	"uimenu ingamesabercustomizationMenu",
 	"uimenu ingamespawncommandsMenu",
+	"uimenu ingameweaponwheelMenu",
 	"scale",
 	"r_weather"
 };

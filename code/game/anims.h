@@ -3371,6 +3371,57 @@ using animNumber_t = enum //# animNumber_e
 	//# Level specific cinematic
 	BOTH_CIN_100,
 	//# Level specific cinematic
+	BOTH_CIN_101,
+	//# Level specific cinematic
+	BOTH_CIN_102,
+	//# Level specific cinematic
+	BOTH_CIN_103,
+	//# Level specific cinematic
+	BOTH_CIN_104,
+	//# Level specific cinematic
+	BOTH_CIN_105,
+	//# Level specific cinematic
+	BOTH_CIN_106,
+	//# Level specific cinematic
+	BOTH_CIN_107,
+	//# Level specific cinematic
+	BOTH_CIN_108,
+	//# Level specific cinematic
+	BOTH_CIN_109,
+	//# Level specific cinematic
+	BOTH_CIN_110,
+	//# Level specific cinematic
+	BOTH_CIN_111,
+	//# Level specific cinematic
+	BOTH_CIN_112,
+	//# Level specific cinematic
+	BOTH_CIN_113,
+	//# Level specific cinematic
+	BOTH_CIN_114,
+	//# Level specific cinematic
+	BOTH_CIN_115,
+	//# Level specific cinematic
+	BOTH_CIN_116,
+	//# Level specific cinematic
+	BOTH_CIN_117,
+	//# Level specific cinematic
+	BOTH_CIN_118,
+	//# Level specific cinematic
+	BOTH_CIN_119,
+	//# Level specific cinematic
+	BOTH_CIN_120,
+	//# Level specific cinematic
+	BOTH_CIN_121,
+	//# Level specific cinematic
+	BOTH_CIN_122,
+	//# Level specific cinematic
+	BOTH_CIN_123,
+	//# Level specific cinematic
+	BOTH_CIN_124,
+	//# Level specific cinematic
+	BOTH_CIN_125,
+	//# Level specific cinematic
+
 
 	//==========================================
 

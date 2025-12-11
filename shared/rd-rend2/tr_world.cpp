@@ -400,11 +400,7 @@ void R_AddBrushModelSurfaces(trRefEntity_t* ent, int entityNum) {
 	for (int i = 0; i < bmodel->numSurfaces; i++) {
 		int surf = bmodel->firstSurface + i;
 
-		if (world->surfacesViewCount[surf] != tr.viewCount)
-		{
-			world->surfacesViewCount[surf] = tr.viewCount;
-			R_AddWorldSurface(world->surfaces + surf, ent, entityNum, ent->needDlights, 0);
-		}
+		R_AddWorldSurface(world->surfaces + surf, ent, entityNum, ent->needDlights, 0);
 	}
 }
 
@@ -728,7 +724,7 @@ static mnode_t* R_PointInLeaf(const vec3_t p) {
 		}
 		plane = node->plane;
 		d = DotProduct(p, plane->normal) - plane->dist;
-		if (d > 0) {
+		if (d >= 0) {
 			node = node->children[0];
 		}
 		else {
@@ -757,12 +753,7 @@ static const byte* R_ClusterPVS(int cluster) {
 R_inPVS
 =================
 */
-#ifndef REND2_SP
 qboolean R_inPVS(const vec3_t p1, const vec3_t p2, byte* mask) {
-#else
-qboolean R_inPVS(vec3_t p1, vec3_t p2) {
-	byte* mask;
-#endif
 	mnode_t* leaf = R_PointInLeaf(p1);
 
 	//agh, the damn snapshot mask doesn't work for this

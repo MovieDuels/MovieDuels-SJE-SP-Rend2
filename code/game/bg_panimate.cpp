@@ -6845,7 +6845,8 @@ static void PM_TorsoAnimLightsaber()
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
 			pm->ps->saber_move = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL)
@@ -6895,7 +6896,8 @@ static void PM_TorsoAnimLightsaber()
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
 			pm->ps->saber_move = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_PISTOL)
@@ -6935,7 +6937,8 @@ static void PM_TorsoAnimLightsaber()
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
 			pm->ps->saber_move = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_PISTOL)
@@ -7178,6 +7181,8 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE2P
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE3
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE4
+			|| pm->ps->legsAnim == BOTH_STANCE_MINIGUN
+			|| pm->ps->legsAnim == BOTH_STANCE_READY_MINIGUN_IDLE
 			|| pm->ps->legsAnim == BOTH_SABERSINGLECROUCH
 			|| pm->ps->legsAnim == BOTH_SABERDUALCROUCH
 			|| pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH
@@ -7437,6 +7442,13 @@ void PM_TorsoAnimation()
 		if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_ALORA)
 		{
 			PM_SetAnim(pm, SETANIM_BOTH, BOTH_ALORA_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			//SETANIM_FLAG_NORMAL
+		}
+		else if (pm->ps->weapon == WP_SABER && pm->gent->client->friendlyfaction == FACTION_NEUTRAL && PM_HasAnimation(
+			pm->gent, BOTH_ENGAGETAUNT))
+		{
+			// No force powers so do basic taunt
+			PM_SetAnim(pm, SETANIM_BOTH, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			//SETANIM_FLAG_NORMAL
 		}
 		else if (pm->ps->weapon == WP_SABER && pm->ps->saber_anim_level == SS_DUAL && PM_HasAnimation(
@@ -7699,7 +7711,8 @@ void PM_TorsoAnimation()
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN && !weapon_busy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL && !weapon_busy)
 		{
@@ -7743,7 +7756,8 @@ void PM_TorsoAnimation()
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN && !weapon_busy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_PISTOL && !weapon_busy)
 		{
@@ -7775,7 +7789,8 @@ void PM_TorsoAnimation()
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN && !weapon_busy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_PISTOL && !weapon_busy)
 		{
@@ -8208,6 +8223,7 @@ void PM_TorsoAnimation()
 				case WP_ROCKET_LAUNCHER:
 				case WP_CONCUSSION:
 				case WP_DEMP2:
+				case WP_Z6_ROTARY_CANNON:
 					if (weapon_busy)
 					{
 						if (cg.renderingThirdPerson)
@@ -8237,6 +8253,23 @@ void PM_TorsoAnimation()
 						}
 					}
 					break;
+
+				/*case WP_Z6_ROTARY_CANNON:
+					if (weapon_busy)
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
+					}
+					else if (PM_WalkingAnim(pm->ps->legsAnim) && (pm->ps->client_num < MAX_CLIENTS ||
+						PM_ControlledByPlayer()))
+					{
+						//
+						PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
+					}
+					break;*/
 
 				case WP_BLASTER:
 				case WP_THEFIRSTORDER:
@@ -8567,7 +8600,9 @@ void PM_TorsoAnimation()
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE2
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE2P
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE3
-			|| pm->ps->legsAnim == TORSO_WEAPONIDLE4)
+			|| pm->ps->legsAnim == TORSO_WEAPONIDLE4
+			|| pm->ps->legsAnim == BOTH_STANCE_MINIGUN
+			|| pm->ps->legsAnim == BOTH_STANCE_READY_MINIGUN_IDLE)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
 			pm->ps->saber_move = LS_READY;
@@ -8942,6 +8977,7 @@ void PM_TorsoAnimation()
 				case WP_ROCKET_LAUNCHER:
 				case WP_CONCUSSION:
 				case WP_DEMP2:
+				case WP_Z6_ROTARY_CANNON:
 
 					if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
 					{
@@ -8982,6 +9018,41 @@ void PM_TorsoAnimation()
 						PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3, SETANIM_FLAG_NORMAL);
 					}
 					break;
+
+				/*case WP_Z6_ROTARY_CANNON:
+
+					if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
+					{
+						//holding an enemy aloft with force-grip
+						return;
+					}
+					if (pm->ps->forcePowersActive & 1 << FP_GRASP && pm->ps->forcePowerLevel[FP_GRASP] >
+						FORCE_LEVEL_1)
+					{
+						//holding an enemy aloft with force-grip
+						return;
+					}
+					if (pm->ps->forcePowersActive & 1 << FP_LIGHTNING && pm->ps->forcePowerLevel[FP_LIGHTNING] >
+						FORCE_LEVEL_1)
+					{
+						//holding an enemy aloft with force-grip
+						return;
+					}
+					if (weapon_busy)
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
+					}
+					else if (PM_WalkingAnim(pm->ps->legsAnim) && (pm->ps->client_num < MAX_CLIENTS ||
+						PM_ControlledByPlayer()))
+					{
+						//
+						PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN_IDLE, SETANIM_FLAG_NORMAL);
+					}
+					break;*/
 
 				case WP_BLASTER:
 				case WP_THEFIRSTORDER:
@@ -9480,6 +9551,8 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
 	case TORSO_WEAPONIDLE4:
+	case BOTH_STANCE_MINIGUN:
+	case BOTH_STANCE_READY_MINIGUN_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE_DUELS:
 	case BOTH_STAND_SABER_ON_IDLE_STAFF:
@@ -9545,6 +9618,8 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
 	case TORSO_WEAPONIDLE4:
+	case BOTH_STANCE_MINIGUN:
+	case BOTH_STANCE_READY_MINIGUN_IDLE:
 	{
 		if (PM_HasAnimation(gent, BOTH_TURNSTAND1))
 		{
@@ -9966,6 +10041,8 @@ qboolean PM_StandingidleAnim(const int anim)
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
 	case TORSO_WEAPONIDLE4:
+	case BOTH_STANCE_MINIGUN:
+	case BOTH_STANCE_READY_MINIGUN_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE_DUELS:
 	case BOTH_STAND_SABER_ON_IDLE_STAFF:
@@ -10021,6 +10098,8 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
 	case TORSO_WEAPONIDLE4:
+	case BOTH_STANCE_MINIGUN:
+	case BOTH_STANCE_READY_MINIGUN_IDLE:
 	case BOTH_STAND9:
 	case BOTH_STAND_SABER_ON_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE_DUELS:
@@ -10795,6 +10874,9 @@ qboolean BG_IsAlreadyinTauntAnim(const int anim)
 	case BOTH_PISTOLCHARGE:
 	case BOTH_PISTOLFAIL:
 		//
+	case BOTH_RELOAD_MINIGUN:
+	case BOTH_RECHARGE_MINIGUN:
+	case BOTH_RELOAD_FAIL_MINIGUN:
 		return qtrue;
 	default:;
 	}
@@ -10823,6 +10905,10 @@ qboolean PM_Bobaspecialanim(const int anim)
 	case BOTH_PISTOLRELOAD:
 	case BOTH_PISTOLCHARGE:
 	case BOTH_PISTOLFAIL:
+		//
+	case BOTH_RELOAD_MINIGUN:
+	case BOTH_RECHARGE_MINIGUN:
+	case BOTH_RELOAD_FAIL_MINIGUN:
 		//
 	case BOTH_GUNSIT1:
 	case BOTH_ATTACK2:
