@@ -2947,7 +2947,7 @@ void UI_SaberDrawBlades(itemDef_t* item, vec3_t origin, const float cur_yaw)
 			if (item->parent)
 			{
 				menuDef_t* parent = (menuDef_t*)item->parent;
-				if (!Q_stricmp(parent->window.name, "ui_md"))
+				if (!Q_stricmp(parent->window.name, "ingamecharacter"))
 					isMD = qtrue;
 			}
 

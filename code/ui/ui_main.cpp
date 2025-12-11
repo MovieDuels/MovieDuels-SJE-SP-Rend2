@@ -746,6 +746,7 @@ static const char* MD_UI_SelectedTeamHead_SubDivs(int index, int* actual) {
 	return "";
 }
 #endif
+
 static int duelMapIndex = 1;
 
 typedef struct {
@@ -2334,7 +2335,7 @@ runEra:
 				Cvar_Set("ui_char_model", charMD[eraIndex[uiEra]].model);//UI_Cvar_VariableString("ui_model"));
 				Cvar_Set("ui_char_skin", charMD[eraIndex[uiEra]].skin);//
 #endif
-				menuDef_t* menu = Menus_FindByName("ui_md");
+				menuDef_t* menu = Menus_FindByName("ingamecharacter");
 				if (menu) {
 #ifdef NEW_FEEDER_V3
 					itemDef_t* item = Menu_FindItemByName(menu, "modellist");
@@ -2540,7 +2541,7 @@ runEra:
 			//Cvar_Set("ui_md_name", charMD[uiModelIndex].name);
 			//Cvar_Set("ui_md_title", charMD[uiModelIndex].title);
 			const menuDef_t* menu = Menu_GetFocused();
-			if (menu && !strcmp(menu->window.name, "ui_md"))
+			if (menu && !strcmp(menu->window.name, "ingamecharacter"))
 			{
 				{
 					const auto item = Menu_FindItemByName(menu, "char_name");
@@ -2584,7 +2585,7 @@ runEra:
 			
 			/*
 			const menuDef_t* menu = Menu_GetFocused();
-			if (menu && !strcmp(menu->window.name, "ui_md"))
+			if (menu && !strcmp(menu->window.name, "ingamecharacter"))
 			{
 				const auto item = Menu_FindItemByName(menu, "character");
 				if (item) {
@@ -2637,7 +2638,7 @@ runEra:
 
 			/*
 			const menuDef_t* menu = Menu_GetFocused();
-			if (menu && !strcmp(menu->window.name, "ui_md"))
+			if (menu && !strcmp(menu->window.name, "ingamecharacter"))
 			{
 				const auto item = Menu_FindItemByName(menu, "character");
 				if (item) {
@@ -3987,7 +3988,7 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 	{
 		int actual = 0;
 #ifdef NEW_FEEDER_V2
-		menuDef_t* menu = Menus_FindByName("ui_md");
+		menuDef_t* menu = Menus_FindByName("ingamecharacter");
 #endif
 		if (feederID == FEEDER_MD_MODELS)
 			MD_UI_SelectedTeamHead_SubDivs(index, &actual);
@@ -5006,7 +5007,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("------------------------- Update 7.0.0 --------------------------\n");
-	Com_Printf("-------------------- Build Date 14/11/2025 ----------------------\n");
+	Com_Printf("-------------------- Build Date 11/12/2025 ----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("---------------------------LightSaber----------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -8862,7 +8863,7 @@ static void UI_UpdateCharacterSkin()
 
 #ifdef NEW_FEEDER
 #ifdef NEW_FEEDER_V2
-	if (!strcmp(menu->window.name, "ui_md"))
+	if (!strcmp(menu->window.name, "ingamecharacter"))
 	{
 		if (!strchr(UI_Cvar_VariableString("ui_model"), '|'))
 		{
@@ -8880,7 +8881,7 @@ static void UI_UpdateCharacterSkin()
 	}
 	else
 #else
-	if (!strcmp(menu->window.name,"ui_md") && !strchr(UI_Cvar_VariableString("ui_model"), '|')) // Not a multipart custom character
+	if (!strcmp(menu->window.name,"ingamecharacter") && !strchr(UI_Cvar_VariableString("ui_model"), '|')) // Not a multipart custom character
 	{
 		Com_sprintf(skin, sizeof skin, "models/players/%s/%s.skin",
 			Cvar_VariableString("ui_char_model"),
@@ -8900,7 +8901,7 @@ static void UI_UpdateCharacterSkin()
 	ItemParse_model_g2skin_go(item, skin);
 
 #ifdef NEW_FEEDER // Saber
-	if (!strcmp(menu->window.name, "ui_md"))
+	if (!strcmp(menu->window.name, "ingamecharacter"))
 	{
 #ifdef NEW_FEEDER_V5 // Saber
 		modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
@@ -9012,7 +9013,7 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 #ifdef NEW_FEEDER // Animation
 #ifdef NEW_FEEDER_V4
 	static int mdSelected = -1;
-	if (!strcmp(menu->window.name, "ui_md"))
+	if (!strcmp(menu->window.name, "ingamecharacter"))
 	{
 #ifdef NEW_FEEDER_V7
 		if ((uiVariantIndex != mdSelected) || newLoad)
@@ -9032,7 +9033,7 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 	}
 	else
 #else
-	if (!strcmp(menu->window.name, "ui_md")) 
+	if (!strcmp(menu->window.name, "ingamecharacter")) 
 	{
 		ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
 		uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
