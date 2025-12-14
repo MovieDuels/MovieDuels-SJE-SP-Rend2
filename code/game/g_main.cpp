@@ -262,7 +262,7 @@ cvar_t* g_VaderBreath;
 cvar_t* com_outcast;
 
 cvar_t* g_gundismemberment;
-cvar_t* g_update6firststartup;
+cvar_t* g_update7firststartup;
 
 cvar_t* g_totgfirststartup;
 
@@ -879,7 +879,7 @@ static void G_InitCvars()
 
 	g_gundismemberment = gi.cvar("g_gundismemberment", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
-	g_update6firststartup = gi.cvar("g_update6firststartup", "1", 0);
+	g_update7firststartup = gi.cvar("g_update7firststartup", "1", 0);
 
 	g_totgfirststartup = gi.cvar("g_totgfirststartup", "1", 0);
 

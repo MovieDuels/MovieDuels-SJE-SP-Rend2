@@ -1449,7 +1449,7 @@ void Cvar_Init()
 
 	g_Weather = Cvar_Get("r_weather", "0", CVAR_ARCHIVE);
 
-	g_update6firststartup = Cvar_Get("g_update6firststartup", "1", 0);
+	g_update7firststartup = Cvar_Get("g_update7firststartup", "1", 0);
 
 	g_totgfirststartup = Cvar_Get("g_totgfirststartup", "1", 0);
 

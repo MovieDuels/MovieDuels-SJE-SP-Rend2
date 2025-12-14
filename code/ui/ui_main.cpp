@@ -1519,7 +1519,7 @@ vmCvar_t ui_SerenityJediEngineMode;
 vmCvar_t ui_char_model_angle;
 
 vmCvar_t ui_com_outcast;
-vmCvar_t ui_update6firststartup;
+vmCvar_t ui_update7firststartup;
 vmCvar_t ui_totgfirststartup;
 vmCvar_t ui_cursor;
 
@@ -1671,7 +1671,7 @@ static cvarTable_t cvarTable[] =
 
 	{&ui_com_outcast, "com_outcast", "0", nullptr, CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 
-	{&ui_update6firststartup, "g_update6firststartup", "1", nullptr, 0},
+	{&ui_update7firststartup, "g_update7firststartup", "1", nullptr, 0},
 
 	{&ui_totgfirststartup, "g_totgfirststartup", "1", nullptr, 0},
 

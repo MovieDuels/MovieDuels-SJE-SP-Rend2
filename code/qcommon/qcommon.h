@@ -626,7 +626,7 @@ extern cvar_t* com_version;
 extern cvar_t* com_homepath;
 extern cvar_t* com_outcast;
 extern cvar_t* g_Weather;
-extern cvar_t* g_update6firststartup;
+extern cvar_t* g_update7firststartup;
 extern cvar_t* g_totgfirststartup;
 extern cvar_t* com_kotor;
 extern cvar_t* g_trueguns;
