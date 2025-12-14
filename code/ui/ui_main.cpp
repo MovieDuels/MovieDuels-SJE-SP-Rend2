@@ -2569,10 +2569,10 @@ runEra:
 				case 2: team = "TEAM_ENEMY";		break;
 				case 3: team = "TEAM_SOLO";			break;
 				case 4: team = "TEAM_NEUTRAL";		break;
-				default: team = "TEAM_PROJECTION";	break; // Will use default team
+				default: team = "TEAM_DEFAULT";		break;
 			}
 			
-			if (strcmp(team, "TEAM_PROJECTION") == 0 && npcHealth == 0) {
+			if (strcmp(team, "TEAM_DEFAULT") == 0 && npcHealth == 0) {
 				// Default npc spawn
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s\n", charMD[uiVariantIndex].npc, targetname));
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s\n", charMD[uiVariantIndex].npc, targetname));
