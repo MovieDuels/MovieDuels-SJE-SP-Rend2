@@ -10448,7 +10448,7 @@ static qboolean Item_ListBox_HandleKey(itemDef_t* item, const int key, qboolean 
 				int viewChunkSize = lengthMax * viewmax;
 				int removeRemaining = count % viewmax;
 
-				if (count <= viewChunkSize) // Entire List fits in chunk, prevent scrolling all together
+				if ((item->special == FEEDER_MD_MODELS) && (count <= viewChunkSize)) // Entire List fits in chunk, prevent scrolling all together
 					return qfalse;
 
 				listPtr->startPos += static_cast<int>(item->special) == FEEDER_MD_MODELS ? viewmax : 1;
