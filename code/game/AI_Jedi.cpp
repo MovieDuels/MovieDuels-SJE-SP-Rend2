@@ -1176,25 +1176,16 @@ static void jedi_aggression(const gentity_t* self, const int change)
 
 	self->NPC->stats.aggression += change;
 
-	if (self->client->playerTeam == TEAM_PLAYER)
+	//bad guys are more aggressive
+	if (npc_is_sith_lord(self))
 	{
-		//good guys are less aggressive
-		upper_threshold = 7;
-		lower_threshold = 1;
+		upper_threshold = 15;
+		lower_threshold = 5;
 	}
 	else
 	{
-		//bad guys are more aggressive
-		if (npc_is_sith_lord(self))
-		{
-			upper_threshold = 20;
-			lower_threshold = 5;
-		}
-		else
-		{
-			upper_threshold = 10;
-			lower_threshold = 3;
-		}
+		upper_threshold = 10;
+		lower_threshold = 3;
 	}
 
 	if (self->NPC->stats.aggression > upper_threshold)
