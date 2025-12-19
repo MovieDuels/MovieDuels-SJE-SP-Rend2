@@ -5080,6 +5080,34 @@ qboolean ForcePower_Valid(const int index)
 }
 
 /*
+================
+CG_SelectForcePower_f
+
+Selects a specific force power based on the given index.
+================
+*/
+void CG_SelectForcePower_f()
+{
+	if (!cg.snap || in_camera)
+	{
+		return;
+	}
+
+	int index = atoi(CG_Argv(1));
+
+	if (index < 0 || index >= MAX_SHOWPOWERS)
+	{
+		CG_Printf("Invalid force power index: %d\n", index);
+		return;
+	}
+
+	if (ForcePower_Valid(index)) // Does he have the force power?
+	{
+		cg.forcepowerSelect = index;
+	}
+}
+
+/*
 ===============
 CG_NextForcePower_f
 ===============

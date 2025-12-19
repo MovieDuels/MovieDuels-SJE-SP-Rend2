@@ -5526,6 +5526,7 @@ static const char* g_bindCommands[] =
 	"g_allowdualpistols !",
 	"cl_run !",
 	"uimenu ingamecharacter",
+	"uimenu ingameforcewheelMenu",
 	"uimenu ingamesabercustomizationMenu",
 	"uimenu ingamespawncommandsMenu",
 	"uimenu ingameweaponwheelMenu",

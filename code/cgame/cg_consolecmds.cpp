@@ -30,6 +30,7 @@ extern qboolean player_locked;
 extern void CMD_CGCam_Disable();
 void CG_NextInventory_f();
 void CG_PrevInventory_f();
+void CG_SelectForcePower_f();
 void CG_NextForcePower_f();
 void CG_PrevForcePower_f();
 
@@ -235,6 +236,7 @@ static consoleCommand_t commands[] = {
 	{"dpweapprev", CG_DPPrevWeapon_f},
 	{"forcenext", CG_NextForcePower_f},
 	{"forceprev", CG_PrevForcePower_f},
+	{"forceselect", CG_SelectForcePower_f},
 	{"invnext", CG_NextInventory_f},
 	{"invprev", CG_PrevInventory_f},
 	{"la_zoom", CG_ToggleLAGoggles},
@@ -398,6 +400,7 @@ static const char* gcmds[] =
 	"g_allowdualpistols !",
 	"cl_run !",
 	"uimenu ingamecharacter",
+	"uimenu ingameforcewheelMenu",
 	"uimenu ingamesabercustomizationMenu",
 	"uimenu ingamespawncommandsMenu",
 	"uimenu ingameweaponwheelMenu",

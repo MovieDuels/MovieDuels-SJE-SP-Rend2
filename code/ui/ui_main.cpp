@@ -1282,6 +1282,7 @@ static void UI_ClearInventory();
 static void UI_GiveInventory(int itemIndex, int amount);
 static void UI_ForcePowerWeaponsButton(qboolean activeFlag);
 static void UI_ViewWeaponWheel();
+static void UI_ViewForceWheel();
 static void UI_UpdateCharacterSkin();
 #ifdef NEW_FEEDER_V7
 static void UI_UpdateCharacter(qboolean changedModel, qboolean newLoad);
@@ -2877,6 +2878,14 @@ runEra:
 			if (menu && !strcmp(menu->window.name, "ingameWeaponWheelMenu"))
 			{
 				UI_ViewWeaponWheel();
+			}
+		}
+		else if (Q_stricmp(name, "md_viewforcewheel") == 0)
+		{
+			const menuDef_t* menu = Menu_GetFocused();
+			if (menu && !strcmp(menu->window.name, "ingameForceWheelMenu"))
+			{
+				UI_ViewForceWheel();
 			}
 		}
 		else if (Q_stricmp(name, "startgame") == 0)
@@ -7136,8 +7145,68 @@ static void UI_ViewWeaponWheel() {
 				item->window.foreColor[3] = 1.0f;
 			}
 			else {
-				item->disabled = qtrue;
 				item->window.foreColor[3] = 0.4f;
+				item->disabled = qtrue;
+			}
+		}
+	}
+}
+
+static void UI_ViewForceWheel() {
+	struct ForceIcon
+	{
+		const char* iconName;
+		int forceIndex;
+	};
+	const ForceIcon forceIcons[] = {
+		{"absorb_icon", 0},
+		{"heal_icon", 1},
+		{"telepathy_icon", 2},
+		{"protect_icon", 3},
+		{"stasis_icon", 4},
+		{"pull_icon", 6},
+		{"push_icon", 7},
+		{"sight_icon", 8},
+		{"speed_icon", 9},
+		{"drain_icon", 13},
+		{"grip_icon", 14},
+		{"lightning_icon", 15},
+		{"rage_icon", 16},
+		{"destruction_icon", 17},
+		{"grasp_icon", 18},
+		{"repulse_icon", 19},
+		{"strike_icon", 20},
+		{"fear_icon", 21},
+		{"deadly_sight_icon", 22},
+		{"projection_icon", 23},
+		{"blast_icon", 24},
+	};
+
+	// Get player state
+	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
+
+	if (!cl)
+	{
+		return; // No client, get out
+	}
+
+	const playerState_t* pState = cl->gentity->client;
+	const menuDef_t* menu = Menu_GetFocused();
+
+	// Enable/disable force icons if player has ability
+	for (const auto& forceIcon : forceIcons)
+	{
+		const auto item = Menu_FindItemByName(menu, forceIcon.iconName);
+		if (item)
+		{
+			if (pState->forcePowerLevel[powerEnums[forceIcon.forceIndex].powerEnum] > 0)
+			{
+				item->disabled = qfalse;
+				item->window.foreColor[3] = 1.0f;
+			}
+			else {
+				item->window.foreColor[3] = 0.4f;
+				item->disabled = qtrue;
 			}
 		}
 	}
