@@ -10435,6 +10435,10 @@ static void PM_Footsteps()
 									PM_SetAnim(pm, SETANIM_LEGS, BOTH_STAND1, SETANIM_FLAG_NORMAL);
 								}
 							}
+							else if (pm->ps->weapon == WP_MELEE)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_STAND5, SETANIM_FLAG_NORMAL);
+							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_STAND1, SETANIM_FLAG_NORMAL);
