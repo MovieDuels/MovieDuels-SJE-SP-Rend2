@@ -1340,7 +1340,7 @@ void CL_Init()
 
 	cl_packetdup = Cvar_Get("cl_packetdup", "1", CVAR_ARCHIVE_ND);
 
-	cl_run = Cvar_Get("cl_run", "1", CVAR_ARCHIVE_ND);
+	cl_run = Cvar_Get("cl_run", "0", CVAR_ARCHIVE_ND);
 	cl_sensitivity = Cvar_Get("sensitivity", "6.593750", CVAR_ARCHIVE);
 	cl_mouseAccel = Cvar_Get("cl_mouseAccel", "0", CVAR_ARCHIVE_ND);
 	cl_freelook = Cvar_Get("cl_freelook", "1", CVAR_ARCHIVE_ND);
@@ -1378,8 +1378,8 @@ void CL_Init()
 	Cvar_Get("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE);
 	Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_SAVEGAME);
 #else
-	Cvar_Get("sex", "f", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	Cvar_Get("snd", "jaden_fmle", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	Cvar_Get("sex", "m", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	Cvar_Get("snd", "jaden_male", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	//UI_SetSexandSoundForModel changes to match sounds.cfg for model
 	Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_SAVEGAME | CVAR_NORESTART);
 #endif

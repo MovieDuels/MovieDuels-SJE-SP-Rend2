@@ -809,9 +809,9 @@ static void G_InitCvars()
 	g_speederControlScheme = gi.cvar("g_speederControlScheme", "2", CVAR_ARCHIVE); //2 is default, 1 is alternate
 
 	g_char_model = gi.cvar("g_char_model", "jedi_hm", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	g_char_skin_head = gi.cvar("g_char_skin_head", "head_b1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	g_char_skin_torso = gi.cvar("g_char_skin_torso", "torso_b1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	g_char_skin_legs = gi.cvar("g_char_skin_legs", "lower_b1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_char_skin_head = gi.cvar("g_char_skin_head", "head_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_char_skin_torso = gi.cvar("g_char_skin_torso", "torso_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_char_skin_legs = gi.cvar("g_char_skin_legs", "lower_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	g_char_color_red = gi.cvar("g_char_color_red", "255", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	g_char_color_green = gi.cvar("g_char_color_green", "255", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	g_char_color_blue = gi.cvar("g_char_color_blue", "255", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
@@ -857,9 +857,9 @@ static void G_InitCvars()
 	//if 1, saber faces up when holstered not down
 	g_CannonHolsteredSabers = gi.cvar("g_CannonHolsteredSabers", "1", CVAR_ARCHIVE); //put the sabers in jka mode
 
-	g_noIgniteTwirl = gi.cvar("g_noIgniteTwirl", "0", CVAR_ARCHIVE); //if 1, don't do ignite twirl
+	g_noIgniteTwirl = gi.cvar("g_noIgniteTwirl", "1", CVAR_ARCHIVE); //if 1, don't do ignite twirl
 
-	g_SerenityJediEngineMode = gi.cvar("g_SerenityJediEngineMode", "1", CVAR_ARCHIVE); //Alternate saber combat system
+	g_SerenityJediEngineMode = gi.cvar("g_SerenityJediEngineMode", "0", CVAR_ARCHIVE); //Alternate saber combat system
 
 	g_SaberPerfectBlockingTimerMissile = gi.cvar("g_SaberPerfectBlockingTimerMissile", "750", CVAR_ARCHIVE);
 	//Alternate saber combat system 3 sec
@@ -877,17 +877,17 @@ static void G_InitCvars()
 
 	com_outcast = gi.cvar("com_outcast", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
-	g_gundismemberment = gi.cvar("g_gundismemberment", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_gundismemberment = gi.cvar("g_gundismemberment", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_update7firststartup = gi.cvar("g_update7firststartup", "1", 0);
 
 	g_totgfirststartup = gi.cvar("g_totgfirststartup", "1", 0);
 
-	g_allowgunnerbash = gi.cvar("g_allowgunnerbash", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_allowgunnerbash = gi.cvar("g_allowgunnerbash", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_noAutoFollow = gi.cvar("g_noAutoFollow", "0", CVAR_ARCHIVE);
 
-	g_AllowLedgeGrab = gi.cvar("g_allowledgegrab", "1", CVAR_ARCHIVE);
+	g_AllowLedgeGrab = gi.cvar("g_allowledgegrab", "0", CVAR_ARCHIVE);
 
 	in_joystick = gi.cvar("in_joystick", "1", CVAR_ARCHIVE_ND | CVAR_LATCH);
 
@@ -897,7 +897,7 @@ static void G_InitCvars()
 
 	g_allowdualpistols = gi.cvar("g_allowdualpistols", "0", CVAR_ARCHIVE | CVAR_NORESTART);
 
-	g_Bloodmist = gi.cvar("g_Bloodmist", "1", CVAR_ARCHIVE);
+	g_Bloodmist = gi.cvar("g_Bloodmist", "0", CVAR_ARCHIVE);
 
 	g_Weather = gi.cvar("r_weather", "0", CVAR_ARCHIVE);
 
@@ -930,7 +930,7 @@ static void G_InitCvars()
 
 	g_debugFatigueBars = gi.cvar("cg_drawfatiguepointbar", "0", CVAR_ARCHIVE);
 
-	g_AdvancedWeaponPickup = gi.cvar("g_AdvancedWeaponPickup", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_AdvancedWeaponPickup = gi.cvar("g_AdvancedWeaponPickup", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_Advancedaitalk = gi.cvar("g_Advancedaitalk", "0", CVAR_ARCHIVE);
 
@@ -944,13 +944,13 @@ static void G_InitCvars()
 
 	g_SaberBounceOnWalls = gi.cvar("g_saberbounceonwalls", "0", CVAR_ARCHIVE);
 
-	g_SaberMustReturn = gi.cvar("g_sabermustreturn", "0", CVAR_ARCHIVE);
+	g_SaberMustReturn = gi.cvar("g_sabermustreturn", "1", CVAR_ARCHIVE);
 
 	com_rend2 = gi.cvar("com_rend2", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
-	g_overpoweredsaberthrow = gi.cvar("g_overpoweredsaberthrow", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_overpoweredsaberthrow = gi.cvar("g_overpoweredsaberthrow", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
-	g_autoHealthRegen = gi.cvar("g_autoHealthRegen", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_autoHealthRegen = gi.cvar("g_autoHealthRegen", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_AllowWeather = gi.cvar("g_AllowWeather", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 

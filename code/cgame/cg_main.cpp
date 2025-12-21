@@ -641,15 +641,15 @@ static cvarTable_t cvarTable[] = {
 	{&cg_SFXSabersGlowSizeRebels, "cg_SFXSabersGlowSizeRebels", "0.6", CVAR_ARCHIVE},
 	{&cg_SFXSabersCoreSizeRebels, "cg_SFXSabersCoreSizeRebels", "0.6", CVAR_ARCHIVE},
 
-	{&cg_ignitionSpeed, "cg_ignitionSpeed", "1.0", CVAR_ARCHIVE},
-	{&cg_ignitionSpeedstaff, "cg_ignitionSpeedstaff", "1.0", CVAR_ARCHIVE},
+	{&cg_ignitionSpeed, "cg_ignitionSpeed", "1", CVAR_ARCHIVE},
+	{&cg_ignitionSpeedstaff, "cg_ignitionSpeedstaff", "1", CVAR_ARCHIVE},
 
 	{&cg_SerenityJediEngineMode, "g_SerenityJediEngineMode", "1", CVAR_ARCHIVE},
-	{&cg_SerenityJediEngineHudMode, "g_SerenityJediEngineHudMode", "4", CVAR_ARCHIVE},
+	{&cg_SerenityJediEngineHudMode, "g_SerenityJediEngineHudMode", "5", CVAR_ARCHIVE},
 	{&cg_SaberInnonblockableAttackWarning, "g_SaberInnonblockableAttackWarning", "0", CVAR_ARCHIVE},
 	{&cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE},
 
-	{&cg_drawRadar, "cg_drawRadar", "1", CVAR_ARCHIVE},
+	{&cg_drawRadar, "cg_drawRadar", "0", CVAR_ARCHIVE},
 
 	{&cg_drawSelectionScrollBar, "cg_drawSelectionScrollBar", "0", CVAR_ARCHIVE},
 
@@ -684,7 +684,7 @@ static cvarTable_t cvarTable[] = {
 
 	{&cg_SpinningBarrels, "cg_SpinningBarrels", "0", CVAR_ARCHIVE},
 
-	{&cg_Bloodmist, "g_Bloodmist", "1", CVAR_ARCHIVE},
+	{&cg_Bloodmist, "g_Bloodmist", "0", CVAR_ARCHIVE},
 
 	{&cg_Weather, "r_weather", "0", CVAR_ARCHIVE},
 
@@ -696,7 +696,7 @@ static cvarTable_t cvarTable[] = {
 
 	{&cg_allowcallout, "g_allowattackorder", "1", CVAR_ARCHIVE},
 
-	{&cg_allowcalloutmarker, "g_allowattackordermarker", "1", CVAR_ARCHIVE},
+	{&cg_allowcalloutmarker, "g_allowattackordermarker", "0", CVAR_ARCHIVE},
 
 	{&cg_com_kotor, "com_kotor", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 

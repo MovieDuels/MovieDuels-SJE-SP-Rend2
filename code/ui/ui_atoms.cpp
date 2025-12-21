@@ -284,9 +284,9 @@ void UI_Init(const int apiVersion, const uiimport_t* uiimport, const qboolean in
 	ui.Cvar_Create("s_language", "english", CVAR_ARCHIVE | CVAR_NORESTART);
 #ifndef JK2_MODE
 	ui.Cvar_Create("g_char_model", "jedi_hm", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	ui.Cvar_Create("g_char_skin_head", "head_b1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	ui.Cvar_Create("g_char_skin_torso", "torso_b1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	ui.Cvar_Create("g_char_skin_legs", "lower_b1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	ui.Cvar_Create("g_char_skin_head", "head_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	ui.Cvar_Create("g_char_skin_torso", "torso_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	ui.Cvar_Create("g_char_skin_legs", "lower_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	ui.Cvar_Create("g_char_color_red", "255", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	ui.Cvar_Create("g_char_color_green", "255", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	ui.Cvar_Create("g_char_color_blue", "255", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
@@ -308,11 +308,11 @@ void UI_Init(const int apiVersion, const uiimport_t* uiimport, const qboolean in
 	ui.Cvar_Create("ui_prisonerobj_mintotal", "0", CVAR_ROM | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	ui.Cvar_Create("g_dismemberment", "3", CVAR_ARCHIVE); //0 = none, 1 = arms and hands, 2 = legs, 3 = waist and head
-	ui.Cvar_Create("cg_gunAutoFirst", "1", CVAR_ARCHIVE);
+	ui.Cvar_Create("cg_gunAutoFirst", "0", CVAR_ARCHIVE);
 	ui.Cvar_Create("cg_crosshairIdentifyTarget", "1", CVAR_ARCHIVE);
 	ui.Cvar_Create("g_subtitles", "0", CVAR_ARCHIVE);
 	ui.Cvar_Create("cg_marks", "1", CVAR_ARCHIVE);
-	ui.Cvar_Create("d_slowmodeath", "3", CVAR_ARCHIVE);
+	ui.Cvar_Create("d_slowmodeath", "2", CVAR_ARCHIVE);
 	ui.Cvar_Create("cg_shadows", "3", CVAR_ARCHIVE);
 
 	ui.Cvar_Create("cg_runpitch", "0.002", CVAR_ARCHIVE);
@@ -321,7 +321,7 @@ void UI_Init(const int apiVersion, const uiimport_t* uiimport, const qboolean in
 	ui.Cvar_Create("cg_bobpitch", "0.002", CVAR_ARCHIVE);
 	ui.Cvar_Create("cg_bobroll", "0.002", CVAR_ARCHIVE);
 
-	ui.Cvar_Create("ui_disableWeaponSway", "0", CVAR_ARCHIVE);
+	ui.Cvar_Create("ui_disableWeaponSway", "1", CVAR_ARCHIVE);
 
 	ui.Cvar_Create("d_slowmoaction", "0", CVAR_ARCHIVE);
 
