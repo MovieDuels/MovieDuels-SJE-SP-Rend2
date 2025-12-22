@@ -204,7 +204,7 @@ gentity_t* TossClientItems(gentity_t* self)
 		return nullptr; // reduce memory use to increase fps
 	}
 
-	if (self->client->friendlyfaction == FACTION_KOTOR)//playing kotor
+	if (self->client->charKOTORWeapons == 1)//playing kotor
 	{
 		return nullptr; // reduce memory use to increase fps
 	}

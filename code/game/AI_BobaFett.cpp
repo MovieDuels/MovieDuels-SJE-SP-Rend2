@@ -43,7 +43,7 @@ extern void player_Burn(const gentity_t* self);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_InRoll(const playerState_t* ps);
 extern qboolean rocket_trooper_player(const gentity_t* self);
-extern qboolean Bokatan_Dual_Clone_Pistol(const gentity_t* self);
+extern qboolean Char_Dual_Pistols(const gentity_t* self);
 extern qboolean Mandalorian_Repeater(const gentity_t* self);
 extern qboolean Armorer_clone_pistol(const gentity_t* self);
 extern qboolean Lando_Class_boba_pistol(const gentity_t* self);
@@ -1396,7 +1396,7 @@ void Boba_FireDecide()
 	//-----------------------------------------------------------------------
 
 	if (Mandalorian_Repeater(NPC) ||
-		Bokatan_Dual_Clone_Pistol(NPC) ||
+		Char_Dual_Pistols(NPC) ||
 		Lando_Class_boba_pistol(NPC) ||
 		Mandalorian_boba_pistol(NPC) ||
 		Armorer_clone_pistol(NPC))
@@ -1547,7 +1547,7 @@ void Boba_TacticsSelect()
 		case BTS_FLAMETHROW:
 			Boba_Printf("NEW TACTIC: Flame Thrower");
 			if (Mandalorian_Repeater(NPC) ||
-				Bokatan_Dual_Clone_Pistol(NPC) ||
+				Char_Dual_Pistols(NPC) ||
 				Lando_Class_boba_pistol(NPC) ||
 				Mandalorian_boba_pistol(NPC) ||
 				Armorer_clone_pistol(NPC))
@@ -1581,7 +1581,7 @@ void Boba_TacticsSelect()
 				{
 					Boba_ChangeWeapon(WP_REPEATER);
 				}
-				else if (Bokatan_Dual_Clone_Pistol(NPC))
+				else if (Char_Dual_Pistols(NPC))
 				{
 					Boba_ChangeWeapon(WP_DUAL_CLONEPISTOL);
 				}
@@ -1610,7 +1610,7 @@ void Boba_TacticsSelect()
 			{
 				Boba_ChangeWeapon(WP_REPEATER);
 			}
-			else if (Bokatan_Dual_Clone_Pistol(NPC))
+			else if (Char_Dual_Pistols(NPC))
 			{
 				Boba_ChangeWeapon(WP_DUAL_CLONEPISTOL);
 			}
@@ -1644,7 +1644,7 @@ void Boba_TacticsSelect()
 				{
 					Boba_ChangeWeapon(WP_REPEATER);
 				}
-				else if (Bokatan_Dual_Clone_Pistol(NPC))
+				else if (Char_Dual_Pistols(NPC))
 				{
 					Boba_ChangeWeapon(WP_DUAL_CLONEPISTOL);
 				}
@@ -1670,7 +1670,7 @@ void Boba_TacticsSelect()
 		case BTS_AMBUSHWAIT:
 			Boba_Printf("NEW TACTIC: Ambush");
 			if (Mandalorian_Repeater(NPC) ||
-				Bokatan_Dual_Clone_Pistol(NPC) ||
+				Char_Dual_Pistols(NPC) ||
 				Lando_Class_boba_pistol(NPC) ||
 				Mandalorian_boba_pistol(NPC) ||
 				Armorer_clone_pistol(NPC))

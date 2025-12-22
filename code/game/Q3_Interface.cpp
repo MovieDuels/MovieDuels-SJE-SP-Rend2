@@ -3484,7 +3484,7 @@ void G_SetWeapon(gentity_t* self, int wp)
 		}
 		else
 		{
-			if (self->client->friendlyfaction == FACTION_KOTOR)
+			if (self->client->charKOTORWeapons == 1)
 			{
 				G_CreateG2AttachedWeaponModel(self, weaponData[wp].altweaponMdl, self->handRBolt, 0);
 			}

@@ -40,10 +40,11 @@ extern cvar_t* com_kotor;
 
 extern void G_MatchPlayerWeapon(gentity_t* ent);
 extern void Q3_SetParm(int entID, int parmNum, const char* parmValue);
-extern qboolean Bokatan_Dual_Clone_Pistol(const gentity_t* self);
+extern qboolean Char_Dual_Pistols(const gentity_t* self);
 extern qboolean Mandalorian_Repeater(const gentity_t* self);
 extern qboolean Armorer_clone_pistol(const gentity_t* self);
 extern qboolean Calo_Nord(const gentity_t* self);
+extern qboolean char_is_force_user_attacker(const gentity_t* self);
 
 extern void PM_SetTorsoAnimTimer(gentity_t* ent, int* torso_anim_timer, int time);
 extern void PM_SetLegsAnimTimer(gentity_t* ent, int* legs_anim_timer, int time);
@@ -470,7 +471,6 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 
 	if (Q_stricmp("md_dindjarin", ent->NPC_type) == 0
 		|| Q_stricmp("md_dindjarin_s3", ent->NPC_type) == 0
-		|| Bokatan_Dual_Clone_Pistol(ent)
 		|| Mandalorian_Repeater(ent))
 	{
 		ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
@@ -483,15 +483,6 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->NPC->scriptFlags |= SCF_NO_GROUPS; //don't use combat points or group AI
 		ent->flags |= FL_SHIELDED | FL_NO_KNOCKBACK; //low-level shots bounce off, no knockback
 	}
-	if (!Q_stricmp("md_snoke", ent->NPC_type)
-		|| !Q_stricmp("md_snoke_cin", ent->NPC_type)
-		|| !Q_stricmp("md_emperor", ent->NPC_type)
-		|| !Q_stricmp("md_emperor_fas", ent->NPC_type)
-		|| !Q_stricmp("md_emperor_ros", ent->NPC_type)
-		|| !Q_stricmp("md_emperor_ros_blind", ent->NPC_type))
-	{
-		ent->NPC->scriptFlags |= SCF_NO_FORCE; //force powers don't work on him
-	}
 	if (!Q_stricmp("Yoda", ent->NPC_type) || !Q_stricmp("Ep1_Yoda", ent->NPC_type) ||
 		!Q_stricmp("Ep2_Yoda", ent->NPC_type) || !Q_stricmp("Ep3_Yoda", ent->NPC_type) ||
 		!Q_stricmp("md_yoda", ent->NPC_type) || !Q_stricmp("md_yoda_ep2", ent->NPC_type) ||
@@ -500,19 +491,9 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->NPC->scriptFlags |= SCF_NO_FORCE; //force powers don't work on him
 		ent->NPC->aiFlags |= NPCAI_BOSS_CHARACTER;
 	}
-	if (!Q_stricmp("emperor", ent->NPC_type)
-		|| !Q_stricmp("cultist_grip", ent->NPC_type)
-		|| !Q_stricmp("cultist_drain", ent->NPC_type)
-		|| !Q_stricmp("cultist_lightning", ent->NPC_type)
-		|| !Q_stricmp("md_snoke", ent->NPC_type)
-		|| !Q_stricmp("md_snoke_cin", ent->NPC_type)
-		|| !Q_stricmp("md_emperor", ent->NPC_type)
-		|| !Q_stricmp("md_emperor_fas", ent->NPC_type)
-		|| !Q_stricmp("md_grogu", ent->NPC_type)
-		|| !Q_stricmp("md_emperor_ros", ent->NPC_type)
-		|| !Q_stricmp("md_emperor_ros_blind", ent->NPC_type))
+	if (char_is_force_user_attacker(ent))
 	{
-		//FIXME: extern this into NPC.cfg?
+		ent->NPC->scriptFlags |= SCF_NO_FORCE; //force powers don't work on him
 		ent->NPC->scriptFlags |= SCF_DONT_FIRE; //so he uses only force powers
 	}
 
@@ -693,7 +674,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					}
@@ -717,7 +698,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					}
@@ -741,7 +722,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -754,8 +735,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				break;
 
 			case WP_DUAL_PISTOL:
-				if ((ent->client->NPC_class == CLASS_JANGODUAL || Q_stricmp(ent->NPC_type, "md_jango_dual") == 0)
-					&& (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
+				if (Char_Dual_Pistols(ent) && (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
 					//they do this themselves
 				{
 					//dual blaster pistols, so add the left-hand one, too
@@ -766,7 +746,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -779,8 +759,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				break;
 
 			case WP_DUAL_CLONEPISTOL:
-				if (Bokatan_Dual_Clone_Pistol(ent)
-					&& (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
+				if (Char_Dual_Pistols(ent) && (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
 					//they do this themselves
 				{
 					//dual blaster pistols, so add the left-hand one, too
@@ -791,7 +770,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -816,7 +795,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -845,7 +824,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -974,7 +953,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					}
@@ -1009,7 +988,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					}
@@ -1042,7 +1021,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -1054,8 +1033,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				}
 				break;
 			case WP_DUAL_PISTOL:
-				if ((ent->client->NPC_class == CLASS_JANGODUAL || Q_stricmp(ent->NPC_type, "md_jango_dual") == 0)
-					&& (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
+				if (Char_Dual_Pistols(ent) && (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
 					//they do this themselves
 				{
 					//dual blaster pistols, so add the left-hand one, too
@@ -1067,7 +1045,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -1079,8 +1057,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				}
 				break;
 			case WP_DUAL_CLONEPISTOL:
-				if (Bokatan_Dual_Clone_Pistol(ent)
-					&& (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
+				if (Char_Dual_Pistols(ent) && (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0]))
 					//they do this themselves
 				{
 					//dual blaster pistols, so add the left-hand one, too
@@ -1092,7 +1069,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -1116,7 +1093,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -1145,7 +1122,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 					}
 					else
 					{
-						if (ent->client->friendlyfaction == FACTION_KOTOR)
+						if (ent->client->charKOTORWeapons == 1)
 						{
 							G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 						}
@@ -1239,7 +1216,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 			}
 			else
 			{
-				if (ent->client->friendlyfaction == FACTION_KOTOR)
+				if (ent->client->charKOTORWeapons == 1)
 				{
 					G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 				}
@@ -1292,7 +1269,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 			}
 			else
 			{
-				if (ent->client->friendlyfaction == FACTION_KOTOR)
+				if (ent->client->charKOTORWeapons == 1)
 				{
 					G_CreateG2AttachedWeaponModel(ent, weaponData[WP_SCEPTER].altweaponMdl, ent->handLBolt, 1);
 				}

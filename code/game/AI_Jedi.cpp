@@ -125,6 +125,7 @@ extern cvar_t* com_outcast;
 extern qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc);
 qboolean jedi_evasion_roll(gentity_t* ai_ent);
 extern qboolean NPC_IsOversized(const gentity_t* self);
+extern qboolean char_is_force_user_attacker(const gentity_t* self);
 
 extern cvar_t* d_slowmodeath;
 extern cvar_t* g_saberNewControlScheme;
@@ -3319,21 +3320,7 @@ static void jedi_combat_distance(const int enemy_dist)
 							}
 						} /////////  lightning ////////////////////////////
 						else if (WP_ForcePowerUsable(NPC, FP_LIGHTNING, 0)
-							&& (NPCInfo->scriptFlags & SCF_DONT_FIRE &&
-								(Q_stricmp("md_snoke_cin", NPC->NPC_type)
-									|| Q_stricmp("md_snoke", NPC->NPC_type)
-									|| Q_stricmp("md_palpatine", NPC->NPC_type)
-									|| Q_stricmp("md_mother_talzin", NPC->NPC_type)
-									|| Q_stricmp("md_sidious_ep2", NPC->NPC_type)
-									|| Q_stricmp("md_sidious", NPC->NPC_type)
-									|| Q_stricmp("md_sidious_ep3_red", NPC->NPC_type)
-									|| Q_stricmp("md_pal_mof", NPC->NPC_type)
-									|| Q_stricmp("md_emperor", NPC->NPC_type)
-									|| Q_stricmp("md_emperor_fas", NPC->NPC_type)
-									|| Q_stricmp("md_emperor_ros", NPC->NPC_type)
-									|| Q_stricmp("md_emperor_ros_blind", NPC->NPC_type)
-									|| Q_stricmp("cultist_lightning", NPC->NPC_type))
-								|| Q_irand(0, 1)))
+							&& (NPCInfo->scriptFlags & SCF_DONT_FIRE && char_is_force_user_attacker(NPC) || Q_irand(0, 1)))
 						{
 							ForceLightning(NPC);
 							if (NPC->client->ps.forcePowerLevel[FP_LIGHTNING] > FORCE_LEVEL_1)

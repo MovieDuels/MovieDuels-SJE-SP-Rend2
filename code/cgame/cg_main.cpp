@@ -184,7 +184,7 @@ extern "C" Q_EXPORT intptr_t QDECL vmMain(const intptr_t command, const intptr_t
 			else
 			{
 				cent = &cg_entities[cg.snap->ps.client_num];
-				if (cent->gent->friendlyfaction == FACTION_KOTOR)
+				if (cent->gent->client->charKOTORWeapons == 1)
 				{
 					CG_DrawDataPadWeaponSelect_kotor();
 				}

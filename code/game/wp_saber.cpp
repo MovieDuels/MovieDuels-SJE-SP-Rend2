@@ -248,6 +248,7 @@ extern qboolean PM_HasAnimation(const gentity_t* ent, int animation);
 extern qboolean jedi_is_kick_resistant(gentity_t* self);
 extern qboolean jedi_jedi_master_low(const gentity_t* self);
 extern qboolean jedi_jedi_master_high(const gentity_t* self);
+extern qboolean char_is_force_user_attacker(const gentity_t* self);
 extern void Boba_FlyStop(gentity_t* self);
 extern void Jetpack_Off(const gentity_t* ent);
 qboolean WP_SaberFatiguedParryDirection(gentity_t* self, vec3_t hitloc, qboolean missileBlock);
@@ -29424,17 +29425,11 @@ void ForceGrip(gentity_t* self)
 			|| !Q_stricmp("md_yoda_hr", traceEnt->NPC_type)
 			|| !Q_stricmp("T_Palpatine_sith", traceEnt->NPC_type)
 			|| !Q_stricmp("md_palpatine", traceEnt->NPC_type)
-			|| !Q_stricmp("md_mother_talzin", traceEnt->NPC_type)
 			|| !Q_stricmp("md_sidious_ep2", traceEnt->NPC_type)
 			|| !Q_stricmp("md_sidious", traceEnt->NPC_type)
 			|| !Q_stricmp("md_sidious_ep3_red", traceEnt->NPC_type)
 			|| !Q_stricmp("md_pal_mof", traceEnt->NPC_type)
-			|| !Q_stricmp("md_snoke", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_fas", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_ros", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type)
-			|| !Q_stricmp("md_snoke_cin", traceEnt->NPC_type))
+			|| char_is_force_user_attacker(traceEnt))
 		{
 			jedi_play_deflect_sound(traceEnt);
 			if (g_SerenityJediEngineMode->integer)
@@ -31328,19 +31323,7 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 				!Q_stricmp("md_yoda_ep2", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_ot", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_hr", traceEnt->NPC_type) ||
-				!Q_stricmp("emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_grip", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_drain", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_lightning", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke_cin", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_fas", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep7_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep8_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Emperor_Palpatine", traceEnt->NPC_type))
+				char_is_force_user_attacker(traceEnt))
 				&& traceEnt->s.weapon == WP_SABER
 				&& traceEnt->client->ps.SaberActive()
 				&& !traceEnt->client->ps.saberInFlight
@@ -31408,19 +31391,7 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 				!Q_stricmp("md_yoda_ep2", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_ot", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_hr", traceEnt->NPC_type) ||
-				!Q_stricmp("emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_grip", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_drain", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_lightning", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke_cin", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_fas", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep7_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep8_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Emperor_Palpatine", traceEnt->NPC_type))
+				char_is_force_user_attacker(traceEnt))
 				&& traceEnt->s.weapon == WP_MELEE ||
 				traceEnt->s.weapon == WP_NONE ||
 				traceEnt->client->ps.weapon == WP_SABER && !traceEnt->client->ps.SaberActive()
@@ -32074,19 +32045,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 				!Q_stricmp("md_yoda_ep2", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_ot", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_hr", traceEnt->NPC_type) ||
-				!Q_stricmp("emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_grip", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_drain", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_lightning", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke_cin", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_fas", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep7_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep8_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Emperor_Palpatine", traceEnt->NPC_type))
+				char_is_force_user_attacker(traceEnt))
 				&& traceEnt->s.weapon == WP_SABER
 				&& traceEnt->client->ps.SaberActive()
 				&& !traceEnt->client->ps.saberInFlight
@@ -32155,19 +32114,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 				!Q_stricmp("md_yoda_ep2", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_ot", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_hr", traceEnt->NPC_type) ||
-				!Q_stricmp("emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_grip", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_drain", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_lightning", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke_cin", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_fas", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep7_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep8_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Emperor_Palpatine", traceEnt->NPC_type))
+				char_is_force_user_attacker(traceEnt))
 				&& traceEnt->s.weapon == WP_MELEE || traceEnt->s.weapon == WP_NONE || traceEnt->client->ps.weapon ==
 				WP_SABER && !traceEnt->client->ps.SaberActive()
 				&& !PM_InKnockDown(&traceEnt->client->ps)
@@ -32925,19 +32872,7 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 				!Q_stricmp("md_yoda_ep2", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_ot", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_hr", traceEnt->NPC_type) ||
-				!Q_stricmp("emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_grip", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_drain", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_lightning", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke_cin", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_fas", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep7_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep8_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Emperor_Palpatine", traceEnt->NPC_type))
+				char_is_force_user_attacker(traceEnt))
 				&& traceEnt->s.weapon == WP_SABER
 				&& traceEnt->client->ps.SaberActive()
 				&& !traceEnt->client->ps.saberInFlight
@@ -33006,19 +32941,7 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 				!Q_stricmp("md_yoda_ep2", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_ot", traceEnt->NPC_type) ||
 				!Q_stricmp("md_yoda_hr", traceEnt->NPC_type) ||
-				!Q_stricmp("emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_grip", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_drain", traceEnt->NPC_type) ||
-				!Q_stricmp("cultist_lightning", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("md_snoke_cin", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_fas", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros", traceEnt->NPC_type) ||
-				!Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep7_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Ep8_Snoke", traceEnt->NPC_type) ||
-				!Q_stricmp("Emperor_Palpatine", traceEnt->NPC_type))
+				char_is_force_user_attacker(traceEnt))
 				&& traceEnt->s.weapon == WP_MELEE || traceEnt->s.weapon == WP_NONE || traceEnt->client->ps.weapon ==
 				WP_SABER && !traceEnt->client->ps.SaberActive()
 				&& !PM_InKnockDown(&traceEnt->client->ps)
@@ -34054,18 +33977,7 @@ qboolean ForceDrain2(gentity_t* self)
 			|| !Q_stricmp("md_yoda_ot", traceEnt->NPC_type)
 			|| !Q_stricmp("md_yoda_hr", traceEnt->NPC_type)
 			|| !Q_stricmp("T_Palpatine_sith", traceEnt->NPC_type)
-			|| !Q_stricmp("md_palpatine", traceEnt->NPC_type)
-			|| !Q_stricmp("md_mother_talzin", traceEnt->NPC_type)
-			|| !Q_stricmp("md_sidious_ep2", traceEnt->NPC_type)
-			|| !Q_stricmp("md_sidious", traceEnt->NPC_type)
-			|| !Q_stricmp("md_sidious_ep3_red", traceEnt->NPC_type)
-			|| !Q_stricmp("md_pal_mof", traceEnt->NPC_type)
-			|| !Q_stricmp("md_snoke", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_fas", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_ros", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type)
-			|| !Q_stricmp("md_snoke_cin", traceEnt->NPC_type))
+			|| char_is_force_user_attacker(traceEnt))
 		{
 			jedi_play_deflect_sound(traceEnt);
 			if (g_SerenityJediEngineMode->integer)
@@ -36679,19 +36591,7 @@ void ForceGrasp(gentity_t* self)
 			|| !Q_stricmp("md_yoda_ep2", traceEnt->NPC_type)
 			|| !Q_stricmp("md_yoda_ot", traceEnt->NPC_type)
 			|| !Q_stricmp("md_yoda_hr", traceEnt->NPC_type)
-			|| !Q_stricmp("T_Palpatine_sith", traceEnt->NPC_type)
-			|| !Q_stricmp("md_palpatine", traceEnt->NPC_type)
-			|| !Q_stricmp("md_mother_talzin", traceEnt->NPC_type)
-			|| !Q_stricmp("md_sidious_ep2", traceEnt->NPC_type)
-			|| !Q_stricmp("md_sidious", traceEnt->NPC_type)
-			|| !Q_stricmp("md_sidious_ep3_red", traceEnt->NPC_type)
-			|| !Q_stricmp("md_pal_mof", traceEnt->NPC_type)
-			|| !Q_stricmp("md_snoke", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_fas", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_ros", traceEnt->NPC_type)
-			|| !Q_stricmp("md_emperor_ros_blind", traceEnt->NPC_type)
-			|| !Q_stricmp("md_snoke_cin", traceEnt->NPC_type))
+			|| char_is_force_user_attacker(traceEnt))
 		{
 			jedi_play_deflect_sound(traceEnt);
 			if (g_SerenityJediEngineMode->integer)

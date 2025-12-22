@@ -479,7 +479,7 @@ static int CG_DrawLoadWeaponsPrintRow(const char* itemName, const char* weapons,
 		}
 		else
 		{
-			if (cent->friendlyfaction == FACTION_KOTOR)
+			if (cent->client->charKOTORWeapons == 1)
 			{
 				if (weaponData[i].alt_weapon_Icon_file[0])
 				{

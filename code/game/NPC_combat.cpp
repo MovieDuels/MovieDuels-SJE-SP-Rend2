@@ -793,7 +793,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 				}
 				else
 				{
-					if (self->client->friendlyfaction == FACTION_KOTOR)
+					if (self->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(self, weaponData[WP_BLASTER].altweaponMdl, self->handRBolt, 0);
 					}
@@ -815,7 +815,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 				}
 				else
 				{
-					if (self->client->friendlyfaction == FACTION_KOTOR)
+					if (self->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(self, weaponData[WP_BLASTER_PISTOL].altweaponMdl, self->handRBolt, 0);
 					}
@@ -837,7 +837,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 				}
 				else
 				{
-					if (self->client->friendlyfaction == FACTION_KOTOR)
+					if (self->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(self, weaponData[WP_DUAL_PISTOL].altweaponMdl, self->handRBolt, 0);
 					}
@@ -859,7 +859,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 				}
 				else
 				{
-					if (self->client->friendlyfaction == FACTION_KOTOR)
+					if (self->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(self, weaponData[WP_DUAL_CLONEPISTOL].altweaponMdl, self->handRBolt, 0);
 					}
@@ -881,7 +881,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 				}
 				else
 				{
-					if (self->client->friendlyfaction == FACTION_KOTOR)
+					if (self->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(self, weaponData[WP_DROIDEKA].altweaponMdl, self->handRBolt, 0);
 					}
@@ -1592,7 +1592,7 @@ void NPC_ChangeWeapon(const int new_weapon)
 			}
 			else
 			{
-				if (NPC->client->friendlyfaction == FACTION_KOTOR)
+				if (NPC->client->charKOTORWeapons == 1)
 				{
 					G_CreateG2AttachedWeaponModel(NPC, weaponData[NPC->client->ps.weapon].altweaponMdl, NPC->handRBolt, 0);
 					G_CreateG2AttachedWeaponModel(NPC, weaponData[NPC->client->ps.weapon].altweaponMdl, NPC->handLBolt, 1);
@@ -1613,7 +1613,7 @@ void NPC_ChangeWeapon(const int new_weapon)
 			}
 			else
 			{
-				if (NPC->client->friendlyfaction == FACTION_KOTOR)
+				if (NPC->client->charKOTORWeapons == 1)
 				{
 					G_CreateG2AttachedWeaponModel(NPC, weaponData[NPC->client->ps.weapon].altweaponMdl, NPC->handRBolt, 0);
 					G_CreateG2AttachedWeaponModel(NPC, weaponData[NPC->client->ps.weapon].altweaponMdl, NPC->handLBolt, 1);
@@ -1634,7 +1634,7 @@ void NPC_ChangeWeapon(const int new_weapon)
 			}
 			else
 			{
-				if (NPC->client->friendlyfaction == FACTION_KOTOR)
+				if (NPC->client->charKOTORWeapons == 1)
 				{
 					G_CreateG2AttachedWeaponModel(NPC, weaponData[NPC->client->ps.weapon].altweaponMdl, NPC->handRBolt, 0);
 					G_CreateG2AttachedWeaponModel(NPC, weaponData[NPC->client->ps.weapon].altweaponMdl, NPC->handLBolt, 1);
@@ -1654,7 +1654,7 @@ void NPC_ChangeWeapon(const int new_weapon)
 			}
 			else
 			{
-				if (NPC->client->friendlyfaction == FACTION_KOTOR)
+				if (NPC->client->charKOTORWeapons == 1)
 				{
 					G_CreateG2AttachedWeaponModel(NPC, weaponData[NPC->client->ps.weapon].altweaponMdl, NPC->handRBolt, 0);
 				}

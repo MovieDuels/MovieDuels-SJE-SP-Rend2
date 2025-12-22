@@ -174,7 +174,7 @@ extern cvar_t* g_allowdualpistols;
 extern void ItemUse_Jetpack(const gentity_t* ent);
 extern void Jetpack_Off(const gentity_t* ent);
 static void PM_SetWaterLevelAtPoint(vec3_t org, int* waterlevel, int* watertype);
-extern qboolean Bokatan_Dual_Clone_Pistol(const gentity_t* self);
+extern qboolean Char_Dual_Pistols(const gentity_t* self);
 extern qboolean Calo_Nord(const gentity_t* self);
 extern cvar_t* g_SaberAttackSpeedMD;
 extern cvar_t* g_RealisticBlockingMode;
@@ -12191,7 +12191,7 @@ static void PM_FinishWeaponChange()
 						pm->ps->eFlags &= ~EF2_JANGO_DUALS;
 					}
 
-					if (weapon == WP_DUAL_CLONEPISTOL && (pm->gent && pm->gent->client && Bokatan_Dual_Clone_Pistol(pm->gent)))
+					if (weapon == WP_DUAL_CLONEPISTOL && (pm->gent && pm->gent->client && Char_Dual_Pistols(pm->gent)))
 					{
 						G_CreateG2AttachedWeaponModel(pm->gent, weaponData[WP_DUAL_CLONEPISTOL].altweaponMdl, pm->gent->handLBolt, 1);
 						pm->ps->eFlags |= EF2_DUAL_CLONE_PISTOLS;
@@ -12219,7 +12219,7 @@ static void PM_FinishWeaponChange()
 			}
 			else
 			{
-				if (pm->gent->friendlyfaction == FACTION_KOTOR)
+				if (pm->gent->client->charKOTORWeapons == 1)
 				{
 					if (weaponData[weapon].altweaponMdl[0])
 					{
@@ -12246,7 +12246,7 @@ static void PM_FinishWeaponChange()
 							pm->ps->eFlags &= ~EF2_JANGO_DUALS;
 						}
 
-						if (weapon == WP_DUAL_CLONEPISTOL && (pm->gent && pm->gent->client && Bokatan_Dual_Clone_Pistol(pm->gent)))
+						if (weapon == WP_DUAL_CLONEPISTOL && (pm->gent && pm->gent->client && Char_Dual_Pistols(pm->gent)))
 						{
 							G_CreateG2AttachedWeaponModel(pm->gent, weaponData[WP_DUAL_CLONEPISTOL].altweaponMdl, pm->gent->handLBolt, 1);
 							pm->ps->eFlags |= EF2_DUAL_CLONE_PISTOLS;
@@ -12299,7 +12299,7 @@ static void PM_FinishWeaponChange()
 							pm->ps->eFlags &= ~EF2_JANGO_DUALS;
 						}
 
-						if (weapon == WP_DUAL_CLONEPISTOL && (pm->gent && pm->gent->client && Bokatan_Dual_Clone_Pistol(pm->gent)))
+						if (weapon == WP_DUAL_CLONEPISTOL && (pm->gent && pm->gent->client && Char_Dual_Pistols(pm->gent)))
 						{
 							G_CreateG2AttachedWeaponModel(pm->gent, weaponData[WP_DUAL_CLONEPISTOL].weaponMdl, pm->gent->handLBolt, 1);
 							pm->ps->eFlags |= EF2_DUAL_CLONE_PISTOLS;
@@ -21462,7 +21462,7 @@ static void PM_Weapon()
 			}
 			else
 			{
-				if (pm->gent->friendlyfaction == FACTION_KOTOR)
+				if (pm->gent->client->charKOTORWeapons == 1)
 				{
 					if (weaponData[pm->ps->weapon].altweaponMdl[0])
 					{

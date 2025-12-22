@@ -37,7 +37,7 @@ extern void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_
 extern qboolean CheatsOk(const gentity_t* ent);
 extern void Boba_Precache();
 extern qboolean HeIsJedi(const gentity_t* ent);
-extern qboolean Bokatan_Dual_Clone_Pistol(const gentity_t* self);
+extern qboolean Char_Dual_Pistols(const gentity_t* self);
 extern qboolean Mandalorian_Repeater(const gentity_t* self);
 extern qboolean Armorer_clone_pistol(const gentity_t* self);
 extern qboolean Grievious_Classes(const gentity_t* self);
@@ -2418,7 +2418,7 @@ static void G_AddWeaponModels(gentity_t* ent)
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
@@ -2438,7 +2438,7 @@ static void G_AddWeaponModels(gentity_t* ent)
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					}
@@ -2710,7 +2710,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 		ent->client->ps.eFlags &= ~EF2_DUAL_CLONE_PISTOLS;
 	}
 
-	if (!Bokatan_Dual_Clone_Pistol(ent))
+	if (!Char_Dual_Pistols(ent))
 	{
 		ent->client->ps.eFlags &= ~EF2_DUAL_CLONE_PISTOLS;
 	}
@@ -2734,7 +2734,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 		}
 		else
 		{
-			if (ent->client->friendlyfaction == FACTION_KOTOR)
+			if (ent->client->charKOTORWeapons == 1)
 			{
 				G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
 			}
@@ -2868,7 +2868,6 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 								|| ent->client->NPC_class == CLASS_MANDALORIAN
 								|| !Q_stricmp("md_dindjarin", ent->NPC_type)
 								|| !Q_stricmp("md_dindjarin_s3", ent->NPC_type)
-								|| Bokatan_Dual_Clone_Pistol(ent)
 								|| Mandalorian_Repeater(ent)
 								|| Armorer_clone_pistol(ent)
 								|| !Q_stricmp("armorer", ent->NPC_type))
@@ -2883,7 +2882,6 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 									|| !Q_stricmp("boba_fett_esb", ent->NPC_type)
 									|| !Q_stricmp("boba_fett_rotj", ent->NPC_type)
 									|| !Q_stricmp("md_boba_fett", ent->NPC_type)
-									|| Bokatan_Dual_Clone_Pistol(ent)
 									|| Mandalorian_Repeater(ent)
 									|| !Q_stricmp("armorer", ent->NPC_type)
 									|| Armorer_clone_pistol(ent))
@@ -3054,7 +3052,6 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 								|| ent->client->NPC_class == CLASS_MANDALORIAN
 								|| !Q_stricmp("md_dindjarin", ent->NPC_type)
 								|| !Q_stricmp("md_dindjarin_s3", ent->NPC_type)
-								|| Bokatan_Dual_Clone_Pistol(ent)
 								|| Mandalorian_Repeater(ent))
 							{
 								ent->client->ps.inventory[INV_GRAPPLEHOOK] = 1;
@@ -3067,7 +3064,6 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 									|| !Q_stricmp("boba_fett_esb", ent->NPC_type)
 									|| !Q_stricmp("boba_fett_rotj", ent->NPC_type)
 									|| !Q_stricmp("md_boba_fett", ent->NPC_type)
-									|| Bokatan_Dual_Clone_Pistol(ent)
 									|| Mandalorian_Repeater(ent)
 									|| !Q_stricmp("armorer", ent->NPC_type)
 									|| Armorer_clone_pistol(ent))
@@ -3610,7 +3606,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
@@ -3630,7 +3626,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					}

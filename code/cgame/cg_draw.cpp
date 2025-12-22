@@ -575,7 +575,7 @@ static void cg_drawweapontype(const centity_t* cent)
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
+			if (cent->gent->client->charKOTORWeapons == 1)
 			{
 				wp_index = OHB_KOTOR_BPISTOL3;
 			}
@@ -587,110 +587,68 @@ static void cg_drawweapontype(const centity_t* cent)
 	}
 	else if (cent->currentState.weapon == WP_BLASTER_PISTOL)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_BPISTOL2;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_BPISTOL2;
-			}
-			else
-			{
-				wp_index = OHB_BLASTER_PISTOL;
-			}
+			wp_index = OHB_BLASTER_PISTOL;
 		}
 	}
 	else if (cent->currentState.weapon == WP_BLASTER)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_BRIFLE2;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_BLASTER;
-			}
-			else
-			{
-				wp_index = OHB_BLASTER;
-			}
+			wp_index = OHB_BLASTER;
 		}
 	}
 	else if (cent->currentState.weapon == WP_DISRUPTOR)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_BRIFLE3;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_BRIFLE3;
-			}
-			else
-			{
-				wp_index = OHB_DISRUPTOR;
-			}
+			wp_index = OHB_DISRUPTOR;
 		}
 	}
 	else if (cent->currentState.weapon == WP_BOWCASTER)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_BOWCASTER;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_BOWCASTER;
-			}
-			else
-			{
-				wp_index = OHB_BOWCASTER;
-			}
+			wp_index = OHB_BOWCASTER;
 		}
 	}
 	else if (cent->currentState.weapon == WP_REPEATER)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_REPEATER;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_REPEATER;
-			}
-			else
-			{
-				wp_index = OHB_REPEATER;
-			}
+			wp_index = OHB_REPEATER;
 		}
 	}
 	else if (cent->currentState.weapon == WP_DEMP2)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_IONRIFLE;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_IONRIFLE;
-			}
-			else
-			{
-				wp_index = OHB_DEMP2;
-			}
+			wp_index = OHB_DEMP2;
 		}
 	}
 	else if (cent->currentState.weapon == WP_FLECHETTE)
@@ -731,38 +689,24 @@ static void cg_drawweapontype(const centity_t* cent)
 	}
 	else if (cent->currentState.weapon == WP_CLONECARBINE)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_BRIFLE1;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_BRIFLE1;
-			}
-			else
-			{
-				wp_index = OHB_CLONECARBINE;
-			}
+			wp_index = OHB_CLONECARBINE;
 		}
 	}
 	else if (cent->currentState.weapon == WP_REBELBLASTER)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_HPISTOL;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_HPISTOL;
-			}
-			else
-			{
-				wp_index = OHB_REBELBLASTER;
-			}
+			wp_index = OHB_REBELBLASTER;
 		}
 	}
 	else if (cent->currentState.weapon == WP_CLONERIFLE)
@@ -779,38 +723,24 @@ static void cg_drawweapontype(const centity_t* cent)
 	}
 	else if (cent->currentState.weapon == WP_REBELRIFLE)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_DRIFLE;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_DRIFLE;
-			}
-			else
-			{
-				wp_index = OHB_REBELRIFLE;
-			}
+			wp_index = OHB_REBELRIFLE;
 		}
 	}
 	else if (cent->currentState.weapon == WP_REY)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_HOBPISTOL;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_HOBPISTOL;
-			}
-			else
-			{
-				wp_index = OHB_REY;
-			}
+			wp_index = OHB_REY;
 		}
 	}
 	else if (cent->currentState.weapon == WP_JANGO)
@@ -819,56 +749,35 @@ static void cg_drawweapontype(const centity_t* cent)
 	}
 	else if (cent->currentState.weapon == WP_BOBA)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_REPRIFLE;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_REPRIFLE;
-			}
-			else
-			{
-				wp_index = OHB_BOBA;
-			}
+			wp_index = OHB_BOBA;
 		}
 	}
 	else if (cent->currentState.weapon == WP_CLONEPISTOL)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_PISTOL1;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_PISTOL1;
-			}
-			else
-			{
-				wp_index = OHB_CLONEPISTOL;
-			}
+			wp_index = OHB_CLONEPISTOL;
 		}
 	}
 	else if (cent->currentState.weapon == WP_DUAL_CLONEPISTOL)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			wp_index = OHB_KOTOR_PISTOL1;
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
-			{
-				wp_index = OHB_KOTOR_PISTOL1;
-			}
-			else
-			{
-				wp_index = OHB_CLONEPISTOL;
-			}
+			wp_index = OHB_CLONEPISTOL;
 		}
 	}
 	else if (cent->currentState.weapon == WP_WRIST_BLASTER)
@@ -8677,7 +8586,7 @@ static void CG_Draw2D()
 		}
 		else
 		{
-			if (cent->gent->friendlyfaction == FACTION_KOTOR)
+			if (cent->gent->client->charKOTORWeapons == 1)
 			{
 				CG_DrawWeaponSelect_kotor();
 			}

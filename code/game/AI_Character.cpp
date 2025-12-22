@@ -127,13 +127,28 @@ qboolean Lando_Class_boba_pistol(const gentity_t* self)
 	return qfalse;
 }
 
-qboolean Bokatan_Dual_Clone_Pistol(const gentity_t* self)
+qboolean Char_Dual_Pistols(const gentity_t* self)
 {
-	if (self->client->NPC_class == CLASS_MANDALORIAN
-		&& (Q_stricmp("bokatan", self->NPC_type) == 0 ||
-			Q_stricmp("bokatan_jp2", self->NPC_type) == 0 ||
-			Q_stricmp("bokatan_nohelm", self->NPC_type) == 0 ||
-			Q_stricmp("bokatan_nohelm_jp2", self->NPC_type) == 0))
+	if (self->client->charDualPistols == 1)
+	{
+		return qtrue;
+	}
+	return qfalse;
+}
+
+qboolean jedi_is_kick_resistant(gentity_t* self)
+{
+	if (self->client->charNoKnockback == 1)
+	{
+		self->flags |= FL_NO_KNOCKBACK;
+		return qtrue;
+	}
+	return qfalse;
+}
+
+qboolean char_is_force_user_attacker(const gentity_t* self)
+{
+	if (self->client->charForceUser == 1)
 	{
 		return qtrue;
 	}
@@ -149,36 +164,6 @@ qboolean Calo_Nord(const gentity_t* self)
 	{
 		return qtrue;
 	}
-	return qfalse;
-}
-
-qboolean jedi_is_kick_resistant(gentity_t* self)
-{
-	if (Q_stricmp("md_gorc", self->NPC_type) == 0
-		|| Q_stricmp("md_vader_ep3", self->NPC_type) == 0
-		|| Q_stricmp("md_vader_anh", self->NPC_type) == 0
-		|| Q_stricmp("md_vad_vr", self->NPC_type) == 0
-		|| Q_stricmp("md_vader_tv", self->NPC_type) == 0
-		|| Q_stricmp("md_vader_ds", self->NPC_type) == 0
-		|| Q_stricmp("md_vader", self->NPC_type) == 0
-		|| Q_stricmp("md_vad_tfu", self->NPC_type) == 0
-		|| Q_stricmp("md_vader_bw", self->NPC_type) == 0
-		|| Q_stricmp("md_vad2_tfu", self->NPC_type) == 0
-		|| Q_stricmp("md_maw", self->NPC_type) == 0
-		|| Q_stricmp("md_grie_egg", self->NPC_type) == 0
-		|| Q_stricmp("md_grie2_egg", self->NPC_type) == 0
-		|| Q_stricmp("md_grie3_egg", self->NPC_type) == 0
-		|| Q_stricmp("md_grie4_egg", self->NPC_type) == 0
-		|| Q_stricmp("md_grievous", self->NPC_type) == 0
-		|| Q_stricmp("md_grievous4", self->NPC_type) == 0
-		|| Q_stricmp("md_grievous_robed", self->NPC_type) == 0
-		|| Q_stricmp("md_dro_am", self->NPC_type) == 0
-		|| Q_stricmp("md_dro_sn", self->NPC_type) == 0)
-	{
-		self->flags |= FL_NO_KNOCKBACK;
-		return qtrue;
-	}
-
 	return qfalse;
 }
 

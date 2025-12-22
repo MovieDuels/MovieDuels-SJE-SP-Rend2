@@ -67,7 +67,6 @@ extern void RemoveBarrier(gentity_t* ent);
 extern void ItemUse_Barrier(gentity_t* ent);
 extern void ItemUse_Grapple(gentity_t* ent);
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
-extern qboolean Bokatan_Dual_Clone_Pistol(const gentity_t* self);
 extern qboolean Mandalorian_Repeater(const gentity_t* self);
 extern qboolean Armorer_clone_pistol(const gentity_t* self);
 extern void ForceJediRepulse(gentity_t* self);
@@ -326,7 +325,6 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 						|| ent->client->NPC_class == CLASS_MANDALORIAN
 						|| !Q_stricmp("md_dindjarin", ent->NPC_type)
 						|| !Q_stricmp("md_dindjarin_s3", ent->NPC_type)
-						|| Bokatan_Dual_Clone_Pistol(ent)
 						|| Mandalorian_Repeater(ent))
 					{
 						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 1;
@@ -339,7 +337,6 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 							|| !Q_stricmp("boba_fett_esb", ent->NPC_type)
 							|| !Q_stricmp("boba_fett_rotj", ent->NPC_type)
 							|| !Q_stricmp("md_boba_fett", ent->NPC_type)
-							|| Bokatan_Dual_Clone_Pistol(ent)
 							|| Mandalorian_Repeater(ent)
 							|| !Q_stricmp("armorer", ent->NPC_type)
 							|| Armorer_clone_pistol(ent))

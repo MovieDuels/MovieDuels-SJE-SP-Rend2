@@ -163,40 +163,26 @@ void CG_RegisterWeapon(const int weapon_num)
 	CG_RegisterItemVisuals(item - bg_itemlist);
 
 	// set up in view weapon model
-	if (cg_com_kotor.integer == 1) //playing kotor
+	if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
 	{
 		weaponInfo->weaponModel = cgi_R_RegisterModel(weaponData[weapon_num].altweaponMdl);
 	}
 	else
 	{
-		if (cent->friendlyfaction == FACTION_KOTOR)
-		{
-			weaponInfo->weaponModel = cgi_R_RegisterModel(weaponData[weapon_num].altweaponMdl);
-		}
-		else
-		{
-			weaponInfo->weaponModel = cgi_R_RegisterModel(weaponData[weapon_num].weaponMdl);
-		}
+		weaponInfo->weaponModel = cgi_R_RegisterModel(weaponData[weapon_num].weaponMdl);
 	}
 
 	{
 		//in case the weaponmodel isn't _w, precache the _w.glm
 		char weapon_model[64];
 
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			Q_strncpyz(weapon_model, weaponData[weapon_num].altweaponMdl, sizeof weapon_model);
 		}
 		else
 		{
-			if (cent->friendlyfaction == FACTION_KOTOR)
-			{
-				Q_strncpyz(weapon_model, weaponData[weapon_num].altweaponMdl, sizeof weapon_model);
-			}
-			else
-			{
-				Q_strncpyz(weapon_model, weaponData[weapon_num].weaponMdl, sizeof weapon_model);
-			}
+			Q_strncpyz(weapon_model, weaponData[weapon_num].weaponMdl, sizeof weapon_model);
 		}
 
 		if (char* spot = strstr(weapon_model, ".md3"))
@@ -215,20 +201,13 @@ void CG_RegisterWeapon(const int weapon_num)
 
 	if (weaponInfo->weaponModel == 0)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].altweaponMdl, weaponData[weapon_num].classname);
 		}
 		else
 		{
-			if (cent->friendlyfaction == FACTION_KOTOR)
-			{
-				CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].altweaponMdl, weaponData[weapon_num].classname);
-			}
-			else
-			{
-				CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].weaponMdl, weaponData[weapon_num].classname);
-			}
+			CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].weaponMdl, weaponData[weapon_num].classname);
 		}
 	}
 
@@ -267,20 +246,13 @@ void CG_RegisterWeapon(const int weapon_num)
 
 	for (i = 0; i < weaponData[weapon_num].numBarrels; i++)
 	{
-		if (cg_com_kotor.integer == 1) //playing kotor
+		if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
 		{
 			Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
 		}
 		else
 		{
-			if (cent->friendlyfaction == FACTION_KOTOR)
-			{
-				Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
-			}
-			else
-			{
-				Q_strncpyz(path, weaponData[weapon_num].weaponMdl, sizeof path);
-			}
+			Q_strncpyz(path, weaponData[weapon_num].weaponMdl, sizeof path);
 		}
 
 		COM_StripExtension(path, path, sizeof path);
@@ -302,20 +274,13 @@ void CG_RegisterWeapon(const int weapon_num)
 
 	// set up the hand that holds the in view weapon - assuming we have one
 
-	if (cg_com_kotor.integer == 1) //playing kotor
+	if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
 	{
 		Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
 	}
 	else
 	{
-		if (cent->friendlyfaction == FACTION_KOTOR)
-		{
-			Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
-		}
-		else
-		{
-			Q_strncpyz(path, weaponData[weapon_num].weaponMdl, sizeof path);
-		}
+		Q_strncpyz(path, weaponData[weapon_num].weaponMdl, sizeof path);
 	}
 
 	COM_StripExtension(path, path, sizeof path);

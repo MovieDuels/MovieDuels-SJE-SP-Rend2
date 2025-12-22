@@ -2260,6 +2260,12 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 
 	npc->s.modelScale[0] = npc->s.modelScale[1] = npc->s.modelScale[2] = 1.0f;
 
+	// MD NPC attributes defaults
+	npc->client->charDualPistols = 0;
+	npc->client->charForceUser = 0;
+	npc->client->charNoKnockback = 0;
+	npc->client->charKOTORWeapons = 0;
+
 	ri->customRGBA[0] = ri->customRGBA[1] = ri->customRGBA[2] = ri->customRGBA[3] = 0xFFu;
 
 	if (!Q_stricmp("random", npc_name))
@@ -3948,6 +3954,50 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 					continue;
 				}
 				npc->client->ps.BlockPointRegenAmount = n;
+				continue;
+			}
+
+			if (!Q_stricmp(token, "dualPistols"))
+			{
+				if (COM_ParseInt(&p, &n))
+				{
+					SkipRestOfLine(&p);
+					continue;
+				}
+				npc->client->charDualPistols = 1;
+				continue;
+			}
+
+			if (!Q_stricmp(token, "forceUser"))
+			{
+				if (COM_ParseInt(&p, &n))
+				{
+					SkipRestOfLine(&p);
+					continue;
+				}
+				npc->client->charForceUser = 1;
+				continue;
+			}
+
+			if (!Q_stricmp(token, "noKnockback"))
+			{
+				if (COM_ParseInt(&p, &n))
+				{
+					SkipRestOfLine(&p);
+					continue;
+				}
+				npc->client->charNoKnockback = 1;
+				continue;
+			}
+
+			if (!Q_stricmp(token, "kotorWeapons"))
+			{
+				if (COM_ParseInt(&p, &n))
+				{
+					SkipRestOfLine(&p);
+					continue;
+				}
+				npc->client->charKOTORWeapons = 1;
 				continue;
 			}
 

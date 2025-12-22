@@ -890,6 +890,12 @@ public:
 	int			isHacking;
 	vec3_t		hackingAngles;
 
+	// MD NPC attributes
+	int charDualPistols; // Character uses dual pistols
+	int charForceUser; // Character attacks with force powers
+	int charNoKnockback; // Character is immune to knockback
+	int charKOTORWeapons; // Character uses KOTOR weapons
+
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
 	{
@@ -1000,6 +1006,10 @@ public:
 		saved_game.write<int32_t>(reloadTime);
 		saved_game.write<int32_t>(isHacking);
 		saved_game.write<int32_t>(hackingAngles);
+		saved_game.write<int32_t>(charDualPistols);
+		saved_game.write<int32_t>(charForceUser);
+		saved_game.write<int32_t>(charNoKnockback);
+		saved_game.write<int32_t>(charKOTORWeapons);
 	}
 
 	void sg_import(
@@ -1112,6 +1122,10 @@ public:
 		saved_game.read<int32_t>(reloadTime);
 		saved_game.read<int32_t>(isHacking);
 		saved_game.read<int32_t>(hackingAngles);
+		saved_game.read<int32_t>(charDualPistols);
+		saved_game.read<int32_t>(charForceUser);
+		saved_game.read<int32_t>(charNoKnockback);
+		saved_game.read<int32_t>(charKOTORWeapons);
 	}
 }; // GClientBase
 

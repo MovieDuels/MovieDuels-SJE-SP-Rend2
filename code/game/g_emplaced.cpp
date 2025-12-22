@@ -1085,7 +1085,7 @@ void ExitEmplacedWeapon(gentity_t* ent)
 				}
 				else
 				{
-					if (ent->client->friendlyfaction == FACTION_KOTOR)
+					if (ent->client->charKOTORWeapons == 1)
 					{
 						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					}
