@@ -791,7 +791,7 @@ static void G_InitCvars()
 	//use +forcefocus to pull off all the special moves
 	g_debugSaberLock = gi.cvar("g_debugSaberLock", "0", CVAR_CHEAT);
 	//just for debugging/development, makes saberlocks happen all the time
-	g_saberLockRandomNess = gi.cvar("g_saberLockRandomNess", "0", CVAR_ARCHIVE);
+	g_saberLockRandomNess = gi.cvar("g_saberLockRandomNess", "1", CVAR_ARCHIVE);
 	//just for debugging/development, controls frequency of saberlocks
 	g_saberRestrictForce = gi.cvar("g_saberRestrictForce", "0", CVAR_ARCHIVE);
 	//restricts certain force powers when using a 2-handed saber or 2 sabers

@@ -321,7 +321,7 @@ void UI_Init(const int apiVersion, const uiimport_t* uiimport, const qboolean in
 	ui.Cvar_Create("cg_bobpitch", "0.002", CVAR_ARCHIVE);
 	ui.Cvar_Create("cg_bobroll", "0.002", CVAR_ARCHIVE);
 
-	ui.Cvar_Create("ui_disableWeaponSway", "1", CVAR_ARCHIVE);
+	ui.Cvar_Create("ui_disableWeaponSway", "0", CVAR_ARCHIVE);
 
 	ui.Cvar_Create("d_slowmoaction", "0", CVAR_ARCHIVE);
 
