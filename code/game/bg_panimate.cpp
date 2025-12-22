@@ -7974,7 +7974,7 @@ void PM_TorsoAnimation()
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND5, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_MD_CIN_1, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
 					}
 				}
 				else
@@ -8137,7 +8137,7 @@ void PM_TorsoAnimation()
 							}
 							else
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND5, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_MD_CIN_1, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
 							}
 						}
 						else
@@ -8836,7 +8836,7 @@ void PM_TorsoAnimation()
 							}
 							else
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND5, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_MD_CIN_1, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
 							}
 						}
 						else
