@@ -431,7 +431,7 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 
 	if (give_all || !Q_stricmp(name, "weapons"))
 	{
-		for (int i = 0; i < WP_MELEE; i++)
+		for (int i = 0; i <= WP_MELEE; i++)
 		{
 			ent->client->ps.weapons[i] = 1;
 		}
