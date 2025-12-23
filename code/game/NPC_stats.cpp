@@ -2264,6 +2264,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 	npc->client->charDualPistols = 0;
 	npc->client->charForceUser = 0;
 	npc->client->charNoKnockback = 0;
+	npc->client->charBeskar = 0;
 	npc->client->charKOTORWeapons = 0;
 
 	ri->customRGBA[0] = ri->customRGBA[1] = ri->customRGBA[2] = ri->customRGBA[3] = 0xFFu;
@@ -3987,6 +3988,17 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 					continue;
 				}
 				npc->client->charNoKnockback = 1;
+				continue;
+			}
+
+			if (!Q_stricmp(token, "beskar"))
+			{
+				if (COM_ParseInt(&p, &n))
+				{
+					SkipRestOfLine(&p);
+					continue;
+				}
+				npc->client->charBeskar = 1;
 				continue;
 			}
 

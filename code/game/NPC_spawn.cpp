@@ -41,10 +41,9 @@ extern cvar_t* com_kotor;
 extern void G_MatchPlayerWeapon(gentity_t* ent);
 extern void Q3_SetParm(int entID, int parmNum, const char* parmValue);
 extern qboolean Char_Dual_Pistols(const gentity_t* self);
-extern qboolean Mandalorian_Repeater(const gentity_t* self);
-extern qboolean Armorer_clone_pistol(const gentity_t* self);
 extern qboolean Calo_Nord(const gentity_t* self);
 extern qboolean char_is_force_user_attacker(const gentity_t* self);
+extern qboolean char_has_beskar_armor(const gentity_t* self);
 
 extern void PM_SetTorsoAnimTimer(gentity_t* ent, int* torso_anim_timer, int time);
 extern void PM_SetLegsAnimTimer(gentity_t* ent, int* legs_anim_timer, int time);
@@ -377,21 +376,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 
 		ent->behaviorSet[BSET_FLEE] = nullptr;
 
-		if (Q_stricmp("boba_fett_mand1", ent->NPC_type) == 0
-			|| Q_stricmp("boba_fett_mand2", ent->NPC_type) == 0
-			|| Q_stricmp("boba_fett_nohelmet", ent->NPC_type) == 0
-			|| Q_stricmp("boba_fett_nohelmet2", ent->NPC_type) == 0
-			|| Q_stricmp("pazvizsla", ent->NPC_type) == 0
-			|| Q_stricmp("pazvizsla_nohelm", ent->NPC_type) == 0
-			|| Q_stricmp("bokatan_jet", ent->NPC_type) == 0
-			|| Q_stricmp("bokatan_helm", ent->NPC_type) == 0
-			|| Q_stricmp("armorer", ent->NPC_type) == 0
-			|| Q_stricmp("boba_fett_esb", ent->NPC_type) == 0
-			|| Q_stricmp("boba_fett_rotj", ent->NPC_type) == 0
-			|| ent->client->NPC_class == CLASS_MANDALORIAN
-			|| ent->client->NPC_class == CLASS_JANGO
-			|| ent->client->NPC_class == CLASS_JANGODUAL
-			|| Armorer_clone_pistol(ent))
+		if (char_has_beskar_armor(ent))
 		{
 			ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
 		}
@@ -472,9 +457,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->client->dismembered = qfalse;
 	}
 
-	if (Q_stricmp("md_dindjarin", ent->NPC_type) == 0
-		|| Q_stricmp("md_dindjarin_s3", ent->NPC_type) == 0
-		|| Mandalorian_Repeater(ent))
+	if (char_has_beskar_armor(ent))
 	{
 		ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
 		ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers

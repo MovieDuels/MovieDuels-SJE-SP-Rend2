@@ -2719,7 +2719,7 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 							//d_flags |= DAMAGE_NO_HIT_LOC;
 						}
 
-						if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 1)))
+						if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 3)))
 						{
 							d_flags |= DAMAGE_NO_DAMAGE;
 							G_Beskar_Attack_Bounce(ent, victim);
@@ -3195,7 +3195,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 							}
 						}
 
-						if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 1)))
+						if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 3)))
 						{
 							d_flags |= DAMAGE_NO_DAMAGE;
 							G_Beskar_Attack_Bounce(ent, victim);

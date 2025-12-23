@@ -7820,17 +7820,19 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			switch (choice)
 			{
 			case 0:
-				damage = ceil(static_cast<float>(damage) * 0.25f);
+				damage = ceil(static_cast<float>(damage) * 0.60f);
 				break;
 			case 1:
-			default:
-				damage = ceil(static_cast<float>(damage) * 0.50f);
+				damage = ceil(static_cast<float>(damage) * 0.70f);
 				break;
 			case 2:
-				damage = ceil(static_cast<float>(damage) * 0.75f);
+				damage = ceil(static_cast<float>(damage) * 0.80f);
 				break;
 			case 3:
-				damage = ceil(static_cast<float>(damage) * 0.95f);
+				damage = ceil(static_cast<float>(damage));
+				break;
+			default:
+				damage = ceil(static_cast<float>(damage));
 				break;
 			}
 		}

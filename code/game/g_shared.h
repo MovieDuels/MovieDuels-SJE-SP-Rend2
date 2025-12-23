@@ -894,6 +894,7 @@ public:
 	int charDualPistols; // Character uses dual pistols
 	int charForceUser; // Character attacks with force powers
 	int charNoKnockback; // Character is immune to knockback
+	int charBeskar; // Character has beskar armor and can deflect blaster bolts
 	int charKOTORWeapons; // Character uses KOTOR weapons
 
 	void sg_export(
@@ -1006,9 +1007,11 @@ public:
 		saved_game.write<int32_t>(reloadTime);
 		saved_game.write<int32_t>(isHacking);
 		saved_game.write<int32_t>(hackingAngles);
+
 		saved_game.write<int32_t>(charDualPistols);
 		saved_game.write<int32_t>(charForceUser);
 		saved_game.write<int32_t>(charNoKnockback);
+		saved_game.write<int32_t>(charBeskar);
 		saved_game.write<int32_t>(charKOTORWeapons);
 	}
 
@@ -1122,9 +1125,11 @@ public:
 		saved_game.read<int32_t>(reloadTime);
 		saved_game.read<int32_t>(isHacking);
 		saved_game.read<int32_t>(hackingAngles);
+
 		saved_game.read<int32_t>(charDualPistols);
 		saved_game.read<int32_t>(charForceUser);
 		saved_game.read<int32_t>(charNoKnockback);
+		saved_game.read<int32_t>(charBeskar);
 		saved_game.read<int32_t>(charKOTORWeapons);
 	}
 }; // GClientBase

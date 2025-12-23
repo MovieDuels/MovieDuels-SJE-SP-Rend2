@@ -2044,7 +2044,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		&& ent->methodOfDeath != MOD_SEEKER
 		&& ent->methodOfDeath != MOD_CONC
 		&& ent->methodOfDeath != WP_NOGHRI_STICK
-		&& (!Q_irand(0, 1)));
+		&& (!Q_irand(0, 2)));
 
 	auto boba_fett = static_cast<qboolean>((other->flags & FL_BOBAFETT)
 		&& !ent->splashDamage

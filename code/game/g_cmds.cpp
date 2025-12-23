@@ -67,8 +67,7 @@ extern void RemoveBarrier(gentity_t* ent);
 extern void ItemUse_Barrier(gentity_t* ent);
 extern void ItemUse_Grapple(gentity_t* ent);
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
-extern qboolean Mandalorian_Repeater(const gentity_t* self);
-extern qboolean Armorer_clone_pistol(const gentity_t* self);
+extern qboolean char_has_beskar_armor(const gentity_t* self);
 extern void ForceJediRepulse(gentity_t* self);
 extern void ForceGrasp(gentity_t* self);
 extern void ForceFear(gentity_t* self);
@@ -323,23 +322,14 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 						|| ent->client->NPC_class == CLASS_JANGO
 						|| ent->client->NPC_class == CLASS_JANGODUAL
 						|| ent->client->NPC_class == CLASS_MANDALORIAN
-						|| !Q_stricmp("md_dindjarin", ent->NPC_type)
-						|| !Q_stricmp("md_dindjarin_s3", ent->NPC_type)
-						|| Mandalorian_Repeater(ent))
+						|| char_has_beskar_armor(ent))
 					{
 						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 1;
 
-						if (!Q_stricmp("md_dindjarin", ent->NPC_type)
-							|| !Q_stricmp("md_dindjarin_s3", ent->NPC_type)
-							|| ent->client->NPC_class == CLASS_JANGO
+						if (ent->client->NPC_class == CLASS_JANGO
 							|| ent->client->NPC_class == CLASS_JANGODUAL
 							|| ent->client->NPC_class == CLASS_MANDALORIAN
-							|| !Q_stricmp("boba_fett_esb", ent->NPC_type)
-							|| !Q_stricmp("boba_fett_rotj", ent->NPC_type)
-							|| !Q_stricmp("md_boba_fett", ent->NPC_type)
-							|| Mandalorian_Repeater(ent)
-							|| !Q_stricmp("armorer", ent->NPC_type)
-							|| Armorer_clone_pistol(ent))
+							|| char_has_beskar_armor(ent))
 						{
 							ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
 						}

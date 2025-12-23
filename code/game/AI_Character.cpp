@@ -155,6 +155,15 @@ qboolean char_is_force_user_attacker(const gentity_t* self)
 	return qfalse;
 }
 
+qboolean char_has_beskar_armor(const gentity_t* self)
+{
+	if (self->client->charBeskar == 1)
+	{
+		return qtrue;
+	}
+	return qfalse;
+}
+
 qboolean Calo_Nord(const gentity_t* self)
 {
 	if (self->client->NPC_class == CLASS_CALONORD
