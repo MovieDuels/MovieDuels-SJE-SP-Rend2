@@ -173,11 +173,11 @@ static void Boba_Printf(const char* format, ...)
 ////////////////////////////////////////////////////////////////////////////////////////
 // Defines
 ////////////////////////////////////////////////////////////////////////////////////////
-constexpr auto BOBA_FLAMEDURATION = 3000;
+constexpr auto BOBA_FLAMEDURATION = 2000;
 constexpr auto BOBA_FLAMETHROWRANGE = 128;
 constexpr auto BOBA_FLAMETHROWSIZE = 40;
 constexpr auto BOBA_FLAMETHROWDAMAGEMIN = 1; //10;
-constexpr auto BOBA_FLAMETHROWDAMAGEMAX = 3; //40;
+constexpr auto BOBA_FLAMETHROWDAMAGEMAX = 2; //40;
 constexpr auto BOBA_ROCKETRANGEMIN = 300;
 constexpr auto BOBA_ROCKETRANGEMAX = 2000;
 
@@ -418,7 +418,7 @@ void Boba_Pain(gentity_t* self, gentity_t* inflictor, int damage, const int mod)
 		else
 		{
 			NPC_SetAnim(self, SETANIM_TORSO, BOTH_FLAMETHROWER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-			self->client->ps.torsoAnimTimer = level.time - TIMER_Get(self, "falmeTime");
+			self->client->ps.torsoAnimTimer = level.time - TIMER_Get(self, "flameTime");
 		}
 	}
 }
@@ -565,17 +565,17 @@ void Boba_FireFlameThrower(gentity_t* self)
 
 	gentity_t* traceEnt = &g_entities[tr.entityNum];
 
-	if (tr.entityNum < ENTITYNUM_WORLD && traceEnt->takedamage)
+	if (tr.entityNum < ENTITYNUM_WORLD && traceEnt->takedamage && level.time + (BOBA_FLAMEDURATION * 0.6) >= TIMER_Get(self, "flameTime"))
 	{
 		if (g_SerenityJediEngineMode->integer)
 		{
 			G_Damage(traceEnt, self, self, dir, tr.endpos, damage_md,
-				DAMAGE_NO_ARMOR | DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
+				DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
 		}
 		else
 		{
 			G_Damage(traceEnt, self, self, dir, tr.endpos, damage,
-				DAMAGE_NO_ARMOR | DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
+				DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
 		}
 
 		if (traceEnt->health > 0 && traceEnt->painDebounceTime > level.time)
@@ -639,17 +639,17 @@ static void Mando_FireFlameThrower(gentity_t* self)
 
 	gentity_t* traceEnt = &g_entities[tr.entityNum];
 
-	if (tr.entityNum < ENTITYNUM_WORLD && traceEnt->takedamage)
+	if (tr.entityNum < ENTITYNUM_WORLD && traceEnt->takedamage && level.time + (BOBA_FLAMEDURATION * 0.6) >= TIMER_Get(self, "flameTime"))
 	{
 		if (g_SerenityJediEngineMode->integer)
 		{
 			G_Damage(traceEnt, self, self, dir, tr.endpos, damage_md,
-				DAMAGE_NO_ARMOR | DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
+				DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
 		}
 		else
 		{
 			G_Damage(traceEnt, self, self, dir, tr.endpos, damage,
-				DAMAGE_NO_ARMOR | DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
+				DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
 		}
 
 		if (traceEnt->health > 0 && traceEnt->painDebounceTime > level.time)
@@ -740,7 +740,7 @@ void Boba_StartFlameThrower(gentity_t* self)
 
 		TIMER_Set(self, "flameTime", BOBA_FLAMEDURATION);
 		TIMER_Set(self, "nextAttackDelay", BOBA_FLAMEDURATION);
-		TIMER_Set(self, "nextFlameDelay", BOBA_FLAMEDURATION * 2);
+		TIMER_Set(self, "nextFlameDelay", BOBA_FLAMEDURATION * 5);
 		TIMER_Set(self, "Boba_TacticsSelect", BOBA_FLAMEDURATION);
 
 		G_SoundOnEnt(self, CHAN_WEAPON, "sound/weapons/boba/bf_flame.mp3");
@@ -795,8 +795,6 @@ void Boba_DoFlameThrower(gentity_t* self)
 	}
 }
 
-constexpr auto MANDO_FLAMEDURATION = 20000;
-
 void Mando_DoFlameThrower(gentity_t* self)
 {
 	if (self->health < 5)
@@ -813,7 +811,7 @@ void Mando_DoFlameThrower(gentity_t* self)
 			{
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FLAMETHROWER,
 					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
-				self->client->ps.torsoAnimTimer = MANDO_FLAMEDURATION;
+				self->client->ps.torsoAnimTimer = BOBA_FLAMEDURATION;
 				self->client->flamethrowerOn = qtrue;
 
 				G_SoundOnEnt(self, CHAN_WEAPON, "sound/weapons/boba/bf_flame.mp3");
