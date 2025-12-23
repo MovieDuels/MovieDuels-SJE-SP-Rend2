@@ -2017,7 +2017,7 @@ float hitLocHealthPercentage[HL_MAX] =
 	0.05f, //HL_ARM_LT,
 	0.01f, //HL_HAND_RT,
 	0.01f, //HL_HAND_LT,
-	0.10f, //HL_HEAD
+	0.45f, //HL_HEAD
 	0.0f, //HL_GENERIC1,
 	0.0f, //HL_GENERIC2,
 	0.0f, //HL_GENERIC3,
@@ -7382,7 +7382,7 @@ float damageModifier[HL_MAX] =
 	0.5f, //HL_ARM_LT,
 	0.25f, //HL_HAND_RT,
 	0.25f, //HL_HAND_LT,
-	2.0f, //HL_HEAD,
+	1.0f, //HL_HEAD,
 	1.0f, //HL_GENERIC1,
 	1.0f, //HL_GENERIC2,
 	1.0f, //HL_GENERIC3,
