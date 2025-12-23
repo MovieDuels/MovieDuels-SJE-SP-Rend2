@@ -272,6 +272,8 @@ static qboolean npc_is_staff_style(const gentity_t* self)
 {
 	if (!Q_stricmp("md_magnaguard", self->NPC_type)
 		|| !Q_stricmp("md_inquisitor", self->NPC_type)
+		|| !Q_stricmp("md_inquisitor_rebels", self->NPC_type)
+		|| !Q_stricmp("md_templeguard_inquisitor", self->NPC_type)
 		|| !Q_stricmp("md_5thbrother", self->NPC_type)
 		|| !Q_stricmp("md_7thsister", self->NPC_type)
 		|| !Q_stricmp("md_8thbrother", self->NPC_type)
@@ -334,7 +336,13 @@ static qboolean npc_is_staff_style(const gentity_t* self)
 		|| !Q_stricmp("md_maul", self->NPC_type)
 		|| !Q_stricmp("md_maul_robed", self->NPC_type)
 		|| !Q_stricmp("md_maul_hooded", self->NPC_type)
-		|| !Q_stricmp("md_maul_wots", self->NPC_type))
+		|| !Q_stricmp("md_maul_wots", self->NPC_type)
+		|| !Q_stricmp("md_vindican", self->NPC_type)
+		|| !Q_stricmp("md_vindican_hooded", self->NPC_type)
+		|| !Q_stricmp("md_bandon", self->NPC_type)
+		|| !Q_stricmp("md_bastila", self->NPC_type)
+		|| !Q_stricmp("md_bastila_robed", self->NPC_type)
+		|| !Q_stricmp("md_bastila_dark", self->NPC_type))
 	{
 		//staff only
 		return qtrue;
@@ -353,9 +361,24 @@ static qboolean npc_is_dual_style(const gentity_t* self)
 		|| !Q_stricmp("md_jango_geo", self->NPC_type)
 		|| !Q_stricmp("md_ani_ep2_dual", self->NPC_type)
 		|| !Q_stricmp("md_serra", self->NPC_type)
-		|| !Q_stricmp("md_ahsoka_rebels", self->NPC_type)
 		|| !Q_stricmp("md_ahsoka", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_padawan", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_tcw", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_eva", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_totj", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_mortis", self->NPC_type)
 		|| !Q_stricmp("md_ahsoka_s7", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_s7_r", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_s7_y", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_s7_y_r", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_rebels", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_rebels_poncho", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_tm", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_h_tm", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_p_tm", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_ahs", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_h_ahs", self->NPC_type)
+		|| !Q_stricmp("md_ahsoka_p_ahs", self->NPC_type)
 		|| !Q_stricmp("md_ventress", self->NPC_type)
 		|| !Q_stricmp("md_ven_ns", self->NPC_type)
 		|| !Q_stricmp("md_ven_bh", self->NPC_type)
@@ -391,7 +414,18 @@ static qboolean npc_is_dual_style(const gentity_t* self)
 		|| !Q_stricmp("md_jediveteran2_jt", self->NPC_type)
 		|| !Q_stricmp("md_jediveteran3_jt", self->NPC_type)
 		|| !Q_stricmp("md_serra_jt", self->NPC_type)
-		|| !Q_stricmp("md_jango_dual", self->NPC_type))
+		|| !Q_stricmp("md_jango_dual", self->NPC_type)
+		|| !Q_stricmp("stormie_tfa_riot", self->NPC_type)
+		|| !Q_stricmp("armorer", self->NPC_type)
+		|| !Q_stricmp("md_malicos", self->NPC_type)
+		|| !Q_stricmp("purge_trooper_dual", self->NPC_type)
+		|| !Q_stricmp("md_krayt", self->NPC_type)
+		|| !Q_stricmp("md_krayt_reborn", self->NPC_type)
+		|| !Q_stricmp("md_boc", self->NPC_type)
+		|| !Q_stricmp("md_maul_tcw_dual", self->NPC_type)
+		|| !Q_stricmp("md_revanr", self->NPC_type)
+		|| !Q_stricmp("md_revanr_nomask", self->NPC_type)
+		|| !Q_stricmp("md_revanr_nomask_nh", self->NPC_type))
 	{
 		//dual only
 		return qtrue;
@@ -1773,122 +1807,12 @@ static void jedi_adjust_saber_anim_level(const gentity_t* self, const int new_le
 			//strong only
 			self->client->ps.saber_anim_level = SS_STRONG;
 		}
-		else if (!Q_stricmp("md_grievous", self->NPC_type)
-			|| !Q_stricmp("md_grievous4", self->NPC_type)
-			|| !Q_stricmp("md_grievous_robed", self->NPC_type)
-			|| !Q_stricmp("md_clone_assassin", self->NPC_type)
-			|| !Q_stricmp("md_jango", self->NPC_type)
-			|| !Q_stricmp("md_jango_geo", self->NPC_type)
-			|| !Q_stricmp("md_ani_ep2_dual", self->NPC_type)
-			|| !Q_stricmp("md_serra", self->NPC_type)
-			|| !Q_stricmp("md_ahsoka_rebels", self->NPC_type)
-			|| !Q_stricmp("md_ahsoka", self->NPC_type)
-			|| !Q_stricmp("md_ahsoka_s7", self->NPC_type)
-			|| !Q_stricmp("md_ventress", self->NPC_type)
-			|| !Q_stricmp("md_ven_ns", self->NPC_type)
-			|| !Q_stricmp("md_ven_bh", self->NPC_type)
-			|| !Q_stricmp("md_ven_dg", self->NPC_type)
-			|| !Q_stricmp("md_asharad", self->NPC_type)
-			|| !Q_stricmp("md_asharad_tus", self->NPC_type)
-			|| !Q_stricmp("boba_fett", self->NPC_type)
-			|| !Q_stricmp("boba_fett_esb", self->NPC_type)
-			|| !Q_stricmp("md_pguard4", self->NPC_type)
-			|| !Q_stricmp("md_grie_egg", self->NPC_type)
-			|| !Q_stricmp("md_grie3_egg", self->NPC_type)
-			|| !Q_stricmp("md_grie4_egg", self->NPC_type)
-			|| !Q_stricmp("md_fet_ga", self->NPC_type)
-			|| !Q_stricmp("md_fet2_ga", self->NPC_type)
-			|| !Q_stricmp("md_fet3_ga", self->NPC_type)
-			|| !Q_stricmp("md_ven2_ga", self->NPC_type)
-			|| !Q_stricmp("md_ket_jt", self->NPC_type)
-			|| !Q_stricmp("md_fet_ka", self->NPC_type)
-			|| !Q_stricmp("md_fet2_ka", self->NPC_type)
-			|| !Q_stricmp("md_clo2_rt", self->NPC_type)
-			|| !Q_stricmp("md_clo5_rt", self->NPC_type)
-			|| !Q_stricmp("reborn_dual", self->NPC_type)
-			|| !Q_stricmp("reborn_dual2", self->NPC_type)
-			|| !Q_stricmp("alora_dual", self->NPC_type)
-			|| !Q_stricmp("JediTrainer", self->NPC_type)
-			|| !Q_stricmp("jedi_zf2", self->NPC_type)
-			|| !Q_stricmp("RebornMasterDual", self->NPC_type)
-			|| !Q_stricmp("Tavion_scepter", self->NPC_type)
-			|| !Q_stricmp("md_jed6_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed11_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed13_jt", self->NPC_type)
-			|| !Q_stricmp("md_jediknight2_jt", self->NPC_type)
-			|| !Q_stricmp("md_jediveteran2_jt", self->NPC_type)
-			|| !Q_stricmp("md_jediveteran3_jt", self->NPC_type)
-			|| !Q_stricmp("md_serra_jt", self->NPC_type)
-			|| !Q_stricmp("md_jango_dual", self->NPC_type))
+		else if (npc_is_dual_style(self))
 		{
 			//dual only
 			self->client->ps.saber_anim_level = SS_DUAL;
 		}
-		else if (!Q_stricmp("md_magnaguard", self->NPC_type)
-			|| !Q_stricmp("md_inquisitor", self->NPC_type)
-			|| !Q_stricmp("md_5thbrother", self->NPC_type)
-			|| !Q_stricmp("md_7thsister", self->NPC_type)
-			|| !Q_stricmp("md_8thbrother", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels2", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels3", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels4", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels5", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels6", self->NPC_type)
-			|| !Q_stricmp("md_jbrute", self->NPC_type)
-			|| !Q_stricmp("md_templeguard", self->NPC_type)
-			|| !Q_stricmp("md_sidious_tcw", self->NPC_type)
-			|| !Q_stricmp("md_maul_tcw_staff", self->NPC_type)
-			|| !Q_stricmp("md_savage", self->NPC_type)
-			|| !Q_stricmp("md_galen", self->NPC_type)
-			|| !Q_stricmp("md_galen_jt", self->NPC_type)
-			|| !Q_stricmp("md_galencjr", self->NPC_type)
-			|| !Q_stricmp("md_starkiller", self->NPC_type)
-			|| !Q_stricmp("md_sithstalker", self->NPC_type)
-			|| !Q_stricmp("md_stk_lord", self->NPC_type)
-			|| !Q_stricmp("md_stk_tat", self->NPC_type)
-			|| !Q_stricmp("darthdesolous", self->NPC_type)
-			|| !Q_stricmp("purge_trooper", self->NPC_type)
-			|| !Q_stricmp("cal_kestis_staff", self->NPC_type)
-			|| !Q_stricmp("md_2ndsister", self->NPC_type)
-			|| !Q_stricmp("md_shadowguard", self->NPC_type)
-			|| !Q_stricmp("md_ven_dual", self->NPC_type)
-			|| !Q_stricmp("md_pguard5", self->NPC_type)
-			|| !Q_stricmp("md_mau_dof", self->NPC_type)
-			|| !Q_stricmp("md_mau2_dof", self->NPC_type)
-			|| !Q_stricmp("md_mau3_dof", self->NPC_type)
-			|| !Q_stricmp("md_mag_egg", self->NPC_type)
-			|| !Q_stricmp("md_mag_ga", self->NPC_type)
-			|| !Q_stricmp("md_ven_ga", self->NPC_type)
-			|| !Q_stricmp("md_mau_luke", self->NPC_type)
-			|| !Q_stricmp("darthphobos", self->NPC_type)
-			|| !Q_stricmp("md_tus5_tc", self->NPC_type)
-			|| !Q_stricmp("md_sta_tfu", self->NPC_type)
-			|| !Q_stricmp("md_gua1_tfu", self->NPC_type)
-			|| !Q_stricmp("md_sta_cs", self->NPC_type)
-			|| !Q_stricmp("md_gua_am", self->NPC_type)
-			|| !Q_stricmp("md_gua2_am", self->NPC_type)
-			|| !Q_stricmp("md_mag_am", self->NPC_type)
-			|| !Q_stricmp("md_mag2_am", self->NPC_type)
-			|| !Q_stricmp("JediF", self->NPC_type)
-			|| !Q_stricmp("JediMaster", self->NPC_type)
-			|| !Q_stricmp("jedi_kdm1", self->NPC_type)
-			|| !Q_stricmp("jedi_tf1", self->NPC_type)
-			|| !Q_stricmp("reborn_staff", self->NPC_type)
-			|| !Q_stricmp("reborn_staff2", self->NPC_type)
-			|| !Q_stricmp("RebornMasterStaff", self->NPC_type)
-			|| !Q_stricmp("md_jed7_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed12_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed14_jt", self->NPC_type)
-			|| !Q_stricmp("md_jedimaster3_jt", self->NPC_type)
-			|| !Q_stricmp("md_jedimaster5_jt", self->NPC_type)
-			|| !Q_stricmp("md_guard_jt", self->NPC_type)
-			|| !Q_stricmp("md_guardboss_jt", self->NPC_type)
-			|| !Q_stricmp("md_jedibrute_jt", self->NPC_type)
-			|| !Q_stricmp("md_maul", self->NPC_type)
-			|| !Q_stricmp("md_maul_robed", self->NPC_type)
-			|| !Q_stricmp("md_maul_hooded", self->NPC_type)
-			|| !Q_stricmp("md_maul_wots", self->NPC_type))
+		else if (npc_is_staff_style(self))
 		{
 			//staff only
 			self->client->ps.saber_anim_level = SS_STAFF;
@@ -1925,122 +1849,12 @@ static void jedi_adjust_saber_anim_level(const gentity_t* self, const int new_le
 			//strong only
 			self->client->ps.saber_anim_level = SS_STRONG;
 		}
-		else if (!Q_stricmp("md_grievous", self->NPC_type)
-			|| !Q_stricmp("md_grievous4", self->NPC_type)
-			|| !Q_stricmp("md_grievous_robed", self->NPC_type)
-			|| !Q_stricmp("md_clone_assassin", self->NPC_type)
-			|| !Q_stricmp("md_jango", self->NPC_type)
-			|| !Q_stricmp("md_jango_geo", self->NPC_type)
-			|| !Q_stricmp("md_ani_ep2_dual", self->NPC_type)
-			|| !Q_stricmp("md_serra", self->NPC_type)
-			|| !Q_stricmp("md_ahsoka_rebels", self->NPC_type)
-			|| !Q_stricmp("md_ahsoka", self->NPC_type)
-			|| !Q_stricmp("md_ahsoka_s7", self->NPC_type)
-			|| !Q_stricmp("md_ventress", self->NPC_type)
-			|| !Q_stricmp("md_ven_ns", self->NPC_type)
-			|| !Q_stricmp("md_ven_bh", self->NPC_type)
-			|| !Q_stricmp("md_ven_dg", self->NPC_type)
-			|| !Q_stricmp("md_asharad", self->NPC_type)
-			|| !Q_stricmp("md_asharad_tus", self->NPC_type)
-			|| !Q_stricmp("boba_fett", self->NPC_type)
-			|| !Q_stricmp("boba_fett_esb", self->NPC_type)
-			|| !Q_stricmp("md_pguard4", self->NPC_type)
-			|| !Q_stricmp("md_grie_egg", self->NPC_type)
-			|| !Q_stricmp("md_grie3_egg", self->NPC_type)
-			|| !Q_stricmp("md_grie4_egg", self->NPC_type)
-			|| !Q_stricmp("md_fet_ga", self->NPC_type)
-			|| !Q_stricmp("md_fet2_ga", self->NPC_type)
-			|| !Q_stricmp("md_fet3_ga", self->NPC_type)
-			|| !Q_stricmp("md_ven2_ga", self->NPC_type)
-			|| !Q_stricmp("md_ket_jt", self->NPC_type)
-			|| !Q_stricmp("md_fet_ka", self->NPC_type)
-			|| !Q_stricmp("md_fet2_ka", self->NPC_type)
-			|| !Q_stricmp("md_clo2_rt", self->NPC_type)
-			|| !Q_stricmp("md_clo5_rt", self->NPC_type)
-			|| !Q_stricmp("reborn_dual", self->NPC_type)
-			|| !Q_stricmp("reborn_dual2", self->NPC_type)
-			|| !Q_stricmp("alora_dual", self->NPC_type)
-			|| !Q_stricmp("JediTrainer", self->NPC_type)
-			|| !Q_stricmp("jedi_zf2", self->NPC_type)
-			|| !Q_stricmp("RebornMasterDual", self->NPC_type)
-			|| !Q_stricmp("Tavion_scepter", self->NPC_type)
-			|| !Q_stricmp("md_jed6_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed11_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed13_jt", self->NPC_type)
-			|| !Q_stricmp("md_jediknight2_jt", self->NPC_type)
-			|| !Q_stricmp("md_jediveteran2_jt", self->NPC_type)
-			|| !Q_stricmp("md_jediveteran3_jt", self->NPC_type)
-			|| !Q_stricmp("md_serra_jt", self->NPC_type)
-			|| !Q_stricmp("md_jango_dual", self->NPC_type))
+		else if (npc_is_dual_style(self))
 		{
 			//dual only
 			self->client->ps.saber_anim_level = SS_DUAL;
 		}
-		else if (!Q_stricmp("md_magnaguard", self->NPC_type)
-			|| !Q_stricmp("md_inquisitor", self->NPC_type)
-			|| !Q_stricmp("md_5thbrother", self->NPC_type)
-			|| !Q_stricmp("md_7thsister", self->NPC_type)
-			|| !Q_stricmp("md_8thbrother", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels2", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels3", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels4", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels5", self->NPC_type)
-			|| !Q_stricmp("md_maul_rebels6", self->NPC_type)
-			|| !Q_stricmp("md_jbrute", self->NPC_type)
-			|| !Q_stricmp("md_templeguard", self->NPC_type)
-			|| !Q_stricmp("md_sidious_tcw", self->NPC_type)
-			|| !Q_stricmp("md_maul_tcw_staff", self->NPC_type)
-			|| !Q_stricmp("md_savage", self->NPC_type)
-			|| !Q_stricmp("md_galen", self->NPC_type)
-			|| !Q_stricmp("md_galen_jt", self->NPC_type)
-			|| !Q_stricmp("md_galencjr", self->NPC_type)
-			|| !Q_stricmp("md_starkiller", self->NPC_type)
-			|| !Q_stricmp("md_sithstalker", self->NPC_type)
-			|| !Q_stricmp("md_stk_lord", self->NPC_type)
-			|| !Q_stricmp("md_stk_tat", self->NPC_type)
-			|| !Q_stricmp("darthdesolous", self->NPC_type)
-			|| !Q_stricmp("purge_trooper", self->NPC_type)
-			|| !Q_stricmp("cal_kestis_staff", self->NPC_type)
-			|| !Q_stricmp("md_2ndsister", self->NPC_type)
-			|| !Q_stricmp("md_shadowguard", self->NPC_type)
-			|| !Q_stricmp("md_ven_dual", self->NPC_type)
-			|| !Q_stricmp("md_pguard5", self->NPC_type)
-			|| !Q_stricmp("md_mau_dof", self->NPC_type)
-			|| !Q_stricmp("md_mau2_dof", self->NPC_type)
-			|| !Q_stricmp("md_mau3_dof", self->NPC_type)
-			|| !Q_stricmp("md_mag_egg", self->NPC_type)
-			|| !Q_stricmp("md_mag_ga", self->NPC_type)
-			|| !Q_stricmp("md_ven_ga", self->NPC_type)
-			|| !Q_stricmp("md_mau_luke", self->NPC_type)
-			|| !Q_stricmp("darthphobos", self->NPC_type)
-			|| !Q_stricmp("md_tus5_tc", self->NPC_type)
-			|| !Q_stricmp("md_sta_tfu", self->NPC_type)
-			|| !Q_stricmp("md_gua1_tfu", self->NPC_type)
-			|| !Q_stricmp("md_sta_cs", self->NPC_type)
-			|| !Q_stricmp("md_gua_am", self->NPC_type)
-			|| !Q_stricmp("md_gua2_am", self->NPC_type)
-			|| !Q_stricmp("md_mag_am", self->NPC_type)
-			|| !Q_stricmp("md_mag2_am", self->NPC_type)
-			|| !Q_stricmp("JediF", self->NPC_type)
-			|| !Q_stricmp("JediMaster", self->NPC_type)
-			|| !Q_stricmp("jedi_kdm1", self->NPC_type)
-			|| !Q_stricmp("jedi_tf1", self->NPC_type)
-			|| !Q_stricmp("reborn_staff", self->NPC_type)
-			|| !Q_stricmp("reborn_staff2", self->NPC_type)
-			|| !Q_stricmp("RebornMasterStaff", self->NPC_type)
-			|| !Q_stricmp("md_jed7_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed12_jt", self->NPC_type)
-			|| !Q_stricmp("md_jed14_jt", self->NPC_type)
-			|| !Q_stricmp("md_jedimaster3_jt", self->NPC_type)
-			|| !Q_stricmp("md_jedimaster5_jt", self->NPC_type)
-			|| !Q_stricmp("md_guard_jt", self->NPC_type)
-			|| !Q_stricmp("md_guardboss_jt", self->NPC_type)
-			|| !Q_stricmp("md_jedibrute_jt", self->NPC_type)
-			|| !Q_stricmp("md_maul", self->NPC_type)
-			|| !Q_stricmp("md_maul_robed", self->NPC_type)
-			|| !Q_stricmp("md_maul_hooded", self->NPC_type)
-			|| !Q_stricmp("md_maul_wots", self->NPC_type))
+		else if (npc_is_staff_style(self))
 		{
 			//staff only
 			self->client->ps.saber_anim_level = SS_STAFF;
@@ -2109,11 +1923,11 @@ static void jedi_check_decrease_saber_anim_level()
 		//not attacking
 		if (TIMER_Done(NPC, "saberLevelDebounce") && !Q_irand(0, 10))
 		{
-			if (NPC->client->ps.saber_anim_level == SS_STRONG
+			if ((NPC->client->ps.saber_anim_level == SS_STRONG
 				|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 				|| NPC->client->ps.saber_anim_level == SS_DESANN
 				|| NPC->client->ps.saber_anim_level == SS_FAST
-				|| NPC->client->ps.saber_anim_level == SS_TAVION
+				|| NPC->client->ps.saber_anim_level == SS_TAVION)
 				&& NPC->client->ps.saber_anim_level != SS_STAFF
 				&& NPC->client->ps.saber_anim_level != SS_DUAL
 				&& !npc_is_staff_style(NPC)
@@ -7438,13 +7252,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 				//advance!
 				jedi_aggression(NPC, 2);
 
-				if (NPC->client->ps.saber_anim_level == SS_STRONG
+				if ((NPC->client->ps.saber_anim_level == SS_STRONG
 					|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 					|| NPC->client->ps.saber_anim_level == SS_DESANN
 					|| NPC->client->ps.saber_anim_level == SS_FAST
-					|| NPC->client->ps.saber_anim_level == SS_TAVION
-					&& NPC->client->ps.saber_anim_level != SS_STAFF
-					&& NPC->client->ps.saber_anim_level != SS_DUAL
+					|| NPC->client->ps.saber_anim_level == SS_TAVION)
 					&& !npc_is_staff_style(NPC)
 					&& !npc_is_dual_style(NPC))
 				{
@@ -7461,13 +7273,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 
 				if (!Q_irand(0, 1))
 				{
-					if (NPC->client->ps.saber_anim_level == SS_STRONG
+					if ((NPC->client->ps.saber_anim_level == SS_STRONG
 						|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 						|| NPC->client->ps.saber_anim_level == SS_DESANN
 						|| NPC->client->ps.saber_anim_level == SS_FAST
-						|| NPC->client->ps.saber_anim_level == SS_TAVION
-						&& NPC->client->ps.saber_anim_level != SS_STAFF
-						&& NPC->client->ps.saber_anim_level != SS_DUAL
+						|| NPC->client->ps.saber_anim_level == SS_TAVION)
 						&& !npc_is_staff_style(NPC)
 						&& !npc_is_dual_style(NPC))
 					{
@@ -7505,13 +7315,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 			}
 			if (!Q_irand(0, 2))
 			{
-				if (NPC->client->ps.saber_anim_level == SS_STRONG
+				if ((NPC->client->ps.saber_anim_level == SS_STRONG
 					|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 					|| NPC->client->ps.saber_anim_level == SS_DESANN
 					|| NPC->client->ps.saber_anim_level == SS_FAST
-					|| NPC->client->ps.saber_anim_level == SS_TAVION
-					&& NPC->client->ps.saber_anim_level != SS_STAFF
-					&& NPC->client->ps.saber_anim_level != SS_DUAL
+					|| NPC->client->ps.saber_anim_level == SS_TAVION)
 					&& !npc_is_staff_style(NPC)
 					&& !npc_is_dual_style(NPC))
 				{
@@ -7536,13 +7344,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 				{
 					jedi_aggression(NPC, -2);
 				}
-				if (NPC->client->ps.saber_anim_level == SS_STRONG
+				if ((NPC->client->ps.saber_anim_level == SS_STRONG
 					|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 					|| NPC->client->ps.saber_anim_level == SS_DESANN
 					|| NPC->client->ps.saber_anim_level == SS_FAST
-					|| NPC->client->ps.saber_anim_level == SS_TAVION
-					&& NPC->client->ps.saber_anim_level != SS_STAFF
-					&& NPC->client->ps.saber_anim_level != SS_DUAL
+					|| NPC->client->ps.saber_anim_level == SS_TAVION)
 					&& !npc_is_staff_style(NPC)
 					&& !npc_is_dual_style(NPC))
 				{
@@ -7567,13 +7373,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 				}
 				if (!Q_irand(0, 1))
 				{
-					if (NPC->client->ps.saber_anim_level == SS_STRONG
+					if ((NPC->client->ps.saber_anim_level == SS_STRONG
 						|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 						|| NPC->client->ps.saber_anim_level == SS_DESANN
 						|| NPC->client->ps.saber_anim_level == SS_FAST
-						|| NPC->client->ps.saber_anim_level == SS_TAVION
-						&& NPC->client->ps.saber_anim_level != SS_STAFF
-						&& NPC->client->ps.saber_anim_level != SS_DUAL
+						|| NPC->client->ps.saber_anim_level == SS_TAVION)
 						&& !npc_is_staff_style(NPC)
 						&& !npc_is_dual_style(NPC))
 					{
@@ -7590,13 +7394,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 			newFlags &= ~SEF_DEFLECTED;
 			if (!Q_irand(0, 3))
 			{
-				if (NPC->client->ps.saber_anim_level == SS_STRONG
+				if ((NPC->client->ps.saber_anim_level == SS_STRONG
 					|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 					|| NPC->client->ps.saber_anim_level == SS_DESANN
 					|| NPC->client->ps.saber_anim_level == SS_FAST
-					|| NPC->client->ps.saber_anim_level == SS_TAVION
-					&& NPC->client->ps.saber_anim_level != SS_STAFF
-					&& NPC->client->ps.saber_anim_level != SS_DUAL
+					|| NPC->client->ps.saber_anim_level == SS_TAVION)
 					&& !npc_is_staff_style(NPC)
 					&& !npc_is_dual_style(NPC))
 				{
@@ -7615,13 +7417,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 			//hit some other damagable object
 			if (!Q_irand(0, 3))
 			{
-				if (NPC->client->ps.saber_anim_level == SS_STRONG
+				if ((NPC->client->ps.saber_anim_level == SS_STRONG
 					|| NPC->client->ps.saber_anim_level == SS_MEDIUM
 					|| NPC->client->ps.saber_anim_level == SS_DESANN
 					|| NPC->client->ps.saber_anim_level == SS_FAST
-					|| NPC->client->ps.saber_anim_level == SS_TAVION
-					&& NPC->client->ps.saber_anim_level != SS_STAFF
-					&& NPC->client->ps.saber_anim_level != SS_DUAL
+					|| NPC->client->ps.saber_anim_level == SS_TAVION)
 					&& !npc_is_staff_style(NPC)
 					&& !npc_is_dual_style(NPC))
 				{
@@ -8566,13 +8366,11 @@ void npc_jedi_pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, c
 		if (!Q_irand(0, 3))
 		{
 			//ouch... maybe switch up which saber power level we're using
-			if (self->client->ps.saber_anim_level == SS_STRONG
+			if ((self->client->ps.saber_anim_level == SS_STRONG
 				|| self->client->ps.saber_anim_level == SS_MEDIUM
 				|| self->client->ps.saber_anim_level == SS_DESANN
 				|| self->client->ps.saber_anim_level == SS_FAST
-				|| self->client->ps.saber_anim_level == SS_TAVION
-				&& self->client->ps.saber_anim_level != SS_STAFF
-				&& self->client->ps.saber_anim_level != SS_DUAL
+				|| self->client->ps.saber_anim_level == SS_TAVION)
 				&& !npc_is_staff_style(self)
 				&& !npc_is_dual_style(self))
 			{
