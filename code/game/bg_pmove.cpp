@@ -9371,6 +9371,7 @@ static qboolean PM_AdjustStandAnimForSlope()
 		{
 		case BOTH_STAND1:
 		case BOTH_STAND9:
+		case BOTH_MD_CIN_1:
 		case BOTH_STANDYODA_STICK:
 		case BOTH_STAND_SABER_ON:
 		case BOTH_STAND_SABER_ON_DUELS:
@@ -9582,6 +9583,7 @@ static qboolean PM_AdjustStandAnimForSlope()
 			{
 			case BOTH_STAND1:
 			case BOTH_STAND9:
+			case BOTH_MD_CIN_1:
 			case BOTH_STANDYODA_STICK:
 			case BOTH_STAND_SABER_ON:
 			case BOTH_STAND_SABER_ON_DUELS:

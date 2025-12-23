@@ -8830,13 +8830,19 @@ void PM_TorsoAnimation()
 						}
 						else if (pm->gent && pm->gent->client && !PM_DroidMelee(pm->gent->client->NPC_class))
 						{
-							if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_YODA)
+							if (!PM_JumpingAnim(pm->ps->legsAnim)
+								&& !PM_LandingAnim(pm->ps->legsAnim)
+								&& !PM_InCartwheel(pm->ps->legsAnim)
+								&& !PM_FlippingAnim(pm->ps->legsAnim))
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANDYODA_STICK, SETANIM_FLAG_NORMAL);
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_MD_CIN_1, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
+								if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_YODA)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANDYODA_STICK, SETANIM_FLAG_NORMAL);
+								}
+								else
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_MD_CIN_1, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
+								}
 							}
 						}
 						else
@@ -9538,6 +9544,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND5: //# standing idle, no weapon, hand down, back straight
 	case BOTH_STAND5IDLE1:
 	case BOTH_MENUIDLE1: //# Random standing idle
+	case BOTH_MD_CIN_1:
 	case BOTH_STAND6: //# one handed: gun at side: relaxed stand
 	case BOTH_STAND2TO4: //# Transition from stand2 to stand4
 	case BOTH_STAND4TO2: //# Transition from stand4 to stand2
