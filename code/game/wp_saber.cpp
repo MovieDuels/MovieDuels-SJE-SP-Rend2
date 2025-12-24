@@ -7872,7 +7872,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 					MAX_CLIENTS)
 				{
 					//Player vs. Kyle Boss == lots of saberlocks
-					if (Q_irand(1, 100) <= g_saberLockRandomNess->integer)
+					if (Q_irand(1, 5) <= g_saberLockRandomNess->integer)
 					{
 						force_lock = qtrue;
 					}
@@ -7999,7 +7999,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 				}
 				else if (ent_attacking
 					&& hit_owner_attacking
-					&& !Q_irand(0, g_saberLockRandomNess->integer)
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer
 					&& (g_debugSaberLock->integer || force_lock
 						|| ent_power_level == hit_owner_power_level
 						|| ent_power_level > FORCE_LEVEL_2 && hit_owner_power_level > FORCE_LEVEL_2
@@ -8017,7 +8017,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 				}
 				else if (hit_owner_attacking
 					&& ent_defending
-					&& !Q_irand(0, g_saberLockRandomNess->integer * 3)
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer
 					&& (g_debugSaberLock->integer || force_lock ||
 						(ent->client->ps.saber_move != LS_READY || hit_owner_power_level - ent->client->ps.
 							forcePowerLevel[FP_SABER_DEFENSE] < Q_irand(-6, 0))
@@ -8039,7 +8039,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 					auto active_defense = static_cast<qboolean>(hit_owner->s.number || g_saberAutoBlocking->integer ||
 						hit_owner->client->ps.saberBlockingTime > level.time);
 
-					if (g_saberLockRandomNess->integer >= 1 && Q_irand(1, 100) <= g_saberLockRandomNess->integer
+					if (g_saberLockRandomNess->integer >= 1 && Q_irand(1, 5) <= g_saberLockRandomNess->integer
 						&& active_defense
 						&& (g_debugSaberLock->integer
 							|| force_lock
@@ -9817,29 +9817,29 @@ void wp_saber_damage_trace_amd(gentity_t* ent, int saber_num, int blade_num)
 					collision_resolved = qtrue;
 				}
 				else if (ent_attacking && hit_owner_attacking && ent_power_level == hit_owner_power_level
-					&& g_saberLockRandomNess->integer > 1 && WP_SabersCheckLock(ent, hit_owner))
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
 				else if (hit_owner_attacking && ent_defending && hit_owner_power_level > ent_power_level
-					&& g_saberLockRandomNess->integer > 0 && WP_SabersCheckLock(ent, hit_owner))
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
 				else if (ent_attacking && hit_owner_defending && ent_power_level > hit_owner_power_level
-					&& g_saberLockRandomNess->integer > 0 && WP_SabersCheckLock(ent, hit_owner))
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
-				else if (atkfake && !otherfake && WP_SabersCheckLock(ent, hit_owner))
+				else if (atkfake && !otherfake && Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
-				else if (otherfake && !atkfake && WP_SabersCheckLock(hit_owner, ent))
+				else if (otherfake && !atkfake && Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(hit_owner, ent))
 				{
 					collision_resolved = qtrue;
 				}
-				else if (otherfake && atkfake && WP_SabersCheckLock(hit_owner, ent))
+				else if (otherfake && atkfake && Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(hit_owner, ent))
 				{
 					collision_resolved = qtrue;
 				}
@@ -9853,7 +9853,7 @@ void wp_saber_damage_trace_amd(gentity_t* ent, int saber_num, int blade_num)
 				}
 				else if ((ent_attacking && (ent->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(ent)))
 					&& (hit_owner_defending && (hit_owner->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(hit_owner)))
-					&& Q_irand(1, 100) <= g_saberLockRandomNess->integer
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer
 					&& (g_debugSaberLock->integer || force_lock && WP_SabersCheckLock(ent, hit_owner)))
 				{
 					collision_resolved = qtrue;
@@ -11193,29 +11193,29 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saber_num, int blade_num)
 					collision_resolved = qtrue;
 				}
 				else if (ent_attacking && hit_owner_attacking && ent_power_level == hit_owner_power_level
-					&& g_saberLockRandomNess->integer > 1 && Q_irand(1, 6) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
+					&& g_saberLockRandomNess->integer > 1 && Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
 				else if (hit_owner_attacking && ent_defending && hit_owner_power_level > ent_power_level
-					&& g_saberLockRandomNess->integer > 0 && Q_irand(1, 6) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
 				else if (ent_attacking && hit_owner_defending && ent_power_level > hit_owner_power_level
-					&& g_saberLockRandomNess->integer > 0 && Q_irand(1, 6) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
-				else if (atkfake && !otherfake && Q_irand(1, 100) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
+				else if (atkfake && !otherfake && Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(ent, hit_owner))
 				{
 					collision_resolved = qtrue;
 				}
-				else if (otherfake && !atkfake && Q_irand(1, 100) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(hit_owner, ent))
+				else if (otherfake && !atkfake && Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(hit_owner, ent))
 				{
 					collision_resolved = qtrue;
 				}
-				else if (otherfake && atkfake && Q_irand(1, 100) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(hit_owner, ent))
+				else if (otherfake && atkfake && Q_irand(1, 5) <= g_saberLockRandomNess->integer && WP_SabersCheckLock(hit_owner, ent))
 				{
 					collision_resolved = qtrue;
 				}
@@ -11229,7 +11229,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saber_num, int blade_num)
 				}
 				else if ((ent_attacking && (ent->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(ent)))
 					&& (hit_owner_defending && (hit_owner->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(hit_owner)))
-					&& Q_irand(1, 100) <= g_saberLockRandomNess->integer
+					&& Q_irand(1, 5) <= g_saberLockRandomNess->integer
 					&& (g_debugSaberLock->integer || force_lock && WP_SabersCheckLock(ent, hit_owner)))
 				{
 					collision_resolved = qtrue;
