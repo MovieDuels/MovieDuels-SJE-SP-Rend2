@@ -8291,7 +8291,7 @@ void PM_TorsoAnimation()
 					{
 						if (cg.renderingThirdPerson)
 						{
-							if (pm->gent->alt_fire)
+							if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
 							}
@@ -8315,7 +8315,7 @@ void PM_TorsoAnimation()
 					{
 						if (cg.renderingThirdPerson)
 						{
-							if (pm->gent->alt_fire)
+							if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
 							}
@@ -9101,7 +9101,7 @@ void PM_TorsoAnimation()
 					{
 						if (cg.renderingThirdPerson)
 						{
-							if (pm->gent->alt_fire)
+							if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
 							}

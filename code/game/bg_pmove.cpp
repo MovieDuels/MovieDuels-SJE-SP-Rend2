@@ -21901,7 +21901,7 @@ static void PM_Weapon()
 			case WP_CLONECARBINE:
 			case WP_BATTLEDROID:
 			case WP_CLONECOMMANDO:
-				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
+				if (pm->cmd.buttons & BUTTON_ALT_ATTACK || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 				{
 					if (cg.renderingThirdPerson)
 					{
