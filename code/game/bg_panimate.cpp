@@ -7972,6 +7972,10 @@ void PM_TorsoAnimation()
 					{
 						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANDYODA_STICK, SETANIM_FLAG_NORMAL);
 					}
+					else if (PM_CrouchAnim(pm->ps->legsAnim))
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND6, SETANIM_FLAG_NORMAL);
+					}
 					else
 					{
 						PM_SetAnim(pm, SETANIM_TORSO, BOTH_MD_CIN_1, SETANIM_FLAG_NORMAL); // was BOTH_STAND6
@@ -8134,6 +8138,10 @@ void PM_TorsoAnimation()
 							if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_YODA)
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANDYODA_STICK, SETANIM_FLAG_NORMAL);
+							}
+							else if (PM_CrouchAnim(pm->ps->legsAnim))
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND6, SETANIM_FLAG_NORMAL);
 							}
 							else
 							{
@@ -8838,6 +8846,10 @@ void PM_TorsoAnimation()
 								if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_YODA)
 								{
 									PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANDYODA_STICK, SETANIM_FLAG_NORMAL);
+								}
+								else if (PM_CrouchAnim(pm->ps->legsAnim))
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND6, SETANIM_FLAG_NORMAL);
 								}
 								else
 								{
