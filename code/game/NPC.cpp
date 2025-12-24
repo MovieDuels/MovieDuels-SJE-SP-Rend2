@@ -2398,7 +2398,7 @@ static void NPC_InitAI()
 
 	d_saberCombat = gi.cvar("d_saberCombat", "0", CVAR_CHEAT);
 
-	d_slowmoaction = gi.cvar("d_slowmoaction", "0", CVAR_ARCHIVE); //save this setting
+	d_slowmoaction = gi.cvar("d_slowmoaction", "1", CVAR_ARCHIVE); //save this setting
 }
 
 /*

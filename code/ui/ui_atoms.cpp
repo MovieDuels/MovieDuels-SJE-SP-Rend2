@@ -323,7 +323,7 @@ void UI_Init(const int apiVersion, const uiimport_t* uiimport, const qboolean in
 
 	ui.Cvar_Create("ui_disableWeaponSway", "0", CVAR_ARCHIVE);
 
-	ui.Cvar_Create("d_slowmoaction", "0", CVAR_ARCHIVE);
+	ui.Cvar_Create("d_slowmoaction", "1", CVAR_ARCHIVE);
 
 #endif
 
