@@ -26,31 +26,36 @@ extern qboolean G_ControlledByPlayer(const gentity_t* self);
 
 qboolean HeIsJedi(const gentity_t* ent)
 {
+	if (!ent || !ent->client)
+	{
+		return qfalse;
+	}
+
 	switch (ent->client->NPC_class)
 	{
-	case CLASS_SITHLORD:
-	case CLASS_DESANN:
-	case CLASS_VADER:
-	case CLASS_JEDI:
-	case CLASS_KYLE:
-	case CLASS_LUKE:
-	case CLASS_MORGANKATARN:
-	case CLASS_REBORN:
-	case CLASS_BOC:
-	case CLASS_SHADOWTROOPER:
-	case CLASS_TAVION:
-	case CLASS_ALORA:
-	case CLASS_GALEN:
-	case CLASS_YODA:
-	case CLASS_AHSOKA:
-	case CLASS_PROJECTION:
-	case CLASS_JEDIMASTER:
-	case CLASS_GROGU:
-		// Is Jedi...
-		return qtrue;
-	default:
-		// NOT Jedi...
-		break;
+		case CLASS_SITHLORD:
+		case CLASS_DESANN:
+		case CLASS_VADER:
+		case CLASS_JEDI:
+		case CLASS_KYLE:
+		case CLASS_LUKE:
+		case CLASS_MORGANKATARN:
+		case CLASS_REBORN:
+		case CLASS_BOC:
+		case CLASS_SHADOWTROOPER:
+		case CLASS_TAVION:
+		case CLASS_ALORA:
+		case CLASS_GALEN:
+		case CLASS_YODA:
+		case CLASS_AHSOKA:
+		case CLASS_PROJECTION:
+		case CLASS_JEDIMASTER:
+		case CLASS_GROGU:
+			// Is Jedi...
+			return qtrue;
+		default:
+			// NOT Jedi...
+			break;
 	}
 
 	return qfalse;
@@ -58,6 +63,11 @@ qboolean HeIsJedi(const gentity_t* ent)
 
 qboolean droideka_npc(const gentity_t* ent)
 {
+	if (!ent || !ent->client)
+	{
+		return qfalse;
+	}
+
 	if (ent->NPC
 		&& ent->client->NPC_class == CLASS_DROIDEKA
 		&& ent->s.weapon == WP_DROIDEKA
@@ -71,6 +81,11 @@ qboolean droideka_npc(const gentity_t* ent)
 
 qboolean Mandalorian_Character(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->NPC_class == CLASS_BOBAFETT
 		|| self->client->NPC_class == CLASS_MANDALORIAN
 		|| self->client->NPC_class == CLASS_JANGO
@@ -83,6 +98,11 @@ qboolean Mandalorian_Character(const gentity_t* self)
 
 qboolean Mandalorian_Repeater(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->NPC_class == CLASS_MANDALORIAN
 		&& (Q_stricmp("pazvizsla", self->NPC_type) == 0 ||
 			Q_stricmp("pazvizsla_nohelm", self->NPC_type) == 0))
@@ -94,6 +114,11 @@ qboolean Mandalorian_Repeater(const gentity_t* self)
 
 qboolean Armorer_clone_pistol(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->NPC_class == CLASS_MANDALORIAN
 		&& (Q_stricmp("armorer_jet", self->NPC_type) == 0))
 	{
@@ -104,6 +129,11 @@ qboolean Armorer_clone_pistol(const gentity_t* self)
 
 qboolean Mandalorian_boba_pistol(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->NPC_class == CLASS_MANDALORIAN
 		&& (Q_stricmp("boba_fett_esb", self->NPC_type) == 0 ||
 			Q_stricmp("boba_fett_rotj", self->NPC_type) == 0 ||
@@ -119,6 +149,11 @@ qboolean Mandalorian_boba_pistol(const gentity_t* self)
 
 qboolean Lando_Class_boba_pistol(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->NPC_class == CLASS_LANDO
 		&& (Q_stricmp("boba_fett_tgpoc", self->NPC_type) == 0))
 	{
@@ -129,6 +164,11 @@ qboolean Lando_Class_boba_pistol(const gentity_t* self)
 
 qboolean Char_Dual_Pistols(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->charDualPistols == 1)
 	{
 		return qtrue;
@@ -138,6 +178,11 @@ qboolean Char_Dual_Pistols(const gentity_t* self)
 
 qboolean jedi_is_kick_resistant(gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->charNoKnockback == 1)
 	{
 		self->flags |= FL_NO_KNOCKBACK;
@@ -148,6 +193,11 @@ qboolean jedi_is_kick_resistant(gentity_t* self)
 
 qboolean char_is_force_user_attacker(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->charForceUser == 1)
 	{
 		return qtrue;
@@ -157,6 +207,11 @@ qboolean char_is_force_user_attacker(const gentity_t* self)
 
 qboolean char_has_beskar_armor(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->charBeskar == 1)
 	{
 		return qtrue;
@@ -166,6 +221,11 @@ qboolean char_has_beskar_armor(const gentity_t* self)
 
 qboolean Calo_Nord(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (self->client->NPC_class == CLASS_CALONORD
 		&& (Q_stricmp("calonord", self->NPC_type) == 0 ||
 			Q_stricmp("md_calo", self->NPC_type) == 0 ||
@@ -178,6 +238,11 @@ qboolean Calo_Nord(const gentity_t* self)
 
 qboolean jedi_win_po(const gentity_t* self)
 {
+	if (!self)
+	{
+		return qfalse;
+	}
+
 	if (Q_stricmp("md_win_po", self->NPC_type) == 0)
 	{
 		return qtrue;
@@ -187,6 +252,11 @@ qboolean jedi_win_po(const gentity_t* self)
 
 qboolean Grievious_Classes(const gentity_t* self)
 {
+	if (!self)
+	{
+		return qfalse;
+	}
+
 	if (Q_stricmp("Arena_Grievous", self->NPC_type) == 0
 		|| Q_stricmp("Arena_Grievous2", self->NPC_type) == 0
 		|| Q_stricmp("md_grievous", self->NPC_type) == 0
@@ -200,6 +270,11 @@ qboolean Grievious_Classes(const gentity_t* self)
 
 qboolean jedi_jedi_master_low(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (g_SerenityJediEngineMode->integer == 2)
 	{
 		if (self->client->NPC_class == CLASS_JEDIMASTER
@@ -221,6 +296,11 @@ qboolean jedi_jedi_master_low(const gentity_t* self)
 
 qboolean jedi_jedi_master_high(const gentity_t* self)
 {
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
 	if (g_SerenityJediEngineMode->integer == 2)
 	{
 		if (self->client->NPC_class == CLASS_JEDIMASTER
