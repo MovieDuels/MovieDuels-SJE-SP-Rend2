@@ -43,7 +43,6 @@ extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_SaberAttackSpeedMD;
 extern cvar_t* g_RealisticBlockingMode;
 extern cvar_t* com_outcast;
-extern cvar_t* g_playerArmourSync;
 extern cvar_t* com_kotor;
 
 extern cvar_t* g_allowAlignmentChange;
@@ -3318,12 +3317,6 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 				else if (parsing_player)
 				{
 					npc->client->ps.stats[STAT_MAX_HEALTH] = npc->client->pers.maxHealth = npc->max_health = n;
-
-					if (g_playerArmourSync->integer)
-					{
-						player->health = Com_Clampi(1, player->client->ps.stats[STAT_MAX_HEALTH], n);
-						player->client->ps.stats[STAT_ARMOR] = n;
-					}
 				}
 				continue;
 			}

@@ -298,8 +298,6 @@ cvar_t* g_remove_unused_weapons;
 cvar_t* g_allowcallout;
 cvar_t* g_allowslipping;
 
-cvar_t* g_playerArmourSync;
-
 cvar_t* g_RealisticBlockingMode;
 
 cvar_t* g_debugFatigueBars;
@@ -923,8 +921,6 @@ static void G_InitCvars()
 	g_remove_unused_weapons = gi.cvar("g_removedroppedweapons", "0", CVAR_ARCHIVE);
 
 	g_allowslipping = gi.cvar("g_allowslipping", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-
-	g_playerArmourSync = gi.cvar("g_playerarmoursync", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_RealisticBlockingMode = gi.cvar("g_RealisticBlockingMode", "0", CVAR_ARCHIVE); //Alternate saber combat system
 
