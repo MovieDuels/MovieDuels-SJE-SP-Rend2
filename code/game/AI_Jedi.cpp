@@ -620,15 +620,15 @@ void npc_jedi_play_confusion_sound(const gentity_t* self)
 				|| self->client->NPC_class == CLASS_VADER
 				|| self->client->NPC_class == CLASS_GALEN))
 		{
-			G_AddVoiceEvent(self, Q_irand(EV_CONFUSE1, EV_CONFUSE3), 2000);
+			G_AddVoiceEvent(self, Q_irand(EV_CONFUSE1, EV_CONFUSE3), 12000);
 		}
 		else if (Q_irand(0, 1))
 		{
-			G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), 2000);
+			G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), 12000);
 		}
 		else
 		{
-			G_AddVoiceEvent(self, Q_irand(EV_GLOAT1, EV_GLOAT3), 2000);
+			G_AddVoiceEvent(self, Q_irand(EV_GLOAT1, EV_GLOAT3), 12000);
 		}
 	}
 }
@@ -1370,17 +1370,17 @@ static qboolean jedi_battle_taunt()
 				jediSpeechDebounceTime[NPC->client->playerTeam] = NPCInfo->blockedSpeechDebounceTime = level.time + 6000;
 				if (NPCInfo->aiFlags & NPCAI_ROSH)
 				{
-					TIMER_Set(NPC, "chatter", Q_irand(8000, 20000));
+					TIMER_Set(NPC, "chatter", Q_irand(15000, 20000));
 				}
 				else
 				{
-					TIMER_Set(NPC, "chatter", Q_irand(5000, 10000));
+					TIMER_Set(NPC, "chatter", Q_irand(12000, 15000));
 				}
 
 				if (NPC->enemy && NPC->enemy->NPC && NPC->enemy->s.weapon == WP_SABER && NPC->enemy->client && (NPC->
 					enemy->client->NPC_class == CLASS_JEDI || NPC->enemy->client->NPC_class == CLASS_AHSOKA))
 				{
-					G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT5), 2000);
+					G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT5), 12000);
 				}
 				return qtrue;
 			}
@@ -2177,7 +2177,7 @@ static void jedi_combat_distance(const int enemy_dist)
 		if (Q_irand(0, 1))
 		{
 			jedi_start_retreat();
-			G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 3000);
+			G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 13000);
 			return;
 		}
 	}
@@ -2376,7 +2376,7 @@ static void jedi_combat_distance(const int enemy_dist)
 						swing_anim = BOTH_A7_HILT;
 					}
 					G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-					G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 2000);
+					G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 12000);
 					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					if (NPC->client->ps.blockPoints > BLOCKPOINTS_THIRTY)
 					{
@@ -2404,7 +2404,7 @@ static void jedi_combat_distance(const int enemy_dist)
 					//animate me
 					const int swing_anim = Q_irand(BOTH_A7_KICK_B, BOTH_SWEEP_KICK);
 					G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-					G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 2000);
+					G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 12000);
 					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
 					if (NPC->health > BLOCKPOINTS_HALF)
@@ -2934,16 +2934,16 @@ static void jedi_combat_distance(const int enemy_dist)
 			if (TIMER_Done(NPC, "chatter") && jediSpeechDebounceTime[NPC->client->playerTeam] < level.time && NPCInfo->
 				blockedSpeechDebounceTime < level.time)
 			{
-				G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 3000);
+				G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 13000);
 				jediSpeechDebounceTime[NPC->client->playerTeam] = NPCInfo->blockedSpeechDebounceTime = level.time +
 					3000;
 				if (NPCInfo->aiFlags & NPCAI_ROSH)
 				{
-					TIMER_Set(NPC, "chatter", 6000);
+					TIMER_Set(NPC, "chatter", 16000);
 				}
 				else
 				{
-					TIMER_Set(NPC, "chatter", 3000);
+					TIMER_Set(NPC, "chatter", 13000);
 				}
 			}
 
@@ -2965,16 +2965,16 @@ static void jedi_combat_distance(const int enemy_dist)
 			if (TIMER_Done(NPC, "chatter") && jediSpeechDebounceTime[NPC->client->playerTeam] < level.time && NPCInfo->
 				blockedSpeechDebounceTime < level.time)
 			{
-				G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 3000);
+				G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 13000);
 				jediSpeechDebounceTime[NPC->client->playerTeam] = NPCInfo->blockedSpeechDebounceTime = level.time +
 					3000;
 				if (NPCInfo->aiFlags & NPCAI_ROSH)
 				{
-					TIMER_Set(NPC, "chatter", 6000);
+					TIMER_Set(NPC, "chatter", 16000);
 				}
 				else
 				{
-					TIMER_Set(NPC, "chatter", 3000);
+					TIMER_Set(NPC, "chatter", 13000);
 				}
 			}
 
@@ -3211,16 +3211,16 @@ static void jedi_combat_distance(const int enemy_dist)
 							if (TIMER_Done(NPC, "chatter") && jediSpeechDebounceTime[NPC->client->playerTeam] < level.
 								time && NPCInfo->blockedSpeechDebounceTime < level.time)
 							{
-								G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 3000);
+								G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 13000);
 								jediSpeechDebounceTime[NPC->client->playerTeam] = NPCInfo->blockedSpeechDebounceTime =
 									level.time + 3000;
 								if (NPCInfo->aiFlags & NPCAI_ROSH)
 								{
-									TIMER_Set(NPC, "chatter", 6000);
+									TIMER_Set(NPC, "chatter", 16000);
 								}
 								else
 								{
-									TIMER_Set(NPC, "chatter", 3000);
+									TIMER_Set(NPC, "chatter", 13000);
 								}
 							}
 
@@ -3241,16 +3241,16 @@ static void jedi_combat_distance(const int enemy_dist)
 							if (TIMER_Done(NPC, "chatter") && jediSpeechDebounceTime[NPC->client->playerTeam] < level.
 								time && NPCInfo->blockedSpeechDebounceTime < level.time)
 							{
-								G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 3000);
+								G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 13000);
 								jediSpeechDebounceTime[NPC->client->playerTeam] = NPCInfo->blockedSpeechDebounceTime =
 									level.time + 3000;
 								if (NPCInfo->aiFlags & NPCAI_ROSH)
 								{
-									TIMER_Set(NPC, "chatter", 6000);
+									TIMER_Set(NPC, "chatter", 16000);
 								}
 								else
 								{
-									TIMER_Set(NPC, "chatter", 3000);
+									TIMER_Set(NPC, "chatter", 13000);
 								}
 							}
 
@@ -7309,8 +7309,8 @@ static void jedi_combat_timers_update(const int enemy_dist)
 					&& jediSpeechDebounceTime[NPC->client->playerTeam] < level.time
 					&& NPC->painDebounceTime < level.time - 1000)
 				{
-					G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), 3000);
-					jediSpeechDebounceTime[NPC->client->playerTeam] = NPCInfo->blockedSpeechDebounceTime = level.time + 3000;
+					G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), 13000);
+					jediSpeechDebounceTime[NPC->client->playerTeam] = NPCInfo->blockedSpeechDebounceTime = level.time + 13000;
 				}
 			}
 			if (!Q_irand(0, 2))
@@ -7495,13 +7495,13 @@ static void jedi_combat_idle(const int enemy_dist)
 					if (NPC->client->playerTeam != TEAM_PLAYER && !Q_irand(0, 1))
 					{
 						NPC->client->ps.taunting = level.time + 100;
-						TIMER_Set(NPC, "chatter", Q_irand(5000, 10000));
-						TIMER_Set(NPC, "taunting", 5500);
+						TIMER_Set(NPC, "chatter", Q_irand(12000, 15000));
+						TIMER_Set(NPC, "taunting", 12500);
 					}
 					else
 					{
 						jedi_battle_taunt();
-						TIMER_Set(NPC, "taunting", Q_irand(5000, 10000));
+						TIMER_Set(NPC, "taunting", Q_irand(12000, 15000));
 					}
 				}
 				else if (jedi_battle_taunt())
@@ -8420,7 +8420,7 @@ void npc_jedi_pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, c
 
 	if (!damage && self->health > 0)
 	{
-		G_AddVoiceEvent(self, Q_irand(EV_PUSHED1, EV_PUSHED3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_PUSHED1, EV_PUSHED3), 4000);
 	}
 
 	//drop me from the ceiling if I'm on it
@@ -8609,7 +8609,7 @@ void jedi_ambush(gentity_t* self)
 		self->client->ps.SaberActivate();
 	}
 	jedi_decloak(self);
-	G_AddVoiceEvent(self, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
+	G_AddVoiceEvent(self, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 }
 
 qboolean jedi_waiting_ambush(const gentity_t* self)
@@ -8885,7 +8885,7 @@ void npc_bs_jedi_follow_leader()
 		{
 			TIMER_Set(NPC, "FollowHealDebouncer", Q_irand(12000, 18000));
 			ForceHeal(NPC);
-			G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), 5000 + Q_irand(0, 15000));
+			G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(6000, 12000));
 		}
 		else
 		{
@@ -9174,8 +9174,8 @@ static void jedi_attack()
 				if (!NPC->client->ps.SaberActive() && !NPC->client->ps.saberInFlight)
 				{
 					//turned off saber (in hand), gloat
-					G_AddVoiceEvent(NPC, Q_irand(EV_VICTORY1, EV_VICTORY3), 3000);
-					jediSpeechDebounceTime[NPC->client->playerTeam] = level.time + 3000;
+					G_AddVoiceEvent(NPC, Q_irand(EV_VICTORY1, EV_VICTORY3), 6000);
+					jediSpeechDebounceTime[NPC->client->playerTeam] = level.time + 6000;
 					NPCInfo->desiredPitch = 0;
 					NPCInfo->goalEntity = nullptr;
 				}
@@ -9357,7 +9357,7 @@ static void jedi_attack()
 			&& !Q_irand(0, 3))
 		{
 			//the more we're hurt and the stronger the attack we're using, the more likely we are to make a anger noise when we swing
-			G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 1000);
+			G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 10000);
 		}
 	}
 
@@ -9485,10 +9485,10 @@ static void jedi_attack()
 			if (NPC->s.weapon == WP_SABER)
 			{
 				WP_DeactivateSaber(NPC);
-				G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(5000, 10000));
+				G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(12000, 15000));
 				return;
 			}
-			G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(5000, 10000));
+			G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(12000, 15000));
 			return;
 		} //IsCowering
 		if (NPC->client->NPC_class != CLASS_RANCOR
@@ -9509,10 +9509,10 @@ static void jedi_attack()
 			if (NPC->s.weapon == WP_SABER)
 			{
 				WP_DeactivateSaber(NPC);
-				G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(5000, 10000));
+				G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(12000, 15000));
 				return;
 			}
-			G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(5000, 10000));
+			G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(12000, 15000));
 			return;
 		} //IsRESPECTING
 		if (NPC->client->NPC_class != CLASS_RANCOR

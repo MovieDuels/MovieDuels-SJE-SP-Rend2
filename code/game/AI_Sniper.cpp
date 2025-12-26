@@ -122,7 +122,7 @@ static void NPC_Sniper_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* ot
 
 	if (self && self->health > 0 && !damage)
 	{
-		G_AddVoiceEvent(self, Q_irand(EV_PUSHED1, EV_PUSHED3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_PUSHED1, EV_PUSHED3), 3000);
 	}
 }
 

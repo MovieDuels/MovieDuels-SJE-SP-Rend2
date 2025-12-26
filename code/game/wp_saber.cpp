@@ -8485,7 +8485,8 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 						WP_SaberBlockEffect(ent, saber_num, blade_num, g_saberFlashPos, hit_norm, qtrue); //jka
 					}
 				}
-				WP_SaberBlockSound(ent, 0, 0);
+				//WP_SaberBlockSound(ent, 0, 0);
+				G_Sound(ent, G_SoundIndex(va("sound/weapons/saber/saberlock%d.mp3", Q_irand(1, 9))));
 			}
 		}
 	}
@@ -21110,8 +21111,8 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 			if (pusher->NPC && pusher->enemy == self)
 			{
 				//pushed pushed down his enemy
-				G_AddVoiceEvent(pusher, Q_irand(EV_GLOAT1, EV_GLOAT3), 3000);
-				pusher->NPC->blockedSpeechDebounceTime = level.time + 3000;
+				G_AddVoiceEvent(pusher, Q_irand(EV_GLOAT1, EV_GLOAT3), 10000);
+				pusher->NPC->blockedSpeechDebounceTime = level.time + 10000;
 			}
 		}
 	}
@@ -22399,7 +22400,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 							self->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 							self->painDebounceTime = level.time + self->client->ps.weaponTime;
 							TIMER_Set(self, "kyleTakesSaber", Q_irand(60000, 180000)); //don't do this again for a while
-							G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(4000, 6000));
+							G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(8000, 12000));
 							VectorClear(self->client->ps.velocity);
 							VectorClear(self->client->ps.moveDir);
 							continue;
@@ -23899,7 +23900,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 							self->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 							self->painDebounceTime = level.time + self->client->ps.weaponTime;
 							TIMER_Set(self, "kyleTakesSaber", Q_irand(60000, 180000)); //don't do this again for a while
-							G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(4000, 6000));
+							G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(8000, 12000));
 							VectorClear(self->client->ps.velocity);
 							VectorClear(self->client->ps.moveDir);
 							continue;
@@ -25764,7 +25765,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 								self->painDebounceTime = level.time + self->client->ps.weaponTime;
 								TIMER_Set(self, "kyleTakesSaber", Q_irand(60000, 180000));
 								//don't do this again for a while
-								G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(4000, 6000));
+								G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(8000, 12000));
 								VectorClear(self->client->ps.velocity);
 								VectorClear(self->client->ps.moveDir);
 								continue;
@@ -26848,7 +26849,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 								self->painDebounceTime = level.time + self->client->ps.weaponTime;
 								TIMER_Set(self, "kyleTakesSaber", Q_irand(60000, 180000));
 								//don't do this again for a while
-								G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(4000, 6000));
+								G_AddVoiceEvent(self, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(8000, 12000));
 								VectorClear(self->client->ps.velocity);
 								VectorClear(self->client->ps.moveDir);
 								continue;
@@ -29475,7 +29476,7 @@ void ForceGrip(gentity_t* self)
 						ForceAbsorb(traceEnt);
 					}
 				}
-				G_AddVoiceEvent(traceEnt, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(3000, 5000));
+				G_AddVoiceEvent(traceEnt, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(8000, 12000));
 			}
 			return;
 		}
@@ -30363,7 +30364,7 @@ static void force_shootstrike(gentity_t* self)
 					{
 						//disable cloak temporarily
 						player_decloak(traceEnt);
-						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
+						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 					}
 
 					if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GALAKMECH)
@@ -30642,7 +30643,7 @@ static void force_shootstrike(gentity_t* self)
 					{
 						//disable cloak temporarily
 						player_decloak(traceEnt);
-						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
+						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 					}
 
 					if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GALAKMECH)
@@ -30921,7 +30922,7 @@ static void force_shootstrike(gentity_t* self)
 					{
 						//disable cloak temporarily
 						player_decloak(traceEnt);
-						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
+						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 					}
 
 					if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GALAKMECH)
@@ -31985,7 +31986,7 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 				{
 					//disable cloak temporarily
 					player_decloak(traceEnt);
-					G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
+					G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 				}
 				traceEnt->s.powerups |= 1 << PW_SHOCKED;
 
@@ -32812,7 +32813,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 				{
 					//disable cloak temporarily
 					player_decloak(traceEnt);
-					G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
+					G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 				}
 				traceEnt->s.powerups |= 1 << PW_SHOCKED;
 
@@ -33548,7 +33549,7 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 				{
 					//disable cloak temporarily
 					player_decloak(traceEnt);
-					G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
+					G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 				}
 				traceEnt->s.powerups |= 1 << PW_SHOCKED;
 
@@ -34023,7 +34024,7 @@ qboolean ForceDrain2(gentity_t* self)
 						ForceAbsorb(traceEnt);
 					}
 				}
-				G_AddVoiceEvent(traceEnt, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(3000, 5000));
+				G_AddVoiceEvent(traceEnt, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(8000, 12000));
 			}
 			return qtrue;
 		}
@@ -36637,7 +36638,7 @@ void ForceGrasp(gentity_t* self)
 						ForceAbsorb(traceEnt);
 					}
 				}
-				G_AddVoiceEvent(traceEnt, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(3000, 5000));
+				G_AddVoiceEvent(traceEnt, Q_irand(EV_TAUNT1, EV_TAUNT5), Q_irand(8000, 12000));
 			}
 			return;
 		}

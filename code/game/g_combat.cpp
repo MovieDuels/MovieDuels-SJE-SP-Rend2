@@ -6219,8 +6219,8 @@ void G_Slapdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, flo
 			if (attacker->NPC && attacker->enemy == self)
 			{
 				//pushed pushed down his enemy
-				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 3000);
-				attacker->NPC->blockedSpeechDebounceTime = level.time + 3000;
+				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 10000);
+				attacker->NPC->blockedSpeechDebounceTime = level.time + 10000;
 			}
 		}
 	}
@@ -6433,8 +6433,8 @@ void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 			if (attacker->NPC && attacker->enemy == self)
 			{
 				//pushed pushed down his enemy
-				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 3000);
-				attacker->NPC->blockedSpeechDebounceTime = level.time + 3000;
+				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 10000);
+				attacker->NPC->blockedSpeechDebounceTime = level.time + 10000;
 			}
 		}
 	}
@@ -6639,8 +6639,8 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 			if (attacker->NPC && attacker->enemy == self)
 			{
 				//pushed pushed down his enemy
-				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 3000);
-				attacker->NPC->blockedSpeechDebounceTime = level.time + 3000;
+				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 10000);
+				attacker->NPC->blockedSpeechDebounceTime = level.time + 10000;
 			}
 		}
 	}
@@ -6839,8 +6839,8 @@ void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 			if (attacker->NPC && attacker->enemy == self)
 			{
 				//pushed pushed down his enemy
-				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 3000);
-				attacker->NPC->blockedSpeechDebounceTime = level.time + 3000;
+				G_AddVoiceEvent(attacker, Q_irand(EV_GLOAT1, EV_GLOAT3), 10000);
+				attacker->NPC->blockedSpeechDebounceTime = level.time + 10000;
 			}
 		}
 	}

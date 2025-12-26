@@ -16002,7 +16002,7 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 			{
 				genemy->NPC->blockedSpeechDebounceTime = 0;
 			}
-			G_AddVoiceEvent(genemy, Q_irand(EV_PUSHED1, EV_PUSHED3), 500);
+			G_AddVoiceEvent(genemy, Q_irand(EV_PUSHED1, EV_PUSHED3), 3000);
 		}
 		if (result == LOCK_VICTORY)
 		{

@@ -188,22 +188,22 @@ void g_do_m_block_response(const gentity_t* speaker_npc_self)
 	switch (voice_event)
 	{
 	case 0:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_GLOAT1, EV_GLOAT3), 2000);
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_GLOAT1, EV_GLOAT3), 10000);
 		break;
 	case 1:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_JCHASE1, EV_JCHASE3), 2000);
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_JCHASE1, EV_JCHASE3), 10000);
 		break;
 	case 2:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_COMBAT1, EV_COMBAT3), 2000);
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_COMBAT1, EV_COMBAT3), 10000);
 		break;
 	case 3:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_ANGER1, EV_ANGER3), 2000);
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 		break;
 	case 4:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_TAUNT1, EV_TAUNT3), 2000);
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_TAUNT1, EV_TAUNT3), 10000);
 		break;
 	default:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_PUSHED1, EV_PUSHED3), 2000);
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_PUSHED1, EV_PUSHED3), 10000);
 		break;
 	}
 }
@@ -255,7 +255,7 @@ void speaker_speech(const gentity_t* self, const int speech_type, const float fa
 		}
 	}
 
-	TIMER_Set(self, "chatter", Q_irand(2000, 4000));
+	TIMER_Set(self, "chatter", Q_irand(12000, 14000));
 
 	if (self->NPC->blockedSpeechDebounceTime > level.time)
 	{
@@ -265,46 +265,46 @@ void speaker_speech(const gentity_t* self, const int speech_type, const float fa
 	switch (speech_type)
 	{
 	case speech_chase:
-		G_AddVoiceEvent(self, Q_irand(EV_CHASE1, EV_CHASE3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_CHASE1, EV_CHASE3), 10000);
 		break;
 	case speech_confused:
-		G_AddVoiceEvent(self, Q_irand(EV_CONFUSE1, EV_CONFUSE3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_CONFUSE1, EV_CONFUSE3), 10000);
 		break;
 	case speech_cover:
-		G_AddVoiceEvent(self, Q_irand(EV_COVER1, EV_COVER5), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_COVER1, EV_COVER5), 10000);
 		break;
 	case speech_detected:
-		G_AddVoiceEvent(self, Q_irand(EV_DETECTED1, EV_DETECTED5), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_DETECTED1, EV_DETECTED5), 10000);
 		break;
 	case speech_giveup:
-		G_AddVoiceEvent(self, Q_irand(EV_GIVEUP1, EV_GIVEUP4), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_GIVEUP1, EV_GIVEUP4), 10000);
 		break;
 	case speech_look:
-		G_AddVoiceEvent(self, Q_irand(EV_LOOK1, EV_LOOK2), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_LOOK1, EV_LOOK2), 10000);
 		break;
 	case speech_lost:
-		G_AddVoiceEvent(self, EV_LOST1, 2000);
+		G_AddVoiceEvent(self, EV_LOST1, 10000);
 		break;
 	case speech_outflank:
-		G_AddVoiceEvent(self, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 10000);
 		break;
 	case speech_escaping:
-		G_AddVoiceEvent(self, Q_irand(EV_ESCAPING1, EV_ESCAPING3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_ESCAPING1, EV_ESCAPING3), 10000);
 		break;
 	case speech_sight:
-		G_AddVoiceEvent(self, Q_irand(EV_SIGHT1, EV_SIGHT3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_SIGHT1, EV_SIGHT3), 10000);
 		break;
 	case speech_sound:
-		G_AddVoiceEvent(self, Q_irand(EV_SOUND1, EV_SOUND3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_SOUND1, EV_SOUND3), 10000);
 		break;
 	case speech_suspicious:
-		G_AddVoiceEvent(self, Q_irand(EV_SUSPICIOUS1, EV_SUSPICIOUS5), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_SUSPICIOUS1, EV_SUSPICIOUS5), 10000);
 		break;
 	case speech_yell:
-		G_AddVoiceEvent(self, Q_irand(EV_ANGER1, EV_ANGER3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
 		break;
 	case speech_greet:
-		G_AddVoiceEvent(self, Q_irand(EV_PUSHED1, EV_PUSHED3), 2000);
+		G_AddVoiceEvent(self, Q_irand(EV_PUSHED1, EV_PUSHED3), 10000);
 		break;
 	default:
 		break;

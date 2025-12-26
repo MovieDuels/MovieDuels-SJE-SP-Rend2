@@ -139,6 +139,8 @@ using playerEntity_t = struct
 	int painTime;
 	int painDirection; // flip from 0 to 1
 
+	int pushedTime; // when the last push sound occurred
+
 	// For persistent beam weapons, so they don't play their start sound more than once
 	qboolean lightningFiring;
 
