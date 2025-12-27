@@ -1513,7 +1513,7 @@ static void NPC_Respond(gentity_t* self, int userNum)
 		auto addFlag = static_cast<qboolean>((self->NPC->scriptFlags & SCF_NO_COMBAT_TALK) != 0);
 		self->NPC->scriptFlags &= ~SCF_NO_COMBAT_TALK;
 
-		G_AddVoiceEvent(self, event, 3000);
+		G_AddVoiceEvent(self, event, Q_irand(10000, 13000));
 
 		if (addFlag)
 		{

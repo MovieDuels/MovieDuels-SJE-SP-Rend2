@@ -710,7 +710,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 					//don't yell that you have an enemy more than once every 4-8 seconds
 					TIMER_Set(self, "kyleAngerSoundDebounce", Q_irand(4000, 8000));
 				}
-				G_AddVoiceEvent(self, event, 2000);
+				G_AddVoiceEvent(self, event, Q_irand(10000, 13000));
 			}
 		}
 
