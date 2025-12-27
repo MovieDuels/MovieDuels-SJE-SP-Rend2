@@ -2005,16 +2005,19 @@ using weaponInfo_t = struct weaponInfo_s
 	gitem_t* item;
 
 	qhandle_t handsModel; // the hands don't actually draw, they just position the weapon
+	qhandle_t altHandsModel; // the hands don't actually draw, they just position the weapon - kotor
 	qhandle_t weaponModel; //for in view
+	qhandle_t altWeaponModel; //for in view - kotor
 	qhandle_t weaponWorldModel; //for in their hands
+	qhandle_t altWeaponWorldModel; //for in their hands - kotor
 	qhandle_t barrelModel[4];
 
 	vec3_t weaponMidpoint; // so it will rotate centered instead of by tag
 
 	qhandle_t weapon_Icon; // The version of the icon with a glowy background
-	qhandle_t alt_weapon_Icon; // The version of the icon with a glowy background
+	qhandle_t alt_weapon_Icon; // The version of the icon with a glowy background - kotor
 	qhandle_t weaponIconNoAmmo; // The version of the icon with no ammo warning
-	qhandle_t alt_weaponIconNoAmmo; // The version of the icon with no ammo warning
+	qhandle_t alt_weaponIconNoAmmo; // The version of the icon with no ammo warning - kotor
 	qhandle_t ammoIcon;
 
 	qhandle_t ammoModel;

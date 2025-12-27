@@ -96,6 +96,7 @@ extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void CheckCameraLocation(vec3_t oldeye_origin);
 extern qboolean PM_CrouchAnim(int anim);
 extern void CG_CubeOutline(vec3_t mins, vec3_t maxs, int time, unsigned int color);
+extern vmCvar_t cg_com_kotor;
 
 /*
 
@@ -16594,7 +16595,15 @@ void CG_Player(centity_t* cent)
 			CG_RegisterWeapon(cent->currentState.weapon);
 			weapon = &cg_weapons[cent->currentState.weapon];
 
-			gun.hModel = weapon->weaponWorldModel;
+			if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+			{
+				gun.hModel = weapon->altWeaponWorldModel;
+			}
+			else
+			{
+				gun.hModel = weapon->weaponWorldModel;
+			}
+
 			if (gun.hModel)
 			{
 				qboolean drawGun = qtrue;

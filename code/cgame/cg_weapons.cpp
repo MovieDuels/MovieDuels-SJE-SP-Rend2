@@ -163,27 +163,14 @@ void CG_RegisterWeapon(const int weapon_num)
 	CG_RegisterItemVisuals(item - bg_itemlist);
 
 	// set up in view weapon model
-	if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
-	{
-		weaponInfo->weaponModel = cgi_R_RegisterModel(weaponData[weapon_num].altweaponMdl);
-	}
-	else
-	{
-		weaponInfo->weaponModel = cgi_R_RegisterModel(weaponData[weapon_num].weaponMdl);
-	}
+	weaponInfo->weaponModel = cgi_R_RegisterModel(weaponData[weapon_num].weaponMdl);
+	weaponInfo->altWeaponModel = cgi_R_RegisterModel(weaponData[weapon_num].altweaponMdl); // kotor
 
 	{
 		//in case the weaponmodel isn't _w, precache the _w.glm
 		char weapon_model[64];
 
-		if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
-		{
-			Q_strncpyz(weapon_model, weaponData[weapon_num].altweaponMdl, sizeof weapon_model);
-		}
-		else
-		{
-			Q_strncpyz(weapon_model, weaponData[weapon_num].weaponMdl, sizeof weapon_model);
-		}
+		Q_strncpyz(weapon_model, weaponData[weapon_num].weaponMdl, sizeof weapon_model);
 
 		if (char* spot = strstr(weapon_model, ".md3"))
 		{
@@ -199,16 +186,33 @@ void CG_RegisterWeapon(const int weapon_num)
 		gi.G2API_PrecacheGhoul2Model(weapon_model); // correct way is item->world_model
 	}
 
+	{
+		//in case the altweaponmodel isn't _w, precache the _w.glm - kotor
+		char alt_weapon_model[64];
+
+		Q_strncpyz(alt_weapon_model, weaponData[weapon_num].altweaponMdl, sizeof alt_weapon_model);
+
+		if (char* spot = strstr(alt_weapon_model, ".md3"))
+		{
+			*spot = 0;
+			spot = strstr(alt_weapon_model, "_w");
+			//i'm using the in view weapon array instead of scanning the item list, so put the _w back on
+			if (!spot)
+			{
+				Q_strcat(alt_weapon_model, sizeof alt_weapon_model, "_w");
+			}
+			Q_strcat(alt_weapon_model, sizeof alt_weapon_model, ".glm"); //and change to ghoul2
+		}
+		gi.G2API_PrecacheGhoul2Model(alt_weapon_model); // correct way is item->world_model
+	}
+
 	if (weaponInfo->weaponModel == 0)
 	{
-		if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
-		{
-			CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].altweaponMdl, weaponData[weapon_num].classname);
-		}
-		else
-		{
-			CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].weaponMdl, weaponData[weapon_num].classname);
-		}
+		CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].weaponMdl, weaponData[weapon_num].classname);
+	}
+	if (weaponInfo->altWeaponModel == 0)
+	{
+		CG_Error("Couldn't find weapon model %s for weapon %s\n", weaponData[weapon_num].altweaponMdl, weaponData[weapon_num].classname);
 	}
 
 	// calc midpoint for rotation
@@ -272,16 +276,15 @@ void CG_RegisterWeapon(const int weapon_num)
 		weaponInfo->weaponWorldModel = weaponInfo->weaponModel;
 	}
 
-	// set up the hand that holds the in view weapon - assuming we have one
+	// kotor world model
+	weaponInfo->altWeaponWorldModel = cgi_R_RegisterModel(item->world_model);
+	if (!weaponInfo->altWeaponWorldModel)
+	{
+		weaponInfo->altWeaponWorldModel = weaponInfo->altWeaponModel;
+	}
 
-	if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
-	{
-		Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
-	}
-	else
-	{
-		Q_strncpyz(path, weaponData[weapon_num].weaponMdl, sizeof path);
-	}
+	// set up the hand that holds the in view weapon - assuming we have one
+	Q_strncpyz(path, weaponData[weapon_num].weaponMdl, sizeof path);
 
 	COM_StripExtension(path, path, sizeof path);
 	Q_strcat(path, sizeof path, "_hand.md3");
@@ -290,6 +293,18 @@ void CG_RegisterWeapon(const int weapon_num)
 	if (!weaponInfo->handsModel)
 	{
 		weaponInfo->handsModel = cgi_R_RegisterModel("models/weapons2/briar_pistol/briar_pistol_hand.md3");
+	}
+
+	// kotor alt hand model
+	Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
+
+	COM_StripExtension(path, path, sizeof path);
+	Q_strcat(path, sizeof path, "_hand.md3");
+	weaponInfo->altHandsModel = cgi_R_RegisterModel(path);
+
+	if (!weaponInfo->altHandsModel)
+	{
+		weaponInfo->altHandsModel = cgi_R_RegisterModel("models/weapons2/briar_pistol/briar_pistol_hand.md3");
 	}
 
 	// register the sounds for the weapon
@@ -1825,7 +1840,15 @@ void CG_AddViewWeapon(playerState_t* ps)
 	{
 		refEntity_t gun = {};
 
-		gun.hModel = weapon->weaponModel;
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		{
+			gun.hModel = weapon->altWeaponModel;
+		}
+		else
+		{
+			gun.hModel = weapon->weaponModel;
+		}
+
 		if (!gun.hModel)
 		{
 			return;
@@ -1833,7 +1856,14 @@ void CG_AddViewWeapon(playerState_t* ps)
 
 		AnglesToAxis(angles, gun.axis);
 
-		CG_PositionEntityOnTag(&gun, &hand, weapon->handsModel, "tag_weapon");
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		{
+			CG_PositionEntityOnTag(&gun, &hand, weapon->altHandsModel, "tag_weapon");
+		}
+		else
+		{
+			CG_PositionEntityOnTag(&gun, &hand, weapon->handsModel, "tag_weapon");
+		}
 
 		gun.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON;
 
@@ -1893,11 +1923,25 @@ void CG_AddViewWeapon(playerState_t* ps)
 			AnglesToAxis(angles, barrel.axis);
 			if (!i)
 			{
-				CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, "tag_barrel", nullptr);
+				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
+				}
+				else
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, "tag_barrel", nullptr);
+				}
 			}
 			else
 			{
-				CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, va("tag_barrel%d", i + 1), nullptr);
+				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
+				}
+				else
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, va("tag_barrel%d", i + 1), nullptr);
+				}
 			}
 			cgi_R_AddRefEntityToScene(&barrel);
 		}
@@ -2313,7 +2357,15 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 	{
 		refEntity_t gun = {};
 
-		gun.hModel = weapon->weaponModel;
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		{
+			gun.hModel = weapon->altWeaponModel;
+		}
+		else
+		{
+			gun.hModel = weapon->weaponModel;
+		}
+
 		if (!gun.hModel)
 		{
 			return;
@@ -2321,7 +2373,14 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 
 		AnglesToAxis(angles, gun.axis);
 
-		CG_PositionEntityOnTag(&gun, &hand, weapon->handsModel, "tag_weapon");
+		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		{
+			CG_PositionEntityOnTag(&gun, &hand, weapon->altHandsModel, "tag_weapon");
+		}
+		else
+		{
+			CG_PositionEntityOnTag(&gun, &hand, weapon->handsModel, "tag_weapon");
+		}
 
 		gun.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON;
 
@@ -2380,11 +2439,25 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			AnglesToAxis(angles, barrel.axis);
 			if (!i)
 			{
-				CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, "tag_barrel", nullptr);
+				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
+				}
+				else
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, "tag_barrel", nullptr);
+				}
 			}
 			else
 			{
-				CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, va("tag_barrel%d", i + 1), nullptr);
+				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
+				}
+				else
+				{
+					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, va("tag_barrel%d", i + 1), nullptr);
+				}
 			}
 			cgi_R_AddRefEntityToScene(&barrel);
 		}
