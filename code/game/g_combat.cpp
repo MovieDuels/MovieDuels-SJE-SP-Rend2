@@ -199,7 +199,10 @@ gentity_t* TossClientItems(gentity_t* self)
 	if (strcmp(s, "md_ga_jedi") == 0
 		|| strcmp(s, "md_ga_sith") == 0
 		|| strcmp(s, "md_gb_sith") == 0
-		|| strcmp(s, "md_gb_jedi") == 0)
+		|| strcmp(s, "md_gb_jedi") == 0
+		|| strcmp(s, "md_arena1") == 0
+		|| strcmp(s, "md_arena2") == 0
+		|| strcmp(s, "md_arena3") == 0)
 	{
 		return nullptr; // reduce memory use to increase fps
 	}
