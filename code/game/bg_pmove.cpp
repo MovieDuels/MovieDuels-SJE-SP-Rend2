@@ -10545,7 +10545,7 @@ static void PM_Footsteps()
 				}
 				else
 				{
-					if (pm->gent->client->NPC_class == CLASS_VADER || pm->gent->client->NPC_class == CLASS_DESANN)
+					if (pm->gent->client->NPC_class == CLASS_VADER)
 					{
 						PM_SetAnim(pm, SETANIM_BOTH, BOTH_WALK2, SETANIM_FLAG_NORMAL);
 					}
