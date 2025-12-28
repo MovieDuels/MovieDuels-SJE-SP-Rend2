@@ -2057,7 +2057,7 @@ static void CG_DrawDF_BlockPoints(const centity_t* cent)
 		cg.forceHUDActive = qtrue;
 	}
 
-	const float inc = static_cast<float>(ps->stats[STAT_MAX_HEALTH]) / MAX_DFHUDTICS;
+	const float inc = static_cast<float>(BLOCK_POINTS_MAX) / MAX_DFHUDTICS;
 	float value = cent->gent->client->ps.blockPoints;
 
 	for (int i = MAX_DFHUDTICS - 1; i >= 0; i--)
@@ -2067,7 +2067,7 @@ static void CG_DrawDF_BlockPoints(const centity_t* cent)
 		{
 			//supercharged
 			memcpy(calc_color, colorTable[CT_WHITE], sizeof(vec4_t));
-			percent = 0.75f + sin(cg.time * 0.005f) * (extra / ps->stats[STAT_MAX_HEALTH] * 0.25f);
+			percent = 0.75f + sin(cg.time * 0.005f) * (extra / BLOCK_POINTS_MAX * 0.25f);
 			calc_color[0] *= percent;
 			calc_color[1] *= percent;
 			calc_color[2] *= percent;
