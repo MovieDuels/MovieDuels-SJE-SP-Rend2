@@ -250,9 +250,10 @@ void CG_RegisterWeapon(const int weapon_num)
 
 	for (i = 0; i < weaponData[weapon_num].numBarrels; i++)
 	{
-		if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
+		if ((cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
+			&& weaponInfo->weapon_Icon != weaponInfo->alt_weapon_Icon) // with different weapon
 		{
-			Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
+			//Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
 		}
 		else
 		{
@@ -1840,7 +1841,8 @@ void CG_AddViewWeapon(playerState_t* ps)
 	{
 		refEntity_t gun = {};
 
-		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+			&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 		{
 			gun.hModel = weapon->altWeaponModel;
 		}
@@ -1856,7 +1858,8 @@ void CG_AddViewWeapon(playerState_t* ps)
 
 		AnglesToAxis(angles, gun.axis);
 
-		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+			&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 		{
 			CG_PositionEntityOnTag(&gun, &hand, weapon->altHandsModel, "tag_weapon");
 		}
@@ -1923,9 +1926,10 @@ void CG_AddViewWeapon(playerState_t* ps)
 			AnglesToAxis(angles, barrel.axis);
 			if (!i)
 			{
-				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+					&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 				{
-					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
+					//CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
 				}
 				else
 				{
@@ -1934,9 +1938,10 @@ void CG_AddViewWeapon(playerState_t* ps)
 			}
 			else
 			{
-				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+					&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 				{
-					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
+					//CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
 				}
 				else
 				{
@@ -2357,7 +2362,8 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 	{
 		refEntity_t gun = {};
 
-		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+			&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 		{
 			gun.hModel = weapon->altWeaponModel;
 		}
@@ -2373,7 +2379,8 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 
 		AnglesToAxis(angles, gun.axis);
 
-		if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+		if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+			&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 		{
 			CG_PositionEntityOnTag(&gun, &hand, weapon->altHandsModel, "tag_weapon");
 		}
@@ -2439,9 +2446,10 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			AnglesToAxis(angles, barrel.axis);
 			if (!i)
 			{
-				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+					&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 				{
-					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
+					//CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
 				}
 				else
 				{
@@ -2450,9 +2458,10 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			}
 			else
 			{
-				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+				if ((cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+					&& weapon->weapon_Icon != weapon->alt_weapon_Icon) // with different weapon
 				{
-					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
+					//CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
 				}
 				else
 				{
