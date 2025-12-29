@@ -313,7 +313,7 @@ void UI_Init(const int apiVersion, const uiimport_t* uiimport, const qboolean in
 	ui.Cvar_Create("g_subtitles", "0", CVAR_ARCHIVE);
 	ui.Cvar_Create("cg_marks", "1", CVAR_ARCHIVE);
 	ui.Cvar_Create("d_slowmodeath", "2", CVAR_ARCHIVE);
-	ui.Cvar_Create("cg_shadows", "3", CVAR_ARCHIVE);
+	ui.Cvar_Create("cg_shadows", "1", CVAR_ARCHIVE);
 
 	ui.Cvar_Create("cg_runpitch", "0.002", CVAR_ARCHIVE);
 	ui.Cvar_Create("cg_runroll", "0.005", CVAR_ARCHIVE);
