@@ -1595,7 +1595,7 @@ static void R_Register(void)
 	r_imageUpsampleType = ri_Cvar_Get_NoComm("r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH, "");
 	r_genNormalMaps = ri_Cvar_Get_NoComm("r_genNormalMaps", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable generating normal maps from diffuse maps");
 
-	r_forceSun = ri_Cvar_Get_NoComm("r_forceSun", "0", CVAR_CHEAT, "");
+	r_forceSun = ri_Cvar_Get_NoComm("r_forceSun", "0", CVAR_ARCHIVE | CVAR_CHEAT, "");
 	r_forceSunMapLightScale = ri_Cvar_Get_NoComm("r_forceSunMapLightScale", "1.0", CVAR_CHEAT, "");
 	r_forceSunLightScale = ri_Cvar_Get_NoComm("r_forceSunLightScale", "1.0", CVAR_CHEAT, "");
 	r_forceSunAmbientScale = ri_Cvar_Get_NoComm("r_forceSunAmbientScale", "0.5", CVAR_CHEAT, "");
@@ -1702,7 +1702,7 @@ static void R_Register(void)
 	r_drawBuffer = ri_Cvar_Get_NoComm("r_drawBuffer", "GL_BACK", CVAR_CHEAT, "");
 	r_lockpvs = ri_Cvar_Get_NoComm("r_lockpvs", "0", CVAR_CHEAT, "");
 	r_noportals = ri_Cvar_Get_NoComm("r_noportals", "0", CVAR_CHEAT, "");
-	r_shadows = ri_Cvar_Get_NoComm("cg_shadows", "3", 0, "");
+	r_shadows = ri_Cvar_Get_NoComm("cg_shadows", "1", 0, "");
 
 	r_marksOnTriangleMeshes = ri_Cvar_Get_NoComm("r_marksOnTriangleMeshes", "0", CVAR_ARCHIVE, "");
 

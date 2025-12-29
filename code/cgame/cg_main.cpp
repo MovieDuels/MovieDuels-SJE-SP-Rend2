@@ -500,7 +500,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_fov, "cg_fov", "80", CVAR_ARCHIVE},
 	{&cg_fovAspectAdjust, "cg_fovAspectAdjust", "1", CVAR_ARCHIVE},
 	{&cg_stereoSeparation, "cg_stereoSeparation", "0.4", CVAR_ARCHIVE},
-	{&cg_shadows, "cg_shadows", "3", CVAR_ARCHIVE},
+	{&cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE},
 	{&cg_renderToTextureFX, "cg_renderToTextureFX", "1", CVAR_ARCHIVE},
 	{&cg_shadowCullDistance, "r_shadowRange", "1000", CVAR_ARCHIVE},
 	{&cg_footsteps, "cg_footsteps", "3", CVAR_ARCHIVE},
