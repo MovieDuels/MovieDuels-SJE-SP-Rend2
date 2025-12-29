@@ -899,6 +899,32 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				break;
 			}
 		}
+		else
+		{
+			ent->NPC->defaultBehavior = BS_DEFAULT;
+			if (ent->client->ps.weapon != WP_NONE
+				&& ent->client->ps.weapon != WP_MELEE
+				&& ent->client->ps.weapon != WP_SABER //sabers done above
+				&& (!(ent->NPC->aiFlags & NPCAI_MATCHPLAYERWEAPON) || !ent->weaponModel[0])) //they do this themselves
+			{
+				if (com_kotor->integer == 1) //playing kotor
+				{
+					G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
+				}
+				else
+				{
+					if (ent->client->charKOTORWeapons == 1)
+					{
+						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
+					}
+					else
+					{
+						G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].weaponMdl, ent->handRBolt, 0);
+					}
+				}
+				WP_SaberAddHolsteredG2SaberModels(ent);
+			}
+		}
 		break;
 
 	case TEAM_ENEMY:

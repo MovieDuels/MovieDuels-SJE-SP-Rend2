@@ -1952,6 +1952,15 @@ static void NPC_RunBehavior(const int team, const int b_state)
 					}
 				}
 			}
+
+			// Default behaviour for TEAM_NEUTRAL so they aren't treated as droids
+			else if (NPC->client->ps.weapon != WP_NONE)
+			{
+				//special melee exception
+				NPC_BehaviorSet_Default(b_state);
+				return;
+			}
+
 			else
 			{
 				// Just one of the average droids
