@@ -618,6 +618,14 @@ void CG_NewClientinfo(const int client_num)
 	Q_strncpyz(g_entities[client_num].client->renderInfo.headModelName, v,
 		sizeof g_entities[client_num].client->renderInfo.headModelName);
 
+	// Check if NPC sounds are already registered
+	if (ci->customBasicSoundDir && ci->customBasicSoundDir[0])
+	{
+		//Com_Printf(S_COLOR_YELLOW "Skipping SP sounds because NPC sounds are already registered.\n");
+		ci->infoValid = qfalse;
+		return;
+	}
+
 	// sounds
 	v = Info_ValueForKey(configstring, "snd");
 
