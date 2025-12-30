@@ -345,7 +345,7 @@ static constexpr charMD_t charMD[] = {
 	{ "Clone Shadow Trooper",			"[Shadow Trooper]",						"",				"md_clo_shadow",				"clonetrooper_p2",		"model_shadow",					"menu_wp_clonecarbine",		"",						"",				"",			0,		0,		ERA_REPUBLIC,		TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/clonetrooper_p2/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_CLONE_TROOPER",				 qtrue },
 	{ "Galactic Marine",				"[21st Nova Corps]",					"",				"md_clonemarine",				"clonemarine",			"model_default",				"menu_wp_clonerifle",		"",						"",				"",			0,		0,		ERA_REPUBLIC,		TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/clonetrooper_p2/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_CLONE_TROOPER",				 qtrue },
 	{ "Coleman Trebor",					"[Episode I-II]",						"",				"md_coleman",					"coleman",				"model_default",				"coleman",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/coleman/misc/taunt3.mp3",				"",		1.0f,	"@MD_CHAR_DESC_COLEMAN_TREBOR",				qfalse },
-	{ "Commander Copy",					"[TCW]",								"",				"md_clo_cody",					"clonetrooper_p2",		"model_212_cody",				"menu_wp_clonecarbine",		"",						"",				"",			0,		0,		ERA_REPUBLIC,		TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/clonetrooper_p2/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_COMMANDER_COPY",				qfalse },
+	{ "Commander Cody",					"[TCW]",								"",				"md_clo_cody",					"clonetrooper_p2",		"model_212_cody",				"menu_wp_clonecarbine",		"",						"",				"",			0,		0,		ERA_REPUBLIC,		TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/clonetrooper_p2/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_COMMANDER_CODY",				qfalse },
 	{ "Commander Fox",					"[TCW]",								"",				"md_clo_fox",					"clonetrooper_p2",		"model_fox",					"menu_wp_clonepistol",		"menu_wp_clonepistol",	"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WEAPONREST2P,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/clonetrooper_p2/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_COMMANDER_FOX",				qfalse },
 	{ "Commander Neyo",					"[TCW]",								"",				"md_clo_neyo",					"clonetrooper_p2",		"model_91_neyo",				"menu_wp_clonecarbine",		"",						"",				"",			0,		0,		ERA_REPUBLIC,		TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/clonetrooper_p2/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_COMMANDER_NEYO",				qfalse },
 	{ "Commander Vaughn",				"[TCW]",								"",				"md_clo_vaughn",				"clonetrooper_p2",		"model_332_vaughn",				"menu_wp_clonecarbine",		"",						"",				"",			0,		0,		ERA_REPUBLIC,		TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/clonetrooper_p2/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_COMMANDER_VAUGHN",			qfalse },
@@ -1894,7 +1894,7 @@ static cvarTable_t cvarTable[] =
 
 	{&ui_totgfirststartup, "g_totgfirststartup", "1", nullptr, 0},
 
-	{&ui_cursor, "g_cursor", "4", nullptr, CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART}, //11 or 12 with base cursor
+	{&ui_cursor, "g_cursor", "10", nullptr, CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART}, //11 or 12 with base cursor
 
 	{&r_ratiofix, "r_ratiofix", "0", UI_Set2DRatio, CVAR_ARCHIVE},
 
@@ -5235,7 +5235,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("------------------------- Update 7.0.0 --------------------------\n");
-	Com_Printf("--------------------- Build Date 29/12/2025 ---------------------\n");
+	Com_Printf("--------------------- Build Date 30/12/2025 ---------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
