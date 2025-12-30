@@ -3371,7 +3371,12 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								{
 									totalDmg[i] = 25;
 								}
-								if (totalDmg[i] > 100)
+								if (totalDmg[i] > 75 && g_saberRealisticCombat->integer == 0)
+								{
+									//clamp using same adjustment as in NPC_Begin
+									totalDmg[i] = 75;
+								}
+								else if (totalDmg[i] > 100)
 								{
 									//clamp using same adjustment as in NPC_Begin
 									totalDmg[i] = 100;
@@ -3385,9 +3390,16 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									{
 										gi.Printf(S_COLOR_YELLOW"saberInStabDown\n");
 									}
-									if (totalDmg[i] < 100)
+									if (totalDmg[i] > 20 && g_saberRealisticCombat->integer == 0)
 									{
-										totalDmg[i] = 100;
+										totalDmg[i] = 20;
+									}
+									else if (totalDmg[i] > 40 && g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = 40;
+									}
+									else {
+										totalDmg[i] = 80;
 									}
 								}
 								else if (saber_in_LeapAttack)
@@ -3396,7 +3408,17 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									{
 										gi.Printf(S_COLOR_YELLOW"saber_in_LeapAttack\n");
 									}
-									totalDmg[i] = G_GetAttackDamageMD(ent, 500, 1000, 0.5f);
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 15, 30, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 60, 100, 0.5f);
+									}
 								}
 								else if (saber_in_kata)
 								{
@@ -3407,20 +3429,60 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									if (ent->client->ps.saber_anim_level == SS_DESANN || ent->client->ps.saber_anim_level ==
 										SS_STRONG)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+										}
 									}
 									else if (ent->client->ps.saber_anim_level == SS_MEDIUM)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+										}
 									}
 									else if (ent->client->ps.saber_anim_level == SS_FAST || ent->client->ps.saber_anim_level
 										== SS_TAVION)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										}
 									}
 									else // SS_STAFF // SS_DUAL
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 60, 70, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 70, 0.5f);
+										}
 									}
 								}
 								else if (saber_in_back_attack)
@@ -3432,20 +3494,60 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									if (ent->client->ps.saber_anim_level == SS_DESANN || ent->client->ps.saber_anim_level ==
 										SS_STRONG)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+										}
 									}
 									else if (ent->client->ps.saber_anim_level == SS_MEDIUM)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+										}
 									}
 									else if (ent->client->ps.saber_anim_level == SS_FAST || ent->client->ps.saber_anim_level
 										== SS_TAVION)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										}
 									}
 									else // SS_STAFF // SS_DUAL
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 60, 70, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 35, 50, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 70, 0.5f);
+										}
 									}
 								}
 								else if (saber_in_over_head_attack)
@@ -3457,20 +3559,62 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									if (ent->client->ps.saber_anim_level == SS_DESANN || ent->client->ps.saber_anim_level ==
 										SS_STRONG)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+										}
 									}
 									else if (ent->client->ps.saber_anim_level == SS_MEDIUM)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 80, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 60, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 70, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 80, 0.5f);
+										}
 									}
 									else if (ent->client->ps.saber_anim_level == SS_FAST || ent->client->ps.saber_anim_level
 										== SS_TAVION)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 40, 0.5f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 50, 0.5f);
+										/*
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 50, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 10, 50, 0.5f);
+										}*/
 									}
 									else // SS_STAFF // SS_DUAL
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 70, 0.5f);
+										if (g_saberRealisticCombat->integer == 0)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+										}
+										if (g_saberRealisticCombat->integer == 1)
+										{
+											totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
+										}
+										else {
+											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 70, 0.5f);
+										}
 									}
 								}
 								else if (saber_in_roll_stab)
@@ -3479,7 +3623,17 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									{
 										gi.Printf(S_COLOR_YELLOW"SaberInRollStab\n");
 									}
-									totalDmg[i] = G_GetAttackDamageMD(ent, 50, 80, 0.5f);
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 80, 0.5f);
+									}
 								}
 								else if (saber_in_lunge_stab)
 								{
@@ -3487,8 +3641,17 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									{
 										gi.Printf(S_COLOR_YELLOW"SaberInLungeStab\n");
 									}
-
-									totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
+									}
 								}
 								else
 								{
@@ -3496,7 +3659,17 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 									{
 										gi.Printf(S_COLOR_YELLOW"saberInSpecial\n");
 									}
-									totalDmg[i] = G_GetAttackDamageMD(ent, 75, 180, 0.65f);
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.65f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 120, 0.65f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 75, 180, 0.65f);
+									}
 								}
 							}
 						}
@@ -40435,7 +40608,7 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 		}
 	}
 
-	if (PM_ForceUsingSaberAnim(self->client->ps.torsoAnim))
+	if (PM_ForceUsingSaberAnim(self->client->ps.torsoAnim) || pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
 	{
 		using_force = qtrue;
 	}
@@ -41244,23 +41417,13 @@ void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps)
 qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 {
 	//The player is attacking with a saber attack that does NO damage AT THIS POINT
-	if (self->client->ps.torsoAnim == BOTH_JUMPFLIPSTABDOWN ||
-		self->client->ps.torsoAnim == BOTH_JUMPFLIPSLASHDOWN1 ||
-		self->client->ps.torsoAnim == BOTH_ROLL_STAB ||
-		self->client->ps.torsoAnim == BOTH_STABDOWN ||
-		self->client->ps.torsoAnim == BOTH_STABDOWN_STAFF ||
-		self->client->ps.torsoAnim == BOTH_STABDOWN_DUAL ||
-		self->client->ps.torsoAnim == BOTH_A6_SABERPROTECT ||
-		self->client->ps.torsoAnim == BOTH_A7_SOULCAL ||
-		self->client->ps.torsoAnim == BOTH_A1_SPECIAL ||
-		self->client->ps.torsoAnim == BOTH_A2_SPECIAL ||
-		self->client->ps.torsoAnim == BOTH_A3_SPECIAL)
+	if (pm_saber_innonblockable_attack(self->client->ps.torsoAnim) || self->client->ps.torsoAnim == BOTH_ROLL_STAB)
 	{
 		float current = 0.0f;
 		int end = 0;
 		int start = 0;
 
-		if (!!gi.G2API_GetBoneAnimIndex(&self->ghoul2[self->playerModel],
+		if (gi.G2API_GetBoneAnimIndex(&self->ghoul2[self->playerModel],
 			self->lowerLumbarBone,
 			level.time,
 			&current,
@@ -41279,18 +41442,40 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 
 			switch (self->client->ps.torsoAnim)
 			{
-			case BOTH_JUMPFLIPSTABDOWN: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.30);
-			case BOTH_JUMPFLIPSLASHDOWN1: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.30);
-			case BOTH_ROLL_STAB: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.30);
-			case BOTH_STABDOWN: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.40);
-			case BOTH_STABDOWN_STAFF: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.40);
-			case BOTH_STABDOWN_DUAL: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.40);
-			case BOTH_A6_SABERPROTECT: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.30);
-			case BOTH_A7_SOULCAL: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.20);
-			case BOTH_A1_SPECIAL: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.20);
-			case BOTH_A2_SPECIAL: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.20);
-			case BOTH_A3_SPECIAL: return static_cast<qboolean>(percent_complete > 0.0 && percent_complete < 0.15);
-			default:;
+				case BOTH_ATTACK_BACK: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.80);
+				case BOTH_A2_STABBACK1: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.65);
+				case BOTH_CROUCHATTACKBACK1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.75);
+				case BOTH_BUTTERFLY_LEFT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_BUTTERFLY_RIGHT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_BUTTERFLY_FL1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_BUTTERFLY_FR1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_FJSS_TR_BL: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_FJSS_TL_BR: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_FORCELEAP2_T__B_: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
+				case BOTH_JUMPFLIPSTABDOWN: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+				case BOTH_JUMPFLIPSLASHDOWN1: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+				case BOTH_ROLL_STAB: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.75);
+				case BOTH_JUMPATTACK6: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_JUMPATTACK7: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
+				case BOTH_SPINATTACK6: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
+				case BOTH_SPINATTACK7: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
+				case BOTH_FORCELONGLEAP_ATTACK: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+				case BOTH_STABDOWN: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+				case BOTH_STABDOWN_STAFF: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+				case BOTH_STABDOWN_DUAL: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+				case BOTH_A6_SABERPROTECT: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
+				case BOTH_A7_SOULCAL: return static_cast<qboolean>( percent_complete < 0.25 || percent_complete > 0.90);
+				case BOTH_A1_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+				case BOTH_A2_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+				case BOTH_A3_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+				case BOTH_FLIP_ATTACK7: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.90);
+				case BOTH_PULL_IMPALE_STAB: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
+				case BOTH_PULL_IMPALE_SWING: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
+				case BOTH_ALORA_SPIN_SLASH: return static_cast<qboolean>(percent_complete < 0.22 || percent_complete > 0.90);
+				case BOTH_A6_FB: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
+				case BOTH_A6_LR: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
+				case BOTH_GRAPPLE_FIRE: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+				default:;
 			}
 		}
 	}
