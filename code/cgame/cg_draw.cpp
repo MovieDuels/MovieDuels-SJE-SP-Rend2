@@ -8504,7 +8504,8 @@ static void CG_Draw2D()
 			//draw it as long as it isn't full
 			CG_DrawPic(0, 0, 640, 480, cgi_R_RegisterShader("gfx/2d/stasissense"));
 		}
-		else if (cg.snap->ps.stats[STAT_HEALTH] <= 25)
+		else if ((cg.snap->ps.stats[STAT_HEALTH] <= 25 && cg.snap->ps.stats[STAT_MAX_HEALTH] >= 100) ||
+			(cg.snap->ps.stats[STAT_HEALTH] <= (cg.snap->ps.stats[STAT_MAX_HEALTH] / 3) && cg.snap->ps.stats[STAT_MAX_HEALTH] < 100))
 		{
 			//tint screen red
 			CG_DrawPic(0, 0, 640, 480, cgi_R_RegisterShader("gfx/2d/dmgsense"));

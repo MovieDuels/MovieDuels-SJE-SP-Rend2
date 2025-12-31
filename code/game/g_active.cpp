@@ -7121,12 +7121,14 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		{
 			client->ps.speed *= 0.3f;
 		}
-		else if (client->ps.stats[STAT_HEALTH] <= 25)
+		else if ((client->ps.stats[STAT_HEALTH] <= 25 && client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
+			(client->ps.stats[STAT_HEALTH] <= (client->ps.stats[STAT_MAX_HEALTH] / 3) && client->ps.stats[STAT_MAX_HEALTH] < 100))
 		{
 			//move slower when low on health
 			client->ps.speed *= 0.85f;
 		}
-		else if (client->ps.stats[STAT_HEALTH] <= 40)
+		else if ((client->ps.stats[STAT_HEALTH] <= 40 && client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
+			(client->ps.stats[STAT_HEALTH] <= (client->ps.stats[STAT_MAX_HEALTH] / 2) && client->ps.stats[STAT_MAX_HEALTH] < 100))
 		{
 			//move slower when low on health
 			client->ps.speed *= 0.90f;
