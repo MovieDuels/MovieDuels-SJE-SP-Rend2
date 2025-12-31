@@ -1794,7 +1794,7 @@ void ItemUse_Bacta(gentity_t* ent)
 	}
 
 	ent->client->ps.inventory[INV_BACTA_CANISTER]--;
-
+	/* Don't play heal sound
 	if (!Q_stricmp("kyle", ent->client->clientInfo.customBasicSoundDir)
 		|| !Q_stricmp("kyle2", ent->client->clientInfo.customBasicSoundDir)
 		|| !Q_stricmp("Kyle_boss", ent->client->clientInfo.customBasicSoundDir)
@@ -1829,7 +1829,7 @@ void ItemUse_Bacta(gentity_t* ent)
 	else
 	{
 		G_SoundOnEnt(ent, CHAN_VOICE, va("sound/weapons/force/heal%d_%c.mp3", Q_irand(1, 4), g_sex->string[0]));
-	}
+	}*/
 	NPC_SetAnim(ent, SETANIM_TORSO, BOTH_FORCEHEAL_QUICK, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
 	G_SoundOnEnt(ent, CHAN_ITEM, "sound/items/use_bacta2.wav");

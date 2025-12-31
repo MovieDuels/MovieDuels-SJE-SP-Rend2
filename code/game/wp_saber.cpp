@@ -38598,6 +38598,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 			STAT_MAX_HEALTH])
 		{
 			//fully healed or used up all 25
+			/* Don't play any heal sound here
 			if (!Q3_TaskIDPending(self, TID_CHAN_VOICE))
 			{
 				int index = Q_irand(1, 4);
@@ -38626,7 +38627,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 						}
 					}
 				}
-			}
+			}*/
 			WP_ForcePowerStop(self, force_power);
 		}
 		else if (self->client->ps.forcePowerLevel[FP_HEAL] < FORCE_LEVEL_3 && (cmd->buttons & BUTTON_ATTACK || cmd->
