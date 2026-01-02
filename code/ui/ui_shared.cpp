@@ -11632,6 +11632,17 @@ void Menu_HandleKey(menuDef_t* menu, int key, qboolean down)
 				key = A_ESCAPE; //pop on outta here
 			}
 		}
+
+		// Special force and weapon wheel key handling 
+		if (Q_stricmp(b, "uimenu ingameforcewheelMenu") == 0 || // They hit the key again.
+			Q_stricmp(b, "uimenu ingameweaponwheelMenu") == 0)
+		{
+			if (Q_stricmp(menu->window.name, "ingameforcewheelMenu") == 0 ||
+				Q_stricmp(menu->window.name, "ingameweaponwheelMenu") == 0)
+			{
+				key = A_ESCAPE; //pop on outta here
+			}
+		}
 	}
 	// default handling
 	switch (key)
