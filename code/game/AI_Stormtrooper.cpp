@@ -49,6 +49,7 @@ extern qboolean PM_CrouchAnim(int anim);
 extern void npc_check_evasion();
 extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_allowgunnerbash;
+extern qboolean char_can_gun_bash(const gentity_t* self);
 extern qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t push_dir);
 extern void speaker_speech(const gentity_t* self, int speech_type, float fail_chance);
 
@@ -160,7 +161,7 @@ void ST_AggressionAdjust(const gentity_t* self, const int change)
 	{
 		//good guys are less aggressive
 		upper_threshold = 7;
-		lower_threshold = 1;
+		lower_threshold = 2;
 	}
 	else
 	{
@@ -3459,10 +3460,8 @@ void NPC_BSST_Attack()
 	//////////////////////////////////////////////////////////////////////// slap start
 
 	//SLAP
-	if (!Q_irand(0, 3) && g_SerenityJediEngineMode->integer && g_allowgunnerbash->integer > 0 &&
-		(NPC->client->NPC_class == CLASS_STORMTROOPER || NPC->client->NPC_class == CLASS_REBEL || NPC->client->NPC_class == CLASS_CALONORD)
-		&& NPC->client->playerTeam == TEAM_ENEMY
-		&& !PM_InKnockDown(&NPC->client->ps))
+	if (!Q_irand(0, 3) && g_SerenityJediEngineMode->integer > 0 && g_allowgunnerbash->integer > 0 &&
+		char_can_gun_bash(NPC) && NPC->client->NPC_class != CLASS_SBD && !PM_InKnockDown(&NPC->client->ps))
 	{
 		if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 || NPC->client->ps.torsoAnim == BOTH_A7_HILT)
 		{
@@ -3515,11 +3514,11 @@ void NPC_BSST_Attack()
 					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					if (NPC->health > BLOCKPOINTS_HALF)
 					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(12000, 18000));
 					}
 					else
 					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(6000, 12000));
 					}
 					//delay the hurt until the proper point in the anim
 					TIMER_Set(NPC, "smackTime", 300);
@@ -3529,152 +3528,10 @@ void NPC_BSST_Attack()
 		}
 	}
 
-	if (!Q_irand(0, 3) && g_SerenityJediEngineMode->integer && g_allowgunnerbash->integer > 0 &&
-		(NPC->client->NPC_class == CLASS_STORMTROOPER || NPC->client->NPC_class == CLASS_REBEL || NPC->client->NPC_class == CLASS_CALONORD)
-		&& NPC->client->playerTeam == TEAM_PLAYER
-		&& !PM_InKnockDown(&NPC->client->ps))
-	{
-		if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 || NPC->client->ps.torsoAnim == BOTH_A7_HILT)
-		{
-			shoot = qfalse;
-			if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
-			{
-				//time to smack
-				//recheck enemyDist and InFront
-				if (enemyDist < MELEE_DIST_SQUARED
-					&& !NPC->client->ps.weaponTime //not firing
-					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
-					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
-				{
-					vec3_t smack_dir;
-					VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
-					smack_dir[2] += 30;
-					VectorNormalize(smack_dir);
-					//hurt them
-					G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-					G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
-						(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
-					WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
-					//done with the damage
-					NPCInfo->blockedDebounceTime = 1;
-				}
-			}
-		}
-		else
-		{
-			if (enemyDist < MELEE_DIST_SQUARED
-				&& !NPC->client->ps.weaponTime //not firing
-				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
-				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
-				//within 80 and in front
-			{
-				//enemy within 80, if very close, use melee attack to slap away
-				if (enemyDist < MELEE_DIST_SQUARED
-					&& !NPC->client->ps.weaponTime //not firing
-					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
-					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
-					//within 80 and in front
-				{
-					//enemy within 80, if very close, use melee attack to slap away
-					if (TIMER_Done(NPC, "slapattackDelay"))
-					{
-						//animate me
-						int swing_anim;
-						if (NPC->health > BLOCKPOINTS_HALF)
-						{
-							swing_anim = BOTH_TUSKENATTACK2;
-						}
-						else
-						{
-							swing_anim = BOTH_A7_HILT;
-						}
-						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
-						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						if (NPC->health > BLOCKPOINTS_HALF)
-						{
-							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
-						}
-						else
-						{
-							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
-						}
-						//delay the hurt until the proper point in the anim
-						TIMER_Set(NPC, "smackTime", 300);
-						NPCInfo->blockedDebounceTime = 0;
-					}
-				}
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	if (!Q_irand(0, 3) && g_SerenityJediEngineMode->integer && g_allowgunnerbash->integer > 0 &&
-		NPC->client->NPC_class == CLASS_CLONETROOPER
-		&& NPC->client->playerTeam == TEAM_ENEMY
-		&& !PM_InKnockDown(&NPC->client->ps))
-	{
-		if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK1)
-		{
-			shoot = qfalse;
-			if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
-			{
-				//time to smack
-				//recheck enemyDist and InFront
-				if (enemyDist < MELEE_DIST_SQUARED
-					&& !NPC->client->ps.weaponTime //not firing
-					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
-					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
-				{
-					vec3_t smack_dir;
-					VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
-					smack_dir[2] += 30;
-					VectorNormalize(smack_dir);
-					//hurt them
-					G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-					G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
-						(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
-					WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
-					//done with the damage
-					NPCInfo->blockedDebounceTime = 1;
-				}
-			}
-		}
-		else
-		{
-			if (enemyDist < MELEE_DIST_SQUARED
-				&& !NPC->client->ps.weaponTime //not firing
-				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
-				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
-				//within 80 and in front
-			{
-				//enemy within 80, if very close, use melee attack to slap away
-				if (TIMER_Done(NPC, "slapattackDelay"))
-				{
-					//animate me
-					constexpr int swing_anim = BOTH_TUSKENATTACK1;
-					G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
-					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					if (NPC->health > BLOCKPOINTS_HALF)
-					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
-					}
-					else
-					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
-					}
-					//delay the hurt until the proper point in the anim
-					TIMER_Set(NPC, "smackTime", 300);
-					NPCInfo->blockedDebounceTime = 0;
-				}
-			}
-		}
-	}
 	///////////////////////////////////////////SBD ///////////////////////////////////////////////
 
-	if (g_SerenityJediEngineMode->integer && g_allowgunnerbash->integer > 0 &&
-		NPC->client->NPC_class == CLASS_SBD
-		&& NPC->client->playerTeam == TEAM_ENEMY
-		&& !PM_InKnockDown(&NPC->client->ps))
+	if (g_SerenityJediEngineMode->integer > 0 && g_allowgunnerbash->integer > 0 &&
+		NPC->client->NPC_class == CLASS_SBD && !PM_InKnockDown(&NPC->client->ps))
 	{
 		if (NPC->client->ps.torsoAnim == BOTH_SLAP_R || NPC->client->ps.torsoAnim == BOTH_SLAP_L)
 		{
@@ -3728,83 +3585,11 @@ void NPC_BSST_Attack()
 					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					if (NPC->health > BLOCKPOINTS_THIRTY)
 					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(12000, 18000));
 					}
 					else
 					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
-					}
-					//delay the hurt until the proper point in the anim
-					TIMER_Set(NPC, "smackTime", 300);
-					NPCInfo->blockedDebounceTime = 0;
-				}
-			}
-		}
-	}
-
-	// SLAP
-	if (g_SerenityJediEngineMode->integer && g_allowgunnerbash->integer > 0 &&
-		NPC->client->NPC_class == CLASS_SBD
-		&& NPC->client->playerTeam == TEAM_PLAYER
-		&& !PM_InKnockDown(&NPC->client->ps))
-	{
-		if (NPC->client->ps.torsoAnim == BOTH_SLAP_R || NPC->client->ps.torsoAnim == BOTH_SLAP_L)
-		{
-			shoot = qfalse;
-			if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
-			{
-				//time to smack
-				//recheck enemyDist and InFront
-				if (enemyDist < MELEE_DIST_SQUARED
-					&& !NPC->client->ps.weaponTime //not firing
-					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
-					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
-				{
-					vec3_t smack_dir;
-					VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
-					smack_dir[2] += 30;
-					VectorNormalize(smack_dir);
-					//hurt them
-					G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-					G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
-						(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
-
-					WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
-					//done with the damage
-					NPCInfo->blockedDebounceTime = 1;
-				}
-			}
-		}
-		else
-		{
-			if (enemyDist < MELEE_DIST_SQUARED
-				&& !NPC->client->ps.weaponTime //not firing
-				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
-				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
-				//within 80 and in front
-			{
-				//enemy within 80, if very close, use melee attack to slap away
-				if (TIMER_Done(NPC, "slapattackDelay"))
-				{
-					//animate me
-					int swing_anim;
-					if (NPC->health > BLOCKPOINTS_THIRTY)
-					{
-						swing_anim = BOTH_SLAP_R;
-					}
-					else
-					{
-						swing_anim = BOTH_SLAP_L;
-					}
-					G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
-					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					if (NPC->health > BLOCKPOINTS_THIRTY)
-					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
-					}
-					else
-					{
-						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(6000, 12000));
 					}
 					//delay the hurt until the proper point in the anim
 					TIMER_Set(NPC, "smackTime", 300);

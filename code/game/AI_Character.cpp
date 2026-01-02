@@ -219,6 +219,20 @@ qboolean char_has_beskar_armor(const gentity_t* self)
 	return qfalse;
 }
 
+qboolean char_can_gun_bash(const gentity_t* self)
+{
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
+	if (self->client->charGunBash == 1)
+	{
+		return qtrue;
+	}
+	return qfalse;
+}
+
 qboolean Calo_Nord(const gentity_t* self)
 {
 	if (!self || !self->client)
