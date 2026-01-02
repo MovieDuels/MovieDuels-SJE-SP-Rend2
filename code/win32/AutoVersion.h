@@ -29,11 +29,11 @@ This file is part of Jedi Academy.
 #ifndef __AUTO_VERSION_HEADER
 #define __AUTO_VERSION_HEADER
 
-#define VERSION_MAJOR_RELEASE		24  // Build year
-#define VERSION_MINOR_RELEASE		05  // Build month
-#define VERSION_INTERNAL_BUILD		14  // Build day
+#define VERSION_MAJOR_RELEASE		26  // Build year
+#define VERSION_MINOR_RELEASE		01  // Build month
+#define VERSION_INTERNAL_BUILD		02  // Build day
 
-#define VERSION_STRING				"Day-14,Month-05,Year-24,BuildNum-04" // build date
-#define VERSION_STRING_DOTTED		"Day-14,Month-05,Year-24,BuildNum-04" // build date
+#define VERSION_STRING				"Day-02,Month-01,Year-26,BuildNum-07" // build date
+#define VERSION_STRING_DOTTED		"Day-02,Month-01,Year-26,BuildNum-07" // build date
 
 #endif // __AUTO_VERSION_HEADER
