@@ -317,7 +317,10 @@ cvar_t* g_overpoweredsaberthrow;
 
 cvar_t* g_autoHealthRegen;
 
+cvar_t* g_allowSuperSaberLockBreaks;
+
 cvar_t* g_AllowWeather;
+
 
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
@@ -947,6 +950,8 @@ static void G_InitCvars()
 	g_overpoweredsaberthrow = gi.cvar("g_overpoweredsaberthrow", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_autoHealthRegen = gi.cvar("g_autoHealthRegen", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+
+	g_allowSuperSaberLockBreaks = gi.cvar("g_allowSuperSaberLockBreaks", "1", CVAR_ARCHIVE);
 
 	g_AllowWeather = gi.cvar("g_AllowWeather", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 

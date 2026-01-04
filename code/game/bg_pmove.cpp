@@ -178,6 +178,7 @@ extern qboolean Char_Dual_Pistols(const gentity_t* self);
 extern qboolean Calo_Nord(const gentity_t* self);
 extern cvar_t* g_SaberAttackSpeedMD;
 extern cvar_t* g_RealisticBlockingMode;
+extern cvar_t* g_allowSuperSaberLockBreaks;
 
 constexpr auto FLY_NONE = 0;
 constexpr auto FLY_NORMAL = 1;
@@ -15923,7 +15924,9 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 	qboolean single_vs_single = qtrue;
 
 	if (result == LOCK_VICTORY
-		&& Q_irand(0, 7) < victory_strength)
+		&& g_allowSuperSaberLockBreaks->integer > 0
+		&& victory_strength > 3
+		&& Q_irand(0, 10) < victory_strength) // was 0,7
 	{
 		if (genemy
 			&& genemy->NPC
@@ -16195,7 +16198,7 @@ static int G_SaberLockStrength(const gentity_t* gent)
 
 				if (gent->client->NPC_class == CLASS_DESANN || gent->client->NPC_class == CLASS_VADER || gent->client->NPC_class == CLASS_LUKE)
 				{
-					strength += 2 + gent->client->ps.forcePowerLevel[FP_SABER_OFFENSE] + Q_irand(0, g_spskill->integer);
+					strength += 1 + gent->client->ps.forcePowerLevel[FP_SABER_OFFENSE] + Q_irand(0, g_spskill->integer);
 				}
 				else
 				{
