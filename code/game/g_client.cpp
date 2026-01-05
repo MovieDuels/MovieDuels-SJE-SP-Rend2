@@ -2546,14 +2546,6 @@ void G_SetSabersFromCVars(gentity_t* ent)
 				}
 			}
 		}
-		else
-		{
-			WP_RemoveSaber(ent, 1);
-		}
-	}
-	else
-	{
-		WP_RemoveSaber(ent, 1);
 	}
 }
 
@@ -3555,7 +3547,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		{
 			//set up so has lightsaber
 			WP_SaberInitBladeData(ent);
-			if ((ent->weaponModel[0] <= 0 || ent->weaponModel[1] <= 0 && ent->client->ps.dualSabers)
+			if ((ent->weaponModel[0] <= 0 || (ent->weaponModel[1] <= 0 && ent->client->ps.dualSabers))
 				//one or both of the saber models is not initialized
 				&& ent->client->ps.weapon == WP_SABER) //current weapon is saber
 			{

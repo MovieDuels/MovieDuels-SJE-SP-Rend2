@@ -516,7 +516,7 @@ static constexpr charMD_t charMD[] = {
 	{ "Darth Maul",						"[Old Wounds]",							"",				"md_mau_luke",					"cyber_maul",			"model_default",				"dual_maul",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/cyber_maul/misc/taunt4.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
 	{ "Darth Maul",						"[Robed - Old Wounds]",					"",				"md_mau_luke_robed",			"cyber_maul",			"model_robed",					"dual_maul",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/cyber_maul/misc/taunt4.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
 	{ "Darth Maul",						"[Hooded - Old Wounds]",				"",				"md_mau_luke_hooded",			"cyber_maul",			"model_hood",					"dual_maul",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/cyber_maul/misc/taunt4.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
-	{ "Darth Plaguesis",				"[Sith]",								"",				"md_plagueis",					"darthplagueis",		"model_default",				"yarael",					"",						"red",			"",			1,		14,		ERA_SEPARATIST,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/darthplagueis/misc/victory1.mp3",		"",		1.0f,	"@MD_CHAR_DESC_DARTH_PLAGUESIS",			qfalse },
+	{ "Darth Plagueis",					"[Sith]",								"",				"md_plagueis",					"darthplagueis",		"model_default",				"yarael",					"",						"red",			"",			1,		14,		ERA_SEPARATIST,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/darthplagueis/misc/victory1.mp3",		"",		1.0f,	"@MD_CHAR_DESC_DARTH_PLAGUESIS",			qfalse },
 	{ "Darth Sidious",					"[Emperor]",							"",				"md_sidious",					"palpatine",			"model_senate",					"sidious",					"",						"red",			"",			1,		14,		ERA_SEPARATIST,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/palpatine_sith/misc/taunt4.mp3",		"",		1.0f,	"@MD_CHAR_DESC_DARTH_SIDIOUS",				qfalse },
 	{ "Darth Sidious",					"[Episode III]",						"",				"md_sidious_ep3_red",			"palpatine",			"model_sith_hood",				"sidious",					"",						"red",			"",			1,		14,		ERA_SEPARATIST,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/palpatine_sith/misc/gloat3.mp3",		"",		1.0f,	"@MD_CHAR_DESC_DARTH_SIDIOUS",				 qtrue },
 	{ "Darth Sidious",					"[Episode III - Robed]",				"",				"md_sidious_ep3_robed",			"palpatine",			"model_sith_hood2",				"sidious2_m",				"",						"red",			"",			1,		14,		ERA_SEPARATIST,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/palpatine_sith/misc/taunt4.mp3",		"",		1.0f,	"@MD_CHAR_DESC_DARTH_SIDIOUS",				 qtrue },
@@ -2826,11 +2826,11 @@ runEra:
 			UI_ClearWeapons();
 			ui.Cmd_ExecuteText(EXEC_APPEND, va("playermodel %s\n", charMD[uiVariantIndex].npc));
 #ifdef NEW_FEEDER_V8
-			Cvar_Set("g_saber", Cvar_VariableString("ui_saber"));
-			Cvar_Set("g_saber2", Cvar_VariableString("ui_saber2"));
+			//Cvar_Set("g_saber", Cvar_VariableString("ui_saber"));
+			//Cvar_Set("g_saber2", Cvar_VariableString("ui_saber2"));
 
-			Cvar_Set("g_saber_color", Cvar_VariableString("ui_saber_color"));
-			Cvar_Set("g_saber2_color", Cvar_VariableString("ui_saber2_color"));
+			//Cvar_Set("g_saber_color", Cvar_VariableString("ui_saber_color"));
+			//Cvar_Set("g_saber2_color", Cvar_VariableString("ui_saber2_color"));
 #endif
 			switch (ui_char_team_select.integer)
 			{
@@ -5030,11 +5030,11 @@ void _UI_Init(const qboolean inGameLoad)
 	uiModelIndex = 0;
 	uiVariantIndex = 0;
 
-	Cvar_Set("g_saber_type", Cvar_VariableString("ui_saber_type_md"));
-	Cvar_Set("g_saber", Cvar_VariableString("ui_saber_md"));
-	Cvar_Set("g_saber2", Cvar_VariableString("ui_saber2_md"));
-	Cvar_Set("g_saber_color", Cvar_VariableString("ui_saber_color_md"));
-	Cvar_Set("g_saber2_color", Cvar_VariableString("ui_saber2_color_md"));
+	//var_Set("g_saber_type", Cvar_VariableString("ui_saber_type_md"));
+	//Cvar_Set("g_saber", Cvar_VariableString("ui_saber_md"));
+	//Cvar_Set("g_saber2", Cvar_VariableString("ui_saber2_md"));
+	//Cvar_Set("g_saber_color", Cvar_VariableString("ui_saber_color_md"));
+	//Cvar_Set("g_saber2_color", Cvar_VariableString("ui_saber2_color_md"));
 #endif
 }
 
@@ -5235,7 +5235,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("------------------------- Update 7.0.0 --------------------------\n");
-	Com_Printf("--------------------- Build Date 02/01/2026 ---------------------\n");
+	Com_Printf("--------------------- Build Date 05/01/2026 ---------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -9068,11 +9068,11 @@ static void UI_GetSaberCvars()
 		Cvar_Set("ui_saber_color", Cvar_VariableString("g_saber_color"));
 		Cvar_Set("ui_saber2_color", Cvar_VariableString("g_saber2_color"));
 #ifdef NEW_FEEDER_V9
-		Cvar_Set("ui_saber_type", Cvar_VariableString("ui_saber_type_md"));
-		Cvar_Set("ui_saber", Cvar_VariableString("ui_saber_md"));
-		Cvar_Set("ui_saber2", Cvar_VariableString("ui_saber2_md"));
-		Cvar_Set("ui_saber_color", Cvar_VariableString("ui_saber_color_md"));
-		Cvar_Set("ui_saber2_color", Cvar_VariableString("ui_saber2_color_md"));
+		//Cvar_Set("ui_saber_type", Cvar_VariableString("ui_saber_type_md"));
+		//Cvar_Set("ui_saber", Cvar_VariableString("ui_saber_md"));
+		//Cvar_Set("ui_saber2", Cvar_VariableString("ui_saber2_md"));
+		//Cvar_Set("ui_saber_color", Cvar_VariableString("ui_saber_color_md"));
+		//Cvar_Set("ui_saber2_color", Cvar_VariableString("ui_saber2_color_md"));
 #endif
 	}
 	else
