@@ -1863,22 +1863,22 @@ void Boba_Update()
 				Boba_Respawn();
 			}
 		}
-	}
 
-	// Make Sure He Always Appears In The Last Area With Full Health When His Death Script Is Turned On
-	//--------------------------------------------------------------------------------------------------
-	if (!BobaHadDeathScript && NPC->behaviorSet[BSET_DEATH] != nullptr)
-	{
-		if (!gi.inPVS(NPC->enemy->currentOrigin, NPC->currentOrigin))
+		// Make Sure He Always Appears In The Last Area With Full Health When His Death Script Is Turned On
+		//--------------------------------------------------------------------------------------------------
+		if (!BobaHadDeathScript && NPC->behaviorSet[BSET_DEATH] != nullptr)
 		{
-			Boba_Printf("Attempting Final Battle Spawn...");
-			if (Boba_Respawn())
+			if (!gi.inPVS(NPC->enemy->currentOrigin, NPC->currentOrigin))
 			{
-				BobaHadDeathScript = true;
-			}
-			else
-			{
-				Boba_Printf("Failed");
+				Boba_Printf("Attempting Final Battle Spawn...");
+				if (Boba_Respawn())
+				{
+					BobaHadDeathScript = true;
+				}
+				else
+				{
+					Boba_Printf("Failed");
+				}
 			}
 		}
 	}
