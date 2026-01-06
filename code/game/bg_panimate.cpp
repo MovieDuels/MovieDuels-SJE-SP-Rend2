@@ -4075,11 +4075,12 @@ static saber_moveName_t PM_CheckDualSpinProtect()
 		}
 	}
 	//do normal checks
+	const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
 	if (pm->ps->saber_move == LS_READY //ready
 		&& pm->ps->saber_anim_level == SS_DUAL //using dual saber style
 		&& pm->ps->saber[0].Active() && pm->ps->saber[1].Active() //both sabers on
 		&& G_TryingKataAttack(&pm->cmd)
-		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue)
+		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue, isPlayer)
 		&& pm->cmd.buttons & BUTTON_ATTACK)
 	{
 		if (pm->gent)
@@ -4130,6 +4131,7 @@ static saber_moveName_t PM_CheckStaffKata()
 		}
 	}
 	//do normal checks
+	const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
 	if (pm->ps->saber_move == LS_READY //ready
 		//&& (pm->ps->client_num < MAX_CLIENTS||PM_ControlledByPlayer())//PLAYER ONLY...?
 		//&& pm->ps->viewangles[0] > 30 //looking down
@@ -4138,7 +4140,7 @@ static saber_moveName_t PM_CheckStaffKata()
 		//&& pm->ps->forcePowerLevel[FP_PUSH]>=FORCE_LEVEL_3//force push 3
 		//&& ((pm->ps->forcePowersActive&(1<<FP_PUSH))||pm->ps->forcePowerDebounce[FP_PUSH]>level.time)//force-pushing
 		&& G_TryingKataAttack(&pm->cmd) //(pm->cmd.buttons&BUTTON_FORCE_FOCUS)//holding focus
-		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue)
+		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue, isPlayer)
 		//pm->ps->forcePower >= SABER_ALT_ATTACK_POWER//DUAL_SPIN_PROTECT_POWER//force push 3
 		&& pm->cmd.buttons & BUTTON_ATTACK //pressing attack
 		)
@@ -4182,13 +4184,14 @@ saber_moveName_t PM_CheckPullAttack()
 		return LS_NONE;
 	}
 
+	const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
 	if ((pm->ps->saber_move == LS_READY || PM_SaberInReturn(pm->ps->saber_move) || PM_SaberInReflect(pm->ps->saber_move))
 		//ready
 		&& pm->ps->saber_anim_level >= SS_FAST //single saber styles - FIXME: Tavion?
 		&& pm->ps->saber_anim_level <= SS_STRONG //single saber styles - FIXME: Tavion?
 		&& G_TryingPullAttack(pm->gent, &pm->cmd, qfalse)
 		&& pm->cmd.buttons & BUTTON_ATTACK //attacking
-		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER))
+		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qfalse, isPlayer))
 	{
 		//FIXME: some NPC logic to do this?
 		qboolean do_move = g_saberNewControlScheme->integer ? qtrue : qfalse;
@@ -4379,6 +4382,8 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 		//first saber not overridden, check second
 		overrideJumpLeftAttackMove = static_cast<saber_moveName_t>(pm->ps->saber[1].jumpAtkLeftMove);
 	}
+
+	const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
 	if (rightmove > 0)
 	{
 		//moving right
@@ -4388,10 +4393,9 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 			//on ground or just jumped
 			&& pm->cmd.buttons & BUTTON_ATTACK //hitting attack
 			&& pm->ps->forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 //have force jump 1 at least
-			&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_LR) //have enough power
-			&& (pm->ps->client_num >= MAX_CLIENTS && !PM_ControlledByPlayer() && pm->cmd.upmove > 0 //jumping NPC
-				|| (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) &&
-				G_TryingCartwheel(pm->gent, &pm->cmd))) //focus-holding player
+			&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_LR, qfalse, isPlayer) //have enough power
+			&& ((!isPlayer && pm->cmd.upmove > 0) //jumping NPC
+				|| (isPlayer && G_TryingCartwheel(pm->gent, &pm->cmd)))) //focus-holding player
 		{
 			//cartwheel right
 			vec3_t right;
@@ -4470,10 +4474,9 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 			//on ground or just jumped
 			&& pm->cmd.buttons & BUTTON_ATTACK //hitting attack
 			&& pm->ps->forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 //have force jump 1 at least
-			&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_LR) //have enough power
-			&& (pm->ps->client_num >= MAX_CLIENTS && !PM_ControlledByPlayer() && pm->cmd.upmove > 0 //jumping NPC
-				|| (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) &&
-				G_TryingCartwheel(pm->gent, &pm->cmd))) //focus-holding player
+			&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_LR, qfalse, isPlayer) //have enough power
+			&& ((!isPlayer && pm->cmd.upmove > 0) //jumping NPC
+				|| (isPlayer && G_TryingCartwheel(pm->gent, &pm->cmd)))) //focus-holding player
 		{
 			//cartwheel left
 			vec3_t right;

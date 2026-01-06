@@ -1819,15 +1819,14 @@ static qboolean PM_CheckJump()
 			float vert_push = 0;
 			int force_power_cost_override = 0;
 
+			const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
 			// Cartwheels/ariels/butterflies
 			if (pm->ps->weapon == WP_SABER && G_TryingCartwheel(pm->gent, &pm->cmd)
 				/*(pm->cmd.buttons&BUTTON_FORCE_FOCUS)*/ && pm->cmd.buttons & BUTTON_ATTACK
 				//using saber and holding focus + attack
 				//					  ||(pm->ps->weapon!=WP_SABER&&((pm->cmd.buttons&BUTTON_ATTACK)||(pm->cmd.buttons&BUTTON_ALT_ATTACK)) ) )//using any other weapon and hitting either attack button
-				&& (pm->ps->client_num >= MAX_CLIENTS && !PM_ControlledByPlayer() && pm->cmd.upmove > 0 && pm->ps->
-					velocity[2] >= 0 //jumping NPC, going up already
-					|| (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) &&
-					G_TryingCartwheel(pm->gent, &pm->cmd)/*(pm->cmd.buttons&BUTTON_FORCE_FOCUS)*/)
+				&& ((!isPlayer && pm->cmd.upmove > 0 && pm->ps-> velocity[2] >= 0) //jumping NPC, going up already
+					|| (isPlayer && G_TryingCartwheel(pm->gent, &pm->cmd))/*(pm->cmd.buttons&BUTTON_FORCE_FOCUS)*/)
 				//focus-holding player
 				&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_LR)
 				/*pm->ps->forcePower >= SABER_ALT_ATTACK_POWER_LR*/) // have enough power
@@ -15360,11 +15359,12 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 
 	if (g_SerenityJediEngineMode->integer)
 	{
+		const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
 		if (g_spskill->integer > 1 &&
-			G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue) &&
+			G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue, isPlayer) &&
 			!pm->ps->forcePowersActive && !in_camera)
 		{
-			if (pm->ps->client_num >= MAX_CLIENTS && !PM_ControlledByPlayer())
+			if (!isPlayer)
 			{// Some special AI stuff.
 				if (Next_Kill_Attack_Move_Check[pm->ps->client_num] <= level.time && g_attackskill->integer >= 0)
 				{
@@ -17140,6 +17140,8 @@ static qboolean PM_CanDoKata()
 	const qboolean active_blocking = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
 	//Active Blocking
 
+	const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
+
 	if (is_holding_block_button || active_blocking)
 	{
 		return qfalse;
@@ -17147,7 +17149,7 @@ static qboolean PM_CanDoKata()
 
 	if (g_SerenityJediEngineMode->integer)
 	{
-		if (pm->ps->client_num >= MAX_CLIENTS && !PM_ControlledByPlayer() //npc kata restrictions
+		if (!isPlayer //npc kata restrictions
 			&& (g_SerenityJediEngineMode->integer == 2 && pm->ps->blockPoints <= BLOCKPOINTS_FOURTY
 				|| g_SerenityJediEngineMode->integer == 1 && pm->ps->forcePower <= BLOCKPOINTS_FOURTY))
 		{
@@ -17170,7 +17172,7 @@ static qboolean PM_CanDoKata()
 		&& G_TryingKataAttack(&pm->cmd)
 		&& pm->ps->damageTime < cg.time //Not Already taking damage
 		&& pm->ps->saberFatigueChainCount < MISHAPLEVEL_TEN
-		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_KATA_ATTACK_POWER, qtrue)) // have enough power
+		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_KATA_ATTACK_POWER, qtrue, isPlayer)) // have enough power
 	{
 		return qtrue;
 	}
@@ -17179,6 +17181,8 @@ static qboolean PM_CanDoKata()
 
 static qboolean PM_CanDoRollStab()
 {
+	const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
+
 	if (!pm->ps->saberInFlight //not throwing saber
 		&& pm->ps->groundEntityNum != ENTITYNUM_NONE //not in the air
 		&& pm->cmd.buttons & BUTTON_ATTACK //pressing attack
@@ -17187,7 +17191,7 @@ static qboolean PM_CanDoRollStab()
 		&& pm->cmd.upmove <= 0 //not jumping...?
 		&& (!(pm->ps->saber[0].saberFlags & SFL_NO_ROLL_STAB)
 			&& (!pm->ps->dualSabers || !(pm->ps->saber[1].saberFlags & SFL_NO_ROLL_STAB)))
-		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_KATA_ATTACK_POWER, qtrue)) // have enough power
+		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_KATA_ATTACK_POWER, qtrue, isPlayer)) // have enough power
 	{
 		return qtrue;
 	}
@@ -17196,11 +17200,13 @@ static qboolean PM_CanDoRollStab()
 
 qboolean PM_Can_Do_Kill_Move()
 {
+	const qboolean isPlayer = (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
+
 	if (!pm->ps->saberInFlight //not throwing saber
 		&& pm->cmd.buttons & BUTTON_ATTACK //pressing attack
 		&& pm->cmd.forwardmove >= 0 //not moving back (used to be !pm->cmd.forwardmove)
 		&& !pm->cmd.rightmove //not moving r/l
-		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_FB, qtrue)) // have enough power
+		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_FB, qtrue, isPlayer)) // have enough power
 	{
 		return qtrue;
 	}
