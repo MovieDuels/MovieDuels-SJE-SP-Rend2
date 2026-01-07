@@ -16051,17 +16051,19 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 					}
 					if (win_anim != BOTH_CCWCIRCLEBREAK)
 					{
-						if (!genemy->s.number && genemy->health <= 25 //player low on health
-							|| genemy->s.number && genemy->client->NPC_class != CLASS_KYLE && genemy->client->
+						if ((!genemy->s.number && genemy->health <= 25) //player low on health
+							|| (genemy->s.number && genemy->client->NPC_class != CLASS_KYLE && genemy->client->
 							NPC_class != CLASS_LUKE && genemy->client->NPC_class != CLASS_YODA && genemy->client
 							->NPC_class != CLASS_TAVION && genemy->client->NPC_class != CLASS_ALORA && genemy->
-							client->NPC_class != CLASS_VADER && genemy->client->NPC_class != CLASS_DESANN
+							client->NPC_class != CLASS_VADER && genemy->client->NPC_class != CLASS_DESANN)
 							//any NPC that's not a boss character
-							|| genemy->s.number && genemy->health <= 50)
+							|| (genemy->s.number && genemy->health <= 50))
 							//boss character with less than 50 health left
 						{
 							//possibly knock saber out of hand OR cut hand off!
-							if (Q_irand(0, 25) < victory_strength
+							if (g_allowSuperSaberLockBreaks->integer > 0
+								&& victory_strength > 3
+								&& Q_irand(0, 25) < victory_strength
 								&& (!genemy->s.number && genemy->health <= 10 || genemy->s.number))
 							{
 								NPC_SetAnim(genemy, SETANIM_BOTH, BOTH_RIGHTHANDCHOPPEDOFF,
