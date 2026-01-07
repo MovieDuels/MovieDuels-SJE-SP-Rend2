@@ -90,14 +90,8 @@ void WP_FireCloneMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qboolea
 
 	missile->damage = damage;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_BLASTER_ALT;
@@ -253,14 +247,8 @@ void WP_FireCloneRifleMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qb
 
 	missile->damage = damage;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_CLONERIFLE_ALT;
@@ -410,14 +398,8 @@ void WP_FireCloneCommandoMissile(gentity_t* ent, vec3_t start, vec3_t dir, const
 
 	missile->damage = damage;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_CLONECOMMANDO_ALT;
@@ -566,14 +548,8 @@ void WP_FireZ6RotaryCannonMissile(gentity_t* ent, vec3_t start, vec3_t dir)
 
 	missile->damage = damage;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	missile->methodOfDeath = MOD_Z6_ROTARY_CANNON;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 	// we don't want it to bounce forever

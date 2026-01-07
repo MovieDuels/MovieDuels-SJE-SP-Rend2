@@ -46,14 +46,9 @@ void WP_FireTurboLaserMissile(gentity_t* ent, vec3_t start, vec3_t dir)
 	missile->damage = ent->damage; //FIXME: externalize
 	missile->splashDamage = ent->splashDamage; //FIXME: externalize
 	missile->splashRadius = ent->splashRadius; //FIXME: externalize
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	missile->methodOfDeath = MOD_EMPLACED; //MOD_TURBLAST; //count as a heavy weap
 	missile->splashMethodOfDeath = MOD_EMPLACED; //MOD_TURBLAST;// ?SPLASH;
 	missile->clipmask = MASK_SHOT;

@@ -72,14 +72,8 @@ static void WP_DEMP2_MainFire(gentity_t* ent)
 
 	missile->damage = damage;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	missile->methodOfDeath = MOD_DEMP2;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 
@@ -260,14 +254,8 @@ static void WP_DEMP2_AltFire(gentity_t* ent)
 	missile->splashMethodOfDeath = missile->methodOfDeath = MOD_DEMP2_ALT;
 	missile->splashRadius = weaponData[WP_DEMP2].altSplashRadius;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 
 	// we don't want it to ever bounce

@@ -102,14 +102,8 @@ void WP_FireTuskenRifle(gentity_t* ent)
 	{
 		missile->damage = TUSKEN_RIFLE_DAMAGE_EASY;
 	}
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
 
 	missile->methodOfDeath = MOD_BRYAR; //???
 

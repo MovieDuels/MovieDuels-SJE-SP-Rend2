@@ -8310,14 +8310,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 	//Attempt to apply extra knockback
 	if (dflags & DAMAGE_EXTRA_KNOCKBACK)
 	{
-		if (g_SerenityJediEngineMode->integer == 2)
-		{
-			knockback *= 8;
-		}
-		else
-		{
-			knockback *= 2;
-		}
+		knockback *= 2;
 	}
 
 	if (knockback > 200)
@@ -9294,46 +9287,16 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		{
 			if (knockback && dflags & DAMAGE_DEATH_KNOCKBACK)
 			{
-				//only do knockback on death
-				if (g_SerenityJediEngineMode->integer == 2)
+				if (mod == MOD_FLECHETTE || mod == MOD_BOWCASTER || mod == MOD_BOWCASTER_ALT
+					|| mod == MOD_CONC || mod == MOD_CONC_ALT)
 				{
-					if (mod == MOD_BLASTER)
-					{
-						//special case because this is shotgun-ish damage, we need to multiply the knockback
-						knockback *= 8;
-					}
-					else if (mod == MOD_FLECHETTE || mod == MOD_BOWCASTER || mod == MOD_BOWCASTER_ALT)
-					{
-						//special case because this is shotgun-ish damage, we need to multiply the knockback
-						knockback *= 12;
-					}
-					else if (mod == MOD_CONC || mod == MOD_CONC_ALT)
-					{
-						//special case because this is shotgun-ish damage, we need to multiply the knockback
-						knockback *= 16;
-					}
-					else if (mod == MOD_FORCE_LIGHTNING)
-					{
-						//special case because this is shotgun-ish damage, we need to multiply the knockback
-						knockback *= 1.5;
-					}
-					else
-					{
-						knockback *= 4;
-					}
+					//special case because this is shotgun-ish damage, we need to multiply the knockback
+					knockback *= 4;
 				}
-				else
+				else if (mod == MOD_FORCE_LIGHTNING)
 				{
-					if (mod == MOD_FLECHETTE)
-					{
-						//special case because this is shotgun-ish damage, we need to multiply the knockback
-						knockback *= 12; //*6 for 6 flechette shots
-					}
-					else if (mod == MOD_FORCE_LIGHTNING)
-					{
-						//special case because this is shotgun-ish damage, we need to multiply the knockback
-						knockback *= 1.5;
-					}
+					//special case because this is shotgun-ish damage, we need to multiply the knockback
+					knockback *= 1.5;
 				}
 				G_ApplyKnockback(targ, new_dir, knockback);
 			}

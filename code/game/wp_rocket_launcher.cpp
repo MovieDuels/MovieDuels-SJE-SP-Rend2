@@ -305,14 +305,7 @@ void WP_FireRocket(gentity_t* ent, const qboolean alt_fire)
 
 	missile->damage = damage;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
 
 	if (alt_fire)
 	{

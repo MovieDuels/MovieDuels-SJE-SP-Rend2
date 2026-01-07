@@ -133,14 +133,8 @@ static void WP_BowcasterMainFire(gentity_t* ent)
 
 		missile->damage = damage;
 
-		if (g_SerenityJediEngineMode->integer == 2)
-		{
-			missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-		}
-		else
-		{
-			missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-		}
+		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+		
 		missile->methodOfDeath = MOD_BOWCASTER;
 		missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 		missile->splashDamage = weaponData[WP_BOWCASTER].splashDamage;
@@ -200,14 +194,8 @@ static void WP_BowcasterAltFire(gentity_t* ent)
 
 	missile->damage = damage;
 
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-	}
-	else
-	{
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	}
+	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+	
 	missile->methodOfDeath = MOD_BOWCASTER_ALT;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 	missile->splashDamage = weaponData[WP_BOWCASTER].altSplashDamage;
