@@ -84,7 +84,7 @@ int g_find_configstring_index(const char* name, const int start, const int max, 
 	if (i == max)
 	{
 		//G_Error("G_FindConfigstringIndex: overflow adding %s to set %d-%d", name, start, max);
-		Com_Printf(S_COLOR_RED "ERROR: G_FindConfigstringIndex: overflow!" S_COLOR_WHITE "\n");
+		Com_Printf(S_COLOR_RED "ERROR: G_FindConfigstringIndex: overflow adding %s to set %d-%d" S_COLOR_WHITE "\n", name, start, max);
 	}
 
 	gi.SetConfigstring(start + i, name);

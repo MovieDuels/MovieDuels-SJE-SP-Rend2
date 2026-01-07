@@ -2660,8 +2660,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 			|| ent->client->NPC_class == CLASS_JANGODUAL
 			|| ent->client->NPC_class == CLASS_ROCKETTROOPER))
 	{
-		gi.Printf(S_COLOR_RED"ERROR: You can not change characters when jetpacking or using the flamethrower\n");
-		gi.Printf(S_COLOR_WHITE"NOTICE: You must now re-select a character\n");
+		gi.Printf(S_COLOR_RED "ERROR: You can not change characters when jetpacking or using the flamethrower. You must now re-select a character.\n");
 		return;
 	}
 
@@ -2679,10 +2678,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 			//|| (ent->client->usercmd.buttons & BUTTON_USE)
 			|| ent->client->usercmd.buttons & BUTTON_DASH))
 	{
-		/*gi.Printf(
-			S_COLOR_RED
-			"ERROR: Erm this may seem stupid but You can not change characters when holding function buttons\n");
-		gi.Printf(S_COLOR_WHITE"NOTICE: You must now re-select a character\n");*/
+		gi.Printf(S_COLOR_RED "ERROR: You can not change characters when holding function buttons. You must now re-select a character.\n");
 		return;
 	}
 
