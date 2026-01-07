@@ -2074,8 +2074,7 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 				}
 			}
 
-			if (g_SerenityJediEngineMode->integer == 2
-				&& g_autoHealthRegen->integer == 1
+			if (g_autoHealthRegen->integer == 1
 				&& (!PM_InAmputateMove(ent->client->ps.legsAnim)
 					&& !PM_InDrainPainMove(ent->client->ps.torsoAnim)
 					&& !ent->client->poisonTime
