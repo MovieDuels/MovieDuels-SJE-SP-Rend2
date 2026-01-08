@@ -1028,7 +1028,7 @@ static void Item_ApplyHacks(itemDef_t* item)
 			item->disabled = qtrue;
 			// Just in case it had focus
 			item->window.flags &= ~WINDOW_MOUSEOVER;
-			Com_Printf("Disabling eax field because current platform does not support EAX.\n");
+			//Com_Printf("Disabling eax field because current platform does not support EAX.\n");
 		}
 	}
 
@@ -1040,7 +1040,7 @@ static void Item_ApplyHacks(itemDef_t* item)
 			item->disabled = item->disabledHidden = qtrue;
 			// Just in case it had focus
 			item->window.flags &= ~WINDOW_MOUSEOVER;
-			Com_Printf("Hiding eax_icon object because current platform does not support EAX.\n");
+			//Com_Printf("Hiding eax_icon object because current platform does not support EAX.\n");
 		}
 	}
 #endif

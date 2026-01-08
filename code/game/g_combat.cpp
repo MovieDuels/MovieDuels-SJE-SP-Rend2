@@ -236,7 +236,7 @@ gentity_t* TossClientItems(gentity_t* self)
 			//don't have one in right hand
 			self->s.weapon = WP_NONE;
 		}
-		else if (g_saberPickuppableDroppedSabers->integer || !(client->ps.saber[0].saberFlags & SFL_NOT_DISARMABLE))
+		else if (g_saberPickuppableDroppedSabers->integer || (client && !(client->ps.saber[0].saberFlags & SFL_NOT_DISARMABLE)))
 		{
 			//okay to drop it
 			if (WP_SaberLose(self, nullptr))
@@ -250,7 +250,7 @@ gentity_t* TossClientItems(gentity_t* self)
 			if (self->weaponModel[1] >= 0)
 			{
 				//have one in left
-				if (!(client->ps.saber[0].saberFlags & SFL_NOT_DISARMABLE) || g_saberPickuppableDroppedSabers->integer)
+				if (client && (!(client->ps.saber[0].saberFlags & SFL_NOT_DISARMABLE) || g_saberPickuppableDroppedSabers->integer))
 				{
 					//okay to drop it
 					//just drop an item

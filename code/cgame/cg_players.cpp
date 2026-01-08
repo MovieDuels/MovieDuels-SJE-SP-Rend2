@@ -16058,25 +16058,25 @@ void CG_Player(centity_t* cent)
 				}
 			}
 
-			if (cent->gent->client->ps.forcePowersActive & 1 << FP_DEADLYSIGHT)
+			if (cent->gent->client->ps.forcePowersActive & 1 << FP_DEADLYSIGHT && cg_jkoeffects.integer != 2)
 			{
 				//doing the gripping
 				CG_ForceDeadlySightBlur(cent->gent->client->renderInfo.headPoint);
 			}
 
-			if (cent->gent->client->ps.forcePowersActive & 1 << FP_GRIP)
+			if (cent->gent->client->ps.forcePowersActive & 1 << FP_GRIP && cg_jkoeffects.integer != 2)
 			{
 				//doing the gripping
 				CG_ForcePushBlur(cent->gent->client->renderInfo.handLPoint, qtrue);
 			}
 
-			if (cent->gent->client->ps.eFlags & EF_FORCE_GRIPPED)
+			if (cent->gent->client->ps.eFlags & EF_FORCE_GRIPPED && cg_jkoeffects.integer != 2)
 			{
 				//being gripped
 				CG_ForcePushBlur(cent->gent->client->renderInfo.headPoint, qtrue);
 			}
 
-			if (cent->gent->client->ps.eFlags & EF_FORCE_GRASPED)
+			if (cent->gent->client->ps.eFlags & EF_FORCE_GRASPED && cg_jkoeffects.integer != 2)
 			{
 				//being gripped
 				CG_GraspBlur(cent->gent->client->renderInfo.crotchPoint);
@@ -16094,7 +16094,7 @@ void CG_Player(centity_t* cent)
 				CG_ForceElectrocution(cent, ent.origin, temp_angles, cgs.media.shockShader);
 			}
 
-			if (cent->gent->client->ps.forcePowersActive & 1 << FP_GRASP)
+			if (cent->gent->client->ps.forcePowersActive & 1 << FP_GRASP && cg_jkoeffects.integer != 2)
 			{
 				//doing the gripping
 				CG_GraspBlur(cent->gent->client->renderInfo.handLPoint);

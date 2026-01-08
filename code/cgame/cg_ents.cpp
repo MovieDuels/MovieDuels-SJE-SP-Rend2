@@ -44,6 +44,7 @@ extern cvar_t* debug_subdivision;
 extern vmCvar_t cg_SerenityJediEngineMode;
 extern vmCvar_t cg_Bloodmist;
 extern cvar_t* g_saberRealisticCombat;
+extern vmCvar_t cg_jkoeffects;
 
 /*
 ======================
@@ -960,7 +961,7 @@ static void CG_General(centity_t* cent)
 	Ghoul2 Insert End
 	*/
 
-	if (cent->gent && cent->gent->forcePushTime > cg.time)
+	if (cent->gent && cent->gent->forcePushTime > cg.time && cg_jkoeffects.integer != 2)
 	{
 		//FIXME: if I'm a rather large model, this will look kind of stupid...
 		CG_ForcePushBlur(cent->lerpOrigin);

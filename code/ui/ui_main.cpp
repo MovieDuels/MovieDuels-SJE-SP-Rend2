@@ -715,7 +715,7 @@ static constexpr charMD_t charMD[] = {
 	{ "Dagan Gera",						"[Jedi]",								"",				"md_dagan_jedi",				"dagan_gera",			"model_jedi",					"dagan",					"",						"yellow",		"",			1,		14,		ERA_EMPIRE,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/dagan/misc/taunt2.mp3",				"",		1.0f,	"@MD_CHAR_DESC_DAGAN_GERA",					 qtrue },
 	{ "Death Trooper",					"[Rogue One]",							"",				"md_deathtrooper",				"deathtrooper",			"model_default",				"menu_wp_blaster",			"",						"",				"",			0,		0,		ERA_EMPIRE,			TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/deathtrooper/misc/taunt2.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DEATH_TROOPER",				qfalse },
 	{ "Death Trooper",					"[Commander]",							"",				"md_deathtrooper_commander",	"deathtrooper",			"model_commander",				"menu_wp_repeater",			"",						"",				"",			0,		0,		ERA_EMPIRE,			TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/deathtrooper/misc/taunt2.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DEATH_TROOPER",				 qtrue },
-	{ "Dark Trooper",					"[The Mandalorian]",					"",				"md_darktrooper",				"darktrooper_tv",		"model_default",				"",							"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_MD_CIN_1,						BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/3rd_dt/misc/taunt1.mp3",				"",		0.7f,	"@MD_CHAR_DESC_DARK_TROOPER",				qfalse },
+	{ "Dark Trooper",					"[The Mandalorian]",					"",				"md_darktrooper",				"darktrooper_tv",		"model_default",				"menu_wp_blaster",			"",						"",				"",			0,		0,		ERA_EMPIRE,			BOTH_STAND1,						BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/3rd_dt/misc/taunt1.mp3",				"",		0.7f,	"@MD_CHAR_DESC_DARK_TROOPER",				qfalse },
 	{ "Darth Desolous",					"[Legends]",							"",				"darthdesolous",				"darthdesolous",		"model_default",				"desolous",					"desolous_shield",		"red",			"",			6,		64,		ERA_EMPIRE,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/darthdesolous/misc/taunt1.mp3",		"",		1.0f,	"@MD_CHAR_DESC_DARTH_DESOLOUS",				qfalse },
 	{ "Darth Krayt",					"[Emperor]",							"",				"md_krayt",						"darthkrayt",			"model_default",				"asharad",					"asharad2",				"red",			"red",		6,		64,		ERA_EMPIRE,			BOTH_SABERDUAL_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/darthkrayt/misc/taunt5.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_KRAYT",				qfalse },
 	{ "Darth Krayt",					"[Reborn]",								"",				"md_krayt_reborn",				"darthkrayt_r",			"model_default",				"asharad",					"asharad2",				"red",			"green",	6,		64,		ERA_EMPIRE,			BOTH_SABERDUAL_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/darthkrayt/misc/taunt5.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_KRAYT",				 qtrue },
@@ -5234,8 +5234,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("---- Genuine MovieDuels SerenityJediEngine (Solaris Edition) ----\n");
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("------------------------- Update 7.0.0 --------------------------\n");
-	Com_Printf("--------------------- Build Date 07/01/2026 ---------------------\n");
+	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
+	Com_Printf("--------------------- Build Date 08/01/2026 ---------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
