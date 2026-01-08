@@ -6520,7 +6520,8 @@ static void PM_TorsoAnimLightsaber()
 							{
 								if (!IsSurrendering(pm->gent))
 								{
-									if (pm->ps->saber_anim_level == SS_STAFF)
+									PM_SetSaberMove(LS_READY);
+									/*if (pm->ps->saber_anim_level == SS_STAFF)
 									{
 										PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABER_IDLE_STANCE_STAFF,
 											SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -6534,7 +6535,7 @@ static void PM_TorsoAnimLightsaber()
 									{
 										PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABER_IDLE_STANCE,
 											SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-									}
+									}*/
 								}
 							}
 						}

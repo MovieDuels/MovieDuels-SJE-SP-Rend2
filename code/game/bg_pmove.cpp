@@ -10914,9 +10914,9 @@ static void PM_Footsteps()
 				//running //sprinting
 				bobmove = 0.4F; // faster speeds bob faster
 
-				if (pm->ps->weapon == WP_SABER && pm->ps->SaberActive())
+				if (pm->ps->weapon == WP_SABER /* && pm->ps->SaberActive()*/)
 				{
-					if (is_holding_block_button && pm->ps->sprintFuel > 15)
+					if ((is_holding_block_button || (pm->cmd.buttons & BUTTON_BLOCK)) && pm->ps->sprintFuel > 15)
 					{
 						if (pm->ps->saber_anim_level == SS_DUAL)
 						{
@@ -10984,12 +10984,11 @@ static void PM_Footsteps()
 						}
 					}
 				} // NON SABER WEAPONS RUNNING
-				else if (pm->ps->weapon == WP_MELEE || pm->ps->weapon == WP_NONE ||
-					pm->ps->weapon == WP_SABER && !pm->ps->SaberActive())
+				else if (pm->ps->weapon == WP_MELEE || pm->ps->weapon == WP_NONE || pm->ps->weapon == WP_SABER)
 				{
 					if (pm->cmd.buttons & BUTTON_BLOCK && pm->ps->sprintFuel > 15)
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_SINGLE_LIGHTSABER, set_anim_flags);
+						PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT, set_anim_flags);
 
 						if (!(pm->ps->PlayerEffectFlags & 1 << PEF_SPRINTING))
 						{
