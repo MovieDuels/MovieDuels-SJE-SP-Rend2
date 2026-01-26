@@ -147,7 +147,7 @@ static std::list<sstring_t> strList;
 //
 static int GetStringNum(const char* psString)
 {
-	assert(psString != reinterpret_cast<char*>(0xcdcdcdcd));
+	assert(reinterpret_cast<uintptr_t>(psString) != 0xcdcdcdcd);  //VS2026 X64 FIX
 
 	// NULL ptrs I'll write out as a strlen of -1...
 	//
@@ -204,7 +204,7 @@ static char* GetStringPtr(const int iStrlen, char* psOriginal/*may be NULL*/)
 //
 static intptr_t GetGEntityNum(const gentity_t* ent)
 {
-	assert(ent != (gentity_t*)0xcdcdcdcd);
+	assert(reinterpret_cast<uintptr_t>(ent) != 0xcdcdcdcd); //VS2026 X64 FIX
 
 	if (ent == nullptr)
 	{
@@ -241,7 +241,7 @@ static gentity_t* GetGEntityPtr(const intptr_t iEntNum)
 
 static intptr_t GetGroupNumber(const AIGroupInfo_t* pGroup)
 {
-	assert(pGroup != (AIGroupInfo_t*)0xcdcdcdcd);
+	assert(reinterpret_cast<uintptr_t>(pGroup) != 0xcdcdcdcd);//VS2026 X64 FIX
 
 	if (pGroup == nullptr)
 	{
@@ -275,7 +275,7 @@ static intptr_t GetGclient_num(const gclient_t* c, const gentity_t* ent)
 	// unfortunately, I now need to see if this is a INT_ID('r','e','a','l') client (and therefore resolve to an enum), or
 	//	whether it's one of the NPC or SP_misc_weapon_shooter
 	//
-	assert(c != (gclient_t*)0xcdcdcdcd);
+	assert(reinterpret_cast<uintptr_t>(c) != 0xcdcdcdcd);//VS2026 X64 FIX
 
 	if (c == nullptr)
 	{
@@ -317,7 +317,7 @@ static gclient_t* GetGClientPtr(const intptr_t c)
 //
 static int GetGItemNum(const gitem_t* pItem)
 {
-	assert(pItem != (gitem_t*)0xcdcdcdcd);
+	assert(reinterpret_cast<uintptr_t>(pItem) != static_cast<uintptr_t>(0xcdcdcdcd));//VS2026 X64 FIX
 
 	if (pItem == nullptr)
 	{
@@ -348,7 +348,7 @@ static gitem_t* GetGItemPtr(const int iItem)
 //
 static int GetVehicleInfoNum(const vehicleInfo_t* pVehicleInfo)
 {
-	assert(pVehicleInfo != (vehicleInfo_t*)0xcdcdcdcd);
+	assert(reinterpret_cast<uintptr_t>(pVehicleInfo) != 0xcdcdcdcd);//VS2026 X64 FIX
 
 	if (pVehicleInfo == nullptr)
 	{

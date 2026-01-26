@@ -370,8 +370,7 @@ void cgi_R_AddRefEntityToScene(const refEntity_t* re)
 
 qboolean cgi_R_inPVS(vec3_t p1, vec3_t p2)
 {
-	byte* mask;
-	return (qboolean)(Q_syscall(CG_R_INPVS, p1, p2, mask) != 0);
+	return static_cast<qboolean>(Q_syscall(CG_R_INPVS, p1, p2) != 0);//VS2026 X64 FIX
 }
 
 void cgi_R_GetLighting(const vec3_t origin, vec3_t ambientLight, vec3_t directedLight, vec3_t ligthDir)

@@ -213,8 +213,13 @@ void Sys_SetProcessorAffinity()
 	if (!GetProcessAffinityMask(handle, &processAffinityMask, &systemAffinityMask))
 		return;
 
-	if (sscanf(com_affinity->string, "%X", &processMask) != 1)
+	// Fix: sscanf expects an unsigned int*, but processMask is DWORD_PTR (unsigned __int64 on 64-bit)  //VS2026 X64 FIX
+	// Use a temporary unsigned int for parsing, then assign/cast to processMask
+	unsigned int tempMask = 0;
+	if (sscanf(com_affinity->string, "%X", &tempMask) != 1)
 		processMask = 1; // set to first core only
+	else
+		processMask = static_cast<DWORD_PTR>(tempMask);
 
 	if (!processMask)
 		processMask = systemAffinityMask; // use all the cores available to the system
