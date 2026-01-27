@@ -27,6 +27,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "wp_saber.h"
 #include "../cgame/cg_local.h"
 #include "b_local.h"
+#include "ghoul2_shared.h"
+#include <qcommon\q_color.h>
+#include <cassert>
 
 extern qboolean missionInfo_Updated;
 extern cvar_t* com_kotor;
@@ -302,13 +305,16 @@ gentity_t* G_DropSaberItem(const char* saberType, const saber_colors_t saberColo
 			if (saberColor >= SABER_RGB)
 			{
 				char rgbColor[8];
-				Com_sprintf(rgbColor, 8, "x%02x%02x%02x", saberColor & 0xff, saberColor >> 8 & 0xff,
-					saberColor >> 16 & 0xff);
+				Com_sprintf(rgbColor, 8, "x%02x%02x%02x", saberColor & 0xff, saberColor >> 8 & 0xff,saberColor >> 16 & 0xff);
 				newItem->NPC_targetname = rgbColor;
+			}
+			else if (saberColor >= 0 && saberColor < SABER_RGB)
+			{
+				newItem->NPC_targetname = const_cast<char*>(saberColorStringForColor[saberColor]); //This fixes an unchecked lowerbound for enum sabercolor used as index
 			}
 			else
 			{
-				newItem->NPC_targetname = const_cast<char*>(saberColorStringForColor[saberColor]);
+				newItem->NPC_targetname = nullptr;
 			}
 			newItem->count = 1;
 			newItem->flags = FL_DROPPED_ITEM;
@@ -1315,23 +1321,20 @@ void FinishSpawningItem(gentity_t* ent)
 		vec3_t dest;
 		// drop to floor
 		VectorSet(dest, ent->s.origin[0], ent->s.origin[1], MIN_WORLD_COORD);
-		gi.trace(&tr, ent->s.origin, ent->mins, ent->maxs, dest, ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,
-			static_cast<EG2_Collision>(0), 0);
+		gi.trace(&tr, ent->s.origin, ent->mins, ent->maxs, dest, ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,static_cast<EG2_Collision>(0), 0);
 		if (tr.startsolid)
-		{
-			if (&g_entities[tr.entityNum] != nullptr)
+		{ //fixed Items spawning in solid and added required includes and static cast above
+
+			if (g_entities[tr.entityNum].inuse)
 			{
-				gi.Printf(S_COLOR_RED"FinishSpawningItem: removing %s startsolid at %s (in a %s)\n", ent->classname,
-					vtos(ent->s.origin), g_entities[tr.entityNum].classname);
+				gi.Printf(S_COLOR_RED"FinishSpawningItem: removing %s startsolid at %s (in a %s)\n", ent->classname, vtos(ent->s.origin), g_entities[tr.entityNum].classname);
 			}
 			else
 			{
 				gi.Printf(S_COLOR_RED"FinishSpawningItem: removing %s startsolid at %s\n", ent->classname, vtos(ent->s.origin));
 			}
-			//assert( 0 && "item starting in solid");//jacesolaris removed for debugging
-			if (!g_entities[ENTITYNUM_WORLD].s.radius)
-			{
-				//not a region
+			assert(0 && "item starting in solid");
+			if (!g_entities[ENTITYNUM_WORLD].s.radius) {	//not a region
 				delayedShutDown = level.time + 100;
 			}
 			G_FreeEntity(ent);

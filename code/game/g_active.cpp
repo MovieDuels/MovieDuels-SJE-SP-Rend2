@@ -10111,10 +10111,12 @@ void ClientEndFrame(gentity_t* ent)
 }
 
 qboolean NPC_IsNotHavingEnoughForceSight(const gentity_t* self)
-{
-	if (self->client &&
-		(!(self->client->ps.forcePowersActive & 1 << FP_SEE)) || //sight is not on OR
-		(self->client->ps.forcePowersActive & 1 << FP_SEE && self->client->ps.forcePowerLevel[FP_SEE] < FORCE_LEVEL_2)) //sight is on but lower than 3
+{ //derefencing null pointer protection
+	if (self->client && (!(self->client->ps.forcePowersActive & 1 << FP_SEE))) //sight is not on OR
+	{//force sight 2+ gives perfect aim
+		return qtrue;
+	}
+	if (self->client && (self->client->ps.forcePowersActive & 1 << FP_SEE && self->client->ps.forcePowerLevel[FP_SEE] < FORCE_LEVEL_2)) //sight is on but lower than 3
 	{//force sight 2+ gives perfect aim
 		return qtrue;
 	}

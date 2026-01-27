@@ -7240,8 +7240,7 @@ static void PM_TorsoAnimLightsaber()
 				if (pm->ps->saberEntityNum < ENTITYNUM_NONE && pm->ps->saberEntityNum > 0)
 				{
 					//
-					if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.
-						trType == TR_STATIONARY)
+					if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.trType == TR_STATIONARY)
 					{
 						//fell to the ground and we're not trying to pull it back
 						saber_in_air = qfalse;
@@ -7529,8 +7528,7 @@ void PM_TorsoAnimation()
 				if (pm->ps->saberEntityNum < ENTITYNUM_NONE && pm->ps->saberEntityNum > 0) //player is 0
 				{
 					//
-					if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.
-						trType == TR_STATIONARY)
+					if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.trType == TR_STATIONARY)
 					{
 						//fell to the ground and we're not trying to pull it back
 						saber_in_air = qfalse;
