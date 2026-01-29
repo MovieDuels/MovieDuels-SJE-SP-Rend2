@@ -262,8 +262,7 @@ static void Rancor_Move()
 }
 
 //---------------------------------------------------------
-extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern qboolean G_DoDismemberment(gentity_t* self, vec3_t point, int mod, int hit_loc,
 	qboolean force = qfalse);
 extern float NPC_EntRangeFromBolt(const gentity_t* targEnt, int bolt_index);

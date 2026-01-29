@@ -22,6 +22,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "b_local.h"
 #include "../cgame/cg_camera.h"
+#include "bg_public.h"
+#include <qcommon\q_shared.h>
+#include "anims.h"
 
 // These define the working combat range for these suckers
 constexpr auto MIN_DISTANCE = 54;
@@ -40,10 +43,9 @@ constexpr auto HOWLER_PANIC_HEALTH = 10;
 
 extern void G_UcmdMoveForDir(const gentity_t* self, usercmd_t* cmd, vec3_t dir);
 extern void G_GetBoltPosition(gentity_t* self, int bolt_index, vec3_t pos, int modelIndex = 0);
-extern int PM_AnimLength(int index, animNumber_t anim);
+extern int PM_AnimLength(const int index, const animNumber_t anim);
 extern qboolean NAV_DirSafe(const gentity_t* self, vec3_t dir, float dist);
-extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern float NPC_EntRangeFromBolt(const gentity_t* targEnt, int bolt_index);
 extern int NPC_GetEntsNearBolt(gentity_t** radius_ents, float radius, int bolt_index, vec3_t bolt_org);
 extern qboolean PM_InKnockDown(const playerState_t* ps);

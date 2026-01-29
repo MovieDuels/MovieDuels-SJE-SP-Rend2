@@ -47,6 +47,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #if defined(_WIN32)
 #include <windows.h>
 #endif
+#include <sys\sys_public.h>
+#include <qcommon\q_string.h>
 
 /*
 =============================================================================

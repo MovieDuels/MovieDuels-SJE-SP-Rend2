@@ -24,9 +24,11 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../cgame/cg_camera.h"
 #include "../cgame/cg_local.h"
 #include "g_functions.h"
+#include "bg_public.h"
+#include <qcommon\q_platform.h>
+#include <qcommon\q_math.h>
 
-extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 
 constexpr auto MIN_ATTACK_DIST_SQ = 128;
 constexpr auto MIN_MISS_DIST = 100;

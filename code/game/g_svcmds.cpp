@@ -27,13 +27,14 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_local.h"
 #include "wp_saber.h"
 #include "g_functions.h"
+#include <qcommon\q_math.h>
 
 extern void G_NextTestAxes();
 extern void G_ChangePlayerModel(gentity_t* ent, const char* new_model);
 extern void G_InitPlayerFromCvars(gentity_t* ent);
 extern void Q3_SetViewEntity(int entID, const char* name);
 extern qboolean G_ClearViewEntity(gentity_t* ent);
-extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, qboolean break_saber_lock);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void WP_SetSaber(gentity_t* ent, int saber_num, const char* saber_name);
 extern void WP_RemoveSaber(gentity_t* ent, int saber_num);

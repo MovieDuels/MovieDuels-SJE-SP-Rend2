@@ -103,7 +103,7 @@ extern qboolean PM_Can_Do_Kill_Move();
 extern qboolean G_TryingSpecial(const usercmd_t* cmd);
 extern int g_crosshairEntNum;
 extern cvar_t* g_RealisticBlockingMode;
-int PM_AnimLength(int index, animNumber_t anim);
+int PM_AnimLength(const int index, const animNumber_t anim);
 qboolean PM_LockedAnim(int anim);
 qboolean PM_StandingAnim(int anim);
 qboolean PM_InOnGroundAnim(playerState_t* ps);

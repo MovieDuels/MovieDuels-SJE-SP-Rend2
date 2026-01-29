@@ -2347,7 +2347,7 @@ void ItemUse_Grapple(gentity_t* ent)
 	}
 }
 
-extern void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, qboolean break_saber_lock);
+extern void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, qboolean breakSaberLock);
 static void barrier_push_ent(gentity_t* ent, gentity_t* pushed, vec3_t smack_dir)
 {
 	G_Damage(pushed, ent, ent, smack_dir, ent->currentOrigin, (g_spskill->integer + 1) * Q_irand(5, 10), DAMAGE_EXTRA_KNOCKBACK, MOD_ELECTROCUTE);

@@ -24,8 +24,14 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <io.h>
 #include <shlobj.h>
 #include <windows.h>
+#include <ShlObj_core.h>
+#include <qcommon\qcommon.h>
+#include <qcommon\q_shared.h>
+#include <string.h>
+#include <qcommon\q_string.h>
+#include <qcommon\q_platform.h>
 
-#define MEM_THRESHOLD (128*1024*1024)
+constexpr auto MEM_THRESHOLD = (128 * 1024 * 1024);
 
 // Used to determine where to store user-specific files
 static char homePath[MAX_OSPATH] = { 0 };

@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "sys_loadlib.h"
 #include "sys_public.h"
 #include "con_local.h"
+#include <SDL_messagebox.h>
 
 static char binaryPath[MAX_OSPATH] = { 0 };
 static char installPath[MAX_OSPATH] = { 0 };
@@ -350,7 +351,7 @@ void* Sys_LoadDll(const char* name, const qboolean useSystemLib)
 }
 
 #if defined(MACOS_X) && !defined(_JK2EXE)
-void* Sys_LoadMachOBundle(const char* name)
+static void* Sys_LoadMachOBundle(const char* name)
 {
 	if (!FS_LoadMachOBundle(name))
 		return nullptr;

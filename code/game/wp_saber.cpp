@@ -173,9 +173,8 @@ extern int SaberDroid_PowerLevelForSaberAnim(const gentity_t* self);
 extern qboolean G_ValidEnemy(const gentity_t* self, const gentity_t* enemy);
 extern void G_StartMatrixEffect(const gentity_t* ent, int me_flags = 0, int length = 1000, float time_scale = 0.0f,
 	int spin_time = 0);
-extern int PM_AnimLength(int index, animNumber_t anim);
-extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+extern int PM_AnimLength(const int index, const animNumber_t anim);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern void G_KnockOffVehicle(gentity_t* pRider, const gentity_t* self, qboolean bPull);
 extern qboolean PM_LockedAnim(int anim);
 extern qboolean rosh_being_healed(const gentity_t* self);
@@ -21040,7 +21039,7 @@ extern qboolean Boba_StopKnockdown(gentity_t* self, const gentity_t* pusher, con
 extern qboolean jedi_stop_knockdown(gentity_t* self, const vec3_t push_dir);
 
 static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean pull, qboolean strong_knockdown,
-	const qboolean break_saber_lock)
+	const qboolean breakSaberLock)
 {
 	if (!self || !self->client || !pusher || !pusher->client)
 	{
@@ -21064,7 +21063,7 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 	//break out of a saberLock?
 	if (self->client->ps.saberLockTime > level.time)
 	{
-		if (break_saber_lock
+		if (breakSaberLock
 			|| pusher && self->client->ps.saberLockEnemy == pusher->s.number)
 		{
 			self->client->ps.saberLockTime = 0;
@@ -30400,7 +30399,7 @@ constexpr auto STRIKE_DAMAGEMEDIUM = 15;
 constexpr auto STRIKE_DAMAGEHIGH = 20;
 extern bool WP_MissileTargetHint(gentity_t* shooter, vec3_t start, vec3_t out);
 extern qboolean LogAccuracyHit(const gentity_t* target, const gentity_t* attacker);
-extern void G_Slapdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, qboolean break_saber_lock);
+extern void G_Slapdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, qboolean breakSaberLock);
 extern int G_GetHitLocFromTrace(trace_t* trace, int mod);
 
 static void force_shootstrike(gentity_t* self)
@@ -31478,7 +31477,7 @@ void ForceLightning(gentity_t* self)
 }
 
 extern void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+	qboolean breakSaberLock);
 
 static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot,
 	vec3_t impact_point)
@@ -41446,40 +41445,40 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 
 			switch (self->client->ps.torsoAnim)
 			{
-				case BOTH_ATTACK_BACK: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.80);
-				case BOTH_A2_STABBACK1: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.65);
-				case BOTH_CROUCHATTACKBACK1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.75);
-				case BOTH_BUTTERFLY_LEFT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_BUTTERFLY_RIGHT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_BUTTERFLY_FL1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_BUTTERFLY_FR1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_FJSS_TR_BL: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_FJSS_TL_BR: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_FORCELEAP2_T__B_: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
-				case BOTH_JUMPFLIPSTABDOWN: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
-				case BOTH_JUMPFLIPSLASHDOWN1: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
-				case BOTH_ROLL_STAB: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.75);
-				case BOTH_JUMPATTACK6: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_JUMPATTACK7: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
-				case BOTH_SPINATTACK6: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
-				case BOTH_SPINATTACK7: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
-				case BOTH_FORCELONGLEAP_ATTACK: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
-				case BOTH_STABDOWN: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-				case BOTH_STABDOWN_STAFF: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-				case BOTH_STABDOWN_DUAL: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-				case BOTH_A6_SABERPROTECT: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
-				case BOTH_A7_SOULCAL: return static_cast<qboolean>( percent_complete < 0.25 || percent_complete > 0.90);
-				case BOTH_A1_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-				case BOTH_A2_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-				case BOTH_A3_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-				case BOTH_FLIP_ATTACK7: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.90);
-				case BOTH_PULL_IMPALE_STAB: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
-				case BOTH_PULL_IMPALE_SWING: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
-				case BOTH_ALORA_SPIN_SLASH: return static_cast<qboolean>(percent_complete < 0.22 || percent_complete > 0.90);
-				case BOTH_A6_FB: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
-				case BOTH_A6_LR: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
-				case BOTH_GRAPPLE_FIRE: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-				default:;
+			case BOTH_ATTACK_BACK: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.80);
+			case BOTH_A2_STABBACK1: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.65);
+			case BOTH_CROUCHATTACKBACK1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.75);
+			case BOTH_BUTTERFLY_LEFT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_BUTTERFLY_RIGHT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_BUTTERFLY_FL1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_BUTTERFLY_FR1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_FJSS_TR_BL: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_FJSS_TL_BR: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_FORCELEAP2_T__B_: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
+			case BOTH_JUMPFLIPSTABDOWN: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+			case BOTH_JUMPFLIPSLASHDOWN1: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+			case BOTH_ROLL_STAB: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.75);
+			case BOTH_JUMPATTACK6: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_JUMPATTACK7: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
+			case BOTH_SPINATTACK6: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
+			case BOTH_SPINATTACK7: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
+			case BOTH_FORCELONGLEAP_ATTACK: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+			case BOTH_STABDOWN: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+			case BOTH_STABDOWN_STAFF: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+			case BOTH_STABDOWN_DUAL: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+			case BOTH_A6_SABERPROTECT: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
+			case BOTH_A7_SOULCAL: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+			case BOTH_A1_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+			case BOTH_A2_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+			case BOTH_A3_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+			case BOTH_FLIP_ATTACK7: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.90);
+			case BOTH_PULL_IMPALE_STAB: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
+			case BOTH_PULL_IMPALE_SWING: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
+			case BOTH_ALORA_SPIN_SLASH: return static_cast<qboolean>(percent_complete < 0.22 || percent_complete > 0.90);
+			case BOTH_A6_FB: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
+			case BOTH_A6_LR: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
+			case BOTH_GRAPPLE_FIRE: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+			default:;
 			}
 		}
 	}

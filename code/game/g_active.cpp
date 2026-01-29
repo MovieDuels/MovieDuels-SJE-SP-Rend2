@@ -70,7 +70,7 @@ extern qboolean PM_SpinningSaberAnim(int anim);
 extern qboolean PM_WalkingOrRunningAnim(int anim);
 extern qboolean PM_SaberInAttack(int move);
 extern qboolean PM_KickingAnim(int anim);
-extern int PM_AnimLength(int index, animNumber_t anim);
+extern int PM_AnimLength(const int index, const animNumber_t anim);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_InGetUp(const playerState_t* ps);
 extern qboolean PM_InRoll(const playerState_t* ps);
@@ -113,7 +113,7 @@ extern qboolean WalkCheck(const gentity_t* self);
 extern qboolean PM_SaberInBrokenParry(int move);
 extern void SabBeh_AnimateSlowBounce(gentity_t* self);
 extern void G_Slapdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+	qboolean breakSaberLock);
 extern qboolean PM_SaberInAttackPure(int move);
 extern qboolean PM_SaberInTransitionAny(int move);
 extern qboolean PM_Saberinstab(int move);
@@ -867,8 +867,7 @@ static void G_SetClientSound(gentity_t* ent)
 }
 
 //==============================================================
-extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern void G_StartMatrixEffect(const gentity_t* ent, int me_flags = 0, int length = 1000, float time_scale = 0.0f,
 	int spin_time = 0);
 

@@ -978,7 +978,7 @@ CG_OffsetFirstPersonView
 extern qboolean PM_InForceGetUp(const playerState_t* ps);
 extern qboolean PM_InGetUp(const playerState_t* ps);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
-extern int PM_AnimLength(int index, animNumber_t anim);
+extern int PM_AnimLength(const int index, const animNumber_t anim);
 
 static void CG_OffsetFirstPersonView(const qboolean first_person_saber)
 {

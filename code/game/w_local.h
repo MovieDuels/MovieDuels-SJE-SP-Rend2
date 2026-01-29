@@ -20,6 +20,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 
+#include <qcommon\q_shared.h>
 extern vec3_t forward_vec, vright_vec, up;
 extern vec3_t muzzle;
 extern vec3_t muzzle2;
@@ -37,8 +38,7 @@ extern qboolean jedi_dodge_evasion(gentity_t* self, gentity_t* shooter, trace_t*
 extern qboolean jedi_disruptor_dodge_evasion(gentity_t* self, gentity_t* shooter, trace_t* tr, int hit_loc);
 extern qboolean jedi_npc_disruptor_dodge_evasion(gentity_t* self, gentity_t* shooter, trace_t* tr, int hit_loc);
 extern qboolean PM_DroidMelee(int npc_class);
-extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
-	qboolean break_saber_lock);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern qboolean G_HasKnockdownAnims(const gentity_t* ent);
 
 extern gentity_t* ent_list[MAX_GENTITIES];
