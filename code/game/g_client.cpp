@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_vehicles.h"
 #include "objectives.h"
 #include "b_local.h"
+#include <cstdio>
 
 extern int WP_SaberInitBladeData(gentity_t* ent);
 extern void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, int bolt_num, int weapon_num);
@@ -297,25 +298,22 @@ qboolean SpotWouldTelefrag(const gentity_t* spot, const team_t checkteam)
 
 qboolean SpotWouldTelefrag2(const gentity_t* mover, vec3_t dest)
 {
-	gentity_t* touch[MAX_GENTITIES];
+	static gentity_t* touch[MAX_GENTITIES]; // moved off stack
 	vec3_t mins, maxs;
 
 	VectorAdd(dest, mover->mins, mins);
 	VectorAdd(dest, mover->maxs, maxs);
+
 	const int num = gi.EntitiesInBox(mins, maxs, touch, MAX_GENTITIES);
 
 	for (int i = 0; i < num; i++)
 	{
 		const gentity_t* hit = touch[i];
 		if (hit == mover)
-		{
 			continue;
-		}
 
 		if (hit->contents & mover->contents)
-		{
 			return qtrue;
-		}
 	}
 
 	return qfalse;

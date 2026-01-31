@@ -26,6 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_navigator.h"
 #include "../cgame/cg_local.h"
 #include "g_functions.h"
+#include <cgame\cg_camera.h>
 
 extern void CG_DrawAlert(vec3_t origin, float rating);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);

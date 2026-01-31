@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===========================================================================
 Copyright (C) 1999 - 2005, Id Software, Inc.
 Copyright (C) 2000 - 2013, Raven Software, Inc.
@@ -305,7 +305,7 @@ gentity_t* G_DropSaberItem(const char* saberType, const saber_colors_t saberColo
 			if (saberColor >= SABER_RGB)
 			{
 				char rgbColor[8];
-				Com_sprintf(rgbColor, 8, "x%02x%02x%02x", saberColor & 0xff, saberColor >> 8 & 0xff,saberColor >> 16 & 0xff);
+				Com_sprintf(rgbColor, 8, "x%02x%02x%02x", saberColor & 0xff, saberColor >> 8 & 0xff, saberColor >> 16 & 0xff);
 				newItem->NPC_targetname = rgbColor;
 			}
 			else if (saberColor >= 0 && saberColor < SABER_RGB)
@@ -1221,34 +1221,35 @@ void FinishSpawningItem(gentity_t* ent)
 {
 	trace_t tr;
 	gitem_t* item;
-	int item_num;
+	int item_num = 1;
 
-	item_num = 1;
+	// ----------------------------------------------------
+	// 1. Find item definition
+	// ----------------------------------------------------
 	for (item = bg_itemlist + 1; item->classname; item++, item_num++)
 	{
-		if (strcmp(item->classname, ent->classname) == 0)
+		if (!strcmp(item->classname, ent->classname))
 		{
 			break;
 		}
 	}
 
-	// Set bounding box for item
-	VectorSet(ent->mins, item->mins[0], item->mins[1], item->mins[2]);
-	VectorSet(ent->maxs, item->maxs[0], item->maxs[1], item->maxs[2]);
+	// ----------------------------------------------------
+	// 2. Set bounding box
+	// ----------------------------------------------------
+	VectorCopy(item->mins, ent->mins);
+	VectorCopy(item->maxs, ent->maxs);
 
 	if (!ent->mins[0] && !ent->mins[1] && !ent->mins[2] &&
-		(!ent->maxs[0] && !ent->maxs[1] && !ent->maxs[2]))
+		!ent->maxs[0] && !ent->maxs[1] && !ent->maxs[2])
 	{
-		VectorSet(ent->mins, -ITEM_RADIUS, -ITEM_RADIUS, -2); //to match the comments in the items.dat file!
+		VectorSet(ent->mins, -ITEM_RADIUS, -ITEM_RADIUS, -2);
 		VectorSet(ent->maxs, ITEM_RADIUS, ITEM_RADIUS, ITEM_RADIUS);
 	}
 
-	if (item->quantity && item->giType == IT_AMMO)
-	{
-		ent->count = item->quantity;
-	}
-
-	if (item->quantity && item->giType == IT_BATTERY)
+	// Ammo / battery counts
+	if (item->quantity &&
+		(item->giType == IT_AMMO || item->giType == IT_BATTERY))
 	{
 		ent->count = item->quantity;
 	}
@@ -1256,125 +1257,159 @@ void FinishSpawningItem(gentity_t* ent)
 	ent->s.radius = 20;
 	VectorSet(ent->s.modelScale, 1.0f, 1.0f, 1.0f);
 
-	if (ent->item->giType == IT_WEAPON
-		&& ent->item->giTag == WP_SABER
-		&& ent->NPC_type
-		&& ent->NPC_type[0])
+	// ----------------------------------------------------
+	// 3. Load model (weapon, saber, or generic)
+	// ----------------------------------------------------
+	if (ent->item->giType == IT_WEAPON &&
+		ent->item->giTag == WP_SABER &&
+		ent->NPC_type && ent->NPC_type[0])
 	{
 		saberInfo_t item_saber;
-		if (Q_stricmp("player", ent->NPC_type) == 0
-			&& g_saber->string
-			&& g_saber->string[0]
-			&& Q_stricmp("none", g_saber->string)
-			&& Q_stricmp("NULL", g_saber->string))
+
+		if (!Q_stricmp(ent->NPC_type, "player") &&
+			g_saber->string && g_saber->string[0] &&
+			Q_stricmp(g_saber->string, "none") &&
+			Q_stricmp(g_saber->string, "NULL"))
 		{
-			//player's saber
 			WP_SaberParseParms(g_saber->string, &item_saber);
 		}
 		else
 		{
-			//specific saber
 			WP_SaberParseParms(ent->NPC_type, &item_saber);
 		}
-		//NOTE:  should I keep this string around for any reason?  Will I ever need it later?
-		//ent->??? = G_NewString( itemSaber.model );
-		gi.G2API_InitGhoul2Model(ent->ghoul2, item_saber.model, G_ModelIndex(item_saber.model), NULL_HANDLE, NULL_HANDLE,
-			0, 0);
+
+		gi.G2API_InitGhoul2Model(ent->ghoul2, item_saber.model,
+			G_ModelIndex(item_saber.model),
+			NULL_HANDLE, NULL_HANDLE, 0, 0);
+
 		WP_SaberFreeStrings(item_saber);
 	}
 	else
 	{
-		gi.G2API_InitGhoul2Model(ent->ghoul2, ent->item->world_model, G_ModelIndex(ent->item->world_model), NULL_HANDLE,
-			NULL_HANDLE, 0, 0);
+		gi.G2API_InitGhoul2Model(ent->ghoul2, ent->item->world_model,
+			G_ModelIndex(ent->item->world_model),
+			NULL_HANDLE, NULL_HANDLE, 0, 0);
 	}
 
-	// Set crystal ammo amount based on skill level
-	/*	if ((itemNum == ITM_AMMO_CRYSTAL_BORG) ||
-			(itemNum == ITM_AMMO_CRYSTAL_DN) ||
-			(itemNum == ITM_AMMO_CRYSTAL_FORGE) ||
-			(itemNum == ITM_AMMO_CRYSTAL_SCAVENGER) ||
-			(itemNum == ITM_AMMO_CRYSTAL_STASIS))
-		{
-			CrystalAmmoSettings(ent);
-		}
-	*/
 	ent->s.eType = ET_ITEM;
-	ent->s.modelindex = ent->item - bg_itemlist; // store item number in modelindex
-	ent->s.modelindex2 = 0; // zero indicates this isn't a dropped item
+	ent->s.modelindex = ent->item - bg_itemlist;
+	ent->s.modelindex2 = 0;
 
-	ent->contents = CONTENTS_TRIGGER | CONTENTS_ITEM; //CONTENTS_BODY;//CONTENTS_TRIGGER|
+	ent->contents = CONTENTS_TRIGGER | CONTENTS_ITEM;
 	ent->e_TouchFunc = touchF_Touch_Item;
-	// useing an item causes it to respawn
 	ent->e_UseFunc = useF_Use_Item;
-	ent->svFlags |= SVF_PLAYER_USABLE; //so player can pick it up
+	ent->svFlags |= SVF_PLAYER_USABLE;
 
-	// Hang in air?
-	ent->s.origin[2] += 1; //just to get it off the damn ground because coplanar = insolid
-	if (ent->spawnflags & ITMSF_SUSPEND
-		|| ent->flags & FL_DROPPED_ITEM)
+	// ----------------------------------------------------
+	// 4. Slight lift to avoid coplanar solid
+	// ----------------------------------------------------
+	ent->s.origin[2] += 1;
+
+	// ----------------------------------------------------
+	// 5. Drop to floor OR recover from solid
+	// ----------------------------------------------------
+	if (ent->spawnflags & ITMSF_SUSPEND ||
+		ent->flags & FL_DROPPED_ITEM)
 	{
-		// suspended
 		G_SetOrigin(ent, ent->s.origin);
 	}
 	else
 	{
 		vec3_t dest;
-		// drop to floor
 		VectorSet(dest, ent->s.origin[0], ent->s.origin[1], MIN_WORLD_COORD);
-		gi.trace(&tr, ent->s.origin, ent->mins, ent->maxs, dest, ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,static_cast<EG2_Collision>(0), 0);
-		if (tr.startsolid)
-		{ //fixed Items spawning in solid and added required includes and static cast above
 
-			if (g_entities[tr.entityNum].inuse)
+		gi.trace(&tr, ent->s.origin, ent->mins, ent->maxs, dest,
+			ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,
+			static_cast<EG2_Collision>(0), 0);
+
+		// ------------------------------------------------
+		// 5A. If starting in solid → attempt recovery
+		// ------------------------------------------------
+		if (tr.startsolid)
+		{
+			gi.Printf(S_COLOR_RED
+				"FinishSpawningItem: %s startsolid at %s — attempting recovery\n",
+				ent->classname, vtos(ent->s.origin));
+
+			vec3_t safeOrigin;
+			VectorCopy(ent->s.origin, safeOrigin);
+
+			// Try upward first
+			for (int i = 0; i < 16; i++)
 			{
-				gi.Printf(S_COLOR_RED"FinishSpawningItem: removing %s startsolid at %s (in a %s)\n", ent->classname, vtos(ent->s.origin), g_entities[tr.entityNum].classname);
+				safeOrigin[2] += 4.0f;
+				gi.trace(&tr, safeOrigin, ent->mins, ent->maxs, safeOrigin,
+					ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,
+					static_cast<EG2_Collision>(0), 0);
+
+				if (!tr.startsolid)
+				{
+					G_SetOrigin(ent, safeOrigin);
+					goto recovered;
+				}
 			}
-			else
+
+			// Try small horizontal offsets
+			const vec3_t offsets[4] = {
+				{ 8, 0, 0 },
+				{ -8, 0, 0 },
+				{ 0, 8, 0 },
+				{ 0, -8, 0 }
+			};
+
+			for (int i = 0; i < 4; i++)
 			{
-				gi.Printf(S_COLOR_RED"FinishSpawningItem: removing %s startsolid at %s\n", ent->classname, vtos(ent->s.origin));
+				VectorAdd(ent->s.origin, offsets[i], safeOrigin);
+				gi.trace(&tr, safeOrigin, ent->mins, ent->maxs, safeOrigin,
+					ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,
+					static_cast<EG2_Collision>(0), 0);
+
+				if (!tr.startsolid)
+				{
+					G_SetOrigin(ent, safeOrigin);
+					goto recovered;
+				}
 			}
-			assert(0 && "item starting in solid");
-			if (!g_entities[ENTITYNUM_WORLD].s.radius) {	//not a region
-				delayedShutDown = level.time + 100;
-			}
+
+			// Could not recover
+			gi.Printf(S_COLOR_RED
+				"FinishSpawningItem: removing %s — no safe position found\n",
+				ent->classname);
 			G_FreeEntity(ent);
 			return;
+
+		recovered:
+			; // label target
 		}
-
-		// allow to ride movers
-		ent->s.groundEntityNum = tr.entityNum;
-
-		G_SetOrigin(ent, tr.endpos);
+		else
+		{
+			// Normal drop to floor
+			ent->s.groundEntityNum = tr.entityNum;
+			G_SetOrigin(ent, tr.endpos);
+		}
 	}
 
-	/* ? don't need this
-		// team slaves and targeted items aren't present at start
-		if ( ( ent->flags & FL_TEAMSLAVE ) || ent->targetname ) {
-			ent->s.eFlags |= EF_NODRAW;
-			ent->contents = 0;
-			return;
-		}
-	*/
-	if (ent->spawnflags & ITMSF_INVISIBLE) // invisible
+	// ----------------------------------------------------
+	// 6. Flags and final setup
+	// ----------------------------------------------------
+	if (ent->spawnflags & ITMSF_INVISIBLE)
 	{
 		ent->s.eFlags |= EF_NODRAW;
 		ent->contents = 0;
 	}
 
-	if (ent->spawnflags & ITMSF_NOTSOLID) // not solid
+	if (ent->spawnflags & ITMSF_NOTSOLID)
 	{
 		ent->contents = 0;
 	}
 
 	if (ent->spawnflags & ITMSF_STATIONARY)
 	{
-		//can't be pushed around
 		ent->flags |= FL_NO_KNOCKBACK;
 	}
 
 	if (ent->flags & FL_DROPPED_ITEM)
 	{
-		//go away after 30 seconds
 		ent->e_ThinkFunc = thinkF_G_FreeEntity;
 		ent->nextthink = level.time + 30000;
 	}

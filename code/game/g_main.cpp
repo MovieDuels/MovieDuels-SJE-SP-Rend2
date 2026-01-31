@@ -321,7 +321,6 @@ cvar_t* g_allowSuperSaberLockBreaks;
 
 cvar_t* g_AllowWeather;
 
-
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
@@ -1134,7 +1133,7 @@ and global variables
 */
 extern int PM_ValidateAnimRange(int startFrame, int endFrame, float animSpeed);
 
-extern "C" Q_EXPORT game_export_t * QDECL GetGameAPI(const game_import_t * import)
+extern "C" Q_EXPORT game_export_t* QDECL GetGameAPI(const game_import_t* import)
 {
 	gameinfo_import_t gameinfo_import{};
 
@@ -1608,9 +1607,12 @@ class CGameRagDollUpdateParams : public CRagDollUpdateParams
 #ifdef _DEBUG
 	void DebugLine(vec3_t p1, vec3_t p2, const int color, const bool bbox) override
 	{
+		// SP cannot draw polygon debug surfaces.
+		// Only draw simple test lines.
 		if (!bbox)
 		{
-			CG_TestLine(p1, p2, 50, color, 1);
+			// lifetime = 50ms, depthTest = 1
+			CG_TestLine(p1, p2, 50, color, qtrue);
 		}
 	}
 #endif

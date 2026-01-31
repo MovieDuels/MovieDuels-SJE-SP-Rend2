@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===========================================================================
 Copyright (C) 1999 - 2005, Id Software, Inc.
 Copyright (C) 2000 - 2013, Raven Software, Inc.
@@ -2427,6 +2427,11 @@ static qboolean G_CanBeEnemy(const gentity_t* self, const gentity_t* enemy)
 
 qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t push_dir)
 {
+	if (!hit_ent || !hit_ent->client || !pusher || !pusher->client)
+	{
+		return qfalse;
+	}
+
 	if (in_camera)
 	{
 		return qfalse;
@@ -2444,453 +2449,301 @@ qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t
 
 	if (hit_ent->client->moveType == MT_FLYSWIM)
 	{
-		//can't knock me down when I'm flying
 		return qfalse;
 	}
 
-	if (PlayerCanAbsorbKick(hit_ent, push_dir) && (hit_ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(hit_ent)))
-		//player only in MD/AMD MODE
+	// ============================================================
+	// Cached values (qboolean‑safe)
+	// ============================================================
+	const int mode = g_SerenityJediEngineMode->integer;
+
+	const qboolean isAMD = (qboolean)(mode == 2);
+	const qboolean isMD = (qboolean)(mode == 1);
+	const qboolean isJKA = (qboolean)(mode == 0);
+
+	const qboolean isPlayerSide = (qboolean)(hit_ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(hit_ent));
+	const qboolean isNPCSide = (qboolean)(hit_ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(hit_ent));
+
+	const qboolean kickResistant = (qboolean)jedi_is_kick_resistant(hit_ent);
+
+	// ============================================================
+	// Helper lambdas (C‑style inline blocks)
+	// ============================================================
+#define DRAIN_BLOCKPOINTS(ent, amt) WP_BlockPointsDrain((ent), (amt))
+#define DRAIN_FORCE(ent, amt)       WP_ForcePowerDrain((ent), FP_SABER_DEFENSE, (amt))
+
+#define MAYBE_DEACTIVATE_SABER(ent) \
+        if (!Q_irand(0,4)) WP_DeactivateSaber((ent), qtrue)
+
+#define PLAY_PUNCH_SOUND(ent) \
+        G_Sound((ent), G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1,4))))
+
+#define PLAY_SWING_SOUND(ent) \
+        G_Sound((ent), G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1,4))))
+
+	// ============================================================
+	// 1. PLAYER ABSORB (MD / AMD / JKA)
+	// ============================================================
+	if (PlayerCanAbsorbKick(hit_ent, push_dir) && isPlayerSide)
 	{
-		if (g_SerenityJediEngineMode->integer)
+		if (!isJKA)
 		{
-			//MD/AMD MODE
-			if (g_SerenityJediEngineMode->integer == 2)
+			// MD / AMD
+			if (isAMD)
 			{
-				//AMD Mode
 				if (hit_ent->client->ps.blockPoints > 50)
-				{
 					G_Stagger(hit_ent);
-					WP_BlockPointsDrain(hit_ent, FATIGUE_BP_ABSORB);
-				}
 				else
-				{
 					G_Stumble(hit_ent);
-					WP_BlockPointsDrain(hit_ent, FATIGUE_BP_ABSORB);
-				}
+
+				DRAIN_BLOCKPOINTS(hit_ent, FATIGUE_BP_ABSORB);
 			}
 			else
 			{
-				// MD mode
 				if (hit_ent->client->ps.forcePower > 50)
-				{
 					G_Stagger(hit_ent);
-					WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-				}
 				else
-				{
 					G_Stumble(hit_ent);
-					WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-				}
+
+				DRAIN_FORCE(hit_ent, FATIGUE_KICKHIT);
 			}
 		}
 		else
 		{
-			//jka mode
+			// JKA
 			if (hit_ent->client->ps.forcePower > 75)
 			{
 				G_Stagger(hit_ent);
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
+				DRAIN_FORCE(hit_ent, FATIGUE_KICKHIT);
 			}
 		}
-		G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+
+		PLAY_PUNCH_SOUND(hit_ent);
+		return qtrue;
 	}
-	else if (BotCanAbsorbKick(hit_ent, push_dir)
-		&& hit_ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(hit_ent)) //NPC only any mode
+
+	// ============================================================
+	// 2. NPC ABSORB (bots only)
+	// ============================================================
+	if (BotCanAbsorbKick(hit_ent, push_dir) && isNPCSide)
 	{
-		if (g_SerenityJediEngineMode->integer)
+		if (!isJKA)
 		{
-			if (g_SerenityJediEngineMode->integer == 2)
+			// MD / AMD
+			if (isAMD)
 			{
-				//Advanced MD Mode
-				if (hit_ent->client->ps.blockPoints > 50 || jedi_is_kick_resistant(hit_ent))
+				if (hit_ent->client->ps.blockPoints > 50 || kickResistant)
 				{
 					G_Stagger(hit_ent);
-					WP_BlockPointsDrain(hit_ent, FATIGUE_BP_ABSORB);
-					if (!Q_irand(0, 4))
-					{
-						//20% chance
-						WP_DeactivateSaber(hit_ent, qtrue);
-					}
-					if (jedi_is_kick_resistant(hit_ent))
-					{
-						jedi_play_blocked_push_sound(hit_ent);
-					}
+					DRAIN_BLOCKPOINTS(hit_ent, FATIGUE_BP_ABSORB);
+
+					MAYBE_DEACTIVATE_SABER(hit_ent);
+					if (kickResistant) jedi_play_blocked_push_sound(hit_ent);
 				}
 				else
 				{
-					NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK2), SETANIM_AFLAG_PACE);
-					WP_BlockPointsDrain(hit_ent, FATIGUE_BP_ABSORB);
+					NPC_SetAnim(hit_ent, SETANIM_BOTH,
+						Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK2),
+						SETANIM_AFLAG_PACE);
+					DRAIN_BLOCKPOINTS(hit_ent, FATIGUE_BP_ABSORB);
 				}
 			}
 			else
 			{
-				//MD MODE
-				if (hit_ent->client->ps.forcePower > 50 || jedi_is_kick_resistant(hit_ent))
+				if (hit_ent->client->ps.forcePower > 50 || kickResistant)
 				{
 					G_Stagger(hit_ent);
-					WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-					if (!Q_irand(0, 4))
-					{
-						//20% chance
-						WP_DeactivateSaber(hit_ent, qtrue);
-					}
-					if (jedi_is_kick_resistant(hit_ent))
-					{
-						jedi_play_blocked_push_sound(hit_ent);
-					}
+					DRAIN_FORCE(hit_ent, FATIGUE_KICKHIT);
+
+					MAYBE_DEACTIVATE_SABER(hit_ent);
+					if (kickResistant) jedi_play_blocked_push_sound(hit_ent);
 				}
 				else
 				{
-					NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK2), SETANIM_AFLAG_PACE);
-					WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
+					NPC_SetAnim(hit_ent, SETANIM_BOTH,
+						Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK2),
+						SETANIM_AFLAG_PACE);
+					DRAIN_FORCE(hit_ent, FATIGUE_KICKHIT);
 				}
 			}
 		}
 		else
 		{
-			//JKA Mode
-			if (hit_ent->client->ps.forcePower > 50 || jedi_is_kick_resistant(hit_ent))
+			// JKA
+			if (hit_ent->client->ps.forcePower > 50 || kickResistant)
 			{
 				G_Stagger(hit_ent);
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-				if (!Q_irand(0, 4))
-				{
-					//20% chance
-					WP_DeactivateSaber(hit_ent, qtrue);
-				}
-				if (jedi_is_kick_resistant(hit_ent))
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
+				DRAIN_FORCE(hit_ent, FATIGUE_KICKHIT);
+
+				MAYBE_DEACTIVATE_SABER(hit_ent);
+				if (kickResistant) jedi_play_blocked_push_sound(hit_ent);
 			}
 			else
 			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK2), SETANIM_AFLAG_PACE);
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
+				NPC_SetAnim(hit_ent, SETANIM_BOTH,
+					Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK2),
+					SETANIM_AFLAG_PACE);
+				DRAIN_FORCE(hit_ent, FATIGUE_KICKHIT);
 			}
 		}
-		G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+
+		PLAY_PUNCH_SOUND(hit_ent);
+		return qtrue;
 	}
-	else
+
+	// ============================================================
+	// 3. NON‑ABSORB: KICK / SLAP / SWEEP / HILT HIT
+	// ============================================================
+	// To keep this readable, we collapse repeated patterns:
+#define HANDLE_RESIST_OR_KNOCKDOWN(KNOCK_ANIM_MIN, KNOCK_ANIM_MAX) \
+        if (kickResistant) { \
+            G_MawStagger(hit_ent); \
+            MAYBE_DEACTIVATE_SABER(hit_ent); \
+            if (kickResistant) jedi_play_blocked_push_sound(hit_ent); \
+        } else { \
+            NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand((KNOCK_ANIM_MIN),(KNOCK_ANIM_MAX)), SETANIM_AFLAG_PACE); \
+            if (hit_ent->client->ps.SaberActive()) WP_DeactivateLightSaber(hit_ent, qtrue); \
+        }
+
+#define APPLY_DRAIN() \
+        if (isAMD) { \
+            DRAIN_BLOCKPOINTS(hit_ent, FATIGUE_BLOCKPOINTDRAIN); \
+        } else { \
+            DRAIN_FORCE(hit_ent, FATIGUE_KICKHIT); \
+        }
+
+	// -------------------------
+	// FRONT KICK / TUSKEN
+	// -------------------------
+	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_F ||
+		pusher->client->ps.legsAnim == BOTH_KICK_F_MD ||
+		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK1 ||
+		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK2 ||
+		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK3)
 	{
-		if (pusher->client->ps.legsAnim == BOTH_A7_KICK_F
-			|| pusher->client->ps.legsAnim == BOTH_KICK_F_MD
-			|| pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK1
-			|| pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK2
-			|| pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK3)
-		{
-			if (jedi_is_kick_resistant(hit_ent))
-			{
-				G_MawStagger(hit_ent);
-				if (!Q_irand(0, 4))
-				{
-					//20% chance
-					WP_DeactivateSaber(hit_ent, qtrue);
-				}
-				else
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
-			}
-			else
-			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand(BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2), SETANIM_AFLAG_PACE);
+		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2);
+		APPLY_DRAIN();
 
-				if (hit_ent->client->ps.SaberActive())
-				{
-					WP_DeactivateLightSaber(hit_ent, qtrue);
-				}
-			}
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-
-				if (d_slowmoaction->integer && hit_ent->health >= 10 && hit_ent->client->ps.blockPoints <
-					BLOCKPOINTS_HALF
-					&& (pusher->s.number < MAX_CLIENTS || G_ControlledByPlayer(pusher)))
-				{
-					G_StartStasisEffect_FORCE_LEVEL_1(pusher, MEF_NO_SPIN, 300, 0.3f, 0);
-				}
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
-			if (pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK1
-				|| pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK2
-				|| pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK3)
-			{
-				G_Sound(hit_ent, G_SoundIndex("sound/movers/objects/saber_slam"));
-			}
-			else
-			{
-				G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-			}
-			hit_ent->client->ps.saber_move = LS_NONE;
-			AddFatigueMeleeBonus(pusher, hit_ent);
-		}
-		else if (pusher->client->ps.legsAnim == BOTH_A7_KICK_B)
-		{
-			if (jedi_is_kick_resistant(hit_ent))
-			{
-				G_MawStagger(hit_ent);
-				if (!Q_irand(0, 4))
-				{
-					//20% chance
-					WP_DeactivateSaber(hit_ent, qtrue);
-				}
-				if (jedi_is_kick_resistant(hit_ent))
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
-			}
-			else
-			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand(BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN5), SETANIM_AFLAG_PACE);
-
-				if (hit_ent->client->ps.SaberActive())
-				{
-					WP_DeactivateLightSaber(hit_ent, qtrue);
-				}
-			}
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
-
-			G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-			hit_ent->client->ps.saber_move = LS_NONE;
-			AddFatigueMeleeBonus(pusher, hit_ent);
-		}
-		else if (pusher->client->ps.legsAnim == BOTH_SWEEP_KICK)
-		{
-			if (jedi_is_kick_resistant(hit_ent))
-			{
-				G_MawStagger(hit_ent);
-				WP_DeactivateSaber(hit_ent, qtrue);
-				if (jedi_is_kick_resistant(hit_ent))
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
-			}
-			else
-			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, BOTH_KNOCKDOWN3, SETANIM_AFLAG_PACE);
-
-				if (hit_ent->client->ps.SaberActive())
-				{
-					WP_DeactivateLightSaber(hit_ent, qtrue);
-				}
-			}
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-
-				if (d_slowmoaction->integer && hit_ent->health >= 10 && (pusher->s.number < MAX_CLIENTS ||
-					G_ControlledByPlayer(pusher)))
-				{
-					G_StartStasisEffect_FORCE_LEVEL_1(pusher, MEF_NO_SPIN, 300, 0.3f, 0);
-				}
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
-			AddFatigueMeleeBonus(pusher, hit_ent);
-			G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-			G_Sound(pusher, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
-			hit_ent->client->ps.saber_move = LS_NONE;
-		}
-		else if (pusher->client->ps.legsAnim == BOTH_A7_KICK_R
-			|| pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R
-			|| pusher->client->ps.torsoAnim == BOTH_SLAP_R)
-		{
-			if (jedi_is_kick_resistant(hit_ent))
-			{
-				G_MawStagger(hit_ent);
-				if (!Q_irand(0, 4))
-				{
-					//20% chance
-					WP_DeactivateSaber(hit_ent, qtrue);
-				}
-				if (jedi_is_kick_resistant(hit_ent))
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
-			}
-			else
-			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, BOTH_SLAPDOWNRIGHT, SETANIM_AFLAG_PACE);
-
-				if (hit_ent->client->ps.SaberActive())
-				{
-					WP_DeactivateLightSaber(hit_ent, qtrue);
-				}
-			}
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-
-				if (d_slowmoaction->integer && hit_ent->health >= 10 && (pusher->s.number < MAX_CLIENTS ||
-					G_ControlledByPlayer(pusher)))
-				{
-					G_StartStasisEffect_FORCE_LEVEL_1(pusher, MEF_NO_SPIN, 300, 0.3f, 0);
-				}
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
-			G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-			G_Sound(pusher, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
-			hit_ent->client->ps.saber_move = LS_NONE;
-			AddFatigueMeleeBonus(pusher, hit_ent);
-		}
-		else if (pusher->client->ps.legsAnim == BOTH_A7_KICK_L
-			|| pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L
-			|| pusher->client->ps.torsoAnim == BOTH_SLAP_L)
-		{
-			if (jedi_is_kick_resistant(hit_ent))
-			{
-				G_MawStagger(hit_ent);
-				if (!Q_irand(0, 4))
-				{
-					//20% chance
-					WP_DeactivateSaber(hit_ent, qtrue);
-				}
-				if (jedi_is_kick_resistant(hit_ent))
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
-			}
-			else
-			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, BOTH_SLAPDOWNLEFT, SETANIM_AFLAG_PACE);
-
-				if (hit_ent->client->ps.SaberActive())
-				{
-					WP_DeactivateLightSaber(hit_ent, qtrue);
-				}
-			}
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-
-				if (d_slowmoaction->integer && hit_ent->health >= 10 && (pusher->s.number < MAX_CLIENTS ||
-					G_ControlledByPlayer(pusher)))
-				{
-					G_StartStasisEffect_FORCE_LEVEL_1(pusher, MEF_NO_SPIN, 300, 0.3f, 0);
-				}
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
-			G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-			G_Sound(pusher, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
-			hit_ent->client->ps.saber_move = LS_NONE;
-			AddFatigueMeleeBonus(pusher, hit_ent);
-		}
-		else if (pusher->client->ps.torsoAnim == BOTH_TUSKENLUNGE1)
-		{
-			if (jedi_is_kick_resistant(hit_ent))
-			{
-				G_MawStagger(hit_ent);
-				WP_DeactivateSaber(hit_ent, qtrue);
-				if (jedi_is_kick_resistant(hit_ent))
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
-			}
-			else
-			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT), SETANIM_AFLAG_PACE);
-
-				if (hit_ent->client->ps.SaberActive())
-				{
-					WP_DeactivateLightSaber(hit_ent, qtrue);
-				}
-			}
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
-			G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-			G_Sound(pusher, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
-			hit_ent->client->ps.saber_move = LS_NONE;
-			AddFatigueMeleeBonus(pusher, hit_ent);
-		}
-		else if (pusher->client->ps.torsoAnim == BOTH_A7_HILT) //for the hiltbash
-		{
-			NPC_SetAnim(hit_ent, SETANIM_BOTH, BOTH_BASHED1, SETANIM_AFLAG_PACE);
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
+		if (pusher->client->ps.torsoAnim >= BOTH_TUSKENATTACK1 &&
+			pusher->client->ps.torsoAnim <= BOTH_TUSKENATTACK3)
 			G_Sound(hit_ent, G_SoundIndex("sound/movers/objects/saber_slam"));
-			G_Sound(pusher, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
-			hit_ent->client->ps.saber_move = LS_NONE;
-			AddFatigueMeleeBonus(pusher, hit_ent);
-		}
 		else
-		{
-			if (jedi_is_kick_resistant(hit_ent))
-			{
-				G_MawStagger(hit_ent);
-				if (!Q_irand(0, 4))
-				{
-					//20% chance
-					WP_DeactivateSaber(hit_ent, qtrue);
-				}
-				if (jedi_is_kick_resistant(hit_ent))
-				{
-					jedi_play_blocked_push_sound(hit_ent);
-				}
-			}
-			else
-			{
-				NPC_SetAnim(hit_ent, SETANIM_BOTH, Q_irand(BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2), SETANIM_AFLAG_PACE);
+			PLAY_PUNCH_SOUND(hit_ent);
 
-				if (hit_ent->client->ps.SaberActive())
-				{
-					WP_DeactivateLightSaber(hit_ent, qtrue);
-				}
-			}
-
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				WP_BlockPointsDrain(hit_ent, FATIGUE_BLOCKPOINTDRAIN);
-			}
-			else
-			{
-				WP_ForcePowerDrain(hit_ent, FP_SABER_DEFENSE, FATIGUE_KICKHIT);
-			}
-			G_Sound(hit_ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-			G_Sound(pusher, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
-			hit_ent->client->ps.saber_move = LS_NONE;
-			AddFatigueMeleeBonus(pusher, hit_ent);
-		}
+		hit_ent->client->ps.saber_move = LS_NONE;
+		AddFatigueMeleeBonus(pusher, hit_ent);
+		return qtrue;
 	}
 
+	// -------------------------
+	// BACK KICK
+	// -------------------------
+	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_B)
+	{
+		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN5);
+		APPLY_DRAIN();
+		PLAY_PUNCH_SOUND(hit_ent);
+
+		hit_ent->client->ps.saber_move = LS_NONE;
+		AddFatigueMeleeBonus(pusher, hit_ent);
+		return qtrue;
+	}
+
+	// -------------------------
+	// SWEEP KICK
+	// -------------------------
+	if (pusher->client->ps.legsAnim == BOTH_SWEEP_KICK)
+	{
+		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_KNOCKDOWN3, BOTH_KNOCKDOWN3);
+		APPLY_DRAIN();
+
+		PLAY_PUNCH_SOUND(hit_ent);
+		PLAY_SWING_SOUND(pusher);
+
+		hit_ent->client->ps.saber_move = LS_NONE;
+		AddFatigueMeleeBonus(pusher, hit_ent);
+		return qtrue;
+	}
+
+	// -------------------------
+	// RIGHT SLAP / RIGHT KICK
+	// -------------------------
+	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_R ||
+		pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R ||
+		pusher->client->ps.torsoAnim == BOTH_SLAP_R)
+	{
+		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNRIGHT);
+		APPLY_DRAIN();
+
+		PLAY_PUNCH_SOUND(hit_ent);
+		PLAY_SWING_SOUND(pusher);
+
+		hit_ent->client->ps.saber_move = LS_NONE;
+		AddFatigueMeleeBonus(pusher, hit_ent);
+		return qtrue;
+	}
+
+	// -------------------------
+	// LEFT SLAP / LEFT KICK
+	// -------------------------
+	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_L ||
+		pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L ||
+		pusher->client->ps.torsoAnim == BOTH_SLAP_L)
+	{
+		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_SLAPDOWNLEFT, BOTH_SLAPDOWNLEFT);
+		APPLY_DRAIN();
+
+		PLAY_PUNCH_SOUND(hit_ent);
+		PLAY_SWING_SOUND(pusher);
+
+		hit_ent->client->ps.saber_move = LS_NONE;
+		AddFatigueMeleeBonus(pusher, hit_ent);
+		return qtrue;
+	}
+
+	// -------------------------
+	// TUSKEN LUNGE
+	// -------------------------
+	if (pusher->client->ps.torsoAnim == BOTH_TUSKENLUNGE1)
+	{
+		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT);
+		APPLY_DRAIN();
+
+		PLAY_PUNCH_SOUND(hit_ent);
+		PLAY_SWING_SOUND(pusher);
+
+		hit_ent->client->ps.saber_move = LS_NONE;
+		AddFatigueMeleeBonus(pusher, hit_ent);
+		return qtrue;
+	}
+
+	// -------------------------
+	// HILT BASH
+	// -------------------------
+	if (pusher->client->ps.torsoAnim == BOTH_A7_HILT)
+	{
+		NPC_SetAnim(hit_ent, SETANIM_BOTH, BOTH_BASHED1, SETANIM_AFLAG_PACE);
+		APPLY_DRAIN();
+
+		G_Sound(hit_ent, G_SoundIndex("sound/movers/objects/saber_slam"));
+		PLAY_SWING_SOUND(pusher);
+
+		hit_ent->client->ps.saber_move = LS_NONE;
+		AddFatigueMeleeBonus(pusher, hit_ent);
+		return qtrue;
+	}
+
+	// -------------------------
+	// DEFAULT KNOCKDOWN
+	// -------------------------
+	HANDLE_RESIST_OR_KNOCKDOWN(BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2);
+	APPLY_DRAIN();
+
+	PLAY_PUNCH_SOUND(hit_ent);
+	PLAY_SWING_SOUND(pusher);
+
+	hit_ent->client->ps.saber_move = LS_NONE;
+	AddFatigueMeleeBonus(pusher, hit_ent);
 	return qtrue;
 }
 

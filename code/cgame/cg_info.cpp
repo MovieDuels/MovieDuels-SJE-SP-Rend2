@@ -823,11 +823,19 @@ int SCREENTIP_NEXT_UPDATE_TIME = 0;
 
 static void LoadTips(void)
 {
-	const int index = Q_irand(1, 20);
 	const int time = cgi_Milliseconds();
 
-	if ((SCREENTIP_NEXT_UPDATE_TIME < time || SCREENTIP_NEXT_UPDATE_TIME == 0))
+	if (SCREENTIP_NEXT_UPDATE_TIME == 0 || SCREENTIP_NEXT_UPDATE_TIME < time)
 	{
+		static int lastIndex = -1;
+		int index;
+
+		do {
+			index = Q_irand(1, 20);
+		} while (index == lastIndex);
+
+		lastIndex = index;
+
 		cgi_Cvar_Set("ui_tipsbriefing", va("@LOADTIPS_TIP%d", index));
 		SCREENTIP_NEXT_UPDATE_TIME = time + 3500;
 	}

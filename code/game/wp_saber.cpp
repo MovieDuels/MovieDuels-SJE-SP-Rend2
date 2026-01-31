@@ -39,6 +39,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_vehicles.h"
 #include "../qcommon/tri_coll_test.h"
 #include "../cgame/cg_local.h"
+#include "g_public.h"
 
 #define JK2_RAGDOLL_GRIPNOHEALTH
 

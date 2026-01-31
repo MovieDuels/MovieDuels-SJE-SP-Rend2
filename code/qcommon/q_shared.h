@@ -1778,7 +1778,7 @@ public:
 	vec3_t velocity;
 	int weaponTime;
 	int weaponChargeTime;
-	int rechargeTime; // for the phaser
+	int rechargeTime;  // for the phaser
 	int gravity;
 	int leanofs;
 	int friction;

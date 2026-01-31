@@ -20,6 +20,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 
+#include <cassert>
 #ifndef __GHOUL2_GORE_H
 #define __GHOUL2_GORE_H
 

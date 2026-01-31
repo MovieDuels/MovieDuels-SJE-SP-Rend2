@@ -31,6 +31,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "Q3_Interface.h"
 #include "g_vehicles.h"
 #include "../cgame/cg_local.h"
+#include "bstate.h"
+#include "b_public.h"
 
 extern vec3_t playerMins;
 extern vec3_t playerMaxs;
