@@ -5235,14 +5235,14 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 31/01/2026 ---------------------\n");// build date
-	Com_Printf("-----------------------------------------------------------------\n");
+	Com_Printf("--------------------- Build Date 06/02/2026 ---------------------\n");// build date
+	Com_Printf("---------------------------Build 01------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-
-	//Com_Printf("------Type (seta cl_noprint 0) to see text------\n");
-	//Com_Printf("------Type (Debuginfo) to open debug command list------\n");
+	//Com_Printf("------Type (seta cl_noprint 0) to see text-----------------------\n");
+	//Com_Printf("------Type (helpdebug) to open debug command list----------------\n");
+	//Com_Printf("------Type (Adminlogin <password>) to log in as admin------------\n");
 
 	ui.FS_FreeFile(buffer); //let go of the buffer
 }

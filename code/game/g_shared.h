@@ -897,6 +897,8 @@ public:
 	int charBeskar; // Character has beskar armor and can deflect blaster bolts
 	int charGunBash; // Character can perform gun bash attacks
 	int charKOTORWeapons; // Character uses KOTOR weapons
+	gentity_t* lastSaberTarget;
+	int lastSaberTargetTime;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -1015,6 +1017,8 @@ public:
 		saved_game.write<int32_t>(charBeskar);
 		saved_game.write<int32_t>(charGunBash);
 		saved_game.write<int32_t>(charKOTORWeapons);
+		saved_game.write<int32_t>(lastSaberTarget);
+		saved_game.write<int32_t>(lastSaberTargetTime);
 	}
 
 	void sg_import(
@@ -1134,6 +1138,8 @@ public:
 		saved_game.read<int32_t>(charBeskar);
 		saved_game.read<int32_t>(charGunBash);
 		saved_game.read<int32_t>(charKOTORWeapons);
+		saved_game.read<int32_t>(lastSaberTarget);
+		saved_game.read<int32_t>(lastSaberTargetTime);
 	}
 }; // GClientBase
 
@@ -1551,6 +1557,7 @@ struct gentity_s
 	faction_t friendlyfaction;
 	int saberPowerTime;
 	qboolean saberPower;
+	int lastKataTime; // timestamp (level.time) when kata is next allowed; 0 = allowed now
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -1771,6 +1778,7 @@ struct gentity_s
 		saved_game.write<int32_t>(friendlyfaction);
 		saved_game.write<int32_t>(saberPowerTime);
 		saved_game.write<int32_t>(saberPower);
+		saved_game.write<int32_t>(lastKataTime);
 	}
 
 	void sg_import(
@@ -1992,6 +2000,7 @@ struct gentity_s
 		saved_game.read<int32_t>(friendlyfaction);
 		saved_game.read<int32_t>(saberPowerTime);
 		saved_game.read<int32_t>(saberPower);
+		saved_game.read<int32_t>(lastKataTime);
 	}
 };
 #endif //#ifdef GAME_INCLUDE

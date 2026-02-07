@@ -405,10 +405,6 @@ static void CG_LoadBar()
 				cgi_R_Font_DrawString(10, 10, va("Warning: Rend2 may increase loading times and cause graphical issues."), colorTable[CT_WHITE], cgs.media.qhFontMedium, -1, 0.5f);
 			}
 		}
-		constexpr int x = (640 - LOADBAR_CLIP_WIDTH) / 2;
-		constexpr int y = 50;
-
-		//CG_DrawPic(x, y, LOADBAR_CLIP_WIDTH, LOADBAR_CLIP_HEIGHT, cgs.media.load_SerenitySaberSystems);
 	}
 }
 
@@ -820,6 +816,7 @@ Draw all the status / pacifier stuff during level loading
 */
 
 int SCREENTIP_NEXT_UPDATE_TIME = 0;
+int SCREENTIP_CURRENT_INDEX = -1;
 
 static void LoadTips(void)
 {
@@ -830,13 +827,18 @@ static void LoadTips(void)
 		static int lastIndex = -1;
 		int index;
 
+		// TIP1–TIP20
 		do {
 			index = Q_irand(1, 20);
 		} while (index == lastIndex);
 
 		lastIndex = index;
+		SCREENTIP_CURRENT_INDEX = index;
 
+		// Update the cvar the menu reads
 		cgi_Cvar_Set("ui_tipsbriefing", va("@LOADTIPS_TIP%d", index));
+
+		// 3.5 seconds
 		SCREENTIP_NEXT_UPDATE_TIME = time + 3500;
 	}
 }

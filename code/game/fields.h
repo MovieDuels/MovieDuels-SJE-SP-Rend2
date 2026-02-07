@@ -23,6 +23,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // Filename:-	fields.h
 //
 
+#include "g_local.h"
+#include "b_public.h"
+#include "g_vehicles.h"
 #ifndef FIELDS_H
 #define FIELDS_H
 

@@ -391,6 +391,7 @@ qboolean G_SpawnVector4(const char* key, const char* defaultString, float* out);
 qboolean G_SpawnAngleHack(const char* key, const char* defaultString, float* out);
 void G_SpawnEntitiesFromString(const char* entity_string);
 void AnimateStun(gentity_t* self, gentity_t* inflictor);
+void G_DebugBBox(const vec3_t origin, const vec3_t mins, const vec3_t maxs, int time, int color);
 
 //
 // g_items.c

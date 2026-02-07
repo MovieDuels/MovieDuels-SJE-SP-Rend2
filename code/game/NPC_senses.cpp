@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===========================================================================
 Copyright (C) 2000 - 2013, Raven Software, Inc.
 Copyright (C) 2001 - 2013, Activision, Inc.
@@ -28,6 +28,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifdef _DEBUG
 #include <float.h>
 #endif
+#include "surfaceflags.h"
+#include <qcommon/q_math.h>
+#include <qcommon/q_shared.h>
+#include "bg_public.h"
+#include "ghoul2_shared.h"
+#include "b_public.h"
+#include <cmath>
+#include "g_local.h"
+#include "teams.h"
 
 extern int eventClearTime;
 qboolean G_ClearLineOfSight(const vec3_t point1, const vec3_t point2, const int ignore, const int clipmask)

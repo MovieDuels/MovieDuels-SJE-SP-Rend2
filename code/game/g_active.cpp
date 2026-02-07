@@ -1947,196 +1947,191 @@ extern void WP_BlasterFatigueRegenerate(int override_amt);
 static void ClientTimerActions(gentity_t* ent, const int msec)
 {
 	gclient_t* client = ent->client;
+	playerState_t* ps = &client->ps;
+
 	client->timeResidual += msec;
+
+	const qboolean isPlayer = (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) ? qtrue : qfalse;
+	const qboolean isNPC = (!isPlayer) ? qtrue : qfalse;
+	const qboolean sjm = g_SerenityJediEngineMode->integer ? qtrue : qfalse;
 
 	while (client->timeResidual >= 1000)
 	{
 		client->timeResidual -= 1000;
 
+		// -----------------------------------------------------
+		// WEAPON USAGE STATS
+		// -----------------------------------------------------
 		if (ent->s.weapon != WP_NONE)
+			client->sess.missionStats.weaponUsed[ent->s.weapon]++;
+
+		// -----------------------------------------------------
+		// ARMOR / FORCE REGEN (SJE mode only)
+		// -----------------------------------------------------
+		if (sjm && isPlayer)
 		{
-			ent->client->sess.missionStats.weaponUsed[ent->s.weapon]++;
+			if (client->NPC_class != CLASS_GALAKMECH &&
+				ps->forcePowerLevel[FP_PROTECT] > FORCE_LEVEL_2 &&
+				ps->forceRageRecoveryTime < level.time &&
+				!(ps->forcePowersActive & (1 << FP_RAGE)))
+			{
+				if (ps->stats[STAT_ARMOR] < ps->stats[STAT_MAX_HEALTH])
+					ps->stats[STAT_ARMOR]++;
+			}
+
+			if (ps->stats[STAT_ARMOR] > ps->stats[STAT_MAX_HEALTH])
+				ps->stats[STAT_ARMOR]--;
+
+			if (ps->forcePower > ps->forcePowerMax)
+				ps->forcePower--;
 		}
 
-		if (g_SerenityJediEngineMode->integer && (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
-		{
-			if (ent->client->NPC_class != CLASS_GALAKMECH
-				&& ent->client->ps.forcePowerLevel[FP_PROTECT] > FORCE_LEVEL_2
-				&& ent->client->ps.forceRageRecoveryTime < level.time
-				&& !(ent->client->ps.forcePowersActive & 1 << FP_RAGE))
-			{
-				if (ent->client->ps.stats[STAT_ARMOR] < ent->client->ps.stats[STAT_MAX_HEALTH])
-				{
-					ent->client->ps.stats[STAT_ARMOR]++;
-				}
-			}
-			// count down armor when over max
-			if (ent->client->ps.stats[STAT_ARMOR] > ent->client->ps.stats[STAT_MAX_HEALTH])
-			{
-				ent->client->ps.stats[STAT_ARMOR]--;
-			}
-			// count down force when over max
-			if (ent->client->ps.forcePower > ent->client->ps.forcePowerMax)
-			{
-				ent->client->ps.forcePower--;
-			}
-		}
-
+		// -----------------------------------------------------
+		// OVERCHARGED HEALTH DECAY
+		// -----------------------------------------------------
 		if (ent->flags & FL_OVERCHARGED_HEALTH)
 		{
-			//need to gradually reduce health back to max
-			if (ent->client->ps.stats[STAT_HEALTH] > ent->client->ps.stats[STAT_MAX_HEALTH])
+			if (ps->stats[STAT_HEALTH] > ps->stats[STAT_MAX_HEALTH])
 			{
-				//decrement it
 				ent->health--;
-				ent->client->ps.stats[STAT_HEALTH] = ent->health;
+				ps->stats[STAT_HEALTH] = ent->health;
 			}
 			else
 			{
-				//done
 				ent->flags &= ~FL_OVERCHARGED_HEALTH;
 			}
 		}
 
-		if (!(ent->client->ps.pm_flags & PMF_ATTACK_HELD) && !(ent->client->ps.pm_flags & PMF_ALT_ATTACK_HELD))
+		// -----------------------------------------------------
+		// BLASTER FATIGUE REGEN
+		// -----------------------------------------------------
+		if (!(ps->pm_flags & (PMF_ATTACK_HELD | PMF_ALT_ATTACK_HELD)) &&
+			ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_MIN &&
+			ps->weaponTime < 1)
 		{
-			if (ent->client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_MIN && ent->client->ps.weaponTime < 1)
-			{
-				if (ent->client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_FULL)
-				{
-					WP_BlasterFatigueRegenerate(4);
-				}
-				else
-				{
-					WP_BlasterFatigueRegenerate(1);
-				}
-			}
+			if (ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_FULL)
+				WP_BlasterFatigueRegenerate(4);
+			else
+				WP_BlasterFatigueRegenerate(1);
 		}
 
-		if (ent->client->ps.forcePowersActive & 1 << FP_SEE)
-		{
-			BG_ReduceBlasterMishapLevelAdvanced(&ent->client->ps);
-		}
+		// -----------------------------------------------------
+		// FORCE SEE → REDUCE BLASTER MISHAP
+		// -----------------------------------------------------
+		if (ps->forcePowersActive & (1 << FP_SEE))
+			BG_ReduceBlasterMishapLevelAdvanced(ps);
 
-		if (g_SerenityJediEngineMode->integer)
+		// -----------------------------------------------------
+		// SABER FATIGUE REGEN (SJE mode only)
+		// -----------------------------------------------------
+		if (sjm)
 		{
-			if (ent->client->ps.saberFatigueChainCount > MISHAPLEVEL_NONE
-				&& (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) // player
-				&& !BG_InSlowBounce(&ent->client->ps)
-				&& !PM_SaberInBrokenParry(ent->client->ps.saber_move)
-				&& !PM_SaberInAttackPure(ent->client->ps.saber_move)
-				&& !PM_SaberInAttack(ent->client->ps.saber_move)
-				&& !PM_SaberInTransitionAny(ent->client->ps.saber_move)
-				&& !PM_InKnockDown(&ent->client->ps)
-				&& ent->client->ps.saberLockTime < level.time
-				&& ent->client->ps.saberBlockingTime < level.time
-				&& ent->client->ps.groundEntityNum != ENTITYNUM_NONE)
+			const qboolean canRegen =
+				(ps->saberFatigueChainCount > MISHAPLEVEL_NONE &&
+					!BG_InSlowBounce(ps) &&
+					!PM_SaberInBrokenParry(ps->saber_move) &&
+					!PM_SaberInAttackPure(ps->saber_move) &&
+					!PM_SaberInAttack(ps->saber_move) &&
+					!PM_SaberInTransitionAny(ps->saber_move) &&
+					!PM_InKnockDown(ps) &&
+					ps->saberLockTime < level.time &&
+					ps->saberBlockingTime < level.time &&
+					ps->groundEntityNum != ENTITYNUM_NONE)
+				? qtrue : qfalse;
+
+			if (canRegen)
 			{
-				if (ent->flags & FL_STAMINA_MODE)
+				if (isPlayer)
 				{
-					ent->client->ps.saberFatigueChainCount = MISHAPLEVEL_MIN;
-				}
-				else
-				{
-					if (!(ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK))
+					if (ent->flags & FL_STAMINA_MODE)
 					{
-						if (ent->client->ps.saberFatigueChainCount > MISHAPLEVEL_HEAVY)
-						{
+						ps->saberFatigueChainCount = MISHAPLEVEL_MIN;
+					}
+					else if (!(ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)))
+					{
+						if (ps->saberFatigueChainCount > MISHAPLEVEL_HEAVY)
 							WP_SaberFatigueRegenerate(2);
-						}
 						else
-						{
 							WP_SaberFatigueRegenerate(4);
-						}
 					}
 				}
-			}
-			else if (ent->client->ps.saberFatigueChainCount > MISHAPLEVEL_NONE
-				&& (ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent)) //npc
-				&& !BG_InSlowBounce(&ent->client->ps)
-				&& !PM_SaberInBrokenParry(ent->client->ps.saber_move)
-				&& !PM_SaberInAttackPure(ent->client->ps.saber_move)
-				&& !PM_SaberInAttack(ent->client->ps.saber_move)
-				&& !PM_SaberInTransitionAny(ent->client->ps.saber_move)
-				&& !PM_InKnockDown(&ent->client->ps)
-				&& ent->client->ps.saberLockTime < level.time
-				&& ent->client->ps.saberBlockingTime < level.time
-				&& ent->client->ps.groundEntityNum != ENTITYNUM_NONE)
-			{
-				if (ent->flags & FL_STAMINA_MODE)
+				else if (isNPC)
 				{
-					ent->client->ps.saberFatigueChainCount = MISHAPLEVEL_MIN;
-				}
-				else
-				{
-					WP_SaberFatigueRegenerate(1);
+					if (ent->flags & FL_STAMINA_MODE)
+						ps->saberFatigueChainCount = MISHAPLEVEL_MIN;
+					else
+						WP_SaberFatigueRegenerate(1);
 				}
 			}
 
-			if (g_autoHealthRegen->integer == 1
-				&& (!PM_InAmputateMove(ent->client->ps.legsAnim)
-					&& !PM_InDrainPainMove(ent->client->ps.torsoAnim)
-					&& !ent->client->poisonTime
-					&& !ent->client->stunTime
-					&& !ent->client->AmputateTime
-					&& !(ent->client->ps.forcePowersActive & 1 << FP_RAGE))
-				&& ent->client->ps.forceRageRecoveryTime < level.time
-				&& !PM_SaberInAttack(ent->client->ps.saber_move)
-				&& ent->client->ps.forcePowerLevel[FP_HEAL] > FORCE_LEVEL_2
-				&& !(ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK)
-				&& ent->client->NPC_class != CLASS_PROJECTION)
+			// -----------------------------------------------------
+			// AUTO HEALTH REGEN (SJE mode)
+			// -----------------------------------------------------
+			if (g_autoHealthRegen->integer == 1 &&
+				ps->forcePowerLevel[FP_HEAL] > FORCE_LEVEL_2 &&
+				!PM_InAmputateMove(ps->legsAnim) &&
+				!PM_InDrainPainMove(ps->torsoAnim) &&
+				!client->poisonTime &&
+				!client->stunTime &&
+				!client->AmputateTime &&
+				!(ps->forcePowersActive & (1 << FP_RAGE)) &&
+				ps->forceRageRecoveryTime < level.time &&
+				!PM_SaberInAttack(ps->saber_move) &&
+				!(ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) &&
+				client->NPC_class != CLASS_PROJECTION)
 			{
-				//you heal 1 hp every 1 second.
-				if (ent->health < client->ps.stats[STAT_MAX_HEALTH])
-				{
+				if (ent->health < ps->stats[STAT_MAX_HEALTH])
 					ent->health++;
-				}
 			}
 
-			if (ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent) //this is for NPC,s
-				&& g_SerenityJediEngineMode->integer == 2 && ent->client->ps.blockPoints < BLOCK_POINTS_MAX)
+			// -----------------------------------------------------
+			// NPC BLOCK POINT REGEN (SJE mode 2)
+			// -----------------------------------------------------
+			if (isNPC &&
+				sjm == 2 &&
+				ps->blockPoints < BLOCK_POINTS_MAX)
 			{
 				if (ent->flags & FL_BLOCKPOINTMODE)
 				{
-					ent->client->ps.blockPoints = BLOCK_POINTS_MAX;
+					ps->blockPoints = BLOCK_POINTS_MAX;
 				}
-				else
+				else if (!PM_SaberInMassiveBounce(ps->torsoAnim) &&
+					!BG_InSlowBounce(ps) &&
+					!PM_InKnockDown(ps) &&
+					!PM_SaberInBrokenParry(ps->saber_move) &&
+					ps->saberBlockingTime < level.time)
 				{
-					if (!PM_SaberInMassiveBounce(ent->client->ps.torsoAnim)
-						&& !BG_InSlowBounce(&ent->client->ps)
-						&& !PM_InKnockDown(&ent->client->ps)
-						&& !PM_SaberInBrokenParry(ent->client->ps.saber_move)
-						&& ent->client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
-					{
-						ent->client->ps.blockPoints++;
-					}
+					ps->blockPoints++;
 				}
 			}
 
-			if (ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent) //this is for NPC,s
-				&& g_SerenityJediEngineMode->integer == 1
-				&& ent->client->ps.forcePower < ent->client->ps.forcePowerMax
-				&& ent->client->ps.weapon == WP_SABER
-				&& ent->client->ps.SaberActive())
+			// -----------------------------------------------------
+			// NPC FORCE REGEN (SJE mode 1)
+			// -----------------------------------------------------
+			if (isNPC &&
+				sjm == 1 &&
+				ps->forcePower < ps->forcePowerMax &&
+				ps->weapon == WP_SABER &&
+				ps->SaberActive())
 			{
 				if (ent->flags & FL_FORCEMODE)
 				{
-					ent->client->ps.forcePower = BLOCK_POINTS_MAX;
+					ps->forcePower = BLOCK_POINTS_MAX;
 				}
-				else
+				else if (!PM_SaberInMassiveBounce(ps->torsoAnim) &&
+					!BG_InSlowBounce(ps) &&
+					!PM_InKnockDown(ps) &&
+					!PM_SaberInBrokenParry(ps->saber_move) &&
+					ps->saberBlockingTime < level.time)
 				{
-					if (!PM_SaberInMassiveBounce(ent->client->ps.torsoAnim)
-						&& !BG_InSlowBounce(&ent->client->ps)
-						&& !PM_InKnockDown(&ent->client->ps)
-						&& !PM_SaberInBrokenParry(ent->client->ps.saber_move)
-						&& ent->client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
-					{
-						ent->client->ps.forcePower++;
-					}
+					ps->forcePower++;
 				}
 			}
 		}
 
+		// -----------------------------------------------------
+		// STATUS EFFECTS
+		// -----------------------------------------------------
 		Player_CheckBurn(ent);
 		Player_CheckFreeze(ent);
 	}

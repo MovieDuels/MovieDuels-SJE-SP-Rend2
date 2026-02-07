@@ -3496,29 +3496,75 @@ saber_moveName_t PM_NPC_Force_Leap_Attack()
 	}
 }
 
-#define SPECIAL_ATTACK_DISTANCE 128
+constexpr auto SPECIAL_ATTACK_DISTANCE = 128;
+extern qboolean npc_is_sith_lord(const gentity_t* self);
+
 qboolean PM_Can_Do_Kill_Lunge(void)
 {
 	trace_t tr;
 	vec3_t flatAng;
-	vec3_t fwd, back{};
-	const vec3_t trmins = { -15, -15, -8 };
-	const vec3_t trmaxs = { 15, 15, 8 };
+	vec3_t fwd, back;
+	const vec3_t trmins = { -15.0f, -15.0f, -8.0f };
+	const vec3_t trmaxs = { 15.0f,  15.0f,  8.0f };
+
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
+	const int clientNum = pm->ps->client_num;
+	const int killLungeCooldownMs = 60000; // 1 minute
+
+	// If this is an NPC (entity numbers >= MAX_CLIENTS), check NPC cooldown field.
+	if (clientNum >= MAX_CLIENTS && clientNum < ENTITYNUM_MAX_NORMAL)
+	{
+		gentity_t* ent = &g_entities[clientNum];
+
+		if (!ent || !ent->NPC)
+		{
+			return qfalse;
+		}
+
+		if (level.time < ent->NPC->lastKataTime)
+		{
+			return qfalse;
+		}
+
+		if (npc_is_sith_lord(ent))
+		{
+			return qfalse;
+		}
+	}
 
 	VectorCopy(pm->ps->viewangles, flatAng);
 	flatAng[PITCH] = 0;
 
-	AngleVectors(flatAng, fwd, 0, 0);
+	AngleVectors(flatAng, fwd, NULL, NULL);
 
 	back[0] = pm->ps->origin[0] + fwd[0] * SPECIAL_ATTACK_DISTANCE;
 	back[1] = pm->ps->origin[1] + fwd[1] * SPECIAL_ATTACK_DISTANCE;
 	back[2] = pm->ps->origin[2] + fwd[2] * SPECIAL_ATTACK_DISTANCE;
 
-	pm->trace(&tr, pm->ps->origin, trmins, trmaxs, back, pm->ps->client_num, MASK_PLAYERSOLID, static_cast<EG2_Collision>(0), 0);
+	pm->trace(&tr, pm->ps->origin, trmins, trmaxs, back, pm->ps->client_num,
+		MASK_PLAYERSOLID, (EG2_Collision)0, 0);
 
-	if (tr.fraction != 1.0 && tr.entityNum >= 0 && tr.entityNum < MAX_CLIENTS)
+	if (tr.fraction != 1.0f && tr.entityNum >= 0 && tr.entityNum < MAX_CLIENTS)
 	{
-		//We don't have real entity access here so we can't do an in depth check. But if it's a client, I guess that's reason enough to attack
+		// Hit a client — start cooldown for NPCs (and optionally players)
+		if (clientNum >= MAX_CLIENTS && clientNum < ENTITYNUM_MAX_NORMAL)
+		{
+			gentity_t* ent = &g_entities[clientNum];
+			if (ent && ent->NPC)
+			{
+				ent->NPC->lastKataTime = level.time + killLungeCooldownMs;
+			}
+		}
+		else if (clientNum >= 0 && clientNum < MAX_CLIENTS)
+		{
+			static int lastKillLungeTime[MAX_CLIENTS] = { 0 };
+			lastKillLungeTime[clientNum] = level.time + killLungeCooldownMs;
+		}
+
 		return qtrue;
 	}
 
@@ -3529,23 +3575,66 @@ qboolean PM_Can_Do_Kill_Lunge_back(void)
 {
 	trace_t tr;
 	vec3_t flatAng;
-	vec3_t fwd, back{};
-	vec3_t trmins = { -15, -15, -8 };
-	vec3_t trmaxs = { 15, 15, 8 };
+	vec3_t fwd, back;
+	const vec3_t trmins = { -15.0f, -15.0f, -8.0f };
+	const vec3_t trmaxs = { 15.0f,  15.0f,  8.0f };
+
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
+	const int clientNum = pm->ps->client_num;
+	const int killLungeCooldownMs = 60000; // 1 minute
+
+	// NPC cooldown check
+	if (clientNum >= MAX_CLIENTS && clientNum < ENTITYNUM_MAX_NORMAL)
+	{
+		gentity_t* ent = &g_entities[clientNum];
+		if (!ent || !ent->NPC)
+		{
+			return qfalse;
+		}
+		if (level.time < ent->NPC->lastKataTime)
+		{
+			return qfalse;
+		}
+
+		if (npc_is_sith_lord(ent))
+		{
+			return qfalse;
+		}
+	}
 
 	VectorCopy(pm->ps->viewangles, flatAng);
 	flatAng[PITCH] = 0;
 
-	AngleVectors(flatAng, fwd, 0, 0);
+	AngleVectors(flatAng, fwd, NULL, NULL);
 
 	back[0] = pm->ps->origin[0] - fwd[0] * SPECIAL_ATTACK_DISTANCE;
 	back[1] = pm->ps->origin[1] - fwd[1] * SPECIAL_ATTACK_DISTANCE;
 	back[2] = pm->ps->origin[2] - fwd[2] * SPECIAL_ATTACK_DISTANCE;
 
-	pm->trace(&tr, pm->ps->origin, trmins, trmaxs, back, pm->ps->client_num, MASK_PLAYERSOLID, static_cast<EG2_Collision>(0), 0);
+	pm->trace(&tr, pm->ps->origin, trmins, trmaxs, back, pm->ps->client_num,
+		MASK_PLAYERSOLID, (EG2_Collision)0, 0);
 
-	if (tr.fraction != 1.0 && tr.entityNum >= 0 && (tr.entityNum < MAX_CLIENTS))
-	{ //We don't have real entity access here so we can't do an indepth check. But if it's a client and it's behind us, I guess that's reason enough to stab backward
+	if (tr.fraction != 1.0f && tr.entityNum >= 0 && tr.entityNum < MAX_CLIENTS)
+	{
+		// Hit a client behind us — start cooldown for NPCs (and optionally players)
+		if (clientNum >= MAX_CLIENTS && clientNum < ENTITYNUM_MAX_NORMAL)
+		{
+			gentity_t* ent = &g_entities[clientNum];
+			if (ent && ent->NPC)
+			{
+				ent->NPC->lastKataTime = level.time + killLungeCooldownMs;
+			}
+		}
+		else if (clientNum >= 0 && clientNum < MAX_CLIENTS)
+		{
+			static int lastKillLungeBackTime[MAX_CLIENTS] = { 0 };
+			lastKillLungeBackTime[clientNum] = level.time + killLungeCooldownMs;
+		}
+
 		return qtrue;
 	}
 
@@ -4431,19 +4520,8 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 				}
 			}
 		}
-		else if (pm->ps->legsAnim != BOTH_CARTWHEEL_RIGHT
-			&& pm->ps->legsAnim != BOTH_ARIAL_RIGHT)
+		else if (pm->ps->legsAnim != BOTH_CARTWHEEL_RIGHT && pm->ps->legsAnim != BOTH_ARIAL_RIGHT)
 		{
-			//not in a cartwheel/arial
-			if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
-			{
-				//player
-				if (G_TryingSpecial(&pm->cmd)) //Holding focus
-				{
-					//if no special worked, do nothing
-					return LS_NONE;
-				}
-			}
 			//checked all special attacks, if we're in a parry, attack from that move
 			const saber_moveName_t parry_attack_move = PM_CheckPlayerAttackFromParry(curmove);
 			if (parry_attack_move != LS_NONE)
@@ -4472,7 +4550,7 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 			&& overrideJumpLeftAttackMove != LS_NONE
 			&& (pm->ps->groundEntityNum != ENTITYNUM_NONE || level.time - pm->ps->lastOnGround <= 250)
 			//on ground or just jumped
-			&& pm->cmd.buttons & BUTTON_ATTACK //hitting attack
+			&& (pm->cmd.buttons & BUTTON_ATTACK && !(pm->cmd.buttons & BUTTON_BLOCK)) //hitting attack
 			&& pm->ps->forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 //have force jump 1 at least
 			&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_LR, qfalse, isPlayer) //have enough power
 			&& ((!isPlayer && pm->cmd.upmove > 0) //jumping NPC
@@ -4514,16 +4592,6 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 		else if (pm->ps->legsAnim != BOTH_CARTWHEEL_LEFT
 			&& pm->ps->legsAnim != BOTH_ARIAL_LEFT)
 		{
-			//not in a left cartwheel/arial
-			if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
-			{
-				//player
-				if (G_TryingSpecial(&pm->cmd)) //Holding focus
-				{
-					//if no special worked, do nothing
-					return LS_NONE;
-				}
-			}
 			//checked all special attacks, if we're in a parry, attack from that move
 			const saber_moveName_t parry_attack_move = PM_CheckPlayerAttackFromParry(curmove);
 			if (parry_attack_move != LS_NONE)
@@ -4595,8 +4663,7 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 						&& pm->gent->enemy->client->NPC_class != CLASS_HOWLER //too short to do auto-aiming accurately
 						&& g_saberAutoAim->integer)
 					{
-						const saber_moveName_t auto_move = PM_AttackForEnemyPos(
-							qfalse,
+						const saber_moveName_t auto_move = PM_AttackForEnemyPos(qfalse,
 							static_cast<qboolean>(pm->ps->client_num >= MAX_CLIENTS && !PM_ControlledByPlayer()));
 						if (auto_move != LS_INVALID)
 						{
@@ -4628,16 +4695,6 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 				if (PM_CheckLungeAttackMove())
 				{
 					return PM_SaberLungeAttackMove(qtrue);
-				}
-			}
-
-			if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
-			{
-				//player
-				if (G_TryingSpecial(&pm->cmd)) //Holding focus
-				{
-					//if no special worked, do nothing
-					return LS_NONE;
 				}
 			}
 
@@ -4684,15 +4741,6 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 				if (PM_CheckBackflipAttackMove())
 				{
 					return PM_SaberBackflipAttackMove(); //backflip attack
-				}
-				if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
-				{
-					//player
-					if (G_TryingSpecial(&pm->cmd)) //Holding focus
-					{
-						//if no special worked, do nothing
-						return LS_NONE;
-					}
 				}
 				//check backstabs
 				if (!(pm->ps->saber[0].saberFlags & SFL_NO_BACK_ATTACK)
@@ -4804,16 +4852,6 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 				}
 			}
 
-			if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
-			{
-				//player
-				if (G_TryingSpecial(&pm->cmd)) //Holding focus
-				{
-					//if no special worked, do nothing
-					return LS_NONE;
-				}
-			}
-
 			//checked all special attacks, if we're in a parry, attack from that move
 			const saber_moveName_t parry_attack_move = PM_CheckPlayerAttackFromParry(curmove);
 			if (parry_attack_move != LS_NONE)
@@ -4831,23 +4869,15 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 		}
 		if (PM_SaberInBounce(curmove) || PM_SaberInMassiveBounce(pm->ps->torsoAnim))
 		{
-			//bounces should go to their default attack if you don't specify a direction but are attacking
-			if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
+			//bounces, parries, etc return to the start position if a direction isn't given.
+			if (pm->ps->client_num && !PM_ControlledByPlayer())
 			{
-				//player
-				if (G_TryingSpecial(&pm->cmd)) //Holding focus
-				{
-					//if no special worked, do nothing
-					return LS_NONE;
-				}
-			}
-
-			if (pm->ps->client_num && !PM_ControlledByPlayer() && Q_irand(0, 3))
-			{//use NPC random
-				newmove = PM_NPCSaberAttackFromQuad(saber_moveData[curmove].endQuad);
+				//use NPC random
+				newmove = LS_READY;
 			}
 			else
-			{//player uses chain-attack
+			{
+				//player uses chain-attack
 				newmove = saber_moveData[curmove].chain_attack;
 			}
 			if (PM_SaberKataDone(curmove, newmove))
@@ -4858,16 +4888,6 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 		}
 		if (PM_SaberInKnockaway(curmove))
 		{
-			//bounces should go to their default attack if you don't specify a direction but are attacking
-			if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
-			{
-				//player
-				if (G_TryingSpecial(&pm->cmd)) //Holding focus
-				{
-					//if no special worked, do nothing
-					return LS_NONE;
-				}
-			}
 			if (pm->ps->client_num && !PM_ControlledByPlayer() && Q_irand(0, 3))
 			{//use NPC random
 				newmove = PM_NPCSaberAttackFromQuad(saber_moveData[curmove].endQuad);
@@ -4897,30 +4917,10 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 			|| curmove >= LS_PARRY_UP
 			&& curmove <= LS_REFLECT_LL)
 		{
-			//Not moving at all, not too busy to attack
-			//push + lookdown + attack + dual sabers = LS_DUAL_SPIN_PROTECT
-			if (g_saberNewControlScheme->integer)
-			{
-				if (PM_CheckDualSpinProtect())
-				{
-					return LS_DUAL_SPIN_PROTECT;
-				}
-				if (PM_CheckStaffKata())
-				{
-					return LS_STAFF_SOULCAL;
-				}
-			}
-			if (pm->ps->client_num < MAX_CLIENTS || PM_ControlledByPlayer()) //PLAYER ONLY
-			{
-				//player
-				if (G_TryingSpecial(&pm->cmd)) //Holding focus
-				{
-					//if no special worked, do nothing
-					return LS_NONE;
-				}
-			}
+			//Not moving at all, not too busy to attack			
 			//checked all special attacks, if we're in a parry, attack from that move
 			const saber_moveName_t parry_attack_move = PM_CheckPlayerAttackFromParry(curmove);
+			
 			if (parry_attack_move != LS_NONE)
 			{
 				return parry_attack_move;
@@ -8264,22 +8264,22 @@ void PM_TorsoAnimation()
 					}
 					break;
 
-				/*case WP_Z6_ROTARY_CANNON:
-					if (weapon_busy)
-					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
-					}
-					else if (PM_WalkingAnim(pm->ps->legsAnim) && (pm->ps->client_num < MAX_CLIENTS ||
-						PM_ControlledByPlayer()))
-					{
-						//
-						PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
-					}
-					else
-					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
-					}
-					break;*/
+					/*case WP_Z6_ROTARY_CANNON:
+						if (weapon_busy)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
+						}
+						else if (PM_WalkingAnim(pm->ps->legsAnim) && (pm->ps->client_num < MAX_CLIENTS ||
+							PM_ControlledByPlayer()))
+						{
+							//
+							PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
+						}
+						break;*/
 
 				case WP_BLASTER:
 				case WP_THEFIRSTORDER:
@@ -9039,40 +9039,40 @@ void PM_TorsoAnimation()
 					}
 					break;
 
-				/*case WP_Z6_ROTARY_CANNON:
+					/*case WP_Z6_ROTARY_CANNON:
 
-					if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
-					{
-						//holding an enemy aloft with force-grip
-						return;
-					}
-					if (pm->ps->forcePowersActive & 1 << FP_GRASP && pm->ps->forcePowerLevel[FP_GRASP] >
-						FORCE_LEVEL_1)
-					{
-						//holding an enemy aloft with force-grip
-						return;
-					}
-					if (pm->ps->forcePowersActive & 1 << FP_LIGHTNING && pm->ps->forcePowerLevel[FP_LIGHTNING] >
-						FORCE_LEVEL_1)
-					{
-						//holding an enemy aloft with force-grip
-						return;
-					}
-					if (weapon_busy)
-					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
-					}
-					else if (PM_WalkingAnim(pm->ps->legsAnim) && (pm->ps->client_num < MAX_CLIENTS ||
-						PM_ControlledByPlayer()))
-					{
-						//
-						PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
-					}
-					else
-					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN_IDLE, SETANIM_FLAG_NORMAL);
-					}
-					break;*/
+						if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
+						{
+							//holding an enemy aloft with force-grip
+							return;
+						}
+						if (pm->ps->forcePowersActive & 1 << FP_GRASP && pm->ps->forcePowerLevel[FP_GRASP] >
+							FORCE_LEVEL_1)
+						{
+							//holding an enemy aloft with force-grip
+							return;
+						}
+						if (pm->ps->forcePowersActive & 1 << FP_LIGHTNING && pm->ps->forcePowerLevel[FP_LIGHTNING] >
+							FORCE_LEVEL_1)
+						{
+							//holding an enemy aloft with force-grip
+							return;
+						}
+						if (weapon_busy)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN, SETANIM_FLAG_NORMAL);
+						}
+						else if (PM_WalkingAnim(pm->ps->legsAnim) && (pm->ps->client_num < MAX_CLIENTS ||
+							PM_ControlledByPlayer()))
+						{
+							//
+							PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_STANCE_READY_MINIGUN_IDLE, SETANIM_FLAG_NORMAL);
+						}
+						break;*/
 
 				case WP_BLASTER:
 				case WP_THEFIRSTORDER:

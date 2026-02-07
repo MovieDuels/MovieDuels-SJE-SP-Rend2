@@ -28,6 +28,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_items.h"
 #include "teams.h"
 #include "statindex.h"
+#include <qcommon/q_shared.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_math.h>
+#include "ghoul2_shared.h"
 
 #define DEFAULT_SABER			"Kyle"
 #define DEFAULT_SABER_NAME		"lightsaber"

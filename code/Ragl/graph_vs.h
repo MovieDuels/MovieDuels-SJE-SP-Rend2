@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===========================================================================
 Copyright (C) 2000 - 2013, Raven Software, Inc.
 Copyright (C) 2001 - 2013, Activision, Inc.
@@ -691,40 +691,91 @@ namespace ragl
 		////////////////////////////////////////////////////////////////////////////////////
 		// Connect Node With An Edge Object  (A->B)  if reflexive, also (B->A)
 		////////////////////////////////////////////////////////////////////////////////////
-		int			connect_node(const TEDGE& t, int node_a, int node_b, bool reflexive = true)
+		int connect_node(const TEDGE& t, int node_a, int node_b, bool reflexive = true)
 		{
-			if (node_a == node_b || !node_a || !node_b || !mNodes.is_used(node_a) || !mNodes.is_used(node_b))
+			// ----------------------------------------
+			// Basic validity checks
+			// ----------------------------------------
+			if (node_a == node_b ||
+				node_a <= 0 || node_b <= 0 ||
+				!mNodes.is_used(node_a) ||
+				!mNodes.is_used(node_b))
 			{
-				assert("ERROR: Cannot Connect A and B!" == nullptr);
+				assert(false && "connect_node: invalid node indices");
 				return 0;
 			}
 
-			if (mLinks[node_a].full() || reflexive && mLinks[node_b].full())
+			// ----------------------------------------
+			// Prevent duplicate edges (both directions)
+			// ----------------------------------------
+			for (const SNodeNeighbor& nbr : mLinks[node_a])
 			{
-				assert("ERROR: Max edges per node exceeded!" == nullptr);
+				if (nbr.mNode == node_b)
+					return nbr.mEdge; // already connected
+			}
+
+			if (reflexive)
+			{
+				for (const SNodeNeighbor& nbr : mLinks[node_b])
+				{
+					if (nbr.mNode == node_a)
+						return nbr.mEdge; // already connected
+				}
+			}
+
+			// ----------------------------------------
+			// Capacity checks
+			// ----------------------------------------
+			if (mLinks[node_a].full())
+			{
+				assert(false && "connect_node: node_a adjacency list full");
+				return 0;
+			}
+
+			if (reflexive && mLinks[node_b].full())
+			{
+				assert(false && "connect_node: node_b adjacency list full");
 				return 0;
 			}
 
 			if (mEdges.full())
 			{
-				assert("ERROR: Max edges exceeded!" == nullptr);
+				assert(false && "connect_node: global edge pool full");
 				return 0;
 			}
 
-			SNodeNeighbor	n_nbr;
-
-			n_nbr.mNode = node_b;
-			n_nbr.mEdge = mEdges.alloc();
-			mEdges[n_nbr.mEdge] = t;
-
-			mLinks[node_a].push_back(n_nbr);
-			if (reflexive)
+			// ----------------------------------------
+			// Allocate edge
+			// ----------------------------------------
+			int edgeIndex = mEdges.alloc();
+			if (!edgeIndex)
 			{
-				n_nbr.mNode = node_a;
-				mLinks[node_b].push_back(n_nbr);
+				assert(false && "connect_node: edge allocation failed");
+				return 0;
 			}
 
-			return n_nbr.mEdge;
+			mEdges[edgeIndex] = t;
+
+			// ----------------------------------------
+			// Add A → B
+			// ----------------------------------------
+			SNodeNeighbor nbrAB;
+			nbrAB.mNode = node_b;
+			nbrAB.mEdge = edgeIndex;
+			mLinks[node_a].push_back(nbrAB);
+
+			// ----------------------------------------
+			// Add B → A (if reflexive)
+			// ----------------------------------------
+			if (reflexive)
+			{
+				SNodeNeighbor nbrBA;
+				nbrBA.mNode = node_a;
+				nbrBA.mEdge = edgeIndex;
+				mLinks[node_b].push_back(nbrBA);
+			}
+
+			return edgeIndex;
 		}
 
 		////////////////////////////////////////////////////////////////////////////////////
@@ -1085,13 +1136,15 @@ namespace ragl
 				mParentVisit(Parent),
 				mCostToGoal(-1),
 				mCostFromStart(0)
-			{}
+			{
+			}
 			search_node(const search_node& t) :
 				mNode(t.mNode),
 				mParentVisit(t.mParentVisit),
 				mCostToGoal(t.mCostToGoal),
 				mCostFromStart(t.mCostFromStart)
-			{}
+			{
+			}
 
 			////////////////////////////////////////////////////////////////////////////////
 			// Assignment Operator

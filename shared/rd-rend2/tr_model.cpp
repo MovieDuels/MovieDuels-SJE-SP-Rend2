@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cache.h"
 #include <qcommon/sstring.h>
 #include <qcommon/matcomp.h>
+#include <rd-common/tr_public.h>
 
 #define	LL(x) x=LittleLong(x)
 
@@ -1427,7 +1428,7 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 	for (l = 0; l < mdr->numLODs; l++)
 	{
 		// simple bounds check
-		if ((byte*)(lod + 1) > (byte*) mdr + size)
+		if ((byte*)(lod + 1) > (byte*)mdr + size)
 		{
 			ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has broken structure.\n", mod_name);
 			return qfalse;
@@ -1443,7 +1444,7 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 		for (i = 0; i < lod->numSurfaces; i++)
 		{
 			// simple bounds check
-			if ((byte*)(surf + 1) > (byte*) mdr + size)
+			if ((byte*)(surf + 1) > (byte*)mdr + size)
 			{
 				ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has broken structure.\n", mod_name);
 				return qfalse;

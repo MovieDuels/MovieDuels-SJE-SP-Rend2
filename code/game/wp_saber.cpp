@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===========================================================================
 Copyright (C) 2000 - 2013, Raven Software, Inc.
 Copyright (C) 2001 - 2013, Activision, Inc.
@@ -40,6 +40,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../qcommon/tri_coll_test.h"
 #include "../cgame/cg_local.h"
 #include "g_public.h"
+#include <cmath>
 
 #define JK2_RAGDOLL_GRIPNOHEALTH
 
@@ -12495,57 +12496,106 @@ void WP_SaberInFlightReflectCheck(gentity_t* self)
 
 static qboolean WP_SaberValidateEnemy(gentity_t* self, gentity_t* enemy)
 {
-	if (!enemy)
-	{
-		return qfalse;
-	}
-
+	// ----------------------------------------------------
+	// Basic null / self / validity checks
+	// ----------------------------------------------------
 	if (!enemy || enemy == self || !enemy->inuse || !enemy->client)
-	{
-		//not valid
 		return qfalse;
-	}
 
+	// ----------------------------------------------------
+	// Must be alive
+	// ----------------------------------------------------
 	if (enemy->health <= 0)
-	{
-		//corpse
 		return qfalse;
-	}
 
+	// ----------------------------------------------------
+	// NPCs cannot target Jedi unless they are Jedi themselves
+	// (prevents non‑Jedi NPCs from cheating with saber throw)
+	// ----------------------------------------------------
 	if (enemy->s.number >= MAX_CLIENTS)
 	{
-		//NPCs can cheat and use the homing saber throw 3 on the player
-		if (enemy->client->ps.forcePowersKnown)
-		{
-			//not other jedi?
+		if (enemy->client->ps.forcePowersKnown == 0)
 			return qfalse;
-		}
 	}
 
-	if (DistanceSquared(self->client->renderInfo.handRPoint, enemy->currentOrigin) > saberThrowDistSquared[self->client
-		->ps.forcePowerLevel[FP_SABERTHROW]])
+	// ----------------------------------------------------
+	// Distance check (squared for performance)
+	// ----------------------------------------------------
+	const float maxDistSq =
+		saberThrowDistSquared[self->client->ps.forcePowerLevel[FP_SABERTHROW]];
+
+	if (DistanceSquared(self->client->renderInfo.handRPoint,
+		enemy->currentOrigin) > maxDistSq)
 	{
-		//too far
 		return qfalse;
 	}
 
-	if ((!InFront(enemy->currentOrigin, self->currentOrigin, self->client->ps.viewangles, 0.0f) || !G_ClearLOS(
-		self, self->client->renderInfo.eyePoint, enemy))
-		&& (DistanceHorizontalSquared(enemy->currentOrigin, self->currentOrigin) > 65536 || fabs(
-			enemy->currentOrigin[2] - self->currentOrigin[2]) > 384))
+	// ----------------------------------------------------
+	// Field‑of‑view + LOS check
+	// If enemy is far away horizontally or vertically,
+	// they MUST be in front AND visible.
+	// ----------------------------------------------------
+	const float horizDistSq =
+		DistanceHorizontalSquared(enemy->currentOrigin, self->currentOrigin);
+
+	const float vertDist =
+		fabsf(enemy->currentOrigin[2] - self->currentOrigin[2]);
+
+	const qboolean inFront =
+		InFront(enemy->currentOrigin, self->currentOrigin,
+			self->client->ps.viewangles, 0.0f);
+
+	const qboolean hasLOS =
+		G_ClearLOS(self, self->client->renderInfo.eyePoint, enemy);
+
+	if ((!inFront || !hasLOS) &&
+		(horizDistSq > 65536.0f || vertDist > 384.0f))
 	{
-		//(not in front or not clear LOS) & greater than 256 away
 		return qfalse;
 	}
 
-	if (enemy->client->playerTeam == self->client->playerTeam && (enemy->client->playerTeam != TEAM_SOLO && self->client
-		->playerTeam != TEAM_SOLO))
+	// ----------------------------------------------------
+	// Team check (unless SOLO)
+	// ----------------------------------------------------
+	if (enemy->client->playerTeam == self->client->playerTeam &&
+		enemy->client->playerTeam != TEAM_SOLO &&
+		self->client->playerTeam != TEAM_SOLO)
 	{
-		//on same team
 		return qfalse;
 	}
 
 	return qtrue;
+}
+
+// ======================================================
+// Distance macro (JA-style)
+// ======================================================
+#define Distance(a,b) (sqrt( ( (a)[0] - (b)[0] ) * ( (a)[0] - (b)[0] ) + \
+                              ( (a)[1] - (b)[1] ) * ( (a)[1] - (b)[1] ) + \
+                              ( (a)[2] - (b)[2] ) * ( (a)[2] - (b)[2] ) ))
+
+// ======================================================
+// Safe helpers
+// ======================================================
+static float SafeDot(const vec3_t a, const vec3_t b)
+{
+	float d = DotProduct(a, b);
+	if (!(d >= -1.0f && d <= 1.0f)) // catches NaN/INF
+		return 0.0f;
+	return d;
+}
+
+static float SafeNormalize(vec3_t v)
+{
+	float len = VectorLength(v);
+	if (len <= 0.0001f)
+		return 0.0f;
+
+	float inv = 1.0f / len;
+	v[0] *= inv;
+	v[1] *= inv;
+	v[2] *= inv;
+	return len;
 }
 
 static float WP_SaberRateEnemy(const gentity_t* enemy, vec3_t center, vec3_t forward, const float radius)
@@ -12563,7 +12613,7 @@ static gentity_t* WP_SaberFindEnemy(gentity_t* self, const gentity_t* saber)
 	//FIXME: should be a more intelligent way of doing this, like auto aim?
 	//closest, most in front... did damage to... took damage from?  How do we know who the player is focusing on?
 	gentity_t* best_ent = nullptr;
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	vec3_t center, mins{}, maxs{}, fwdangles{}, forward;
 	constexpr float radius = 400;
 	float best_rating = 0.0f;
@@ -17529,10 +17579,10 @@ qboolean WP_SaberBounceDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parryReCalcTime = jedi_re_calc_parry_time(self, EVASION_PARRY);
-		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parryReCalcTime)
+		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
-			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parryReCalcTime;
+			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
 		}
 	}
 
@@ -20236,21 +20286,19 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 
 void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 {
-	float minsize = 16;
+	float minsize = 16.0f;
 
-	const qboolean holding_block_and_attack = self->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK
-		? qtrue
-		: qfalse;
-	const qboolean is_holding_block_button = self->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-
-	if (!self->client)
-	{
+	if (!self || !self->client)
 		return;
-	}
+
+	const qboolean holding_block_and_attack =
+		(self->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
+	const qboolean is_holding_block_button =
+		(self->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
 
 	if (self->client->ps.saberEntityNum < 0 || self->client->ps.saberEntityNum >= ENTITYNUM_WORLD)
 	{
-		//never got one
+		// never got one
 		return;
 	}
 
@@ -20259,7 +20307,7 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 
 	if (self->client->ps.saberEntityNum <= 0)
 	{
-		//WTF?!!  We lost it?
+		// WTF?!!  We lost it?
 		return;
 	}
 
@@ -20267,25 +20315,23 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 
 	if (self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		//we're blocking, increase min size
-		minsize = 32;
+		// we're blocking, increase min size
+		minsize = 32.0f;
 	}
 
 	if (G_InCinematicSaberAnim(self))
 	{
-		//fake some blocking
+		// fake some blocking
 		self->client->ps.saberBlocking = BLK_TIGHT;
+
 		if (self->client->ps.saber[0].Active())
-		{
 			self->client->ps.saber[0].ActivateTrail(150);
-		}
+
 		if (self->client->ps.saber[1].Active())
-		{
 			self->client->ps.saber[1].ActivateTrail(150);
-		}
 	}
 
-	//is our saber in flight?
+	// is our saber in flight?
 	if (!self->client->ps.saberInFlight)
 	{
 		// It isn't, which means we can update its position as we will.
@@ -20293,7 +20339,7 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 		qboolean force_block = qfalse;
 		qboolean no_blocking = qfalse;
 
-		//clear out last frame's numbers
+		// clear out last frame's numbers
 		VectorClear(saberent->mins);
 		VectorClear(saberent->maxs);
 
@@ -20303,264 +20349,251 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 			|| !self->client->ps.saberBlocking
 			|| PM_InKnockDown(&self->client->ps)
 			|| PM_SuperBreakLoseAnim(self->client->ps.torsoAnim)
-			|| p_veh && p_veh->m_pVehicleInfo && p_veh->m_pVehicleInfo->type != VH_ANIMAL && p_veh->m_pVehicleInfo->type
-			!= VH_FLIER) //riding a vehicle that you cannot block shots on
+			|| (p_veh && p_veh->m_pVehicleInfo &&
+				p_veh->m_pVehicleInfo->type != VH_ANIMAL &&
+				p_veh->m_pVehicleInfo->type != VH_FLIER)) // riding a vehicle that you cannot block shots on
 		{
-			//can't block if saber isn't on
-			int j;
+			// can't block if saber isn't on
 			for (int i = 0; i < MAX_SABERS; i++)
 			{
-				//initialize to not blocking
-				for (j = 0; j < MAX_BLADES; j++)
-				{
+				// initialize to not blocking
+				for (int j = 0; j < MAX_BLADES; j++)
 					always_block[i][j] = qfalse;
-				}
+
 				if (i > 0 && !self->client->ps.dualSabers)
 				{
-					//not using a second saber, leave it not blocking
+					// not using a second saber, leave it not blocking
+					continue;
 				}
-				else
+
+				if (self->client->ps.saber[i].saberFlags2 & SFL2_ALWAYS_BLOCK)
 				{
-					if (self->client->ps.saber[i].saberFlags2 & SFL2_ALWAYS_BLOCK)
+					for (int j = 0; j < self->client->ps.saber[i].numBlades; j++)
 					{
-						for (j = 0; j < self->client->ps.saber[i].numBlades; j++)
+						always_block[i][j] = qtrue;
+						force_block = qtrue;
+					}
+				}
+
+				if (self->client->ps.saber[i].bladeStyle2Start > 0)
+				{
+					for (int j = self->client->ps.saber[i].bladeStyle2Start;
+						j < self->client->ps.saber[i].numBlades; j++)
+					{
+						if (self->client->ps.saber[i].saberFlags2 & SFL2_ALWAYS_BLOCK2)
 						{
 							always_block[i][j] = qtrue;
 							force_block = qtrue;
 						}
-					}
-					if (self->client->ps.saber[i].bladeStyle2Start > 0)
-					{
-						for (j = self->client->ps.saber[i].bladeStyle2Start; j < self->client->ps.saber[i].numBlades; j
-							++)
+						else
 						{
-							if (self->client->ps.saber[i].saberFlags2 & SFL2_ALWAYS_BLOCK2)
-							{
-								always_block[i][j] = qtrue;
-								force_block = qtrue;
-							}
-							else
-							{
-								always_block[i][j] = qfalse;
-							}
+							always_block[i][j] = qfalse;
 						}
 					}
 				}
 			}
+
 			if (!force_block)
 			{
 				no_blocking = qtrue;
 			}
 			else if (!self->client->ps.saberBlocking)
 			{
-				//turn blocking on!
+				// turn blocking on!
 				self->client->ps.saberBlocking = BLK_TIGHT;
 			}
 		}
+
 		if (no_blocking)
 		{
 			G_SetOrigin(saberent, self->currentOrigin);
 		}
-		else if (self->client->ps.saberBlocking == BLK_TIGHT || self->client->ps.saberBlocking == BLK_WIDE)
+		else if (self->client->ps.saberBlocking == BLK_TIGHT ||
+			self->client->ps.saberBlocking == BLK_WIDE)
 		{
 			vec3_t saber_org;
 
 			if (!force_block
 				&& (self->s.number && !jedi_saber_busy(self)
-					|| self->s.number == 0 && self->client->ps.saberBlocking == BLK_WIDE
-					&& (g_saberAutoBlocking->integer || self->client->ps.saberBlockingTime > level.time))
+					|| (self->s.number == 0 && self->client->ps.saberBlocking == BLK_WIDE
+						&& (g_saberAutoBlocking->integer ||
+							self->client->ps.saberBlockingTime > level.time)))
 				&& self->client->ps.weaponTime <= 0
 				&& !G_InCinematicSaberAnim(self))
 			{
-				//Just standing not attacking
+				// Just standing not attacking
 				if (is_holding_block_button && !holding_block_and_attack)
 				{
 					// holding block small box
-					int num_sabers = 1;
-					if (self->client->ps.dualSabers)
-					{
-						num_sabers = 2;
-					}
+					int num_sabers = self->client->ps.dualSabers ? 2 : 1;
+
 					for (int saber_num = 0; saber_num < num_sabers; saber_num++)
 					{
-						for (int blade_num = 0; blade_num < self->client->ps.saber[saber_num].numBlades; blade_num++)
+						for (int blade_num = 0;
+							blade_num < self->client->ps.saber[saber_num].numBlades;
+							blade_num++)
 						{
 							vec3_t saber_tip;
 							vec3_t saber_base;
+
 							if (self->client->ps.saber[saber_num].blade[blade_num].length <= 0.0f)
-							{
-								//don't include blades that are not on...
 								continue;
-							}
-							if (force_block)
-							{
-								//doing blade-specific bbox-sizing only, see if this blade should be counted
-								if (!always_block[saber_num][blade_num])
-								{
-									//this blade doesn't count right now
-									continue;
-								}
-							}
-							VectorCopy(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint, saber_base);
-							VectorMA(saber_base, self->client->ps.saber[saber_num].blade[blade_num].length,
-								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir, saber_tip);
-							VectorMA(saber_base, self->client->ps.saber[saber_num].blade[blade_num].length * 0.5,
-								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir, saber_org);
+
+							if (force_block && !always_block[saber_num][blade_num])
+								continue;
+
+							VectorCopy(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint,
+								saber_base);
+
+							VectorMA(saber_base,
+								self->client->ps.saber[saber_num].blade[blade_num].length,
+								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir,
+								saber_tip);
+
+							VectorMA(saber_base,
+								self->client->ps.saber[saber_num].blade[blade_num].length * 0.5f,
+								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir,
+								saber_org);
+
 							for (int i = 0; i < 3; i++)
 							{
 								float new_size_tip = saber_tip[i] - saber_org[i];
-								new_size_tip += new_size_tip >= 0 ? 8 : -8;
 								float new_size_base = saber_base[i] - saber_org[i];
-								new_size_base += new_size_base >= 0 ? 8 : -8;
+
+								new_size_tip += (new_size_tip >= 0.0f) ? 8.0f : -8.0f;
+								new_size_base += (new_size_base >= 0.0f) ? 8.0f : -8.0f;
+
 								if (new_size_tip > saberent->maxs[i])
-								{
 									saberent->maxs[i] = new_size_tip;
-								}
 								if (new_size_base > saberent->maxs[i])
-								{
 									saberent->maxs[i] = new_size_base;
-								}
+
 								if (new_size_tip < saberent->mins[i])
-								{
 									saberent->mins[i] = new_size_tip;
-								}
 								if (new_size_base < saberent->mins[i])
-								{
 									saberent->mins[i] = new_size_base;
-								}
 							}
 						}
 					}
+
 					if (!force_block)
 					{
-						//not doing special "alwaysBlock" bbox
+						// not doing special "alwaysBlock" bbox
 						if (self->client->ps.weaponTime > 0
 							|| self->s.number
 							|| g_saberAutoBlocking->integer
 							|| self->client->ps.saberBlockingTime > level.time)
 						{
-							//if attacking or blocking (or an NPC), inflate to a minimum size
+							// if attacking or blocking (or an NPC), inflate to a minimum size
 							for (int i = 0; i < 3; i++)
 							{
 								if (saberent->maxs[i] < minsize)
-								{
 									saberent->maxs[i] = minsize;
-								}
 								if (saberent->mins[i] > -minsize)
-								{
 									saberent->mins[i] = -minsize;
-								}
 							}
 						}
 					}
+
 					saberent->contents = CONTENTS_LIGHTSABER;
 					G_SetOrigin(saberent, saber_org);
 
 					if (d_saberinfo->integer || g_DebugSaberCombat->integer)
 					{
-						//gi.Printf(S_COLOR_ORANGE" holding block small box\n");
+						// debug print if needed
+						// gi.Printf(S_COLOR_ORANGE" holding block small box\n");
 					}
 				}
 				else if (holding_block_and_attack)
 				{
 					// holding block + attack big box
 					vec3_t fwd;
-					vec3_t saberang = { 0, 0, 0 };
-					constexpr vec3_t sabermaxs = { 8, 8, 8 };
-					constexpr vec3_t sabermins = { -8, -8, -8 };
+					vec3_t saberang = { 0.0f, 0.0f, 0.0f };
+					constexpr vec3_t sabermaxs = { 8.0f,  8.0f,  8.0f };
+					constexpr vec3_t sabermins = { -8.0f, -8.0f, -8.0f };
 
 					saberang[YAW] = self->client->ps.viewangles[YAW];
 					AngleVectors(saberang, fwd, nullptr, nullptr);
 
-					VectorMA(self->currentOrigin, 12, fwd, saber_org);
+					VectorMA(self->currentOrigin, 12.0f, fwd, saber_org);
 
 					VectorAdd(self->mins, sabermins, saberent->mins);
 					VectorAdd(self->maxs, sabermaxs, saberent->maxs);
 
 					saberent->contents = CONTENTS_LIGHTSABER;
-
 					G_SetOrigin(saberent, saber_org);
 				}
 				else
 				{
 					// just holding nothing small box just for impact trace
-					int num_sabers = 1;
-					if (self->client->ps.dualSabers)
-					{
-						num_sabers = 2;
-					}
+					int num_sabers = self->client->ps.dualSabers ? 2 : 1;
+
 					for (int saber_num = 0; saber_num < num_sabers; saber_num++)
 					{
-						for (int blade_num = 0; blade_num < self->client->ps.saber[saber_num].numBlades; blade_num++)
+						for (int blade_num = 0;
+							blade_num < self->client->ps.saber[saber_num].numBlades;
+							blade_num++)
 						{
 							vec3_t saber_tip;
 							vec3_t saber_base;
+
 							if (self->client->ps.saber[saber_num].blade[blade_num].length <= 0.0f)
-							{
-								//don't include blades that are not on...
 								continue;
-							}
-							if (force_block)
-							{
-								//doing blade-specific bbox-sizing only, see if this blade should be counted
-								if (!always_block[saber_num][blade_num])
-								{
-									//this blade doesn't count right now
-									continue;
-								}
-							}
-							VectorCopy(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint, saber_base);
-							VectorMA(saber_base, self->client->ps.saber[saber_num].blade[blade_num].length,
-								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir, saber_tip);
-							VectorMA(saber_base, self->client->ps.saber[saber_num].blade[blade_num].length * 0.5,
-								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir, saber_org);
+
+							if (force_block && !always_block[saber_num][blade_num])
+								continue;
+
+							VectorCopy(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint,
+								saber_base);
+
+							VectorMA(saber_base,
+								self->client->ps.saber[saber_num].blade[blade_num].length,
+								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir,
+								saber_tip);
+
+							VectorMA(saber_base,
+								self->client->ps.saber[saber_num].blade[blade_num].length * 0.5f,
+								self->client->ps.saber[saber_num].blade[blade_num].muzzleDir,
+								saber_org);
+
 							for (int i = 0; i < 3; i++)
 							{
 								float new_size_tip = saber_tip[i] - saber_org[i];
-								new_size_tip += new_size_tip >= 0 ? 8 : -8;
 								float new_size_base = saber_base[i] - saber_org[i];
-								new_size_base += new_size_base >= 0 ? 8 : -8;
+
+								new_size_tip += (new_size_tip >= 0.0f) ? 8.0f : -8.0f;
+								new_size_base += (new_size_base >= 0.0f) ? 8.0f : -8.0f;
+
 								if (new_size_tip > saberent->maxs[i])
-								{
 									saberent->maxs[i] = new_size_tip;
-								}
 								if (new_size_base > saberent->maxs[i])
-								{
 									saberent->maxs[i] = new_size_base;
-								}
+
 								if (new_size_tip < saberent->mins[i])
-								{
 									saberent->mins[i] = new_size_tip;
-								}
 								if (new_size_base < saberent->mins[i])
-								{
 									saberent->mins[i] = new_size_base;
-								}
 							}
 						}
 					}
+
 					if (!force_block)
 					{
-						//not doing special "alwaysBlock" bbox
 						if (self->client->ps.weaponTime > 0
 							|| self->s.number
 							|| g_saberAutoBlocking->integer
 							|| self->client->ps.saberBlockingTime > level.time)
 						{
-							//if attacking or blocking (or an NPC), inflate to a minimum size
 							for (int i = 0; i < 3; i++)
 							{
 								if (saberent->maxs[i] < minsize)
-								{
 									saberent->maxs[i] = minsize;
-								}
 								if (saberent->mins[i] > -minsize)
-								{
 									saberent->mins[i] = -minsize;
-								}
 							}
 						}
 					}
+
 					saberent->contents = CONTENTS_LIGHTSABER;
 					G_SetOrigin(saberent, saber_org);
 				}
@@ -20568,83 +20601,74 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 			else
 			{
 				// must be swinging the saber small box
-				int num_sabers = 1;
-				if (self->client->ps.dualSabers)
-				{
-					num_sabers = 2;
-				}
+				int num_sabers = self->client->ps.dualSabers ? 2 : 1;
+
 				for (int saber_num = 0; saber_num < num_sabers; saber_num++)
 				{
-					for (int blade_num = 0; blade_num < self->client->ps.saber[saber_num].numBlades; blade_num++)
+					for (int blade_num = 0;
+						blade_num < self->client->ps.saber[saber_num].numBlades;
+						blade_num++)
 					{
 						vec3_t saber_tip;
 						vec3_t saber_base;
+
 						if (self->client->ps.saber[saber_num].blade[blade_num].length <= 0.0f)
-						{
-							//don't include blades that are not on...
 							continue;
-						}
-						if (force_block)
-						{
-							//doing blade-specific bbox-sizing only, see if this blade should be counted
-							if (!always_block[saber_num][blade_num])
-							{
-								//this blade doesn't count right now
-								continue;
-							}
-						}
-						VectorCopy(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint, saber_base);
-						VectorMA(saber_base, self->client->ps.saber[saber_num].blade[blade_num].length,
-							self->client->ps.saber[saber_num].blade[blade_num].muzzleDir, saber_tip);
-						VectorMA(saber_base, self->client->ps.saber[saber_num].blade[blade_num].length * 0.5,
-							self->client->ps.saber[saber_num].blade[blade_num].muzzleDir, saber_org);
+
+						if (force_block && !always_block[saber_num][blade_num])
+							continue;
+
+						VectorCopy(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint,
+							saber_base);
+
+						VectorMA(saber_base,
+							self->client->ps.saber[saber_num].blade[blade_num].length,
+							self->client->ps.saber[saber_num].blade[blade_num].muzzleDir,
+							saber_tip);
+
+						VectorMA(saber_base,
+							self->client->ps.saber[saber_num].blade[blade_num].length * 0.5f,
+							self->client->ps.saber[saber_num].blade[blade_num].muzzleDir,
+							saber_org);
+
 						for (int i = 0; i < 3; i++)
 						{
 							float new_size_tip = saber_tip[i] - saber_org[i];
-							new_size_tip += new_size_tip >= 0 ? 8 : -8;
 							float new_size_base = saber_base[i] - saber_org[i];
-							new_size_base += new_size_base >= 0 ? 8 : -8;
+
+							new_size_tip += (new_size_tip >= 0.0f) ? 8.0f : -8.0f;
+							new_size_base += (new_size_base >= 0.0f) ? 8.0f : -8.0f;
+
 							if (new_size_tip > saberent->maxs[i])
-							{
 								saberent->maxs[i] = new_size_tip;
-							}
 							if (new_size_base > saberent->maxs[i])
-							{
 								saberent->maxs[i] = new_size_base;
-							}
+
 							if (new_size_tip < saberent->mins[i])
-							{
 								saberent->mins[i] = new_size_tip;
-							}
 							if (new_size_base < saberent->mins[i])
-							{
 								saberent->mins[i] = new_size_base;
-							}
 						}
 					}
 				}
+
 				if (!force_block)
 				{
-					//not doing special "alwaysBlock" bbox
 					if (self->client->ps.weaponTime > 0
 						|| self->s.number
 						|| g_saberAutoBlocking->integer
 						|| self->client->ps.saberBlockingTime > level.time)
 					{
-						//if attacking or blocking (or an NPC), inflate to a minimum size
 						for (int i = 0; i < 3; i++)
 						{
 							if (saberent->maxs[i] < minsize)
-							{
 								saberent->maxs[i] = minsize;
-							}
 							if (saberent->mins[i] > -minsize)
-							{
 								saberent->mins[i] = -minsize;
-							}
 						}
 					}
 				}
+
 				saberent->contents = CONTENTS_LIGHTSABER;
 				G_SetOrigin(saberent, saber_org);
 			}
@@ -20654,6 +20678,7 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 			// Otherwise there is no blocking possible.
 			G_SetOrigin(saberent, self->currentOrigin);
 		}
+
 		saberent->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 		gi.linkentity(saberent);
 	}
@@ -20664,68 +20689,96 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 
 	if (d_saberinfo->integer || g_DebugSaberCombat->integer)
 	{
-		CG_CubeOutline(saberent->absmin, saberent->absmax, 10,
+		CG_CubeOutline(
+			saberent->absmin,
+			saberent->absmax,
+			10,
 			WPDEBUG_SaberColor(self->client->ps.saber[0].blade[0].color));
 	}
 }
 
-constexpr auto MAX_RADIUS_ENTS = 256; //NOTE: This can cause entities to be lost;
-qboolean G_CheckEnemyPresence(const gentity_t* ent, const int dir, const float radius, const float tolerance)
+constexpr int MAX_RADIUS_ENTS = 256;
+
+qboolean G_CheckEnemyPresence(const gentity_t* ent, int dir, float radius, float tolerance)
 {
-	gentity_t* radius_ents[MAX_RADIUS_ENTS];
-	vec3_t mins{}, maxs{};
-	vec3_t check_dir;
-	int i;
+	if (!ent || !ent->inuse)
+		return qfalse;
+
+	// ----------------------------------------------------
+	// Compute direction vector
+	// ----------------------------------------------------
+	vec3_t check_dir = { 0 };
 
 	switch (dir)
 	{
 	case DIR_RIGHT:
 		AngleVectors(ent->currentAngles, nullptr, check_dir, nullptr);
 		break;
+
 	case DIR_LEFT:
 		AngleVectors(ent->currentAngles, nullptr, check_dir, nullptr);
-		VectorScale(check_dir, -1, check_dir);
+		VectorScale(check_dir, -1.0f, check_dir);
 		break;
+
 	case DIR_FRONT:
 		AngleVectors(ent->currentAngles, check_dir, nullptr, nullptr);
 		break;
+
 	case DIR_BACK:
 		AngleVectors(ent->currentAngles, check_dir, nullptr, nullptr);
-		VectorScale(check_dir, -1, check_dir);
+		VectorScale(check_dir, -1.0f, check_dir);
 		break;
-	default:;
-	}
-	//Get all ents in range, see if they're living clients and enemies, then check dot to them...
 
-	//Setup the bbox to search in
-	for (i = 0; i < 3; i++)
+	default:
+		return qfalse;
+	}
+
+	// NaN guard
+	if (check_dir[0] != check_dir[0])
+		return qfalse;
+
+	// ----------------------------------------------------
+	// Build bounding box
+	// ----------------------------------------------------
+	vec3_t mins{}, maxs;
+	for (int i = 0; i < 3; i++)
 	{
 		mins[i] = ent->currentOrigin[i] - radius;
 		maxs[i] = ent->currentOrigin[i] + radius;
 	}
 
-	//Get a number of entities in a given space
-	const int num_ents = gi.EntitiesInBox(mins, maxs, radius_ents, MAX_RADIUS_ENTS);
+	// ----------------------------------------------------
+	// Query entities
+	// ----------------------------------------------------
+	gentity_t* ents[MAX_RADIUS_ENTS];
+	const int num = gi.EntitiesInBox(mins, maxs, ents, MAX_RADIUS_ENTS);
 
-	for (i = 0; i < num_ents; i++)
+	// If we hit the cap, entities may have been dropped.
+	// Treat this as "enemy presence likely".
+	if (num == MAX_RADIUS_ENTS)
+		return qtrue;
+
+	// ----------------------------------------------------
+	// Check each entity
+	// ----------------------------------------------------
+	for (int i = 0; i < num; i++)
 	{
-		vec3_t dir2_check_ent;
-		//Don't consider self
-		if (radius_ents[i] == ent)
+		gentity_t* other = ents[i];
+
+		if (other == ent)
 			continue;
 
-		//Must be valid
-		if (G_ValidEnemy(ent, radius_ents[i]) == qfalse)
+		if (!G_ValidEnemy(ent, other))
 			continue;
 
-		VectorSubtract(radius_ents[i]->currentOrigin, ent->currentOrigin, dir2_check_ent);
-		const float dist = VectorNormalize(dir2_check_ent);
-		if (dist <= radius
-			&& DotProduct(dir2_check_ent, check_dir) >= tolerance)
-		{
-			//stop on the first one
+		// Compute direction to entity
+		vec3_t delta, dir_to_ent;
+		VectorSubtract(other->currentOrigin, ent->currentOrigin, delta);
+
+		float dist = VectorNormalize2(delta, dir_to_ent);
+
+		if (dist <= radius && DotProduct(dir_to_ent, check_dir) >= tolerance)
 			return qtrue;
-		}
 	}
 
 	return qfalse;
@@ -28762,7 +28815,7 @@ int IsPressingDestructButton(const gentity_t* self)
 	return qfalse;
 }
 
-static void ForceDashAnim(gentity_t* self)
+void ForceDashAnim(gentity_t* self)
 {
 	constexpr int set_anim_override = SETANIM_AFLAG_PACE;
 
@@ -28784,7 +28837,7 @@ static void ForceDashAnim(gentity_t* self)
 	}
 }
 
-static void ForceDashAnimDash(gentity_t* self)
+void ForceDashAnimDash(gentity_t* self)
 {
 	constexpr int set_anim_override = SETANIM_AFLAG_PACE;
 
@@ -41485,4 +41538,133 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 	}
 
 	return qfalse;
+}
+
+qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc)
+{
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
+	vec3_t diff;
+	vec3_t fwdangles = { 0.0f, 0.0f, 0.0f };
+	vec3_t right;
+	const qboolean in_front = InFront(hitloc, self->client->ps.origin, self->client->ps.viewangles, -0.7f);
+
+	VectorSubtract(hitloc, self->client->renderInfo.eyePoint, diff);
+	diff[2] = 0.0f;
+	VectorNormalize(diff);
+
+	fwdangles[1] = self->client->ps.viewangles[1];
+	AngleVectors(fwdangles, NULL, right, NULL);
+
+	const float rightdot = DotProduct(right, diff);
+	const float zdiff = hitloc[2] - self->client->renderInfo.eyePoint[2];
+	vec3_t dir;
+
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
+	if (PM_SaberInStart(self->client->ps.saber_move)
+		|| PM_SaberInTransition(self->client->ps.saber_move)
+		|| BG_InKnockDown(self->client->ps.legsAnim)
+		|| BG_InKnockDown(self->client->ps.torsoAnim)
+		|| PM_InRoll(&self->client->ps)
+		|| PM_SuperBreakWinAnim(self->client->ps.torsoAnim)
+		|| pm_saber_in_special_attack(self->client->ps.torsoAnim)
+		|| PM_InSpecialJump(self->client->ps.torsoAnim)
+		|| self->client->ps.groundEntityNum == ENTITYNUM_NONE
+		|| self->client->ps.forcePower < BLOCKPOINTS_HALF
+		|| (g_SerenityJediEngineMode->integer == 2 && self->client->ps.blockPoints < BLOCKPOINTS_HALF))
+	{
+		return qfalse;
+	}
+
+	if (!in_front)
+	{
+		NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_F, SETANIM_AFLAG_PACE);
+
+		AngleVectors(self->client->ps.viewangles, dir, NULL, NULL);
+		self->client->ps.velocity[0] *= 4.0f;
+		self->client->ps.velocity[1] *= 4.0f;
+		G_SoundOnEnt(self, CHAN_BODY, "sound/weapons/force/dash.mp3");
+	}
+	else if (zdiff > -5.0f)
+	{
+		if (rightdot > 0.3f)
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+		}
+		else if (rightdot < -0.3f)
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+		}
+
+		AngleVectors(self->client->ps.viewangles, dir, NULL, NULL);
+		self->client->ps.velocity[0] *= 4.0f;
+		self->client->ps.velocity[1] *= 4.0f;
+		G_SoundOnEnt(self, CHAN_BODY, "sound/weapons/force/dash.mp3");
+	}
+	else if (zdiff > -22.0f)
+	{
+		if (zdiff < -10.0f)
+		{
+			//
+		}
+
+		if (rightdot > 0.1f)
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+		}
+		else if (rightdot < -0.1f)
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+		}
+
+		AngleVectors(self->client->ps.viewangles, dir, NULL, NULL);
+		self->client->ps.velocity[0] *= 4.0f;
+		self->client->ps.velocity[1] *= 4.0f;
+		G_SoundOnEnt(self, CHAN_BODY, "sound/weapons/force/dash.mp3");
+	}
+	else
+	{
+		if (rightdot >= 0.0f)
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+		}
+
+		AngleVectors(self->client->ps.viewangles, dir, NULL, NULL);
+		self->client->ps.velocity[0] *= 4.0f;
+		self->client->ps.velocity[1] *= 4.0f;
+		G_SoundOnEnt(self, CHAN_BODY, "sound/weapons/force/dash.mp3");
+	}
+
+	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
+	{
+		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
+		{
+			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
+		}
+	}
+
+	/* mark dashing (set the flag) and return success */
+	self->client->ps.userInt3 |= (1 << FLAG_DASHING);
+
+	return qtrue;
 }

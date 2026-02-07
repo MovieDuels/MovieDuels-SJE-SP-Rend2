@@ -44,6 +44,33 @@ model / sound configstring indexes
 
 =========================================================================
 */
+void G_DebugBBox(const vec3_t origin, const vec3_t mins, const vec3_t maxs, int time, int color)
+{
+	vec3_t corners[8];
+
+	// Compute all 8 corners of the bounding box
+	for (int i = 0; i < 8; i++)
+	{
+		corners[i][0] = origin[0] + ((i & 1) ? maxs[0] : mins[0]);
+		corners[i][1] = origin[1] + ((i & 2) ? maxs[1] : mins[1]);
+		corners[i][2] = origin[2] + ((i & 4) ? maxs[2] : mins[2]);
+	}
+
+	// Draw edges
+	for (int i = 0; i < 4; i++)
+	{
+		G_DebugLine(corners[i], corners[(i + 1) % 4], time, color);
+		G_DebugLine(corners[i + 4], corners[((i + 1) % 4) + 4], time, color);
+		G_DebugLine(corners[i], corners[i + 4], time, color);
+	}
+}
+/*
+=========================================================================
+
+model / sound configstring indexes
+
+=========================================================================
+*/
 
 /*
 ================

@@ -3169,6 +3169,9 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 	index = ent - g_entities;
 	client = ent->client;
 
+	client->lastSaberTarget = nullptr;
+	client->lastSaberTargetTime = 0;
+
 	if (e_saved_game_just_loaded == eFULL && g_qbLoadTransition == qfalse) //qbFromSavedGame)
 	{
 		//loading up a full save game

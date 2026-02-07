@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../cgame/cg_camera.h"
 #include "../qcommon/sstring.h"
 #include "qcommon/ojk_saved_game_helper.h"
+#include "b_public.h"
 
 extern void G_LoadSave_WriteMiscData();
 extern void G_LoadSave_ReadMiscData();

@@ -1669,15 +1669,21 @@ qboolean G2API_AttachEnt(int* boltInfo, CGhoul2Info* ghlInfoTo, int toBoltIndex,
 	G2ERROR(boltInfo, "NULL boltInfo");
 	if (boltInfo && G2_SetupModelPointers(ghlInfoTo))
 	{
-		// make sure we have a model to attach, a model to attach to, and a bolt on that model
-		if (ghlInfoTo->mBltlist.size() && (ghlInfoTo->mBltlist[toBoltIndex].boneNumber != -1 || ghlInfoTo->mBltlist[toBoltIndex].surface_number != -1))
+		// ensure toBoltIndex is within range
+		const int bltCount = static_cast<int>(ghlInfoTo->mBltlist.size());
+		if (bltCount > 0 && toBoltIndex >= 0 && toBoltIndex < bltCount &&
+			(ghlInfoTo->mBltlist[toBoltIndex].boneNumber != -1 || ghlInfoTo->mBltlist[toBoltIndex].surface_number != -1))
 		{
-			// encode the bolt address into the model bolt link
 			to_model_num &= MODEL_AND;
 			toBoltIndex &= BOLT_AND;
 			entNum &= ENTITY_AND;
 			*boltInfo = toBoltIndex << BOLT_SHIFT | to_model_num << MODEL_SHIFT | entNum << ENTITY_SHIFT;
 			ret = qtrue;
+		}
+		else
+		{
+			// clear out on failure so callers do not get garbage
+			*boltInfo = 0;
 		}
 	}
 	G2WARNING(ret, "G2API_AttachEnt Failed");

@@ -192,6 +192,7 @@ cvar_t* r_screenshotJpegQuality;
 cvar_t* g_Weather;
 
 cvar_t* r_com_rend2;
+cvar_t* g_DebugSaberCombat;
 
 #if !defined(__APPLE__)
 PFNGLSTENCILOPSEPARATEPROC qglStencilOpSeparate;
@@ -1693,6 +1694,8 @@ static void R_Register()
 	r_com_rend2 = ri.Cvar_Get("com_rend2", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_Weather = ri.Cvar_Get("r_weather", "0", CVAR_ARCHIVE);
+
+	g_DebugSaberCombat = ri.Cvar_Get("g_DebugSaberCombat", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	/*
 	Ghoul2 Insert End
 	*/

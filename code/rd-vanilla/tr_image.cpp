@@ -30,6 +30,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../rd-common/tr_common.h"
 #include <png.h>
 #include <map>
+#include <string.h>
 
 static byte			 s_intensitytable[256];
 static unsigned char s_gammatable[256];
@@ -889,6 +890,8 @@ qboolean RE_RegisterImages_LevelLoadEnd()
 //
 // This is called by both R_FindImageFile and anything that creates default images...
 //
+
+extern cvar_t* g_DebugSaberCombat;
 static image_t* R_FindImageFile_NoLoad(const char* name, const qboolean mipmap, const qboolean allowPicmip, qboolean allowTC, const int glWrapClampMode)
 {
 	if (!name) {
@@ -907,15 +910,22 @@ static image_t* R_FindImageFile_NoLoad(const char* name, const qboolean mipmap, 
 
 		// the white image can be used with any set of parms, but other mismatches are errors...
 		//
-		if (strcmp(pName, "*white") != 0) {
-			if (pImage->mipmap != !!mipmap) {
-				ri.Printf(PRINT_WARNING, "WARNING: reused image %s with mixed mipmap parm\n", pName);
-			}
-			if (pImage->allowPicmip != !!allowPicmip) {
-				ri.Printf(PRINT_WARNING, "WARNING: reused image %s with mixed allowPicmip parm\n", pName);
-			}
-			if (pImage->wrapClampMode != glWrapClampMode) {
-				ri.Printf(PRINT_WARNING, "WARNING: reused image %s with mixed glWrapClampMode parm\n", pName);
+		if (strcmp(pName, "*white") != 0)
+		{
+			if (g_DebugSaberCombat->integer != 0)
+			{
+				if (pImage->mipmap != !!mipmap)
+				{
+					ri.Printf(PRINT_WARNING, "WARNING: reused image %s with mixed mipmap parm\n", pName);
+				}
+				if (pImage->allowPicmip != !!allowPicmip)
+				{
+					ri.Printf(PRINT_WARNING, "WARNING: reused image %s with mixed allowPicmip parm\n", pName);
+				}
+				if (pImage->wrapClampMode != glWrapClampMode)
+				{
+					ri.Printf(PRINT_WARNING, "WARNING: reused image %s with mixed glWrapClampMode parm\n", pName);
+				}
 			}
 		}
 

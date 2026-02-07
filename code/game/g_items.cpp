@@ -1216,205 +1216,410 @@ free fall from their spawn points
 */
 extern int delayedShutDown;
 extern cvar_t* g_saber;
+extern cvar_t* com_outcast;
+extern cvar_t* g_debugItems;
+extern cvar_t* g_fixJOItems;
 
 void FinishSpawningItem(gentity_t* ent)
 {
-	trace_t tr;
-	gitem_t* item;
-	int item_num = 1;
-
-	// ----------------------------------------------------
-	// 1. Find item definition
-	// ----------------------------------------------------
-	for (item = bg_itemlist + 1; item->classname; item++, item_num++)
+	// ====================================================
+	// Jedi Outcast branch (com_outcast > 1)
+	// ====================================================
+	if (com_outcast->integer == 1)
 	{
-		if (!strcmp(item->classname, ent->classname))
-		{
-			break;
-		}
-	}
-
-	// ----------------------------------------------------
-	// 2. Set bounding box
-	// ----------------------------------------------------
-	VectorCopy(item->mins, ent->mins);
-	VectorCopy(item->maxs, ent->maxs);
-
-	if (!ent->mins[0] && !ent->mins[1] && !ent->mins[2] &&
-		!ent->maxs[0] && !ent->maxs[1] && !ent->maxs[2])
-	{
-		VectorSet(ent->mins, -ITEM_RADIUS, -ITEM_RADIUS, -2);
-		VectorSet(ent->maxs, ITEM_RADIUS, ITEM_RADIUS, ITEM_RADIUS);
-	}
-
-	// Ammo / battery counts
-	if (item->quantity &&
-		(item->giType == IT_AMMO || item->giType == IT_BATTERY))
-	{
-		ent->count = item->quantity;
-	}
-
-	ent->s.radius = 20;
-	VectorSet(ent->s.modelScale, 1.0f, 1.0f, 1.0f);
-
-	// ----------------------------------------------------
-	// 3. Load model (weapon, saber, or generic)
-	// ----------------------------------------------------
-	if (ent->item->giType == IT_WEAPON &&
-		ent->item->giTag == WP_SABER &&
-		ent->NPC_type && ent->NPC_type[0])
-	{
-		saberInfo_t item_saber;
-
-		if (!Q_stricmp(ent->NPC_type, "player") &&
-			g_saber->string && g_saber->string[0] &&
-			Q_stricmp(g_saber->string, "none") &&
-			Q_stricmp(g_saber->string, "NULL"))
-		{
-			WP_SaberParseParms(g_saber->string, &item_saber);
-		}
-		else
-		{
-			WP_SaberParseParms(ent->NPC_type, &item_saber);
-		}
-
-		gi.G2API_InitGhoul2Model(ent->ghoul2, item_saber.model,
-			G_ModelIndex(item_saber.model),
-			NULL_HANDLE, NULL_HANDLE, 0, 0);
-
-		WP_SaberFreeStrings(item_saber);
-	}
-	else
-	{
-		gi.G2API_InitGhoul2Model(ent->ghoul2, ent->item->world_model,
-			G_ModelIndex(ent->item->world_model),
-			NULL_HANDLE, NULL_HANDLE, 0, 0);
-	}
-
-	ent->s.eType = ET_ITEM;
-	ent->s.modelindex = ent->item - bg_itemlist;
-	ent->s.modelindex2 = 0;
-
-	ent->contents = CONTENTS_TRIGGER | CONTENTS_ITEM;
-	ent->e_TouchFunc = touchF_Touch_Item;
-	ent->e_UseFunc = useF_Use_Item;
-	ent->svFlags |= SVF_PLAYER_USABLE;
-
-	// ----------------------------------------------------
-	// 4. Slight lift to avoid coplanar solid
-	// ----------------------------------------------------
-	ent->s.origin[2] += 1;
-
-	// ----------------------------------------------------
-	// 5. Drop to floor OR recover from solid
-	// ----------------------------------------------------
-	if (ent->spawnflags & ITMSF_SUSPEND ||
-		ent->flags & FL_DROPPED_ITEM)
-	{
-		G_SetOrigin(ent, ent->s.origin);
-	}
-	else
-	{
+		trace_t tr;
 		vec3_t dest;
-		VectorSet(dest, ent->s.origin[0], ent->s.origin[1], MIN_WORLD_COORD);
-
-		gi.trace(&tr, ent->s.origin, ent->mins, ent->maxs, dest,
-			ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,
-			static_cast<EG2_Collision>(0), 0);
 
 		// ------------------------------------------------
-		// 5A. If starting in solid → attempt recovery
+		// Debug cvars
 		// ------------------------------------------------
-		if (tr.startsolid)
+		static int joItemWarnings = 0;
+		const int JO_MAX_WARNINGS = 10;
+
+		qboolean debugBoxes = (g_debugItems->integer == 0) ? qtrue : qfalse;
+		qboolean autoNudge = (g_fixJOItems->integer == 0) ? qtrue : qfalse;
+
+		// ------------------------------------------------
+		// Map exception list (JO maps with known bad placements)
+		// ------------------------------------------------
+		const char* map = level.mapname;
+
+		qboolean mapException = (
+			!Q_stricmp(map, "kejim_post")
+			|| !Q_stricmp(map, "kejim_base")
+			|| !Q_stricmp(map, "ns_streets")
+			|| !Q_stricmp(map, "ns_hideout")
+			|| !Q_stricmp(map, "yavin_trial")
+			|| !Q_stricmp(map, "doom_comm")
+			|| !Q_stricmp(map, "artus_mine")
+			|| !Q_stricmp(map, "cairn_bay")
+			) ? qtrue : qfalse;
+
+		// ------------------------------------------------
+		// 1. Resolve item definition
+		// ------------------------------------------------
+		gitem_t* item = nullptr;
+		int itemNum = 1;
+
+		for (gitem_t* it = bg_itemlist + 1; it->classname; ++it, ++itemNum)
 		{
-			gi.Printf(S_COLOR_RED
-				"FinishSpawningItem: %s startsolid at %s — attempting recovery\n",
-				ent->classname, vtos(ent->s.origin));
-
-			vec3_t safeOrigin;
-			VectorCopy(ent->s.origin, safeOrigin);
-
-			// Try upward first
-			for (int i = 0; i < 16; i++)
+			if (!strcmp(it->classname, ent->classname))
 			{
-				safeOrigin[2] += 4.0f;
-				gi.trace(&tr, safeOrigin, ent->mins, ent->maxs, safeOrigin,
-					ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,
-					static_cast<EG2_Collision>(0), 0);
-
-				if (!tr.startsolid)
-				{
-					G_SetOrigin(ent, safeOrigin);
-					goto recovered;
-				}
+				item = it;
+				break;
 			}
+		}
 
-			// Try small horizontal offsets
-			const vec3_t offsets[4] = {
-				{ 8, 0, 0 },
-				{ -8, 0, 0 },
-				{ 0, 8, 0 },
-				{ 0, -8, 0 }
-			};
-
-			for (int i = 0; i < 4; i++)
-			{
-				VectorAdd(ent->s.origin, offsets[i], safeOrigin);
-				gi.trace(&tr, safeOrigin, ent->mins, ent->maxs, safeOrigin,
-					ent->s.number, MASK_SOLID | CONTENTS_PLAYERCLIP,
-					static_cast<EG2_Collision>(0), 0);
-
-				if (!tr.startsolid)
-				{
-					G_SetOrigin(ent, safeOrigin);
-					goto recovered;
-				}
-			}
-
-			// Could not recover
-			gi.Printf(S_COLOR_RED
-				"FinishSpawningItem: removing %s — no safe position found\n",
+		if (!item)
+		{
+			gi.Printf(S_COLOR_RED "JO FinishSpawningItem: Unknown item '%s'\n",
 				ent->classname);
 			G_FreeEntity(ent);
 			return;
+		}
 
-		recovered:
-			; // label target
+		ent->item = item;
+
+		// ------------------------------------------------
+		// 2. JO bounding box (smaller than JA)
+		// ------------------------------------------------
+		VectorSet(ent->mins, -12, -12, -4);
+		VectorSet(ent->maxs, 12, 12, 8);
+
+		// ------------------------------------------------
+		// 3. Quantity (ammo / battery)
+		// ------------------------------------------------
+		if (item->quantity &&
+			(item->giType == IT_AMMO || item->giType == IT_BATTERY))
+		{
+			ent->count = item->quantity;
+		}
+
+		// ------------------------------------------------
+		// 4. Model scale + radius
+		// ------------------------------------------------
+		ent->s.radius = 20;
+		VectorSet(ent->s.modelScale, 1.0f, 1.0f, 1.0f);
+
+		// ------------------------------------------------
+		// 5. Init model
+		// ------------------------------------------------
+		gi.G2API_InitGhoul2Model(
+			ent->ghoul2,
+			item->world_model,
+			G_ModelIndex(item->world_model),
+			NULL_HANDLE, NULL_HANDLE,
+			0, 0
+		);
+
+		// ------------------------------------------------
+		// 6. Basic entity setup
+		// ------------------------------------------------
+		ent->s.eType = ET_ITEM;
+		ent->s.modelindex = item - bg_itemlist;
+		ent->s.modelindex2 = 0;
+
+		ent->contents = CONTENTS_TRIGGER | CONTENTS_ITEM;
+		ent->e_TouchFunc = touchF_Touch_Item;
+		ent->e_UseFunc = useF_Use_Item;
+		ent->svFlags |= SVF_PLAYER_USABLE;
+
+		// ------------------------------------------------
+		// 7. Drop or suspend
+		// ------------------------------------------------
+		ent->s.origin[2] += 4; // JO offset
+
+		if (ent->spawnflags & ITMSF_SUSPEND)
+		{
+			G_SetOrigin(ent, ent->s.origin);
 		}
 		else
 		{
-			// Normal drop to floor
+			VectorSet(dest, ent->s.origin[0], ent->s.origin[1], MIN_WORLD_COORD);
+
+			gi.trace(
+				&tr,
+				ent->s.origin,
+				ent->mins,
+				ent->maxs,
+				dest,
+				ent->s.number,
+				MASK_SOLID,          // JO behavior (no playerclip)
+				G2_NOCOLLIDE,
+				0
+			);
+
+			// ------------------------------------------------
+			// 7A. Auto-nudge logic for JO maps
+			// ------------------------------------------------
+			if (tr.startsolid && (autoNudge || mapException))
+			{
+				vec3_t nudged;
+				VectorCopy(ent->s.origin, nudged);
+
+				for (int i = 0; i < 12; i++)
+				{
+					nudged[2] += 1.0f;
+
+					gi.trace(
+						&tr,
+						nudged,
+						ent->mins,
+						ent->maxs,
+						dest,
+						ent->s.number,
+						MASK_SOLID,
+						G2_NOCOLLIDE,
+						0
+					);
+
+					if (!tr.startsolid)
+					{
+						VectorCopy(nudged, ent->s.origin);
+						break;
+					}
+				}
+			}
+
+			// ------------------------------------------------
+			// 7B. Final startsolid check
+			// ------------------------------------------------
+			gi.trace(
+				&tr,
+				ent->s.origin,
+				ent->mins,
+				ent->maxs,
+				dest,
+				ent->s.number,
+				MASK_SOLID,
+				G2_NOCOLLIDE,
+				0
+			);
+
+			if (tr.startsolid)
+			{
+				if (joItemWarnings < JO_MAX_WARNINGS)
+				{
+					gi.Printf(S_COLOR_RED
+						"JO FinishSpawningItem: removing %s startsolid at %s\n",
+						ent->classname, vtos(ent->s.origin));
+
+					joItemWarnings++;
+				}
+
+				G_FreeEntity(ent);
+				return;
+			}
+
 			ent->s.groundEntityNum = tr.entityNum;
 			G_SetOrigin(ent, tr.endpos);
 		}
+
+		// ------------------------------------------------
+		// 8. Spawnflags
+		// ------------------------------------------------
+		if (ent->spawnflags & ITMSF_INVISIBLE)
+		{
+			ent->s.eFlags |= EF_NODRAW;
+			ent->contents = 0;
+		}
+
+		if (ent->spawnflags & ITMSF_NOTSOLID)
+			ent->contents = 0;
+
+		// ------------------------------------------------
+		// 9. Debug: draw bounding boxes
+		// ------------------------------------------------
+		if (debugBoxes)
+		{
+			G_DebugBBox(ent->s.origin, ent->mins, ent->maxs, 2000, 1); // 1 = red, or whatever your CG_TestLine color index is
+		}
+
+		// ------------------------------------------------
+		// 10. Link entity
+		// ------------------------------------------------
+		gi.linkentity(ent);
+		return;
 	}
 
-	// ----------------------------------------------------
-	// 6. Flags and final setup
-	// ----------------------------------------------------
-	if (ent->spawnflags & ITMSF_INVISIBLE)
+	// ====================================================
+	// Jedi Academy branch (original behavior)
+	// ====================================================
 	{
-		ent->s.eFlags |= EF_NODRAW;
-		ent->contents = 0;
-	}
+		trace_t tr;
 
-	if (ent->spawnflags & ITMSF_NOTSOLID)
-	{
-		ent->contents = 0;
-	}
+		// 1. Resolve item definition
+		gitem_t* item = nullptr;
+		int itemNum = 1;
 
-	if (ent->spawnflags & ITMSF_STATIONARY)
-	{
-		ent->flags |= FL_NO_KNOCKBACK;
-	}
+		for (gitem_t* it = bg_itemlist + 1; it->classname; ++it, ++itemNum)
+		{
+			if (!strcmp(it->classname, ent->classname))
+			{
+				item = it;
+				break;
+			}
+		}
 
-	if (ent->flags & FL_DROPPED_ITEM)
-	{
-		ent->e_ThinkFunc = thinkF_G_FreeEntity;
-		ent->nextthink = level.time + 30000;
-	}
+		if (!item)
+		{
+			gi.Printf(S_COLOR_RED "FinishSpawningItem: Unknown item '%s'\n",
+				ent->classname);
+			G_FreeEntity(ent);
+			return;
+		}
 
-	gi.linkentity(ent);
+		ent->item = item;
+
+		// 2. Bounding box
+		VectorCopy(item->mins, ent->mins);
+		VectorCopy(item->maxs, ent->maxs);
+
+		const bool minsZero = VectorCompare(ent->mins, vec3_origin);
+		const bool maxsZero = VectorCompare(ent->maxs, vec3_origin);
+
+		if (minsZero && maxsZero)
+		{
+			VectorSet(ent->mins, -ITEM_RADIUS, -ITEM_RADIUS, -2);
+			VectorSet(ent->maxs, ITEM_RADIUS, ITEM_RADIUS, ITEM_RADIUS);
+		}
+
+		// 3. Quantity
+		if (item->quantity &&
+			(item->giType == IT_AMMO || item->giType == IT_BATTERY))
+		{
+			ent->count = item->quantity;
+		}
+
+		// 4. Model scale + radius
+		ent->s.radius = 20;
+		VectorSet(ent->s.modelScale, 1.0f, 1.0f, 1.0f);
+
+		// 5. Saber or generic model
+		if (item->giType == IT_WEAPON &&
+			item->giTag == WP_SABER &&
+			ent->NPC_type && ent->NPC_type[0])
+		{
+			saberInfo_t saberInfo;
+
+			const bool isPlayer = !Q_stricmp(ent->NPC_type, "player");
+			const bool validPlayerSaber =
+				g_saber->string && g_saber->string[0] &&
+				Q_stricmp(g_saber->string, "none") &&
+				Q_stricmp(g_saber->string, "NULL");
+
+			if (isPlayer && validPlayerSaber)
+				WP_SaberParseParms(g_saber->string, &saberInfo);
+			else
+				WP_SaberParseParms(ent->NPC_type, &saberInfo);
+
+			gi.G2API_InitGhoul2Model(
+				ent->ghoul2,
+				saberInfo.model,
+				G_ModelIndex(saberInfo.model),
+				NULL_HANDLE, NULL_HANDLE,
+				0, 0
+			);
+
+			WP_SaberFreeStrings(saberInfo);
+		}
+		else
+		{
+			gi.G2API_InitGhoul2Model(
+				ent->ghoul2,
+				item->world_model,
+				G_ModelIndex(item->world_model),
+				NULL_HANDLE, NULL_HANDLE,
+				0, 0
+			);
+		}
+
+		// 6. Basic entity setup
+		ent->s.eType = ET_ITEM;
+		ent->s.modelindex = item - bg_itemlist;
+		ent->s.modelindex2 = 0;
+
+		ent->contents = CONTENTS_TRIGGER | CONTENTS_ITEM;
+		ent->e_TouchFunc = touchF_Touch_Item;
+		ent->e_UseFunc = useF_Use_Item;
+		ent->svFlags |= SVF_PLAYER_USABLE;
+
+		// 7. Drop or suspend
+		ent->s.origin[2] += 1;
+
+		if (ent->spawnflags & ITMSF_SUSPEND ||
+			ent->flags & FL_DROPPED_ITEM)
+		{
+			G_SetOrigin(ent, ent->s.origin);
+		}
+		else
+		{
+			vec3_t dest;
+			VectorSet(dest, ent->s.origin[0], ent->s.origin[1], MIN_WORLD_COORD);
+
+			gi.trace(
+				&tr,
+				ent->s.origin,
+				ent->mins,
+				ent->maxs,
+				dest,
+				ent->s.number,
+				MASK_SOLID | CONTENTS_PLAYERCLIP,
+				static_cast<EG2_Collision>(0),
+				0
+			);
+
+			if (tr.startsolid)
+			{
+				if (g_entities[tr.entityNum].inuse)
+				{
+					gi.Printf(S_COLOR_RED
+						"FinishSpawningItem: removing %s startsolid at %s (in a %s)\n",
+						ent->classname, vtos(ent->s.origin),
+						g_entities[tr.entityNum].classname);
+				}
+				else
+				{
+					gi.Printf(S_COLOR_RED
+						"FinishSpawningItem: removing %s startsolid at %s\n",
+						ent->classname, vtos(ent->s.origin));
+				}
+
+				assert(!"item starting in solid");
+
+				if (!g_entities[ENTITYNUM_WORLD].s.radius)
+					delayedShutDown = level.time + 100;
+
+				G_FreeEntity(ent);
+				return;
+			}
+
+			ent->s.groundEntityNum = tr.entityNum;
+			G_SetOrigin(ent, tr.endpos);
+		}
+
+		// 8. Spawnflags
+		if (ent->spawnflags & ITMSF_INVISIBLE)
+		{
+			ent->s.eFlags |= EF_NODRAW;
+			ent->contents = 0;
+		}
+
+		if (ent->spawnflags & ITMSF_NOTSOLID)
+			ent->contents = 0;
+
+		if (ent->spawnflags & ITMSF_STATIONARY)
+			ent->flags |= FL_NO_KNOCKBACK;
+
+		if (ent->flags & FL_DROPPED_ITEM)
+		{
+			ent->e_ThinkFunc = thinkF_G_FreeEntity;
+			ent->nextthink = level.time + 30000;
+		}
+
+		// 9. Link entity
+		gi.linkentity(ent);
+	}
 }
 
 char itemRegistered[MAX_ITEMS + 1];

@@ -320,6 +320,8 @@ cvar_t* g_autoHealthRegen;
 cvar_t* g_allowSuperSaberLockBreaks;
 
 cvar_t* g_AllowWeather;
+cvar_t* g_debugItems;
+cvar_t* g_fixJOItems;
 
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
@@ -955,6 +957,9 @@ static void G_InitCvars()
 	g_AllowWeather = gi.cvar("g_AllowWeather", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	r_AdvancedsurfaceSprites = gi.cvar("r_advancedlod", "1", CVAR_ARCHIVE | CVAR_SAVEGAME);
+
+	g_debugItems = gi.cvar("g_debugItems", "0", CVAR_CHEAT);
+	g_fixJOItems = gi.cvar("g_fixJOItems", "1", CVAR_ARCHIVE);
 }
 
 /*

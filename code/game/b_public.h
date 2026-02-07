@@ -404,7 +404,10 @@ public:
 	int ffireCount;
 	//sigh... you'd think I'd be able to find a way to do this without having to use 3 int fields, but...
 	int ffireDebounce;
-	int ffireFadeDebounce;
+	int ffireFadeDebounce;// in npc_t (header where NPC fields live)
+	int lastKataTime; // timestamp (level.time) when kata is next allowed; 0 = allowed now
+	int nextKillAttackCheck;
+	int nextKillAttackBackCheck;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -525,6 +528,9 @@ public:
 		saved_game.write<int32_t>(ffireCount);
 		saved_game.write<int32_t>(ffireDebounce);
 		saved_game.write<int32_t>(ffireFadeDebounce);
+		saved_game.write<int32_t>(lastKataTime);
+		saved_game.write<int32_t>(nextKillAttackCheck);
+		saved_game.write<int32_t>(nextKillAttackBackCheck);
 	}
 
 	void sg_import(
@@ -646,6 +652,9 @@ public:
 		saved_game.read<int32_t>(ffireCount);
 		saved_game.read<int32_t>(ffireDebounce);
 		saved_game.read<int32_t>(ffireFadeDebounce);
+		saved_game.read<int32_t>(lastKataTime);
+		saved_game.read<int32_t>(nextKillAttackCheck);
+		saved_game.read<int32_t>(nextKillAttackBackCheck);
 	}
 }; // gNPC_t
 

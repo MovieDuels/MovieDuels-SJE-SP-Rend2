@@ -52,6 +52,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../cgame/cg_local.h"	// yeah I know this is naughty, but we're shipping soon...
 #include "wp_saber.h"
 #include "g_vehicles.h"
+#include <qcommon/q_color.h>
 
 extern qboolean G_DoDismemberment(gentity_t* self, vec3_t point, int mod, int hit_loc,
 	qboolean force = qfalse);
@@ -1825,7 +1826,7 @@ static qboolean PM_CheckJump()
 				/*(pm->cmd.buttons&BUTTON_FORCE_FOCUS)*/ && pm->cmd.buttons & BUTTON_ATTACK
 				//using saber and holding focus + attack
 				//					  ||(pm->ps->weapon!=WP_SABER&&((pm->cmd.buttons&BUTTON_ATTACK)||(pm->cmd.buttons&BUTTON_ALT_ATTACK)) ) )//using any other weapon and hitting either attack button
-				&& ((!isPlayer && pm->cmd.upmove > 0 && pm->ps-> velocity[2] >= 0) //jumping NPC, going up already
+				&& ((!isPlayer && pm->cmd.upmove > 0 && pm->ps->velocity[2] >= 0) //jumping NPC, going up already
 					|| (isPlayer && G_TryingCartwheel(pm->gent, &pm->cmd))/*(pm->cmd.buttons&BUTTON_FORCE_FOCUS)*/)
 				//focus-holding player
 				&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_LR)
@@ -15028,6 +15029,12 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 				//cancel out pre-block flag
 				pm->ps->userInt3 &= ~(1 << FLAG_PREBLOCK);
 			}
+
+			if (!PM_Is_A_Dash_Anim(new_move))
+			{
+				//cancel out FLAG_DASHING flag
+				pm->ps->userInt3 &= ~(1 << FLAG_DASHING);
+			}
 			if (PM_SaberInAttack(new_move) || pm_saber_in_special_attack(anim))
 			{
 				//playing an attack
@@ -15231,6 +15238,63 @@ extern qboolean PM_Can_Do_Kill_Lunge(void);
 extern qboolean PM_Can_Do_Kill_Lunge_back(void);
 int Next_Kill_Attack_Move_Check[32]; // Next special move check.
 saber_moveName_t PM_DoAI_Fake(const int curmove);
+constexpr auto KILL_LUNGE_COOLDOWN_BASE_MS = 190000; 
+
+// Helper: schedule next check for this client/entity safely
+static void ScheduleNextKillAttackCheck(int clientNum)
+{
+	int check_val = g_attackskill->integer;
+	if (check_val <= 0) check_val = 1;
+
+	if (clientNum >= MAX_CLIENTS && clientNum < ENTITYNUM_MAX_NORMAL)
+	{
+		gentity_t* ent = &g_entities[clientNum];
+		if (ent && ent->NPC)
+		{
+			// store per-NPC timer if you have one, e.g. ent->NPC->nextKillAttackCheck
+			ent->NPC->nextKillAttackCheck = level.time + (KILL_LUNGE_COOLDOWN_BASE_MS / check_val);
+		}
+	}
+}
+
+// Helper: pick a forward special move
+static saber_moveName_t PickForwardKillMove(void)
+{
+	// use Q_irand for consistent RNG across codebase
+	const int choice = Q_irand(0, 10); // 0..10 inclusive to match original default branch
+	switch (choice)
+	{
+	case 0:  return PM_NPC_Force_Leap_Attack();
+	case 1:  return PM_DoAI_Fake(qtrue);
+	case 2:  return LS_A1_SPECIAL;
+	case 3:  return LS_A2_SPECIAL;
+	case 4:  return LS_A3_SPECIAL;
+	case 5:  return LS_JUMPATTACK_STAFF_RIGHT;
+	case 6:  return LS_JUMPATTACK_STAFF_LEFT;
+	case 7:
+		if (pm->ps->saber_anim_level == SS_DUAL) return LS_DUAL_SPIN_PROTECT;
+		if (pm->ps->saber_anim_level == SS_STAFF) return LS_STAFF_SOULCAL;
+		return LS_A_JUMP_T__B_;
+	case 8:
+		if (pm->ps->saber_anim_level == SS_DUAL) return LS_JUMPATTACK_DUAL;
+		if (pm->ps->saber_anim_level == SS_STAFF) return LS_JUMPATTACK_STAFF_RIGHT;
+		return LS_SPINATTACK;
+	case 9:
+	case 10:
+	default:
+		return PM_SaberFlipOverAttackMove();
+	}
+}
+
+static int NPC_KillLungeCooldown(int baseMs)
+{
+	int skill = g_attackskill->integer;
+
+	if (skill <= 0)
+		skill = 1;
+
+	return baseMs / skill;
+}
 
 saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 {
@@ -15509,7 +15573,7 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 								}
 								break;
 							default:
-								newmove = PM_SaberFlipOverAttackMove();
+								newmove = PM_SaberLungeAttackMove(qtrue);
 
 								if (d_attackinfo->integer)
 								{
@@ -15529,7 +15593,7 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 						check_val = 1;
 					}
 
-					Next_Kill_Attack_Move_Check[pm->ps->client_num] = level.time + (40000 / check_val); // 20 secs / g_attackskill->integer
+					Next_Kill_Attack_Move_Check[pm->ps->client_num] = level.time + (90000 / check_val); // 20 secs / g_attackskill->integer
 				}
 			}
 		}
@@ -16052,9 +16116,9 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 					{
 						if ((!genemy->s.number && genemy->health <= 25) //player low on health
 							|| (genemy->s.number && genemy->client->NPC_class != CLASS_KYLE && genemy->client->
-							NPC_class != CLASS_LUKE && genemy->client->NPC_class != CLASS_YODA && genemy->client
-							->NPC_class != CLASS_TAVION && genemy->client->NPC_class != CLASS_ALORA && genemy->
-							client->NPC_class != CLASS_VADER && genemy->client->NPC_class != CLASS_DESANN)
+								NPC_class != CLASS_LUKE && genemy->client->NPC_class != CLASS_YODA && genemy->client
+								->NPC_class != CLASS_TAVION && genemy->client->NPC_class != CLASS_ALORA && genemy->
+								client->NPC_class != CLASS_VADER && genemy->client->NPC_class != CLASS_DESANN)
 							//any NPC that's not a boss character
 							|| (genemy->s.number && genemy->health <= 50))
 							//boss character with less than 50 health left
@@ -20324,10 +20388,6 @@ static void PM_WeaponLightsaber()
 				//from a parry or reflection, can go directly into an attack
 				if (pm->ps->client_num >= MAX_CLIENTS && !PM_ControlledByPlayer())
 				{//NPCs
-					newmove = PM_NPCSaberAttackFromQuad(saber_moveData[curmove].endQuad);
-				}
-				else
-				{
 					newmove = PM_SaberAttackForMovement(pm->cmd.forwardmove, pm->cmd.rightmove, curmove);
 				}
 			}
@@ -21899,10 +21959,10 @@ static void PM_Weapon()
 				}
 				break;
 
-			/*case WP_Z6_ROTARY_CANNON:
-				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_MINIGUN,
-					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
-				break;*/
+				/*case WP_Z6_ROTARY_CANNON:
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_MINIGUN,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+					break;*/
 
 			case WP_BLASTER:
 			case WP_THEFIRSTORDER:
@@ -23936,83 +23996,105 @@ static qboolean LedgeGrabableEntity(const int entityNum)
 
 static void PM_SetVelocityforLedgeMove(playerState_t* ps, const int anim)
 {
-	vec3_t fwd_angles, move_dir;
-	const float animationpoint = GetSelfLegAnimPointforLedge();
+	vec3_t fwdAngles, moveDir;
+	const float t = GetSelfLegAnimPointforLedge();
+
+	auto ClearVel = [&]()
+		{
+			VectorClear(ps->velocity);
+		};
+
+	auto SetDirVel = [&](float yaw, float scale, bool useRight, bool useUp)
+		{
+			VectorSet(fwdAngles, 0.0f, yaw, 0.0f);
+			AngleVectors(
+				fwdAngles,
+				useRight ? nullptr : moveDir,   // forward
+				useRight ? moveDir : nullptr,   // right
+				useUp ? moveDir : nullptr       // up
+			);
+			VectorScale(moveDir, scale, moveDir);
+			VectorCopy(moveDir, ps->velocity);
+		};
 
 	switch (anim)
 	{
 	case BOTH_LEDGE_GRAB:
 	case BOTH_LEDGE_HOLD:
-		VectorClear(ps->velocity);
+		ClearVel();
 		return;
+
 	case BOTH_LEDGE_LEFT:
-		if (animationpoint > .333 && animationpoint < .666)
+		if (t > 0.333f && t < 0.666f)
 		{
-			VectorSet(fwd_angles, 0, pm->ps->viewangles[YAW], 0);
-			AngleVectors(fwd_angles, nullptr, move_dir, nullptr);
-			VectorScale(move_dir, -30, move_dir);
-			VectorCopy(move_dir, ps->velocity);
+			SetDirVel(pm->ps->viewangles[YAW], -30.0f, true, false);
 		}
 		else
 		{
-			VectorClear(ps->velocity);
+			ClearVel();
 		}
 		break;
+
 	case BOTH_LEDGE_RIGHT:
-		if (animationpoint > .333 && animationpoint < .666)
+		if (t > 0.333f && t < 0.666f)
 		{
-			VectorSet(fwd_angles, 0, pm->ps->viewangles[YAW], 0);
-			AngleVectors(fwd_angles, nullptr, move_dir, nullptr);
-			VectorScale(move_dir, 30, move_dir);
-			VectorCopy(move_dir, ps->velocity);
+			SetDirVel(pm->ps->viewangles[YAW], 30.0f, true, false);
 		}
 		else
 		{
-			VectorClear(ps->velocity);
+			ClearVel();
 		}
 		break;
-	case BOTH_LEDGE_JEDIPULL:
-		if (animationpoint > .210 && animationpoint < .65)
-		{
-			VectorSet(fwd_angles, 0, pm->ps->viewangles[YAW], 0);
-			AngleVectors(fwd_angles, nullptr, nullptr, move_dir);
-			VectorScale(move_dir, 90, move_dir);
-			VectorCopy(move_dir, ps->velocity);
-		}
-		else if (animationpoint > .8 && animationpoint < .925)
-		{
-			VectorSet(fwd_angles, 0, pm->ps->viewangles[YAW], 0);
-			AngleVectors(fwd_angles, move_dir, nullptr, nullptr);
-			VectorScale(move_dir, 70, move_dir);
-			VectorCopy(move_dir, ps->velocity);
-		}
-		else
-		{
-			VectorClear(ps->velocity);
-		}
-		break;
+
 	case BOTH_LEDGE_MERCPULL:
-		if (animationpoint > .210 && animationpoint < .65)
+		if (t > 0.8f && t < 0.925f)
 		{
-			VectorSet(fwd_angles, 0, pm->ps->viewangles[YAW], 0);
-			AngleVectors(fwd_angles, nullptr, nullptr, move_dir);
-			VectorScale(move_dir, 90, move_dir);
-			VectorCopy(move_dir, ps->velocity);
+			float blend = (t - 0.8f) / 0.125f;   // 0 ? 1
+			float animWeight = 1.0f - blend;
+			float physWeight = blend;
+
+			VectorSet(fwdAngles, 0.0f, pm->ps->viewangles[YAW], 0.0f);
+			AngleVectors(fwdAngles, moveDir, nullptr, nullptr);
+
+			vec3_t animVel, physVel;
+
+			// Stronger animation-driven forward push
+			VectorScale(moveDir, 45.0f, animVel);
+			animVel[2] = 154.0f;
+
+			// Stronger physics-driven "step up and forward"
+			physVel[0] = moveDir[0] * 60.0f;
+			physVel[1] = moveDir[1] * 60.0f;
+			physVel[2] = 200.0f;
+
+			// Blend them
+			ps->velocity[0] = animVel[0] * animWeight + physVel[0] * physWeight;
+			ps->velocity[1] = animVel[1] * animWeight + physVel[1] * physWeight;
+			ps->velocity[2] = animVel[2] * animWeight + physVel[2] * physWeight;
 		}
-		else if (animationpoint > .8 && animationpoint < .925)
+		else if (t > 0.7f && t < 0.75f)
 		{
-			VectorSet(fwd_angles, 0, pm->ps->viewangles[YAW], 0);
-			AngleVectors(fwd_angles, move_dir, nullptr, nullptr);
-			VectorScale(move_dir, 70, move_dir);
-			VectorCopy(move_dir, ps->velocity);
+			ClearVel();
+			ps->velocity[2] = 26.0f;
+		}
+		else if (t > 0.375f && t < 0.7f)
+		{
+			ClearVel();
+			ps->velocity[2] = 140.0f;
+		}
+		else if (t < 0.375f)
+		{
+			SetDirVel(pm->ps->viewangles[YAW], 140.0f, false, true);
 		}
 		else
 		{
-			VectorClear(ps->velocity);
+			ClearVel();
 		}
 		break;
+
 	default:
-		VectorClear(ps->velocity);
+		ClearVel();
+		break;
 	}
 }
 
