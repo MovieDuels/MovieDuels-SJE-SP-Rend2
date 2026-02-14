@@ -385,7 +385,7 @@ void CG_InterpolatePlayerState(const qboolean grab_angles)
 		if (!skip)
 		{
 			//NULL so that it doesn't execute a block of code that must be run from game
-			PM_UpdateViewAngles(out->saber_anim_level, out, &cmd, nullptr);
+			PM_UpdateViewAngles(out->saberAnimLevel, out, &cmd, nullptr);
 		}
 	}
 

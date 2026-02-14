@@ -334,7 +334,7 @@ void SP_misc_teleporter(gentity_t* ent)
 	}
 
 	ent->s.modelindex = G_ModelIndex("models/objects/dmspot.md3");
-	ent->s.client_num = 1;
+	ent->s.clientNum = 1;
 	//	ent->s.loopSound = G_SoundIndex("sound/world/amb10.wav");
 	ent->contents = CONTENTS_SOLID;
 
@@ -443,8 +443,8 @@ static void setCamera(gentity_t* ent)
 		ent->s.frame = 75;
 	}
 
-	// client_num holds the rotate offset
-	ent->s.client_num = ent->owner->s.client_num;
+	// clientNum holds the rotate offset
+	ent->s.clientNum = ent->owner->s.clientNum;
 
 	VectorCopy(ent->owner->s.origin, ent->s.origin2);
 
@@ -584,7 +584,7 @@ void SP_misc_portal_camera(gentity_t* ent)
 
 	G_SpawnFloat("roll", "0", &roll);
 
-	ent->s.client_num = roll / 360.0 * 256;
+	ent->s.clientNum = roll / 360.0 * 256;
 	ent->wait *= 1000;
 }
 

@@ -224,10 +224,10 @@ void workshop_draw_clientside_information()
 		return;
 	}
 	// Draw the information for the NPC that is in our crosshairs
-	if (cg.crosshairclient_num != ENTITYNUM_NONE && cg.crosshairclient_num != 0 && g_entities[cg.crosshairclient_num].
+	if (cg.crosshairclientNum != ENTITYNUM_NONE && cg.crosshairclientNum != 0 && g_entities[cg.crosshairclientNum].
 		client)
 	{
-		const gentity_t* crossEnt = &g_entities[cg.crosshairclient_num];
+		const gentity_t* crossEnt = &g_entities[cg.crosshairclientNum];
 		WorkshopDrawEntityInformation(crossEnt, 10, "Crosshair AI");
 	}
 
@@ -1268,7 +1268,7 @@ static void Workshop_Stamina_f(gentity_t* ent)
 
 extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
 extern qboolean WP_SaberParseParms(const char* SaberName, saberInfo_t* saber, qboolean setColors = qtrue);
-extern qboolean WP_UseFirstValidSaberStyle(const gentity_t* ent, int* saber_anim_level);
+extern qboolean WP_UseFirstValidSaberStyle(const gentity_t* ent, int* saberAnimLevel);
 extern void WP_SaberSetDefaults(saberInfo_t* saber, qboolean set_colors = qtrue);
 
 static int WP_SetSaberNPCModel(gclient_t* client, const class_t npcClass)
@@ -1339,17 +1339,17 @@ static void WP_RemovenpcSaber(gentity_t* ent, const int saber_num)
 		gi.G2API_RemoveGhoul2Model(selected->ghoul2, selected->weaponModel[saber_num]);
 		selected->weaponModel[saber_num] = -1;
 	}
-	if (selected->client->ps.saber_anim_level == SS_DUAL || selected->client->ps.saber_anim_level == SS_STAFF)
+	if (selected->client->ps.saberAnimLevel == SS_DUAL || selected->client->ps.saberAnimLevel == SS_STAFF)
 	{
 		//change to the style to the default
 		for (int i = SS_NONE + 1; i < SS_NUM_SABER_STYLES; i++)
 		{
 			if (selected->client->ps.saberStylesKnown & 1 << i)
 			{
-				selected->client->ps.saber_anim_level = i;
+				selected->client->ps.saberAnimLevel = i;
 				if (selected->s.number < MAX_CLIENTS)
 				{
-					cg.saberAnimLevelPending = selected->client->ps.saber_anim_level;
+					cg.saberAnimLevelPending = selected->client->ps.saberAnimLevel;
 				}
 				break;
 			}
@@ -1514,7 +1514,7 @@ void WP_SetNPCSaber(gentity_t* ent, const int saber_num, const char* saberName)
 	{
 		selected->client->ps.saberStylesKnown |= selected->client->ps.saber[saber_num].singleBladeStyle;
 	}
-	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saber_anim_level);
+	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saberAnimLevel);
 }
 
 static void Workshop_Set_Saber_f(gentity_t* ent)
@@ -1556,7 +1556,7 @@ static void Workshop_Set_Saber_f(gentity_t* ent)
 		gi.cvar_set("g_NPCsabertwo", "");
 		WP_RemoveSaber(selected, 1);
 	}
-	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saber_anim_level);
+	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saberAnimLevel);
 }
 
 static void Workshop_Set_SaberSecond_f(gentity_t* ent)
@@ -1590,7 +1590,7 @@ static void Workshop_Set_SaberSecond_f(gentity_t* ent)
 		gi.cvar_set("g_NPCsabertwo", "");
 		WP_RemoveSaber(selected, 1);
 	}
-	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saber_anim_level);
+	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saberAnimLevel);
 }
 
 static void Workshop_Set_SaberSingle_f(gentity_t* ent)
@@ -1618,7 +1618,7 @@ static void Workshop_Set_SaberSingle_f(gentity_t* ent)
 
 	gi.cvar_set("g_NPCsabertwo", "");
 	WP_RemoveSaber(selected, 1);
-	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saber_anim_level);
+	WP_UseFirstValidSaberStyle(selected, &selected->client->ps.saberAnimLevel);
 }
 
 extern saber_colors_t TranslateSaberColor(const char* name);

@@ -150,6 +150,8 @@ void GEntity_ThinkFunc(gentity_t* self)
 
 			THINKCASE(asteroid_move_to_start)
 
+			THINKCASE(wp_stasis_missile_blow)
+
 	default:
 		Com_Error(ERR_DROP, "GEntity_ThinkFunc: case %d not handled!\n", self->e_ThinkFunc);
 	}

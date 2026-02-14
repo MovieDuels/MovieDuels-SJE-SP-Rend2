@@ -626,9 +626,42 @@ public:
 #if G2API_DEBUG
 	std::vector<CGhoul2Info>& GetDebug(int handle)
 	{
-		assert(!(handle <= 0 || (handle & G2_INDEX_MASK) < 0 || (handle & G2_INDEX_MASK) >= MAX_G2_MODELS || m_ids_[handle & G2_INDEX_MASK] != handle));
+		// Validate handle
+		if (handle <= 0)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: GetDebug called with invalid handle %d\n", handle);
+#endif
+			static std::vector<CGhoul2Info> dummy;
+			return dummy;
+		}
 
-		return m_infos_[handle & G2_INDEX_MASK];
+		const int index = (handle & G2_INDEX_MASK);
+
+		// Validate index range
+		if (index < 0 || index >= MAX_G2_MODELS)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: GetDebug index %d out of range (MAX %d)\n",
+				index, MAX_G2_MODELS);
+#endif
+			static std::vector<CGhoul2Info> dummy;
+			return dummy;
+		}
+
+		// Validate handle matches stored ID
+		if (m_ids_[index] != handle)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: GetDebug handle mismatch: got %d, expected %d\n",
+				handle, m_ids_[index]);
+#endif
+			static std::vector<CGhoul2Info> dummy;
+			return dummy;
+		}
+
+		// All good
+		return m_infos_[index];
 	}
 	void TestAllAnims()
 	{
@@ -1756,29 +1789,25 @@ qboolean G2API_DetachG2Model(CGhoul2Info* ghlInfo)
 
 qboolean G2API_AttachEnt(int* boltInfo, CGhoul2Info* ghlInfoTo, int toBoltIndex, int entNum, int to_model_num)
 {
-	qboolean ret = qfalse;
-	G2ERROR(boltInfo, "NULL boltInfo");
 	if (boltInfo && G2_SetupModelPointers(ghlInfoTo))
 	{
-		// ensure toBoltIndex is within range
-		const int bltCount = static_cast<int>(ghlInfoTo->mBltlist.size());
-		if (bltCount > 0 && toBoltIndex >= 0 && toBoltIndex < bltCount &&
-			(ghlInfoTo->mBltlist[toBoltIndex].boneNumber != -1 || ghlInfoTo->mBltlist[toBoltIndex].surface_number != -1))
+		// make sure we have a model to attach, a model to attach to, and a
+		// bolt on that model
+		if (ghlInfoTo->mBltlist.size() &&
+			((ghlInfoTo->mBltlist[toBoltIndex].boneNumber != -1) ||
+				(ghlInfoTo->mBltlist[toBoltIndex].surface_number != -1)))
 		{
+			// encode the bolt address into the model bolt link
 			to_model_num &= MODEL_AND;
 			toBoltIndex &= BOLT_AND;
 			entNum &= ENTITY_AND;
-			*boltInfo = toBoltIndex << BOLT_SHIFT | to_model_num << MODEL_SHIFT | entNum << ENTITY_SHIFT;
-			ret = qtrue;
-		}
-		else
-		{
-			// clear out on failure so callers do not get garbage
-			*boltInfo = 0;
+			*boltInfo = (toBoltIndex << BOLT_SHIFT) |
+				(to_model_num << MODEL_SHIFT) |
+				(entNum << ENTITY_SHIFT);
+			return qtrue;
 		}
 	}
-	G2WARNING(ret, "G2API_AttachEnt Failed");
-	return ret;
+	return qfalse;
 }
 
 void G2API_DetachEnt(int* boltInfo)

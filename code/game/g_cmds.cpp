@@ -158,13 +158,13 @@ static void SanitizeString(char* in, char* out)
 
 /*
 ==================
-client_numberFromString
+clientNumberFromString
 
 Returns a player number for either a number or name string
 Returns -1 if invalid
 ==================
 */
-static int client_numberFromString(const gentity_t* to, char* s)
+static int clientNumberFromString(const gentity_t* to, char* s)
 {
 	gclient_t* cl;
 	int idnum;
@@ -1717,7 +1717,7 @@ static void G_Taunt(gentity_t* ent)
 	if (ent->client)
 	{
 		if (ent->client->ps.weapon == WP_SABER && ent->client->ps.dualSabers
-			&& (ent->client->ps.saber_anim_level == SS_FAST || ent->client->ps.saber_anim_level == SS_TAVION))
+			&& (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel == SS_TAVION))
 		{
 			ent->client->ps.taunting = level.time + 100;
 			//make sure all sabers are on
@@ -1955,7 +1955,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			}
 			else
 			{
-				switch (ent->client->ps.saber_anim_level)
+				switch (ent->client->ps.saberAnimLevel)
 				{
 				case SS_FAST:
 				case SS_TAVION:
@@ -2166,7 +2166,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			{
 				anim = ent->client->ps.saber[1].flourishAnim;
 			}
-			else if ((ent->client->ps.saber_anim_level == SS_FAST || ent->client->ps.saber_anim_level == SS_TAVION)
+			else if ((ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel == SS_TAVION)
 				&& ent->client->ps.dualSabers)
 			{
 				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_DUAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -2176,7 +2176,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				if (PM_WalkingAnim(ent->client->ps.legsAnim) || PM_RunningAnim(ent->client->ps.legsAnim))
 				{
 					//TORSO ONLY
-					switch (ent->client->ps.saber_anim_level)
+					switch (ent->client->ps.saberAnimLevel)
 					{
 					case SS_FAST:
 					case SS_TAVION:
@@ -2200,7 +2200,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				}
 				else
 				{
-					switch (ent->client->ps.saber_anim_level)
+					switch (ent->client->ps.saberAnimLevel)
 					{
 					case SS_FAST:
 					case SS_TAVION:
@@ -2295,7 +2295,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				if (PM_WalkingAnim(ent->client->ps.legsAnim) || PM_RunningAnim(ent->client->ps.legsAnim))
 				{
 					//TORSO ONLY
-					switch (ent->client->ps.saber_anim_level)
+					switch (ent->client->ps.saberAnimLevel)
 					{
 					case SS_FAST:
 					case SS_TAVION:
@@ -2347,7 +2347,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				}
 				else
 				{
-					switch (ent->client->ps.saber_anim_level)
+					switch (ent->client->ps.saberAnimLevel)
 					{
 					case SS_FAST:
 					case SS_TAVION:
@@ -2494,7 +2494,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				}
 				break;
 			}
-			switch (ent->client->ps.saber_anim_level)
+			switch (ent->client->ps.saberAnimLevel)
 			{
 			case SS_FAST:
 			case SS_TAVION:
@@ -2562,7 +2562,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			}
 			else
 			{
-				switch (ent->client->ps.saber_anim_level)
+				switch (ent->client->ps.saberAnimLevel)
 				{
 				case SS_FAST:
 					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -2758,9 +2758,9 @@ void G_RemoveWeather()
 ClientCommand
 =================
 */
-void ClientCommand(const int client_num)
+void ClientCommand(const int clientNum)
 {
-	gentity_t* ent = g_entities + client_num;
+	gentity_t* ent = g_entities + clientNum;
 	if (!ent->client)
 	{
 		return; // not fully in game yet
@@ -2986,7 +2986,7 @@ void ClientCommand(const int client_num)
 		if (setStyle > SS_NONE && setStyle < SS_STAFF)
 		{
 			ent->client->ps.saberStylesKnown = 1 << setStyle;
-			cg.saberAnimLevelPending = ent->client->ps.saber_anim_level = setStyle;
+			cg.saberAnimLevelPending = ent->client->ps.saberAnimLevel = setStyle;
 		}
 	}
 #ifdef NEW_FEEDER
@@ -2996,7 +2996,7 @@ void ClientCommand(const int client_num)
 		if (!ent || !ent->client) {
 			return;
 		}
-		cg.saberAnimLevelPending = ent->client->ps.saber_anim_level = atoi(gi.argv(1));
+		cg.saberAnimLevelPending = ent->client->ps.saberAnimLevel = atoi(gi.argv(1));
 		ent->client->ps.saberStylesKnown = atoi(gi.argv(2));
 	}
 #endif
@@ -3214,6 +3214,6 @@ void ClientCommand(const int client_num)
 	}
 	else
 	{
-		gi.SendServerCommand(client_num, va("print \"Unknown command %s\n\"", cmd));
+		gi.SendServerCommand(clientNum, va("print \"Unknown command %s\n\"", cmd));
 	}
 }

@@ -30,7 +30,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../rd-common/tr_common.h"
 #include <png.h>
 #include <map>
-#include <string.h>
 
 static byte			 s_intensitytable[256];
 static unsigned char s_gammatable[256];

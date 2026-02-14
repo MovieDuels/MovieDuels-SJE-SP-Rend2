@@ -623,7 +623,7 @@ const netField_t	entityStateFields[] =
 { NETF(modelindex), 9 },	//0 to 511
 { NETF(modelindex2), 8 },
 { NETF(modelindex3), 8 },
-{ NETF(client_num), 32 },
+{ NETF(clientNum), 32 },
 { NETF(frame), 16 },
 
 { NETF(solid), 24 },
@@ -1154,7 +1154,7 @@ static const netField_t playerStateFields[] =
 	{PSF(eventParms[1]), -9},
 	{PSF(externalEvent), 8},
 	{PSF(externalEventParm), 8},
-	{PSF(client_num), 32},
+	{PSF(clientNum), 32},
 	{PSF(weapon), 6},
 	{PSF(weaponstate), 4},
 	{PSF(batteryCharge), 16},

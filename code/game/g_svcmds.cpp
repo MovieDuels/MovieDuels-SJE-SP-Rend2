@@ -40,7 +40,7 @@ extern void WP_SetSaber(gentity_t* ent, int saber_num, const char* saber_name);
 extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
 extern saber_colors_t TranslateSaberColor(const char* name);
 extern qboolean WP_SaberBladeUseSecondBladeStyle(const saberInfo_t* saber, int blade_num);
-extern qboolean WP_UseFirstValidSaberStyle(const gentity_t* ent, int* saber_anim_level);
+extern qboolean WP_UseFirstValidSaberStyle(const gentity_t* ent, int* saberAnimLevel);
 extern void G_RemoveWeather();
 extern void RemoveBarrier(gentity_t* ent);
 extern cvar_t* g_SerenityJediEngineMode;
@@ -611,38 +611,38 @@ static void Svcmd_SaberAttackCycle_f()
 		return;
 	}
 
-	int saber_anim_level;
+	int saberAnimLevel;
 	if (!self->s.number)
 	{
-		saber_anim_level = cg.saberAnimLevelPending;
+		saberAnimLevel = cg.saberAnimLevelPending;
 	}
 	else
 	{
-		saber_anim_level = self->client->ps.saber_anim_level;
+		saberAnimLevel = self->client->ps.saberAnimLevel;
 	}
-	saber_anim_level++;
+	saberAnimLevel++;
 	int sanityCheck = 0;
-	while (self->client->ps.saber_anim_level != saber_anim_level
-		&& !(allowedStyles & 1 << saber_anim_level)
+	while (self->client->ps.saberAnimLevel != saberAnimLevel
+		&& !(allowedStyles & 1 << saberAnimLevel)
 		&& sanityCheck < SS_NUM_SABER_STYLES + 1)
 	{
-		saber_anim_level++;
-		if (saber_anim_level > SS_STAFF)
+		saberAnimLevel++;
+		if (saberAnimLevel > SS_STAFF)
 		{
-			saber_anim_level = SS_FAST;
+			saberAnimLevel = SS_FAST;
 		}
 		sanityCheck++;
 	}
 
-	if (!(allowedStyles & 1 << saber_anim_level))
+	if (!(allowedStyles & 1 << saberAnimLevel))
 	{
 		return;
 	}
 
-	WP_UseFirstValidSaberStyle(self, &saber_anim_level);
+	WP_UseFirstValidSaberStyle(self, &saberAnimLevel);
 	if (!self->s.number)
 	{
-		cg.saberAnimLevelPending = saber_anim_level;
+		cg.saberAnimLevelPending = saberAnimLevel;
 
 		if (!self->client->ps.saberInFlight)
 		{
@@ -650,11 +650,11 @@ static void Svcmd_SaberAttackCycle_f()
 			{
 				if (!(self->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK)) // lets do a movement when changing styles // need better anims for this
 				{
-					if (saber_anim_level == SS_DUAL)
+					if (saberAnimLevel == SS_DUAL)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
-					else if (saber_anim_level == SS_STAFF)
+					else if (saberAnimLevel == SS_STAFF)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
@@ -679,11 +679,11 @@ static void Svcmd_SaberAttackCycle_f()
 	}
 	else
 	{
-		self->client->ps.saber_anim_level = saber_anim_level;
+		self->client->ps.saberAnimLevel = saberAnimLevel;
 	}
 
 #ifndef FINAL_BUILD
-	switch (saber_anim_level)
+	switch (saberAnimLevel)
 	{
 	case SS_FAST:
 		gi.Printf(S_COLOR_BLUE "Lightsaber Combat Style: Fast\n");

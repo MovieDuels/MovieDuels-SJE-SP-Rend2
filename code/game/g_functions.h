@@ -155,6 +155,8 @@ using thinkFunc_t = enum
 	thinkF_Weapon_HookFree,
 
 	thinkF_asteroid_move_to_start,
+
+	thinkF_wp_stasis_missile_blow,
 };
 
 // THINK functions...
@@ -272,6 +274,8 @@ extern void Weapon_HookThink(gentity_t* ent);
 extern void Weapon_HookFree(gentity_t* ent);
 
 extern void asteroid_move_to_start(gentity_t* self);
+
+extern void wp_stasis_missile_blow(gentity_t* ent);
 
 //	void		(*clThink)(centity_s *cent);	//Think func for equivalent centity
 using clThinkFunc_t = enum

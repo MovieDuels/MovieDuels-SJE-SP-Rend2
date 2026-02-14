@@ -71,7 +71,7 @@ qboolean droideka_npc(const gentity_t* ent)
 	if (ent->NPC
 		&& ent->client->NPC_class == CLASS_DROIDEKA
 		&& ent->s.weapon == WP_DROIDEKA
-		&& ent->s.client_num >= MAX_CLIENTS
+		&& ent->s.clientNum >= MAX_CLIENTS
 		&& !G_ControlledByPlayer(ent))
 	{
 		return qtrue;

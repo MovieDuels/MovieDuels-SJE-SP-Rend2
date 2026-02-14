@@ -9679,7 +9679,7 @@ void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, con
 		//add bonus
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
-			if (attacker->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(attacker))
+			if (attacker->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(attacker))
 			{
 				WP_BlockPointsRegenerate(attacker, FATIGUE_HURTBONUSMAX);
 			}

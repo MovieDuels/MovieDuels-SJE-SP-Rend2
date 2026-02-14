@@ -23,7 +23,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 // bg_local.h -- local definitions for the bg (both games) files
 
-#include "bg_public.h"
 #ifndef _BG_LOCAL_H
 #define _BG_LOCAL_H
 
@@ -66,9 +65,5 @@ qboolean PM_SlideMove(float grav_mod);
 void PM_StepSlideMove(float grav_mod);
 
 extern qboolean BG_AllowThirdPersonSpecialMove(const playerState_t* ps);
-
-#ifndef MAX_INT
-#define MAX_INT(a,b) (( (a) > (b) ) ? (a) : (b))
-#endif
 
 #endif

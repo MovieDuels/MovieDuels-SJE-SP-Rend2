@@ -265,8 +265,8 @@ cvar_t* r_AdvancedsurfaceSprites;
 
 // the limits apply to the sum of all scenes in a frame --
 // the main view, all the 3D icons, etc
-constexpr auto DEFAULT_MAX_POLYS = 600;
-constexpr auto DEFAULT_MAX_POLYVERTS = 3000;
+#define	DEFAULT_MAX_POLYS		600
+#define	DEFAULT_MAX_POLYVERTS	3000
 cvar_t* r_maxpolys;
 cvar_t* r_maxpolyverts;
 int		max_polys;
@@ -298,7 +298,6 @@ cvar_t* g_Weather;
 
 cvar_t* r_patchStitching;
 cvar_t* com_outcast;
-cvar_t* g_DebugSaberCombat;
 
 #define ri_Cvar_Get_NoComm(varname, value, flag, comment) ri.Cvar_Get(varname, value, flag)
 
@@ -1741,8 +1740,6 @@ static void R_Register(void)
 	r_com_rend2 = ri.Cvar_Get("com_rend2", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
 
 	com_outcast = ri.Cvar_Get("com_outcast", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
-
-	g_DebugSaberCombat = ri.Cvar_Get("g_DebugSaberCombat", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
 	/*
 	Ghoul2 Insert End
 	*/

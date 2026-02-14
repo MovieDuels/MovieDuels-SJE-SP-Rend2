@@ -828,10 +828,10 @@ static void WP_RocketLock(const gentity_t* ent, const float lock_dist)
 	ang[1] = muzzle_point[1] + ang[1] * lock_dist;
 	ang[2] = muzzle_point[2] + ang[2] * lock_dist;
 
-	gi.trace(&tr, muzzle_point, nullptr, nullptr, ang, ent->client->ps.client_num, MASK_PLAYERSOLID,
+	gi.trace(&tr, muzzle_point, nullptr, nullptr, ang, ent->client->ps.clientNum, MASK_PLAYERSOLID,
 		static_cast<EG2_Collision>(0), 0);
 
-	if (tr.fraction != 1 && tr.entityNum < ENTITYNUM_NONE && tr.entityNum != ent->client->ps.client_num)
+	if (tr.fraction != 1 && tr.entityNum < ENTITYNUM_NONE && tr.entityNum != ent->client->ps.clientNum)
 	{
 		const gentity_t* bg_ent = &g_entities[tr.entityNum];
 		if (bg_ent && bg_ent->s.powerups & PW_CLOAKED)
@@ -1472,7 +1472,7 @@ static void G_AddBlasterAttackChainCount(const gentity_t* ent, int amount)
 		return;
 	}
 
-	if (ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
+	if (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
 	{
 		return;
 	}

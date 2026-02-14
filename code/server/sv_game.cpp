@@ -93,7 +93,7 @@ SV_GameSendServerCommand
 Sends a command string to a client
 ===============
 */
-void SV_GameSendServerCommand(const int client_num, const char* fmt, ...)
+void SV_GameSendServerCommand(const int clientNum, const char* fmt, ...)
 {
 	char msg[8192];
 	va_list argptr;
@@ -102,17 +102,17 @@ void SV_GameSendServerCommand(const int client_num, const char* fmt, ...)
 	Q_vsnprintf(msg, sizeof msg, fmt, argptr);
 	va_end(argptr);
 
-	if (client_num == -1)
+	if (clientNum == -1)
 	{
 		SV_SendServerCommand(nullptr, "%s", msg);
 	}
 	else
 	{
-		if (client_num < 0 || client_num >= 1)
+		if (clientNum < 0 || clientNum >= 1)
 		{
 			return;
 		}
-		SV_SendServerCommand(svs.clients + client_num, "%s", msg);
+		SV_SendServerCommand(svs.clients + clientNum, "%s", msg);
 	}
 }
 
@@ -123,13 +123,13 @@ SV_GameDropClient
 Disconnects the client with a message
 ===============
 */
-void SV_GameDropClient(const int client_num, const char* reason)
+void SV_GameDropClient(const int clientNum, const char* reason)
 {
-	if (client_num < 0 || client_num >= 1)
+	if (clientNum < 0 || clientNum >= 1)
 	{
 		return;
 	}
-	SV_DropClient(svs.clients + client_num, reason);
+	SV_DropClient(svs.clients + clientNum, reason);
 }
 
 /*

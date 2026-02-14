@@ -128,7 +128,7 @@ using client_t = struct client_s
 	int lastMessageNum; // for delta compression
 	int cmdNum; // command number last executed
 	int lastClientCommand; // reliable client message sequence
-	gentity_t* gentity; // SV_GentityNum(client_num)
+	gentity_t* gentity; // SV_GentityNum(clientNum)
 	char name[MAX_NAME_LENGTH]; // extracted from userinfo, high bits masked
 	byte* download; // file being downloaded
 	int downloadsize; // total bytes (can't use EOF because of paks)

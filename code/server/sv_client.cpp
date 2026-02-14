@@ -115,8 +115,8 @@ gotnewcl:
 	// accept the new client
 	// this is the only place a client_t is ever initialized
 	*newcl = temp;
-	const int client_num = newcl - svs.clients;
-	gentity_t* ent = SV_GentityNum(client_num);
+	const int clientNum = newcl - svs.clients;
+	gentity_t* ent = SV_GentityNum(clientNum);
 	newcl->gentity = ent;
 
 	// save the address
@@ -126,7 +126,7 @@ gotnewcl:
 	Q_strncpyz(newcl->userinfo, userinfo, sizeof(newcl->userinfo));
 
 	// get the game a chance to reject this connection or modify the userinfo
-	char* denied = ge->ClientConnect(client_num, qtrue, e_saved_game_just_loaded); // firstTime = qtrue
+	char* denied = ge->ClientConnect(clientNum, qtrue, e_saved_game_just_loaded); // firstTime = qtrue
 	if (denied)
 	{
 		NET_OutOfBandPrint(NS_SERVER, from, "print\n%s\n", denied);
@@ -251,9 +251,9 @@ void SV_ClientEnterWorld(client_t* client, const usercmd_t* cmd, const SavedGame
 	client->state = CS_ACTIVE;
 
 	// set up the entity for the client
-	const int client_num = client - svs.clients;
-	gentity_t* ent = SV_GentityNum(client_num);
-	ent->s.number = client_num;
+	const int clientNum = client - svs.clients;
+	gentity_t* ent = SV_GentityNum(clientNum);
+	ent->s.number = clientNum;
 	client->gentity = ent;
 
 	// normally I check 'qbFromSavedGame' to avoid overwriting loaded client data, but this stuff I want

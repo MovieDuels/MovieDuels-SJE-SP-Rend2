@@ -109,7 +109,6 @@ typedef struct {
 	const char* color1;
 	const char* color2;
 
-
 	int				style;
 	int				styleBitFlag;
 
@@ -117,7 +116,7 @@ typedef struct {
 
 	int 		    selectAnimation;
 	int				plyAnimation; // Disabled as menu closes on selection
-	int 		    npcAnimation; // Disabled as menu closes on selection 
+	int 		    npcAnimation; // Disabled as menu closes on selection
 
 	const char* plySelectSound;
 	const char* npcSelectSound;
@@ -129,8 +128,8 @@ typedef struct {
 } charMD_t;
 
 static constexpr charMD_t charMD[] = {
-	//name								title									icon			npc								model					skin							saber1						saber2					color1			color2		style	sbFlag	era				
-	
+	//name								title									icon			npc								model					skin							saber1						saber2					color1			color2		style	sbFlag	era
+
 	// Old Republic
 	{ "Atris",							"[Jedi Master]",						"",				"md_atris",						"atris",				"model_default",				"revan",					"",						"blue",			"",			1,		14,		ERA_OLD_REPUBLIC,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/atris/misc/anger2.mp3",				"",		1.0f,	"@MD_CHAR_DESC_ATRIS",						qfalse },
 	{ "Atton Rand",						"[KOTOR]",								"",				"md_atton",						"atton",				"model_default",				"menu_wp_blaster_pistol_kotor",	"",					"",				"",			0,		0,		ERA_OLD_REPUBLIC,	TORSO_WEAPONREST2,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/atton/misc/taunt1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_ATTON_RAND",					qfalse },
@@ -197,7 +196,6 @@ static constexpr charMD_t charMD[] = {
 	{ "Ven Zallow",						"[Jedi]",								"",				"md_ven",						"jedi_tor",				"model_ven",					"jolee",					"",						"green",		"",			1,		30,		ERA_OLD_REPUBLIC,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/jedi_tor/misc/taunt2.mp3",				"",		1.0f,	"@MD_CHAR_DESC_VEN_ZALLOW",					qfalse },
 	{ "Vrook Lamar",					"[Jedi]",								"",				"jedi_vrook",					"jedi_kotor",			"model_vrook",					"single_2",					"",						"green",		"",			1,		14,		ERA_OLD_REPUBLIC,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/vrook/misc/taunt5.mp3",				"",		1.0f,	"@MD_CHAR_DESC_VROOK_LAMAR",				qfalse },
 	{ "Zhar Lestin",					"[Jedi]",								"",				"jedi_zhar",					"jedi_kotor",			"model_zhar",					"single_2",					"",						"blue",			"",			1,		14,		ERA_OLD_REPUBLIC,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/zhar/misc/taunt1.mp3",					"",		1.0f,	"@MD_CHAR_DESC_ZHAR_LESTIN",				qfalse },
-
 
 	// Sith Empire
 	{ "Arcann",							"[KOTOR]",								"",				"md_arcann",					"thexan",				"model_arcann",					"galenmarek_cjr",			"",						"yellow",		"",			1,		14,		ERA_SITH_EMPIRE,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/arcann/misc/taunt3.mp3",				"",		1.0f,	"@MD_CHAR_DESC_ARCANN",						qfalse },
@@ -271,7 +269,6 @@ static constexpr charMD_t charMD[] = {
 	{ "Visas Marr",						"[KOTOR]",								"",				"md_visas",						"visas",				"model_default",				"dagan",					"",						"red",			"",			1,		14,		ERA_SITH_EMPIRE,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/visas/misc/taunt3.mp3",				"",		1.0f,	"@MD_CHAR_DESC_VISAS_MARR",					qfalse },
 	{ "Visas Marr",						"[KOTOR - Alternative]",				"",				"md_visas_dark",				"visas",				"model_dark",					"dagan",					"",						"red",			"",			1,		14,		ERA_SITH_EMPIRE,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/visas/misc/taunt3.mp3",				"",		1.0f,	"@MD_CHAR_DESC_VISAS_MARR",					 qtrue },
 	{ "Yuthura Ban",					"[KOTOR]",								"",				"md_yuthura",					"yuthura",				"model_default",				"single_1",					"",						"red",			"",			1,		14,		ERA_SITH_EMPIRE,	BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/yuthura/misc/taunt2.mp3",				"",		1.0f,	"@MD_CHAR_DESC_YUTHURA_BAN",				qfalse },
-
 
 	// Galactic Republic
 	{ "Aayla Secura",					"[Episode I-III]",						"",				"md_aayla",						"aayla",				"model_default",				"aayla",					"",						"blue",			"",			1,		14,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/aayla/misc/gloat3.mp3",				"",		1.0f,	"@MD_CHAR_DESC_AAYLA_SECURA",				qfalse },
@@ -361,7 +358,7 @@ static constexpr charMD_t charMD[] = {
 	{ "Depa Billaba",					"[Episode I-III]",						"",				"md_depa",						"depabillaba",			"model_default",				"depa",						"",						"green",		"",			1,		14, 	ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/depabillaba/misc/taunt2.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DEPA_BILLABA",				 qtrue },
 	{ "Eekar Oki",						"[TCW]",								"",				"md_eekar",						"eekar",				"model_default",				"quigon",					"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_EEKAR_OKI",					qfalse },
 	{ "Eeth Koth",						"[General]",							"",				"md_eeth_koth",					"eeth_koth",			"model_cw",						"fisto",					"",						"green",		"",			1,		14,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/eeth_koth/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_EETH_KOTH",					qfalse },
-	{ "Even Piell",						"[Episode I-III]",						"",				"md_even_piell",				"even_piell",			"model_default",				"even_piell",				"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/even_piell/misc/victory2.mp3",			"",		0.7f,	"@MD_CHAR_DESC_EVEN_PIELL",					qfalse },	
+	{ "Even Piell",						"[Episode I-III]",						"",				"md_even_piell",				"even_piell",			"model_default",				"even_piell",				"",						"green",		"",			1,		6,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/even_piell/misc/victory2.mp3",			"",		0.7f,	"@MD_CHAR_DESC_EVEN_PIELL",					qfalse },
 	{ "Falon Grey",						"[Battlefront]",						"",				"md_falon_grey",				"falon_grey",			"model_default",				"galenmarek_alt",			"",						"blue",			"",			1,		14, 	ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/jedi2/misc/taunt3.mp3",				"",		1.0f,	"@MD_CHAR_DESC_FALON_GREY",					qfalse },
 	{ "Fi-Ek Sirch",					"[Episode II]",							"",				"md_sirch",						"sirch",				"model_robed",					"luminara",					"",						"blue",			"",			2,		12,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_FI_EK_SIRCH",				qfalse },
 	{ "Foul Moudama",					"[TCW]",								"",				"md_foul_moudama",				"foul_moudama",			"model_default",				"coleman",					"",						"blue",			"",			4,		24,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/talz/misc/taunt1.mp3",					"",		1.0f,	"@MD_CHAR_DESC_FOUL_MOUDAMA",				qfalse },
@@ -407,7 +404,7 @@ static constexpr charMD_t charMD[] = {
 	{ "Mace Windu",						"[TCW - General]",						"",				"md_windu_tcw",					"macewindu",			"model_cw",						"windu",					"",						"purple",		"",			1,		30,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/mace_tcw/misc/taunt1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_MACE_WINDU",					 qtrue },
 	{ "Mace Windu",						"[CW - General]",						"",				"md_windu_cw",					"macewindu_cw",			"model_default",				"windu",					"",						"purple",		"",			1,		30,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/mace_tcw/misc/taunt1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_MACE_WINDU",					 qtrue },
 	{ "Mace Windu",						"[Tales of the Jedi]",					"",				"md_windu_totj",				"macewindu",			"model_totj",					"windu",					"",						"purple",		"",			1,		30,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/mace_tcw/misc/taunt1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_MACE_WINDU",					 qtrue },
-	{ "Mandalorian",					"[Death Watch]",						"",				"md_mando_dw",					"deathwatch",			"model_default",				"menu_wp_clonepistol",		"menu_wp_clonepistol",	"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WEAPONREST2P,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/mando_dw/misc/victory1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DEATH_WATCH",				qfalse },	
+	{ "Mandalorian",					"[Death Watch]",						"",				"md_mando_dw",					"deathwatch",			"model_default",				"menu_wp_clonepistol",		"menu_wp_clonepistol",	"",				"",			0,		0,		ERA_REPUBLIC,		BOTH_WEAPONREST2P,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/mando_dw/misc/victory1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DEATH_WATCH",				qfalse },
 	{ "Micah Giiett",					"[TCW]",								"",				"md_micah_robed",				"micah_giiett",			"model_robed",					"coleman",					"coleman",				"yellow",		"yellow",	6,		64,		ERA_REPUBLIC,		BOTH_SABERDUAL_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_MICAH_GIIETT",				qfalse },
 	{ "Nahdar Vebb",					"[TCW]",								"",				"md_nahdar",					"nahdar",				"model_default",				"quigon",					"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_NAHDAR_VEBB",				qfalse },
 	{ "Nahdar Vebb",					"[Robed]",								"",				"md_nahdar_robed",				"nahdar",				"model_robed",					"quigon",					"",						"blue",			"",			1,		6,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_NAHDAR_VEBB",				 qtrue },
@@ -473,9 +470,8 @@ static constexpr charMD_t charMD[] = {
 	{ "Youngling",						"[Jedi Student]",						"",				"md_you5",						"youngfem",				"model_default",				"",							"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_MD_CIN_1,						BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/youngling/misc/taunt4.mp3",			"",		0.7f,	"@MD_CHAR_DESC_YOUNGLING",					 qtrue },
 	{ "Youngling",						"[Jedi Student]",						"",				"md_you4",						"youngshak",			"model_default",				"",							"",						"",				"",			1,		14,		ERA_REPUBLIC,		BOTH_MD_CIN_1,						BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/youngling/misc/taunt4.mp3",			"",		0.7f,	"@MD_CHAR_DESC_YOUNGLING",					 qtrue },
 	{ "Zett Jukassa",					"[Episode III]",						"",				"md_zett_jukassa",				"zett_jukassa",			"model_default",				"coleman",					"",						"blue",			"",			2,		6,		ERA_REPUBLIC,		BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_ZETT_JUKASSA",				qfalse },
-	
 
-	// Separatist Alliance																										
+	// Separatist Alliance
 	{ "Asajj Ventress",					"[TCW]",								"",				"md_ventress",					"asajj",				"model_default",				"ventress_tcw",				"ventress_tcw",			"red",			"red",		6,		64,		ERA_SEPARATIST,		BOTH_SABERDUAL_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/assajj/misc/taunt2.mp3",				"",		1.0f,	"@MD_CHAR_DESC_ASAJJ_VENTRESS",				qfalse },
 	{ "Asajj Ventress",					"[Staff]",								"",				"md_ven_dual",					"asajj",				"model_default",				"ventress_tcw_dual",		"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_STAND_BLOCKING_ON_STAFF,		BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/assajj/misc/taunt2.mp3",				"",		1.0f,	"@MD_CHAR_DESC_ASAJJ_VENTRESS",				 qtrue },
 	{ "Asajj Ventress",					"[Nightsister]",						"",				"md_ven_ns",					"asajj",				"model_ns",						"ventress_tcw",				"ventress_tcw",			"red",			"red",		6,		64,		ERA_SEPARATIST,		BOTH_SABERDUAL_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/assajj/misc/taunt2.mp3",				"",		1.0f,	"@MD_CHAR_DESC_ASAJJ_VENTRESS",				 qtrue },
@@ -510,7 +506,7 @@ static constexpr charMD_t charMD[] = {
 	{ "Darth Maul",						"[Cowel]",								"",				"md_maul_rebels4",				"maul_rebels",			"model_shirtless_cowelbase",	"maul_rebels",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/maul_rebels/misc/gloat3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
 	{ "Darth Maul",						"[Coweless]",							"",				"md_maul_rebels2",				"maul_rebels",			"model_shirtless",				"maul_rebels",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/maul_rebels/misc/gloat3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
 	{ "Darth Maul",						"[Tatooine]",							"",				"md_maul_rebels5",				"maul_rebels",			"model_desert",					"maul_rebels",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/maul_rebels/misc/gloat3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
-	{ "Darth Maul",						"[Twin Suns Duel]",						"",				"md_maul_rebels6",				"maul_rebels",			"model_twinsuns",				"maul_rebels",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/maul_rebels/misc/gloat3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },	
+	{ "Darth Maul",						"[Twin Suns Duel]",						"",				"md_maul_rebels6",				"maul_rebels",			"model_twinsuns",				"maul_rebels",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/maul_rebels/misc/gloat3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
 	{ "Darth Maul",						"[Crimson Dawn]",						"",				"md_maul_solo",					"maul_tcw",				"model_solo",					"maul_rebels",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/maul_rebels/misc/gloat3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
 	{ "Darth Maul",						"[Crimson Dawn - Hooded]",				"",				"md_maul_solo_hood",			"maul_tcw",				"model_solo_hood",				"maul_rebels",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/maul_rebels/misc/gloat3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
 	{ "Darth Maul",						"[Old Wounds]",							"",				"md_mau_luke",					"cyber_maul",			"model_default",				"dual_maul",				"",						"red",			"",			7,		128,	ERA_SEPARATIST,		BOTH_CIN_8,							BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/cyber_maul/misc/taunt4.mp3",			"",		1.0f,	"@MD_CHAR_DESC_DARTH_MAUL",					 qtrue },
@@ -556,7 +552,6 @@ static constexpr charMD_t charMD[] = {
 	{ "Tusken Sniper",					"[Episode II]",							"",				"md_tus2_tc",					"tusken_ep1n2",			"model_default",				"menu_wp_tusken_rifle",		"",						"",				"",			0,		0,		ERA_SEPARATIST,		TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/tusken/misc/taunt1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_TUSKAN_RAIDER",				 qtrue },
 	{ "Tusken Chieftain",				"[Episode II]",							"",				"md_tus5_tc",					"tusken_quarak",		"model_ep2",					"tusken_chieftain_gaffi",	"",						"",				"",			7,		128,	ERA_SEPARATIST,		BOTH_STAND_BLOCKING_ON_STAFF,		BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/tusken/misc/taunt1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_TUSKAN_RAIDER",				 qtrue },
 	{ "Wat Tambor",						"[Episode II-III]",						"",				"md_wat_tambor",				"wat_tambor",			"model_default",				"",							"",						"",				"",			0,		0,		ERA_SEPARATIST,		BOTH_MD_CIN_1,						BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/wat_tambor/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_WAT_TAMBOR",					qfalse },
-
 
 #if 1
 	// Rebel Alliance
@@ -698,7 +693,6 @@ static constexpr charMD_t charMD[] = {
 	{ "Sabine Wren",					"[Rebels]",								"",				"md_sabine",					"sabine",				"model_default",				"darksaber_reb",			"",						"black",		"",			1,		6,		ERA_REBELS,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/sabine/misc/taunt4.mp3",				"",		1.0f,	"@MD_CHAR_DESC_SABINE_WREN",				qfalse },
 	{ "Sabine Wren",					"[Rebels - Helmet]",					"",				"md_sabine_helmet",				"sabine",				"model_helmet",					"menu_wp_clonepistol",		"menu_wp_clonepistol",	"",				"",			0,		0,		ERA_REBELS,			BOTH_WEAPONREST2P,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/sabine/misc/taunt4.mp3",				"",		1.0f,	"@MD_CHAR_DESC_SABINE_WREN",				 qtrue },
 	{ "Tobias Beckett",					"[Andor]",								"",				"md_beckett",					"beckett",				"model_default",				"menu_wp_blaster_pistol",	"",						"",				"",			0,		0,		ERA_REBELS,			TORSO_WEAPONREST2,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/beckett/misc/anger1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_TOBIAS_BECKETT",				qfalse },
-
 
 	// Galactic Empire
 	{ "Alora",							"[Jedi Academy]",						"",				"alora_dual",					"alora",				"model_default",				"single_4",					"single_4",				"red",			"red",		6,		64,		ERA_EMPIRE,			BOTH_SABERDUAL_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/alora/misc/anger1.mp3",				"",		1.0f,	"@MD_CHAR_DESC_ALORA",						qfalse },
@@ -850,7 +844,6 @@ static constexpr charMD_t charMD[] = {
 	{ "The Armorer",					"[The Mandalorian]",					"",				"armorer",						"mando_arm",			"model_default",				"mando_arm",				"mando_arm2",			"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_MD_CIN_1,						BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_THE_ARMORER",				qfalse },
 	{ "The Armorer",					"[Jetpack]",							"",				"armorer_jet",					"mando_arm",			"model_jetpack",				"mando_arm",				"mando_arm2",			"",				"",			0,		0,		ERA_RESISTANCE,		BOTH_MD_CIN_1,						BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_THE_ARMORER",				 qtrue },
 
-
 	// First Order
 	{ "Armitage Hux",					"[TFA]",								"",				"md_hux",						"hux",					"model_default",				"",							"",						"",				"",			0,		0,		ERA_FIRST_ORDER,	BOTH_STAND4,						BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/hux/misc/taunt1.mp3",					"",		1.0f,	"@MD_CHAR_DESC_ARMITAGE_HUX",				qfalse },
 	{ "Armitage Hux",					"[Coat]",								"",				"md_hux_coat",					"hux",					"model_coat",					"",							"",						"",				"",			0,		0,		ERA_FIRST_ORDER,	BOTH_STAND4,						BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/hux/misc/taunt1.mp3",					"",		1.0f,	"@MD_CHAR_DESC_ARMITAGE_HUX",				 qtrue },
@@ -926,7 +919,6 @@ static const char* MD_UI_SelectedTeamHead_SubDivs(int index, int* actual) {
 
 	for (i = eraIndex[uiEra]; i < eraIndex[uiEra + 1]; i++) {
 		if (i >= eraIndex[uiEra] && i < eraIndex[uiEra + 1]) {
-
 			if (!charMD[i].isSubDiv) { // hasSubDiv
 				int k;
 				for (k = 1; k < NO_OF_MD_MODELS; k++) {
@@ -947,7 +939,6 @@ static const char* MD_UI_SelectedTeamHead_SubDivs(int index, int* actual) {
 			else {
 				c++;
 			}
-
 		}
 	}
 	return "";
@@ -1268,7 +1259,7 @@ static constexpr singleSaberHilts_t singleSaberHilts[] = {
 	{ "@MD_MENU_SABER_YARAEL",				"yarael"				},
 	{ "@MD_MENU_SABER_YODA",				"yoda"					},
 	{ "@MD_MENU_SABER_YUN",					"yun"					},
-	
+
 	{ "",									""						},
 };
 constexpr int NO_OF_SINGLE_SABER_HILTS = sizeof(singleSaberHilts) / sizeof(singleSaberHilts[0]);
@@ -2255,12 +2246,12 @@ static const char* UI_FeederItemText(const float feederID, const int index, cons
 	}
 #ifdef NEW_FEEDER
 	else if (feederID == FEEDER_MD_FACTION)
-	{ 
-		if (index >= 0 && index < TOTAL_ERAS) 
-		{ 
-			return eraNames[index]; 
-		} 
-	} 
+	{
+		if (index >= 0 && index < TOTAL_ERAS)
+		{
+			return eraNames[index];
+		}
+	}
 #endif
 	else if (feederID == FEEDER_DUEL_MAPS)
 	{
@@ -2375,7 +2366,7 @@ static qhandle_t UI_FeederItemImage(const float feederID, const int index)
 		if (index >= start && index < end)
 		{
 			if (!mdHeadIcons[index])
-				mdHeadIcons[index] = ui.R_RegisterShaderNoMip(va("gfx/menus/charactermenuicons/%s", ((!strcmp(charMD[index].icon,"")) ? charMD[index].npc : charMD[index].icon)));//(va("models/players/%s/%s", charMD[index].model, charMD[index].icon));
+				mdHeadIcons[index] = ui.R_RegisterShaderNoMip(va("gfx/menus/charactermenuicons/%s", ((!strcmp(charMD[index].icon, "")) ? charMD[index].npc : charMD[index].icon)));//(va("models/players/%s/%s", charMD[index].model, charMD[index].icon));
 
 			return mdHeadIcons[index];
 		}
@@ -2488,7 +2479,6 @@ static qboolean UI_RunMenuScript(const char** args)
 
 	if (String_Parse(args, &name))
 	{
-
 #ifdef NEW_FEEDER_V1
 #ifdef NEW_FEEDER_V6
 		if (Q_stricmp(name, "md_char_init") == 0)
@@ -2507,7 +2497,7 @@ static qboolean UI_RunMenuScript(const char** args)
 			if (Q_stricmp(name, era_table[i].name) == 0) {
 				uiEra = i;
 #ifdef NEW_FEEDER_V6
-runEra:
+				runEra :
 #endif
 #ifdef NEW_FEEDER_V7
 				int select = eraIndex[uiEra];
@@ -2589,7 +2579,7 @@ runEra:
 #ifdef NEW_FEEDER_V2
 					itemDef_t* itemDesc = Menu_FindItemByName(menu, "char_desc");
 					if (itemDesc) {
-						itemDesc->text = (char *)charMD[uiVariantIndex].desc;
+						itemDesc->text = (char*)charMD[uiVariantIndex].desc;
 					}
 #endif
 				}
@@ -2755,7 +2745,7 @@ runEra:
 			UI_CheckVid1Data(menuName, warningMenuName);
 		}
 #ifdef NEW_FEEDER
-		else if (Q_stricmp(name, "md_char") == 0) 
+		else if (Q_stricmp(name, "md_char") == 0)
 		{
 			//Cvar_Set("ui_md_name", charMD[uiModelIndex].name);
 			//Cvar_Set("ui_md_title", charMD[uiModelIndex].title);
@@ -2776,7 +2766,7 @@ runEra:
 				}
 			}
 		}
-		else if (Q_stricmp(name, "md_npc") == 0) 
+		else if (Q_stricmp(name, "md_npc") == 0)
 		{
 			const char* targetname = va("%s%d", charMD[uiVariantIndex].npc, Q_irand(0, 9999));
 			const char* team;
@@ -2784,13 +2774,13 @@ runEra:
 
 			switch (ui_char_team_select.integer)
 			{
-				case 1: team = "TEAM_PLAYER";		break;
-				case 2: team = "TEAM_ENEMY";		break;
-				case 3: team = "TEAM_SOLO";			break;
-				case 4: team = "TEAM_NEUTRAL";		break;
-				default: team = "TEAM_DEFAULT";		break;
+			case 1: team = "TEAM_PLAYER";		break;
+			case 2: team = "TEAM_ENEMY";		break;
+			case 3: team = "TEAM_SOLO";			break;
+			case 4: team = "TEAM_NEUTRAL";		break;
+			default: team = "TEAM_DEFAULT";		break;
 			}
-			
+
 			if (strcmp(team, "TEAM_DEFAULT") == 0 && npcHealth == 0) {
 				// Default npc spawn
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s\n", charMD[uiVariantIndex].npc, targetname));
@@ -2801,7 +2791,7 @@ runEra:
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s %s %d\n", charMD[uiVariantIndex].npc, targetname, team, npcHealth));
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s %s %d\n", charMD[uiVariantIndex].npc, targetname, team, npcHealth));
 			}
-			
+
 			/*
 			const menuDef_t* menu = Menu_GetFocused();
 			if (menu && !strcmp(menu->window.name, "ingamecharacter"))
@@ -2834,14 +2824,14 @@ runEra:
 #endif
 			switch (ui_char_team_select.integer)
 			{
-				case 1:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam player\n");			break;
-				case 2:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam enemy\n");			break;
-				case 3:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam solo\n");			break;
-				case 4:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam neutral\n");		break;
+			case 1:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam player\n");			break;
+			case 2:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam enemy\n");			break;
+			case 3:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam solo\n");			break;
+			case 4:	ui.Cmd_ExecuteText(EXEC_APPEND, "playerteam neutral\n");		break;
 
-				default: break;
+			default: break;
 			}
-			
+
 			const int playerHealth = ui_char_health_select.integer;
 			if (playerHealth != 0)
 			{
@@ -3993,7 +3983,7 @@ static int UI_FeederCount(const float feederID)
 		return uiInfo.playerSpecies[uiInfo.playerSpeciesIndex].ColorCount;
 	}
 #ifdef NEW_FEEDER
-	if (feederID == FEEDER_MD_FACTION) 
+	if (feederID == FEEDER_MD_FACTION)
 	{
 		return TOTAL_ERAS;
 	}
@@ -4206,11 +4196,11 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 		}
 	*/
 #ifdef NEW_FEEDER
-	else if (feederID == FEEDER_MD_FACTION) 
-	{ 
-		uiEra = index; 
+	else if (feederID == FEEDER_MD_FACTION)
+	{
+		uiEra = index;
 		return;
-	} 
+	}
 	else if ((feederID == FEEDER_MD_MODELS) || (feederID == FEEDER_MD_VARIANTS))
 	{
 		int actual = 0;
@@ -4260,7 +4250,7 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 			Cvar_Set("ui_char_model", charMD[index].model);//UI_Cvar_VariableString("ui_model"));
 			Cvar_Set("ui_char_skin", charMD[index].skin);//
 		}
-	} 
+	}
 #endif
 
 	else if (feederID == FEEDER_DUEL_MAPS)
@@ -4394,7 +4384,7 @@ static qboolean UI_ParseAnimationFile(const char* af_filename)
 #ifdef _DEBUG
 			if (strcmp(token, "ROOT"))
 			{
-				Com_Printf(S_COLOR_RED"WARNING: Unknown token %s in %s\n", token, af_filename);
+				//Com_Printf(S_COLOR_RED"WARNING: Unknown token %s in %s\n", token, af_filename);
 			}
 #endif
 			while (token[0])
@@ -5235,14 +5225,15 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 08/02/2026 ---------------------\n");// build date
-	Com_Printf("---------------------------Build 02------------------------------\n");
+	Com_Printf("--------------------- Build Date 14/02/2026 ---------------------\n");// build date
+	Com_Printf("---------------------------Build 04------------------------------\n");
+	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	//Com_Printf("------Type (seta cl_noprint 0) to see text-----------------------\n");
-	//Com_Printf("------Type (helpdebug) to open debug command list----------------\n");
-	//Com_Printf("------Type (Adminlogin <password>) to log in as admin------------\n");
+
+	//Com_Printf("------Type (seta cl_noprint 0) to see text------\n");
+	//Com_Printf("------Type (Debuginfo) to open debug command list------\n");
 
 	ui.FS_FreeFile(buffer); //let go of the buffer
 }
@@ -5285,7 +5276,7 @@ void UI_Load()
 	String_Init();
 
 #ifdef NEW_FEEDER_V6
-//	firstTimeLoad = false;
+	//	firstTimeLoad = false;
 #endif
 
 	UI_LoadMenus(menuSet, qtrue);
@@ -6301,14 +6292,14 @@ static void UI_OwnerDraw(float x, float y, float w, float h, const float text_x,
 		int duelMapImage;
 		duelMapImage = ui.
 			R_RegisterShaderNoMip(duelMaps[duelMapIndex].duelMapImage);
-			if (duelMapImage)
-			{
-				ui.R_DrawStretchPic(x, y, w, h, 0, 0, 1, 1, duelMapImage);
-			}
-			else
-			{
-				UI_DrawHandlePic(x, y, w, h, uis.menuBackShader);
-			}
+		if (duelMapImage)
+		{
+			ui.R_DrawStretchPic(x, y, w, h, 0, 0, 1, 1, duelMapImage);
+		}
+		else
+		{
+			UI_DrawHandlePic(x, y, w, h, uis.menuBackShader);
+		}
 		break;
 	default:
 		break;
@@ -6926,11 +6917,11 @@ static void UI_UpdateFightingStyleChoices()
 			}
 
 			// Determine current style
-			if (pState->saber_anim_level == SS_FAST)
+			if (pState->saberAnimLevel == SS_FAST)
 			{
 				Cvar_Set("ui_currentfightingstyle", "0"); // FAST
 			}
-			else if (pState->saber_anim_level == SS_STRONG)
+			else if (pState->saberAnimLevel == SS_STRONG)
 			{
 				Cvar_Set("ui_currentfightingstyle", "2"); // STRONG
 			}
@@ -9156,7 +9147,7 @@ static void UI_UpdateCharacterSkin()
 	}
 	else
 #else
-	if (!strcmp(menu->window.name,"ingamecharacter") && !strchr(UI_Cvar_VariableString("ui_model"), '|')) // Not a multipart custom character
+	if (!strcmp(menu->window.name, "ingamecharacter") && !strchr(UI_Cvar_VariableString("ui_model"), '|')) // Not a multipart custom character
 	{
 		Com_sprintf(skin, sizeof skin, "models/players/%s/%s.skin",
 			Cvar_VariableString("ui_char_model"),
@@ -9166,12 +9157,12 @@ static void UI_UpdateCharacterSkin()
 	else
 #endif
 #endif
-	Com_sprintf(skin, sizeof skin, "models/players/%s/|%s|%s|%s",
-		Cvar_VariableString("ui_char_model"),
-		Cvar_VariableString("ui_char_skin_head"),
-		Cvar_VariableString("ui_char_skin_torso"),
-		Cvar_VariableString("ui_char_skin_legs")
-	);
+		Com_sprintf(skin, sizeof skin, "models/players/%s/|%s|%s|%s",
+			Cvar_VariableString("ui_char_model"),
+			Cvar_VariableString("ui_char_skin_head"),
+			Cvar_VariableString("ui_char_skin_torso"),
+			Cvar_VariableString("ui_char_skin_legs")
+		);
 
 	ItemParse_model_g2skin_go(item, skin);
 
@@ -9252,13 +9243,12 @@ static void UI_UpdateCharacterSkin()
 		}
 #endif
 #endif
-		 // Play the Select Animation
-		//uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
-		//ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
-		//const modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
-		//if (modelPtr->g2anim)
-		//	uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", modelPtr->g2anim, qtrue);
-
+		// Play the Select Animation
+	   //uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
+	   //ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
+	   //const modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
+	   //if (modelPtr->g2anim)
+	   //	uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", modelPtr->g2anim, qtrue);
 	}
 #endif
 }
@@ -9293,7 +9283,7 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 #ifdef NEW_FEEDER_V7
 		if ((uiVariantIndex != mdSelected) || newLoad)
 #else
-		if (uiVariantIndex != mdSelected) 
+		if (uiVariantIndex != mdSelected)
 #endif
 		{
 			mdSelected = uiVariantIndex;
@@ -9301,14 +9291,14 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 			uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
 #endif
 			ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
-			uiInfo.moveAnimTime += uiInfo.uiDC.realTime; 
+			uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 		}
 		else
 			return;
 	}
 	else
 #else
-	if (!strcmp(menu->window.name, "ingamecharacter")) 
+	if (!strcmp(menu->window.name, "ingamecharacter"))
 	{
 		ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
 		uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
@@ -9316,7 +9306,7 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 	else
 #endif
 #endif
-	ItemParse_model_g2anim_go(item, ui_char_anim.string);
+		ItemParse_model_g2anim_go(item, ui_char_anim.string);
 
 	Com_sprintf(modelPath, sizeof modelPath, "models/players/%s/model.glm", Cvar_VariableString("ui_char_model"));
 	ItemParse_asset_model_go(item, modelPath);

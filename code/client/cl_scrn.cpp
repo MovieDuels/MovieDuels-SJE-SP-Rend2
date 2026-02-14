@@ -396,8 +396,6 @@ void SCR_Init()
 void UI_SetActiveMenu(const char* menuname, const char* menuID);
 void _UI_Refresh(int realtime);
 void UI_DrawConnect(const char* servername, const char* updateInfoString);
-extern cvar_t* cl_com_outcast;
-
 extern cvar_t* cl_com_rend2;
 
 /*

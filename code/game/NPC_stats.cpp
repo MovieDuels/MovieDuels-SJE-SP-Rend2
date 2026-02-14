@@ -1020,7 +1020,7 @@ static qboolean G_ParseAnimationFile(const int gla_index, const char* skeletonNa
 #ifndef FINAL_BUILD
 			if (strcmp(token, "ROOT"))
 			{
-				Com_Printf(S_COLOR_RED"WARNING: Unknown token %s in %s\n", token, skeletonPath);
+				//Com_Printf(S_COLOR_RED"WARNING: Unknown token %s in %s\n", token, skeletonPath);
 			}
 #endif
 			//unrecognized animation so skip to end of line,
@@ -4471,7 +4471,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 					//clear
 					npc->client->ps.saberStylesKnown &= ~(1 << n);
 				}
-				npc->client->ps.saber_anim_level = n;
+				npc->client->ps.saberAnimLevel = n;
 				if (parsing_player)
 				{
 					cg.saberAnimLevelPending = n;

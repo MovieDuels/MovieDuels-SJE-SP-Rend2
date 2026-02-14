@@ -1,4 +1,4 @@
-﻿/*
+/*
 ===========================================================================
 Copyright (C) 2000 - 2013, Raven Software, Inc.
 Copyright (C) 2001 - 2013, Activision, Inc.
@@ -1136,15 +1136,13 @@ namespace ragl
 				mParentVisit(Parent),
 				mCostToGoal(-1),
 				mCostFromStart(0)
-			{
-			}
+			{}
 			search_node(const search_node& t) :
 				mNode(t.mNode),
 				mParentVisit(t.mParentVisit),
 				mCostToGoal(t.mCostToGoal),
 				mCostFromStart(t.mCostFromStart)
-			{
-			}
+			{}
 
 			////////////////////////////////////////////////////////////////////////////////
 			// Assignment Operator

@@ -56,7 +56,7 @@ qboolean PM_SlideMove(const float grav_mod)
 	qboolean damage_self;
 	int slide_move_contents = pm->tracemask;
 
-	if (pm->ps->client_num >= MAX_CLIENTS
+	if (pm->ps->clientNum >= MAX_CLIENTS
 		&& !PM_ControlledByPlayer())
 	{
 		//a non-player client, not an NPC under player control
@@ -138,7 +138,7 @@ qboolean PM_SlideMove(const float grav_mod)
 		VectorMA(pm->ps->origin, time_left, pm->ps->velocity, end);
 
 		// see if we can make it there
-		pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, end, pm->ps->client_num, slide_move_contents,
+		pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, end, pm->ps->clientNum, slide_move_contents,
 			static_cast<EG2_Collision>(0), 0);
 		if (trace.contents & CONTENTS_BOTCLIP
 			&& slide_move_contents & CONTENTS_BOTCLIP)
@@ -148,13 +148,13 @@ qboolean PM_SlideMove(const float grav_mod)
 			{
 				//crap, we're in a do not enter brush, take it out for the remainder of the traces and re-trace this one right now without it
 				slide_move_contents &= ~CONTENTS_BOTCLIP;
-				pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, end, pm->ps->client_num, slide_move_contents,
+				pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, end, pm->ps->clientNum, slide_move_contents,
 					static_cast<EG2_Collision>(0), 0);
 			}
 			else if (trace.plane.normal[2] > 0.0f)
 			{
 				//on top of a do not enter brush, it, just redo this one trace without it
-				pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, end, pm->ps->client_num,
+				pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, end, pm->ps->clientNum,
 					slide_move_contents & ~CONTENTS_BOTCLIP, static_cast<EG2_Collision>(0), 0);
 			}
 		}
@@ -418,7 +418,7 @@ void PM_StepSlideMove(float grav_mod)
 	//Q3Final addition...
 	VectorCopy(start_o, down);
 	down[2] -= step_size;
-	pm->trace(&trace, start_o, pm->mins, pm->maxs, down, pm->ps->client_num, pm->tracemask,
+	pm->trace(&trace, start_o, pm->mins, pm->maxs, down, pm->ps->clientNum, pm->tracemask,
 		static_cast<EG2_Collision>(0), 0);
 	VectorSet(up, 0, 0, 1);
 	// never step up when you still have up velocity
@@ -442,7 +442,7 @@ void PM_StepSlideMove(float grav_mod)
 
 	// test the player position if they were a stepheight higher
 
-	pm->trace(&trace, start_o, pm->mins, pm->maxs, up, pm->ps->client_num, pm->tracemask, static_cast<EG2_Collision>(0),
+	pm->trace(&trace, start_o, pm->mins, pm->maxs, up, pm->ps->clientNum, pm->tracemask, static_cast<EG2_Collision>(0),
 		0);
 	if (trace.allsolid || trace.startsolid || trace.fraction == 0)
 	{
@@ -487,7 +487,7 @@ void PM_StepSlideMove(float grav_mod)
 		// push down the final amount
 		VectorCopy(pm->ps->origin, down);
 		down[2] -= step_size;
-		pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, down, pm->ps->client_num, pm->tracemask,
+		pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, down, pm->ps->clientNum, pm->tracemask,
 			static_cast<EG2_Collision>(0), 0);
 		if (pm->debugLevel)
 		{
@@ -495,7 +495,7 @@ void PM_StepSlideMove(float grav_mod)
 		}
 		if (g_stepSlideFix->integer)
 		{
-			if (pm->ps->client_num < MAX_CLIENTS
+			if (pm->ps->clientNum < MAX_CLIENTS
 				&& trace.plane.normal[2] < MIN_WALK_NORMAL)
 			{
 				//normal players cannot step up slopes that are too steep to walk on!
@@ -523,7 +523,7 @@ void PM_StepSlideMove(float grav_mod)
 		if (!trace.allsolid
 			&& !skip_step) //normal players cannot step up slopes that are too steep to walk on!
 		{
-			if (pm->ps->client_num
+			if (pm->ps->clientNum
 				&& is_giant
 				&& g_entities[trace.entityNum].client
 				&& pm->gent
@@ -542,7 +542,7 @@ void PM_StepSlideMove(float grav_mod)
 					VectorCopy(start_v, pm->ps->velocity);
 				}
 			}
-			else if (pm->ps->client_num
+			else if (pm->ps->clientNum
 				&& is_giant
 				&& g_entities[trace.entityNum].client
 				&& g_entities[trace.entityNum].client->playerTeam == pm->gent->client->playerTeam)
@@ -599,7 +599,7 @@ void PM_StepSlideMove(float grav_mod)
 	*/
 #if 0
 	// if the down trace can trace back to the original position directly, don't step
-	pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, start_o, pm->ps->client_num, pm->tracemask);
+	pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, start_o, pm->ps->clientNum, pm->tracemask);
 	if (trace.fraction == 1.0) {
 		// use the original move
 		VectorCopy(down_o, pm->ps->origin);

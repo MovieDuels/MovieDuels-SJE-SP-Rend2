@@ -32,7 +32,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_vehicles.h"
 
 extern qboolean G_CheckInSolid(gentity_t* self, qboolean fix);
-extern void client_userinfo_changed(int client_num);
+extern void client_userinfo_changed(int clientNum);
 extern qboolean SpotWouldTelefrag2(const gentity_t* mover, vec3_t dest);
 extern void jedi_cloak(gentity_t* self);
 extern void Saboteur_Cloak(gentity_t* self);
@@ -585,7 +585,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->NPC->scriptFlags |= SCF_NAV_CAN_JUMP; // These jokers can jump
 	}
 	if (ent->client->NPC_class == CLASS_DESANN
-		|| ent->client->NPC_class == CLASS_VADER
+		//|| ent->client->NPC_class == CLASS_VADER
 		|| ent->client->NPC_class == CLASS_YODA
 		|| ent->client->NPC_class == CLASS_TAVION
 		|| ent->client->NPC_class == CLASS_LUKE
@@ -599,7 +599,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->NPC->aiFlags |= NPCAI_BOSS_SERENITYJEDIENGINE;
 	}
 	if (ent->client->NPC_class == CLASS_DESANN
-		|| ent->client->NPC_class == CLASS_VADER
+		//|| ent->client->NPC_class == CLASS_VADER
 		|| ent->client->NPC_class == CLASS_TAVION
 		|| ent->client->NPC_class == CLASS_YODA
 		|| ent->client->NPC_class == CLASS_LUKE
@@ -1665,7 +1665,7 @@ void NPC_Begin(gentity_t* ent)
 
 	client->airOutTime = level.time + 12000;
 
-	client->ps.client_num = ent->s.number;
+	client->ps.clientNum = ent->s.number;
 	// clear entity values
 
 	if (ent->health) // Was health supplied in map
@@ -2609,15 +2609,15 @@ gentity_t* NPC_Spawn_Do(gentity_t* ent, const qboolean fullSpawnNow)
 		newent->client->playerTeam = ent->NPC_overrideTeam;
 		switch (newent->client->playerTeam)
 		{
-			case TEAM_PLAYER:
-				newent->client->enemyTeam = TEAM_ENEMY;
-				break;
-			case TEAM_ENEMY:
-				newent->client->enemyTeam = TEAM_PLAYER;
-				break;
-			default: // Solo, free and neutral
-				newent->client->enemyTeam = ent->NPC_overrideTeam;
-				break;
+		case TEAM_PLAYER:
+			newent->client->enemyTeam = TEAM_ENEMY;
+			break;
+		case TEAM_ENEMY:
+			newent->client->enemyTeam = TEAM_PLAYER;
+			break;
+		default: // Solo, free and neutral
+			newent->client->enemyTeam = ent->NPC_overrideTeam;
+			break;
 		}
 	}
 

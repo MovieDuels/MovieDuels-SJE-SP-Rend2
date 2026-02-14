@@ -831,7 +831,7 @@ int G_MinGetUpTime(const gentity_t* ent)
 		//stormtroopers are slow to get up
 		return 100;
 	}
-	if (ent && ent->s.client_num < MAX_CLIENTS || G_ControlledByPlayer(ent))
+	if (ent && ent->s.clientNum < MAX_CLIENTS || G_ControlledByPlayer(ent))
 	{
 		//player can get up faster based on his/her force jump skill
 		constexpr int get_up_time = PLAYER_KNOCKDOWN_HOLD_EXTRA_TIME;
@@ -1495,7 +1495,7 @@ qboolean PM_AdjustAnglesForHeldByMonster(gentity_t* ent, const gentity_t* monste
 
 qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, const qboolean interrupt_okay)
 {
-	if ((ps->client_num < MAX_CLIENTS || G_ControlledByPlayer(&g_entities[ps->client_num])) //player
+	if ((ps->clientNum < MAX_CLIENTS || G_ControlledByPlayer(&g_entities[ps->clientNum])) //player
 		&& ps->groundEntityNum != ENTITYNUM_NONE //on ground
 		&& (interrupt_okay //okay to interrupt a lean
 			&& !PM_CrouchAnim(ps->legsAnim)
@@ -1517,7 +1517,7 @@ qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, const qbool
 
 qboolean G_OkayToDoStandingBlock(const playerState_t* ps, const usercmd_t* cmd, const qboolean interrupt_okay)
 {
-	if ((ps->client_num < MAX_CLIENTS || G_ControlledByPlayer(&g_entities[ps->client_num])) //player
+	if ((ps->clientNum < MAX_CLIENTS || G_ControlledByPlayer(&g_entities[ps->clientNum])) //player
 		&& ps->groundEntityNum != ENTITYNUM_NONE //on ground
 		&& (interrupt_okay
 			&& !in_camera
@@ -1549,7 +1549,7 @@ are being updated isntead of a full move
 //FIXME: Now that they pmove twice per think, they snap-look really fast
 ================
 */
-void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd, gentity_t* gent)
+void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, gentity_t* gent)
 {
 	short temp;
 	float root_pitch = 0, pitch_min = -75, pitch_max = 75, yaw_min = 0, yaw_max = 0, locked_yaw_value = 0;
@@ -1587,7 +1587,7 @@ void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd
 		return;
 	}
 
-	if (ps->client_num != 0 && gent != nullptr && gent->client != nullptr)
+	if (ps->clientNum != 0 && gent != nullptr && gent->client != nullptr)
 	{
 		if (gent->client->renderInfo.renderFlags & RF_LOCKEDANGLE)
 		{
@@ -2005,7 +2005,7 @@ void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd
 					if (cmd->rightmove > 0)
 					{
 						//lean right
-						if (saber_anim_level == SS_DUAL)
+						if (saberAnimLevel == SS_DUAL)
 						{
 							if (ps->torsoAnim == BOTH_BLOCK_HOLD_R_DUAL)
 							{
@@ -2016,7 +2016,7 @@ void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd
 								anim = BOTH_BLOCK_R_DUAL;
 							}
 						}
-						else if (saber_anim_level == SS_STAFF)
+						else if (saberAnimLevel == SS_STAFF)
 						{
 							if (ps->torsoAnim == BOTH_BLOCK_HOLD_R_STAFF)
 							{
@@ -2042,7 +2042,7 @@ void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd
 					else if (cmd->rightmove < 0)
 					{
 						//lean left
-						if (saber_anim_level == SS_DUAL)
+						if (saberAnimLevel == SS_DUAL)
 						{
 							if (ps->torsoAnim == BOTH_BLOCK_HOLD_L_DUAL)
 							{
@@ -2053,7 +2053,7 @@ void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd
 								anim = BOTH_BLOCK_L_DUAL;
 							}
 						}
-						else if (saber_anim_level == SS_STAFF)
+						else if (saberAnimLevel == SS_STAFF)
 						{
 							if (ps->torsoAnim == BOTH_BLOCK_HOLD_L_STAFF)
 							{
@@ -2081,7 +2081,7 @@ void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd
 				{
 					int extra_hold_time = 0;
 
-					if (saber_anim_level == SS_DUAL)
+					if (saberAnimLevel == SS_DUAL)
 					{
 						if (PM_BlockDualAnim(ps->torsoAnim) && !PM_BlockHoldDualAnim(ps->torsoAnim))
 						{
@@ -2091,7 +2091,7 @@ void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd
 							extra_hold_time = 100;
 						}
 					}
-					else if (saber_anim_level == SS_STAFF)
+					else if (saberAnimLevel == SS_STAFF)
 					{
 						if (PM_BlockStaffAnim(ps->torsoAnim) && !PM_BlockHoldStaffAnim(ps->torsoAnim))
 						{

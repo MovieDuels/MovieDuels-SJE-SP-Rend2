@@ -255,7 +255,7 @@ static qboolean G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t m
 	{
 		//Do damage
 		if (pusher->spawnflags & MOVER_CRUSHER //a crusher
-			&& check->s.client_num >= MAX_CLIENTS //not the player
+			&& check->s.clientNum >= MAX_CLIENTS //not the player
 			&& check->client //NPC
 			&& check->health <= 0 //dead
 			&& G_OkayToRemoveCorpse(check)) //okay to remove him
@@ -1198,7 +1198,7 @@ void Blocked_Door(gentity_t* ent, gentity_t* other)
 	if (ent->damage)
 	{
 		if (ent->spawnflags & MOVER_CRUSHER //a crusher
-			&& other->s.client_num >= MAX_CLIENTS //not the player
+			&& other->s.clientNum >= MAX_CLIENTS //not the player
 			&& other->client //NPC
 			&& other->health <= 0 //dead
 			&& G_OkayToRemoveCorpse(other)) //okay to remove him

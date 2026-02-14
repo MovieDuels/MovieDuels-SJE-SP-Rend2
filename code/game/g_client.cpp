@@ -580,14 +580,14 @@ The game can override any of the settings and call gi.SetUserinfo
 if desired.
 ============
 */
-void client_userinfo_changed(const int client_num)
+void client_userinfo_changed(const int clientNum)
 {
-	const gentity_t* ent = g_entities + client_num;
+	const gentity_t* ent = g_entities + clientNum;
 	gclient_t* client = ent->client;
 	char userinfo[MAX_INFO_STRING] = { 0 }, buf[MAX_INFO_STRING] = { 0 },
 		sound[MAX_STRING_CHARS] = { 0 }, oldname[34] = { 0 };
 
-	gi.GetUserinfo(client_num, userinfo, sizeof userinfo);
+	gi.GetUserinfo(clientNum, userinfo, sizeof userinfo);
 
 	// set name
 	Q_strncpyz(oldname, client->pers.netname, sizeof oldname);
@@ -616,7 +616,7 @@ void client_userinfo_changed(const int client_num)
 	Q_strcat(buf, sizeof buf, va("hc\\%i\\", client->pers.maxHealth));
 	Q_strcat(buf, sizeof buf, va("snd\\%s\\", sound));
 
-	gi.SetConfigstring(CS_PLAYERS + client_num, buf);
+	gi.SetConfigstring(CS_PLAYERS + clientNum, buf);
 }
 
 /*
@@ -639,16 +639,16 @@ to the server machine, but qfalse on map changes and tournement
 restarts.
 ============
 */
-char* ClientConnect(const int client_num, const qboolean first_time,
+char* ClientConnect(const int clientNum, const qboolean first_time,
 	const SavedGameJustLoaded_e e_saved_game_just_loaded)
 {
-	gentity_t* ent = &g_entities[client_num];
+	gentity_t* ent = &g_entities[clientNum];
 	char userinfo[MAX_INFO_STRING] = { 0 };
 
-	gi.GetUserinfo(client_num, userinfo, sizeof userinfo);
+	gi.GetUserinfo(clientNum, userinfo, sizeof userinfo);
 
 	// they can connect
-	ent->client = level.clients + client_num;
+	ent->client = level.clients + clientNum;
 	gclient_t* client = ent->client;
 
 	if (e_saved_game_just_loaded != eFULL)
@@ -673,7 +673,7 @@ char* ClientConnect(const int client_num, const qboolean first_time,
 	if (e_saved_game_just_loaded == eFULL)
 	{
 		// get and distribute relevent paramters
-		client_userinfo_changed(client_num);
+		client_userinfo_changed(clientNum);
 	}
 	else
 	{
@@ -685,7 +685,7 @@ char* ClientConnect(const int client_num, const qboolean first_time,
 		G_ReadSessionData(client);
 
 		// get and distribute relevent paramters
-		client_userinfo_changed(client_num);
+		client_userinfo_changed(clientNum);
 
 		// don't do the "xxx connected" messages if they were caried over from previous level
 		if (first_time)
@@ -706,10 +706,10 @@ to be placed into the level.  This will happen every level load,
 and on transition between teams, but doesn't happen on respawns
 ============
 */
-void ClientBegin(const int client_num, const usercmd_t* cmd, const SavedGameJustLoaded_e e_saved_game_just_loaded)
+void ClientBegin(const int clientNum, const usercmd_t* cmd, const SavedGameJustLoaded_e e_saved_game_just_loaded)
 {
-	gentity_t* ent = g_entities + client_num;
-	gclient_t* client = level.clients + client_num;
+	gentity_t* ent = g_entities + clientNum;
+	gclient_t* client = level.clients + clientNum;
 
 	if (e_saved_game_just_loaded == eFULL)
 	{
@@ -900,7 +900,7 @@ static void Player_RestoreFromPrevLevel(gentity_t* ent)
 				&saber2_blade_color[7],
 				//general saber data
 				&client->ps.saberStylesKnown,
-				&client->ps.saber_anim_level,
+				&client->ps.saberAnimLevel,
 				&client->ps.saberLockEnemy,
 				&client->ps.saberLockTime
 			);
@@ -3169,9 +3169,6 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 	index = ent - g_entities;
 	client = ent->client;
 
-	client->lastSaberTarget = nullptr;
-	client->lastSaberTargetTime = 0;
-
 	if (e_saved_game_just_loaded == eFULL && g_qbLoadTransition == qfalse) //qbFromSavedGame)
 	{
 		//loading up a full save game
@@ -3303,7 +3300,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->crouchheight = CROUCH_MAXS_2;
 		client->standheight = DEFAULT_MAXS_2;
 
-		client->ps.client_num = index;
+		client->ps.clientNum = index;
 
 		// give default weapons
 		//these are precached in g_items, ClearRegisteredItems()
@@ -3647,9 +3644,9 @@ Called when a player drops from the server.
 Will not be called between levels.
 ============
 */
-void ClientDisconnect(const int client_num)
+void ClientDisconnect(const int clientNum)
 {
-	gentity_t* ent = g_entities + client_num;
+	gentity_t* ent = g_entities + clientNum;
 
 	if (!ent->client)
 	{
@@ -3674,7 +3671,7 @@ void ClientDisconnect(const int client_num)
 		Weapon_StunFree(ent->client->stun);
 	}
 
-	gi.SetConfigstring(CS_PLAYERS + client_num, "");
+	gi.SetConfigstring(CS_PLAYERS + clientNum, "");
 
 	IIcarusInterface::GetIcarus()->DeleteIcarusID(ent->m_iIcarusID);
 }

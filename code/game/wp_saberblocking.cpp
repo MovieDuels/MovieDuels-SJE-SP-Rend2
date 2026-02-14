@@ -88,7 +88,7 @@ void g_fatigue_bp_knockaway(gentity_t* blocker)
 
 	const int anim_choice = irand(0, 5);
 
-	if (blocker->client->ps.saber_anim_level == SS_DUAL)
+	if (blocker->client->ps.saberAnimLevel == SS_DUAL)
 	{
 		switch (anim_choice)
 		{
@@ -113,7 +113,7 @@ void g_fatigue_bp_knockaway(gentity_t* blocker)
 			break;
 		}
 	}
-	else if (blocker->client->ps.saber_anim_level == SS_STAFF)
+	else if (blocker->client->ps.saberAnimLevel == SS_STAFF)
 	{
 		switch (anim_choice)
 		{
@@ -186,7 +186,7 @@ static void g_bounce_attacker(gentity_t* atk)
 
 	const int anim_choice = irand(0, 6);
 
-	if (atk->client->ps.saber_anim_level == SS_DUAL)
+	if (atk->client->ps.saberAnimLevel == SS_DUAL)
 	{
 		switch (anim_choice)
 		{
@@ -214,7 +214,7 @@ static void g_bounce_attacker(gentity_t* atk)
 			break;
 		}
 	}
-	else if (atk->client->ps.saber_anim_level == SS_STAFF)
+	else if (atk->client->ps.saberAnimLevel == SS_STAFF)
 	{
 		switch (anim_choice)
 		{
@@ -242,7 +242,7 @@ static void g_bounce_attacker(gentity_t* atk)
 			break;
 		}
 	}
-	else if (atk->client->ps.saber_anim_level == SS_FAST)
+	else if (atk->client->ps.saberAnimLevel == SS_FAST)
 	{
 		switch (anim_choice)
 		{
@@ -270,7 +270,7 @@ static void g_bounce_attacker(gentity_t* atk)
 			break;
 		}
 	}
-	else if (atk->client->ps.saber_anim_level == SS_MEDIUM)
+	else if (atk->client->ps.saberAnimLevel == SS_MEDIUM)
 	{
 		switch (anim_choice)
 		{
@@ -298,7 +298,7 @@ static void g_bounce_attacker(gentity_t* atk)
 			break;
 		}
 	}
-	else if (atk->client->ps.saber_anim_level == SS_STRONG)
+	else if (atk->client->ps.saberAnimLevel == SS_STRONG)
 	{
 		switch (anim_choice)
 		{
@@ -326,7 +326,7 @@ static void g_bounce_attacker(gentity_t* atk)
 			break;
 		}
 	}
-	else if (atk->client->ps.saber_anim_level == SS_DESANN)
+	else if (atk->client->ps.saberAnimLevel == SS_DESANN)
 	{
 		switch (anim_choice)
 		{
@@ -354,7 +354,7 @@ static void g_bounce_attacker(gentity_t* atk)
 			break;
 		}
 	}
-	else if (atk->client->ps.saber_anim_level == SS_TAVION)
+	else if (atk->client->ps.saberAnimLevel == SS_TAVION)
 	{
 		switch (anim_choice)
 		{
@@ -1206,7 +1206,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							}
 							else
 							{
-								if (attacker->client->ps.saber_anim_level == SS_DESANN || attacker->client->ps.saber_anim_level == SS_STRONG)
+								if (attacker->client->ps.saberAnimLevel == SS_DESANN || attacker->client->ps.saberAnimLevel == SS_STRONG)
 								{
 									WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);
 								}
@@ -1250,7 +1250,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						}
 						else
 						{
-							if (attacker->client->ps.saber_anim_level == SS_DESANN || attacker->client->ps.saber_anim_level == SS_STRONG)
+							if (attacker->client->ps.saberAnimLevel == SS_DESANN || attacker->client->ps.saberAnimLevel == SS_STRONG)
 							{
 								WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);
 							}
@@ -1293,7 +1293,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 					}
 					else if ((accurate_parry || npc_blocking)) //Other types and npc,s
 					{
-						if (attacker->client->ps.saber_anim_level == SS_DESANN || attacker->client->ps.saber_anim_level == SS_STRONG)
+						if (attacker->client->ps.saberAnimLevel == SS_DESANN || attacker->client->ps.saberAnimLevel == SS_STRONG)
 						{
 							WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);
 						}
@@ -1552,7 +1552,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							}
 							else
 							{
-								if (attacker->client->ps.saber_anim_level == SS_DESANN || attacker->client->ps.saber_anim_level == SS_STRONG)
+								if (attacker->client->ps.saberAnimLevel == SS_DESANN || attacker->client->ps.saberAnimLevel == SS_STRONG)
 								{
 									WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);
 								}
@@ -1596,7 +1596,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						}
 						else
 						{
-							if (attacker->client->ps.saber_anim_level == SS_DESANN || attacker->client->ps.saber_anim_level
+							if (attacker->client->ps.saberAnimLevel == SS_DESANN || attacker->client->ps.saberAnimLevel
 								== SS_STRONG)
 							{
 								WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);
@@ -1642,7 +1642,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						G_ControlledByPlayer(blocker) || blocker->client->ps.saberBlockingTime > level.time && blocker->
 						NPC && !G_ControlledByPlayer(blocker))) //Other types and npc,s
 					{
-						if (attacker->client->ps.saber_anim_level == SS_DESANN || attacker->client->ps.saber_anim_level ==
+						if (attacker->client->ps.saberAnimLevel == SS_DESANN || attacker->client->ps.saberAnimLevel ==
 							SS_STRONG)
 						{
 							WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);

@@ -589,13 +589,13 @@ static clientSnapshot_t* SV_BuildClientSnapshot(client_t* client)
 	// this stops the main client entity playerstate from being sent across, which has the effect of breaking
 	// looping sounds for the main client. So I took it out.
 	/*	{
-			int							client_num;
+			int							clientNum;
 			svEntity_t					*svEnt;
-			client_num = frame->ps.client_num;
-			if ( client_num < 0 || client_num >= MAX_GENTITIES ) {
+			clientNum = frame->ps.clientNum;
+			if ( clientNum < 0 || clientNum >= MAX_GENTITIES ) {
 				Com_Error( ERR_DROP, "SV_SvEntityForGentity: bad gEnt" );
 			}
-			svEnt = &sv.svEntities[ client_num ];
+			svEnt = &sv.svEntities[ clientNum ];
 			// never send client's own entity, because it can
 			// be regenerated from the playerstate
 			svEnt->snapshotCounter = sv.snapshotCounter;

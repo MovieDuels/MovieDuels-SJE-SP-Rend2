@@ -2729,10 +2729,7 @@ done:
 		Hunk_FreeTempMemory(resampledBuffer);
 }
 
-
-extern cvar_t* g_DebugSaberCombat;
-static image_t* R_GetLoadedImage(const char* name, int flags)
-{
+image_t* R_GetLoadedImage(const char* name, int flags) {
 	long	hash;
 	image_t* image;
 
@@ -2740,14 +2737,9 @@ static image_t* R_GetLoadedImage(const char* name, int flags)
 	for (image = hashTable[hash]; image; image = image->next) {
 		if (!strcmp(name, image->imgName)) {
 			// the white image can be used with any set of parms, but other mismatches are errors
-			if (strcmp(name, "*white"))
-			{
-				if (image->flags != flags)
-				{
-					if (g_DebugSaberCombat->integer != 0)
-					{
-						ri.Printf(PRINT_DEVELOPER, "WARNING: reused image %s with mixed flags (%i vs %i)\n", name, image->flags, flags);
-					}
+			if (strcmp(name, "*white")) {
+				if (image->flags != flags) {
+					ri.Printf(PRINT_DEVELOPER, "WARNING: reused image %s with mixed flags (%i vs %i)\n", name, image->flags, flags);
 				}
 			}
 			return image;

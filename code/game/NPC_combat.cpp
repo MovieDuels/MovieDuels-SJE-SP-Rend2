@@ -1685,7 +1685,7 @@ void NPC_ApplyWeaponFireDelay()
 		break;
 
 	case WP_THERMAL:
-		if (client->ps.client_num)
+		if (client->ps.clientNum)
 		{
 			//NPCs delay...
 			//FIXME: player should, too, but would feel weird in 1st person, even though it

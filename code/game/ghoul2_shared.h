@@ -26,6 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include <vector>
 #include <map>
+#include <qcommon\ojk_saved_game_helper_fwd.h>
 
 constexpr auto G2T_SV_TIME = 0;
 constexpr auto G2T_CG_TIME = 1;
@@ -107,6 +108,9 @@ typedef struct {
 } mdxaBone_t;
 */
 #include "../rd-common/mdx_format.h"
+#include <cassert>
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
 
 // we save the whole structure here.
 struct boneInfo_t
@@ -634,6 +638,7 @@ IGhoul2InfoArray& _TheGhoul2InfoArray();
 IGhoul2InfoArray& TheGameGhoul2InfoArray();
 #endif
 
+
 class CGhoul2Info_v
 {
 	int mItem;
@@ -651,30 +656,81 @@ class CGhoul2Info_v
 
 	void Alloc()
 	{
-		assert(!mItem); //already alloced
+		if (mItem)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::Alloc called but mItem already allocated\n");
+#endif
+			return;
+		}
+
 		mItem = InfoArray().New();
-		assert(!Array().size());
+
+		if (!mItem)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::Alloc failed to allocate new item\n");
+#endif
+			return;
+		}
+
+		if (Array().size() != 0)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1WARNING: CGhoul2InfoArray::Alloc created non-empty array (size %d)\n",
+				Array().size());
+#endif
+		}
 	}
 
 	void Free()
 	{
-		if (mItem)
+		if (!mItem)
 		{
-			assert(InfoArray().IsValid(mItem));
-			InfoArray().Delete(mItem);
-			mItem = 0;
+#ifdef _DEBUG
+				Com_Printf("^3WARNING: CGhoul2InfoArray::Free called with NULL mItem\n");
+#endif
+			return;
 		}
+
+		if (!InfoArray().IsValid(mItem))
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::Free called with invalid mItem\n");
+#endif
+			mItem = 0;
+			return;
+		}
+
+		InfoArray().Delete(mItem);
+		mItem = 0;
 	}
 
 	std::vector<CGhoul2Info>& Array()
 	{
-		assert(InfoArray().IsValid(mItem));
+		if (!InfoArray().IsValid(mItem))
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::Array() called with invalid mItem\n");
+#endif
+			static std::vector<CGhoul2Info> dummy;
+			return dummy;
+		}
+
 		return InfoArray().Get(mItem);
 	}
 
 	const std::vector<CGhoul2Info>& Array() const
 	{
-		assert(InfoArray().IsValid(mItem));
+		if (!InfoArray().IsValid(mItem))
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::Array() const called with invalid mItem\n");
+#endif
+			static std::vector<CGhoul2Info> dummy;
+			return dummy;
+		}
+
 		return InfoArray().Get(mItem);
 	}
 
@@ -713,15 +769,49 @@ public:
 
 	CGhoul2Info& operator[](const int idx)
 	{
-		assert(mItem);
-		assert(idx >= 0 && idx < size());
+		if (!mItem)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::operator[] called with NULL mItem\n");
+#endif
+			static CGhoul2Info dummy;
+			return dummy;
+		}
+
+		if (idx < 0 || idx >= size())
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::operator[] index %d out of range (size %d)\n",
+				idx, size());
+#endif
+			static CGhoul2Info dummy;
+			return dummy;
+		}
+
 		return Array()[idx];
 	}
 
 	const CGhoul2Info& operator[](const int idx) const
 	{
-		assert(mItem);
-		assert(idx >= 0 && idx < size());
+		if (!mItem)
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::operator[] called with NULL mItem\n");
+#endif
+			static CGhoul2Info dummy;
+			return dummy;
+		}
+
+		if (idx < 0 || idx >= size())
+		{
+#ifdef _DEBUG
+			Com_Printf("^1ERROR: CGhoul2InfoArray::operator[] index %d out of range (size %d)\n",
+				idx, size());
+#endif
+			static CGhoul2Info dummy;
+			return dummy;
+		}
+
 		return Array()[idx];
 	}
 

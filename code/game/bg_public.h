@@ -28,10 +28,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_items.h"
 #include "teams.h"
 #include "statindex.h"
-#include <qcommon/q_shared.h>
-#include <qcommon/q_platform.h>
-#include <qcommon/q_math.h>
-#include "ghoul2_shared.h"
 
 #define DEFAULT_SABER			"Kyle"
 #define DEFAULT_SABER_NAME		"lightsaber"
@@ -315,7 +311,7 @@ using pmove_t = struct
 };
 
 // if a full pmove isn't done on the client, you can just update the angles
-void PM_UpdateViewAngles(int saber_anim_level, playerState_t* ps, usercmd_t* cmd, gentity_t* gent);
+void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, gentity_t* gent);
 void Pmove(pmove_t* pmove);
 
 constexpr auto SETANIM_TORSO = 1;
@@ -359,7 +355,7 @@ using persEnum_t = enum
 	// incremented every respawn
 	//	PERS_REWARD_COUNT,				// incremented for each reward sound
 	PERS_ATTACKER,
-	// client_num of last damage inflicter
+	// clientNum of last damage inflicter
 	PERS_KILLED,
 	// count of the number of times you died
 

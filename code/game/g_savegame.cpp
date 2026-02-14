@@ -271,7 +271,7 @@ static AIGroupInfo_t* GetGroupPtr(const intptr_t iGroupNum)
 /////////// gclient_t * ////////
 //
 //
-static intptr_t GetGclient_num(const gclient_t* c, const gentity_t* ent)
+static intptr_t GetGclientNum(const gclient_t* c, const gentity_t* ent)
 {
 	// unfortunately, I now need to see if this is a INT_ID('r','e','a','l') client (and therefore resolve to an enum), or
 	//	whether it's one of the NPC or SP_misc_weapon_shooter
@@ -394,7 +394,7 @@ static void EnumerateField(const save_field_t* pField, const byte* pbBase)
 		break;
 
 	case F_GCLIENT:
-		*static_cast<intptr_t*>(pv) = GetGclient_num(*static_cast<gclient_t**>(pv), (gentity_t*)pbBase);
+		*static_cast<intptr_t*>(pv) = GetGclientNum(*static_cast<gclient_t**>(pv), (gentity_t*)pbBase);
 		break;
 
 	case F_ITEM:

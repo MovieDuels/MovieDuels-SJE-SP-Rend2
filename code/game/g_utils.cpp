@@ -64,13 +64,6 @@ void G_DebugBBox(const vec3_t origin, const vec3_t mins, const vec3_t maxs, int 
 		G_DebugLine(corners[i], corners[i + 4], time, color);
 	}
 }
-/*
-=========================================================================
-
-model / sound configstring indexes
-
-=========================================================================
-*/
 
 /*
 ================
@@ -210,11 +203,11 @@ void G_PlayEffect(const int fx_id, const int entNum, const vec3_t fwd)
 
 // Play an effect bolted onto the muzzle of the specified client
 //----------------------------
-void G_PlayEffect(const char* name, const int client_num)
+void G_PlayEffect(const char* name, const int clientNum)
 {
-	gentity_t* tent = G_TempEntity(g_entities[client_num].currentOrigin, EV_PLAY_MUZZLE_EFFECT);
+	gentity_t* tent = G_TempEntity(g_entities[clientNum].currentOrigin, EV_PLAY_MUZZLE_EFFECT);
 	tent->s.eventParm = G_EffectIndex(name);
-	tent->s.otherentity_num = client_num;
+	tent->s.otherentity_num = clientNum;
 	VectorSet(tent->maxs, FX_ENT_RADIUS, FX_ENT_RADIUS, FX_ENT_RADIUS);
 	VectorScale(tent->maxs, -1, tent->mins);
 }

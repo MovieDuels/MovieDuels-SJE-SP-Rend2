@@ -208,6 +208,19 @@ void WP_flechette_alt_blow(gentity_t* ent)
 	G_FreeEntity(ent);
 }
 
+//----------------------------------------------
+void wp_stasis_missile_blow(gentity_t* ent)
+//----------------------------------------------
+{
+	EvaluateTrajectory(&ent->s.pos, level.time, ent->currentOrigin);
+	// Not sure if this is even necessary, but correct origins are cool?
+
+	G_RadiusDamage(ent->currentOrigin, ent->owner, ent->splashDamage, ent->splashRadius, nullptr, MOD_BRYAR);
+	G_PlayEffect("sparks/spark_explosion", ent->currentOrigin);
+
+	G_FreeEntity(ent);
+}
+
 //------------------------------------------------------------------------------
 static void WP_CreateFlechetteBouncyThing(vec3_t start, vec3_t fwd, gentity_t* self)
 //------------------------------------------------------------------------------

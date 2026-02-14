@@ -670,7 +670,8 @@ constexpr auto SNAPFLAG_SERVERCOUNT = 4; // toggled every map_restart so transit
 constexpr auto MAX_CLIENTS = 1; // 128		// absolute limit;
 constexpr auto MAX_TERRAINS = 1; //32;
 
-constexpr auto GENTITYNUM_BITS = 10;// don't need to send any more
+constexpr auto GENTITYNUM_BITS = 12;
+//10		// don't need to send any more //serenity does, got this from doom 3 code and it works hey hey;
 #define	MAX_GENTITIES		(1<<GENTITYNUM_BITS)
 
 // entitynums are communicated with GENTITY_BITS, so any reserved
@@ -1806,7 +1807,7 @@ public:
 	int externalEventParm;
 	int externalEventTime;
 
-	int client_num; // ranges from 0 to MAX_CLIENTS-1
+	int clientNum; // ranges from 0 to MAX_CLIENTS-1
 	int weapon; // copied to entityState_t->weapon
 	int weaponstate;
 
@@ -2047,7 +2048,7 @@ public:
 	int saberDamageDebounceTime;
 	int saberHitWallSoundDebounceTime;
 	int saberEventFlags;
-	int saber_anim_level;
+	int saberAnimLevel;
 	int saberAttackChainCount;
 	int saberFatigueChainCount;
 	int BlasterAttackChainCount;
@@ -2232,8 +2233,6 @@ public:
 	//drawing progress bar (is there a less bandwidth-eating way to do
 	//this without a lot of hassle?)
 	int			hackingBaseTime;
-	int nextKillLungeForwardTime;
-	int nextKillLungeBackTime;
 
 #endif // !JK2_MODE
 
@@ -2269,7 +2268,7 @@ public:
 		saved_game.write<int32_t>(externalEvent);
 		saved_game.write<int32_t>(externalEventParm);
 		saved_game.write<int32_t>(externalEventTime);
-		saved_game.write<int32_t>(client_num);
+		saved_game.write<int32_t>(clientNum);
 		saved_game.write<int32_t>(weapon);
 		saved_game.write<int32_t>(weaponstate);
 		saved_game.write<int32_t>(batteryCharge);
@@ -2338,7 +2337,7 @@ public:
 		saved_game.write<int32_t>(saberDamageDebounceTime);
 		saved_game.write<int32_t>(saberHitWallSoundDebounceTime);
 		saved_game.write<int32_t>(saberEventFlags);
-		saved_game.write<int32_t>(saber_anim_level);
+		saved_game.write<int32_t>(saberAnimLevel);
 		saved_game.write<int32_t>(saberAttackChainCount);
 		saved_game.write<int32_t>(saberFatigueChainCount);
 		saved_game.write<int32_t>(BlasterAttackChainCount);
@@ -2512,8 +2511,6 @@ public:
 
 		saved_game.write<int32_t>(hackingTime);
 		saved_game.write<int32_t>(hackingBaseTime);
-		saved_game.write<int32_t>(nextKillLungeForwardTime);
-		saved_game.write<int32_t>(nextKillLungeBackTime);
 
 #endif // !JK2_MODE
 	}
@@ -2550,7 +2547,7 @@ public:
 		saved_game.read<int32_t>(externalEvent);
 		saved_game.read<int32_t>(externalEventParm);
 		saved_game.read<int32_t>(externalEventTime);
-		saved_game.read<int32_t>(client_num);
+		saved_game.read<int32_t>(clientNum);
 		saved_game.read<int32_t>(weapon);
 		saved_game.read<int32_t>(weaponstate);
 		saved_game.read<int32_t>(batteryCharge);
@@ -2619,7 +2616,7 @@ public:
 		saved_game.read<int32_t>(saberEntityState);
 		saved_game.read<int32_t>(saberHitWallSoundDebounceTime);
 		saved_game.read<int32_t>(saberEventFlags);
-		saved_game.read<int32_t>(saber_anim_level);
+		saved_game.read<int32_t>(saberAnimLevel);
 		saved_game.read<int32_t>(saberAttackChainCount);
 		saved_game.read<int32_t>(saberFatigueChainCount);
 		saved_game.read<int32_t>(BlasterAttackChainCount);
@@ -2793,8 +2790,6 @@ public:
 
 		saved_game.read<int32_t>(hackingTime);
 		saved_game.read<int32_t>(hackingBaseTime);
-		saved_game.read<int32_t>(nextKillLungeForwardTime);
-		saved_game.read<int32_t>(nextKillLungeBackTime);
 
 #endif // !JK2_MODE
 	}
@@ -2991,7 +2986,7 @@ using entityState_t = struct entityState_s
 	int modelindex;
 	int modelindex2;
 	int modelindex3;
-	int client_num; // 0 to (MAX_CLIENTS - 1), for players and corpses
+	int clientNum; // 0 to (MAX_CLIENTS - 1), for players and corpses
 	mutable int frame;
 
 	int NPC_class; //we need to see what it is on the client for a few effects.
@@ -3144,7 +3139,7 @@ using entityState_t = struct entityState_s
 		saved_game.write<int32_t>(modelindex);
 		saved_game.write<int32_t>(modelindex2);
 		saved_game.write<int32_t>(modelindex3);
-		saved_game.write<int32_t>(client_num);
+		saved_game.write<int32_t>(clientNum);
 		saved_game.write<int32_t>(frame);
 		saved_game.write<int32_t>(solid);
 		saved_game.write<int32_t>(event);
@@ -3266,7 +3261,7 @@ using entityState_t = struct entityState_s
 		saved_game.read<int32_t>(modelindex);
 		saved_game.read<int32_t>(modelindex2);
 		saved_game.read<int32_t>(modelindex3);
-		saved_game.read<int32_t>(client_num);
+		saved_game.read<int32_t>(clientNum);
 		saved_game.read<int32_t>(frame);
 		saved_game.read<int32_t>(solid);
 		saved_game.read<int32_t>(event);

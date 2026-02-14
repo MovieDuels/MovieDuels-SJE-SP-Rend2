@@ -254,7 +254,7 @@ void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward
 
 	if (perfect_reflection)
 	{
-		if (owner->s.client_num >= MAX_CLIENTS)
+		if (owner->s.clientNum >= MAX_CLIENTS)
 		{
 			gentity_t* enemy;
 			if (owner->enemy && Q_irand(0, 3))
@@ -339,7 +339,7 @@ void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward
 	}
 	if (!reflected)
 	{
-		if (owner && owner->s.client_num >= MAX_CLIENTS)
+		if (owner && owner->s.clientNum >= MAX_CLIENTS)
 		{
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{
@@ -1130,7 +1130,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			Com_Printf(S_COLOR_CYAN"Saber Not Blocked but Reflected off saber.\n");
 		}
 
-		if (blocker && blocker->s.client_num >= MAX_CLIENTS)
+		if (blocker && blocker->s.clientNum >= MAX_CLIENTS)
 		{
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{
@@ -1266,6 +1266,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 
 static qhandle_t stasisLoopSound = 0;
 gentity_t* tgt_list[MAX_GENTITIES];
+
 void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 {
 	vec3_t	bounce_dir;
@@ -1282,7 +1283,32 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 	{
 		blocker = ent->owner;
 	}
-	const qboolean missile_in_stasis = blocker->client->ps.ManualBlockingFlags & 1 << MBF_MISSILESTASIS ? qtrue : qfalse;
+
+	qboolean missile_in_stasis = qfalse;
+
+	if (missile->userFloat1 == 0)
+	{
+		missile->userFloat1 = level.time + 10000;   // unfreeze at t+10s
+		missile->nextthink = level.time + 20000;   // explode at t+20s
+		missile->e_ThinkFunc = thinkF_wp_stasis_missile_blow;
+
+		missile_in_stasis = qtrue;
+	}
+	else if (level.time < missile->userFloat1)
+	{
+		missile_in_stasis = qtrue;
+	}
+
+	//
+	// ⭐ PHASE 2 — Unfreeze at 10 seconds
+	//
+	if (!missile_in_stasis && missile->userFloat1 > 0 && level.time >= missile->userFloat1)
+	{
+		missile->userFloat1 = 0;
+
+		// resume normal physics
+		missile->s.pos.trTime = level.time;
+	}
 
 	//save the original speed
 	const float stasisspeed = VectorNormalize(missile->s.pos.trDelta) / 50;
@@ -3836,7 +3862,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			Com_Printf(S_COLOR_CYAN"Saber Not Blocked but Reflected off saber.\n");
 		}
 
-		if (blocker && blocker->s.client_num >= MAX_CLIENTS)
+		if (blocker && blocker->s.clientNum >= MAX_CLIENTS)
 		{
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{
@@ -4326,7 +4352,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			Com_Printf(S_COLOR_CYAN"Saber Not Blocked but Reflected off saber.\n");
 		}
 
-		if (blocker && blocker->s.client_num >= MAX_CLIENTS)
+		if (blocker && blocker->s.clientNum >= MAX_CLIENTS)
 		{
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{

@@ -1892,7 +1892,7 @@ void G_MatchPlayerWeapon(gentity_t* ent)
 							[blade_num].length;
 					}
 				}
-				ent->client->ps.saber_anim_level = g_entities[0].client->ps.saber_anim_level;
+				ent->client->ps.saberAnimLevel = g_entities[0].client->ps.saberAnimLevel;
 				ent->client->ps.saberStylesKnown = g_entities[0].client->ps.saberStylesKnown;
 			}
 			else
@@ -2457,7 +2457,7 @@ qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t
 	const qboolean isJKA = (qboolean)(mode == 0);
 
 	const qboolean isPlayerSide = (qboolean)(hit_ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(hit_ent));
-	const qboolean isNPCSide = (qboolean)(hit_ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(hit_ent));
+	const qboolean isNPCSide = (qboolean)(hit_ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(hit_ent));
 
 	const qboolean kickResistant = (qboolean)jedi_is_kick_resistant(hit_ent);
 
@@ -2951,7 +2951,7 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 							&& !(hit_ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK))
 						{
 							//knockdown
-							if (hit_ent->client->ps.saber_anim_level == SS_STAFF)
+							if (hit_ent->client->ps.saberAnimLevel == SS_STAFF)
 							{
 								SabBeh_AnimateSlowBounce(hit_ent);
 							}
@@ -2967,7 +2967,7 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 								}
 							}
 						}
-						else if (ent->client->ps.saber_anim_level == SS_DESANN
+						else if (ent->client->ps.saberAnimLevel == SS_DESANN
 							&& (hit_ent->client->ps.saberFatigueChainCount >= MISHAPLEVEL_HEAVY ||
 								hit_ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVY)
 							&& !(hit_ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK))
@@ -5743,7 +5743,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 	} //stiffened up
 	else if (g_SerenityJediEngineMode->integer == 2
 		&& !in_camera
-		&& (ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
+		&& (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
 		&& PM_SaberInMassiveBounce(ent->client->ps.torsoAnim)
 		&& ent->client->ps.torsoAnimTimer)
 	{
@@ -7052,7 +7052,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		else if (PM_SaberInAttack(client->ps.saber_move) && ucmd->forwardmove < 0)
 		{
 			//if running backwards while attacking, don't run as fast.
-			switch (client->ps.saber_anim_level)
+			switch (client->ps.saberAnimLevel)
 			{
 			case SS_FAST:
 				client->ps.speed *= 0.85f;
@@ -7089,7 +7089,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		{
 			//if attacking with saber while running, drop your speed
 			//FIXME: should be weaponTime?  Or in certain anims?
-			switch (client->ps.saber_anim_level)
+			switch (client->ps.saberAnimLevel)
 			{
 			case SS_TAVION:
 			case SS_FAST:
@@ -7110,7 +7110,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 				client->ps.speed *= g_saberMoveSpeed->value;
 			}
 		}
-		else if (client->ps.weapon == WP_SABER && client->ps.saber_anim_level == FORCE_LEVEL_3 &&
+		else if (client->ps.weapon == WP_SABER && client->ps.saberAnimLevel == FORCE_LEVEL_3 &&
 			PM_SaberInTransition(client->ps.saber_move))
 		{
 			//Now, we want to even slow down in transitions for level 3 (since it has chains and stuff)
@@ -8807,7 +8807,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
 	}
 
-	if (client->ps.ManualBlockingFlags & 1 << MBF_MISSILESTASIS)
+	if (client->ps.ManualBlockingFlags & 1 << MBF_MISSILESTASIS)  // this is no long used but im leaving in incase i want to use it later.
 	{
 		// started function
 		if (client->ps.BoltstasisStartTime <= 0) //fresh start
@@ -8815,7 +8815,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			// They just pressed block. Mark the time...
 			client->ps.BoltstasisStartTime = level.time; //start the timer
 		}
-		else if (client->ps.ManualBlockingFlags & 1 << MBF_MISSILESTASIS && level.time - client->ps.BoltstasisStartTime >= 3000) //3 sec
+		else if (client->ps.ManualBlockingFlags & 1 << MBF_MISSILESTASIS && level.time - client->ps.BoltstasisStartTime >= 6000) //3 sec
 		{
 			// Been holding for too long....let go.
 			client->ps.ManualBlockingFlags &= ~(1 << MBF_MISSILESTASIS);
@@ -8857,7 +8857,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	}
 
 	if (/*g_SerenityJediEngineMode->integer
-		&&*/ ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
+		&&*/ ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
 	{
 		if (NPC_Can_Do_Blocking_stances_In_SJE_Mode(ent))
 		{
@@ -8920,7 +8920,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 	}
 
-	if (ent->NPC || ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent) &&
+	if (ent->NPC || ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent) &&
 		client->ps.weapon == WP_SABER &&
 		client->ps.SaberActive()
 		&& !PM_SaberInMassiveBounce(client->ps.torsoAnim)
@@ -8941,7 +8941,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	}
 
 	if (g_SerenityJediEngineMode->integer <= 1
-		&& (ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
+		&& (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
 		&& !PM_SaberInMassiveBounce(client->ps.torsoAnim)
 		&& !PM_SaberInBashedAnim(client->ps.torsoAnim)
 		&& !PM_Saberinstab(client->ps.saber_move))
@@ -9540,7 +9540,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	// perform once-a-second actions
 	ClientTimerActions(ent, msec);
 
-	if (ent->s.client_num >= MAX_CLIENTS && !G_ControlledByPlayer(ent) && npc_is_projected(ent))
+	if (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent) && npc_is_projected(ent))
 	{
 		//decrement it
 		ClientTimerProjectionLifeDrain(ent, msec);
@@ -9755,12 +9755,12 @@ A new command has arrived from the client
 extern void PM_CheckForceUseButton(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_GentCantJump(const gentity_t* gent);
 
-void ClientThink(const int client_num, usercmd_t* ucmd)
+void ClientThink(const int clientNum, usercmd_t* ucmd)
 {
 	qboolean restore_ucmd = qfalse;
 	usercmd_t sav_ucmd = { 0 };
 
-	gentity_t* ent = g_entities + client_num;
+	gentity_t* ent = g_entities + clientNum;
 
 	if (ent->s.number < MAX_CLIENTS)
 	{

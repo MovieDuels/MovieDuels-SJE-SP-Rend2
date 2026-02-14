@@ -550,7 +550,7 @@ static void CG_General(centity_t* cent)
 	}
 
 	// player model
-	if (s1->number == cg.snap->ps.client_num)
+	if (s1->number == cg.snap->ps.clientNum)
 	{
 		ent.renderfx |= RF_THIRD_PERSON; // only draw from mirrors
 	}
@@ -798,7 +798,7 @@ static void CG_General(centity_t* cent)
 					{
 						cgi_S_AddLoopingSound(cent->currentState.number,
 							cent->lerpOrigin, vec3_origin,
-							cgs.sound_precache[g_entities[cent->currentState.client_num].client->ps.
+							cgs.sound_precache[g_entities[cent->currentState.clientNum].client->ps.
 							saber[0].soundLoop]);
 					}
 					else
@@ -1083,7 +1083,7 @@ static void CG_General(centity_t* cent)
 
 	//draw force sight shell around it, too
 	if (cg.snap->ps.forcePowersActive & 1 << FP_SEE
-		&& cg.snap->ps.client_num != cent->currentState.number
+		&& cg.snap->ps.clientNum != cent->currentState.number
 		&& CG_PlayerCanSeeCent(cent))
 	{
 		//so player can see dark missiles/explosives
@@ -1109,9 +1109,9 @@ Speaker entities can automatically play sounds
 */
 static void CG_Speaker(centity_t* cent)
 {
-	if (!cent->currentState.client_num)
+	if (!cent->currentState.clientNum)
 	{
-		// FIXME: use something other than client_num...
+		// FIXME: use something other than clientNum...
 		return; // not auto triggering
 	}
 
@@ -1123,8 +1123,8 @@ static void CG_Speaker(centity_t* cent)
 	cgi_S_StartSound(nullptr, cent->currentState.number, CHAN_ITEM, cgs.sound_precache[cent->currentState.eventParm]);
 
 	//	ent->s.frame = ent->wait * 10;
-	//	ent->s.client_num = ent->random * 10;
-	cent->miscTime = static_cast<int>(cg.time + cent->currentState.frame * 100 + cent->currentState.client_num * 100 *
+	//	ent->s.clientNum = ent->random * 10;
+	cent->miscTime = static_cast<int>(cg.time + cent->currentState.frame * 100 + cent->currentState.clientNum * 100 *
 		Q_flrand(-1.0f, 1.0f));
 }
 
@@ -1269,7 +1269,7 @@ static void CG_Item(centity_t* cent)
 	cgi_R_AddRefEntityToScene(&ent);
 
 	if (cg.snap->ps.forcePowersActive & 1 << FP_SEE
-		&& cg.snap->ps.client_num != cent->currentState.number
+		&& cg.snap->ps.clientNum != cent->currentState.number
 		&& CG_PlayerCanSeeCent(cent))
 	{
 		CG_AddForceSightShell(&ent, cent);
@@ -1541,7 +1541,7 @@ static void CG_Missile(centity_t* cent)
 	CG_AddRefEntityWithPowerups(&ent, s1->powerups, nullptr);
 
 	if (cg.snap->ps.forcePowersActive & 1 << FP_SEE
-		&& cg.snap->ps.client_num != cent->currentState.number
+		&& cg.snap->ps.clientNum != cent->currentState.number
 		&& CG_PlayerCanSeeCent(cent))
 	{
 		//so player can see dark missiles/explosives
@@ -1760,7 +1760,7 @@ static void CG_Mover(const centity_t* cent)
 	CG_AddRefEntWithTransportEffect(cent, &ent);
 
 	if (cg.snap->ps.forcePowersActive & 1 << FP_SEE
-		&& cg.snap->ps.client_num != cent->currentState.number
+		&& cg.snap->ps.clientNum != cent->currentState.number
 		&& s1->eFlags & EF_FORCE_VISIBLE)
 	{
 		//so player can see func_breakables
@@ -1964,7 +1964,7 @@ static void CG_Portal(const centity_t* cent)
 	CrossProduct(ent.axis[0], ent.axis[1], ent.axis[2]);
 	ent.reType = RT_PORTALSURFACE;
 	ent.frame = s1->frame; // rotation speed
-	ent.skinNum = static_cast<int>(s1->client_num / 256.0 * 360); // roll offset
+	ent.skinNum = static_cast<int>(s1->clientNum / 256.0 * 360); // roll offset
 
 	/*
 	Ghoul2 Insert Start
@@ -2033,7 +2033,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 			cent->nextState->vehicleAngles[2], f);
 	}
 
-	if (cent->currentState.number == cg.snap->ps.client_num)
+	if (cent->currentState.number == cg.snap->ps.clientNum)
 	{
 		// if the player, take position from prediction
 		VectorCopy(cg.predictedPlayerState.origin, cent->lerpOrigin);
@@ -2074,7 +2074,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 			cent->lerpAngles[2] = LerpAngle(current[2], next[2], f);
 
 			/*
-			if(cent->gent && cent->currentState.client_num != 0 && !VectorCompare(current, next))
+			if(cent->gent && cent->currentState.clientNum != 0 && !VectorCompare(current, next))
 			{
 				Com_Printf("%s last/next/lerp apos %s/%s/%s, f = %4.2f\n", cent->gent->script_targetname, vtos(current), vtos(next), vtos(cent->lerpAngles), f);
 			}
@@ -2105,7 +2105,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 			cent->lerpOrigin[2] = current[2] + f * (next[2] - current[2]);
 
 			/*
-			if ( cent->gent && cent->currentState.client_num != 0 )
+			if ( cent->gent && cent->currentState.clientNum != 0 )
 			{
 				Com_Printf("%s last/next/lerp pos %s/%s/%s, f = %4.2f\n", cent->gent->script_targetname, vtos(current), vtos(next), vtos(cent->lerpOrigin), f);
 			}
@@ -2123,7 +2123,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 		{
 			EvaluateTrajectory(&cent->currentState.pos, cg.snap->serverTime, cent->lerpOrigin);
 			/*
-			if(cent->gent && cent->currentState.client_num != 0 )
+			if(cent->gent && cent->currentState.clientNum != 0 )
 			{
 				Com_Printf("%s last/next/lerp pos %s, f = 1.0\n", cent->gent->script_targetname, vtos(cent->lerpOrigin) );
 			}
@@ -2184,7 +2184,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 #else
 void CG_CalcEntityLerpPositions(centity_t* cent)
 {
-	if (cent->currentState.number == cg.snap->ps.client_num)
+	if (cent->currentState.number == cg.snap->ps.clientNum)
 	{
 		// if the player, take position from prediction
 		VectorCopy(cg.predictedPlayerState.origin, cent->lerpOrigin);
@@ -2193,7 +2193,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 		return;
 	}
 
-	if (cent->currentState.number != cg.snap->ps.client_num && cent->interpolate && cent->currentState.pos.trType == TR_INTERPOLATE)
+	if (cent->currentState.number != cg.snap->ps.clientNum && cent->interpolate && cent->currentState.pos.trType == TR_INTERPOLATE)
 	{
 		if (cent->interpolate)
 		{
@@ -2221,7 +2221,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 
 	//FIXME: prediction on clients in timescale results in jerky positional translation
 	if (cent->interpolate &&
-		(cent->currentState.number == cg.snap->ps.client_num ||
+		(cent->currentState.number == cg.snap->ps.clientNum ||
 			cent->interpolate && cent->currentState.pos.trType == TR_INTERPOLATE))
 	{
 		vec3_t		current, next;
@@ -3178,8 +3178,8 @@ void CG_AddPacketEntities(const qboolean isPortal)
 
 	// generate and add the entity from the playerstate
 	playerState_t* ps = &cg.predictedPlayerState;
-	PlayerStateToEntityState(ps, &cg_entities[ps->client_num].currentState);
-	//	cent = &cg_entities[ ps->client_num ];	// not needed now that player is in the snap packet
+	PlayerStateToEntityState(ps, &cg_entities[ps->clientNum].currentState);
+	//	cent = &cg_entities[ ps->clientNum ];	// not needed now that player is in the snap packet
 	//	CG_AddCEntity( cent );					//
 
 	// add each entity sent over by the server

@@ -423,7 +423,7 @@ static int CG_DrawLoadWeaponsPrintRow(const char* itemName, const char* weapons,
 	int width, height;
 	vec4_t color;
 	qhandle_t background;
-	const gentity_t* cent = &g_entities[g_entities[0].client->ps.client_num];
+	const gentity_t* cent = &g_entities[g_entities[0].client->ps.clientNum];
 
 	if (!cgi_UI_GetMenuItemInfo(
 		"loadScreen",
@@ -816,7 +816,6 @@ Draw all the status / pacifier stuff during level loading
 */
 
 int SCREENTIP_NEXT_UPDATE_TIME = 0;
-int SCREENTIP_CURRENT_INDEX = -1;
 
 static void LoadTips(void)
 {
@@ -827,18 +826,13 @@ static void LoadTips(void)
 		static int lastIndex = -1;
 		int index;
 
-		// TIP1–TIP20
 		do {
 			index = Q_irand(1, 20);
 		} while (index == lastIndex);
 
 		lastIndex = index;
-		SCREENTIP_CURRENT_INDEX = index;
 
-		// Update the cvar the menu reads
 		cgi_Cvar_Set("ui_tipsbriefing", va("@LOADTIPS_TIP%d", index));
-
-		// 3.5 seconds
 		SCREENTIP_NEXT_UPDATE_TIME = time + 3500;
 	}
 }

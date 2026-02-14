@@ -262,7 +262,7 @@ void SP_target_speaker(gentity_t* ent)
 	ent->s.eType = ET_SPEAKER;
 	ent->s.eventParm = ent->noise_index;
 	ent->s.frame = ent->wait * 10;
-	ent->s.client_num = ent->random * 10;
+	ent->s.clientNum = ent->random * 10;
 
 	ent->wait *= 1000;
 

@@ -5009,7 +5009,7 @@ static bool TestCollision(gentity_t* actor, SSteerUser& suser, const CVec3& Proj
 		if (ContactNum != ENTITYNUM_WORLD && ContactNum != ENTITYNUM_NONE && g_entities[ContactNum].client != nullptr)
 		{
 			gentity_t* Contact = &g_entities[ContactNum];
-			//bool			ContactIsPlayer = (Contact->client->ps.client_num==0);
+			//bool			ContactIsPlayer = (Contact->client->ps.clientNum==0);
 			const CVec3 ContactVelocity(Contact->client->ps.velocity);
 
 			const float ContactSpeed = ContactVelocity.Len();
@@ -5189,15 +5189,15 @@ float STEER::AvoidCollisions(gentity_t* actor, const gentity_t* leader)
 	{
 		if (actor->NPC->greetEnt && actor->NPC->greetEnt->owner == NPC)
 		{
-			suser.mIgnoreEntity = actor->NPC->greetEnt->s.client_num;
+			suser.mIgnoreEntity = actor->NPC->greetEnt->s.clientNum;
 		}
 		else if (actor->enemy)
 		{
-			suser.mIgnoreEntity = actor->enemy->s.client_num;
+			suser.mIgnoreEntity = actor->enemy->s.clientNum;
 		}
 		else if (leader)
 		{
-			suser.mIgnoreEntity = leader->s.client_num;
+			suser.mIgnoreEntity = leader->s.clientNum;
 		}
 	}
 

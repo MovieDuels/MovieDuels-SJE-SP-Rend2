@@ -127,7 +127,7 @@ void CG_RegisterWeapon(const int weapon_num)
 	char path[MAX_QPATH];
 	vec3_t mins, maxs;
 	int i;
-	const gentity_t* cent = &g_entities[g_entities[0].client->ps.client_num];
+	const gentity_t* cent = &g_entities[g_entities[0].client->ps.clientNum];
 
 	weaponInfo_t* weaponInfo = &cg_weapons[weapon_num];
 
@@ -1470,7 +1470,7 @@ static void CG_DoMuzzleFlash(centity_t* cent, vec3_t org, vec3_t dir, const weap
 			else
 			{
 				// We got an effect and we're firing, so let 'er rip.
-				theFxScheduler.PlayEffect(effect, cent->currentState.client_num);
+				theFxScheduler.PlayEffect(effect, cent->currentState.clientNum);
 			}
 		}
 	}
@@ -1498,7 +1498,7 @@ static void CG_DoMuzzleFlash(centity_t* cent, vec3_t org, vec3_t dir, const weap
 				else
 				{
 					// We got an effect and we're firing, so let 'er rip.
-					theFxScheduler.PlayEffect(effect, cent->currentState.client_num);
+					theFxScheduler.PlayEffect(effect, cent->currentState.clientNum);
 				}
 			}
 			cent->muzzleOverheatTime = 0;
@@ -1519,7 +1519,7 @@ static void CG_DoMuzzleFlash(centity_t* cent, vec3_t org, vec3_t dir, const weap
 				else
 				{
 					// We got an effect and we're firing, so let 'er rip.
-					theFxScheduler.PlayEffect(effect, cent->currentState.client_num);
+					theFxScheduler.PlayEffect(effect, cent->currentState.clientNum);
 				}
 			}
 			cent->muzzleOverheatTime = 0;
@@ -1557,7 +1557,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 		(ps->eFlags & EF2_JANGO_DUALS || ps->eFlags & EF2_DUAL_CLONE_PISTOLS || ps->eFlags & EF2_DUAL_PISTOLS || ps->eFlags & EF2_DUAL_CALONORD || ps->weapon == WP_DROIDEKA || ps->weapon == WP_DUAL_PISTOL || ps->weapon == WP_DUAL_CLONEPISTOL))
 	{
 		vec3_t origin;
-		cent = &cg_entities[ps->client_num];
+		cent = &cg_entities[ps->clientNum];
 		// special hack for lightning guns...
 		VectorCopy(cg.refdef.vieworg, origin);
 		VectorMA(origin, -10, cg.refdef.viewaxis[2], origin);
@@ -1598,7 +1598,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 		return;
 	}
 
-	cent = &cg_entities[ps->client_num];
+	cent = &cg_entities[ps->clientNum];
 
 	if (ps->eFlags & EF_LOCKED_TO_WEAPON)
 	{
@@ -1818,7 +1818,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 			hand.oldframe = CG_MapTorsoToWeaponFrame(ci, floor(current_frame), torso_anim);
 			hand.frame = CG_MapTorsoToWeaponFrame(ci, ceil(current_frame), torso_anim);
 			hand.backlerp = 1.0f - (current_frame - floor(current_frame));
-			if (cg_debugAnim.integer == 1 && cent->currentState.client_num == 0)
+			if (cg_debugAnim.integer == 1 && cent->currentState.clientNum == 0)
 			{
 				Com_Printf("Torso frame %d to %d makes Weapon frame %d to %d\n", cent->pe.torso.oldFrame,
 					cent->pe.torso.frame, hand.oldframe, hand.frame);
@@ -2068,7 +2068,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 
 			for (int i = 0; i < ct; i++)
 			{
-				theFxScheduler.PlayEffect("repeater/muzzle_smoke", cent->currentState.client_num);
+				theFxScheduler.PlayEffect("repeater/muzzle_smoke", cent->currentState.clientNum);
 			}
 
 			cent->gent->client->ps.weaponShotCount = 0;
@@ -2148,7 +2148,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 		return;
 	}
 
-	cent = &cg_entities[ps->client_num];
+	cent = &cg_entities[ps->clientNum];
 
 	if (ps->eFlags & EF_LOCKED_TO_WEAPON)
 	{
@@ -2339,7 +2339,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			hand.oldframe = CG_MapTorsoToWeaponFrame(ci, floor(current_frame), torso_anim);
 			hand.frame = CG_MapTorsoToWeaponFrame(ci, ceil(current_frame), torso_anim);
 			hand.backlerp = 1.0f - (current_frame - floor(current_frame));
-			if (cg_debugAnim.integer == 1 && cent->currentState.client_num == 0)
+			if (cg_debugAnim.integer == 1 && cent->currentState.clientNum == 0)
 			{
 				Com_Printf("Torso frame %d to %d makes Weapon frame %d to %d\n", cent->pe.torso.oldFrame,
 					cent->pe.torso.frame, hand.oldframe, hand.frame);
@@ -2594,7 +2594,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 
 			for (int i = 0; i < ct; i++)
 			{
-				theFxScheduler.PlayEffect("repeater/muzzle_smoke", cent->currentState.client_num);
+				theFxScheduler.PlayEffect("repeater/muzzle_smoke", cent->currentState.clientNum);
 			}
 
 			cent->gent->client->ps.weaponShotCount = 0;
@@ -5264,7 +5264,7 @@ void CG_Weapon_f()
 						}
 						else
 						{
-							cgi_S_StartSound(nullptr, cg.snap->ps.client_num, CHAN_AUTO,
+							cgi_S_StartSound(nullptr, cg.snap->ps.clientNum, CHAN_AUTO,
 								cgs.sound_precache[cg_entities[0].gent->client->ps.saber[0].soundOff]);
 						}
 					}
