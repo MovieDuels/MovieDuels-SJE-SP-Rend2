@@ -91,7 +91,7 @@ void WP_FireCloneMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qboolea
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_BLASTER_ALT;
@@ -115,7 +115,13 @@ extern qboolean PM_WalkingAnim(int anim);
 //---------------------------------------------------------
 void WP_FireClone(gentity_t* ent, const qboolean alt_fire)
 //---------------------------------------------------------
-{
+{    // Safety guard for static analysis and future-proofing
+	if (!ent || !ent->client)
+	{
+		return;
+	}
+
+
 	vec3_t dir, angs;
 
 	vectoangles(forward_vec, angs);
@@ -248,7 +254,7 @@ void WP_FireCloneRifleMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qb
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_CLONERIFLE_ALT;
@@ -270,6 +276,9 @@ void WP_FireCloneRifle(gentity_t* ent, const qboolean alt_fire)
 	vec3_t dir, angs;
 
 	vectoangles(forward_vec, angs);
+
+	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+		return;
 
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
 	{
@@ -399,7 +408,7 @@ void WP_FireCloneCommandoMissile(gentity_t* ent, vec3_t start, vec3_t dir, const
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_CLONECOMMANDO_ALT;
@@ -421,6 +430,9 @@ void WP_FireCloneCommando(gentity_t* ent, const qboolean alt_fire)
 	vec3_t dir, angs;
 
 	vectoangles(forward_vec, angs);
+
+	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+		return;
 
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
 	{
@@ -549,7 +561,7 @@ void WP_FireZ6RotaryCannonMissile(gentity_t* ent, vec3_t start, vec3_t dir)
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	missile->methodOfDeath = MOD_Z6_ROTARY_CANNON;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 	// we don't want it to bounce forever
@@ -563,6 +575,9 @@ void WP_FireZ6RotaryCannon(gentity_t* ent)
 	vec3_t dir, angs;
 
 	vectoangles(forward_vec, angs);
+
+	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+		return;
 
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
 	{

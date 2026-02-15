@@ -38,112 +38,127 @@ extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingAnim(int anim);
 //---------------------------------------------------------
 static void WP_BowcasterMainFire(gentity_t* ent)
-//---------------------------------------------------------
 {
-	int damage = weaponData[WP_BOWCASTER].damage;
-	vec3_t angs, start;
+    // Safety guard for static analysis and future-proofing
+    if (!ent || !ent->client)
+    {
+        return;
+    }
 
-	VectorCopy(muzzle, start);
-	WP_TraceSetStart(ent, start);
-	//make sure our start point isn't on the other side of a wall
+    int damage = weaponData[WP_BOWCASTER].damage;
+    vec3_t angs, start;
 
-	// Do the damages
-	if (ent->s.number != 0)
-	{
-		if (g_spskill->integer == 0)
-		{
-			damage = BOWCASTER_NPC_DAMAGE_EASY;
-		}
-		else if (g_spskill->integer == 1)
-		{
-			damage = BOWCASTER_NPC_DAMAGE_NORMAL;
-		}
-		else
-		{
-			damage = BOWCASTER_NPC_DAMAGE_HARD;
-		}
-	}
+    VectorCopy(muzzle, start);
+    WP_TraceSetStart(ent, start);
 
-	int count = (level.time - ent->client->ps.weaponChargeTime) / BOWCASTER_CHARGE_UNIT;
+    // NPC damage scaling
+    if (ent->s.number != 0)
+    {
+        if (g_spskill->integer == 0)
+        {
+            damage = BOWCASTER_NPC_DAMAGE_EASY;
+        }
+        else if (g_spskill->integer == 1)
+        {
+            damage = BOWCASTER_NPC_DAMAGE_NORMAL;
+        }
+        else
+        {
+            damage = BOWCASTER_NPC_DAMAGE_HARD;
+        }
+    }
 
-	if (count < 1)
-	{
-		count = 1;
-	}
-	else if (count > 5)
-	{
-		count = 5;
-	}
+    // Charge level → number of bolts
+    int count = (level.time - ent->client->ps.weaponChargeTime) / BOWCASTER_CHARGE_UNIT;
 
-	if (!(count & 1))
-	{
-		// if we aren't odd, knock us down a level
-		count--;
-	}
+    if (count < 1)
+    {
+        count = 1;
+    }
+    else if (count > 5)
+    {
+        count = 5;
+    }
 
-	WP_MissileTargetHint(ent, start, forward_vec);
-	for (int i = 0; i < count; i++)
-	{
-		vec3_t dir;
-		// create a range of different velocities
-		const float vel = BOWCASTER_VELOCITY * (Q_flrand(-1.0f, 1.0f) * BOWCASTER_VEL_RANGE + 1.0f);
+    // Only odd numbers allowed
+    if (!(count & 1))
+    {
+        count--;
+    }
 
-		vectoangles(forward_vec, angs);
+    WP_MissileTargetHint(ent, start, forward_vec);
 
-		if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
-		{
-			//no inherent aim screw up
-		}
-		else if (NPC_IsNotHavingEnoughForceSight(ent))
-		{//force sight 2+ gives perfect aim
-			if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
-			{
-				if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-				{ // running or very fatigued
-					angs[PITCH] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
-					angs[YAW] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
-				}
-				else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
-				{//walking or fatigued a bit
-					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
-					angs[YAW] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
-				}
-				else
-				{// just standing
-					angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BOWCASTER_MAIN_SPREAD;
-					angs[YAW] += Q_flrand(-0.5f, 0.5f) * BOWCASTER_MAIN_SPREAD;
-				}
-			}
-			else
-			{// add some slop to the fire direction for NPC,s
-				angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
-				angs[YAW] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
-			}
-		}
+    for (int i = 0; i < count; i++)
+    {
+        vec3_t dir;
 
-		AngleVectors(angs, dir, nullptr, nullptr);
+        // Randomized velocity
+        const float vel = BOWCASTER_VELOCITY *
+            (Q_flrand(-1.0f, 1.0f) * BOWCASTER_VEL_RANGE + 1.0f);
 
-		gentity_t* missile = create_missile(start, dir, vel, 10000, ent);
+        vectoangles(forward_vec, angs);
 
-		missile->classname = "bowcaster_proj";
-		missile->s.weapon = WP_BOWCASTER;
+        // Aim spread logic
+        if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+        {
+            // Vehicles have perfect aim
+        }
+        else if (NPC_IsNotHavingEnoughForceSight(ent))
+        {
+            // Player or player-controlled entity
+            if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
+            {
+                if (PM_RunningAnim(ent->client->ps.legsAnim) ||
+                    ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+                {
+                    // Running or very fatigued
+                    angs[PITCH] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
+                    angs[YAW] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
+                }
+                else if (PM_WalkingAnim(ent->client->ps.legsAnim) ||
+                    ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
+                {
+                    // Walking or mildly fatigued
+                    angs[PITCH] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
+                    angs[YAW] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
+                }
+                else
+                {
+                    // Standing still
+                    angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BOWCASTER_MAIN_SPREAD;
+                    angs[YAW] += Q_flrand(-0.5f, 0.5f) * BOWCASTER_MAIN_SPREAD;
+                }
+            }
+            else
+            {
+                // NPC aim slop
+                angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
+                angs[YAW] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
+            }
+        }
 
-		VectorSet(missile->maxs, BOWCASTER_SIZE, BOWCASTER_SIZE, BOWCASTER_SIZE);
-		VectorScale(missile->maxs, -1, missile->mins);
+        AngleVectors(angs, dir, nullptr, nullptr);
 
-		missile->damage = damage;
+        gentity_t* missile = create_missile(start, dir, vel, 10000, ent);
 
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-		
-		missile->methodOfDeath = MOD_BOWCASTER;
-		missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
-		missile->splashDamage = weaponData[WP_BOWCASTER].splashDamage;
-		missile->splashRadius = weaponData[WP_BOWCASTER].splashRadius;
+        missile->classname = "bowcaster_proj";
+        missile->s.weapon = WP_BOWCASTER;
 
-		// we don't want it to bounce
-		missile->bounceCount = 0;
-		ent->client->sess.missionStats.shotsFired++;
-	}
+        VectorSet(missile->maxs, BOWCASTER_SIZE, BOWCASTER_SIZE, BOWCASTER_SIZE);
+        VectorScale(missile->maxs, -1, missile->mins);
+
+        missile->damage = damage;
+        missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+        missile->methodOfDeath = MOD_BOWCASTER;
+
+        missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
+        missile->splashDamage = weaponData[WP_BOWCASTER].splashDamage;
+        missile->splashRadius = weaponData[WP_BOWCASTER].splashRadius;
+
+        missile->bounceCount = 0;
+
+        ent->client->sess.missionStats.shotsFired++;
+    }
 }
 
 //---------------------------------------------------------
@@ -195,7 +210,7 @@ static void WP_BowcasterAltFire(gentity_t* ent)
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	missile->methodOfDeath = MOD_BOWCASTER_ALT;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 	missile->splashDamage = weaponData[WP_BOWCASTER].altSplashDamage;

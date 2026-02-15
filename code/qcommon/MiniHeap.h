@@ -20,65 +20,71 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 
+#include "qcommon.h"
 #if !defined(MINIHEAP_H_INC)
 #define MINIHEAP_H_INC
 
 class CMiniHeap
 {
-	char* mHeap;
-	char* mCurrentHeap;
-	int mSize;
+    char* mHeap;
+    char* mCurrentHeap;
+    int   mSize;
 #if _DEBUG
-	int mMaxAlloc;
+    int   mMaxAlloc;
 #endif
 
 public:
-	// reset the heap back to the start
-	void ResetHeap()
-	{
+    // initialise the heap
+    CMiniHeap(const int size)
+        : mHeap(nullptr)
+        , mCurrentHeap(nullptr)
+        , mSize(size)
 #if _DEBUG
-		if ((intptr_t)mCurrentHeap - (intptr_t)mHeap > mMaxAlloc)
-		{
-			mMaxAlloc = (intptr_t)mCurrentHeap - (intptr_t)mHeap;
-		}
+        , mMaxAlloc(0)
 #endif
-		mCurrentHeap = mHeap;
-	}
+    {
+        mHeap = static_cast<char*>(Z_Malloc(size, TAG_GHOUL2, qtrue));
 
-	// initialise the heap
-	CMiniHeap(const int size)
-	{
-		mHeap = static_cast<char*>(Z_Malloc(size, TAG_GHOUL2, qtrue));
-		mSize = size;
+        if (mHeap)
+        {
+            mCurrentHeap = mHeap;   // safe, explicit
+        }
+    }
+
+    // reset the heap back to the start
+    void ResetHeap()
+    {
 #if _DEBUG
-		mMaxAlloc = 0;
+        const intptr_t used = (intptr_t)mCurrentHeap - (intptr_t)mHeap;
+        if (used > mMaxAlloc)
+        {
+            mMaxAlloc = (int)used;
+        }
 #endif
-		if (mHeap)
-		{
-			ResetHeap();
-		}
-	}
+        mCurrentHeap = mHeap;
+    }
 
-	// free up the heap
-	~CMiniHeap()
-	{
-		if (mHeap)
-		{
-			// the quake heap will be long gone, no need to free it Z_Free(mHeap);
-		}
-	}
+    // free up the heap
+    ~CMiniHeap()
+    {
+        // quake frees all memory pools at shutdown, so no Z_Free here
+    }
 
-	// give me some space from the heap please
-	char* MiniHeapAlloc(const int size)
-	{
-		if (size < (mSize - (reinterpret_cast<intptr_t>(mCurrentHeap) - reinterpret_cast<intptr_t>(mHeap))))
-		{
-			char* tempAddress = mCurrentHeap;
-			mCurrentHeap += size;
-			return tempAddress;
-		}
-		return nullptr;
-	}
+    // give me some space from the heap please
+    char* MiniHeapAlloc(const int size)
+    {
+        const intptr_t used = (intptr_t)mCurrentHeap - (intptr_t)mHeap;
+        const intptr_t remaining = mSize - used;
+
+        if (size < remaining)
+        {
+            char* tempAddress = mCurrentHeap;
+            mCurrentHeap += size;
+            return tempAddress;
+        }
+
+        return nullptr;
+    }
 };
 
 extern CMiniHeap* G2VertSpaceServer;

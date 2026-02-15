@@ -661,6 +661,10 @@ void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model,
 void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,
 	const int weapon_num)
 {
+	if (!ent)
+	{
+		return;
+	}
 	if (!ps_weapon_model)
 	{
 		assert(ps_weapon_model);
@@ -681,20 +685,6 @@ void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, 
 		ent->weaponModel[0] = ent->weaponModel[1] = -1;
 		return;
 	}
-
-	//if (ent && ent->client && ent->client->NPC_class == CLASS_SBD)
-	//{
-	//	//hack for sbd, no weaponmodel
-	//	ent->weaponModel[0] = ent->weaponModel[1] = -1;
-	//	return;
-	//}
-
-	//if (ent && ent->client && ent->client->NPC_class == CLASS_DROIDEKA)
-	//{
-	//	//hack for galakmech, no weaponmodel
-	//	ent->weaponModel[0] = ent->weaponModel[1] = -1;
-	//	return;
-	//}
 
 	if (weapon_num < 0 || weapon_num >= MAX_INHAND_WEAPONS)
 	{
@@ -752,45 +742,46 @@ void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, 
 void WP_SaberAddG2SaberModels(gentity_t* ent, const int specific_saber_num)
 {
 	int saber_num = 0, max_saber = 1;
+
+	if (!ent || !ent->client)
+		return;
+
 	if (specific_saber_num != -1 && specific_saber_num <= max_saber)
 	{
 		saber_num = max_saber = specific_saber_num;
 	}
+
 	for (; saber_num <= max_saber; saber_num++)
 	{
+		// Remove existing model if present
 		if (ent->weaponModel[saber_num] > 0)
 		{
-			//we already have a weapon model in this slot
-			//remove it
 			gi.G2API_SetSkin(&ent->ghoul2[ent->weaponModel[saber_num]], -1, 0);
 			gi.G2API_RemoveGhoul2Model(ent->ghoul2, ent->weaponModel[saber_num]);
 			ent->weaponModel[saber_num] = -1;
 		}
+
+		// Saber activation logic
 		if (saber_num > 0)
 		{
-			//second saber
-			if (!ent->client->ps.dualSabers
-				|| G_IsRidingVehicle(ent))
+			if (!ent->client->ps.dualSabers || G_IsRidingVehicle(ent))
 			{
-				//only have one saber or riding a vehicle and can only use one saber
 				return;
 			}
 		}
 		else if (saber_num == 0)
 		{
-			//first saber
 			if (ent->client->ps.saberInFlight)
 			{
-				//it's still out there somewhere, don't add it
-				//FIXME: call it back?
 				continue;
 			}
 		}
-		int hand_bolt = saber_num == 0 ? ent->handRBolt : ent->handLBolt;
 
-		if (ent->client && ent->client->ps.saber[saber_num].saberFlags & SFL_BOLT_TO_WRIST)
+		int hand_bolt = (saber_num == 0) ? ent->handRBolt : ent->handLBolt;
+
+		// Wrist‑bolted sabers
+		if (ent->client->ps.saber[saber_num].saberFlags & SFL_BOLT_TO_WRIST)
 		{
-			//special case, bolt to forearm
 			if (saber_num == 0)
 			{
 				hand_bolt = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "*r_hand_cap_r_arm");
@@ -800,19 +791,30 @@ void WP_SaberAddG2SaberModels(gentity_t* ent, const int specific_saber_num)
 				hand_bolt = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "*l_hand_cap_l_arm");
 			}
 		}
-		G_CreateG2AttachedWeaponModel(ent, ent->client->ps.saber[saber_num].model, hand_bolt, saber_num);
 
+		// Create the saber model
+		G_CreateG2AttachedWeaponModel(ent,
+			ent->client->ps.saber[saber_num].model,
+			hand_bolt,
+			saber_num);
+
+		// Apply custom skin if present
 		if (ent->client->ps.saber[saber_num].skin != nullptr)
 		{
-			//if this saber has a customSkin, use it
-			// lets see if it's out there
-			const int saber_skin = gi.RE_RegisterSkin(ent->client->ps.saber[saber_num].skin);
+			const int saber_skin =
+				gi.RE_RegisterSkin(ent->client->ps.saber[saber_num].skin);
+
 			if (saber_skin)
 			{
-				// put it in the config strings
-				// and set the ghoul2 model to use it
-				gi.G2API_SetSkin(&ent->ghoul2[ent->weaponModel[saber_num]],
-					G_SkinIndex(ent->client->ps.saber[saber_num].skin), saber_skin);
+				// ⭐ FIX: Only apply skin if the model index is valid
+				if (ent->weaponModel[saber_num] >= 0)
+				{
+					gi.G2API_SetSkin(
+						&ent->ghoul2[ent->weaponModel[saber_num]],
+						G_SkinIndex(ent->client->ps.saber[saber_num].skin),
+						saber_skin
+					);
+				}
 			}
 		}
 	}
@@ -1457,6 +1459,9 @@ void G_Throw(gentity_t* targ, const vec3_t new_dir, const float push)
 	vec3_t kvel;
 	float mass;
 
+	if (!targ)
+		return;
+
 	if (targ
 		&& targ->client
 		&& (targ->client->NPC_class == CLASS_ATST
@@ -1540,6 +1545,9 @@ void G_Kick_Throw(gentity_t* targ, const vec3_t new_dir, const float push)
 {
 	vec3_t kvel;
 	float mass;
+
+	if (!targ)
+		return;
 
 	if (targ
 		&& targ->client
@@ -2648,398 +2656,401 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 	for (int i = 0; i < numVictims; i++)
 	{
 		int d_flags = base_d_flags | DAMAGE_DEATH_KNOCKBACK | DAMAGE_NO_HIT_LOC;
+
+		if (victimEntityNum[i] == ENTITYNUM_NONE ||
+			victimEntityNum[i] < 0 ||
+			victimEntityNum[i] >= MAX_GENTITIES)
+		{
+			continue;
+		}
+
 		gentity_t* victim = &g_entities[victimEntityNum[i]];
 
-		if (victimEntityNum[i] != ENTITYNUM_NONE && &g_entities[victimEntityNum[i]] != nullptr)
+		// Don't bother with this damage if the fraction is higher than the saber's fraction
+		if (dmgFraction[i] < saberHitFraction || broken_parry)
 		{
-			// Don't bother with this damage if the fraction is higher than the saber's fraction
-			if (dmgFraction[i] < saberHitFraction || broken_parry)
+			if (!victim)
+				continue;
+
+			if (victim->e_DieFunc == dieF_maglock_die)
 			{
-				if (!victim)
+				//*sigh*, special check for maglocks
+				vec3_t test_from;
+				if (ent->client->ps.saberInFlight)
 				{
+					VectorCopy(g_entities[ent->client->ps.saberEntityNum].currentOrigin, test_from);
+				}
+				else
+				{
+					VectorCopy(ent->currentOrigin, test_from);
+				}
+				test_from[2] = victim->currentOrigin[2];
+				trace_t test_trace;
+				gi.trace(&test_trace, test_from, vec3_origin, vec3_origin, victim->currentOrigin, ent->s.number,
+					MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+				if (test_trace.entityNum != victim->s.number)
+				{
+					//can only damage maglocks if have a clear trace to the thing's origin
 					continue;
 				}
-
-				if (victim->e_DieFunc == dieF_maglock_die)
+			}
+			if (totalDmg[i] > 0)
+			{
+				//actually want to do *some* damage here
+				if (victim->client
+					&& victim->client->NPC_class == CLASS_WAMPA
+					&& victim->activator == ent)
 				{
-					//*sigh*, special check for maglocks
-					vec3_t test_from;
-					if (ent->client->ps.saberInFlight)
+				}
+				else if (PM_SuperBreakWinAnim(ent->client->ps.torsoAnim)
+					|| PM_StabDownAnim(ent->client->ps.torsoAnim))
+				{
+					//never cap the superbreak wins
+				}
+				else
+				{
+					if (victim->client
+						&& (victim->s.weapon == WP_SABER || victim->client->NPC_class == CLASS_REBORN || victim->client->NPC_class == CLASS_WAMPA)
+						&& !g_saberRealisticCombat->integer)
 					{
-						VectorCopy(g_entities[ent->client->ps.saberEntityNum].currentOrigin, test_from);
+						//dmg vs other saber fighters is modded by hitloc and capped
+						totalDmg[i] *= damageModifier[hit_loc[i]];
+						if (hit_loc[i] == HL_NONE)
+						{
+							max_dmg = 33 * base_damage;
+						}
+						else
+						{
+							max_dmg = 50 * hitLocHealthPercentage[hit_loc[i]] * base_damage;
+							//*victim->client->ps.stats[STAT_MAX_HEALTH]*2.0f;
+						}
+						if (max_dmg < totalDmg[i])
+						{
+							totalDmg[i] = max_dmg;
+						}
+						//d_flags |= DAMAGE_NO_HIT_LOC;
+					}
+
+					if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 3)))
+					{
+						d_flags |= DAMAGE_NO_DAMAGE;
+						G_Beskar_Attack_Bounce(ent, victim);
+						G_Sound(victim, G_SoundIndex(va("sound/weapons/impacts/beskar_impact%d.mp3", index)));
+					}
+					//clamp the dmg
+					if (victim->s.weapon != WP_SABER)
+					{
+						//clamp the dmg between 25 and maxhealth
+						if (totalDmg[i] < 25)
+						{
+							totalDmg[i] = 25;
+						}
+						if (totalDmg[i] > 100) //+(50*g_spskill->integer) )
+						{
+							//clamp using same adjustment as in NPC_Begin
+							totalDmg[i] = 100; //+(50*g_spskill->integer);
+						}
 					}
 					else
 					{
-						VectorCopy(ent->currentOrigin, test_from);
-					}
-					test_from[2] = victim->currentOrigin[2];
-					trace_t test_trace;
-					gi.trace(&test_trace, test_from, vec3_origin, vec3_origin, victim->currentOrigin, ent->s.number,
-						MASK_SHOT, static_cast<EG2_Collision>(0), 0);
-					if (test_trace.entityNum != victim->s.number)
-					{
-						//can only damage maglocks if have a clear trace to the thing's origin
-						continue;
+						//clamp the dmg between 5 and 100
+						if (!victim->s.number && totalDmg[i] > 50)
+						{
+							//never do more than half full health damage to player
+							//prevents one-hit kills
+							totalDmg[i] = 50;
+						}
+						else if (totalDmg[i] > 100)
+						{
+							totalDmg[i] = 100;
+						}
+						else
+						{
+							if (totalDmg[i] < 5)
+							{
+								totalDmg[i] = 5;
+							}
+						}
 					}
 				}
+
 				if (totalDmg[i] > 0)
 				{
-					//actually want to do *some* damage here
-					if (victim->client
-						&& victim->client->NPC_class == CLASS_WAMPA
-						&& victim->activator == ent)
+					gentity_t* inflictor = ent;
+					did_damage = qtrue;
+					qboolean vic_was_dismembered = qtrue;
+					const auto vic_was_alive = static_cast<qboolean>(victim->health > 0);
+
+					if (base_damage <= 0.1f)
 					{
+						//just get their attention?
+						d_flags |= DAMAGE_NO_DAMAGE;
 					}
-					else if (PM_SuperBreakWinAnim(ent->client->ps.torsoAnim)
-						|| PM_StabDownAnim(ent->client->ps.torsoAnim))
+
+					if (victim->client)
 					{
-						//never cap the superbreak wins
+						if (victim->client->ps.pm_time > 0 && victim->client->ps.pm_flags & PMF_TIME_KNOCKBACK &&
+							victim->client->ps.velocity[2] > 0)
+						{
+							//already being knocked around
+							d_flags |= DAMAGE_NO_KNOCKBACK;
+						}
+						if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+							&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT)
+						{
+							//no dismemberment! (blunt/stabbing weapon?)
+						}
+						else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+							&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT2)
+						{
+							//no dismemberment! (blunt/stabbing weapon?)
+						}
+						else
+						{
+							if (debug_subdivision->integer || g_saberRealisticCombat->integer)
+							{
+								d_flags |= DAMAGE_DISMEMBER;
+								if (hitDismember[i])
+								{
+									victim->client->dismembered = false;
+								}
+							}
+							else if (hitDismember[i])
+							{
+								d_flags |= DAMAGE_DISMEMBER;
+							}
+							if (!victim->client->dismembered)
+							{
+								vic_was_dismembered = qfalse;
+							}
+						}
+						if (base_damage <= 1.0f)
+						{
+							//very mild damage
+							if (victim->s.number == 0 || victim->client->ps.weapon == WP_SABER || victim->client->
+								NPC_class == CLASS_GALAKMECH)
+							{
+								//if it's the player or a saber-user, don't kill them with this blow
+								d_flags |= DAMAGE_NO_KILL;
+							}
+						}
 					}
 					else
 					{
+						if (victim->takedamage)
+						{
+							//some other breakable thing
+							//create a flash here
+							if (!g_noClashFlare)
+							{
+								g_saberFlashTime = level.time - 50;
+								VectorCopy(dmgSpot[i], g_saberFlashPos);
+							}
+						}
+					}
+					if (!PM_SuperBreakWinAnim(ent->client->ps.torsoAnim)
+						&& !PM_StabDownAnim(ent->client->ps.torsoAnim)
+						&& !g_saberRealisticCombat->integer
+						&& g_saberDamageCapping->integer)
+					{
+						//never cap the superbreak wins
 						if (victim->client
-							&& (victim->s.weapon == WP_SABER || victim->client->NPC_class == CLASS_REBORN || victim->client->NPC_class == CLASS_WAMPA)
-							&& !g_saberRealisticCombat->integer)
+							&& victim->s.number >= MAX_CLIENTS)
 						{
-							//dmg vs other saber fighters is modded by hitloc and capped
-							totalDmg[i] *= damageModifier[hit_loc[i]];
-							if (hit_loc[i] == HL_NONE)
+							if (victim->client->NPC_class == CLASS_SHADOWTROOPER
+								|| victim->NPC && victim->NPC->aiFlags & NPCAI_BOSS_CHARACTER)
 							{
-								max_dmg = 33 * base_damage;
-							}
-							else
-							{
-								max_dmg = 50 * hitLocHealthPercentage[hit_loc[i]] * base_damage;
-								//*victim->client->ps.stats[STAT_MAX_HEALTH]*2.0f;
-							}
-							if (max_dmg < totalDmg[i])
-							{
-								totalDmg[i] = max_dmg;
-							}
-							//d_flags |= DAMAGE_NO_HIT_LOC;
-						}
-
-						if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 3)))
-						{
-							d_flags |= DAMAGE_NO_DAMAGE;
-							G_Beskar_Attack_Bounce(ent, victim);
-							G_Sound(victim, G_SoundIndex(va("sound/weapons/impacts/beskar_impact%d.mp3", index)));
-						}
-						//clamp the dmg
-						if (victim->s.weapon != WP_SABER)
-						{
-							//clamp the dmg between 25 and maxhealth
-							if (totalDmg[i] < 25)
-							{
-								totalDmg[i] = 25;
-							}
-							if (totalDmg[i] > 100) //+(50*g_spskill->integer) )
-							{
-								//clamp using same adjustment as in NPC_Begin
-								totalDmg[i] = 100; //+(50*g_spskill->integer);
-							}
-						}
-						else
-						{
-							//clamp the dmg between 5 and 100
-							if (!victim->s.number && totalDmg[i] > 50)
-							{
-								//never do more than half full health damage to player
-								//prevents one-hit kills
-								totalDmg[i] = 50;
-							}
-							else if (totalDmg[i] > 100)
-							{
-								totalDmg[i] = 100;
-							}
-							else
-							{
-								if (totalDmg[i] < 5)
+								//hit a boss character
+								const int dmg = (3 - g_spskill->integer) * 5 + 10;
+								if (totalDmg[i] > dmg)
 								{
-									totalDmg[i] = 5;
+									totalDmg[i] = dmg;
+								}
+							}
+							else if (victim->client->ps.weapon == WP_SABER
+								|| victim->client->NPC_class == CLASS_REBORN
+								|| victim->client->NPC_class == CLASS_JEDI)
+							{
+								//hit a non-boss saber-user
+								const int dmg = (3 - g_spskill->integer) * 15 + 30;
+								if (totalDmg[i] > dmg)
+								{
+									totalDmg[i] = dmg;
+								}
+							}
+						}
+						if (victim->s.number < MAX_CLIENTS
+							&& ent->NPC)
+						{
+							if (ent->NPC->aiFlags & NPCAI_BOSS_CHARACTER
+								|| ent->NPC->aiFlags & NPCAI_SUBBOSS_CHARACTER
+								|| ent->client->NPC_class == CLASS_SHADOWTROOPER)
+							{
+								//player hit by a boss character
+								const int dmg = (g_spskill->integer + 1) * 4 + 3;
+								if (totalDmg[i] > dmg)
+								{
+									totalDmg[i] = dmg;
+								}
+							}
+							else if (g_spskill->integer < 3) //was < 2
+							{
+								//player hit by any enemy //on easy or medium?
+								const int dmg = (g_spskill->integer + 1) * 10 + 20;
+								if (totalDmg[i] > dmg)
+								{
+									totalDmg[i] = dmg;
 								}
 							}
 						}
 					}
+					//victim->hit_loc = hit_loc[i];
 
-					if (totalDmg[i] > 0)
+					d_flags |= DAMAGE_NO_KNOCKBACK; //okay, let's try no knockback whatsoever...
+					d_flags &= ~DAMAGE_DEATH_KNOCKBACK;
+					if (g_saberRealisticCombat->integer)
 					{
-						gentity_t* inflictor = ent;
-						did_damage = qtrue;
-						qboolean vic_was_dismembered = qtrue;
-						const auto vic_was_alive = static_cast<qboolean>(victim->health > 0);
-
-						if (base_damage <= 0.1f)
-						{
-							//just get their attention?
-							d_flags |= DAMAGE_NO_DAMAGE;
-						}
-
-						if (victim->client)
-						{
-							if (victim->client->ps.pm_time > 0 && victim->client->ps.pm_flags & PMF_TIME_KNOCKBACK &&
-								victim->client->ps.velocity[2] > 0)
-							{
-								//already being knocked around
-								d_flags |= DAMAGE_NO_KNOCKBACK;
-							}
-							if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-								&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT)
-							{
-								//no dismemberment! (blunt/stabbing weapon?)
-							}
-							else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-								&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT2)
-							{
-								//no dismemberment! (blunt/stabbing weapon?)
-							}
-							else
-							{
-								if (debug_subdivision->integer || g_saberRealisticCombat->integer)
-								{
-									d_flags |= DAMAGE_DISMEMBER;
-									if (hitDismember[i])
-									{
-										victim->client->dismembered = false;
-									}
-								}
-								else if (hitDismember[i])
-								{
-									d_flags |= DAMAGE_DISMEMBER;
-								}
-								if (!victim->client->dismembered)
-								{
-									vic_was_dismembered = qfalse;
-								}
-							}
-							if (base_damage <= 1.0f)
-							{
-								//very mild damage
-								if (victim->s.number == 0 || victim->client->ps.weapon == WP_SABER || victim->client->
-									NPC_class == CLASS_GALAKMECH)
-								{
-									//if it's the player or a saber-user, don't kill them with this blow
-									d_flags |= DAMAGE_NO_KILL;
-								}
-							}
-						}
-						else
-						{
-							if (victim->takedamage)
-							{
-								//some other breakable thing
-								//create a flash here
-								if (!g_noClashFlare)
-								{
-									g_saberFlashTime = level.time - 50;
-									VectorCopy(dmgSpot[i], g_saberFlashPos);
-								}
-							}
-						}
-						if (!PM_SuperBreakWinAnim(ent->client->ps.torsoAnim)
-							&& !PM_StabDownAnim(ent->client->ps.torsoAnim)
-							&& !g_saberRealisticCombat->integer
-							&& g_saberDamageCapping->integer)
-						{
-							//never cap the superbreak wins
-							if (victim->client
-								&& victim->s.number >= MAX_CLIENTS)
-							{
-								if (victim->client->NPC_class == CLASS_SHADOWTROOPER
-									|| victim->NPC && victim->NPC->aiFlags & NPCAI_BOSS_CHARACTER)
-								{
-									//hit a boss character
-									const int dmg = (3 - g_spskill->integer) * 5 + 10;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-								else if (victim->client->ps.weapon == WP_SABER
-									|| victim->client->NPC_class == CLASS_REBORN
-									|| victim->client->NPC_class == CLASS_JEDI)
-								{
-									//hit a non-boss saber-user
-									const int dmg = (3 - g_spskill->integer) * 15 + 30;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-							}
-							if (victim->s.number < MAX_CLIENTS
-								&& ent->NPC)
-							{
-								if (ent->NPC->aiFlags & NPCAI_BOSS_CHARACTER
-									|| ent->NPC->aiFlags & NPCAI_SUBBOSS_CHARACTER
-									|| ent->client->NPC_class == CLASS_SHADOWTROOPER)
-								{
-									//player hit by a boss character
-									const int dmg = (g_spskill->integer + 1) * 4 + 3;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-								else if (g_spskill->integer < 3) //was < 2
-								{
-									//player hit by any enemy //on easy or medium?
-									const int dmg = (g_spskill->integer + 1) * 10 + 20;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-							}
-						}
-						//victim->hit_loc = hit_loc[i];
-
-						d_flags |= DAMAGE_NO_KNOCKBACK; //okay, let's try no knockback whatsoever...
+						d_flags |= DAMAGE_NO_KNOCKBACK;
 						d_flags &= ~DAMAGE_DEATH_KNOCKBACK;
-						if (g_saberRealisticCombat->integer)
+						d_flags &= ~DAMAGE_NO_KILL;
+					}
+					if (ent->client && !ent->s.number)
+					{
+						switch (hit_loc[i])
 						{
-							d_flags |= DAMAGE_NO_KNOCKBACK;
-							d_flags &= ~DAMAGE_DEATH_KNOCKBACK;
-							d_flags &= ~DAMAGE_NO_KILL;
+						case HL_FOOT_RT:
+						case HL_FOOT_LT:
+						case HL_LEG_RT:
+						case HL_LEG_LT:
+							ent->client->sess.missionStats.legAttacksCnt++;
+							break;
+						case HL_WAIST:
+						case HL_BACK_RT:
+						case HL_BACK_LT:
+						case HL_BACK:
+						case HL_CHEST_RT:
+						case HL_CHEST_LT:
+						case HL_CHEST:
+							ent->client->sess.missionStats.torsoAttacksCnt++;
+							break;
+						case HL_ARM_RT:
+						case HL_ARM_LT:
+						case HL_HAND_RT:
+						case HL_HAND_LT:
+							ent->client->sess.missionStats.armAttacksCnt++;
+							break;
+						default:
+							ent->client->sess.missionStats.otherAttacksCnt++;
+							break;
 						}
-						if (ent->client && !ent->s.number)
-						{
-							switch (hit_loc[i])
-							{
-							case HL_FOOT_RT:
-							case HL_FOOT_LT:
-							case HL_LEG_RT:
-							case HL_LEG_LT:
-								ent->client->sess.missionStats.legAttacksCnt++;
-								break;
-							case HL_WAIST:
-							case HL_BACK_RT:
-							case HL_BACK_LT:
-							case HL_BACK:
-							case HL_CHEST_RT:
-							case HL_CHEST_LT:
-							case HL_CHEST:
-								ent->client->sess.missionStats.torsoAttacksCnt++;
-								break;
-							case HL_ARM_RT:
-							case HL_ARM_LT:
-							case HL_HAND_RT:
-							case HL_HAND_LT:
-								ent->client->sess.missionStats.armAttacksCnt++;
-								break;
-							default:
-								ent->client->sess.missionStats.otherAttacksCnt++;
-								break;
-							}
-						}
+					}
 
-						if (saber_type == SABER_SITH_SWORD)
+					if (saber_type == SABER_SITH_SWORD)
+					{
+						//do knockback
+						d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
+					}
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].knockbackScale > 0.0f)
+					{
+						d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
+						if (saber_num < 1)
 						{
-							//do knockback
-							d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
-						}
-						if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].knockbackScale > 0.0f)
-						{
-							d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
-							if (saber_num < 1)
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK1;
-							}
-							else
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK2;
-							}
-						}
-						else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].knockbackScale2 > 0.0f)
-						{
-							d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
-							if (saber_num < 1)
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK1_B2;
-							}
-							else
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK2_B2;
-							}
-						}
-						if (thrown_saber)
-						{
-							inflictor = &g_entities[ent->client->ps.saberEntityNum];
-						}
-						int damage;
-						if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].damageScale != 1.0f)
-						{
-							damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale);
-						}
-						else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].damageScale2 != 1.0f)
-						{
-							damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale2);
+							d_flags |= DAMAGE_SABER_KNOCKBACK1;
 						}
 						else
 						{
-							damage = ceil(totalDmg[i]);
+							d_flags |= DAMAGE_SABER_KNOCKBACK2;
 						}
-						G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, d_flags, MOD_SABER,
-							hitDismemberLoc[i]);
-						if (damage > 0 && cg.time)
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].knockbackScale2 > 0.0f)
+					{
+						d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
+						if (saber_num < 1)
 						{
-							float size_time_scale = 1.0f;
-							if (vic_was_alive
-								&& victim->health <= 0
-								|| !vic_was_dismembered
-								&& victim->client->dismembered
-								&& hitDismemberLoc[i] != HL_NONE
-								&& hitDismember[i])
-							{
-								size_time_scale = 3.0f;
-							}
-							//FIXME: if not hitting the first model on the enemy, don't do this!
-							CG_SaberDoWeaponHitMarks(ent->client,
-								ent->client->ps.saberInFlight
-								? &g_entities[ent->client->ps.saberEntityNum]
-								: nullptr,
-								victim,
-								saber_num,
-								blade_num,
-								dmgSpot[i],
-								dmgDir[i],
-								dmgBladeVec[i],
-								size_time_scale);
+							d_flags |= DAMAGE_SABER_KNOCKBACK1_B2;
 						}
+						else
+						{
+							d_flags |= DAMAGE_SABER_KNOCKBACK2_B2;
+						}
+					}
+					if (thrown_saber)
+					{
+						inflictor = &g_entities[ent->client->ps.saberEntityNum];
+					}
+					int damage;
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].damageScale != 1.0f)
+					{
+						damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale);
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].damageScale2 != 1.0f)
+					{
+						damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale2);
+					}
+					else
+					{
+						damage = ceil(totalDmg[i]);
+					}
+					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, d_flags, MOD_SABER,
+						hitDismemberLoc[i]);
+					if (damage > 0 && cg.time)
+					{
+						float size_time_scale = 1.0f;
+						if (vic_was_alive
+							&& victim->health <= 0
+							|| !vic_was_dismembered
+							&& victim->client->dismembered
+							&& hitDismemberLoc[i] != HL_NONE
+							&& hitDismember[i])
+						{
+							size_time_scale = 3.0f;
+						}
+						//FIXME: if not hitting the first model on the enemy, don't do this!
+						CG_SaberDoWeaponHitMarks(ent->client,
+							ent->client->ps.saberInFlight
+							? &g_entities[ent->client->ps.saberEntityNum]
+							: nullptr,
+							victim,
+							saber_num,
+							blade_num,
+							dmgSpot[i],
+							dmgDir[i],
+							dmgBladeVec[i],
+							size_time_scale);
+					}
 #ifndef FINAL_BUILD
-						if (d_saberCombat->integer)
+					if (d_saberCombat->integer)
+					{
+						if ((d_flags & DAMAGE_NO_DAMAGE))
 						{
-							if ((d_flags & DAMAGE_NO_DAMAGE))
-							{
-								gi.Printf(S_COLOR_RED"damage: fake, hit_loc %d\n", hit_loc[i]);
-							}
-							else
-							{
-								gi.Printf(S_COLOR_RED"damage: %4.2f, hit_loc %d\n", totalDmg[i], hit_loc[i]);
-							}
+							gi.Printf(S_COLOR_RED"damage: fake, hit_loc %d\n", hit_loc[i]);
 						}
+						else
+						{
+							gi.Printf(S_COLOR_RED"damage: %4.2f, hit_loc %d\n", totalDmg[i], hit_loc[i]);
+						}
+					}
 #endif
-						//do the effect
-						if (ent->s.number == 0)
+					//do the effect
+					if (ent->s.number == 0)
+					{
+						AddSoundEvent(victim->owner, dmgSpot[i], 256, AEL_DISCOVERED);
+						AddSightEvent(victim->owner, dmgSpot[i], 512, AEL_DISCOVERED, 50);
+					}
+					if (ent->client)
+					{
+						if (ent->enemy && ent->enemy == victim)
 						{
-							AddSoundEvent(victim->owner, dmgSpot[i], 256, AEL_DISCOVERED);
-							AddSightEvent(victim->owner, dmgSpot[i], 512, AEL_DISCOVERED, 50);
+							//just so Jedi knows that he hit his enemy
+							ent->client->ps.saberEventFlags |= SEF_HITENEMY;
 						}
-						if (ent->client)
+						else
 						{
-							if (ent->enemy && ent->enemy == victim)
-							{
-								//just so Jedi knows that he hit his enemy
-								ent->client->ps.saberEventFlags |= SEF_HITENEMY;
-							}
-							else
-							{
-								ent->client->ps.saberEventFlags |= SEF_HITOBJECT;
-							}
+							ent->client->ps.saberEventFlags |= SEF_HITOBJECT;
 						}
 					}
 				}
@@ -3107,864 +3118,867 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 	for (int i = 0; i < numVictims; i++)
 	{
 		int d_flags = base_d_flags | DAMAGE_DEATH_KNOCKBACK | DAMAGE_NO_HIT_LOC;
+
+		if (victimEntityNum[i] == ENTITYNUM_NONE ||
+			victimEntityNum[i] < 0 ||
+			victimEntityNum[i] >= MAX_GENTITIES)
+		{
+			continue;
+		}
+
 		gentity_t* victim = &g_entities[victimEntityNum[i]];
 
-		if (victimEntityNum[i] != ENTITYNUM_NONE && &g_entities[victimEntityNum[i]] != nullptr)
+		// Don't bother with this damage if the fraction is higher than the saber's fraction
+		if (dmgFraction[i] < saberHitFraction || broken_parry)
 		{
-			// Don't bother with this damage if the fraction is higher than the saber's fraction
-			if (dmgFraction[i] < saberHitFraction || broken_parry)
+			if (!victim)
+				continue;
+
+			if (victim->e_DieFunc == dieF_maglock_die)
 			{
-				if (!victim)
+				//*sigh*, special check for maglocks
+				vec3_t test_from;
+				if (ent->client->ps.saberInFlight)
 				{
+					VectorCopy(g_entities[ent->client->ps.saberEntityNum].currentOrigin, test_from);
+				}
+				else
+				{
+					VectorCopy(ent->currentOrigin, test_from);
+				}
+				test_from[2] = victim->currentOrigin[2];
+				trace_t test_trace;
+				gi.trace(&test_trace, test_from, vec3_origin, vec3_origin, victim->currentOrigin, ent->s.number,
+					MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+				if (test_trace.entityNum != victim->s.number)
+				{
+					//can only damage maglocks if have a clear trace to the thing's origin
 					continue;
 				}
-
-				if (victim->e_DieFunc == dieF_maglock_die)
+			}
+			if (totalDmg[i] > 0)
+			{
+				if (g_SaberAttackSpeedMD->integer && g_RealisticBlockingMode->integer && g_SerenityJediEngineMode->integer == 2 && victim->health >= 1)
 				{
-					//*sigh*, special check for maglocks
-					vec3_t test_from;
-					if (ent->client->ps.saberInFlight)
+					if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
 					{
-						VectorCopy(g_entities[ent->client->ps.saberEntityNum].currentOrigin, test_from);
-					}
-					else
-					{
-						VectorCopy(ent->currentOrigin, test_from);
-					}
-					test_from[2] = victim->currentOrigin[2];
-					trace_t test_trace;
-					gi.trace(&test_trace, test_from, vec3_origin, vec3_origin, victim->currentOrigin, ent->s.number,
-						MASK_SHOT, static_cast<EG2_Collision>(0), 0);
-					if (test_trace.entityNum != victim->s.number)
-					{
-						//can only damage maglocks if have a clear trace to the thing's origin
-						continue;
+						CGCam_BlockShakeSP(0.25f, 100);
 					}
 				}
-				if (totalDmg[i] > 0)
+				//actually want to do *some* damage here
+				if (victim->client
+					&& victim->client->NPC_class == CLASS_WAMPA
+					&& victim->activator == ent)
 				{
-					if (g_SaberAttackSpeedMD->integer && g_RealisticBlockingMode->integer && g_SerenityJediEngineMode->integer == 2 && victim->health >= 1)
-					{
-						if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
-						{
-							CGCam_BlockShakeSP(0.25f, 100);
-						}
-					}
-					//actually want to do *some* damage here
+					//
+				}
+				else if (PM_SuperBreakWinAnim(ent->client->ps.torsoAnim))
+				{
+					//never cap the superbreak wins
+				}
+				else
+				{
+					const qboolean saber_in_special = pm_saber_in_special_attack(ent->client->ps.torsoAnim);
+					const qboolean saber_in_LeapAttack = PM_SaberInInstankillKillAttack(ent->client->ps.torsoAnim);
+					const qboolean saber_in_stab_down = PM_StabDownAnim(ent->client->ps.torsoAnim);
+					const qboolean saber_in_kata = PM_SaberInKata(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
+					const qboolean saber_in_back_attack = PM_SaberInBackAttack(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
+					const qboolean saber_in_over_head_attack = PM_SaberInOverHeadSlash(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
+					const qboolean saber_in_roll_stab = PM_SaberInRollStab(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
+					const qboolean saber_in_lunge_stab = PM_SaberInLungeStab(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
+					const int index = Q_irand(1, 3);
+
 					if (victim->client
-						&& victim->client->NPC_class == CLASS_WAMPA
-						&& victim->activator == ent)
+						&& (victim->s.weapon == WP_SABER
+							|| victim->client->NPC_class == CLASS_REBORN
+							|| victim->client->NPC_class == CLASS_WAMPA)
+						&& !g_saberRealisticCombat->integer)
 					{
-						//
-					}
-					else if (PM_SuperBreakWinAnim(ent->client->ps.torsoAnim))
-					{
-						//never cap the superbreak wins
-					}
-					else
-					{
-						const qboolean saber_in_special = pm_saber_in_special_attack(ent->client->ps.torsoAnim);
-						const qboolean saber_in_LeapAttack = PM_SaberInInstankillKillAttack(ent->client->ps.torsoAnim);
-						const qboolean saber_in_stab_down = PM_StabDownAnim(ent->client->ps.torsoAnim);
-						const qboolean saber_in_kata = PM_SaberInKata(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
-						const qboolean saber_in_back_attack = PM_SaberInBackAttack(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
-						const qboolean saber_in_over_head_attack = PM_SaberInOverHeadSlash(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
-						const qboolean saber_in_roll_stab = PM_SaberInRollStab(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
-						const qboolean saber_in_lunge_stab = PM_SaberInLungeStab(static_cast<saber_moveName_t>(ent->client->ps.saber_move));
-						const int index = Q_irand(1, 3);
-
-						if (victim->client
-							&& (victim->s.weapon == WP_SABER
-								|| victim->client->NPC_class == CLASS_REBORN
-								|| victim->client->NPC_class == CLASS_WAMPA)
-							&& !g_saberRealisticCombat->integer)
+						//dmg vs other saber fighters is modded by hitloc and capped
+						totalDmg[i] *= damageModifier[hit_loc[i]];
+						if (hit_loc[i] == HL_NONE)
 						{
-							//dmg vs other saber fighters is modded by hitloc and capped
-							totalDmg[i] *= damageModifier[hit_loc[i]];
-							if (hit_loc[i] == HL_NONE)
-							{
-								max_dmg = 33 * base_damage;
-							}
-							else
-							{
-								max_dmg = 50 * hitLocHealthPercentage[hit_loc[i]] * base_damage;
-							}
-							if (max_dmg < totalDmg[i])
-							{
-								totalDmg[i] = max_dmg;
-							}
-						}
-
-						if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 3)))
-						{
-							d_flags |= DAMAGE_NO_DAMAGE;
-							G_Beskar_Attack_Bounce(ent, victim);
-							G_Sound(victim, G_SoundIndex(va("sound/weapons/impacts/beskar_impact%d.mp3", index)));
-						}
-
-						if (!saber_in_special) // not doing a special move
-						{
-							if (victim->s.weapon != WP_SABER || !Q_stricmp("func_breakable", victim->classname))
-							{
-								// my enemy has a gun
-								if (g_saberRealisticCombat->integer < 3)
-								{
-									// enemy has more than 30hp
-									if (g_saberRealisticCombat->integer == 2 && victim->NPC && victim->health >= 30)
-									{
-										d_flags |= DAMAGE_NO_KILL;
-										totalDmg[i] = 30;
-									}
-									else if (g_saberRealisticCombat->integer == 1 && victim->NPC && victim->health >=
-										30)
-									{
-										d_flags |= DAMAGE_NO_KILL;
-										totalDmg[i] = 25;
-									}
-									else if (g_saberRealisticCombat->integer == 0 && victim->NPC && victim->health >=
-										30)
-									{
-										d_flags |= DAMAGE_NO_KILL;
-										totalDmg[i] = 10;
-									}
-									else
-									{
-										// enemy has less than 30 hp
-										if (g_saberRealisticCombat->integer == 2)
-										{
-											if (totalDmg[i] < 35)
-											{
-												totalDmg[i] = 35;
-											}
-											if (totalDmg[i] > 35)
-											{
-												//clamp using same adjustment as in NPC_Begin
-												totalDmg[i] = 35;
-											}
-										}
-										else if (g_saberRealisticCombat->integer == 1)
-										{
-											if (totalDmg[i] < 15)
-											{
-												totalDmg[i] = 15;
-											}
-											if (totalDmg[i] > 15)
-											{
-												//clamp using same adjustment as in NPC_Begin
-												totalDmg[i] = 15;
-											}
-										}
-										else if (g_saberRealisticCombat->integer == 0)
-										{
-											if (totalDmg[i] < 5)
-											{
-												totalDmg[i] = 5;
-											}
-											if (totalDmg[i] > 5)
-											{
-												//clamp using same adjustment as in NPC_Begin
-												totalDmg[i] = 5;
-											}
-										}
-									}
-								}
-								else
-								{
-									// need to add better damage control here for saber v gunner at high damage
-									if (totalDmg[i] < 50)
-									{
-										totalDmg[i] = 50;
-									}
-									if (totalDmg[i] > 100)
-									{
-										//clamp using same adjustment as in NPC_Begin
-										totalDmg[i] = 100;
-									}
-								}
-							}
-							else
-							{
-								// my enemy has a saber
-								if (g_saberRealisticCombat->integer < 3)
-								{
-									// enemy has more than 30hp
-									if (g_saberRealisticCombat->integer == 2 && victim->NPC && victim->health >= 30)
-									{
-										d_flags |= DAMAGE_NO_KILL;
-										totalDmg[i] = 30;
-									}
-									else if (g_saberRealisticCombat->integer == 1 && victim->NPC && victim->health >=
-										30)
-									{
-										d_flags |= DAMAGE_NO_KILL;
-										totalDmg[i] = 25;
-									}
-									else if (g_saberRealisticCombat->integer == 0 && victim->NPC && victim->health >=
-										30)
-									{
-										d_flags |= DAMAGE_NO_KILL;
-										totalDmg[i] = 10;
-									}
-									else
-									{
-										// enemy has less than 30 hp
-										if (g_saberRealisticCombat->integer == 2)
-										{
-											if (totalDmg[i] < 35)
-											{
-												totalDmg[i] = 35;
-											}
-											if (totalDmg[i] > 35)
-											{
-												//clamp using same adjustment as in NPC_Begin
-												totalDmg[i] = 35;
-											}
-										}
-										else if (g_saberRealisticCombat->integer == 1)
-										{
-											if (totalDmg[i] < 15)
-											{
-												totalDmg[i] = 15;
-											}
-											if (totalDmg[i] > 15)
-											{
-												//clamp using same adjustment as in NPC_Begin
-												totalDmg[i] = 15;
-											}
-										}
-										else if (g_saberRealisticCombat->integer == 0)
-										{
-											if (totalDmg[i] < 5)
-											{
-												totalDmg[i] = 5;
-											}
-											if (totalDmg[i] > 5)
-											{
-												//clamp using same adjustment as in NPC_Begin
-												totalDmg[i] = 5;
-											}
-										}
-									}
-								}
-								else
-								{
-									// need to add better damage control here for saber v gunner at high damage
-									if (totalDmg[i] < 50)
-									{
-										totalDmg[i] = 50;
-									}
-									if (totalDmg[i] > 100)
-									{
-										//clamp using same adjustment as in NPC_Begin
-										totalDmg[i] = 100;
-									}
-								}
-							}
+							max_dmg = 33 * base_damage;
 						}
 						else
 						{
-							// doing a special move
-							if (victim->s.weapon != WP_SABER || !Q_stricmp("func_breakable", victim->classname))
+							max_dmg = 50 * hitLocHealthPercentage[hit_loc[i]] * base_damage;
+						}
+						if (max_dmg < totalDmg[i])
+						{
+							totalDmg[i] = max_dmg;
+						}
+					}
+
+					if (victim->flags & FL_SABERDAMAGE_RESIST && (!Q_irand(0, 3)))
+					{
+						d_flags |= DAMAGE_NO_DAMAGE;
+						G_Beskar_Attack_Bounce(ent, victim);
+						G_Sound(victim, G_SoundIndex(va("sound/weapons/impacts/beskar_impact%d.mp3", index)));
+					}
+
+					if (!saber_in_special) // not doing a special move
+					{
+						if (victim->s.weapon != WP_SABER || !Q_stricmp("func_breakable", victim->classname))
+						{
+							// my enemy has a gun
+							if (g_saberRealisticCombat->integer < 3)
 							{
-								//clamp the dmg between 25 and maxhealth
-								if (totalDmg[i] < 25)
+								// enemy has more than 30hp
+								if (g_saberRealisticCombat->integer == 2 && victim->NPC && victim->health >= 30)
 								{
+									d_flags |= DAMAGE_NO_KILL;
+									totalDmg[i] = 30;
+								}
+								else if (g_saberRealisticCombat->integer == 1 && victim->NPC && victim->health >=
+									30)
+								{
+									d_flags |= DAMAGE_NO_KILL;
 									totalDmg[i] = 25;
 								}
-								if (totalDmg[i] > 75 && g_saberRealisticCombat->integer == 0)
+								else if (g_saberRealisticCombat->integer == 0 && victim->NPC && victim->health >=
+									30)
 								{
-									//clamp using same adjustment as in NPC_Begin
-									totalDmg[i] = 75;
+									d_flags |= DAMAGE_NO_KILL;
+									totalDmg[i] = 10;
 								}
-								else if (totalDmg[i] > 100)
+								else
+								{
+									// enemy has less than 30 hp
+									if (g_saberRealisticCombat->integer == 2)
+									{
+										if (totalDmg[i] < 35)
+										{
+											totalDmg[i] = 35;
+										}
+										if (totalDmg[i] > 35)
+										{
+											//clamp using same adjustment as in NPC_Begin
+											totalDmg[i] = 35;
+										}
+									}
+									else if (g_saberRealisticCombat->integer == 1)
+									{
+										if (totalDmg[i] < 15)
+										{
+											totalDmg[i] = 15;
+										}
+										if (totalDmg[i] > 15)
+										{
+											//clamp using same adjustment as in NPC_Begin
+											totalDmg[i] = 15;
+										}
+									}
+									else if (g_saberRealisticCombat->integer == 0)
+									{
+										if (totalDmg[i] < 5)
+										{
+											totalDmg[i] = 5;
+										}
+										if (totalDmg[i] > 5)
+										{
+											//clamp using same adjustment as in NPC_Begin
+											totalDmg[i] = 5;
+										}
+									}
+								}
+							}
+							else
+							{
+								// need to add better damage control here for saber v gunner at high damage
+								if (totalDmg[i] < 50)
+								{
+									totalDmg[i] = 50;
+								}
+								if (totalDmg[i] > 100)
 								{
 									//clamp using same adjustment as in NPC_Begin
 									totalDmg[i] = 100;
 								}
 							}
-							else
+						}
+						else
+						{
+							// my enemy has a saber
+							if (g_saberRealisticCombat->integer < 3)
 							{
-								if (saber_in_stab_down)
+								// enemy has more than 30hp
+								if (g_saberRealisticCombat->integer == 2 && victim->NPC && victim->health >= 30)
 								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-									{
-										gi.Printf(S_COLOR_YELLOW"saberInStabDown\n");
-									}
-									if (totalDmg[i] > 20 && g_saberRealisticCombat->integer == 0)
-									{
-										totalDmg[i] = 20;
-									}
-									else if (totalDmg[i] > 40 && g_saberRealisticCombat->integer == 1)
-									{
-										totalDmg[i] = 40;
-									}
-									else {
-										totalDmg[i] = 80;
-									}
+									d_flags |= DAMAGE_NO_KILL;
+									totalDmg[i] = 30;
 								}
-								else if (saber_in_LeapAttack)
+								else if (g_saberRealisticCombat->integer == 1 && victim->NPC && victim->health >=
+									30)
 								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-									{
-										gi.Printf(S_COLOR_YELLOW"saber_in_LeapAttack\n");
-									}
-									if (g_saberRealisticCombat->integer == 0)
-									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 15, 30, 0.5f);
-									}
-									if (g_saberRealisticCombat->integer == 1)
-									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
-									}
-									else {
-										totalDmg[i] = G_GetAttackDamageMD(ent, 60, 100, 0.5f);
-									}
+									d_flags |= DAMAGE_NO_KILL;
+									totalDmg[i] = 25;
 								}
-								else if (saber_in_kata)
+								else if (g_saberRealisticCombat->integer == 0 && victim->NPC && victim->health >=
+									30)
 								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-									{
-										gi.Printf(S_COLOR_YELLOW"saberInKata\n");
-									}
-									if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
-										SS_STRONG)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
-										}
-									}
-									else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
-										}
-									}
-									else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
-										== SS_TAVION)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
-										}
-									}
-									else // SS_STAFF // SS_DUAL
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 70, 0.5f);
-										}
-									}
-								}
-								else if (saber_in_back_attack)
-								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-									{
-										gi.Printf(S_COLOR_YELLOW"saberInBackAttack\n");
-									}
-									if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
-										SS_STRONG)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
-										}
-									}
-									else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
-										}
-									}
-									else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
-										== SS_TAVION)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
-										}
-									}
-									else // SS_STAFF // SS_DUAL
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 35, 50, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 70, 0.5f);
-										}
-									}
-								}
-								else if (saber_in_over_head_attack)
-								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-									{
-										gi.Printf(S_COLOR_YELLOW"saberInOverHeadAttack\n");
-									}
-									if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
-										SS_STRONG)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
-										}
-									}
-									else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 60, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 70, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 80, 0.5f);
-										}
-									}
-									else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
-										== SS_TAVION)
-									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 50, 0.5f);
-										/*
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 20, 50, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 10, 50, 0.5f);
-										}*/
-									}
-									else // SS_STAFF // SS_DUAL
-									{
-										if (g_saberRealisticCombat->integer == 0)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
-										}
-										if (g_saberRealisticCombat->integer == 1)
-										{
-											totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
-										}
-										else {
-											totalDmg[i] = G_GetAttackDamageMD(ent, 40, 70, 0.5f);
-										}
-									}
-								}
-								else if (saber_in_roll_stab)
-								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-									{
-										gi.Printf(S_COLOR_YELLOW"SaberInRollStab\n");
-									}
-									if (g_saberRealisticCombat->integer == 0)
-									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
-									}
-									if (g_saberRealisticCombat->integer == 1)
-									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
-									}
-									else {
-										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 80, 0.5f);
-									}
-								}
-								else if (saber_in_lunge_stab)
-								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-									{
-										gi.Printf(S_COLOR_YELLOW"SaberInLungeStab\n");
-									}
-									if (g_saberRealisticCombat->integer == 0)
-									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
-									}
-									if (g_saberRealisticCombat->integer == 1)
-									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
-									}
-									else {
-										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
-									}
+									d_flags |= DAMAGE_NO_KILL;
+									totalDmg[i] = 10;
 								}
 								else
 								{
-									if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+									// enemy has less than 30 hp
+									if (g_saberRealisticCombat->integer == 2)
 									{
-										gi.Printf(S_COLOR_YELLOW"saberInSpecial\n");
+										if (totalDmg[i] < 35)
+										{
+											totalDmg[i] = 35;
+										}
+										if (totalDmg[i] > 35)
+										{
+											//clamp using same adjustment as in NPC_Begin
+											totalDmg[i] = 35;
+										}
 									}
+									else if (g_saberRealisticCombat->integer == 1)
+									{
+										if (totalDmg[i] < 15)
+										{
+											totalDmg[i] = 15;
+										}
+										if (totalDmg[i] > 15)
+										{
+											//clamp using same adjustment as in NPC_Begin
+											totalDmg[i] = 15;
+										}
+									}
+									else if (g_saberRealisticCombat->integer == 0)
+									{
+										if (totalDmg[i] < 5)
+										{
+											totalDmg[i] = 5;
+										}
+										if (totalDmg[i] > 5)
+										{
+											//clamp using same adjustment as in NPC_Begin
+											totalDmg[i] = 5;
+										}
+									}
+								}
+							}
+							else
+							{
+								// need to add better damage control here for saber v gunner at high damage
+								if (totalDmg[i] < 50)
+								{
+									totalDmg[i] = 50;
+								}
+								if (totalDmg[i] > 100)
+								{
+									//clamp using same adjustment as in NPC_Begin
+									totalDmg[i] = 100;
+								}
+							}
+						}
+					}
+					else
+					{
+						// doing a special move
+						if (victim->s.weapon != WP_SABER || !Q_stricmp("func_breakable", victim->classname))
+						{
+							//clamp the dmg between 25 and maxhealth
+							if (totalDmg[i] < 25)
+							{
+								totalDmg[i] = 25;
+							}
+							if (totalDmg[i] > 75 && g_saberRealisticCombat->integer == 0)
+							{
+								//clamp using same adjustment as in NPC_Begin
+								totalDmg[i] = 75;
+							}
+							else if (totalDmg[i] > 100)
+							{
+								//clamp using same adjustment as in NPC_Begin
+								totalDmg[i] = 100;
+							}
+						}
+						else
+						{
+							if (saber_in_stab_down)
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"saberInStabDown\n");
+								}
+								if (totalDmg[i] > 20 && g_saberRealisticCombat->integer == 0)
+								{
+									totalDmg[i] = 20;
+								}
+								else if (totalDmg[i] > 40 && g_saberRealisticCombat->integer == 1)
+								{
+									totalDmg[i] = 40;
+								}
+								else {
+									totalDmg[i] = 80;
+								}
+							}
+							else if (saber_in_LeapAttack)
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"saber_in_LeapAttack\n");
+								}
+								if (g_saberRealisticCombat->integer == 0)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 15, 30, 0.5f);
+								}
+								if (g_saberRealisticCombat->integer == 1)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+								}
+								else {
+									totalDmg[i] = G_GetAttackDamageMD(ent, 60, 100, 0.5f);
+								}
+							}
+							else if (saber_in_kata)
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"saberInKata\n");
+								}
+								if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
+									SS_STRONG)
+								{
 									if (g_saberRealisticCombat->integer == 0)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.65f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
 									}
 									if (g_saberRealisticCombat->integer == 1)
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 120, 0.65f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
 									}
 									else {
-										totalDmg[i] = G_GetAttackDamageMD(ent, 75, 180, 0.65f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
 									}
+								}
+								else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+									}
+								}
+								else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
+									== SS_TAVION)
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+									}
+								}
+								else // SS_STAFF // SS_DUAL
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 70, 0.5f);
+									}
+								}
+							}
+							else if (saber_in_back_attack)
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"saberInBackAttack\n");
+								}
+								if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
+									SS_STRONG)
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+									}
+								}
+								else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+									}
+								}
+								else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
+									== SS_TAVION)
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+									}
+								}
+								else // SS_STAFF // SS_DUAL
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 35, 50, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 70, 0.5f);
+									}
+								}
+							}
+							else if (saber_in_over_head_attack)
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"saberInOverHeadAttack\n");
+								}
+								if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
+									SS_STRONG)
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 50, 100, 0.5f);
+									}
+								}
+								else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 60, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 70, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 80, 0.5f);
+									}
+								}
+								else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
+									== SS_TAVION)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 10, 50, 0.5f);
+									/*
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 50, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 50, 0.5f);
+									}*/
+								}
+								else // SS_STAFF // SS_DUAL
+								{
+									if (g_saberRealisticCombat->integer == 0)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+									}
+									if (g_saberRealisticCombat->integer == 1)
+									{
+										totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
+									}
+									else {
+										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 70, 0.5f);
+									}
+								}
+							}
+							else if (saber_in_roll_stab)
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"SaberInRollStab\n");
+								}
+								if (g_saberRealisticCombat->integer == 0)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+								}
+								if (g_saberRealisticCombat->integer == 1)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+								}
+								else {
+									totalDmg[i] = G_GetAttackDamageMD(ent, 50, 80, 0.5f);
+								}
+							}
+							else if (saber_in_lunge_stab)
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"SaberInLungeStab\n");
+								}
+								if (g_saberRealisticCombat->integer == 0)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+								}
+								if (g_saberRealisticCombat->integer == 1)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
+								}
+								else {
+									totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
+								}
+							}
+							else
+							{
+								if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+								{
+									gi.Printf(S_COLOR_YELLOW"saberInSpecial\n");
+								}
+								if (g_saberRealisticCombat->integer == 0)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.65f);
+								}
+								if (g_saberRealisticCombat->integer == 1)
+								{
+									totalDmg[i] = G_GetAttackDamageMD(ent, 50, 120, 0.65f);
+								}
+								else {
+									totalDmg[i] = G_GetAttackDamageMD(ent, 75, 180, 0.65f);
+								}
+							}
+						}
+					}
+				}
+
+				if (totalDmg[i] > 0)
+				{
+					gentity_t* inflictor = ent;
+					did_damage = qtrue;
+					qboolean vic_was_dismembered = qtrue;
+					const auto vic_was_alive = static_cast<qboolean>(victim->health > 0);
+
+					if (base_damage <= 0.1f)
+					{
+						//just get their attention?
+						d_flags |= DAMAGE_NO_DAMAGE;
+						G_SaberBounce(ent, victim);
+					}
+
+					if (victim->client)
+					{
+						if (victim->client->ps.pm_time > 0 && victim->client->ps.pm_flags & PMF_TIME_KNOCKBACK &&
+							victim->client->ps.velocity[2] > 0)
+						{
+							//already being knocked around
+							d_flags |= DAMAGE_NO_KNOCKBACK;
+							G_SaberBounce(ent, victim);
+						}
+						if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+							&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT)
+						{
+							//no dismemberment! (blunt/stabbing weapon?)
+							G_SaberBounce(ent, victim);
+						}
+						else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+							&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT2)
+						{
+							//no dismemberment! (blunt/stabbing weapon?)
+							G_SaberBounce(ent, victim);
+						}
+						else
+						{
+							if (debug_subdivision->integer || g_saberRealisticCombat->integer)
+							{
+								d_flags |= DAMAGE_DISMEMBER;
+								if (hitDismember[i])
+								{
+									victim->client->dismembered = false;
+									G_SaberBounce(ent, victim);
+								}
+							}
+							else if (hitDismember[i])
+							{
+								d_flags |= DAMAGE_DISMEMBER;
+							}
+							if (!victim->client->dismembered)
+							{
+								vic_was_dismembered = qfalse;
+								G_SaberBounce(ent, victim);
+							}
+						}
+						if (base_damage <= 1.0f)
+						{
+							//very mild damage
+							if (victim->s.number == 0 || victim->client->ps.weapon == WP_SABER || victim->client->
+								NPC_class == CLASS_GALAKMECH)
+							{
+								//if it's the player or a saber-user, don't kill them with this blow
+								G_SaberBounce(ent, victim);
+
+								if (victim->health > 20)
+								{
+									d_flags |= DAMAGE_NO_KILL;
+								}
+							}
+						}
+					}
+					else
+					{
+						if (victim->takedamage)
+						{
+							//some other breakable thing
+							//create a flash here
+							if (!g_noClashFlare)
+							{
+								g_saberFlashTime = level.time - 50;
+								VectorCopy(dmgSpot[i], g_saberFlashPos);
+								G_SaberBounce(ent, victim);
+							}
+						}
+					}
+					if (!PM_SuperBreakWinAnim(ent->client->ps.torsoAnim)
+						&& !PM_StabDownAnim(ent->client->ps.torsoAnim)
+						&& !g_saberRealisticCombat->integer
+						&& g_saberDamageCapping->integer)
+					{
+						//never cap the superbreak wins
+						if (victim->client
+							&& victim->s.number >= MAX_CLIENTS)
+						{
+							if (victim->client->NPC_class == CLASS_SHADOWTROOPER
+								|| victim->NPC && victim->NPC->aiFlags & NPCAI_BOSS_CHARACTER)
+							{
+								//hit a boss character
+								const int dmg = (3 - g_spskill->integer) * 5 + 10;
+								if (totalDmg[i] > dmg)
+								{
+									totalDmg[i] = dmg;
+								}
+							}
+							else if (victim->client->ps.weapon == WP_SABER
+								|| victim->client->NPC_class == CLASS_REBORN
+								|| victim->client->NPC_class == CLASS_PROJECTION
+								|| victim->client->NPC_class == CLASS_JEDI)
+							{
+								//hit a non-boss saber-user
+								const int dmg = (3 - g_spskill->integer) * 15 + 30;
+								if (totalDmg[i] > dmg)
+								{
+									totalDmg[i] = dmg;
+								}
+							}
+						}
+						if (victim->s.number < MAX_CLIENTS
+							&& ent->NPC)
+						{
+							if (ent->NPC->aiFlags & NPCAI_BOSS_CHARACTER
+								|| ent->NPC->aiFlags & NPCAI_SUBBOSS_CHARACTER
+								|| ent->client->NPC_class == CLASS_SHADOWTROOPER)
+							{
+								//player hit by a boss character
+								const int dmg = (g_spskill->integer + 1) * 4 + 3;
+								if (totalDmg[i] > dmg)
+								{
+									totalDmg[i] = dmg;
+								}
+							}
+							else if (g_spskill->integer < 3) //was < 2
+							{
+								//player hit by any enemy //on easy or medium?
+								const int dmg = (g_spskill->integer + 1) * 10 + 20;
+								if (totalDmg[i] > dmg)
+								{
+									totalDmg[i] = dmg;
 								}
 							}
 						}
 					}
 
-					if (totalDmg[i] > 0)
+					d_flags |= DAMAGE_NO_KNOCKBACK; //okay, let's try no knockback whatsoever...
+					d_flags &= ~DAMAGE_DEATH_KNOCKBACK;
+					if (g_saberRealisticCombat->integer)
 					{
-						gentity_t* inflictor = ent;
-						did_damage = qtrue;
-						qboolean vic_was_dismembered = qtrue;
-						const auto vic_was_alive = static_cast<qboolean>(victim->health > 0);
-
-						if (base_damage <= 0.1f)
-						{
-							//just get their attention?
-							d_flags |= DAMAGE_NO_DAMAGE;
-							G_SaberBounce(ent, victim);
-						}
-
-						if (victim->client)
-						{
-							if (victim->client->ps.pm_time > 0 && victim->client->ps.pm_flags & PMF_TIME_KNOCKBACK &&
-								victim->client->ps.velocity[2] > 0)
-							{
-								//already being knocked around
-								d_flags |= DAMAGE_NO_KNOCKBACK;
-								G_SaberBounce(ent, victim);
-							}
-							if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-								&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT)
-							{
-								//no dismemberment! (blunt/stabbing weapon?)
-								G_SaberBounce(ent, victim);
-							}
-							else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-								&& ent->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_DISMEMBERMENT2)
-							{
-								//no dismemberment! (blunt/stabbing weapon?)
-								G_SaberBounce(ent, victim);
-							}
-							else
-							{
-								if (debug_subdivision->integer || g_saberRealisticCombat->integer)
-								{
-									d_flags |= DAMAGE_DISMEMBER;
-									if (hitDismember[i])
-									{
-										victim->client->dismembered = false;
-										G_SaberBounce(ent, victim);
-									}
-								}
-								else if (hitDismember[i])
-								{
-									d_flags |= DAMAGE_DISMEMBER;
-								}
-								if (!victim->client->dismembered)
-								{
-									vic_was_dismembered = qfalse;
-									G_SaberBounce(ent, victim);
-								}
-							}
-							if (base_damage <= 1.0f)
-							{
-								//very mild damage
-								if (victim->s.number == 0 || victim->client->ps.weapon == WP_SABER || victim->client->
-									NPC_class == CLASS_GALAKMECH)
-								{
-									//if it's the player or a saber-user, don't kill them with this blow
-									G_SaberBounce(ent, victim);
-
-									if (victim->health > 20)
-									{
-										d_flags |= DAMAGE_NO_KILL;
-									}
-								}
-							}
-						}
-						else
-						{
-							if (victim->takedamage)
-							{
-								//some other breakable thing
-								//create a flash here
-								if (!g_noClashFlare)
-								{
-									g_saberFlashTime = level.time - 50;
-									VectorCopy(dmgSpot[i], g_saberFlashPos);
-									G_SaberBounce(ent, victim);
-								}
-							}
-						}
-						if (!PM_SuperBreakWinAnim(ent->client->ps.torsoAnim)
-							&& !PM_StabDownAnim(ent->client->ps.torsoAnim)
-							&& !g_saberRealisticCombat->integer
-							&& g_saberDamageCapping->integer)
-						{
-							//never cap the superbreak wins
-							if (victim->client
-								&& victim->s.number >= MAX_CLIENTS)
-							{
-								if (victim->client->NPC_class == CLASS_SHADOWTROOPER
-									|| victim->NPC && victim->NPC->aiFlags & NPCAI_BOSS_CHARACTER)
-								{
-									//hit a boss character
-									const int dmg = (3 - g_spskill->integer) * 5 + 10;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-								else if (victim->client->ps.weapon == WP_SABER
-									|| victim->client->NPC_class == CLASS_REBORN
-									|| victim->client->NPC_class == CLASS_PROJECTION
-									|| victim->client->NPC_class == CLASS_JEDI)
-								{
-									//hit a non-boss saber-user
-									const int dmg = (3 - g_spskill->integer) * 15 + 30;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-							}
-							if (victim->s.number < MAX_CLIENTS
-								&& ent->NPC)
-							{
-								if (ent->NPC->aiFlags & NPCAI_BOSS_CHARACTER
-									|| ent->NPC->aiFlags & NPCAI_SUBBOSS_CHARACTER
-									|| ent->client->NPC_class == CLASS_SHADOWTROOPER)
-								{
-									//player hit by a boss character
-									const int dmg = (g_spskill->integer + 1) * 4 + 3;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-								else if (g_spskill->integer < 3) //was < 2
-								{
-									//player hit by any enemy //on easy or medium?
-									const int dmg = (g_spskill->integer + 1) * 10 + 20;
-									if (totalDmg[i] > dmg)
-									{
-										totalDmg[i] = dmg;
-									}
-								}
-							}
-						}
-
-						d_flags |= DAMAGE_NO_KNOCKBACK; //okay, let's try no knockback whatsoever...
+						d_flags |= DAMAGE_NO_KNOCKBACK;
 						d_flags &= ~DAMAGE_DEATH_KNOCKBACK;
-						if (g_saberRealisticCombat->integer)
+						d_flags &= ~DAMAGE_NO_KILL;
+					}
+					if (ent->client && !ent->s.number)
+					{
+						switch (hit_loc[i])
 						{
-							d_flags |= DAMAGE_NO_KNOCKBACK;
-							d_flags &= ~DAMAGE_DEATH_KNOCKBACK;
-							d_flags &= ~DAMAGE_NO_KILL;
+						case HL_FOOT_RT:
+						case HL_FOOT_LT:
+						case HL_LEG_RT:
+						case HL_LEG_LT:
+							ent->client->sess.missionStats.legAttacksCnt++;
+							break;
+						case HL_WAIST:
+						case HL_BACK_RT:
+						case HL_BACK_LT:
+						case HL_BACK:
+						case HL_CHEST_RT:
+						case HL_CHEST_LT:
+						case HL_CHEST:
+							ent->client->sess.missionStats.torsoAttacksCnt++;
+							break;
+						case HL_ARM_RT:
+						case HL_ARM_LT:
+						case HL_HAND_RT:
+						case HL_HAND_LT:
+							ent->client->sess.missionStats.armAttacksCnt++;
+							break;
+						default:
+							ent->client->sess.missionStats.otherAttacksCnt++;
+							break;
 						}
-						if (ent->client && !ent->s.number)
-						{
-							switch (hit_loc[i])
-							{
-							case HL_FOOT_RT:
-							case HL_FOOT_LT:
-							case HL_LEG_RT:
-							case HL_LEG_LT:
-								ent->client->sess.missionStats.legAttacksCnt++;
-								break;
-							case HL_WAIST:
-							case HL_BACK_RT:
-							case HL_BACK_LT:
-							case HL_BACK:
-							case HL_CHEST_RT:
-							case HL_CHEST_LT:
-							case HL_CHEST:
-								ent->client->sess.missionStats.torsoAttacksCnt++;
-								break;
-							case HL_ARM_RT:
-							case HL_ARM_LT:
-							case HL_HAND_RT:
-							case HL_HAND_LT:
-								ent->client->sess.missionStats.armAttacksCnt++;
-								break;
-							default:
-								ent->client->sess.missionStats.otherAttacksCnt++;
-								break;
-							}
-						}
+					}
 
-						if (saber_type == SABER_SITH_SWORD)
+					if (saber_type == SABER_SITH_SWORD)
+					{
+						//do knockback
+						d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
+						G_SaberBounce(ent, victim);
+					}
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].knockbackScale > 0.0f)
+					{
+						d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
+						if (saber_num < 1)
 						{
-							//do knockback
-							d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
-							G_SaberBounce(ent, victim);
-						}
-						if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].knockbackScale > 0.0f)
-						{
-							d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
-							if (saber_num < 1)
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK1;
-							}
-							else
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK2;
-							}
-						}
-						else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].knockbackScale2 > 0.0f)
-						{
-							d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
-							if (saber_num < 1)
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK1_B2;
-							}
-							else
-							{
-								d_flags |= DAMAGE_SABER_KNOCKBACK2_B2;
-							}
-						}
-						if (thrown_saber)
-						{
-							inflictor = &g_entities[ent->client->ps.saberEntityNum];
-						}
-						int damage;
-						if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].damageScale != 1.0f)
-						{
-							damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale);
-						}
-						else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
-							&& ent->client->ps.saber[saber_num].damageScale2 != 1.0f)
-						{
-							damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale2);
+							d_flags |= DAMAGE_SABER_KNOCKBACK1;
 						}
 						else
 						{
-							damage = ceil(totalDmg[i]);
+							d_flags |= DAMAGE_SABER_KNOCKBACK2;
 						}
-						G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, d_flags, MOD_SABER,
-							hitDismemberLoc[i]);
-						if (damage > 0 && cg.time)
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].knockbackScale2 > 0.0f)
+					{
+						d_flags &= ~(DAMAGE_NO_KNOCKBACK | DAMAGE_DEATH_KNOCKBACK);
+						if (saber_num < 1)
 						{
-							float size_time_scale = 1.0f;
-							if (vic_was_alive
-								&& victim->health <= 0
-								|| !vic_was_dismembered
-								&& victim->client->dismembered
-								&& hitDismemberLoc[i] != HL_NONE
-								&& hitDismember[i])
-							{
-								size_time_scale = 3.0f;
-							}
-							//FIXME: if not hitting the first model on the enemy, don't do this!
-							CG_SaberDoWeaponHitMarks(ent->client,
-								ent->client->ps.saberInFlight
-								? &g_entities[ent->client->ps.saberEntityNum]
-								: nullptr,
-								victim,
-								saber_num,
-								blade_num,
-								dmgSpot[i],
-								dmgDir[i],
-								dmgBladeVec[i],
-								size_time_scale);
+							d_flags |= DAMAGE_SABER_KNOCKBACK1_B2;
 						}
+						else
+						{
+							d_flags |= DAMAGE_SABER_KNOCKBACK2_B2;
+						}
+					}
+					if (thrown_saber)
+					{
+						inflictor = &g_entities[ent->client->ps.saberEntityNum];
+					}
+					int damage;
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].damageScale != 1.0f)
+					{
+						damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale);
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saber_num], blade_num)
+						&& ent->client->ps.saber[saber_num].damageScale2 != 1.0f)
+					{
+						damage = ceil(totalDmg[i] * ent->client->ps.saber[saber_num].damageScale2);
+					}
+					else
+					{
+						damage = ceil(totalDmg[i]);
+					}
+					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, d_flags, MOD_SABER,
+						hitDismemberLoc[i]);
+					if (damage > 0 && cg.time)
+					{
+						float size_time_scale = 1.0f;
+						if (vic_was_alive
+							&& victim->health <= 0
+							|| !vic_was_dismembered
+							&& victim->client->dismembered
+							&& hitDismemberLoc[i] != HL_NONE
+							&& hitDismember[i])
+						{
+							size_time_scale = 3.0f;
+						}
+						//FIXME: if not hitting the first model on the enemy, don't do this!
+						CG_SaberDoWeaponHitMarks(ent->client,
+							ent->client->ps.saberInFlight
+							? &g_entities[ent->client->ps.saberEntityNum]
+							: nullptr,
+							victim,
+							saber_num,
+							blade_num,
+							dmgSpot[i],
+							dmgDir[i],
+							dmgBladeVec[i],
+							size_time_scale);
+					}
 #ifndef FINAL_BUILD
-						if (d_saberCombat->integer)
+					if (d_saberCombat->integer)
+					{
+						if ((d_flags & DAMAGE_NO_DAMAGE))
 						{
-							if ((d_flags & DAMAGE_NO_DAMAGE))
-							{
-								gi.Printf(S_COLOR_RED"damage: fake, hit_loc %d\n", hit_loc[i]);
-							}
-							else
-							{
-								gi.Printf(S_COLOR_RED"damage: %4.2f, hit_loc %d\n", totalDmg[i], hit_loc[i]);
-							}
+							gi.Printf(S_COLOR_RED"damage: fake, hit_loc %d\n", hit_loc[i]);
 						}
+						else
+						{
+							gi.Printf(S_COLOR_RED"damage: %4.2f, hit_loc %d\n", totalDmg[i], hit_loc[i]);
+						}
+					}
 #endif
-						if (ent->s.number == 0)
+					if (ent->s.number == 0)
+					{
+						AddSoundEvent(victim->owner, dmgSpot[i], 256, AEL_DISCOVERED);
+						AddSightEvent(victim->owner, dmgSpot[i], 512, AEL_DISCOVERED, 50);
+					}
+					if (ent->client)
+					{
+						if (ent->enemy && ent->enemy == victim)
 						{
-							AddSoundEvent(victim->owner, dmgSpot[i], 256, AEL_DISCOVERED);
-							AddSightEvent(victim->owner, dmgSpot[i], 512, AEL_DISCOVERED, 50);
+							//just so Jedi knows that he hit his enemy
+							ent->client->ps.saberEventFlags |= SEF_HITENEMY;
 						}
-						if (ent->client)
+						else
 						{
-							if (ent->enemy && ent->enemy == victim)
-							{
-								//just so Jedi knows that he hit his enemy
-								ent->client->ps.saberEventFlags |= SEF_HITENEMY;
-							}
-							else
-							{
-								ent->client->ps.saberEventFlags |= SEF_HITOBJECT;
-							}
+							ent->client->ps.saberEventFlags |= SEF_HITOBJECT;
 						}
 					}
 				}
@@ -13237,14 +13251,42 @@ void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_s
 		//reset its contents/clipmask
 		saber->contents = CONTENTS_LIGHTSABER; // | CONTENTS_SHOTCLIP;
 		saber->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
-
+		
 		//play catch sound
 		G_Sound(saber, G_SoundIndex("sound/weapons/saber/saber_catch.mp3"));
-		//if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)) //NPC only
-		//{
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_AFLAG_PACE);
-		//}
-		//FIXME: if an NPC, don't turn it back on if no enemy or enemy is dead...
+
+		// now choose the actual catch/stop animation based on saber style
+		switch (self->client->ps.saberAnimLevel)
+		{
+		case SS_FAST:
+		case SS_TAVION:
+		case SS_MEDIUM:
+		case SS_STRONG:
+		case SS_DESANN:
+			NPC_SetAnim(self,
+				SETANIM_TORSO,
+				BOTH_STAND1TO2,
+				SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
+			break;
+
+		case SS_DUAL:
+			NPC_SetAnim(self,
+				SETANIM_TORSO,
+				BOTH_SABERTHROW1STOP,
+				SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
+			break;
+
+		case SS_STAFF:
+			NPC_SetAnim(self,
+				SETANIM_TORSO,
+				BOTH_SABERTHROW1STOP,
+				SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
+			break;
+
+		default:
+			break;
+		}
+
 		//if it's not our current weapon, make it our current weapon
 		if (self->client->ps.weapon == WP_SABER)
 		{
@@ -38600,37 +38642,6 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 		if (self->client->ps.forceHealCount >= FP_MaxForceHeal(self) || self->health >= self->client->ps.stats[
 			STAT_MAX_HEALTH])
 		{
-			//fully healed or used up all 25
-			/* Don't play any heal sound here
-			if (!Q3_TaskIDPending(self, TID_CHAN_VOICE))
-			{
-				int index = Q_irand(1, 4);
-				if (self->s.number < MAX_CLIENTS)
-				{
-					G_SoundOnEnt(self, CHAN_VOICE, va("sound/weapons/force/heal%d_%c.mp3", index, g_sex->string[0]));
-				}
-				else if (self->NPC)
-				{
-					if (self->NPC->blockedSpeechDebounceTime <= level.time)
-					{
-						//enough time has passed since our last speech
-						if (Q3_TaskIDPending(self, TID_CHAN_VOICE))
-						{
-							//not playing a scripted line
-							//say "Ahhh...."
-							if (self->NPC->stats.sex == SEX_MALE
-								|| self->NPC->stats.sex == SEX_NEUTRAL)
-							{
-								G_SoundOnEnt(self, CHAN_VOICE, va("sound/weapons/force/heal%d_m.mp3", index));
-							}
-							else //all other sexes use female sounds
-							{
-								G_SoundOnEnt(self, CHAN_VOICE, va("sound/weapons/force/heal%d_f.mp3", index));
-							}
-						}
-					}
-				}
-			}*/
 			WP_ForcePowerStop(self, force_power);
 		}
 		else if (self->client->ps.forcePowerLevel[FP_HEAL] < FORCE_LEVEL_3 && (cmd->buttons & BUTTON_ATTACK || cmd->
@@ -40226,7 +40237,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 	}
 }
 
-void WP_CheckForcedPowers(gentity_t* self, usercmd_t* ucmd)
+static void WP_CheckForcedPowers(gentity_t* self, usercmd_t* ucmd)
 {
 	for (int force_power = FP_FIRST; force_power < NUM_FORCE_POWERS; force_power++)
 	{
@@ -40401,24 +40412,19 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 {
 	qboolean using_force = qfalse;
 	int i;
-	//see if any force powers are running
-	if (!self)
-	{
+
+	if (!self || !self->client)
 		return;
-	}
-	if (!self->client)
-	{
-		return;
-	}
 
 	if (self->health <= 0)
 	{
-		//if dead, deactivate any active force powers
+		// if dead, deactivate any active force powers
 		for (i = 0; i < NUM_FORCE_POWERS; i++)
 		{
-			if (self->client->ps.forcePowerDuration[i] || self->client->ps.forcePowersActive & 1 << i)
+			if (self->client->ps.forcePowerDuration[i] ||
+				(self->client->ps.forcePowersActive & (1 << i)))
 			{
-				WP_ForcePowerStop(self, static_cast<forcePowers_t>(i));
+				WP_ForcePowerStop(self, (forcePowers_t)i);
 				self->client->ps.forcePowerDuration[i] = 0;
 			}
 		}
@@ -40429,62 +40435,63 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 
 	if (g_SerenityJediEngineMode->integer)
 	{
-		//check for fatigued state.
 		if (self->client->ps.forcePower <= BLOCKPOINTS_FATIGUE)
 		{
-			//Pop the Fatigued flag
-			self->client->ps.userInt3 |= 1 << FLAG_FATIGUED;
+			self->client->ps.userInt3 |= (1 << FLAG_FATIGUED);
 		}
 	}
 
+	// Force jump logic
 	if (!self->s.number)
 	{
-		//player uses different kind of force-jump
+		// player uses different kind of force-jump
 	}
 	else
 	{
 		if (self->client->ps.forceJumpCharge)
 		{
-			//let go of charge button, have charge
-			//if leave the ground by some other means, cancel the force jump so we don't suddenly jump when we land.
-			if (self->client->ps.groundEntityNum == ENTITYNUM_NONE
-				&& !PM_SwimmingAnim(self->client->ps.legsAnim))
+			if (self->client->ps.groundEntityNum == ENTITYNUM_NONE &&
+				!PM_SwimmingAnim(self->client->ps.legsAnim))
 			{
-				//
+				// do nothing
 			}
 			else
 			{
-				//still on ground, so jump
 				ForceJump(self, ucmd);
 				return;
 			}
 		}
 	}
 
+	// Repulse
 	if (ucmd->buttons & BUTTON_REPULSE)
 	{
 		ForceJediRepulse(self);
-		self->client->ps.powerups[PW_INVINCIBLE] = level.time + self->client->ps.torsoAnimTimer + 2000;
+		self->client->ps.powerups[PW_INVINCIBLE] =
+			level.time + self->client->ps.torsoAnimTimer + 2000;
 	}
 
+	// Force Grasp
 	if (ucmd->buttons & BUTTON_FORCEGRASP)
 	{
 		ForceGrasp(self);
 	}
 
-	if (!self->s.number
-		&& (self->client->NPC_class == CLASS_BOBAFETT ||
+	// Boba/Jango special wrist laser logic
+	if (!self->s.number &&
+		(self->client->NPC_class == CLASS_BOBAFETT ||
 			self->client->NPC_class == CLASS_MANDALORIAN ||
 			self->client->NPC_class == CLASS_JANGO ||
 			self->client->NPC_class == CLASS_JANGODUAL))
 	{
-		//Boba Fett
-		if (self->client->ps.weapon == WP_MELEE && ucmd->buttons & BUTTON_WALKING && ucmd->buttons & BUTTON_BLOCK)
+		if (self->client->ps.weapon == WP_MELEE &&
+			(ucmd->buttons & BUTTON_WALKING) &&
+			(ucmd->buttons & BUTTON_BLOCK))
 		{
-			//start wrist laser
 			Boba_FireWristMissile(self, BOBA_MISSILE_LASER);
 			return;
 		}
+
 		if (self->client->ps.forcePowerDuration[FP_GRIP])
 		{
 			Boba_EndWristMissile(self, BOBA_MISSILE_LASER);
@@ -40496,21 +40503,23 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 		ForceGrip(self);
 	}
 
-	if (!self->s.number
-		&& (self->client->NPC_class == CLASS_BOBAFETT || self->client->NPC_class == CLASS_MANDALORIAN || self->client->
-			NPC_class == CLASS_JANGO || self->client->NPC_class == CLASS_JANGODUAL))
+	// Boba/Jango flamethrower logic
+	if (!self->s.number &&
+		(self->client->NPC_class == CLASS_BOBAFETT ||
+			self->client->NPC_class == CLASS_MANDALORIAN ||
+			self->client->NPC_class == CLASS_JANGO ||
+			self->client->NPC_class == CLASS_JANGODUAL))
 	{
-		//Boba Fett
 		if (ucmd->buttons & BUTTON_FORCE_LIGHTNING)
 		{
-			//start flamethrower
-			if (self->client->ps.jetpackFuel > 15 && !self->client->hookhasbeenfired)
+			if (self->client->ps.jetpackFuel > 15 &&
+				!self->client->hookhasbeenfired)
 			{
-				//not enough fuel to fire the weapon.
 				Mando_DoFlameThrower(self);
 			}
 			return;
 		}
+
 		if (self->client->ps.forcePowerDuration[FP_LIGHTNING])
 		{
 			self->client->ps.forcePowerDuration[FP_LIGHTNING] = 0;
@@ -40533,27 +40542,30 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 		ForceProjection(self);
 	}
 
-	if ((self->client->ps.communicatingflags & 1 << DASHING) || (IsPressingDashButton(self)))
-	{//dash is one of the powers with its own button.. if it's held, call the specific dash power function.
+	if ((self->client->ps.communicatingflags & (1 << DASHING)) ||
+		IsPressingDashButton(self))
+	{
 		ForceSpeedDash(self);
 	}
 
-	if (!self->s.number
-		&& (self->client->NPC_class == CLASS_BOBAFETT || self->client->NPC_class == CLASS_JANGO || self->client->
-			NPC_class == CLASS_JANGODUAL))
+	// Boba/Jango wrist rocket logic
+	if (!self->s.number &&
+		(self->client->NPC_class == CLASS_BOBAFETT ||
+			self->client->NPC_class == CLASS_JANGO ||
+			self->client->NPC_class == CLASS_JANGODUAL))
 	{
-		//Boba Fett
-		if (self->client->ps.weapon != WP_MELEE && self->client->ps.weapon != WP_SABER && ucmd->buttons & BUTTON_WALKING
-			&& ucmd->buttons & BUTTON_BLOCK)
+		if (self->client->ps.weapon != WP_MELEE &&
+			self->client->ps.weapon != WP_SABER &&
+			(ucmd->buttons & BUTTON_WALKING) &&
+			(ucmd->buttons & BUTTON_BLOCK))
 		{
-			//start wrist rocket
 			Boba_FireWristMissile(self, BOBA_MISSILE_VIBROBLADE);
 			return;
 		}
+
 		if (self->client->ps.forcePowerDuration[FP_DRAIN])
 		{
 			Boba_EndWristMissile(self, BOBA_MISSILE_VIBROBLADE);
-
 			return;
 		}
 	}
@@ -40561,156 +40573,147 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 	{
 		if (!ForceDrain2(self))
 		{
-			//can't drain-grip someone right in front
 			if (self->client->ps.forcePowerLevel[FP_DRAIN] > FORCE_LEVEL_1)
 			{
-				//try ranged
 				ForceDrain(self, qtrue);
 			}
 		}
 	}
 
+	// -------------------------------------------------------
+	// Force power durations + running powers
+	// -------------------------------------------------------
 	for (i = 0; i < NUM_FORCE_POWERS; i++)
 	{
-		if (self->client->ps.forcePowerDuration[i])
+		if (self->client->ps.forcePowerDuration[i] &&
+			self->client->ps.forcePowerDuration[i] < level.time)
 		{
-			if (self->client->ps.forcePowerDuration[i] < level.time)
+			if (self->client->ps.forcePowersActive & (1 << i))
 			{
-				if (self->client->ps.forcePowersActive & 1 << i)
-				{
-					//turn it off
-					WP_ForcePowerStop(self, static_cast<forcePowers_t>(i));
-				}
-				self->client->ps.forcePowerDuration[i] = 0;
+				WP_ForcePowerStop(self, (forcePowers_t)i);
 			}
+			self->client->ps.forcePowerDuration[i] = 0;
 		}
-		if (self->client->ps.forcePowersActive & 1 << i)
+
+		if (self->client->ps.forcePowersActive & (1 << i))
 		{
 			using_force = qtrue;
-			wp_force_power_run(self, static_cast<forcePowers_t>(i), ucmd);
+			wp_force_power_run(self, (forcePowers_t)i, ucmd);
 		}
 	}
+
+	// -------------------------------------------------------
+	// Saber in flight — FIXED (no more C6397)
+	// -------------------------------------------------------
 	if (self->client->ps.saberInFlight)
 	{
-		//don't regen force power while throwing saber
-		if (self->client->ps.saberEntityNum < ENTITYNUM_NONE && self->client->ps.saberEntityNum > 0) //player is 0
+		int entNum = self->client->ps.saberEntityNum;
+
+		if (entNum > 0 && entNum < MAX_GENTITIES)
 		{
-			//
-			if (&g_entities[self->client->ps.saberEntityNum] != nullptr && g_entities[self->client->ps.saberEntityNum].s
-				.pos.trType == TR_LINEAR)
+			if (g_entities[entNum].s.pos.trType == TR_LINEAR)
 			{
-				//fell to the ground and we're trying to pull it back
-				if (g_SerenityJediEngineMode->integer)
-				{
-					using_force = qfalse;
-				}
-				else
-				{
-					using_force = qtrue;
-				}
+				using_force = g_SerenityJediEngineMode->integer ? qfalse : qtrue;
 			}
 		}
 	}
 
-	if (PM_ForceUsingSaberAnim(self->client->ps.torsoAnim) || pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
+	if (PM_ForceUsingSaberAnim(self->client->ps.torsoAnim) ||
+		pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
 	{
 		using_force = qtrue;
 	}
 
+	// -------------------------------------------------------
+	// Force regeneration logic
+	// -------------------------------------------------------
 	if (!using_force)
 	{
-		//when not using the force, regenerate at 10 points per second
 		if (self->client->ps.forcePowerRegenDebounceTime < level.time)
 		{
 			WP_ForcePowerRegenerate(self, self->client->ps.forcePowerRegenAmount);
+			self->client->ps.forcePowerRegenDebounceTime =
+				level.time + self->client->ps.forcePowerRegenRate;
 
-			self->client->ps.forcePowerRegenDebounceTime = level.time + self->client->ps.forcePowerRegenRate;
-
-			if (self->NPC && !G_ControlledByPlayer(self)) //npc
+			// NPC regen logic
+			if (self->NPC && !G_ControlledByPlayer(self))
 			{
-				if (g_SerenityJediEngineMode->integer == 1) //npc in md mode
+				if (g_SerenityJediEngineMode->integer == 1)
 				{
 					if (self->client->ps.forceRageRecoveryTime >= level.time)
 					{
-						//regen half as fast
-						self->client->ps.forcePowerRegenDebounceTime += self->client->ps.forcePowerRegenRate;
+						self->client->ps.forcePowerRegenDebounceTime +=
+							self->client->ps.forcePowerRegenRate;
 					}
-					else if (PM_SaberInAttack(self->client->ps.saber_move)
-						|| pm_saber_in_special_attack(self->client->ps.torsoAnim)
-						|| PM_SpinningSaberAnim(self->client->ps.torsoAnim)
-						|| PM_SaberInParry(self->client->ps.saber_move)
-						|| PM_SaberInReturn(self->client->ps.saber_move)
-						|| !WalkCheck(self) && self->s.weapon == WP_SABER
-						|| self->client->ps.saberInFlight
-						|| PM_SaberInParry(self->client->ps.saber_move))
+					else if (PM_SaberInAttack(self->client->ps.saber_move) ||
+						pm_saber_in_special_attack(self->client->ps.torsoAnim) ||
+						PM_SpinningSaberAnim(self->client->ps.torsoAnim) ||
+						PM_SaberInParry(self->client->ps.saber_move) ||
+						PM_SaberInReturn(self->client->ps.saber_move) ||
+						(!WalkCheck(self) && self->s.weapon == WP_SABER) ||
+						self->client->ps.saberInFlight ||
+						PM_SaberInParry(self->client->ps.saber_move))
 					{
-						//regen half as fast
-						self->client->ps.forcePowerRegenDebounceTime += 2000; //1 point per 1 seconds.. super slow
+						self->client->ps.forcePowerRegenDebounceTime += 2000;
 					}
 				}
-				else // npc in jka mode and amd mode
+				else
 				{
 					if (self->client->ps.forceRageRecoveryTime >= level.time)
 					{
-						//regen half as fast
-						self->client->ps.forcePowerRegenDebounceTime += self->client->ps.forcePowerRegenRate;
+						self->client->ps.forcePowerRegenDebounceTime +=
+							self->client->ps.forcePowerRegenRate;
 					}
 					else if (self->client->ps.saberInFlight)
 					{
-						//regen half as fast
-						self->client->ps.forcePowerRegenDebounceTime += 2000; //1 point per 1 seconds.. super slow
+						self->client->ps.forcePowerRegenDebounceTime += 2000;
 					}
 				}
 			}
-			else // player
+			else
 			{
-				if (g_SerenityJediEngineMode->integer) //player in md and amdmode
+				// Player regen logic
+				if (g_SerenityJediEngineMode->integer)
 				{
 					if (self->client->ps.forcePower > BLOCKPOINTS_FATIGUE)
 					{
-						//You gained some FP back.  Cancel the Fatigue status.
 						self->client->ps.userInt3 &= ~(1 << FLAG_FATIGUED);
 					}
-					if (!PM_InKnockDown(&self->client->ps)
-						&& WalkCheck(self)
-						&& self->client->ps.weaponTime <= 0
-						&& self->client->ps.groundEntityNum != ENTITYNUM_NONE
-						&& !PM_SaberInBounce(self->client->ps.saber_move)
-						&& !PM_SaberInMassiveBounce(self->client->ps.saber_move)
-						&& !(PM_StabAnim(self->client->ps.legsAnim) || PM_StabAnim(self->client->ps.torsoAnim)))
+
+					if (!PM_InKnockDown(&self->client->ps) &&
+						WalkCheck(self) &&
+						self->client->ps.weaponTime <= 0 &&
+						self->client->ps.groundEntityNum != ENTITYNUM_NONE &&
+						!PM_SaberInBounce(self->client->ps.saber_move) &&
+						!PM_SaberInMassiveBounce(self->client->ps.saber_move) &&
+						!(PM_StabAnim(self->client->ps.legsAnim) ||
+							PM_StabAnim(self->client->ps.torsoAnim)))
 					{
 						if (PM_RestAnim(self->client->ps.legsAnim))
 						{
 							WP_ForcePowerRegenerate(self, 4);
 							BG_ReduceSaberMishapLevel(&self->client->ps);
-							//BG_ReduceBlasterMishapLevel(&self->client->ps);
-							self->client->ps.powerups[PW_MEDITATE] = level.time + self->client->ps.torsoAnimTimer +
-								3000;
+							self->client->ps.powerups[PW_MEDITATE] =
+								level.time + self->client->ps.torsoAnimTimer + 3000;
 							self->client->ps.eFlags |= EF_MEDITATING;
 						}
 						else if (PM_CrouchAnim(self->client->ps.legsAnim))
 						{
 							WP_ForcePowerRegenerate(self, 2);
 							BG_ReduceSaberMishapLevel(&self->client->ps);
-							//BG_ReduceBlasterMishapLevel(&self->client->ps);
 						}
-						else if (self->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK)
+						else if (self->client->ps.ManualBlockingFlags &
+							(1 << HOLDINGBLOCK))
 						{
 							if (g_SerenityJediEngineMode->integer == 2)
-							{
 								self->client->ps.forcePowerRegenDebounceTime += 2000;
-								//1 point per 2 seconds.. super slow
-							}
 							else
-							{
 								self->client->ps.forcePowerRegenDebounceTime += 4000;
-								//1 point per 4 seconds.. super slow
-							}
 						}
 						else if (self->client->ps.powerups[PW_CLOAKED])
 						{
-							//regen half as fast
-							self->client->ps.forcePowerRegenDebounceTime += self->client->ps.forcePowerRegenRate;
+							self->client->ps.forcePowerRegenDebounceTime +=
+								self->client->ps.forcePowerRegenRate;
 						}
 						else
 						{
@@ -40718,12 +40721,12 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 						}
 					}
 				}
-				else //player in jka mode
+				else
 				{
 					if (self->client->ps.forceRageRecoveryTime >= level.time)
 					{
-						//regen half as fast
-						self->client->ps.forcePowerRegenDebounceTime += self->client->ps.forcePowerRegenRate;
+						self->client->ps.forcePowerRegenDebounceTime +=
+							self->client->ps.forcePowerRegenRate;
 					}
 				}
 			}

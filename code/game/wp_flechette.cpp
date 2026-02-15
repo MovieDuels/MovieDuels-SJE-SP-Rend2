@@ -37,14 +37,15 @@ extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingAnim(int anim);
 //---------------------------------------------------------
 static void WP_FlechetteMainFire(gentity_t* ent)
-//---------------------------------------------------------
 {
+	if (!ent)                     // ⭐ FIX 1: prevent NULL dereference
+		return;
+
 	vec3_t angs, start;
 	float damage = weaponData[WP_FLECHETTE].damage, vel = FLECHETTE_VEL;
 
 	VectorCopy(muzzle, start);
 	WP_TraceSetStart(ent, start);
-	//make sure our start point isn't on the other side of a wall
 
 	// If we aren't the player, we will cut the velocity and damage of the shots
 	if (ent->s.number)
@@ -60,36 +61,38 @@ static void WP_FlechetteMainFire(gentity_t* ent)
 
 		if (i == 0 && ent->s.number == 0)
 		{
-			// do nothing on the first shot for the player, this one will hit the crosshairs
+			// first shot is accurate for the player
 		}
 		else
 		{
 			if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
 			{
-				//no inherent aim screw up
+				// no aim spread
 			}
-			else if (NPC_IsNotHavingEnoughForceSight(ent))
-			{//force sight 2+ gives perfect aim
+			else if (ent->client && NPC_IsNotHavingEnoughForceSight(ent))
+			{
 				if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
 				{
-					if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-					{ // running or very fatigued
+					if (PM_RunningAnim(ent->client->ps.legsAnim) ||
+						ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+					{
 						angs[PITCH] += Q_flrand(-1.5f, 1.5f) * FLECHETTE_SPREAD;
 						angs[YAW] += Q_flrand(-1.5f, 1.5f) * FLECHETTE_SPREAD;
 					}
-					else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
-					{//walking or fatigued a bit
+					else if (PM_WalkingAnim(ent->client->ps.legsAnim) ||
+						ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
+					{
 						angs[PITCH] += Q_flrand(-1.2f, 1.2f) * FLECHETTE_SPREAD;
 						angs[YAW] += Q_flrand(-1.2f, 1.2f) * FLECHETTE_SPREAD;
 					}
 					else
-					{// just standing
+					{
 						angs[PITCH] += Q_flrand(-1.0f, 1.0f) * FLECHETTE_SPREAD;
 						angs[YAW] += Q_flrand(-1.0f, 1.0f) * FLECHETTE_SPREAD;
 					}
 				}
 				else
-				{// add some slop to the fire direction for NPC,s
+				{
 					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * FLECHETTE_SPREAD;
 					angs[YAW] += Q_flrand(-1.0f, 1.0f) * FLECHETTE_SPREAD;
 				}
@@ -109,17 +112,14 @@ static void WP_FlechetteMainFire(gentity_t* ent)
 		VectorScale(missile->maxs, -1, missile->mins);
 
 		missile->damage = damage;
-
 		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_EXTRA_KNOCKBACK;
-
 		missile->methodOfDeath = MOD_FLECHETTE;
 		missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
-
-		// we don't want it to bounce forever
 		missile->bounceCount = Q_irand(1, 2);
-
 		missile->s.eFlags |= EF_BOUNCE_SHRAPNEL;
-		ent->client->sess.missionStats.shotsFired++;
+
+		if (ent->client)          // ⭐ FIX 2: safe client access
+			ent->client->sess.missionStats.shotsFired++;
 	}
 }
 

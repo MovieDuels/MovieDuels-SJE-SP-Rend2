@@ -1046,6 +1046,7 @@ static void G_SetSkin(gentity_t* ent)
 	}
 }
 
+extern cvar_t* g_DebugSaberCombat;
 qboolean g_standard_humanoid(gentity_t* self)
 {
 	if (!self || !self->ghoul2.size())
@@ -1057,7 +1058,13 @@ qboolean g_standard_humanoid(gentity_t* self)
 		return qfalse;
 	}
 	const char* gla_name = gi.G2API_GetGLAName(&self->ghoul2[self->playerModel]);
-	assert(gla_name);
+
+	if (g_DebugSaberCombat->integer)
+	{
+		Com_Printf("WARNING: g_standard_humanoid: NULL GLA for entity %d (model index %d)\n",self->s.number, self->playerModel);
+		//assert(gla_name);
+	}
+
 	if (gla_name)
 	{
 		if (!Q_stricmpn("models/players/_humanoid", gla_name, 24))

@@ -5739,7 +5739,7 @@ void PM_SaberStartTransAnim(const int saberAnimLevel, const int anim, float* ani
 					{
 						if (g_RealisticBlockingMode->integer)
 						{
-							if (gent->client->ps.saberFatigueChainCount >= MISHAPLEVEL_LIGHT)
+							if (gent->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
 							{//Slow down saber moves...
 								constexpr float fatiguedanimscale = 0.96f;
 								*animSpeed *= fatiguedanimscale;

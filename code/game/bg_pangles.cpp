@@ -34,6 +34,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "wp_saber.h"
 #include "g_vehicles.h"
 #include "../ghoul2/ghoul2_gore.h"
+#include "teams.h"
 
 extern void CG_SetClientViewAngles(vec3_t angles, qboolean override_view_ent);
 extern qboolean PM_InAnimForSaberMove(int anim, int saber_move);
@@ -802,53 +803,54 @@ qboolean PM_AdjustAnglesForSaberLock(gentity_t* ent, usercmd_t* ucmd)
 
 int G_MinGetUpTime(const gentity_t* ent)
 {
-	if (ent
-		&& ent->client
-		&& (ent->client->ps.legsAnim == BOTH_PLAYER_PA_3_FLY
-			|| ent->client->ps.legsAnim == BOTH_LK_DL_ST_T_SB_1_L
-			|| ent->client->ps.legsAnim == BOTH_RELEASED))
+	// Special animation cases
+	if (ent &&
+		ent->client &&
+		(ent->client->ps.legsAnim == BOTH_PLAYER_PA_3_FLY ||
+			ent->client->ps.legsAnim == BOTH_LK_DL_ST_T_SB_1_L ||
+			ent->client->ps.legsAnim == BOTH_RELEASED))
 	{
-		//special cases
 		return 200;
 	}
-	if (ent && ent->client && ent->client->NPC_class == CLASS_ALORA)
+
+	// NPC class special cases
+	if (ent && ent->client)
 	{
-		//alora springs up very quickly from knockdowns!
-		return 1000;
+		switch (ent->client->NPC_class)
+		{
+		case CLASS_ALORA:
+			return 1000;   // Alora gets up very fast
+		case CLASS_STORMTROOPER:
+		case CLASS_GUARD:
+		case CLASS_STORMCOMMANDO:
+			return 100;    // Slow to get up
+		default:
+			break;
+		}
 	}
-	if (ent && ent->client && ent->client->NPC_class == CLASS_STORMTROOPER)
+
+	// Player or player‑controlled entity
+	if (ent &&
+		ent->client &&
+		((ent->s.clientNum < MAX_CLIENTS) || G_ControlledByPlayer(ent)))
 	{
-		//stormtroopers are slow to get up
-		return 100;
-	}
-	if (ent && ent->client && ent->client->NPC_class == CLASS_GUARD)
-	{
-		//stormtroopers are slow to get up
-		return 100;
-	}
-	if (ent && ent->client && ent->client->NPC_class == CLASS_STORMCOMMANDO)
-	{
-		//stormtroopers are slow to get up
-		return 100;
-	}
-	if (ent && ent->s.clientNum < MAX_CLIENTS || G_ControlledByPlayer(ent))
-	{
-		//player can get up faster based on his/her force jump skill
 		constexpr int get_up_time = PLAYER_KNOCKDOWN_HOLD_EXTRA_TIME;
-		if (ent && ent->client->ps.forcePowerLevel[FP_LEVITATION] >= FORCE_LEVEL_3)
-		{
-			return get_up_time + 400; //750
-		}
-		if (ent->client->ps.forcePowerLevel[FP_LEVITATION] == FORCE_LEVEL_2)
-		{
-			return get_up_time + 200; //500
-		}
-		if (ent->client->ps.forcePowerLevel[FP_LEVITATION] == FORCE_LEVEL_1)
-		{
-			return get_up_time + 100; //250
-		}
+
+		const int lev = ent->client->ps.forcePowerLevel[FP_LEVITATION];
+
+		if (lev >= FORCE_LEVEL_3)
+			return get_up_time + 400;   // 750
+
+		if (lev == FORCE_LEVEL_2)
+			return get_up_time + 200;   // 500
+
+		if (lev == FORCE_LEVEL_1)
+			return get_up_time + 100;   // 250
+
 		return get_up_time;
 	}
+
+	// Default fallback
 	return 200;
 }
 

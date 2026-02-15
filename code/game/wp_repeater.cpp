@@ -146,11 +146,16 @@ extern qboolean PM_WalkingAnim(int anim);
 
 //---------------------------------------------------------
 void WP_FireRepeater(gentity_t* ent, const qboolean alt_fire)
-//---------------------------------------------------------
 {
 	vec3_t angs;
 
 	vectoangles(forward_vec, angs);
+
+	if (!ent)
+		return;
+
+	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+		return;
 
 	if (alt_fire)
 	{
@@ -159,40 +164,41 @@ void WP_FireRepeater(gentity_t* ent, const qboolean alt_fire)
 	else
 	{
 		vec3_t dir;
-		if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+
+		if (ent->client->NPC_class == CLASS_VEHICLE)
 		{
-			//no inherent aim screw up
+			// no inherent aim screw up
 		}
 		else if (NPC_IsNotHavingEnoughForceSight(ent))
-		{//force sight 2+ gives perfect aim
+		{
 			if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
 			{
-				if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-				{ // running or very fatigued
+				if (PM_RunningAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+				{
 					angs[PITCH] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
 					angs[YAW] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
 				}
-				else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
-				{//walking or fatigued a bit
+				else if (PM_WalkingAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
+				{
 					angs[PITCH] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
 					angs[YAW] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
 				}
 				else
-				{// just standing
+				{
 					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * REPEATER_SPREAD;
 					angs[YAW] += Q_flrand(-1.0f, 1.0f) * REPEATER_SPREAD;
 				}
 			}
 			else
-			{// add some slop to the fire direction for NPC,s
+			{
 				angs[PITCH] += Q_flrand(-1.0f, 1.0f) * REPEATER_NPC_SPREAD;
 				angs[YAW] += Q_flrand(-1.0f, 1.0f) * REPEATER_NPC_SPREAD;
 			}
 		}
 
 		AngleVectors(angs, dir, nullptr, nullptr);
-
-		// FIXME: if temp_org does not have clear trace to inside the bbox, don't shoot!
 		WP_RepeaterMainFire(ent, dir);
 	}
 }

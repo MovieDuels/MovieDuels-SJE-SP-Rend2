@@ -287,9 +287,13 @@ char* Sys_Cwd()
 {
 	static char cwd[MAX_OSPATH];
 
-	_getcwd(cwd, sizeof(cwd) - 1);
-	cwd[MAX_OSPATH - 1] = 0;
+	if (!_getcwd(cwd, sizeof(cwd) - 1))
+	{
+		// fallback: empty string
+		cwd[0] = '\0';
+	}
 
+	cwd[MAX_OSPATH - 1] = 0;
 	return cwd;
 }
 
@@ -410,7 +414,7 @@ char** Sys_ListFiles(const char* directory, const char* extension, char* filter,
 	char search[MAX_OSPATH];
 	int nfiles;
 	char** listCopy;
-	char* list[MAX_FOUND_FILES];
+	static char* list[MAX_FOUND_FILES];
 	_finddata_t findinfo;
 	int flag;
 	int i;

@@ -688,7 +688,7 @@ class CGhoul2Info_v
 		if (!mItem)
 		{
 #ifdef _DEBUG
-				Com_Printf("^3WARNING: CGhoul2InfoArray::Free called with NULL mItem\n");
+				//Com_Printf("^3WARNING: CGhoul2InfoArray::Free called with NULL mItem\n");
 #endif
 			return;
 		}

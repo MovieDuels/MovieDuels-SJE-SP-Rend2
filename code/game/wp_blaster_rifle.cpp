@@ -958,7 +958,7 @@ void WP_FireJangoPistolMissile(gentity_t* ent, vec3_t start, vec3_t dir, const q
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_JANGO_ALT;
@@ -1111,7 +1111,7 @@ void WP_FireJangoDualPistolMissile(gentity_t* ent, vec3_t start, vec3_t dir, con
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_JANGO_ALT;
@@ -1191,7 +1191,7 @@ void WP_FireJangoDualPistolMissileDuals(gentity_t* ent, vec3_t start, vec3_t dir
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_JANGO_ALT;
@@ -1602,7 +1602,7 @@ void WP_FireBobaRifleMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qbo
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	missile->methodOfDeath = MOD_BOBA;
 
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
@@ -1746,7 +1746,7 @@ static void WP_FireDroidekaDualPistolMissileDuals(gentity_t* ent, vec3_t start, 
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	if (alt_fire)
 	{
 		missile->methodOfDeath = MOD_JANGO_ALT;

@@ -14282,9 +14282,15 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 
 		if (PM_SaberInAttack(new_move))
 		{
-			if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+			pm->ps->saberAttackChainCount++;
+
+			// Only add fatigue every 2 swings (half as fast)
+			if ((pm->ps->saberAttackChainCount & 1) == 0)  // even number
 			{
-				pm->ps->saberFatigueChainCount++;
+				if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+				{
+					pm->ps->saberFatigueChainCount++;
+				}
 			}
 		}
 	}
@@ -20141,9 +20147,12 @@ static void PM_WeaponLightsaber()
 
 						if (g_SerenityJediEngineMode->integer)
 						{
-							if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+							if ((pm->ps->saberAttackChainCount & 1) == 0)  // even number
 							{
-								pm->ps->saberFatigueChainCount++;
+								if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+								{
+									pm->ps->saberFatigueChainCount++;
+								}
 							}
 						}
 					}

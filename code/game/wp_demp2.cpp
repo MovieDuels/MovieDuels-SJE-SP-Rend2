@@ -73,7 +73,7 @@ static void WP_DEMP2_MainFire(gentity_t* ent)
 	missile->damage = damage;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	missile->methodOfDeath = MOD_DEMP2;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 
@@ -86,7 +86,7 @@ static void WP_DEMP2_MainFire(gentity_t* ent)
 void DEMP2_AltRadiusDamage(gentity_t* ent)
 {
 	float frac = (level.time - ent->fx_time) / 1300.0f; // synchronize with demp2 effect
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	int i;
 	vec3_t mins{}, maxs{};
 	vec3_t v{}, dir;
@@ -255,7 +255,7 @@ static void WP_DEMP2_AltFire(gentity_t* ent)
 	missile->splashRadius = weaponData[WP_DEMP2].altSplashRadius;
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 
 	// we don't want it to ever bounce

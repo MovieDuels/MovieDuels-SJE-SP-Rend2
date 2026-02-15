@@ -48,7 +48,7 @@ void WP_FireTurboLaserMissile(gentity_t* ent, vec3_t start, vec3_t dir)
 	missile->splashRadius = ent->splashRadius; //FIXME: externalize
 
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-	
+
 	missile->methodOfDeath = MOD_EMPLACED; //MOD_TURBLAST; //count as a heavy weap
 	missile->splashMethodOfDeath = MOD_EMPLACED; //MOD_TURBLAST;// ?SPLASH;
 	missile->clipmask = MASK_SHOT;
@@ -67,8 +67,10 @@ void WP_FireTurboLaserMissile(gentity_t* ent, vec3_t start, vec3_t dir)
 // Emplaced Gun
 //---------------------------------------------------------
 void WP_EmplacedFire(gentity_t* ent)
-//---------------------------------------------------------
 {
+	if (!ent)   // ⭐ FIX 1: prevent NULL dereference
+		return;
+
 	const float damage = weaponData[WP_EMPLACED_GUN].damage * (ent->NPC ? 0.1f : 1.0f);
 	const float vel = EMPLACED_VEL * (ent->NPC ? 0.4f : 1.0f);
 
@@ -84,17 +86,17 @@ void WP_EmplacedFire(gentity_t* ent)
 	missile->methodOfDeath = MOD_EMPLACED;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 
-	// do some weird switchery on who the real owner is, we do this so the projectiles don't hit the gun object
-	if (ent && ent->client && !(ent->client->ps.eFlags & EF_LOCKED_TO_WEAPON))
+	// ⭐ FIX 2: safe owner assignment
+	if (ent->client && !(ent->client->ps.eFlags & EF_LOCKED_TO_WEAPON))
 	{
 		missile->owner = ent;
 	}
 	else
 	{
-		missile->owner = ent->owner;
+		missile->owner = ent->owner;   // safe because ent is guaranteed non-null
 	}
 
-	if (missile->owner->e_UseFunc == useF_eweb_use)
+	if (missile->owner && missile->owner->e_UseFunc == useF_eweb_use)
 	{
 		missile->alt_fire = qtrue;
 	}
@@ -102,6 +104,5 @@ void WP_EmplacedFire(gentity_t* ent)
 	VectorSet(missile->maxs, EMPLACED_SIZE, EMPLACED_SIZE, EMPLACED_SIZE);
 	VectorScale(missile->maxs, -1, missile->mins);
 
-	// alternate muzzles
 	ent->fxID = ~ent->fxID;
 }
