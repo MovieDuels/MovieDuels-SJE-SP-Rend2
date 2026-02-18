@@ -670,8 +670,7 @@ constexpr auto SNAPFLAG_SERVERCOUNT = 4; // toggled every map_restart so transit
 constexpr auto MAX_CLIENTS = 1; // 128		// absolute limit;
 constexpr auto MAX_TERRAINS = 1; //32;
 
-constexpr auto GENTITYNUM_BITS = 12;
-//10		// don't need to send any more //serenity does, got this from doom 3 code and it works hey hey;
+constexpr auto GENTITYNUM_BITS = 10; // don't need to send any more
 #define	MAX_GENTITIES		(1<<GENTITYNUM_BITS)
 
 // entitynums are communicated with GENTITY_BITS, so any reserved
@@ -2233,6 +2232,7 @@ public:
 	//drawing progress bar (is there a less bandwidth-eating way to do
 	//this without a lot of hassle?)
 	int			hackingBaseTime;
+	int         saberstuckinwalltimer;
 
 #endif // !JK2_MODE
 
@@ -2511,6 +2511,7 @@ public:
 
 		saved_game.write<int32_t>(hackingTime);
 		saved_game.write<int32_t>(hackingBaseTime);
+		saved_game.write<int32_t>(saberstuckinwalltimer);
 
 #endif // !JK2_MODE
 	}
@@ -2790,6 +2791,7 @@ public:
 
 		saved_game.read<int32_t>(hackingTime);
 		saved_game.read<int32_t>(hackingBaseTime);
+		saved_game.read<int32_t>(saberstuckinwalltimer);
 
 #endif // !JK2_MODE
 	}

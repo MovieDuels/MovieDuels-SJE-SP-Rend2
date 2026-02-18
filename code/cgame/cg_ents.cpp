@@ -789,8 +789,10 @@ static void CG_General(centity_t* cent)
 			{
 				//thrown saber
 				//light?  sound?
-				if (cent->gent->owner->client && g_entities[cent->currentState.otherentity_num].client && g_entities[cent
-					->currentState.otherentity_num].client->ps.saber[0].Active())
+				if (cent->gent->owner->client &&
+					g_entities[cent->currentState.otherentity_num].client &&
+					g_entities[cent->currentState.otherentity_num].client->ps.saber[0].Active() &&
+					cent->gent->owner->client->ps.saberEntityState != SES_STUCK)
 				{
 					//saber is in-flight and active, play a sound on it
 					if (cent->gent->owner->client->ps.saberEntityState == SES_RETURNING
@@ -887,7 +889,8 @@ static void CG_General(centity_t* cent)
 			{
 				//saber is in-flight and active, play a sound on it
 				if (cent->gent->owner->client->ps.saberEntityState == SES_RETURNING
-					&& cent->gent->owner->client->ps.saber[0].type != SABER_STAR)
+					&& cent->gent->owner->client->ps.saber[0].type != SABER_STAR &&
+					cent->gent->owner->client->ps.saberEntityState != SES_STUCK)
 				{
 					if (cg_weapons[WP_SABER].firingSound)
 					{

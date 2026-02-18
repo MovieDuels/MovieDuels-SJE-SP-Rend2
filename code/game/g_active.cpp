@@ -6804,8 +6804,6 @@ ClientAlterSpeed
 This function is called ONLY from ClientThinkReal, and is responsible for setting client ps.speed
 ==============
 */
-extern qboolean g_standard_humanoid(gentity_t* self);
-
 static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean controlled_by_player)
 {
 	gclient_t* client = ent->client;

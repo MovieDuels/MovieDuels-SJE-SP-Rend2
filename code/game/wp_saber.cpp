@@ -12017,6 +12017,353 @@ void WP_SabersDamageTrace(gentity_t* ent, const qboolean no_effects)
 //SABER THROWING============================================================================
 //SABER THROWING============================================================================
 
+static void WP_SaberCatchFromWall(gentity_t* self, gentity_t* saber, const qboolean switch_to_saber)
+{
+	if (self->flags & FL_NO_SABER_RETURN && (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)))
+	{
+		return;
+	}
+
+	if (self->health > 0 &&
+		!PM_SaberInBrokenParry(self->client->ps.saber_move) &&
+		self->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
+	{
+		// Clear enemy
+		saber->enemy = nullptr;
+
+		// Hide thrown saber entity
+		saber->s.eFlags |= EF_NODRAW;
+		saber->svFlags &= SVF_BROADCAST;
+		saber->svFlags |= SVF_NOCLIENT;
+
+		// Remove gravity/bounce
+		saber->s.pos.trType = TR_LINEAR;
+		saber->s.eFlags &= ~EF_BOUNCE_HALF;
+
+		// Clear stuck flag
+		saber->s.eFlags &= ~EF_MISSILE_STICK;
+
+		// Put saber back in hand (state)
+		self->client->ps.saberInFlight = qfalse;
+		self->client->ps.saberEntityState = SES_LEAVING;
+
+		// Turn off trail
+		self->client->ps.saber[0].DeactivateTrail(75);
+
+		// Restore contents
+		saber->contents = CONTENTS_LIGHTSABER;
+		saber->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
+
+		// Play catch sound
+		G_Sound(saber, G_SoundIndex("sound/weapons/saber/saber_catch.mp3"));
+
+		// Choose catch animation
+		switch (self->client->ps.saberAnimLevel)
+		{
+		case SS_FAST:
+		case SS_TAVION:
+		case SS_MEDIUM:
+		case SS_STRONG:
+		case SS_DESANN:
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND1TO2,
+				SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
+			break;
+
+		case SS_DUAL:
+		case SS_STAFF:
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERTHROW1STOP,
+				SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
+			break;
+
+		default:
+			break;
+		}
+
+		// If saber is current weapon, restore G2 model + fatigue/force regen
+		if (self->client->ps.weapon == WP_SABER)
+		{
+			WP_SaberAddG2SaberModels(self, qfalse);
+
+			if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
+			{
+				if (self->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
+				{
+					self->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
+				}
+
+				if (g_SerenityJediEngineMode->integer)
+				{
+					if (g_SerenityJediEngineMode->integer == 2)
+						WP_BlockPointsRegenerate(self, BLOCKPOINTS_TWENTYFIVE);
+					else
+						WP_ForcePowerRegenerate(self, BLOCKPOINTS_TWENTYFIVE);
+				}
+			}
+		}
+
+		// Switch to saber if requested
+		if (switch_to_saber)
+		{
+			if (self->client->ps.weapon != WP_SABER)
+			{
+				CG_ChangeWeapon(WP_SABER);
+			}
+			else
+			{
+				// Ensure blade is active
+				if (self->client->ps.saber[0].saberFlags & SFL_SINGLE_BLADE_THROWABLE)
+				{
+					if (!self->client->ps.saber[0].blade[0].active)
+						self->client->ps.saber[0].Activate();
+				}
+				else
+				{
+					self->client->ps.saber[0].Activate();
+				}
+			}
+		}
+
+		// give saber velocity toward the hand so it actually RELEASES from wall
+		{
+			vec3_t toHand, dir;
+
+			VectorSubtract(self->client->renderInfo.handRPoint,
+				saber->currentOrigin,
+				toHand);
+
+			VectorNormalize2(toHand, dir);
+
+			const float catchSpeed = 900.0f; // tweak to taste
+
+			saber->s.pos.trType = TR_LINEAR;
+			saber->s.pos.trTime = level.time;
+			VectorCopy(saber->currentOrigin, saber->s.pos.trBase);
+			VectorScale(dir, catchSpeed, saber->s.pos.trDelta);
+
+			// No spin
+			saber->s.apos.trType = TR_LINEAR;
+			saber->s.apos.trTime = level.time;
+			VectorCopy(saber->currentAngles, saber->s.apos.trBase);
+			VectorClear(saber->s.apos.trDelta);
+
+			gi.linkentity(saber);
+		}
+	}
+}
+
+static void WP_SaberPullFromWall(const gentity_t* self, gentity_t* saber)
+{
+	const qboolean active_blocking = (self->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
+	const qboolean is_holding_block_button = (self->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
+
+	if (self->flags & FL_NO_SABER_RETURN && (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)))
+	{
+		return;
+	}
+	if (PM_SaberInBrokenParry(self->client->ps.saber_move) || self->client->ps.saberBlocked == BLOCKED_PARRY_BROKEN)
+	{
+		return;
+	}
+	if (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self))
+	{
+		if (self->client->ps.forcePower < BLOCKPOINTS_FIVE ||
+			self->client->ps.blockPoints < BLOCKPOINTS_TWELVE ||
+			is_holding_block_button || active_blocking)
+		{
+			return;
+		}
+	}
+
+	if (self->health <= 0)
+	{
+		return;
+	}
+
+	// --- free from wall state ---
+	saber->s.pos.trType = TR_LINEAR;
+	saber->s.eFlags &= ~EF_BOUNCE_HALF;
+	saber->s.eFlags &= ~EF_MISSILE_STICK;
+
+	self->client->ps.saberEntityDist = 0;
+	self->client->ps.saberEntityState = SES_RETURNING;
+
+	// angular motion allowed
+	saber->s.apos.trType = TR_LINEAR;
+	saber->s.apos.trTime = level.time;
+
+	// start from current origin
+	VectorCopy(saber->currentOrigin, saber->s.pos.trBase);
+	saber->s.pos.trTime = level.time;
+
+	// --- give it velocity toward the hand ---
+	vec3_t toHand, dir;
+	VectorSubtract(self->client->renderInfo.handRPoint, saber->currentOrigin, toHand);
+	VectorNormalize2(toHand, dir);
+
+	const float pullSpeed = 800.0f; // tweak to taste
+	VectorScale(dir, pullSpeed, saber->s.pos.trDelta);
+
+	// no extra spin for now
+	VectorClear(saber->s.apos.trDelta);
+
+	gi.linkentity(saber);
+
+	G_Sound(self, G_SoundIndex("sound/weapons/force/pull.wav"));
+}
+
+static void WP_SaberFallFromWall(gentity_t* self, gentity_t* saber)
+{
+	if (g_DebugSaberCombat->integer)
+	{
+		Com_Printf("SABER IMPACT:6. should be falling from wall now at %i\n", level.time);
+	}
+
+	saber->enemy = NULL;
+
+	saber->s.eFlags &= ~EF_BOUNCE;
+	saber->s.eFlags &= ~EF_MISSILE_STICK;
+	saber->bounceCount = 0;
+
+	saber->s.pos.trType = TR_GRAVITY;
+	saber->s.pos.trTime = level.time;
+	VectorCopy(saber->currentOrigin, saber->s.pos.trBase);
+	VectorClear(saber->s.pos.trDelta);
+
+	saber->s.eFlags |= EF_BOUNCE_HALF;
+
+	VectorCopy(saber->currentAngles, saber->s.apos.trBase);
+	saber->s.apos.trType = TR_LINEAR;
+	saber->s.apos.trTime = level.time;
+	VectorSet(saber->s.apos.trDelta,
+		Q_irand(-300, 300),
+		Q_irand(-300, 300),
+		Q_irand(-300, 300));
+
+	self->client->ps.saberEntityDist = 0;
+	self->client->ps.saberEntityState = SES_RETURNING;
+
+	self->client->ps.saber[0].Deactivate();
+	self->client->ps.saber[0].DeactivateTrail(75);
+
+	G_SoundIndexOnEnt(saber, CHAN_AUTO, self->client->ps.saber[0].soundOff);
+
+	if (self->health <= 0)
+	{
+		saber->s.time = level.time;
+	}
+
+	// stop stuck think loop
+	saber->e_ThinkFunc = thinkF_NULL;
+	saber->nextthink = 0;
+
+	gi.linkentity(saber);
+}
+
+void WP_SaberBallisticsThink(gentity_t* ent)
+{
+	trace_t tr;
+
+	// Always schedule next think FIRST
+	ent->nextthink = level.time + FRAMETIME;
+
+	gentity_t* owner = ent->owner;
+	if (!owner || !owner->client)
+	{
+		G_FreeEntity(ent);
+		return;
+	}
+
+	if (g_DebugSaberCombat->integer)
+	{
+		Com_Printf("SABER IMPACT:4. wp_SaberBallisticsThink at %i\n", level.time);
+	}
+
+	// Freeze saber
+	ent->s.pos.trType = TR_STATIONARY;
+	ent->s.apos.trType = TR_STATIONARY;
+	VectorClear(ent->s.pos.trDelta);
+	VectorClear(ent->s.apos.trDelta);
+
+	const int stuckTime = level.time - owner->client->ps.saberstuckinwalltimer;
+
+	// ⭐ 1. TIMEOUT FIRST
+	if (stuckTime > SES_STUCK_TIME)
+	{
+		if (g_DebugSaberCombat->integer)
+		{
+			Com_Printf("SABER IMPACT:5. go to WP_SaberFallFromWall at %i\n", level.time);
+		}
+
+		WP_SaberFallFromWall(owner, ent);
+
+		ent->e_ThinkFunc = thinkF_NULL;
+		ent->nextthink = 0;
+		return;
+	}
+
+	gi.linkentity(ent);
+}
+
+static void WP_thrownSaberBallistics(gentity_t* saberent, gentity_t* owner, const trace_t* trace)
+{
+	if (g_DebugSaberCombat->integer)
+	{
+		Com_Printf("SABER IMPACT:2. WP_thrownSaberBallistics at %i\n", level.time);
+	}
+
+	// Rotate saber so blade points INTO wall
+	vec3_t inward;
+	VectorScale(trace->plane.normal, -1.0f, inward);
+
+	vec3_t angles;
+	vectoangles(inward, angles);
+	angles[ROLL] += 90;
+	angles[YAW] += 90;
+	angles[PITCH] += 45;
+
+	VectorCopy(angles, saberent->s.apos.trBase);
+	saberent->s.apos.trType = TR_STATIONARY;
+	saberent->s.apos.trTime = level.time;
+
+	// Move slightly out of the wall
+	vec3_t stickPos;
+	VectorMA(trace->endpos, 12.0f, trace->plane.normal, stickPos);
+	VectorCopy(stickPos, saberent->currentOrigin);
+	VectorCopy(stickPos, saberent->s.pos.trBase);
+
+	// Stop all movement
+	VectorClear(saberent->s.pos.trDelta);
+	VectorClear(saberent->s.apos.trDelta);
+
+	// Freeze saber in place
+	saberent->s.pos.trType = TR_STATIONARY;
+
+	// Mark as stuck
+	saberent->s.eFlags |= EF_MISSILE_STICK;
+
+	// Update owner state
+	if (owner && owner->client)
+	{
+		if (g_DebugSaberCombat->integer)
+		{
+			Com_Printf("SABER IMPACT:3. Saberstuckinwalltimer start at %i\n", level.time);
+		}
+
+		owner->client->ps.saberEntityState = SES_STUCK;
+		owner->client->ps.saberstuckinwalltimer = level.time;
+		saberent->aimDebounceTime = level.time;
+	}
+
+	// Reset bounce count
+	saberent->bounceCount = 0;
+
+	// Ballistics think handles the timeout
+	saberent->e_ThinkFunc = thinkF_WP_SaberBallisticsThink;
+	saberent->e_TouchFunc = touchF_NULL;   // SP sabers do NOT use touch
+	saberent->nextthink = level.time + FRAMETIME;
+
+	gi.linkentity(saberent);
+}
 /*
 ================
 WP_SaberImpact
@@ -12084,6 +12431,50 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 				AddSightEvent(owner, trace->endpos, 512, AEL_DISCOVERED, 50);
 			}
 			return;
+		}
+	}
+
+	if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (owner->s.number < MAX_CLIENTS || G_ControlledByPlayer(owner)))
+	{
+		if (other && owner->client->ps.saberEntityState == SES_LEAVING
+			&& other->s.number == ENTITYNUM_WORLD //hit solid object.
+			&& owner->client->ps.forcePowerLevel[FP_SABERTHROW] >= FORCE_LEVEL_3)
+		{
+			// Reject floors and ceilings
+			if (trace->plane.normal[2] >= 0.8f || trace->plane.normal[2] <= -0.8f)
+			{
+				// too horizontal to stick
+			}
+			else
+			{
+				// Blade direction is the UP vector, not forward
+				vec3_t bladeDir;
+				AngleVectors(saber->currentAngles, NULL, NULL, bladeDir);
+
+				// Wall normal points OUT of the wall → invert it
+				vec3_t wallInward;
+				VectorScale(trace->plane.normal, -1.0f, wallInward);
+
+				// Blade must be pointing INTO the wall
+				if (DotProduct(bladeDir, wallInward) > 0.35f)
+				{
+					if (g_DebugSaberCombat->integer)
+					{
+						Com_Printf("SABER IMPACT:1. Stick in wall succsess WP_thrownSaberBallistics start at %i\n", level.time);
+					}
+					WP_thrownSaberBallistics(saber, owner, trace);
+					return;
+				}
+				else
+				{
+					if (g_DebugSaberCombat->integer)
+					{
+						Com_Printf("Missed the stick in walls just drop at %i\n", level.time);
+					}
+					//hit a wall?
+					WP_SaberDrop(saber->owner, saber);
+				}
+			}
 		}
 	}
 
@@ -12179,8 +12570,7 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 			}
 		}
 
-		if (saber->s.pos.trType == TR_LINEAR && owner && owner->client && owner->client->ps.saberEntityState ==
-			SES_RETURNING)
+		if (saber->s.pos.trType == TR_LINEAR && owner && owner->client && owner->client->ps.saberEntityState == SES_RETURNING)
 		{
 			//don't home for a few frames so we can get around this thing
 			trace_t bounce_tr;
@@ -12271,238 +12661,206 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 	}
 }
 
-extern float G_PointDistFromLineSegment(const vec3_t start, const vec3_t end, const vec3_t from);
-
-void WP_SaberInFlightReflectCheck(gentity_t* self)
+static void WP_SaberInFlightReflectCheck(gentity_t* self)
 {
-	gentity_t* entity_list[MAX_GENTITIES];
-	gentity_t* missile_list[MAX_GENTITIES]{};
-	vec3_t mins{}, maxs{};
-	int ent_count = 0;
-	vec3_t center;
-	vec3_t up = { 0, 0, 1 };
+	// --- EARLY VALIDATION ----------------------------------------------------
+	if (!self || !self->client)
+		return;
 
-	if (self->NPC && self->NPC->scriptFlags & SCF_IGNORE_ALERTS)
-	{
-		//don't react to things flying at me...
+	if (self->NPC && (self->NPC->scriptFlags & SCF_IGNORE_ALERTS))
 		return;
-	}
-	//sanity checks: make sure we actually have a saberent
-	if (self->client->ps.weapon != WP_SABER)
-	{
-		return;
-	}
-	if (!self->client->ps.saberInFlight)
+
+	if (self->client->ps.weapon != WP_SABER ||
+		!self->client->ps.saberInFlight ||
+		!self->client->ps.SaberLength() ||
+		self->client->ps.saberEntityNum == ENTITYNUM_NONE)
 	{
 		return;
 	}
-	if (!self->client->ps.SaberLength())
-	{
-		return;
-	}
-	if (self->client->ps.saberEntityNum == ENTITYNUM_NONE)
-	{
-		return;
-	}
+
 	gentity_t* saberent = &g_entities[self->client->ps.saberEntityNum];
-	if (!saberent)
-	{
+	if (!saberent || !saberent->inuse)
 		return;
-	}
-	//okay, enough damn sanity checks
 
+	// --- PREPARE SEARCH BOX --------------------------------------------------
+	vec3_t center;
 	VectorCopy(saberent->currentOrigin, center);
 
-	for (int i = 0; i < 3; i++)
+	constexpr float radius = 180.0f;
+	vec3_t mins = { center[0] - radius, center[1] - radius, center[2] - radius };
+	vec3_t maxs = { center[0] + radius, center[1] + radius, center[2] + radius };
+
+	// --- STATIC BUFFERS (NO STACK BLOAT) -------------------------------------
+	static gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* missile_list[MAX_GENTITIES];
+
+	const int num_listed = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
+	int missile_count = 0;
+
+	// --- PRECOMPUTE SABER TIP POSITIONS --------------------------------------
+	// This avoids recomputing muzzlePoint/tip for every missile
+	vec3_t saberTips[4]{};
+	int tipCount = 0;
+
+	const int numSabers = self->client->ps.dualSabers ? 2 : 1;
+
+	for (int s = 0; s < numSabers; s++)
 	{
-		constexpr int radius = 180;
-		mins[i] = center[i] - radius;
-		maxs[i] = center[i] + radius;
+		const saberInfo_t& saber = self->client->ps.saber[s];
+		for (int b = 0; b < saber.numBlades; b++)
+		{
+			vec3_t tip;
+			VectorMA(saber.blade[b].muzzlePoint,
+				saber.blade[b].length,
+				saber.blade[b].muzzleDir,
+				tip);
+
+			VectorCopy(tip, saberTips[tipCount++]);
+		}
 	}
 
-	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
-
-	//FIXME: check visibility?
-	for (int e = 0; e < num_listed_entities; e++)
+	// --- SCAN ENTITIES -------------------------------------------------------
+	for (int i = 0; i < num_listed; i++)
 	{
-		gentity_t* ent = entity_list[e];
+		gentity_t* ent = entity_list[i];
+		if (!ent || !ent->inuse)
+			continue;
 
-		if (ent == self)
+		if (ent == self || ent->owner == self)
 			continue;
-		if (ent->owner == self)
-			continue;
-		if (!ent->inuse)
-			continue;
+
+		// --- MISSILE FILTER ---------------------------------------------------
 		if (ent->s.eType != ET_MISSILE)
 		{
-			if (ent->client || ent->s.weapon != WP_SABER)
-			{
-				//FIXME: wake up bad guys?
+			// Only reflect sabers (lightsaber entities)
+			if (!ent->client && ent->s.weapon != WP_SABER)
 				continue;
-			}
+
 			if (ent->s.eFlags & EF_NODRAW)
-			{
 				continue;
-			}
-			if (Q_stricmp("lightsaber", ent->classname) != 0)
-			{
-				//not a lightsaber
+
+			if (Q_stricmp(ent->classname, "lightsaber") != 0)
 				continue;
-			}
 		}
 		else
 		{
-			//FIXME: make exploding missiles explode?
+			// Stationary missiles can't be reflected
 			if (ent->s.pos.trType == TR_STATIONARY)
-			{
-				//nothing you can do with a stationary missile
 				continue;
-			}
+
+			// Exploding missiles: detonate if close, but don't reflect
 			if (ent->splashDamage || ent->splashRadius)
 			{
-				//can't deflect exploding missiles
-				if (DistanceSquared(ent->currentOrigin, center) < 256) //16 squared
+				if (DistanceSquared(ent->currentOrigin, center) < 256.0f)
 				{
+					vec3_t up = { 0, 0, 1 };
 					G_MissileImpacted(ent, saberent, ent->currentOrigin, up);
 				}
 				continue;
 			}
 		}
 
-		//don't deflect it if it's not within 16 units of the blade
-		//do this for all blades
+		// --- DISTANCE TO SABER BLADES ----------------------------------------
 		qboolean will_hit = qfalse;
-		int num_sabers = 1;
-		if (self->client->ps.dualSabers)
-		{
-			num_sabers = 2;
-		}
-		for (int saber_num = 0; saber_num < num_sabers; saber_num++)
-		{
-			for (int blade_num = 0; blade_num < self->client->ps.saber[saber_num].numBlades; blade_num++)
-			{
-				vec3_t tip;
-				VectorMA(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint,
-					self->client->ps.saber[saber_num].blade[blade_num].length,
-					self->client->ps.saber[saber_num].blade[blade_num].muzzleDir, tip);
 
-				if (G_PointDistFromLineSegment(self->client->ps.saber[saber_num].blade[blade_num].muzzlePoint, tip,
-					ent->currentOrigin) <= 32)
-				{
-					will_hit = qtrue;
-					break;
-				}
-			}
-			if (will_hit)
+		for (int t = 0; t < tipCount; t++)
+		{
+			// Check distance to each blade tip
+			if (DistanceSquared(ent->currentOrigin, saberTips[t]) <= (32.0f * 32.0f))
 			{
+				will_hit = qtrue;
 				break;
 			}
 		}
+
 		if (!will_hit)
-		{
 			continue;
-		}
-		// ok, we are within the radius, add us to the incoming list
-		missile_list[ent_count] = ent;
-		ent_count++;
+
+		missile_list[missile_count++] = ent;
 	}
 
-	if (ent_count)
+	// --- PROCESS REFLECTIONS -------------------------------------------------
+	for (int i = 0; i < missile_count; i++)
 	{
-		// we are done, do we have any to deflect?
-		if (ent_count)
+		gentity_t* m = missile_list[i];
+		vec3_t fx_dir;
+
+		// --- REFLECT SABERS ---------------------------------------------------
+		if (m->s.weapon == WP_SABER)
 		{
-			for (int x = 0; x < ent_count; x++)
+			if (m->owner && m->owner->client &&
+				m->owner->client->ps.saber[0].Active() &&
+				m->s.pos.trType == TR_LINEAR &&
+				m->owner->client->ps.saberEntityState != SES_RETURNING)
 			{
-				vec3_t fx_dir;
-				if (missile_list[x]->s.weapon == WP_SABER)
+				// Drop or return depending on owner type
+				if (g_SerenityJediEngineMode->integer &&
+					g_SaberMustReturn->integer < 1 &&
+					G_ControlledByPlayer(m->owner))
 				{
-					//just send it back
-					if (missile_list[x]->owner && missile_list[x]->owner->client && missile_list[x]->owner->client->ps.
-						saber[0].Active() && missile_list[x]->s.pos.trType == TR_LINEAR && missile_list[x]->owner->
-						client->ps.saberEntityState != SES_RETURNING)
-					{
-						//it's on and being controlled
-						if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (G_ControlledByPlayer(missile_list[x]->owner)))
-						{
-							WP_SaberDrop(missile_list[x]->owner, missile_list[x]);
-						}
-						else
-						{
-							if (missile_list[x]->owner->NPC && !G_ControlledByPlayer(missile_list[x]->owner))
-							{
-								WP_SaberDrop(missile_list[x]->owner, missile_list[x]);
-							}
-							else
-							{
-								WP_SaberReturn(missile_list[x]->owner, missile_list[x]);
-							}
-						}
-						VectorNormalize2(missile_list[x]->s.pos.trDelta, fx_dir);
-						WP_SaberBlockEffect(self, 0, 0, missile_list[x]->currentOrigin, fx_dir, qfalse);
-
-						if (missile_list[x]->owner->client->ps.saberInFlight && self->client->ps.saberInFlight)
-						{
-							if (self->client->ps.blockPoints < BLOCKPOINTS_HALF || self->client->ps.forcePower <
-								BLOCKPOINTS_HALF)
-							{
-								WP_SaberKnockSound(self, 0, 0);
-							}
-							else
-							{
-								WP_SaberBlockSound(self, 0, 0);
-							}
-
-							qboolean no_flare = qfalse;
-							if (missile_list[x]->owner->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE
-								&& self->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE)
-							{
-								no_flare = qtrue;
-							}
-							if (!no_flare)
-							{
-								g_saberFlashTime = level.time - 50;
-								const gentity_t* saber = &g_entities[self->client->ps.saberEntityNum];
-								vec3_t org;
-								VectorSubtract(missile_list[x]->currentOrigin, saber->currentOrigin, org);
-								VectorMA(saber->currentOrigin, 0.5, org, org);
-								VectorCopy(org, g_saberFlashPos);
-							}
-						}
-					}
+					WP_SaberDrop(m->owner, m);
+				}
+				else if (m->owner->NPC && !G_ControlledByPlayer(m->owner))
+				{
+					WP_SaberDrop(m->owner, m);
 				}
 				else
 				{
-					//bounce it
-					vec3_t reflect_angle, forward;
-					if (self->client && !self->s.number)
-					{
-						self->client->sess.missionStats.saberBlocksCnt++;
-					}
-					VectorCopy(saberent->s.apos.trBase, reflect_angle);
-					reflect_angle[PITCH] = Q_flrand(-90, 90);
-					AngleVectors(reflect_angle, forward, nullptr, nullptr);
+					WP_SaberReturn(m->owner, m);
+				}
 
-					if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
+				VectorNormalize2(m->s.pos.trDelta, fx_dir);
+				WP_SaberBlockEffect(self, 0, 0, m->currentOrigin, fx_dir, qfalse);
+
+				// Saber‑vs‑saber clash effects
+				if (m->owner->client->ps.saberInFlight && self->client->ps.saberInFlight)
+				{
+					if (self->client->ps.blockPoints < BLOCKPOINTS_HALF ||
+						self->client->ps.forcePower < BLOCKPOINTS_HALF)
 					{
-						G_ReflectMissileNPC(self, missile_list[x], forward);
+						WP_SaberKnockSound(self, 0, 0);
 					}
 					else
 					{
-						if (g_SerenityJediEngineMode->integer)
-						{
-							G_ReflectMissileAuto(self, missile_list[x], forward);
-						}
-						else
-						{
-							G_ReflectMissile_JKA(self, missile_list[x], forward);
-						}
+						WP_SaberBlockSound(self, 0, 0);
 					}
-					//do an effect
-					VectorNormalize2(missile_list[x]->s.pos.trDelta, fx_dir);
-					G_PlayEffect("blaster/deflect", missile_list[x]->currentOrigin, fx_dir);
+
+					// Flare
+					if (!(m->owner->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE) ||
+						!(self->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE))
+					{
+						g_saberFlashTime = level.time - 50;
+
+						vec3_t org;
+						VectorSubtract(m->currentOrigin, saberent->currentOrigin, org);
+						VectorMA(saberent->currentOrigin, 0.5f, org, org);
+						VectorCopy(org, g_saberFlashPos);
+					}
 				}
 			}
+		}
+		else
+		{
+			// --- REFLECT BLASTER / MISSILE -----------------------------------
+			vec3_t reflect_angle, forward;
+
+			if (self->client && self->s.number < MAX_CLIENTS)
+				self->client->sess.missionStats.saberBlocksCnt++;
+
+			VectorCopy(saberent->s.apos.trBase, reflect_angle);
+			reflect_angle[PITCH] = Q_flrand(-90, 90);
+
+			AngleVectors(reflect_angle, forward, nullptr, nullptr);
+
+			if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
+				G_ReflectMissileNPC(self, m, forward);
+			else if (g_SerenityJediEngineMode->integer)
+				G_ReflectMissileAuto(self, m, forward);
+			else
+				G_ReflectMissile_JKA(self, m, forward);
+
+			VectorNormalize2(m->s.pos.trDelta, fx_dir);
+			G_PlayEffect("blaster/deflect", m->currentOrigin, fx_dir);
 		}
 	}
 }
@@ -12574,15 +12932,12 @@ static float WP_SaberRateEnemy(const gentity_t* enemy, vec3_t center, vec3_t for
 
 static gentity_t* WP_SaberFindEnemy(gentity_t* self, const gentity_t* saber)
 {
-	//FIXME: should be a more intelligent way of doing this, like auto aim?
 	//closest, most in front... did damage to... took damage from?  How do we know who the player is focusing on?
 	gentity_t* best_ent = nullptr;
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	vec3_t center, mins{}, maxs{}, fwdangles{}, forward;
 	constexpr float radius = 400;
 	float best_rating = 0.0f;
-
-	//FIXME: no need to do this in 1st person?
 	fwdangles[1] = self->client->ps.viewangles[1];
 	AngleVectors(fwdangles, forward, nullptr, nullptr);
 
@@ -13228,11 +13583,6 @@ void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_s
 	{
 		//clear the enemy
 		saber->enemy = nullptr;
-		//===FIXME!!!==============================================================================================
-		//We should copy the thrown saber's g2 instance to the right-hand saber
-		//When you catch it, and vice-versa when you throw it!!!
-		//===FIXME!!!==============================================================================================
-		//don't draw it
 		saber->s.eFlags |= EF_NODRAW;
 		saber->svFlags &= SVF_BROADCAST;
 		saber->svFlags |= SVF_NOCLIENT;
@@ -13240,6 +13590,9 @@ void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_s
 		//take off any gravity stuff if we'd dropped it
 		saber->s.pos.trType = TR_LINEAR;
 		saber->s.eFlags &= ~EF_BOUNCE_HALF;
+
+		// clear stuck flag so the saber can move away from the wall
+		saber->s.eFlags &= ~EF_MISSILE_STICK;
 
 		//Put it in my hand
 		self->client->ps.saberInFlight = qfalse;
@@ -13251,7 +13604,7 @@ void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_s
 		//reset its contents/clipmask
 		saber->contents = CONTENTS_LIGHTSABER; // | CONTENTS_SHOTCLIP;
 		saber->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
-		
+
 		//play catch sound
 		G_Sound(saber, G_SoundIndex("sound/weapons/saber/saber_catch.mp3"));
 
@@ -13445,6 +13798,9 @@ static void WP_SaberPull(const gentity_t* self, gentity_t* saber)
 		saber->s.pos.trType = TR_LINEAR;
 		//take off bounce
 		saber->s.eFlags &= EF_BOUNCE_HALF;
+
+		// clear stuck flag so the saber can move away from the wall
+		saber->s.eFlags &= ~EF_MISSILE_STICK;
 		//play sound
 		G_Sound(self, G_SoundIndex("sound/weapons/force/pull.wav"));
 	}
@@ -13573,8 +13929,8 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 				trace_t trace;
 				VectorCopy(self->currentOrigin, axis_point);
 				axis_point[2] = self->client->renderInfo.handRPoint[2];
-				gi.trace(&trace, axis_point, vec3_origin, vec3_origin, self->client->renderInfo.handRPoint,
-					self->s.number, MASK_SOLID, static_cast<EG2_Collision>(0), 0);
+				gi.trace(&trace, axis_point, vec3_origin, vec3_origin, self->client->renderInfo.handRPoint, self->s.number, MASK_SOLID, static_cast<EG2_Collision>(0), 0);
+
 				if (!trace.startsolid && trace.fraction >= 1.0f)
 				{
 					//our hand isn't through a wall
@@ -13582,6 +13938,55 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 				}
 				return;
 			}
+		}
+
+		const int stuckTime = level.time - self->client->ps.saberstuckinwalltimer;
+
+		//RETRIEVE DELAY
+		if (self->client->ps.saberEntityState == SES_STUCK && stuckTime >= SES_STUCK_RETRIEVE_DELAY)
+		{
+			// Attack button?
+			if (ucmd->buttons & BUTTON_ATTACK)
+			{
+				gi.trace(&tr,
+					saberent->currentOrigin,
+					saberent->mins,
+					saberent->maxs,
+					self->client->renderInfo.handRPoint,
+					self->s.number,
+					MASK_SOLID,
+					(EG2_Collision)0, 0);
+
+				if (tr.allsolid || tr.startsolid || tr.fraction < 1.0f)
+				{
+					if (g_DebugSaberCombat->integer)
+					{
+						Com_Printf("DEBUG: WP_SaberCatch called by SES_STUCK_RETRIEVE_DELAY No clear LOS at %i\n", level.time);
+					}
+
+					WP_SaberCatchFromWall(self, saberent, qfalse);
+
+					saberent->e_ThinkFunc = thinkF_NULL;
+					saberent->nextthink = 0;
+					return;
+				}
+				else
+				{
+					if (g_DebugSaberCombat->integer)
+					{
+						Com_Printf("DEBUG: WP_SaberPull called by SES_STUCK_RETRIEVE_DELAY Clear LOS at %i\n", level.time);
+					}
+
+					WP_SaberPullFromWall(self, saberent);
+
+					saberent->e_ThinkFunc = thinkF_NULL;
+					saberent->nextthink = 0;
+					return;
+				}
+			}
+
+			// No attack → do nothing, stay stuck
+			return;
 		}
 
 		if (saberent->s.pos.trType != TR_STATIONARY)
@@ -13626,9 +14031,36 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 			if (!self->s.number && level.time - saberent->aimDebounceTime > 15000
 				|| self->s.number && level.time - saberent->aimDebounceTime > 5000)
 			{
-				//(only for player) been missing for 15 seconds, automatically return
-				WP_SaberCatch(self, saberent, qfalse);
-				return;
+				// Trace from saber to player's hand
+				gi.trace(&tr,
+					saberent->currentOrigin,
+					saberent->mins,
+					saberent->maxs,
+					self->client->renderInfo.handRPoint,
+					self->s.number,
+					MASK_SOLID,
+					(EG2_Collision)0, 0);
+
+				if (tr.allsolid || tr.startsolid || tr.fraction < 1.0f) // No clear line of sight
+				{
+					if (g_DebugSaberCombat->integer)
+					{
+						Com_Printf("DEBUG: WP_SaberCatch/triggered by aimDebounceTime no los at %i\n", level.time);
+					}
+					// No clear line of sight → auto‑catch
+					WP_SaberCatch(self, saberent, qfalse);
+					return;
+				}
+				else
+				{
+					if (g_DebugSaberCombat->integer)
+					{
+						Com_Printf("DEBUG: WP_SaberPull/triggered by aimDebounceTime with los at %i\n", level.time);
+					}
+					// Clear line of sight → pull saber back
+					WP_SaberPull(self, saberent);
+					return;
+				}
 			}
 		}
 	}
@@ -13676,7 +14108,8 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 			}
 		}
 	}
-	else if (saberent->s.pos.trType != TR_LINEAR)
+	else if (saberent->s.pos.trType != TR_LINEAR &&
+		self->client->ps.saberEntityState != SES_STUCK)
 	{
 		//weapon is saber and not flying
 		if (self->client->ps.saberInFlight)
@@ -13685,9 +14118,7 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 			if (ucmd->buttons & BUTTON_ATTACK)
 			{
 				//we actively want to pick it up or we just switched to it, so pull it back
-				gi.trace(&tr, saberent->currentOrigin, saberent->mins, saberent->maxs,
-					self->client->renderInfo.handRPoint, self->s.number, MASK_SOLID, static_cast<EG2_Collision>(0),
-					0);
+				gi.trace(&tr, saberent->currentOrigin, saberent->mins, saberent->maxs, self->client->renderInfo.handRPoint, self->s.number, MASK_SOLID, static_cast<EG2_Collision>(0), 0);
 
 				if (tr.allsolid || tr.startsolid || tr.fraction < 1.0f)
 				{
@@ -13752,7 +14183,9 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 		WP_SaberDrop(self, saberent);
 		return;
 	}
-	else if (!self->client->ps.saber[0].Active() && self->client->ps.saberEntityState != SES_RETURNING)
+	else if (!self->client->ps.saber[0].Active() //saber is off
+		&& self->client->ps.saberEntityState != SES_RETURNING //not already coming back to us
+		&& self->client->ps.saberEntityState != SES_STUCK) //not already coming back to us or stuck in wall
 	{
 		//we turned it off, drop it
 		WP_SaberDrop(self, saberent);
@@ -13778,8 +14211,14 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 				//done throwing, return to me
 				if (self->client->ps.saber[0].Active())
 				{
-					//still on
-					WP_SaberReturn(self, saberent);
+					if (g_SerenityJediEngineMode->integer == 2 && g_SaberMustReturn->integer < 1)
+					{
+						WP_SaberDrop(self, saberent);
+					}
+					else
+					{
+						WP_SaberReturn(self, saberent);
+					}
 				}
 			}
 			else if (level.time - self->client->ps.saberThrowTime >= 100)

@@ -157,6 +157,8 @@ using thinkFunc_t = enum
 	thinkF_asteroid_move_to_start,
 
 	thinkF_wp_stasis_missile_blow,
+
+	thinkF_WP_SaberBallisticsThink,
 };
 
 // THINK functions...
@@ -277,7 +279,8 @@ extern void asteroid_move_to_start(gentity_t* self);
 
 extern void wp_stasis_missile_blow(gentity_t* ent);
 
-//	void		(*clThink)(centity_s *cent);	//Think func for equivalent centity
+extern void WP_SaberBallisticsThink(gentity_t* ent);
+
 using clThinkFunc_t = enum
 {
 	clThinkF_NULL = 0,

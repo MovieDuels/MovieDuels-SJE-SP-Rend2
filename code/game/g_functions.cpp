@@ -152,6 +152,8 @@ void GEntity_ThinkFunc(gentity_t* self)
 
 			THINKCASE(wp_stasis_missile_blow)
 
+			THINKCASE(WP_SaberBallisticsThink)
+
 	default:
 		Com_Error(ERR_DROP, "GEntity_ThinkFunc: case %d not handled!\n", self->e_ThinkFunc);
 	}

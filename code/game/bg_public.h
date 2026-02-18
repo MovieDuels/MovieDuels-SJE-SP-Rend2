@@ -192,10 +192,6 @@ constexpr auto DEFAULT_BLOCK_TIME_MAX_MILLISECONDS = 300;
 #define BRYAR_PISTOL_ALT_DPMAXDAMAGE		DODGE_BOLTBLOCK*1.5		//maximum DP damage of bryar secondary
 constexpr auto BRYAR_MAX_CHARGE = 5;
 
-constexpr auto MAX_LEAVE_TIME = 2500;
-constexpr auto MAX_RETURN_TIME = 2000;
-constexpr auto MAX_DISARM_TIME = 1750;
-
 constexpr auto FATIGUE_KILLBONUS = 30; //the bonus you get for killing another player;
 constexpr auto FATIGUE_NPCDAMAGEBONUS = 30; //the bonus you get for slapping another player;
 constexpr auto FATIGUE_DAMAGEBONUS = 20; //the bonus you get for slapping another player;
