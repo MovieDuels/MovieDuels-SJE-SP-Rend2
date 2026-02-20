@@ -3496,7 +3496,7 @@ saber_moveName_t PM_NPC_Force_Leap_Attack()
 	}
 }
 
-#define SPECIAL_ATTACK_DISTANCE 128
+constexpr auto SPECIAL_ATTACK_DISTANCE = 128;
 extern qboolean npc_is_sith_lord(const gentity_t* self);
 
 qboolean PM_Can_Do_Kill_Lunge(void)

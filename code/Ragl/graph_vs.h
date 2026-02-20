@@ -126,6 +126,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #if !defined(RBTREE_MAP_VS_INC)
 #include "../Ratl/map_vs.h"
 #endif
+#include <Ratl\pool_vs.h>
 #if !defined(RATL_POOL_VS_INC)
 #include "../Ratl/pool_vs.h"
 #endif
@@ -133,6 +134,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../Ratl/grid_vs.h"
 #endif
 #include <qcommon\q_shared.h>
+#include <Ratl\ratl_common.h>
 namespace ragl
 {
 	////////////////////////////////////////////////////////////////////////////////////////

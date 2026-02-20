@@ -881,8 +881,7 @@ static void WriteGEntities(const qboolean qb_autosave)
 		}
 	}
 
-	ojk::SavedGameHelper saved_game(
-		gi.saved_game);
+	ojk::SavedGameHelper saved_game(gi.saved_game);
 
 	saved_game.write_chunk<int32_t>(
 		INT_ID('N', 'M', 'E', 'D'),
@@ -900,70 +899,82 @@ static void WriteGEntities(const qboolean qb_autosave)
 
 			const qboolean qbLinked = ent->linked;
 			gi.unlinkentity(ent);
-			gentity_t tempEnt = *ent; // make local copy
-			tempEnt.linked = qbLinked;
+
+			// Move tempEnt off the stack
+			gentity_t* tempEnt = new gentity_t;
+			*tempEnt = *ent;
+			tempEnt->linked = qbLinked;
 
 			if (qbLinked)
 			{
 				gi.linkentity(ent);
 			}
 
-			EnumerateFields(savefields_gEntity, &tempEnt, INT_ID('G', 'E', 'N', 'T'));
+			EnumerateFields(savefields_gEntity, tempEnt, INT_ID('G', 'E', 'N', 'T'));
 
-			// now for any fiddly bits that would be rather awkward to build into the enumerator...
-			//
-			if (tempEnt.NPC)
+			// NPC block
+			if (tempEnt->NPC)
 			{
-				gNPC_t npc = *ent->NPC; // NOT *tempEnt.NPC; !! :-)
+				gNPC_t* npc = new gNPC_t;
+				*npc = *ent->NPC;
 
-				EnumerateFields(savefields_gNPC, &npc, INT_ID('G', 'N', 'P', 'C'));
+				EnumerateFields(savefields_gNPC, npc, INT_ID('G', 'N', 'P', 'C'));
+
+				delete npc;
 			}
 
-			if (tempEnt.client == reinterpret_cast<gclient_t*>(-2)) // I know, I know...
+			// Client block
+			if (tempEnt->client == reinterpret_cast<gclient_t*>(-2))
 			{
-				gclient_t client = *ent->client; // NOT *tempEnt.client!!
-				EnumerateFields(savefields_gClient, &client, INT_ID('G', 'C', 'L', 'I'));
+				gclient_t* client = new gclient_t;
+				*client = *ent->client;
+
+				EnumerateFields(savefields_gClient, client, INT_ID('G', 'C', 'L', 'I'));
+
+				delete client;
 			}
 
-			if (tempEnt.parms)
+			// parms block
+			if (tempEnt->parms)
 			{
 				saved_game.write_chunk(
 					INT_ID('P', 'A', 'R', 'M'),
 					*ent->parms);
 			}
 
-			if (tempEnt.m_pVehicle)
+			// Vehicle block
+			if (tempEnt->m_pVehicle)
 			{
-				Vehicle_t vehicle = *ent->m_pVehicle; // NOT *tempEnt.m_pVehicle!!
-				EnumerateFields(savefields_gVHIC, &vehicle, INT_ID('V', 'H', 'I', 'C'));
+				Vehicle_t* vehicle = new Vehicle_t;
+				*vehicle = *ent->m_pVehicle;
+
+				EnumerateFields(savefields_gVHIC, vehicle, INT_ID('V', 'H', 'I', 'C'));
+
+				delete vehicle;
 			}
 
-			// the scary ghoul2 saver stuff...  (fingers crossed)
-			//
-			gi.G2API_SaveGhoul2Models(tempEnt.ghoul2);
-			tempEnt.ghoul2.kill(); // this handle was shallow copied from an ent. We don't want it destroyed
+			// Ghoul2 saver
+			gi.G2API_SaveGhoul2Models(tempEnt->ghoul2);
+			tempEnt->ghoul2.kill();
+
+			delete tempEnt;
 		}
 	}
 
-	//Write out all entity timers
-	TIMER_Save(); //WriteEntityTimers();
+	TIMER_Save();
 
 	if (!qb_autosave)
 	{
-		//Save out ICARUS information
 		IIcarusInterface::GetIcarus()->Save();
 
-		// this marker needs to be here, it lets me know if Icarus doesn't load everything back later,
-		//	which has happened, and doesn't always show up onscreen until certain game situations.
-		//	This saves time debugging, and makes things easier to track.
-		//
 		static int iBlah = 1234;
 
 		saved_game.write_chunk<int32_t>(
 			INT_ID('I', 'C', 'O', 'K'),
 			iBlah);
 	}
-	if (!qb_autosave) //really shouldn't need to write these bits at all, just restore them from the ents...
+
+	if (!qb_autosave)
 	{
 		WriteInUseBits();
 	}
@@ -974,14 +985,14 @@ static void ReadGEntities(const qboolean qbAutosave)
 	int iCount = 0;
 	int i;
 
-	ojk::SavedGameHelper saved_game(
-		gi.saved_game);
+	ojk::SavedGameHelper saved_game(gi.saved_game);
 
 	saved_game.read_chunk<int32_t>(
 		INT_ID('N', 'M', 'E', 'D'),
 		iCount);
 
 	int iPreviousEntRead = -1;
+
 	for (i = 0; i < iCount; i++)
 	{
 		int iEntIndex = 0;
@@ -999,7 +1010,7 @@ static void ReadGEntities(const qboolean qbAutosave)
 		{
 			for (int j = iPreviousEntRead + 1; j != iEntIndex; j++)
 			{
-				if (g_entities[j].inuse) // not actually necessary
+				if (g_entities[j].inuse)
 				{
 					G_FreeEntity(&g_entities[j]);
 				}
@@ -1007,150 +1018,121 @@ static void ReadGEntities(const qboolean qbAutosave)
 		}
 		iPreviousEntRead = iEntIndex;
 
-		// slightly naff syntax here, but makes a few ops clearer later...
-		//
-		gentity_t entity;
-		gentity_t* pEntOriginal = &entity;
+		// Move this huge struct off the stack
+		gentity_t* pEntOriginal = new gentity_t;
 		gentity_t* pEnt = &g_entities[iEntIndex];
-		*pEntOriginal = *pEnt; // struct copy, so we can refer to original
+		*pEntOriginal = *pEnt;
 
 		pEntOriginal->ghoul2.kill();
 		gi.unlinkentity(pEnt);
 		Quake3Game()->FreeEntity(pEnt);
 
-		//
-		// sneaky:  destroy the ghoul2 object within this struct before binary-loading over the top of it...
-		//
 		gi.G2API_LoadSaveCodeDestructGhoul2Info(pEnt->ghoul2);
 		pEnt->ghoul2.kill();
-		EvaluateFields(savefields_gEntity, pEnt, reinterpret_cast<byte*>(pEntOriginal), INT_ID('G', 'E', 'N', 'T'));
+
+		EvaluateFields(savefields_gEntity, pEnt,
+			reinterpret_cast<byte*>(pEntOriginal),
+			INT_ID('G', 'E', 'N', 'T'));
+
 		pEnt->ghoul2.kill();
 
-		// now for any fiddly bits...
-		//
-		if (pEnt->NPC) // will be qtrue/qfalse
+		// NPC block
+		if (pEnt->NPC)
 		{
-			gNPC_t tempNPC;
+			gNPC_t* tempNPC = new gNPC_t;
 
-			EvaluateFields(savefields_gNPC, &tempNPC, reinterpret_cast<byte*>(pEntOriginal->NPC),
+			EvaluateFields(savefields_gNPC, tempNPC,
+				reinterpret_cast<byte*>(pEntOriginal->NPC),
 				INT_ID('G', 'N', 'P', 'C'));
 
-			// so can we pinch the original's one or do we have to alloc a new one?...
-			//
 			if (pEntOriginal->NPC)
 			{
-				// pinch this G_Alloc handle...
-				//
 				pEnt->NPC = pEntOriginal->NPC;
 			}
 			else
 			{
-				// original didn't have one (hmmm...), so make a new one...
-				//
-				//assert(0);	// I want to know about this, though not in release
 				pEnt->NPC = static_cast<gNPC_t*>(G_Alloc(sizeof * pEnt->NPC));
 			}
 
-			// copy over the one we've just loaded...
-			//
-			*pEnt->NPC = tempNPC;
+			*pEnt->NPC = *tempNPC;
+			delete tempNPC;
 		}
 
-		if (pEnt->client == reinterpret_cast<gclient_t*>(-2)) // one of Mike G's NPC clients?
+		// Client block
+		if (pEnt->client == reinterpret_cast<gclient_t*>(-2))
 		{
-			gclient_t tempGClient;
+			gclient_t* tempGClient = new gclient_t;
 
-			EvaluateFields(savefields_gClient, &tempGClient, reinterpret_cast<byte*>(pEntOriginal->client),
+			EvaluateFields(savefields_gClient, tempGClient,
+				reinterpret_cast<byte*>(pEntOriginal->client),
 				INT_ID('G', 'C', 'L', 'I'));
 
-			// can we pinch the original's client handle or do we have to alloc a new one?...
-			//
 			if (pEntOriginal->client)
 			{
-				// pinch this G_Alloc handle...
-				//
 				pEnt->client = pEntOriginal->client;
 			}
 			else
 			{
-				// original didn't have one (hmmm...) so make a new one...
-				//
 				pEnt->client = static_cast<gclient_t*>(G_Alloc(sizeof * pEnt->client));
 			}
 
-			// copy over the one we've just loaded....
-			//
-			*pEnt->client = tempGClient; // struct copy
+			*pEnt->client = *tempGClient;
+			delete tempGClient;
 
 			if (pEnt->s.number)
 			{
-				//not player
 				G_ReloadSaberData(pEnt);
 			}
 		}
 
-		// Some Icarus thing... (probably)
-		//
-		if (pEnt->parms) // will be qtrue/qfalse
+		// parms block
+		if (pEnt->parms)
 		{
-			parms_t tempParms;
+			parms_t* tempParms = new parms_t;
 
 			saved_game.read_chunk(
 				INT_ID('P', 'A', 'R', 'M'),
-				tempParms);
+				*tempParms);
 
-			// so can we pinch the original's one or do we have to alloc a new one?...
-			//
 			if (pEntOriginal->parms)
 			{
-				// pinch this G_Alloc handle...
-				//
 				pEnt->parms = pEntOriginal->parms;
 			}
 			else
 			{
-				// original didn't have one, so make a new one...
-				//
 				pEnt->parms = static_cast<parms_t*>(G_Alloc(sizeof * pEnt->parms));
 			}
 
-			// copy over the one we've just loaded...
-			//
-			*pEnt->parms = tempParms; // struct copy
+			*pEnt->parms = *tempParms;
+			delete tempParms;
 		}
 
-		if (pEnt->m_pVehicle) // will be qtrue/qfalse
+		// Vehicle block
+		if (pEnt->m_pVehicle)
 		{
-			Vehicle_t tempVehicle;
+			Vehicle_t* tempVehicle = new Vehicle_t;
 
-			// initialize the vehicle cache g_vehicleInfo
-			// Calling this function fixes the vehicle crashing issue
 			BG_VehicleGetIndex(pEnt->NPC_type);
 
-			EvaluateFields(savefields_gVHIC, &tempVehicle, reinterpret_cast<byte*>(pEntOriginal->m_pVehicle), INT_ID('V', 'H', 'I', 'C'));
+			EvaluateFields(savefields_gVHIC, tempVehicle,
+				reinterpret_cast<byte*>(pEntOriginal->m_pVehicle),
+				INT_ID('V', 'H', 'I', 'C'));
 
-			// so can we pinch the original's one or do we have to alloc a new one?...
-			//
 			if (pEntOriginal->m_pVehicle)
 			{
-				// pinch this G_Alloc handle...
-				//
 				pEnt->m_pVehicle = pEntOriginal->m_pVehicle;
 			}
 			else
 			{
-				// original didn't have one, so make a new one...
-				//
-				pEnt->m_pVehicle = static_cast<Vehicle_t*>(gi.Malloc(sizeof(Vehicle_t), TAG_G_ALLOC, qfalse));
+				pEnt->m_pVehicle = static_cast<Vehicle_t*>(
+					gi.Malloc(sizeof(Vehicle_t), TAG_G_ALLOC, qfalse));
 			}
 
-			// copy over the one we've just loaded...
-			//
-			*pEnt->m_pVehicle = tempVehicle; // struct copy
+			*pEnt->m_pVehicle = *tempVehicle;
+			delete tempVehicle;
 		}
 
-		// the scary ghoul2 stuff...  (fingers crossed)
-		//
+		// Ghoul2 block
 		{
 			saved_game.read_chunk(
 				INT_ID('G', 'H', 'L', '2'));
@@ -1158,23 +1140,11 @@ static void ReadGEntities(const qboolean qbAutosave)
 			gi.G2API_LoadGhoul2Models(pEnt->ghoul2, nullptr);
 		}
 
-		//		gi.unlinkentity (pEntOriginal);
-		//		ICARUS_FreeEnt( pEntOriginal );
-		//		*pEntOriginal = *pEnt;	// struct copy
-		//		qboolean qbLinked = pEntOriginal->linked;
-		//		pEntOriginal->linked = qfalse;
-		//		if (qbLinked)
-		//		{
-		//			gi.linkentity (pEntOriginal);
-		//		}
-
-		// because the sytem stores sfx_t handles directly instead of the set, we have to reget the set's sfx_t...
-		//
 		if (pEnt->s.eType == ET_MOVER && pEnt->s.loopSound > 0)
 		{
 			if (VALIDSTRING(pEnt->soundSet))
 			{
-				extern int BMS_MID; // from g_mover
+				extern int BMS_MID;
 				pEnt->s.loopSound = CAS_GetBModelSound(pEnt->soundSet, BMS_MID);
 				if (pEnt->s.loopSound == -1)
 				{
@@ -1183,7 +1153,6 @@ static void ReadGEntities(const qboolean qbAutosave)
 			}
 		}
 
-		// NPCs and other ents store waypoints that aren't valid after a load
 		pEnt->waypoint = 0;
 
 		const qboolean qbLinked = pEnt->linked;
@@ -1192,40 +1161,35 @@ static void ReadGEntities(const qboolean qbAutosave)
 		{
 			gi.linkentity(pEnt);
 		}
+
+		delete pEntOriginal;
 	}
 
-	//Read in all the entity timers
-	TIMER_Load(); //ReadEntityTimers();
+	TIMER_Load();
 
 	if (!qbAutosave)
 	{
-		// now zap any g_ents that were inuse when the level was loaded, but are no longer in use in the saved version
-		//	that we've just loaded...
-		//
 		for (i = iPreviousEntRead + 1; i < globals.num_entities; i++)
 		{
-			if (g_entities[i].inuse) // not actually necessary
+			if (g_entities[i].inuse)
 			{
 				G_FreeEntity(&g_entities[i]);
 			}
 		}
 
-		//Load ICARUS information
 		Quake3Game()->ClearEntityList();
-
 		IIcarusInterface::GetIcarus()->Load();
 
-		// check that Icarus has loaded everything it saved out by having a marker chunk after it...
-		//
 		static int iBlah = 1234;
 
 		saved_game.read_chunk<int32_t>(
 			INT_ID('I', 'C', 'O', 'K'),
 			iBlah);
 	}
+
 	if (!qbAutosave)
 	{
-		ReadInUseBits(); //really shouldn't need to read these bits in at all, just restore them from the ents...
+		ReadInUseBits();
 	}
 }
 
@@ -1269,59 +1233,45 @@ void WriteLevel(const qboolean qbAutosave)
 
 void ReadLevel(const qboolean qbAutosave, const qboolean qb_load_transition)
 {
-	ojk::SavedGameHelper saved_game(
-		gi.saved_game);
+	ojk::SavedGameHelper saved_game(gi.saved_game);
 
 	if (qb_load_transition)
 	{
-		// I STRONGLY SUSPECT THAT THIS WILL JUST ERR_DROP BECAUSE OF THE LOAD SWAPPING OF THE CHUNK-ORDER
-		//	BELOW BETWEEN OBJECTIVES AND LEVEL_LOCALS, SO I'M GUESSING THIS IS SOME OLD EF1 JUNK?
-		// IN ANY CASE, LET'S MAKE SURE...   // -ste (no idea who wrote the comment stuff below, did it ever work?)
-		//
 		assert(0);
-		//
-		//loadtransitions do not need to read the objectives and client data from the level they're going to
-		//In a loadtransition, client data is carried over on the server and will be stomped later anyway.
-		//The objective info (in client->sess data), however, is read in from G_ReadSessionData which is called before this func,
-		//we do NOT want to stomp that session data when doing a load transition
 
-		//However, we should still save this info out because these savegames may need to be
-		//loaded normally later- perhaps if you die and need to respawn, perhaps as some kind
-		//of emergency savegame for resuming, etc.
-
-		//SO: We read it in, but throw it away.
-
-		//Read & throw away gclient info
-		gclient_t junkClient;
-		EvaluateFields(savefields_gClient, &junkClient, reinterpret_cast<byte*>(&level.clients[0]),
+		// Read & throw away gclient info (heap allocated to avoid stack bloat)
+		gclient_t* junkClient = new gclient_t;
+		EvaluateFields(savefields_gClient, junkClient,
+			reinterpret_cast<byte*>(&level.clients[0]),
 			INT_ID('G', 'C', 'L', 'I'));
+		delete junkClient;
 
-		ReadLevelLocals(); // level_locals_t level
+		ReadLevelLocals();
 
-		//Read & throw away objective info
-		saved_game.read_chunk(
-			INT_ID('O', 'B', 'J', 'T'));
+		saved_game.read_chunk(INT_ID('O', 'B', 'J', 'T'));
 	}
 	else
 	{
-		if (!qbAutosave) //always load the client unless it's an autosave
+		if (!qbAutosave)
 		{
 			assert(level.maxclients == 1);
-			// I'll need to know if this changes, otherwise I'll need to change the way things work
 
-			gclient_t GClient;
-			EvaluateFields(savefields_gClient, &GClient, reinterpret_cast<byte*>(&level.clients[0]),
+			// Move GClient off the stack
+			gclient_t* GClient = new gclient_t;
+			EvaluateFields(savefields_gClient, GClient,
+				reinterpret_cast<byte*>(&level.clients[0]),
 				INT_ID('G', 'C', 'L', 'I'));
-			level.clients[0] = GClient; // struct copy
-			ReadLevelLocals(); // level_locals_t level
+
+			level.clients[0] = *GClient;   // struct copy
+			delete GClient;
+
+			ReadLevelLocals();
 		}
 
-		OBJ_LoadObjectiveData(); //loads mission objectives AND tactical info
+		OBJ_LoadObjectiveData();
 	}
 
 	FX_Read();
-
-	/////////////
 
 	ReadGEntities(qbAutosave);
 	Quake3Game()->VariableLoad();
@@ -1330,10 +1280,6 @@ void ReadLevel(const qboolean qbAutosave, const qboolean qb_load_transition)
 	extern void CG_ReadTheEvilCGHackStuff();
 	CG_ReadTheEvilCGHackStuff();
 
-	// (Do NOT put any read-code below this line)
-	//
-	// check that the whole file content was loaded by specifically requesting an end-marker...
-	//
 	static int iDONE = 1234;
 
 	saved_game.read_chunk<int32_t>(

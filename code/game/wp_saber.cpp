@@ -40,6 +40,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../qcommon/tri_coll_test.h"
 #include "../cgame/cg_local.h"
 #include "g_public.h"
+#include <cmath>
 
 #define JK2_RAGDOLL_GRIPNOHEALTH
 
@@ -12867,162 +12868,384 @@ static void WP_SaberInFlightReflectCheck(gentity_t* self)
 
 static qboolean WP_SaberValidateEnemy(gentity_t* self, gentity_t* enemy)
 {
-	if (!enemy)
-	{
-		return qfalse;
-	}
-
+	// ----------------------------------------------------
+	// Basic null / self / validity checks
+	// ----------------------------------------------------
 	if (!enemy || enemy == self || !enemy->inuse || !enemy->client)
-	{
-		//not valid
 		return qfalse;
-	}
 
+	// ----------------------------------------------------
+	// Must be alive
+	// ----------------------------------------------------
 	if (enemy->health <= 0)
-	{
-		//corpse
 		return qfalse;
-	}
 
+	// ----------------------------------------------------
+	// NPCs cannot target Jedi unless they are Jedi themselves
+	// (prevents non‑Jedi NPCs from cheating with saber throw)
+	// ----------------------------------------------------
 	if (enemy->s.number >= MAX_CLIENTS)
 	{
-		//NPCs can cheat and use the homing saber throw 3 on the player
-		if (enemy->client->ps.forcePowersKnown)
-		{
-			//not other jedi?
+		if (enemy->client->ps.forcePowersKnown == 0)
 			return qfalse;
-		}
 	}
 
-	if (DistanceSquared(self->client->renderInfo.handRPoint, enemy->currentOrigin) > saberThrowDistSquared[self->client
-		->ps.forcePowerLevel[FP_SABERTHROW]])
+	// ----------------------------------------------------
+	// Distance check (squared for performance)
+	// ----------------------------------------------------
+	const float maxDistSq =
+		saberThrowDistSquared[self->client->ps.forcePowerLevel[FP_SABERTHROW]];
+
+	if (DistanceSquared(self->client->renderInfo.handRPoint,
+		enemy->currentOrigin) > maxDistSq)
 	{
-		//too far
 		return qfalse;
 	}
 
-	if ((!InFront(enemy->currentOrigin, self->currentOrigin, self->client->ps.viewangles, 0.0f) || !G_ClearLOS(
-		self, self->client->renderInfo.eyePoint, enemy))
-		&& (DistanceHorizontalSquared(enemy->currentOrigin, self->currentOrigin) > 65536 || fabs(
-			enemy->currentOrigin[2] - self->currentOrigin[2]) > 384))
+	// ----------------------------------------------------
+	// Field‑of‑view + LOS check
+	// If enemy is far away horizontally or vertically,
+	// they MUST be in front AND visible.
+	// ----------------------------------------------------
+	const float horizDistSq =
+		DistanceHorizontalSquared(enemy->currentOrigin, self->currentOrigin);
+
+	const float vertDist =
+		fabsf(enemy->currentOrigin[2] - self->currentOrigin[2]);
+
+	const qboolean inFront =
+		InFront(enemy->currentOrigin, self->currentOrigin,
+			self->client->ps.viewangles, 0.0f);
+
+	const qboolean hasLOS =
+		G_ClearLOS(self, self->client->renderInfo.eyePoint, enemy);
+
+	if ((!inFront || !hasLOS) &&
+		(horizDistSq > 65536.0f || vertDist > 384.0f))
 	{
-		//(not in front or not clear LOS) & greater than 256 away
 		return qfalse;
 	}
 
-	if (enemy->client->playerTeam == self->client->playerTeam && (enemy->client->playerTeam != TEAM_SOLO && self->client
-		->playerTeam != TEAM_SOLO))
+	// ----------------------------------------------------
+	// Team check (unless SOLO)
+	// ----------------------------------------------------
+	if (enemy->client->playerTeam == self->client->playerTeam &&
+		enemy->client->playerTeam != TEAM_SOLO &&
+		self->client->playerTeam != TEAM_SOLO)
 	{
-		//on same team
 		return qfalse;
 	}
 
 	return qtrue;
 }
 
-static float WP_SaberRateEnemy(const gentity_t* enemy, vec3_t center, vec3_t forward, const float radius)
-{
-	vec3_t dir;
+// ======================================================
+// Distance macro (JA-style)
+// ======================================================
+#define Distance(a,b) (sqrt( ( (a)[0] - (b)[0] ) * ( (a)[0] - (b)[0] ) + \
+                              ( (a)[1] - (b)[1] ) * ( (a)[1] - (b)[1] ) + \
+                              ( (a)[2] - (b)[2] ) * ( (a)[2] - (b)[2] ) ))
 
+// ======================================================
+// Safe helpers
+// ======================================================
+static float SafeDot(const vec3_t a, const vec3_t b)
+{
+	float d = DotProduct(a, b);
+	if (!(d >= -1.0f && d <= 1.0f)) // catches NaN/INF
+		return 0.0f;
+	return d;
+}
+
+static float SafeNormalize(vec3_t v)
+{
+	float len = VectorLength(v);
+	if (len <= 0.0001f)
+		return 0.0f;
+
+	float inv = 1.0f / len;
+	v[0] *= inv;
+	v[1] *= inv;
+	v[2] *= inv;
+	return len;
+}
+
+// ======================================================
+// Rate an enemy with:
+//  • Step 1: current target awareness
+//  • Step 2: soft‑lock smoothing
+//  • Step 3: target stickiness (time‑based decay)
+//  • Step 4: cinematic target switching
+//  • Step 5: screen‑center weighting
+//  • Step 6: cinematic distance falloff (safe)
+//  • Step 7: threat weighting
+// ======================================================
+static float WP_SaberRateEnemy(
+	const gentity_t* self,
+	const gentity_t* enemy,
+	const gentity_t* currentTarget,
+	const gentity_t* lastTarget,
+	const int        lastTargetTime,
+	const vec3_t& center,
+	const vec3_t& forward,
+	const float      radius)
+{
+	// -----------------------------
+	// Step 6: Cinematic distance falloff (safe)
+	// -----------------------------
+	float dist = Distance(center, enemy->currentOrigin);
+	if (!(dist >= 0.0f)) // NaN guard
+		return 0.0f;
+
+	float d = dist / radius;
+	if (d > 1.0f)
+		return 0.0f;
+	if (d < 0.0f)
+		d = 0.0f;
+
+	const float falloffPower = 2.25f;
+	float base = 1.0f - d;
+	if (base < 0.0f)
+		base = 0.0f;
+
+	float distWeight = powf(base, falloffPower);
+	if (!(distWeight >= 0.0f)) // NaN guard
+		distWeight = 0.0f;
+
+	float rating = distWeight;
+
+	// -----------------------------
+	// Forward alignment (safe)
+	// -----------------------------
+	vec3_t dir;
 	VectorSubtract(enemy->currentOrigin, center, dir);
-	float rating = 1.0f - VectorNormalize(dir) / radius;
-	rating *= DotProduct(forward, dir);
+	if (SafeNormalize(dir) == 0.0f)
+		return rating;
+
+	float fwdDot = SafeDot(forward, dir);
+	rating *= fwdDot;
+
+	// -----------------------------
+	// Step 2: Soft‑lock smoothing
+	// -----------------------------
+	if (enemy == currentTarget && currentTarget != nullptr)
+	{
+		const float softLockStrength = 0.35f;
+		rating = rating + (1.0f - rating) * softLockStrength;
+	}
+
+	// -----------------------------
+	// Step 3: Target stickiness
+	// -----------------------------
+	if (enemy == lastTarget && lastTarget != nullptr)
+	{
+		const float stickinessDuration = 300.0f;
+		float       t = (level.time - lastTargetTime);
+
+		if (t < stickinessDuration)
+		{
+			float decay = 1.0f - (t / stickinessDuration);
+			float stickinessBoost = decay * 0.45f;
+			rating += stickinessBoost;
+		}
+	}
+
+	// -----------------------------
+	// Step 5: Screen‑center weighting (safe)
+	// -----------------------------
+	{
+		vec3_t toEnemy;
+		VectorSubtract(enemy->currentOrigin, center, toEnemy);
+
+		if (SafeNormalize(toEnemy) != 0.0f)
+		{
+			float dot = SafeDot(forward, toEnemy);
+			float centerWeight = (dot > 0.0f) ? dot : 0.0f;
+
+			const float centerBiasStrength = 0.65f;
+
+			rating = rating * (1.0f - centerBiasStrength) +
+				centerWeight * centerBiasStrength;
+		}
+	}
+
+	// -----------------------------
+	// Step 4: Cinematic target switching
+	// -----------------------------
+	if (enemy->client && enemy->client->ps.saber_move != LS_NONE)
+		rating += 0.35f;
+
+	if (enemy->client && enemy->client->ps.saberBlocked == BLOCKED_PARRY_BROKEN)
+		rating += 0.55f;
+
+	if (enemy->client &&
+		(enemy->client->ps.weapon == WP_BLASTER ||
+			enemy->client->ps.weapon == WP_BLASTER_PISTOL) &&
+		enemy->client->ps.weaponstate == WEAPON_FIRING)
+	{
+		rating += 0.40f;
+	}
+
+	{
+		vec3_t toEnemy2;
+		VectorSubtract(enemy->currentOrigin, center, toEnemy2);
+
+		if (SafeNormalize(toEnemy2) != 0.0f)
+		{
+			float behind = SafeDot(forward, toEnemy2);
+			if (behind < -0.3f)
+			{
+				float dist2 = Distance(center, enemy->currentOrigin);
+				if (dist2 < 200.0f)
+					rating += 0.50f;
+			}
+		}
+	}
+
+	// -----------------------------
+	// Step 7: Threat weighting
+	// -----------------------------
+
+	// 1. Enemy is aiming at you
+	if (enemy->enemy == self && enemy->client)
+	{
+		vec3_t enemyFwd;
+		AngleVectors(enemy->client->ps.viewangles, enemyFwd, nullptr, nullptr);
+
+		vec3_t toSelf;
+		VectorSubtract(self->currentOrigin, enemy->currentOrigin, toSelf);
+		if (SafeNormalize(toSelf) != 0.0f)
+		{
+			float aimDot = SafeDot(enemyFwd, toSelf);
+			if (aimDot > 0.7f)
+				rating += 0.45f;
+		}
+	}
+
+	// 2. Close‑range threat
+	if (dist < 120.0f)
+		rating += 0.35f;
+
+	// 3. Boss / elite priority (rank_t >= RANK_LT)
+	if (enemy->NPC && enemy->NPC->rank >= RANK_LT)
+		rating += 0.50f;
+
+	// 4. Flanking threat (side angles)
+	{
+		float sideDot = SafeDot(forward, dir);
+		if (sideDot < 0.2f && sideDot > -0.3f)
+		{
+			if (dist < 250.0f)
+				rating += 0.30f;
+		}
+	}
+
+	// 5. High‑speed rusher
+	if (enemy->client)
+	{
+		float speed = VectorLength(enemy->client->ps.velocity);
+		if (speed > 200.0f)
+			rating += 0.25f;
+	}
+
 	return rating;
 }
 
+// ======================================================
+// Try a candidate enemy and update best target
+// ======================================================
+static void WP_TrySaberCandidate(
+	gentity_t* self,
+	gentity_t* ent,
+	gentity_t*& best,
+	float& bestRating,
+	const vec3_t& center,
+	const vec3_t& forward,
+	const float   radius)
+{
+	if (!ent)
+		return;
+
+	if (!WP_SaberValidateEnemy(self, ent))
+		return;
+
+	if (!gi.inPVS(self->currentOrigin, ent->currentOrigin))
+		return;
+
+	if (!G_ClearLOS(self, self->client->renderInfo.eyePoint, ent))
+		return;
+
+	float rating = WP_SaberRateEnemy(
+		self,
+		ent,
+		best,                              // current target
+		self->client->lastSaberTarget,     // last target
+		self->client->lastSaberTargetTime, // last target time
+		center,
+		forward,
+		radius
+	);
+
+	if (rating > bestRating)
+	{
+		best = ent;
+		bestRating = rating;
+	}
+}
+
+// ======================================================
+// Main enemy‑finding function
+// ======================================================
 static gentity_t* WP_SaberFindEnemy(gentity_t* self, const gentity_t* saber)
 {
-	//closest, most in front... did damage to... took damage from?  How do we know who the player is focusing on?
-	gentity_t* best_ent = nullptr;
+	gentity_t* best = nullptr;
+
 	static gentity_t* entity_list[MAX_GENTITIES];
-	vec3_t center, mins{}, maxs{}, fwdangles{}, forward;
-	constexpr float radius = 400;
-	float best_rating = 0.0f;
-	fwdangles[1] = self->client->ps.viewangles[1];
-	AngleVectors(fwdangles, forward, nullptr, nullptr);
 
+	vec3_t center, mins{}, maxs{}, fwdAngles, forward;
+	constexpr float radius = 400.0f;
+	float           bestRating = 0.0f;
+
+	// Forward direction from view yaw
+	VectorSet(fwdAngles, 0.0f, self->client->ps.viewangles[YAW], 0.0f);
+	AngleVectors(fwdAngles, forward, nullptr, nullptr);
+
+	// Search area around saber
 	VectorCopy(saber->currentOrigin, center);
-
 	for (int i = 0; i < 3; i++)
 	{
 		mins[i] = center[i] - radius;
 		maxs[i] = center[i] + radius;
 	}
 
-	//if the saber has an enemy from the last time it looked, init to that one
-	if (WP_SaberValidateEnemy(self, saber->enemy))
+	// 1. Saber’s last enemy
+	WP_TrySaberCandidate(self, saber->enemy, best, bestRating, center, forward, radius);
+
+	// 2. Self’s current enemy
+	WP_TrySaberCandidate(self, self->enemy, best, bestRating, center, forward, radius);
+
+	// 3. Nearby entities
+	int count = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
+	if (count)
 	{
-		if (gi.inPVS(self->currentOrigin, saber->enemy->currentOrigin))
+		for (int i = 0; i < count; i++)
 		{
-			//potentially visible
-			if (G_ClearLOS(self, self->client->renderInfo.eyePoint, saber->enemy))
-			{
-				//can see him
-				best_ent = saber->enemy;
-				best_rating = WP_SaberRateEnemy(best_ent, center, forward, radius);
-			}
+			gentity_t* ent = entity_list[i];
+			if (ent == self || ent == saber || ent == best)
+				continue;
+
+			WP_TrySaberCandidate(self, ent, best, bestRating, center, forward, radius);
 		}
 	}
 
-	//If I have an enemy, see if that's even better
-	if (WP_SaberValidateEnemy(self, self->enemy))
+	// Update last target + timestamp
+	if (best != self->client->lastSaberTarget)
 	{
-		const float my_enemy_rating = WP_SaberRateEnemy(self->enemy, center, forward, radius);
-		if (my_enemy_rating > best_rating)
-		{
-			if (gi.inPVS(self->currentOrigin, self->enemy->currentOrigin))
-			{
-				//potentially visible
-				if (G_ClearLOS(self, self->client->renderInfo.eyePoint, self->enemy))
-				{
-					//can see him
-					best_ent = self->enemy;
-					best_rating = my_enemy_rating;
-				}
-			}
-		}
+		self->client->lastSaberTarget = best;
+		self->client->lastSaberTargetTime = level.time;
 	}
 
-	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
-
-	if (!num_listed_entities)
-	{
-		//should we clear the enemy?
-		return best_ent;
-	}
-
-	for (int e = 0; e < num_listed_entities; e++)
-	{
-		gentity_t* ent = entity_list[e];
-
-		if (ent == self || ent == saber || ent == best_ent)
-		{
-			continue;
-		}
-		if (!WP_SaberValidateEnemy(self, ent))
-		{
-			//doesn't meet criteria of valid look enemy (don't check current since we would have done that before this func's call
-			continue;
-		}
-		if (!gi.inPVS(self->currentOrigin, ent->currentOrigin))
-		{
-			//not even potentially visible
-			continue;
-		}
-		if (!G_ClearLOS(self, self->client->renderInfo.eyePoint, ent))
-		{
-			//can't see him
-			continue;
-		}
-		//rate him based on how close & how in front he is
-		const float rating = WP_SaberRateEnemy(ent, center, forward, radius);
-		if (rating > best_rating)
-		{
-			best_ent = ent;
-			best_rating = rating;
-		}
-	}
-	return best_ent;
+	return best;
 }
 
 static void WP_RunSaber(gentity_t* self, gentity_t* saber)
@@ -13196,7 +13419,6 @@ static void WP_RunSaber(gentity_t* self, gentity_t* saber)
 
 static qboolean WP_SaberLaunch(gentity_t* self, gentity_t* saber, const qboolean thrown, const qboolean no_fail = qfalse)
 {
-	//FIXME: probably need a debounce time
 	constexpr vec3_t saber_mins = { -3.0f, -3.0f, -3.0f };
 	constexpr vec3_t saber_maxs = { 3.0f, 3.0f, 3.0f };
 	trace_t trace;
@@ -13340,11 +13562,7 @@ static qboolean WP_SaberLaunch(gentity_t* self, gentity_t* saber, const qboolean
 	self->client->ps.saberEntityState = SES_LEAVING;
 	self->client->ps.saberEntityDist = saberThrowDist[self->client->ps.forcePowerLevel[FP_SABERTHROW]];
 	self->client->ps.saberThrowTime = level.time;
-	//if ( self->client->ps.forcePowerLevel[FP_SABERTHROW] > FORCE_LEVEL_2 )
-	{
-		self->client->ps.forcePowerDebounce[FP_SABERTHROW] = level.time + 1000;
-		//so we can keep it out for a minimum amount of time
-	}
+	self->client->ps.forcePowerDebounce[FP_SABERTHROW] = level.time + 1000;
 
 	if (thrown)
 	{
@@ -14162,15 +14380,13 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 					}
 					else
 					{
-						if (level.time - self->client->ps.saberThrowTime >= MAX_RETURN_TIME &&
-							!PM_SaberInBrokenParry(self->client->ps.saber_move) && self->client->ps.saberBlocked !=
-							BLOCKED_PARRY_BROKEN)
+						if (level.time - self->client->ps.saberThrowTime >= MAX_RETURN_TIME
+							&& !PM_SaberInBrokenParry(self->client->ps.saber_move)
+							&& self->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN
+							&& !PM_SaberInMassiveBounce(self->client->ps.torsoAnim)
+							&& !PM_SaberInBashedAnim(self->client->ps.torsoAnim))
 						{
 							WP_SaberGrab(self, saberent);
-							if (self->client->ps.blockPoints < BLOCKPOINTS_TWELVE)
-							{
-								WP_BlockPointsRegenerate(self, BLOCKPOINTS_FATIGUE);
-							}
 						}
 					}
 				}
@@ -29524,7 +29740,10 @@ void ForceHeal(gentity_t* self)
 		return;
 	}
 
-	if (self->painDebounceTime > level.time || self->client->ps.weaponTime && self->client->ps.weapon != WP_NONE)
+	if (self->painDebounceTime > level.time ||
+		(self->client->ps.weaponTime &&
+			self->client->ps.weapon != WP_NONE &&
+			self->client->ps.SaberActive()))
 	{
 		//can't initiate a heal while taking pain or attacking
 		return;

@@ -24,6 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "anims.h"
 #include "../cgame/cg_local.h"
 #include "g_functions.h"
+#include <qcommon\q_string.h>
 
 extern qboolean g_standard_humanoid(gentity_t* ent);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);

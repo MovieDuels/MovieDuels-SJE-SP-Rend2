@@ -23,6 +23,18 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "g_navigator.h"
 #include "g_functions.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "ghoul2_shared.h"
+#include <qcommon\q_math.h>
+#include "bg_public.h"
+#include <qcommon\q_platform.h>
+#include "ai.h"
+#include "bstate.h"
+#include "g_local.h"
+#include "b_public.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
 
 extern void CG_DrawAlert(vec3_t origin, float rating);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
@@ -434,44 +446,31 @@ static void Grenadier_CheckFireState()
 	{
 		//if moving at all, don't do this
 	}
-
-	//continue to fire on their last position
-	/*
-	if ( !Q_irand( 0, 1 ) && NPCInfo->enemyLastSeenTime && level.time - NPCInfo->enemyLastSeenTime < 4000 )
-	{
-		//Fire on the last known position
-		vec3_t	muzzle, dir, angles;
-
-		CalcEntitySpot( NPC, SPOT_WEAPON, muzzle );
-		VectorSubtract( NPCInfo->enemyLastSeenLocation, muzzle, dir );
-
-		VectorNormalize( dir );
-
-		vectoangles( dir, angles );
-
-		NPCInfo->desiredYaw		= angles[YAW];
-		NPCInfo->desiredPitch	= angles[PITCH];
-		//FIXME: they always throw toward enemy, so this will be very odd...
-		shoot = qtrue;
-		faceEnemy = qfalse;
-
-		return;
-	}
-	*/
 }
 
 static qboolean Grenadier_EvaluateShot(const int hit)
 {
-	if (!NPC->enemy)
+	if (!NPC || !NPC->enemy)
 	{
 		return qfalse;
 	}
 
-	if (hit == NPC->enemy->s.number || &g_entities[hit] != nullptr && g_entities[hit].svFlags & SVF_GLASS_BRUSH)
+	// Validate hit index (SP uses MAX_GENTITIES, not level.num_entities)
+	if (hit >= 0 && hit < MAX_GENTITIES)
 	{
-		//can hit enemy or will hit glass, so shoot anyway
-		return qtrue;
+		// Can hit enemy directly?
+		if (hit == NPC->enemy->s.number)
+		{
+			return qtrue;
+		}
+
+		// Can hit glass?
+		if (g_entities[hit].svFlags & SVF_GLASS_BRUSH)
+		{
+			return qtrue;
+		}
 	}
+
 	return qfalse;
 }
 

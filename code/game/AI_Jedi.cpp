@@ -1208,16 +1208,25 @@ static void jedi_aggression(const gentity_t* self, const int change)
 
 	self->NPC->stats.aggression += change;
 
-	//bad guys are more aggressive
-	if (npc_is_sith_lord(self))
+	if (self->client->playerTeam == TEAM_PLAYER)
 	{
-		upper_threshold = 15;
+		//good guys are less aggressive
+		upper_threshold = 10;
 		lower_threshold = 5;
 	}
 	else
 	{
-		upper_threshold = 10;
-		lower_threshold = 3;
+		//bad guys are more aggressive
+		if (npc_is_sith_lord(self))
+		{
+			upper_threshold = 15;
+			lower_threshold = 5;
+		}
+		else
+		{
+			upper_threshold = 10;
+			lower_threshold = 3;
+		}
 	}
 
 	if (self->NPC->stats.aggression > upper_threshold)
@@ -6734,7 +6743,7 @@ void npc_evasion_saber()
 
 extern float WP_SpeedOfMissileForWeapon(int wp, qboolean alt_fire);
 
-static void jedi_face_enemy(const qboolean do_pitch)
+static void Jedi_FaceEnemy(const qboolean do_pitch)
 {
 	vec3_t enemy_eyes, eyes, angles;
 
@@ -7222,10 +7231,9 @@ static void jedi_combat_timers_update(const int enemy_dist)
 		}
 
 		// Always face the enemy while advancing
-		jedi_face_enemy(qtrue);
+		Jedi_FaceEnemy(qtrue);
 		NPC_UpdateAngles(qtrue, qtrue);
 	}
-
 
 	//===END MISSING CODE=================================================================
 	if (NPC->client->ps.saberEventFlags)
@@ -8221,7 +8229,7 @@ static void jedi_combat()
 	//Turn to face the enemy
 	if (TIMER_Done(NPC, "noturn") && !NPC_Jumping())
 	{
-		jedi_face_enemy(qtrue);
+		Jedi_FaceEnemy(qtrue);
 	}
 	NPC_UpdateAngles(qtrue, qtrue);
 
@@ -8793,7 +8801,7 @@ finish:
 	}
 }
 
-static qboolean jedi_can_pull_back_saber(const gentity_t* self)
+static qboolean Jedi_CanPullBackSaber(const gentity_t* self)
 {
 	if (self->client->ps.saberBlocked == BLOCKED_PARRY_BROKEN && !TIMER_Done(self, "parryTime"))
 	{
@@ -8840,7 +8848,7 @@ void npc_bs_jedi_follow_leader()
 			if (g_entities[NPC->client->ps.saberEntityNum].s.pos.trType == TR_STATIONARY)
 			{
 				//fell to the ground, try to pick it up...
-				if (jedi_can_pull_back_saber(NPC))
+				if (Jedi_CanPullBackSaber(NPC))
 				{
 					NPC->client->ps.saberBlocked = BLOCKED_NONE;
 					NPCInfo->goalEntity = &g_entities[NPC->client->ps.saberEntityNum];
@@ -8937,7 +8945,7 @@ static qboolean NPC_CanDoKata(gentity_t* self)
 	return qfalse;
 }
 
-static qboolean jedi_check_kata_attack()
+static qboolean Jedi_CheckKataAttack()
 {
 	if (!TIMER_Done(NPC, "KataTime"))
 	{
@@ -9269,6 +9277,7 @@ static float JediDistanceToEnemy(gentity_t* self)
 	VectorSubtract(self->enemy->currentOrigin, self->currentOrigin, diff);
 	return VectorLength(diff);
 }
+
 static qboolean JediInAttackRange(gentity_t* self, float minDist, float maxDist)
 {
 	const float dist = JediDistanceToEnemy(self);
@@ -9327,7 +9336,7 @@ static void JediHandleSpacing(gentity_t* self)
 				// 1 in 20 chance per attempt
 				if (!Q_irand(0, 19))
 				{
-					jedi_face_enemy(qtrue);
+					Jedi_FaceEnemy(qtrue);
 					NPC_UpdateAngles(qtrue, qtrue);
 
 					// Jump forward
@@ -9363,7 +9372,7 @@ static void JediHandleSpacing(gentity_t* self)
 		NPCInfo->goalEntity = self->enemy;
 		jedi_move(self->enemy, qfalse);
 		ucmd.forwardmove = 127;
-		jedi_face_enemy(qtrue);
+		Jedi_FaceEnemy(qtrue);
 		NPC_UpdateAngles(qtrue, qtrue);
 		return;
 	}
@@ -9378,7 +9387,7 @@ static void JediHandleSpacing(gentity_t* self)
 			// 1 in 10 chance per attempt
 			if (!Q_irand(0, 9))
 			{
-				jedi_face_enemy(qtrue);
+				Jedi_FaceEnemy(qtrue);
 				NPC_UpdateAngles(qtrue, qtrue);
 
 				// Burst forward
@@ -9401,7 +9410,7 @@ static void JediHandleSpacing(gentity_t* self)
 		NPCInfo->goalEntity = self->enemy;
 		jedi_move(self->enemy, qfalse);
 		ucmd.forwardmove = 127;
-		jedi_face_enemy(qtrue);
+		Jedi_FaceEnemy(qtrue);
 		NPC_UpdateAngles(qtrue, qtrue);
 		return;
 	}
@@ -9421,7 +9430,7 @@ static void JediHandleSpacing(gentity_t* self)
 		{
 			ucmd.rightmove = -64;
 			ucmd.forwardmove = 48;
-			jedi_face_enemy(qtrue);
+			Jedi_FaceEnemy(qtrue);
 			NPC_UpdateAngles(qtrue, qtrue);
 			return;
 		}
@@ -9431,7 +9440,7 @@ static void JediHandleSpacing(gentity_t* self)
 		{
 			ucmd.rightmove = 64;
 			ucmd.forwardmove = 48;
-			jedi_face_enemy(qtrue);
+			Jedi_FaceEnemy(qtrue);
 			NPC_UpdateAngles(qtrue, qtrue);
 			return;
 		}
@@ -9440,7 +9449,7 @@ static void JediHandleSpacing(gentity_t* self)
 		if (pvel[0] < -80)
 		{
 			ucmd.forwardmove = 127;
-			jedi_face_enemy(qtrue);
+			Jedi_FaceEnemy(qtrue);
 			NPC_UpdateAngles(qtrue, qtrue);
 			return;
 		}
@@ -9449,7 +9458,7 @@ static void JediHandleSpacing(gentity_t* self)
 		if (pvel[0] > 80)
 		{
 			ucmd.rightmove = (Q_irand(0, 1) ? 64 : -64);
-			jedi_face_enemy(qtrue);
+			Jedi_FaceEnemy(qtrue);
 			NPC_UpdateAngles(qtrue, qtrue);
 			return;
 		}
@@ -9473,17 +9482,81 @@ static void JediHandleSpacing(gentity_t* self)
 // =====================
 // Counterattack Handler
 // =====================
+#define AIFLAG_COUNTERATTACK   (1 << 20)
+#define AIFLAG_HEAVYCOUNTER    (1 << 21)
+#define AIFLAG_RIPOSTE         (1 << 22)
+#define AIFLAG_FORCECOUNTER    (1 << 23)
+#define AIFLAG_SPINCOUNTER     (1 << 24)
 
 static void JediHandleCounterattacks(gentity_t* self)
 {
-	if (!self || !self->enemy)
+	if (!self || !self->enemy || !self->client)
+		return;
+
+	saberBlockedType_t blockType = (saberBlockedType_t)self->client->ps.saberBlocked;
+
+	// Use existing saberBlockingTime as the cooldown
+	if (self->client->ps.saberBlockingTime > level.time)
+		return;
+
+	switch (blockType)
 	{
+	case BLOCKED_BOUNCE_MOVE:
+	case BLOCKED_ATK_BOUNCE:
+		self->NPC->aiFlags |= AIFLAG_COUNTERATTACK;
+		break;
+
+	case BLOCKED_PARRY_BROKEN:
+		self->NPC->aiFlags |= AIFLAG_HEAVYCOUNTER;
+		self->NPC->aiFlags |= AIFLAG_RIPOSTE;
+		break;
+
+	case BLOCKED_UPPER_RIGHT:
+	case BLOCKED_UPPER_LEFT:
+	case BLOCKED_LOWER_RIGHT:
+	case BLOCKED_LOWER_LEFT:
+	case BLOCKED_TOP:
+		self->NPC->aiFlags |= AIFLAG_COUNTERATTACK;
+		break;
+
+	case BLOCKED_UPPER_RIGHT_PROJ:
+	case BLOCKED_UPPER_LEFT_PROJ:
+	case BLOCKED_LOWER_RIGHT_PROJ:
+	case BLOCKED_LOWER_LEFT_PROJ:
+	case BLOCKED_TOP_PROJ:
+		self->NPC->aiFlags |= AIFLAG_FORCECOUNTER;
+		break;
+
+	case BLOCKED_BACK:
+		self->NPC->aiFlags |= AIFLAG_SPINCOUNTER;
+		break;
+
+	default:
 		return;
 	}
 
-	// Placeholder for future expansion:
-	// If you detect a block, parry, or stagger, you can set flags here
-	// to influence combo selection (e.g., prefer heavy or counter pools).
+	// Reuse saberBlockingTime as the counter cooldown
+	self->client->ps.saberBlockingTime = level.time + 500;
+}
+
+static saberCombo_t JediBuildCombo(const saber_moveName_t* moves, int maxLen)
+{
+	saberCombo_t combo{};
+	combo.valid = qtrue;
+	combo.useForcePushFinisher = qfalse;
+
+	for (int i = 0; i < maxLen; i++)
+	{
+		combo.moves[i] = moves[i];
+		if (moves[i] == LS_NONE)
+		{
+			combo.length = i;
+			return combo;
+		}
+	}
+
+	combo.length = maxLen;
+	return combo;
 }
 
 // =====================
@@ -9492,7 +9565,7 @@ static void JediHandleCounterattacks(gentity_t* self)
 
 static saberCombo_t JediChooseCombo(gentity_t* self)
 {
-	saberCombo_t combo;
+	saberCombo_t combo{};
 	combo.valid = qfalse;
 	combo.length = 0;
 	combo.useForcePushFinisher = qfalse;
@@ -9501,6 +9574,74 @@ static saberCombo_t JediChooseCombo(gentity_t* self)
 	{
 		return combo;
 	}
+
+	// =====================
+	// Counterattack Override
+	// =====================
+	if (self->NPC->aiFlags & AIFLAG_HEAVYCOUNTER)
+	{
+		const saber_moveName_t* chosen =
+			s_heavyComboPool[Q_irand(0, ARRAY_LEN(s_heavyComboPool) - 1)];
+
+		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
+			AIFLAG_COUNTERATTACK | AIFLAG_FORCECOUNTER |
+			AIFLAG_SPINCOUNTER);
+
+		return JediBuildCombo(chosen, 4);
+	}
+
+	if (self->NPC->aiFlags & AIFLAG_RIPOSTE)
+	{
+		const saber_moveName_t* chosen =
+			s_duelistCounterPool[Q_irand(0, ARRAY_LEN(s_duelistCounterPool) - 1)];
+
+		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
+			AIFLAG_COUNTERATTACK | AIFLAG_FORCECOUNTER |
+			AIFLAG_SPINCOUNTER);
+
+		return JediBuildCombo(chosen, 3);
+	}
+
+	if (self->NPC->aiFlags & AIFLAG_COUNTERATTACK)
+	{
+		const saber_moveName_t* chosen =
+			s_lightComboPool[Q_irand(0, ARRAY_LEN(s_lightComboPool) - 1)];
+
+		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
+			AIFLAG_COUNTERATTACK | AIFLAG_FORCECOUNTER |
+			AIFLAG_SPINCOUNTER);
+
+		return JediBuildCombo(chosen, 3);
+	}
+
+	if (self->NPC->aiFlags & AIFLAG_FORCECOUNTER)
+	{
+		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
+			AIFLAG_COUNTERATTACK | AIFLAG_FORCECOUNTER |
+			AIFLAG_SPINCOUNTER);
+
+		combo.valid = qtrue;
+		combo.length = 1;
+		combo.moves[0] = LS_NONE;
+		combo.useForcePushFinisher = qtrue;
+		return combo;
+	}
+
+	if (self->NPC->aiFlags & AIFLAG_SPINCOUNTER)
+	{
+		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
+			AIFLAG_COUNTERATTACK | AIFLAG_FORCECOUNTER |
+			AIFLAG_SPINCOUNTER);
+
+		combo.valid = qtrue;
+		combo.length = 1;
+		combo.moves[0] = LS_SPINATTACK;
+		return combo;
+	}
+
+	// =====================
+	// Normal Combo Logic
+	// =====================
 
 	const int style = self->client->ps.saberAnimLevel;
 
@@ -9663,7 +9804,7 @@ static void JediExecuteCombo(gentity_t* self, const saberCombo_t& combo)
 	}
 
 	// Apply cooldown so we don't spam combos
-	JediSetAttackCooldown(self, Q_irand(400, 900));
+	JediSetAttackCooldown(self, Q_irand(40000, 90000));
 }
 
 // =====================
@@ -9688,7 +9829,7 @@ static qboolean JediShouldAttack(gentity_t* self)
 			ucmd.forwardmove = 64;
 
 			// Face the enemy
-			jedi_face_enemy(qtrue);
+			Jedi_FaceEnemy(qtrue);
 			NPC_UpdateAngles(qtrue, qtrue);
 		}
 	}
@@ -9751,7 +9892,7 @@ static void jedi_attack(void)
 	{
 		if (Q_irand(0, 1))
 		{
-			jedi_face_enemy(qtrue);
+			Jedi_FaceEnemy(qtrue);
 		}
 
 		NPC_UpdateAngles(qtrue, qtrue);
@@ -9873,7 +10014,9 @@ static void jedi_attack(void)
 
 		NPC_UpdateAngles(qtrue, qtrue);
 		return;
-	}    // If we dropped our saber, go after it
+	}
+
+	// If we dropped our saber, go after it
 	if (NPC->client->ps.saberInFlight)
 	{
 		// Saber is not in hand
@@ -9883,7 +10026,7 @@ static void jedi_attack(void)
 			if (g_entities[NPC->client->ps.saberEntityNum].s.pos.trType == TR_STATIONARY)
 			{
 				// Saber fell to the ground, try to pull it back
-				if (jedi_can_pull_back_saber(NPC))
+				if (Jedi_CanPullBackSaber(NPC))
 				{
 					NPC->client->ps.saberBlocked = BLOCKED_NONE;
 					NPCInfo->goalEntity = &g_entities[NPC->client->ps.saberEntityNum];
@@ -9971,7 +10114,7 @@ static void jedi_attack(void)
 					NPCInfo->goalEntity = nullptr;
 				}
 
-				jedi_face_enemy(qtrue);
+				Jedi_FaceEnemy(qtrue);
 				NPC_UpdateAngles(qtrue, qtrue);
 				return;
 			}
@@ -10033,7 +10176,7 @@ static void jedi_attack(void)
 					}
 				}
 
-				jedi_face_enemy(qtrue);
+				Jedi_FaceEnemy(qtrue);
 				NPC_UpdateAngles(qtrue, qtrue);
 				return;
 			}
@@ -10200,7 +10343,7 @@ static void jedi_attack(void)
 	}
 
 	// Kata attacks override everything else
-	if (jedi_check_kata_attack())
+	if (Jedi_CheckKataAttack())
 	{
 		// Doing a kata attack
 	}
@@ -10301,101 +10444,99 @@ static void jedi_attack(void)
 				}
 			}
 		}
-	} 
-	
-
+	}
 
 	/* -------------------------------------------------------------------------
 	   Main cleaned interaction logic
 	   - Call this where your original block ran.
 	   - Preserves original animations, voice events and timing.
 	   ------------------------------------------------------------------------- */
-	   if (NPC && NPC->enemy && NPC->enemy->s.number < MAX_CLIENTS)
-	   {
-		   gentity_t* enemy = NPC->enemy;
+	if (NPC && NPC->enemy && NPC->enemy->s.number < MAX_CLIENTS)
+	{
+		gentity_t* enemy = NPC->enemy;
 
-		   // quick exclusion by class
-		   if (NPC_IsExcludedForGestures(NPC))
-		   {
-			   // excluded classes do nothing here
-		   }
-		   else if (NPC_CanReactToEnemy(NPC, enemy) && IsSurrendering(enemy))
-		   {
-			   // Enemy is surrendering: gloat and sheathe saber if needed
-			   NPC_PlayGloatAndMaybeSheathe(NPC);
-			   return;
-		   }
-		   else if (NPC_CanReactToEnemy(NPC, enemy) && IsCowering(enemy))
-		   {
-			   // Enemy is cowering: gloat and sheathe saber if needed
-			   NPC_PlayGloatAndMaybeSheathe(NPC);
-			   return;
-		   }
-		   else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << RESPECTING)))
-		   {
-			   // Enemy is showing respect: NPC bows or handsignal and may speak
-			   if (NPC->s.weapon == WP_SABER)
-			   {
-				   WP_DeactivateSaber(NPC);
-				   NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_BOW, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		// quick exclusion by class
+		if (NPC_IsExcludedForGestures(NPC))
+		{
+			// excluded classes do nothing here
+		}
+		else if (NPC_CanReactToEnemy(NPC, enemy) && IsSurrendering(enemy))
+		{
+			// Enemy is surrendering: gloat and sheathe saber if needed
+			NPC_PlayGloatAndMaybeSheathe(NPC);
+			return;
+		}
+		else if (NPC_CanReactToEnemy(NPC, enemy) && IsCowering(enemy))
+		{
+			// Enemy is cowering: gloat and sheathe saber if needed
+			NPC_PlayGloatAndMaybeSheathe(NPC);
+			return;
+		}
+		else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << RESPECTING)))
+		{
+			// Enemy is showing respect: NPC bows or handsignal and may speak
+			if (NPC->s.weapon == WP_SABER)
+			{
+				WP_DeactivateSaber(NPC);
+				NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_BOW, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
-				   NPC_HandleSpeechDebounceAndIncrement(NPC);
-			   }
-			   else
-			   {
-				   NPC_SetAnim(NPC, SETANIM_TORSO, TORSO_HANDSIGNAL3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				NPC_HandleSpeechDebounceAndIncrement(NPC);
+			}
+			else
+			{
+				NPC_SetAnim(NPC, SETANIM_TORSO, TORSO_HANDSIGNAL3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
-				   NPC_HandleSpeechDebounceAndIncrement(NPC);
-			   }
-		   }
-		   else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << GESTURING)))
-		   {
-			   // Enemy gestured: return gesture or taunt depending on saber and saber level
-			   if (NPC->s.weapon == WP_SABER)
-			   {
-				   if (NPC->client->friendlyfaction == FACTION_NEUTRAL)
-				   {
-					   NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				   }
-				   else
-				   {
-					   switch (NPC->client->ps.saberAnimLevel)
-					   {
-					   case SS_FAST:
-					   case SS_TAVION:
-					   case SS_MEDIUM:
-					   case SS_STRONG:
-					   case SS_DESANN:
-						   NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						   break;
-					   case SS_DUAL:
-						   NPC->client->ps.SaberActivate();
-						   NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_DUAL_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						   break;
-					   case SS_STAFF:
-						   NPC->client->ps.SaberActivate();
-						   NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAFF_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						   break;
-					   default:
-						   break;
-					   }
-				   }
+				NPC_HandleSpeechDebounceAndIncrement(NPC);
+			}
+		}
+		else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << GESTURING)))
+		{
+			// Enemy gestured: return gesture or taunt depending on saber and saber level
+			if (NPC->s.weapon == WP_SABER)
+			{
+				if (NPC->client->friendlyfaction == FACTION_NEUTRAL)
+				{
+					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					switch (NPC->client->ps.saberAnimLevel)
+					{
+					case SS_FAST:
+					case SS_TAVION:
+					case SS_MEDIUM:
+					case SS_STRONG:
+					case SS_DESANN:
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					case SS_DUAL:
+						NPC->client->ps.SaberActivate();
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_DUAL_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					case SS_STAFF:
+						NPC->client->ps.SaberActivate();
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAFF_TAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						break;
+					default:
+						break;
+					}
+				}
 
-				   NPC_HandleSpeechDebounceAndIncrement(NPC);
-			   }
-			   else
-			   {
-				   NPC_SetAnim(NPC, SETANIM_TORSO, TORSO_HANDSIGNAL3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				   NPC_HandleSpeechDebounceAndIncrement(NPC);
-			   }
-		   }
-	   }
+				NPC_HandleSpeechDebounceAndIncrement(NPC);
+			}
+			else
+			{
+				NPC_SetAnim(NPC, SETANIM_TORSO, TORSO_HANDSIGNAL3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				NPC_HandleSpeechDebounceAndIncrement(NPC);
+			}
+		}
+	}
 
 	// =====================
-    // Dynamic Cinematic/Raven Switching
-    // =====================
+	// Dynamic Cinematic/Raven Switching
+	// =====================
 
-    // Conditions that *allow* cinematic mode
+	// Conditions that *allow* cinematic mode
 	qboolean cinematicAllowed = qfalse;
 
 	if (g_SerenityJediEngineMode->integer == 2)
@@ -10437,7 +10578,7 @@ static void jedi_attack(void)
 			// We want Raven movement/pathing to continue.
 			}
 		}
-	}	
+	}
 
 	// =====================
 	// Otherwise: Raven fallback logic continues below

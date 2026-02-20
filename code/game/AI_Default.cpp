@@ -950,23 +950,10 @@ void NPC_BSDefault(void)
 */
 extern void NPC_CheckGetNewWeapon();
 extern void NPC_BSST_Attack();
-extern qboolean NPC_IsGunner(const gentity_t* self);
-extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
 
 void NPC_BSDefault()
 {
-	//	vec3_t		enemyDir;
-	//	float		enemyDist;
-	//	float		shootDist;
-	//	qboolean	enemyFOV = qfalse;
-	//	qboolean	enemyShotFOV = qfalse;
-	//	qboolean	enemyPVS = qfalse;
-	//	vec3_t		enemyHead;
-	//	vec3_t		muzzle;
-	//	qboolean	enemyLOS = qfalse;
-	//	qboolean	enemyCS = qfalse;
 	qboolean move = qtrue;
-	//	qboolean	shoot = qfalse;
 
 	if (NPCInfo->scriptFlags & SCF_FIRE_WEAPON)
 	{
@@ -981,98 +968,85 @@ void NPC_BSDefault()
 			NPC_SetAnim(NPC, SETANIM_TORSO, TORSO_SURRENDER_START, SETANIM_FLAG_HOLD);
 		}
 	}
+
 	//look for a new enemy if don't have one and are allowed to look, validate current enemy if have one
 	NPC_CheckEnemy(static_cast<qboolean>((NPCInfo->scriptFlags & SCF_LOOK_FOR_ENEMIES) != 0), qfalse);
+
 	if (!NPC->enemy)
 	{
-		//still don't have an enemy
 		if (!(NPCInfo->scriptFlags & SCF_IGNORE_ALERTS))
 		{
-			//check for alert events
-			//FIXME: Check Alert events, see if we should investigate or just look at it
 			const int alert_event = NPC_CheckAlertEvents(qtrue, qtrue, -1, qtrue, AEL_DISCOVERED);
 
-			//There is an event to look at
-			if (alert_event >= 0) //&& level.alertEvents[alert_event].ID != NPCInfo->lastAlertID )
+			if (alert_event >= 0)
 			{
-				//heard/saw something
-				if (level.alertEvents[alert_event].level >= AEL_DISCOVERED && NPCInfo->scriptFlags &
-					SCF_LOOK_FOR_ENEMIES)
+				if (level.alertEvents[alert_event].level >= AEL_DISCOVERED &&
+					(NPCInfo->scriptFlags & SCF_LOOK_FOR_ENEMIES))
 				{
-					//was a big event
-					if (level.alertEvents[alert_event].owner
-						&& level.alertEvents[alert_event].owner != NPC
-						&& level.alertEvents[alert_event].owner->client
-						&& level.alertEvents[alert_event].owner->health >= 0
-						&& level.alertEvents[alert_event].owner->client->playerTeam == NPC->client->enemyTeam)
+					if (level.alertEvents[alert_event].owner &&
+						level.alertEvents[alert_event].owner != NPC &&
+						level.alertEvents[alert_event].owner->client &&
+						level.alertEvents[alert_event].owner->health >= 0 &&
+						level.alertEvents[alert_event].owner->client->playerTeam == NPC->client->enemyTeam)
 					{
-						//an enemy
 						G_SetEnemy(NPC, level.alertEvents[alert_event].owner);
 					}
 				}
-				else
-				{
-					//FIXME: investigate lesser events
-				}
 			}
-			//FIXME: also check our allies' condition?
 		}
 	}
 
 	if (NPC->enemy && !(NPCInfo->scriptFlags & SCF_FORCED_MARCH))
 	{
-		// just use the stormtrooper attack AI...
 		NPC_CheckGetNewWeapon();
-		if (NPC->client->leader
-			&& NPCInfo->goalEntity == NPC->client->leader
-			&& !Q3_TaskIDPending(NPC, TID_MOVE_NAV))
+
+		if (NPC->client->leader &&
+			NPCInfo->goalEntity == NPC->client->leader &&
+			!Q3_TaskIDPending(NPC, TID_MOVE_NAV))
 		{
 			NPC_ClearGoal();
 		}
+
 		NPC_BSST_Attack();
-
 		npc_check_speak(NPC);
-
 		return;
 	}
 
 	if (UpdateGoal())
 	{
-		//have a goal
-		if (!NPC->enemy
-			&& NPC->client->leader
-			&& NPCInfo->goalEntity == NPC->client->leader
-			&& !Q3_TaskIDPending(NPC, TID_MOVE_NAV))
+		if (!NPC->enemy &&
+			NPC->client->leader &&
+			NPCInfo->goalEntity == NPC->client->leader &&
+			!Q3_TaskIDPending(NPC, TID_MOVE_NAV))
 		{
 			NPC_BSFollowLeader();
 		}
 		else
 		{
-			//set angles
-			if (NPCInfo->scriptFlags & SCF_FACE_MOVE_DIR || NPCInfo->goalEntity != NPC->enemy)
+			// FACE DIRECTION LOGIC — now NULL‑safe
+			if (NPCInfo->scriptFlags & SCF_FACE_MOVE_DIR ||
+				(NPCInfo->goalEntity && NPCInfo->goalEntity != NPC->enemy))
 			{
-				//face direction of movement, NOTE: default behavior when not chasing enemy
 				NPCInfo->combatMove = qfalse;
 			}
-			else
+			else if (NPCInfo->goalEntity)   // NULL‑check added here
 			{
-				//face goal.. FIXME: what if have a navgoal but want to face enemy while moving?  Will this do that?
 				vec3_t dir, angles;
 
 				NPCInfo->combatMove = qfalse;
 
 				VectorSubtract(NPCInfo->goalEntity->currentOrigin, NPC->currentOrigin, dir);
 				vectoangles(dir, angles);
+
 				NPCInfo->desiredYaw = angles[YAW];
+
 				if (NPCInfo->goalEntity == NPC->enemy)
 				{
 					NPCInfo->desiredPitch = angles[PITCH];
 				}
 			}
 
-			//set movement
-			//override default walk/run behavior
-			//NOTE: redundant, done in NPC_ApplyScriptFlags
+			// movement flags
 			if (NPCInfo->scriptFlags & SCF_RUNNING)
 			{
 				ucmd.buttons &= ~BUTTON_WALKING;
@@ -1092,17 +1066,14 @@ void NPC_BSDefault()
 
 			if (NPCInfo->scriptFlags & SCF_FORCED_MARCH)
 			{
-				//being forced to walk
 				if (g_crosshairEntNum != NPC->s.number)
 				{
-					//don't walk if player isn't aiming at me
 					move = qfalse;
 				}
 			}
 
 			if (move)
 			{
-				//move toward goal
 				NPC_MoveToGoal(qtrue);
 			}
 		}
@@ -1112,6 +1083,5 @@ void NPC_BSDefault()
 		NPC_BSFollowLeader();
 	}
 
-	//update angles
 	NPC_UpdateAngles(qtrue, qtrue);
 }

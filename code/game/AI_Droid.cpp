@@ -273,17 +273,22 @@ static void Droid_Spin()
 NPC_BSDroid_Pain
 -------------------------
 */
-void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, const int damage,
-	const int mod,
-	int hit_loc)
+void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* other,
+	const vec3_t point, const int damage,
+	const int mod, int hit_loc)
 {
+	// SAFETY CHECKS
+	if (!self || !self->client || !self->NPC)
+		return;
+
 	int anim;
 	float pain_chance;
 
-	if (self->NPC && self->NPC->ignorePain)
+	if (self->NPC->ignorePain)
 	{
 		return;
 	}
+
 	VectorCopy(self->NPC->lastPathAngles, self->s.angles);
 
 	if (self->client->NPC_class == CLASS_R5D2)
@@ -292,7 +297,6 @@ void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, 
 
 		// Put it in pain
 		if (mod == MOD_DEMP2 || mod == MOD_DEMP2_ALT || Q_flrand(0.0f, 1.0f) < pain_chance)
-			// Spin around in pain? Demp2 always does this
 		{
 			// Health is between 0-30 or was hit by a DEMP2 so pop his head
 			if (self->health < 30 || mod == MOD_DEMP2 || mod == MOD_DEMP2_ALT)
@@ -304,7 +308,6 @@ void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, 
 					{
 						gi.G2API_SetSurfaceOnOff(&self->ghoul2[self->playerModel], "head", TURN_OFF);
 
-						//						G_PlayEffect( "small_chunks" , self->currentOrigin );
 						G_PlayEffect("chunks/r5d2head", self->currentOrigin);
 
 						self->s.powerups |= 1 << PW_SHOCKED;
@@ -316,7 +319,6 @@ void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, 
 					}
 				}
 			}
-			// Just give him normal pain for a little while
 			else
 			{
 				anim = self->client->ps.legsAnim;
@@ -332,7 +334,6 @@ void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, 
 
 				NPC_SetAnim(self, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
-				// Spin around in pain
 				self->NPC->localState = LSTATE_SPINNING;
 				TIMER_Set(self, "roam", Q_irand(1000, 2000));
 			}
@@ -358,38 +359,37 @@ void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, 
 		pain_chance = NPC_GetPainChance(self, damage);
 
 		if (mod == MOD_DEMP2 || mod == MOD_DEMP2_ALT || Q_flrand(0.0f, 1.0f) < pain_chance)
-			// Spin around in pain? Demp2 always does this
 		{
 			anim = self->client->ps.legsAnim;
 
-			if (anim == BOTH_STAND2) // On two legs?
+			if (anim == BOTH_STAND2)
 			{
 				anim = BOTH_PAIN1;
 			}
-			else // On three legs
+			else
 			{
 				anim = BOTH_PAIN2;
 			}
 
 			NPC_SetAnim(self, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
-			// Spin around in pain
 			self->NPC->localState = LSTATE_SPINNING;
 			TIMER_Set(self, "roam", Q_irand(1000, 2000));
 		}
 	}
-	else if (self->client->NPC_class == CLASS_INTERROGATOR && (mod == MOD_DEMP2 || mod == MOD_DEMP2_ALT) && attacker)
+	else if (self->client->NPC_class == CLASS_INTERROGATOR &&
+		(mod == MOD_DEMP2 || mod == MOD_DEMP2_ALT) && other)
 	{
 		vec3_t dir;
 
-		VectorSubtract(self->currentOrigin, attacker->currentOrigin, dir);
+		VectorSubtract(self->currentOrigin, other->currentOrigin, dir);
 		VectorNormalize(dir);
 
 		VectorMA(self->client->ps.velocity, 550, dir, self->client->ps.velocity);
 		self->client->ps.velocity[2] -= 127;
 	}
 
-	NPC_Pain(self, inflictor, attacker, point, damage, mod);
+	NPC_Pain(self, inflictor, other, point, damage, mod);
 }
 
 /*

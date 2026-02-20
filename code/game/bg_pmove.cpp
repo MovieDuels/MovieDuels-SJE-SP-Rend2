@@ -15315,7 +15315,8 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 		return LS_NONE;
 	}
 
-	if (g_SerenityJediEngineMode->integer == 2 && pm->gent &&
+	if (g_SerenityJediEngineMode->integer == 2 &&
+		pm->gent &&
 		pm->gent->NPC &&
 		pm->gent->client &&
 		(pm->gent->client->NPC_class != CLASS_VADER))
@@ -20337,17 +20338,11 @@ static void PM_WeaponLightsaber()
 					newmove = LS_READY;
 				}
 				else
-				{
-					//get attack move from movement command
-					if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()
-						&& (Q_irand(0, pm->ps->forcePowerLevel[FP_SABER_OFFENSE] - 1)
-							|| pm->gent && pm->gent->enemy && pm->gent->enemy->client
-							&& PM_InKnockDownOnGround(&pm->gent->enemy->client->ps)
-							//enemy knocked down, use some logic
-							|| pm->ps->saberAnimLevel == SS_FAST && pm->gent
-							&& pm->gent->NPC && pm->gent->NPC->rank >= RANK_LT_JG && Q_irand(0, 1)))
-						//minor change to make fast-attack users use the special attacks more
-					{//NPCs use more randomized attacks the more skilled they are
+				{//get attack move from movement command
+					bool npc = (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer());
+
+					if (npc && Q_irand(0, 1))// 50% chance
+					{
 						newmove = PM_NPCSaberAttackFromQuad(saber_moveData[curmove].endQuad);
 					}
 					else
