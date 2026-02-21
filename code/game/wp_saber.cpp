@@ -876,7 +876,13 @@ qboolean DarthMaulHolster(const gentity_t* ent)
 		!Q_stricmp("md_maul_rebels4", ent->NPC_type) ||
 		!Q_stricmp("md_maul_rebels5", ent->NPC_type) ||
 		!Q_stricmp("md_maul_rebels6", ent->NPC_type) ||
-		!Q_stricmp("md_maul_wots", ent->NPC_type))
+		!Q_stricmp("md_maul_wots", ent->NPC_type)    ||
+		!Q_stricmp("md_maul_tcw_staff", ent->NPC_type) ||
+		!Q_stricmp("md_maul_solo", ent->NPC_type) ||
+		!Q_stricmp("md_maul_solo_hood", ent->NPC_type) ||
+		!Q_stricmp("md_mau_luke", ent->NPC_type) ||
+		!Q_stricmp("md_mau_luke_robed", ent->NPC_type) ||
+		!Q_stricmp("md_mau_luke_hooded", ent->NPC_type))
 	{
 		return qtrue;
 	}
