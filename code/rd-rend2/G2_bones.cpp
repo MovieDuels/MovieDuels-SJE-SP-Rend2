@@ -594,35 +594,57 @@ qboolean G2_Set_Bone_Angles_Matrix(const CGhoul2Info* ghlInfo, boneInfo_v& blist
 #define DEBUG_G2_TIMING (0)
 
 // given a model, bone name, a bonelist, a start/end frame number, a anim speed and some anim flags, set up or modify an existing bone entry for a new set of anims
-qboolean G2_Set_Bone_Anim_Index(boneInfo_v& blist, const int index, const int startFrame, const int endFrame, const int flags, const float animSpeed, const int current_time, const float set_frame, const int blend_time, const int numFrames)
+qboolean G2_Set_Bone_Anim_Index(
+	boneInfo_v& blist,
+	const int index,
+	const int startFrame,
+	const int endFrame,
+	const int flags,
+	const float animSpeed,
+	const int current_time,
+	const float set_frame,
+	const int blend_time,
+	const int numFrames)
 {
-	int			modFlags = flags;
+	int modFlags = flags;
 
-	if ((index >= (int)blist.size()) || (blist[index].boneNumber == -1))
+	// Invalid bone index or missing bone
+	if (index >= (int)blist.size() || blist[index].boneNumber == -1)
 	{
-		// we are attempting to set a bone override that doesn't exist
-		assert(0);
+		Com_Printf("G2_Set_Bone_Anim_Index: Invalid bone index %d (boneNumber=%d)\n",
+			index, (index < (int)blist.size() ? blist[index].boneNumber : -999));
 		return qfalse;
 	}
 
-	// sanity check to see if setfram is within animation bounds
-	assert((set_frame == -1) || ((set_frame >= startFrame) && (set_frame < endFrame)) || ((set_frame > endFrame) && (set_frame <= (startFrame + 1))));
+	// Sanity check for set_frame
+	if (!(
+		set_frame == -1 ||
+		(set_frame >= startFrame && set_frame < endFrame) ||
+		(set_frame > endFrame && set_frame <= (startFrame + 1))
+		))
+	{
+		Com_Printf("G2_Set_Bone_Anim_Index: set_frame %.2f out of range (%d–%d)\n",
+			set_frame, startFrame, endFrame);
+		return qfalse;
+	}
 
+	// Blending logic
 	if (modFlags & BONE_ANIM_BLEND)
 	{
-		float	current_frame, animSpeed;
-		int 	startFrame, endFrame, flags;
-		// figure out where we are now
-		if (G2_Get_Bone_Anim_Index(blist, index, current_time, &current_frame, &startFrame, &endFrame, &flags, &animSpeed, numFrames))
+		float current_frame, curAnimSpeed;
+		int curStart, curEnd, curFlags;
+
+		if (G2_Get_Bone_Anim_Index(
+			blist, index, current_time,
+			&current_frame, &curStart, &curEnd, &curFlags, &curAnimSpeed, numFrames))
 		{
-			if (blist[index].blendStart == current_time)	//we're replacing a blend in progress which hasn't started
+			if (blist[index].blendStart == current_time)
 			{
-				// set the amount of time it's going to take to blend this anim with the last frame of the last one
 				blist[index].blend_time = blend_time;
 			}
 			else
 			{
-				if (animSpeed < 0.0f)
+				if (curAnimSpeed < 0.0f)
 				{
 					blist[index].blendFrame = floor(current_frame);
 					blist[index].blendLerpFrame = floor(current_frame);
@@ -632,128 +654,81 @@ qboolean G2_Set_Bone_Anim_Index(boneInfo_v& blist, const int index, const int st
 					blist[index].blendFrame = current_frame;
 					blist[index].blendLerpFrame = current_frame + 1;
 
-					// cope with if the lerp frame is actually off the end of the anim
-					if (blist[index].blendFrame >= endFrame)
+					// Clamp blendFrame
+					if (blist[index].blendFrame >= curEnd)
 					{
-						// we only want to lerp with the first frame of the anim if we are looping
 						if (blist[index].flags & BONE_ANIM_OVERRIDE_LOOP)
-						{
-							blist[index].blendFrame = startFrame;
-						}
-						// if we intend to end this anim or freeze after this, then just keep on the last frame
+							blist[index].blendFrame = curStart;
 						else
-						{
-							//	assert(endFrame>0);
-							if (endFrame <= 0)
-							{
-								blist[index].blendLerpFrame = 0;
-							}
-							else
-							{
-								blist[index].blendFrame = endFrame - 1;
-							}
-						}
+							blist[index].blendFrame = (curEnd > 0 ? curEnd - 1 : 0);
 					}
 
-					// cope with if the lerp frame is actually off the end of the anim
-					if (blist[index].blendLerpFrame >= endFrame)
+					// Clamp blendLerpFrame
+					if (blist[index].blendLerpFrame >= curEnd)
 					{
-						// we only want to lerp with the first frame of the anim if we are looping
 						if (blist[index].flags & BONE_ANIM_OVERRIDE_LOOP)
-						{
-							blist[index].blendLerpFrame = startFrame;
-						}
-						// if we intend to end this anim or freeze after this, then just keep on the last frame
+							blist[index].blendLerpFrame = curStart;
 						else
-						{
-							//	assert(endFrame>0);
-							if (endFrame <= 0)
-							{
-								blist[index].blendLerpFrame = 0;
-							}
-							else
-							{
-								blist[index].blendLerpFrame = endFrame - 1;
-							}
-						}
+							blist[index].blendLerpFrame = (curEnd > 0 ? curEnd - 1 : 0);
 					}
 				}
-				// set the amount of time it's going to take to blend this anim with the last frame of the last one
+
 				blist[index].blend_time = blend_time;
 				blist[index].blendStart = current_time;
 			}
 		}
-		// hmm, we weren't animating on this bone. In which case disable the blend
 		else
 		{
-			blist[index].blendFrame = blist[index].blendLerpFrame = 0;
+			// No existing anim → disable blend
+			blist[index].blendFrame = 0;
+			blist[index].blendLerpFrame = 0;
 			blist[index].blend_time = 0;
-			modFlags &= ~(BONE_ANIM_BLEND);
+			modFlags &= ~BONE_ANIM_BLEND;
 		}
 	}
 	else
 	{
-		blist[index].blendFrame = blist[index].blendLerpFrame = 0;
-		blist[index].blend_time = blist[index].blendStart = 0;
-		// we aren't blending, so remove the option to do so
+		blist[index].blendFrame = 0;
+		blist[index].blendLerpFrame = 0;
+		blist[index].blend_time = 0;
+		blist[index].blendStart = 0;
 		modFlags &= ~BONE_ANIM_BLEND;
 	}
-	// yes, so set the anim data and flags correctly
+
+	// Set anim data
 	blist[index].endFrame = endFrame;
 	blist[index].startFrame = startFrame;
 	blist[index].animSpeed = animSpeed;
 	blist[index].pauseTime = 0;
 
-	assert(blist[index].blendFrame >= 0 && blist[index].blendFrame < numFrames);
-	assert(blist[index].blendLerpFrame >= 0 && blist[index].blendLerpFrame < numFrames);
-	// start up the animation:)
+	// Validate blend frames
+	if (blist[index].blendFrame < 0 || blist[index].blendFrame >= numFrames)
+	{
+		Com_Printf("G2_Set_Bone_Anim_Index: blendFrame %d out of range (0–%d)\n",
+			blist[index].blendFrame, numFrames - 1);
+		blist[index].blendFrame = 0;
+	}
+
+	if (blist[index].blendLerpFrame < 0 || blist[index].blendLerpFrame >= numFrames)
+	{
+		Com_Printf("G2_Set_Bone_Anim_Index: blendLerpFrame %d out of range (0–%d)\n",
+			blist[index].blendLerpFrame, numFrames - 1);
+		blist[index].blendLerpFrame = 0;
+	}
+
+	// Start animation
 	if (set_frame != -1)
 	{
-		blist[index].startTime = (current_time - (((set_frame - (float)startFrame) * 50.0) / animSpeed));
+		blist[index].startTime =
+			current_time - (((set_frame - (float)startFrame) * 50.0f) / animSpeed);
 	}
 	else
 	{
 		blist[index].startTime = current_time;
 	}
-	blist[index].flags &= ~(BONE_ANIM_TOTAL);
-	blist[index].flags |= modFlags;
 
-#if DEBUG_G2_TIMING
-	if (index == 2)
-	{
-		const boneInfo_t& bone = blist[index];
-		char mess[1000];
-		if (bone.flags & BONE_ANIM_BLEND)
-		{
-			sprintf(mess, "sab[%2d] %5d  %5d  (%5d-%5d) %4.2f %4x   bt(%5d-%5d) %7.2f %5d\n",
-				index,
-				current_time,
-				bone.startTime,
-				bone.startFrame,
-				bone.endFrame,
-				bone.animSpeed,
-				bone.flags,
-				bone.blendStart,
-				bone.blendStart + bone.blend_time,
-				bone.blendFrame,
-				bone.blendLerpFrame
-			);
-		}
-		else
-		{
-			sprintf(mess, "saa[%2d] %5d  %5d  (%5d-%5d) %4.2f %4x\n",
-				index,
-				current_time,
-				bone.startTime,
-				bone.startFrame,
-				bone.endFrame,
-				bone.animSpeed,
-				bone.flags
-			);
-		}
-		Com_OPrintf("%s", mess);
-	}
-#endif
+	blist[index].flags &= ~BONE_ANIM_TOTAL;
+	blist[index].flags |= modFlags;
 
 	return qtrue;
 }

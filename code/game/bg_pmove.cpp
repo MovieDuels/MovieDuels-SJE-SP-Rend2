@@ -15233,6 +15233,91 @@ extern qboolean PM_Can_Do_Kill_Lunge_back(void);
 int Next_Kill_Attack_Move_Check[32]; // Next special move check.
 saber_moveName_t PM_DoAI_Fake(const int curmove);
 
+static saber_moveName_t PM_NPCSaberAttackFromBlock(const int quad)
+{
+	saber_moveName_t auto_move = LS_NONE;
+
+	if (pm->gent &&
+		pm->gent->NPC &&
+		pm->gent->client &&
+		(pm->gent->client->NPC_class == CLASS_TAVION ||
+			pm->gent->client->NPC_class == CLASS_ALORA))
+	{
+		auto_move = PM_AttackForEnemyPos(qtrue, qtrue);
+	}
+
+	if (auto_move != LS_NONE && PM_SaberInSpecial(auto_move))
+	{
+		//if have opportunity to do a special attack, do one
+		return auto_move;
+	}
+	//pick another one
+	saber_moveName_t newmove = LS_NONE;
+
+	// Default quadrant‑based selection
+	switch (quad)
+	{
+	case Q_T:
+		return Q_irand(0, 1) ? LS_A_T2B : LS_A_TR2BL;
+
+	case Q_TR:
+		switch (Q_irand(0, 2))
+		{
+		case 0: return LS_A_R2L;
+		case 1: return LS_A_TR2BL;
+		default: return LS_T1_TR_BR;
+		}
+
+	case Q_TL:
+		switch (Q_irand(0, 2))
+		{
+		case 0: return LS_A_L2R;
+		case 1: return LS_A_TL2BR;
+		default: return LS_T1_TL_BL;
+		}
+
+	case Q_BR:
+		switch (Q_irand(0, 2))
+		{
+		case 0: return LS_A_BR2TL;
+		case 1: return LS_T1_BR_TR;
+		default: return LS_A_R2L;
+		}
+
+	case Q_BL:
+		switch (Q_irand(0, 2))
+		{
+		case 0: return LS_A_BL2TR;
+		case 1: return LS_T1_BL_TL;
+		default: return LS_A_L2R;
+		}
+
+	case Q_L:
+		switch (Q_irand(0, 2))
+		{
+		case 0: return LS_A_L2R;
+		case 1: return LS_T1__L_T_;
+		default: return LS_A_R2L;
+		}
+
+	case Q_R:
+		switch (Q_irand(0, 2))
+		{
+		case 0: return LS_A_R2L;
+		case 1: return LS_T1__R_T_;
+		default: return LS_A_L2R;
+		}
+
+	case Q_B:
+		return PM_SaberLungeAttackMove(qtrue);
+
+	default:
+		return LS_NONE;
+	}
+
+	return newmove;
+}
+
 saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 {
 	saber_moveName_t auto_move = LS_NONE;
@@ -20284,25 +20369,34 @@ static void PM_WeaponLightsaber()
 			}
 			if (curmove >= LS_PARRY_UP && curmove <= LS_REFLECT_LL)
 			{//from a parry or reflection, can go directly into an attack
-				switch (saber_moveData[curmove].endQuad)
+				bool npc = (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer());
+
+				if (npc)
 				{
-				case Q_T:
-					newmove = LS_A_T2B;
-					break;
-				case Q_TR:
-					newmove = LS_A_TR2BL;
-					break;
-				case Q_TL:
-					newmove = LS_A_TL2BR;
-					break;
-				case Q_BR:
-					newmove = LS_A_BR2TL;
-					break;
-				case Q_BL:
-					newmove = LS_A_BL2TR;
-					break;
-				default:;
-					//shouldn't be a parry that ends at L, R or B
+					newmove = PM_NPCSaberAttackFromBlock(saber_moveData[curmove].endQuad);//from a parry or reflection, can go directly into an attack
+				}
+				else
+				{
+					switch (saber_moveData[curmove].endQuad)
+					{
+					case Q_T:
+						newmove = LS_A_T2B;
+						break;
+					case Q_TR:
+						newmove = LS_A_TR2BL;
+						break;
+					case Q_TL:
+						newmove = LS_A_TL2BR;
+						break;
+					case Q_BR:
+						newmove = LS_A_BR2TL;
+						break;
+					case Q_BL:
+						newmove = LS_A_BL2TR;
+						break;
+					default:;
+						//shouldn't be a parry that ends at L, R or B
+					}
 				}
 			}
 
@@ -20349,44 +20443,16 @@ static void PM_WeaponLightsaber()
 					{
 						newmove = PM_SaberAttackForMovement(pm->cmd.forwardmove, pm->cmd.rightmove, curmove);
 
-						if (g_SerenityJediEngineMode->integer)
+						if ((PM_SaberInBounce(curmove) || PM_SaberInBrokenParry(curmove))
+							&& saber_moveData[newmove].startQuad == saber_moveData[curmove].endQuad)
 						{
-							if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_TEN) //npc or low fatigue
-							{
-								if ((PM_SaberInBounce(curmove) || PM_SaberInBrokenParry(curmove))
-									&& saber_moveData[newmove].startQuad == saber_moveData[curmove].endQuad)
-								{
-									//this attack would be a repeat of the last (which was blocked), so don't actually use it, use the default chain attack for this bounce
-									newmove = saber_moveData[curmove].chain_attack;
-								}
-							}
-							else
-							{
-								if ((PM_SaberInBounce(curmove) || PM_SaberInParry(curmove))
-									&& newmove >= LS_A_TL2BR && newmove <= LS_A_T2B)
-								{
-									//prevent similar attack directions to prevent lightning-like bounce attacks.
-									if (saber_moveData[newmove].startQuad == saber_moveData[curmove].endQuad)
-									{
-										//can't attack in the same direction
-										newmove = LS_READY;
-									}
-								}
-							}
+							//this attack would be a repeat of the last (which was blocked), so don't actually use it, use the default chain attack for this bounce
+							newmove = saber_moveData[curmove].chain_attack;
 						}
-						else
-						{
-							if ((PM_SaberInBounce(curmove) || PM_SaberInBrokenParry(curmove))
-								&& saber_moveData[newmove].startQuad == saber_moveData[curmove].endQuad)
-							{
-								//this attack would be a repeat of the last (which was blocked), so don't actually use it, use the default chain attack for this bounce
-								newmove = saber_moveData[curmove].chain_attack;
-							}
-						}
-
-						//starting a new attack, as such, remove the attack fake flag.
-						pm->ps->userInt3 &= ~(1 << FLAG_ATTACKFAKE);
 					}
+
+					//starting a new attack, as such, remove the attack fake flag.
+					pm->ps->userInt3 &= ~(1 << FLAG_ATTACKFAKE);
 
 					if (PM_SaberKataDone(curmove, newmove))
 					{

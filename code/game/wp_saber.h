@@ -74,7 +74,7 @@ constexpr auto BOBA_MISSILE_LASER = 1;
 constexpr auto BOBA_MISSILE_DART = 2;
 constexpr auto BOBA_MISSILE_VIBROBLADE = 3;
 
-constexpr auto NPC_PARRYRATE = 100;
+constexpr auto NPC_PARRYRATE = 50;
 constexpr auto MPCOST_PARRIED = 1;
 constexpr auto MPCOST_MBLOCKED = 3;
 constexpr auto MPCOST_PARRIED_ATTACKFAKE = 2;

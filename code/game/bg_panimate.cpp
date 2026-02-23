@@ -5733,34 +5733,8 @@ void PM_SaberStartTransAnim(const int saberAnimLevel, const int anim, float* ani
 				}
 				else if (saberAnimLevel == SS_MEDIUM)
 				{
-					if (gent
-						&& gent->client
-						&& gent->s.number < MAX_CLIENTS)
-					{
-						if (g_RealisticBlockingMode->integer)
-						{
-							if (gent->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
-							{//Slow down saber moves...
-								constexpr float fatiguedanimscale = 0.96f;
-								*animSpeed *= fatiguedanimscale;
-							}
-							else
-							{
-								constexpr float realisticanimscale = 0.98f;
-								*animSpeed *= realisticanimscale;
-							}
-						}
-						else
-						{
-							constexpr float mediumanimscale = 1.0f;
-							*animSpeed *= mediumanimscale;
-						}
-					}
-					else
-					{
-						constexpr float npcanimscale = 0.90f;
-						*animSpeed *= npcanimscale;
-					}
+					constexpr float mediumanimscale = 1.0f;
+					*animSpeed *= mediumanimscale;
 				}
 				else if (saberAnimLevel == SS_STRONG)
 				{

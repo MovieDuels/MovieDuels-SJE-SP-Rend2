@@ -20547,41 +20547,48 @@ void wp_saber_start_missile_block_check_md(gentity_t* self, const usercmd_t* ucm
 	{
 		if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
 		{
-			if (jedi_waiting_ambush(self))
+			// NPC logic
+			if (self->NPC && jedi_waiting_ambush(self))
 			{
 				jedi_ambush(self);
 			}
+
 			if ((self->client->NPC_class == CLASS_BOBAFETT ||
-				self->client->NPC_class == CLASS_MANDALORIAN || self->client->NPC_class == CLASS_ROCKETTROOPER)
+				self->client->NPC_class == CLASS_MANDALORIAN ||
+				self->client->NPC_class == CLASS_ROCKETTROOPER)
 				&& self->client->moveType == MT_FLYSWIM
 				&& incoming->methodOfDeath != MOD_ROCKET_ALT)
 			{
-				//a hovering Boba Fett, not a tracking rocket
-				if (!Q_irand(0, 1))
+				// hovering Boba/Mando/RocketTrooper
+				if (self->NPC)
 				{
-					//strafe
-					self->NPC->standTime = 0;
-					self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + Q_irand(1000, 2000);
-				}
-				if (!Q_irand(0, 1))
-				{
-					//go up/down
-					TIMER_Set(self, "heightChange", Q_irand(1000, 3000));
-					self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + Q_irand(1000, 2000);
+					if (!Q_irand(0, 1))
+					{
+						self->NPC->standTime = 0;
+						self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] =
+							level.time + Q_irand(1000, 2000);
+					}
+
+					if (!Q_irand(0, 1))
+					{
+						TIMER_Set(self, "heightChange", Q_irand(1000, 3000));
+						self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] =
+							level.time + Q_irand(1000, 2000);
+					}
 				}
 			}
-			else if (jedi_saber_block_go(self, &self->NPC->last_ucmd, nullptr, nullptr, incoming) != EVASION_NONE)
+			else if (self->NPC &&
+				jedi_saber_block_go(self, &self->NPC->last_ucmd, nullptr, nullptr, incoming) != EVASION_NONE)
 			{
-				//make sure to turn on your saber if it's not on
-				if (self->client->NPC_class != CLASS_BOBAFETT
-					&& self->client->NPC_class != CLASS_ROCKETTROOPER
-					&& self->client->NPC_class != CLASS_MANDALORIAN
-					&& self->client->NPC_class != CLASS_JANGO
-					&& self->client->NPC_class != CLASS_JANGODUAL
-					&& (self->client->NPC_class != CLASS_REBORN)
-					&& (self->client->NPC_class != CLASS_GROGU))
+				// ensure saber is on
+				if (self->client->NPC_class != CLASS_BOBAFETT &&
+					self->client->NPC_class != CLASS_ROCKETTROOPER &&
+					self->client->NPC_class != CLASS_MANDALORIAN &&
+					self->client->NPC_class != CLASS_JANGO &&
+					self->client->NPC_class != CLASS_JANGODUAL &&
+					self->client->NPC_class != CLASS_REBORN &&
+					self->client->NPC_class != CLASS_GROGU)
 				{
-					//make sure to turn on your saber if it's not on
 					if (self->s.weapon == WP_SABER)
 					{
 						self->client->ps.SaberActivate();
@@ -20589,7 +20596,7 @@ void wp_saber_start_missile_block_check_md(gentity_t* self, const usercmd_t* ucm
 				}
 			}
 		}
-		else //player
+		else
 		{
 			gentity_t* blocker = &g_entities[incoming->ownerNum];
 
@@ -20697,7 +20704,7 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 	if (!self->client->ps.saberInFlight)
 	{
 		// It isn't, which means we can update its position as we will.
-		qboolean always_block[MAX_SABERS][MAX_BLADES]{};
+		qboolean always_block[MAX_SABERS][MAX_BLADES] = { qfalse };
 		qboolean force_block = qfalse;
 		qboolean no_blocking = qfalse;
 
@@ -20992,7 +20999,7 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 	if (!self->client->ps.saberInFlight)
 	{
 		// It isn't, which means we can update its position as we will.
-		qboolean always_block[MAX_SABERS][MAX_BLADES]{};
+		qboolean always_block[MAX_SABERS][MAX_BLADES] = { qfalse };
 		qboolean force_block = qfalse;
 		qboolean no_blocking = qfalse;
 
