@@ -286,6 +286,8 @@ void G_StopEffect(const char* name, const int modelIndex, const int bolt_index, 
 
 extern void cgi_S_StartSound(const vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx);
 #include "../cgame/cg_media.h"	//access to cgs
+#include <cmath>
+#include <icarus\IcarusInterface.h>
 extern qboolean CG_TryPlayCustomSound(vec3_t origin, int entityNum, soundChannel_t channel, const char* sound_name,
 	int custom_sound_set);
 extern cvar_t* g_timescale;
@@ -797,6 +799,12 @@ float vectoyaw(const vec3_t vec)
 
 void G_InitGentity(gentity_t* e, const qboolean b_free_g2)
 {
+	if (!e)
+	{
+		Com_Printf("^1G_InitGentity: ERROR — called with NULL entity pointer\n");
+		return;
+	}
+
 	e->inuse = qtrue;
 	SetInUse(e);
 	e->m_iIcarusID = IIcarusInterface::ICARUS_INVALID;
@@ -808,7 +816,8 @@ void G_InitGentity(gentity_t* e, const qboolean b_free_g2)
 	{
 		gi.G2API_CleanGhoul2Models(e->ghoul2);
 	}
-	//Navigational setups
+
+	// Navigational setups
 	e->waypoint = WAYPOINT_NONE;
 	e->lastWaypoint = WAYPOINT_NONE;
 }
@@ -829,17 +838,18 @@ angles and bad trails.
 =================
 */
 
-static gentity_t* FindRemoveAbleGent()
+static gentity_t* find_remove_able_gent(void)
 {
-	//returns an entity that we can remove to prevent the game from overloading
-	//on map entities.
-	//We first search for stuff that's immediately safe to remove
-	//and then start searching for things that aren't mission critical to remove.
 	int i;
+	gentity_t* e;
 
-	gentity_t* e = &g_entities[MAX_CLIENTS];
-	for (i = MAX_CLIENTS; i < globals.num_entities; i++)
+	// 1. Harmless items first
+	e = &g_entities[MAX_CLIENTS];
+	for (i = MAX_CLIENTS; i < globals.num_entities; i++, e++)
 	{
+		if (!e->classname)
+			continue;
+
 		if (stricmp(e->classname, "item_shield") == 0
 			|| stricmp(e->classname, "item_Barrier") == 0
 			|| stricmp(e->classname, "item_seeker") == 0
@@ -858,108 +868,287 @@ static gentity_t* FindRemoveAbleGent()
 		}
 	}
 
-	//dead NPCs can be removed as well
+	// 2. Dead NPCs
 	e = &g_entities[MAX_CLIENTS];
 	for (i = MAX_CLIENTS; i < globals.num_entities; i++, e++)
 	{
-		if (e->NPC
-			&& e->health <= 0
-			&& e->NPC->timeOfDeath + 1000 < level.time)
-			//NPC has been dead long enough for all the death related code to run.
+		if (e->NPC &&
+			e->health <= 0 &&
+			e->NPC->timeOfDeath + 1000 < level.time)
 		{
-			//found one
 			return e;
 		}
 	}
 
-	//try looking for scripted NPCs that are acting like dead bodies next.
+	// 3. Scripted NPCs stuck in death anim
 	e = &g_entities[MAX_CLIENTS];
 	for (i = MAX_CLIENTS; i < globals.num_entities; i++, e++)
 	{
-		if (e->NPC && e->client && e->health > 0
-			&& PM_InDeathAnim())
+		if (e->NPC && e->client && e->health > 0 &&
+			PM_InDeathAnim())
 		{
-			//found one
 			return e;
 		}
 	}
-	//light entities?
+
+	// 4. Light entities
 	e = &g_entities[MAX_CLIENTS];
 	for (i = MAX_CLIENTS; i < globals.num_entities; i++, e++)
 	{
-		if (strcmp(e->classname, "light") == 0)
+		if (e->classname && strcmp(e->classname, "light") == 0)
 		{
-			//found one
 			return e;
 		}
 	}
-	//large entities?
+
+	// 5. Large breakables
 	e = &g_entities[MAX_CLIENTS];
 	for (i = MAX_CLIENTS; i < globals.num_entities; i++, e++)
 	{
-		if (strcmp(e->classname, "misc_model_breakable") == 0)
+		if (e->classname && strcmp(e->classname, "misc_model_breakable") == 0)
 		{
-			//found one
 			return e;
 		}
 	}
-	//crap!  we couldn't find anything.  Ideally, this function should have enough things
-	//to be able to remove to have this never happen.
-	return nullptr;
+
+	return NULL;
 }
 
-gentity_t* G_Spawn()
-{
-	gentity_t* e = nullptr; // shut up warning
-	int i = 0; // shut up warning
 
+static const char* DecodeEF(int ef)
+{
+	static char buffer[512];
+	buffer[0] = '\0';
+
+#define ADD_FLAG(str) \
+    do { \
+        if (buffer[0]) \
+            Q_strcat(buffer, sizeof(buffer), ", "); \
+        Q_strcat(buffer, sizeof(buffer), (str)); \
+    } while (0)
+
+	if (ef & EF_HELD_BY_SAND_CREATURE) ADD_FLAG("HELD_BY_SAND_CREATURE");
+	if (ef & EF_HELD_BY_RANCOR)        ADD_FLAG("HELD_BY_RANCOR");
+	if (ef & EF_TELEPORT_BIT)          ADD_FLAG("TELEPORT_BIT");
+	if (ef & EF_SHADER_ANIM)           ADD_FLAG("SHADER_ANIM");
+	if (ef & EF_BOUNCE)                ADD_FLAG("BOUNCE");
+	if (ef & EF_BOUNCE_HALF)           ADD_FLAG("BOUNCE_HALF");
+	if (ef & EF_MISSILE_STICK)         ADD_FLAG("MISSILE_STICK");
+	if (ef & EF_NODRAW)                ADD_FLAG("NODRAW");
+	if (ef & EF_FIRING)                ADD_FLAG("FIRING");
+	if (ef & EF_ALT_FIRING)            ADD_FLAG("ALT_FIRING");
+	if (ef & EF_VEH_BOARDING)          ADD_FLAG("VEH_BOARDING");
+	if (ef & EF_AUTO_SIZE)             ADD_FLAG("AUTO_SIZE");
+	if (ef & EF_BOUNCE_SHRAPNEL)       ADD_FLAG("BOUNCE_SHRAPNEL");
+	if (ef & EF_USE_ANGLEDELTA)        ADD_FLAG("USE_ANGLEDELTA");
+	if (ef & EF_ANIM_ALLFAST)          ADD_FLAG("ANIM_ALLFAST");
+	if (ef & EF_ANIM_ONCE)             ADD_FLAG("ANIM_ONCE");
+	if (ef & EF_HELD_BY_WAMPA)         ADD_FLAG("HELD_BY_WAMPA");
+	if (ef & EF_PROX_TRIP)             ADD_FLAG("PROX_TRIP");
+	if (ef & EF_LOCKED_TO_WEAPON)      ADD_FLAG("LOCKED_TO_WEAPON");
+	if (ef & EF_PERMANENT)             ADD_FLAG("PERMANENT");
+	if (ef & EF_SPOTLIGHT)             ADD_FLAG("SPOTLIGHT");
+	if (ef & EF_PLANTED_CHARGE)        ADD_FLAG("PLANTED_CHARGE");
+	if (ef & EF_POWERING_ROSH)         ADD_FLAG("POWERING_ROSH");
+	if (ef & EF_FORCE_VISIBLE)         ADD_FLAG("FORCE_VISIBLE");
+	if (ef & EF_IN_ATST)               ADD_FLAG("IN_ATST");
+	if (ef & EF_DISINTEGRATION)        ADD_FLAG("DISINTEGRATION");
+	if (ef & EF_LESS_ATTEN)            ADD_FLAG("LESS_ATTEN");
+	if (ef & EF_JETPACK_ACTIVE)        ADD_FLAG("JETPACK_ACTIVE");
+	if (ef & EF_DISABLE_SHADER_ANIM)   ADD_FLAG("DISABLE_SHADER_ANIM");
+	if (ef & EF_FORCE_GRIPPED)         ADD_FLAG("FORCE_GRIPPED");
+	if (ef & EF_FORCE_DRAINED)         ADD_FLAG("FORCE_DRAINED");
+	if (ef & EF_BLOCKED_MOVER)         ADD_FLAG("BLOCKED_MOVER");
+	if (ef & EF_WALK)                  ADD_FLAG("WALK");
+	if (ef & EF_FORCE_GRASPED)         ADD_FLAG("FORCE_GRASPED");
+
+#undef ADD_FLAG
+
+	if (!buffer[0])
+		return "None";
+
+	return buffer;
+}
+
+static const char* DecodeEF2(int ef2)
+{
+	static char buffer[512];
+	buffer[0] = '\0';
+
+#define ADD_FLAG(str) \
+    do { \
+        if (buffer[0]) \
+            Q_strcat(buffer, sizeof(buffer), ", "); \
+        Q_strcat(buffer, sizeof(buffer), (str)); \
+    } while (0)
+
+	if (ef2 & EF2_RADAROBJECT)     ADD_FLAG("RADAROBJECT");
+	if (ef2 & EF2_USE_ALT_ANIM)    ADD_FLAG("USE_ALT_ANIM");
+	if (ef2 & EF2_ALERTED)         ADD_FLAG("ALERTED");
+	if (ef2 & EF2_GENERIC_NPC_FLAG)ADD_FLAG("GENERIC_NPC_FLAG");
+	if (ef2 & EF2_FLYING)          ADD_FLAG("FLYING");
+	if (ef2 & EF2_HYPERSPACE)      ADD_FLAG("HYPERSPACE");
+	if (ef2 & EF2_BRACKET_ENTITY)  ADD_FLAG("BRACKET_ENTITY");
+	if (ef2 & EF2_SHIP_DEATH)      ADD_FLAG("SHIP_DEATH");
+	if (ef2 & EF2_BOWCASTERSCOPE)  ADD_FLAG("BOWCASTERSCOPE");
+	if (ef2 & EF2_PLAYERHIT)       ADD_FLAG("PLAYERHIT");
+	if (ef2 & EF2_DUAL_PISTOLS)    ADD_FLAG("DUAL_PISTOLS");
+
+#undef ADD_FLAG
+
+	if (!buffer[0])
+		return "None";
+
+	return buffer;
+}
+
+static void G_SpewEntList_SP(void)
+{
+	int numNPC = 0;
+	int numProjectile = 0;
+	int numTempEnt = 0;
+	int numTempEntST = 0;
+
+#ifdef _DEBUG
+	fileHandle_t fh;
+	gi.FS_FOpenFile("entspew_sp.txt", &fh, FS_WRITE);
+#endif
+
+	Com_Printf("\n^3================ SP ENTITY SPEW ================\n");
+
+	for (int i = MAX_CLIENTS; i < globals.num_entities; i++)
+	{
+		gentity_t* ent = &g_entities[i];
+
+		if (!PInUse(i))
+			continue;
+
+		const char* className =
+			(ent->classname && ent->classname[0]) ? ent->classname : "Unknown";
+
+		// SP NPC detection
+		if (ent->NPC)
+			numNPC++;
+
+		// Projectiles
+		if (ent->s.eType == ET_MISSILE)
+			numProjectile++;
+
+		// Temp ents
+		if (ent->freeAfterEvent)
+		{
+			numTempEnt++;
+		}
+
+		const char* efDecoded = DecodeEF(ent->s.eFlags);
+		const char* ef2Decoded = DecodeEF2(ent->s.eFlags2);
+
+		char* line = va(
+			"ENT %4i: Class %-24s  eType %-3d  Health %-4d  EF [%s]  EF2 [%s]\n",
+			i, className, ent->s.eType, ent->health, efDecoded, ef2Decoded
+		);
+
+		Com_Printf("%s", line);
+
+#ifdef _DEBUG
+		if (fh)
+			gi.FS_Write(line, strlen(line), fh);
+#endif
+	}
+
+	char* totals = va(
+		"\nTotals:\n"
+		"  NPCs:          %d\n"
+		"  Projectiles:   %d\n"
+		"  TempEnts:      %d\n"
+		"  TempEnt ST:    %d\n"
+		"  Num Entities:  %d / %d\n",
+		numNPC, numProjectile, numTempEnt, numTempEntST,
+		globals.num_entities, ENTITYNUM_MAX_NORMAL
+	);
+
+	Com_Printf("%s", totals);
+
+#ifdef _DEBUG
+	if (fh)
+	{
+		gi.FS_Write(totals, strlen(totals), fh);
+		gi.FS_FCloseFile(fh);
+	}
+#endif
+
+	Com_Printf("^3=================================================\n\n");
+}
+
+
+gentity_t* G_Spawn(void)
+{
+	gentity_t* e = NULL;
+	int i = 0;
+
+	// Pass 1 and 2: try to reuse an existing free entity
 	for (int force = 0; force < 2; force++)
 	{
-		for (i = MAX_CLIENTS; i < globals.num_entities; i++)
+		e = &g_entities[MAX_CLIENTS];
+
+		for (i = MAX_CLIENTS; i < globals.num_entities; i++, e++)
 		{
 			if (PInUse(i))
-			{
 				continue;
-			}
-			e = &g_entities[i];
 
-			// the first couple seconds of server time can involve a lot of
-			// freeing and allocating, so relax the replacement policy
-			if (!force && e->freetime > 2000 && level.time - e->freetime < 1000)
+			// Avoid reusing entities freed too recently
+			if (!force &&
+				e->freetime > 2000 &&
+				level.time - e->freetime < 1000)
 			{
 				continue;
 			}
 
-			// reuse this slot
+			// Reuse this slot
 			G_InitGentity(e, qtrue);
 			return e;
 		}
-		e = &g_entities[i];
 
-		if (i != ENTITYNUM_MAX_NORMAL)
-		{
+		// IMPORTANT FIX (same as MP):
+		if (i != globals.num_entities)
 			break;
-		}
 	}
 
+	// No free slot in normal range — try to remove something safely
 	if (i == ENTITYNUM_MAX_NORMAL)
 	{
-		//in case we can't find an open entity, search for something we can safely replace
-		//to keep the game running.  This isn't the best solution but it's better than
-		//having the game shut down.
-		e = FindRemoveAbleGent();
+		e = find_remove_able_gent();
 		if (e)
 		{
-			//found something we can replace
 			G_FreeEntity(e);
 			G_InitGentity(e, qtrue);
 			return e;
 		}
-		G_Error("G_Spawn: no free entities removing redundant entities to make space for spawner");
+
+		G_SpewEntList_SP();
+		G_Error("^1G_Spawn: HARD LIMIT REACHED — no free entities\n");
+		return NULL;
 	}
 
-	// open up a new slot
+	// HARD LIMIT CHECK
+	if (globals.num_entities >= ENTITYNUM_MAX_NORMAL)
+	{
+		Com_Printf("^1G_Spawn: HARD LIMIT REACHED (%d). Cannot spawn more entities.\n",
+			ENTITYNUM_MAX_NORMAL);
+		return NULL;
+	}
+
+	// Allocate a new entity slot
 	globals.num_entities++;
+
+	e = &g_entities[globals.num_entities - 1];
+
+	if (!e)
+	{
+		Com_Printf("^1G_Spawn: ERROR — new entity slot is NULL\n");
+		return NULL;
+	}
+
 	G_InitGentity(e, qtrue);
 	return e;
 }

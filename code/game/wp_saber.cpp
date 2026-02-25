@@ -41712,93 +41712,119 @@ void G_Beskar_Attack_Bounce(const gentity_t* self, gentity_t* other)
 
 qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker, vec3_t hit_loc)
 {
-	//determines if self (who is blocking) is activating blocking (parrying)
 	vec3_t p_angles;
 	vec3_t p_right;
-	vec3_t parrier_move{};
+	vec3_t parrier_move = { 0 };
 	vec3_t hit_pos;
-	vec3_t hit_flat{}; //flatten 2D version of the hitPos.
-	const qboolean in_front = InFront(attacker->client->ps.origin, blocker->client->ps.origin, blocker->client->ps.viewangles, 0.0f);
+	vec3_t hit_flat = { 0 };
 
+	// MP uses 0.0f tolerance
+	const qboolean in_front_of_me =
+		InFront(attacker->client->ps.origin,
+			blocker->client->ps.origin,
+			blocker->client->ps.viewangles,
+			0.0f);
+
+	// ------------------------------------------------------------
+	// Manual block requirement (players only)
+	// ------------------------------------------------------------
 	if (blocker->s.number < MAX_CLIENTS || G_ControlledByPlayer(blocker))
 	{
-		if (!(blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK))
-		{
+		if (!(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)))
 			return qfalse;
-		}
 	}
 
-	if (!in_front)
-	{
-		//can't parry attacks to the rear.
+	// Cannot block from behind
+	if (!in_front_of_me)
 		return qfalse;
-	}
+
+	// Already in knockaway → allow continued parry
 	if (PM_SaberInKnockaway(blocker->client->ps.saber_move))
-	{
-		//already in parry move, continue parrying anything that hits us as long as
-		//the attacker is in the same general area that we're facing.
 		return qtrue;
-	}
 
+	// Cannot parry while kicking
 	if (PM_KickingAnim(blocker->client->ps.legsAnim))
-	{
-		//can't parry in kick.
 		return qfalse;
-	}
 
+	// Cannot parry while transitioning or bouncing
 	if (BG_SaberInNonIdleDamageMove(&blocker->client->ps)
-		|| PM_SaberInBounce(blocker->client->ps.saber_move) || BG_InSlowBounce(&blocker->client->ps))
-	{
-		//can't parry if we're transitioning into a block from an attack state.
+		|| PM_SaberInBounce(blocker->client->ps.saber_move)
+		|| BG_InSlowBounce(&blocker->client->ps))
 		return qfalse;
-	}
 
+	// Cannot parry while ducked
 	if (blocker->client->ps.pm_flags & PMF_DUCKED)
-	{
-		//can't parry while ducked or running
 		return qfalse;
-	}
 
-	if (blocker->client->ps.ManualblockStartTime >= 3000) //3 sec
-	{
-		//cant perfect parry if your too slow
+	// Cannot parry while knocked down
+	if (PM_InKnockDown(&blocker->client->ps))
 		return qfalse;
-	}
 
-	//set up flatten version of the location of the incoming attack in orientation
-	//to the player.
+	// Held block too long → too slow to parry
+	if (blocker->client->ps.ManualblockStartTime >= 3000)
+		return qfalse;
+
+	// ------------------------------------------------------------
+	// Directional parry correctness
+	// ------------------------------------------------------------
+
+	// Vector from blocker to hit location
 	VectorSubtract(hit_loc, blocker->client->ps.origin, hit_pos);
+
+	// Blocker's right vector (yaw only)
 	VectorSet(p_angles, 0, blocker->client->ps.viewangles[YAW], 0);
-	AngleVectors(p_angles, nullptr, p_right, nullptr);
+	AngleVectors(p_angles, NULL, p_right, NULL);
+
+	// Flatten hit into blocker's local plane
 	hit_flat[0] = 0;
 	hit_flat[1] = DotProduct(p_right, hit_pos);
 
-	//just bump the hit pos down for the blocking since the average left/right slice happens at about origin +10
+	// MP uses fixed -10 vertical offset
 	hit_flat[2] = hit_pos[2] - 10;
+
 	VectorNormalize(hit_flat);
 
-	//set up the vector for the direction the player is trying to parry in.
+	// Player's intended parry direction
 	parrier_move[0] = 0;
 	parrier_move[1] = blocker->client->pers.cmd.rightmove;
 	parrier_move[2] = -blocker->client->pers.cmd.forwardmove;
+
 	VectorNormalize(parrier_move);
+
+	// ------------------------------------------------------------
+	// Style-based threshold 
+	// ------------------------------------------------------------
+	float threshold = 0.40f; // default
+
+	switch (blocker->client->ps.saberAnimLevel)
+	{
+	case SS_FAST:
+		threshold = 0.55f;
+		break;
+
+	case SS_STRONG:
+		threshold = 0.35f;
+		break;
+
+	default:
+		threshold = 0.40f;
+		break;
+	}
 
 	const float block_dot = DotProduct(hit_flat, parrier_move);
 
-	if (block_dot >= 0.4F)
-	{
-		//player successfully blocked in the right direction to do a full parry.
+	if (block_dot >= threshold)
 		return qtrue;
-	}
-	//player didn't parry in the correct direction, do blockPoints punishment
+
+	// ------------------------------------------------------------
+	// NPC fallback (MP logic)
+	// ------------------------------------------------------------
 	if (blocker->NPC && !G_ControlledByPlayer(blocker))
 	{
-		//bots just randomly parry to make up for them not intelligently parrying.
 		if (NPC_PARRYRATE * g_spskill->integer > Q_irand(0, 999))
-		{
 			return qtrue;
-		}
 	}
+
 	return qfalse;
 }
 

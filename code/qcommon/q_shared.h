@@ -670,7 +670,7 @@ constexpr auto SNAPFLAG_SERVERCOUNT = 4; // toggled every map_restart so transit
 constexpr auto MAX_CLIENTS = 1; // 128		// absolute limit;
 constexpr auto MAX_TERRAINS = 1; //32;
 
-constexpr auto GENTITYNUM_BITS = 10; // don't need to send any more
+constexpr auto GENTITYNUM_BITS = 12; // don't need to send any more
 #define	MAX_GENTITIES		(1<<GENTITYNUM_BITS)
 
 // entitynums are communicated with GENTITY_BITS, so any reserved
