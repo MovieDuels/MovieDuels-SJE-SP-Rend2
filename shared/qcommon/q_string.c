@@ -10,6 +10,8 @@
 #include <string.h>
 
 #include "q_color.h"
+#include <corecrt.h>
+#include <stdarg.h>
 
 int Q_isprint(const int c)
 {
@@ -279,26 +281,45 @@ int Q_PrintStrlen(const char* string)
 	return len;
 }
 
+/*
+====================
+Q_CleanStr
+
+Removes Quake3-style color codes and non-printable characters
+from a string *in place*.
+
+Safe, warning-free version.
+====================
+*/
 char* Q_CleanStr(char* string)
 {
-	int c;
+	if (!string)
+		return NULL;
 
 	char* s = string;
 	char* d = string;
-	while ((c = *s) != 0)
+
+	while (*s != '\0')
 	{
+		// Skip Quake3 color codes: ^X
 		if (Q_IsColorString(s))
 		{
-			s++;
+			s += 2;   // skip '^' and the color code
+			continue;
 		}
-		else if (c >= 0x20 && c <= 0x7E)
+
+		unsigned char c = (unsigned char)*s;
+
+		// Keep only printable ASCII
+		if (c >= 0x20 && c <= 0x7E)
 		{
 			*d++ = c;
 		}
+
 		s++;
 	}
-	*d = '\0';
 
+	*d = '\0';
 	return string;
 }
 
@@ -413,15 +434,18 @@ const char* Q_strchrs(const char* string, const char* search)
 }
 
 #if defined(_MSC_VER)
+
 /*
-=============
+====================
 Q_vsnprintf
 
-Special wrapper function for Microsoft's broken _vsnprintf() function.
-MinGW comes with its own snprintf() which is not broken.
-=============
+Safe wrapper for Microsoft's non‑C99 _vsnprintf().
+Ensures:
+- guaranteed null‑termination
+- consistent return value
+- no buffer overrun
+====================
 */
-
 int Q_vsnprintf(char* str, size_t size, const char* format, va_list argptr)
 {
 	const int retval = _vsnprintf(str, size, format, argptr);
@@ -438,7 +462,7 @@ int Q_vsnprintf(char* str, size_t size, const char* format, va_list argptr)
 		str[size - 1] = '\0';
 		return size;
 	}
-
 	return retval;
 }
+
 #endif

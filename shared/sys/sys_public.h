@@ -22,6 +22,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "qcommon/q_shared.h"
+#include <rd-common\tr_types.h>
 
 constexpr auto MAXPRINTMSG = 4096;
 
@@ -128,17 +129,7 @@ int Sys_Milliseconds(bool baseTime = false);
 int Sys_Milliseconds2();
 void Sys_Sleep(int msec);
 
-extern "C" void Sys_SnapVector(float* v);
-
 bool Sys_RandomBytes(byte* string, int len);
-
-void Sys_SendPacket(int length, const void* data, netadr_t to);
-
-qboolean Sys_StringToAdr(const char* s, netadr_t* a);
-//Does NOT parse port numbers, only base addresses.
-
-qboolean Sys_IsLANAddress(netadr_t adr);
-void Sys_ShowIP();
 
 qboolean Sys_Mkdir(const char* path);
 char* Sys_Cwd();
@@ -155,7 +146,7 @@ const char* Sys_Basename(const char* path);
 
 bool Sys_PathCmp(const char* path1, const char* path2);
 
-char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, qboolean wantsubs);
+char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, const qboolean wantsubs);
 void Sys_FreeFileList(char** ps_list);
 //rwwRMG - changed to fileList to not conflict with list type
 
@@ -209,7 +200,7 @@ using windowDesc_t = struct windowDesc_s
 using glconfig_t = struct glconfig_s;
 window_t WIN_Init(const windowDesc_t* window_desc, glconfig_t* glConfig);
 void WIN_Present(window_t* window);
-void WIN_SetGamma(glconfig_t* glConfig, byte red[256], byte green[256], byte blue[256]);
+void WIN_SetGamma(const glconfig_t* glConfig, byte red[256], byte green[256], byte blue[256]);
 void WIN_Shutdown();
 void* WIN_GL_GetProcAddress(const char* proc);
 qboolean WIN_GL_ExtensionSupported(const char* extension);

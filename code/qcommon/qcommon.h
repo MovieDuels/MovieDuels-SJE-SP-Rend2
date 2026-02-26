@@ -144,15 +144,7 @@ const char* NET_AdrToString(netadr_t a);
 qboolean NET_StringToAdr(const char* s, netadr_t* a);
 qboolean NET_GetLoopPacket(netsrc_t sock, netadr_t* net_from, msg_t* net_message);
 
-void Sys_SendPacket(int length, const void* data, netadr_t to);
-//Does NOT parse port numbers, only base addresses.
-qboolean Sys_StringToAdr(const char* s, netadr_t* a);
-qboolean Sys_IsLANAddress(netadr_t adr);
-void Sys_ShowIP();
-
 #define	MAX_MSGLEN				(1*17408)		// max length of a message, which may
-//#define	MAX_MSGLEN				(3*16384)		// max length of a message, which may
-// be fragmented into multiple packets
 
 /*
 Netchan handles packet fragmentation and out of order / duplicate suppression

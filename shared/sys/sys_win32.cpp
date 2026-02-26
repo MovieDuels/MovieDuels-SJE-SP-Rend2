@@ -22,7 +22,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "sys_local.h"
 #include <direct.h>
 #include <io.h>
-#include <shlobj.h>
 #include <windows.h>
 #include <ShlObj_core.h>
 #include <qcommon\qcommon.h>
@@ -30,6 +29,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <qcommon\q_string.h>
 #include <qcommon\q_platform.h>
+#include <cstdio>
+#include <qcommon\q_math.h>
+#include <cstdlib>
+#include <malloc.h>
 
 constexpr auto MEM_THRESHOLD = (128 * 1024 * 1024);
 
@@ -325,9 +328,9 @@ DIRECTORY SCANNING
 ==============================================================
 */
 
-#define	MAX_FOUND_FILES	0x1000
+constexpr auto MAX_FOUND_FILES = 0x1000;
 
-void Sys_ListFilteredFiles(const char* basedir, char* subdirs, char* filter, char** psList, int* numfiles)
+static void Sys_ListFilteredFiles(const char* basedir, char* subdirs, char* filter, char** psList, int* numfiles)
 {
 	char search[MAX_OSPATH];
 	_finddata_t findinfo;
@@ -409,124 +412,182 @@ static qboolean strgtr(const char* s0, const char* s1)
 	return qfalse;
 }
 
+/*
+====================
+Sys_ListFiles
+
+Returns a NULL‑terminated array of filenames found in the given directory.
+
+Supports:
+- extension filtering
+- substring filtering
+- optional directory inclusion
+- sorted output
+
+Memory ownership:
+- Caller owns the returned list (allocated with Z_Malloc)
+====================
+*/
 char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, const qboolean wantsubs)
 {
-	char search[MAX_OSPATH];
-	int nfiles;
-	char** listCopy;
-	static char* list[MAX_FOUND_FILES];
-	_finddata_t findinfo;
-	int flag;
-	int i;
+	// -----------------------------
+	// Validate input
+	// -----------------------------
+	if (!directory || !numfiles)
+	{
+		if (numfiles)
+			*numfiles = 0;
+		return NULL;
+	}
 
+	// -----------------------------
+	// FILTERED SEARCH MODE
+	// (Uses Sys_ListFilteredFiles)
+	// -----------------------------
 	if (filter)
 	{
-		nfiles = 0;
+		int nfiles = 0;
+
+		// Allocate temporary list on heap (not stack)
+		char** list = (char**)Z_Malloc(MAX_FOUND_FILES * sizeof(char*), TAG_LISTFILES);
+
 		Sys_ListFilteredFiles(directory, "", filter, list, &nfiles);
 
-		list[nfiles] = nullptr;
-		*numfiles = nfiles;
-
-		if (!nfiles)
-			return nullptr;
-
-		listCopy = static_cast<char**>(Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_LISTFILES));
-		for (i = 0; i < nfiles; i++)
+		if (nfiles == 0)
 		{
-			listCopy[i] = list[i];
+			Z_Free(list);
+			*numfiles = 0;
+			return NULL;
 		}
-		listCopy[i] = nullptr;
 
+		// Allocate final list
+		char** listCopy = (char**)Z_Malloc((nfiles + 1) * sizeof(char*), TAG_LISTFILES);
+
+		for (int i = 0; i < nfiles; i++)
+			listCopy[i] = list[i];
+
+		listCopy[nfiles] = NULL;
+
+		Z_Free(list);
+
+		*numfiles = nfiles;
 		return listCopy;
 	}
 
+	// -----------------------------
+	// EXTENSION HANDLING
+	// -----------------------------
 	if (!extension)
-	{
 		extension = "";
-	}
-
-	// passing a slash as extension will find directories
-	if (extension[0] == '/' && extension[1] == 0)
-	{
-		extension = "";
-		flag = 0;
-	}
-	else
-	{
-		flag = _A_SUBDIR;
-	}
 
 	const int extLen = strlen(extension);
 
+	// -----------------------------
+	// Build search pattern
+	// -----------------------------
+	char search[MAX_OSPATH];
 	Com_sprintf(search, sizeof(search), "%s\\*%s", directory, extension);
 
-	// search
-	nfiles = 0;
+	// -----------------------------
+	// Allocate temporary list on heap
+	// -----------------------------
+	char** list = (char**)Z_Malloc(MAX_FOUND_FILES * sizeof(char*), TAG_LISTFILES);
+	int nfiles = 0;
 
-	const intptr_t findhandle = _findfirst(search, &findinfo);
+	// -----------------------------
+	// Begin directory scan
+	// -----------------------------
+	_finddata_t findinfo;
+	intptr_t findhandle = _findfirst(search, &findinfo);
+
 	if (findhandle == -1)
 	{
+		Z_Free(list);
 		*numfiles = 0;
-		return nullptr;
+		return NULL;
 	}
 
 	do
 	{
-		if ((!wantsubs && flag ^ (findinfo.attrib & _A_SUBDIR)) || (wantsubs && findinfo.attrib & _A_SUBDIR))
-		{
-			if (*extension)
-			{
-				if (strlen(findinfo.name) < extLen ||
-					Q_stricmp(
-						findinfo.name + strlen(findinfo.name) - extLen,
-						extension))
-				{
-					continue; // didn't match
-				}
-			}
-			if (nfiles == MAX_FOUND_FILES - 1)
-			{
-				break;
-			}
-			list[nfiles] = CopyString(findinfo.name);
-			nfiles++;
-		}
-	} while (_findnext(findhandle, &findinfo) != -1);
+		const qboolean isDir = (findinfo.attrib & _A_SUBDIR) ? qtrue : qfalse;
 
-	list[nfiles] = nullptr;
+		// Skip "." and ".."
+		if (isDir &&
+			(!strcmp(findinfo.name, ".") || !strcmp(findinfo.name, "..")))
+		{
+			continue;
+		}
+
+		// Directory filtering logic
+		if (!wantsubs && isDir)
+			continue;
+		if (wantsubs && !isDir)
+			continue;
+
+		// Extension filtering
+		if (extLen > 0)
+		{
+			const int nameLen = strlen(findinfo.name);
+
+			if (nameLen < extLen ||
+				Q_stricmp(findinfo.name + (nameLen - extLen), extension) != 0)
+			{
+				continue;
+			}
+		}
+
+		// Prevent overflow
+		if (nfiles >= MAX_FOUND_FILES - 1)
+			break;
+
+		list[nfiles++] = CopyString(findinfo.name);
+	} while (_findnext(findhandle, &findinfo) != -1);
 
 	_findclose(findhandle);
 
-	// return a copy of the list
-	*numfiles = nfiles;
-
-	if (!nfiles)
+	if (nfiles == 0)
 	{
-		return nullptr;
+		Z_Free(list);
+		*numfiles = 0;
+		return NULL;
 	}
 
-	listCopy = static_cast<char**>(Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_LISTFILES));
-	for (i = 0; i < nfiles; i++)
-	{
+	// -----------------------------
+	// Allocate final sorted list
+	// -----------------------------
+	char** listCopy = (char**)Z_Malloc((static_cast<unsigned long long>(nfiles) + 1) * sizeof(char*), TAG_LISTFILES);
+
+	for (int i = 0; i < nfiles; i++)
 		listCopy[i] = list[i];
-	}
-	listCopy[i] = nullptr;
 
+	listCopy[nfiles] = NULL;
+
+	// -----------------------------
+	// Sort alphabetically (bubble sort)
+	// -----------------------------
+	qboolean swapped;
 	do
 	{
-		flag = 0;
-		for (i = 1; i < nfiles; i++)
+		swapped = qfalse;
+
+		for (int i = 1; i < nfiles; i++)
 		{
 			if (strgtr(listCopy[i - 1], listCopy[i]))
 			{
 				char* temp = listCopy[i];
 				listCopy[i] = listCopy[i - 1];
 				listCopy[i - 1] = temp;
-				flag = 1;
+				swapped = qtrue;
 			}
 		}
-	} while (flag);
+	} while (swapped);
 
+	// -----------------------------
+	// Cleanup temporary list
+	// -----------------------------
+	Z_Free(list);
+
+	*numfiles = nfiles;
 	return listCopy;
 }
 
