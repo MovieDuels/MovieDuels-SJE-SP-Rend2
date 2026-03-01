@@ -2346,7 +2346,16 @@ static void jedi_combat_distance(const int enemy_dist)
 
 	// SLAP
 	shoot = qfalse;
-	enemyDist = DistanceSquared(NPC->currentOrigin, NPC->enemy->currentOrigin);
+
+	if (!enemy)
+	{
+		enemyDist = Q3_INFINITE;
+		return;     // ← safest and simplest
+	}
+	else
+	{
+		enemyDist = DistanceSquared(NPC->currentOrigin, enemy->currentOrigin);
+	}
 
 	qboolean can_slap = (qboolean)(
 		g_spskill->integer > 1 &&
@@ -6754,100 +6763,115 @@ static void Jedi_FaceEnemy(const qboolean do_pitch)
 {
 	vec3_t enemy_eyes, eyes, angles;
 
-	if (NPC == nullptr)
-		return;
-
-	if (NPC->enemy == nullptr)
-		return;
-
-	if (NPC->client->ps.forcePowersActive & 1 << FP_GRIP && NPC->client->ps.forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
+	// Basic guards
+	if (!NPC || !NPC->client || !NPC->enemy || !NPC->enemy->client)
 	{
-		//don't update?
+		return;
+	}
+
+	// If gripping / grasping strongly, keep current view
+	if ((NPC->client->ps.forcePowersActive & (1 << FP_GRIP)) &&
+		NPC->client->ps.forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
+	{
 		NPCInfo->desiredPitch = NPC->client->ps.viewangles[PITCH];
 		NPCInfo->desiredYaw = NPC->client->ps.viewangles[YAW];
 		return;
 	}
 
-	if (NPC->client->ps.forcePowersActive & 1 << FP_GRASP && NPC->client->ps.forcePowerLevel[FP_GRASP] > FORCE_LEVEL_1)
+	if ((NPC->client->ps.forcePowersActive & (1 << FP_GRASP)) &&
+		NPC->client->ps.forcePowerLevel[FP_GRASP] > FORCE_LEVEL_1)
 	{
-		//don't update?
 		NPCInfo->desiredPitch = NPC->client->ps.viewangles[PITCH];
 		NPCInfo->desiredYaw = NPC->client->ps.viewangles[YAW];
 		return;
 	}
 
+	// Get eye positions
 	CalcEntitySpot(NPC, SPOT_HEAD, eyes);
-
 	CalcEntitySpot(NPC->enemy, SPOT_HEAD, enemy_eyes);
 
-	if ((NPC->client->NPC_class == CLASS_BOBAFETT || NPC->client->NPC_class == CLASS_MANDALORIAN || NPC->client->
-		NPC_class == CLASS_JANGO || NPC->client->NPC_class == CLASS_JANGODUAL)
-		&& TIMER_Done(NPC, "flameTime")
-		&& NPC->s.weapon != WP_NONE
-		&& NPC->s.weapon != WP_DISRUPTOR
-		&& (NPC->s.weapon != WP_ROCKET_LAUNCHER || !(NPCInfo->scriptFlags & SCF_ALT_FIRE))
-		&& NPC->s.weapon != WP_THERMAL
-		&& NPC->s.weapon != WP_TRIP_MINE
-		&& NPC->s.weapon != WP_DET_PACK
-		&& NPC->s.weapon != WP_STUN_BATON
-		&& NPC->s.weapon != WP_MELEE)
+	// Default: face towards enemy
+	GetAnglesForDirection(eyes, enemy_eyes, angles);
+
+	// Boba / Mando style leading
+	if ((NPC->client->NPC_class == CLASS_BOBAFETT ||
+		NPC->client->NPC_class == CLASS_MANDALORIAN ||
+		NPC->client->NPC_class == CLASS_JANGO ||
+		NPC->client->NPC_class == CLASS_JANGODUAL) &&
+		TIMER_Done(NPC, "flameTime") &&
+		NPC->s.weapon != WP_NONE &&
+		NPC->s.weapon != WP_DISRUPTOR &&
+		(NPC->s.weapon != WP_ROCKET_LAUNCHER || !(NPCInfo->scriptFlags & SCF_ALT_FIRE)) &&
+		NPC->s.weapon != WP_THERMAL &&
+		NPC->s.weapon != WP_TRIP_MINE &&
+		NPC->s.weapon != WP_DET_PACK &&
+		NPC->s.weapon != WP_STUN_BATON &&
+		NPC->s.weapon != WP_MELEE)
 	{
-		//boba leads his enemy
 		if (NPC->health < NPC->max_health * 0.5f)
 		{
-			//lead
-			const float missile_speed = WP_SpeedOfMissileForWeapon(NPC->s.weapon,
-				static_cast<qboolean>(NPCInfo->scriptFlags &
-					SCF_ALT_FIRE));
-			if (missile_speed)
+			const float missile_speed = WP_SpeedOfMissileForWeapon(
+				NPC->s.weapon,
+				(qboolean)(NPCInfo->scriptFlags & SCF_ALT_FIRE));
+
+			if (missile_speed > 0.0f)
 			{
 				float e_dist = Distance(eyes, enemy_eyes);
-				e_dist /= missile_speed; //How many seconds it will take to get to the enemy
-				VectorMA(enemy_eyes, e_dist * Q_flrand(0.95f, 1.25f), NPC->enemy->client->ps.velocity, enemy_eyes);
+				e_dist /= missile_speed; // time to reach target
+
+				VectorMA(enemy_eyes,
+					e_dist * Q_flrand(0.95f, 1.25f),
+					NPC->enemy->client->ps.velocity,
+					enemy_eyes);
+
+				// Recompute angles with lead
+				GetAnglesForDirection(eyes, enemy_eyes, angles);
 			}
 		}
 	}
 
-	//Find the desired angles
-	if (!NPC->client->ps.saberInFlight
-		&& (NPC->client->ps.legsAnim == BOTH_A2_STABBACK1
-			|| NPC->client->ps.legsAnim == BOTH_CROUCHATTACKBACK1
-			|| NPC->client->ps.legsAnim == BOTH_ATTACK_BACK
-			|| NPC->client->ps.legsAnim == BOTH_A7_KICK_B
-			|| NPC->client->ps.legsAnim == BOTH_SWEEP_KICK))
+	// Special facing rules for certain saber moves
+	if (!NPC->client->ps.saberInFlight &&
+		(NPC->client->ps.legsAnim == BOTH_A2_STABBACK1 ||
+			NPC->client->ps.legsAnim == BOTH_CROUCHATTACKBACK1 ||
+			NPC->client->ps.legsAnim == BOTH_ATTACK_BACK ||
+			NPC->client->ps.legsAnim == BOTH_A7_KICK_B ||
+			NPC->client->ps.legsAnim == BOTH_SWEEP_KICK))
 	{
-		//point *away*
+		// Point away from enemy
 		GetAnglesForDirection(enemy_eyes, eyes, angles);
 	}
 	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_R)
 	{
-		//keep enemy to right
+		// keep enemy to right – keep default angles
 	}
 	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_L)
 	{
-		//keep enemy to left
+		// keep enemy to left – keep default angles
 	}
-	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_RL
-		|| NPC->client->ps.legsAnim == BOTH_A7_KICK_BF
-		|| NPC->client->ps.legsAnim == BOTH_A7_KICK_S)
+	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_RL ||
+		NPC->client->ps.legsAnim == BOTH_A7_KICK_BF ||
+		NPC->client->ps.legsAnim == BOTH_A7_KICK_S)
 	{
-		//???
+		// multi‑direction kicks – keep default angles
 	}
 	else
 	{
-		//point towards him
-		GetAnglesForDirection(eyes, enemy_eyes, angles);
+		// default already set: face enemy
 	}
 
+	// Apply yaw
 	NPCInfo->desiredYaw = AngleNormalize360(angles[YAW]);
 
+	// Apply pitch if requested
 	if (do_pitch)
 	{
 		NPCInfo->desiredPitch = AngleNormalize360(angles[PITCH]);
+
 		if (NPC->client->ps.saberInFlight)
 		{
-			//tilt down a little
-			NPCInfo->desiredPitch += 10;
+			// tilt down a little when saber is in flight
+			NPCInfo->desiredPitch = AngleNormalize360(NPCInfo->desiredPitch + 10.0f);
 		}
 	}
 }
@@ -10542,6 +10566,10 @@ static void jedi_attack(void)
 	// =====================
 	// Dynamic Cinematic/Raven Switching
 	// =====================
+	if (!NPC || !NPC->client)
+	{
+		return;
+	}
 
 	// Conditions that *allow* cinematic mode
 	qboolean cinematicAllowed = qfalse;
@@ -10590,15 +10618,17 @@ static void jedi_attack(void)
 	// =====================
 	// Otherwise: Raven fallback logic continues below
 	// =====================
+	if (!NPC || !NPC->client)
+	{
+		return;
+	}
 
 	// If NAV is not moving us but ucmds are, set movement speed manually
 	if (VectorCompare(NPC->client->ps.moveDir, vec3_origin) &&
 		(ucmd.forwardmove || ucmd.rightmove))
 	{
-		// Using ucmds to move this turn, not NAV
 		if (ucmd.buttons & BUTTON_WALKING)
 		{
-			// NAV system overrides speed, so reapply walk speed
 			NPC->client->ps.speed = NPCInfo->stats.walkSpeed;
 		}
 		else
@@ -10606,6 +10636,7 @@ static void jedi_attack(void)
 			NPC->client->ps.speed = NPCInfo->stats.runSpeed;
 		}
 	}
+
 	if (PM_SaberInStart(curmove) || PM_SaberInTransition(curmove))
 	{
 		ucmd.buttons |= BUTTON_ATTACK;
@@ -10984,14 +11015,22 @@ static qboolean jedi_in_special_move()
 			}
 			if (NPC->client->leader)
 			{
-				qboolean helping_rosh = qfalse;
-				NPC->flags |= FL_LOCK_PLAYER_WEAPONS;
-				NPC->client->leader->flags |= FL_UNDYING;
-				if (NPC->client->leader->client)
+				gentity_t* rosh = NPC->client->leader;
+
+				if (!rosh->client)
 				{
-					NPC->client->leader->client->ps.forcePowersKnown |= FORCE_POWERS_ROSH_FROM_TWINS;
+					// Rosh exists but has no client – nothing to do here
+					NPC_UpdateAngles(qtrue, qtrue);
+					return qtrue;
 				}
-				if (NPC->client->leader->client->ps.legsAnim == BOTH_FORCEHEAL_START)
+
+				qboolean helping_rosh = qfalse;
+
+				NPC->flags |= FL_LOCK_PLAYER_WEAPONS;
+				rosh->flags |= FL_UNDYING;
+				rosh->client->ps.forcePowersKnown |= FORCE_POWERS_ROSH_FROM_TWINS;
+
+				if (rosh->client->ps.legsAnim == BOTH_FORCEHEAL_START)
 				{
 					if (TIMER_Done(NPC, "healRoshDebounce"))
 					{
@@ -11001,7 +11040,7 @@ static qboolean jedi_in_special_move()
 						}
 						else
 						{
-							//can't get to him!
+							// can't get to him!
 							npc_bs_jedi_follow_leader();
 							NPC_UpdateAngles(qtrue, qtrue);
 							return qtrue;

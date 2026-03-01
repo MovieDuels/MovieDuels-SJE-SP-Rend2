@@ -1939,7 +1939,6 @@ ClientTimerActions
 Actions that happen once a second
 ==================
 */
-extern void BG_ReduceBlasterMishapLevel(playerState_t* ps);
 extern void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps);
 extern void WP_SaberFatigueRegenerate(int override_amt);
 extern void WP_BlasterFatigueRegenerate(int override_amt);

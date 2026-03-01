@@ -33,6 +33,19 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../Ratl/string_vs.h"
 #include "../Rufl/hstring.h"
 #include "../Ratl/vector_vs.h"
+#include "g_local.h"
+#include "bg_public.h"
+#include <qcommon\q_platform.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_shared.h>
+#include "teams.h"
+#include "g_shared.h"
+#include <qcommon\q_string.h>
+#include "ai.h"
+#include <qcommon\q_color.h>
+#include <cstdlib>
+#include <cassert>
+#include <string.h>
 
 extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
 extern qboolean NPCsPrecached;
@@ -271,7 +284,7 @@ qboolean G_ParseLiteral(const char** data, const char* string)
 //
 // NPC parameters file : ext_data/NPCs/*.npc*
 //
-#define MAX_NPC_DATA_SIZE 0x100000
+constexpr auto MAX_NPC_DATA_SIZE = 0x100000;
 char NPCParms[MAX_NPC_DATA_SIZE];
 
 /*
@@ -1274,7 +1287,10 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 			const int cineGLAIndex = gi.G2API_PrecacheGhoul2Model(va("models/players/%s/%s.gla", skeletonMapName, skeletonMapName));
 			if (cineGLAIndex)
 			{
-				assert(cineGLAIndex == normalGLAIndex + 1);
+				if (cineGLAIndex != normalGLAIndex + 1)
+				{
+					Com_Printf("Warning: cineGLAIndex (%d) != normalGLAIndex+1 (%d)\n", cineGLAIndex, normalGLAIndex + 1);
+				}
 				G_ParseAnimationFile(1, skeletonMapName, file_index);
 				G_ParseAnimationEvtFile(1, skeletonMapName, file_index, cineGLAIndex, false);
 			}
@@ -1337,51 +1353,55 @@ extern cvar_t* g_char_model;
 
 void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name)
 {
-	//load its animation config
-	char* model_name;
-	char* stripped_name;
-
-	if (ent->playerModel == -1)
-	{
+	if (!ent || !ent->client || ent->playerModel == -1)
 		return;
-	}
-	if (Q_stricmp("player", p_model_name) == 0)
-	{
-		//model is actually stored on console
+
+	const char* model_name;
+
+	if (!Q_stricmp("player", p_model_name))
 		model_name = g_char_model->string;
-	}
 	else
+		model_name = p_model_name;
+
+	const char* gla_name = NULL;
+
+	// Validate Ghoul2 before calling G2API_GetGLAName
+	if (ent->ghoul2.IsValid() &&
+		ent->ghoul2.size() > ent->playerModel &&
+		ent->ghoul2[ent->playerModel].mModel != 0)
 	{
-		model_name = const_cast<char*>(p_model_name);
+		gla_name = gi.G2API_GetGLAName(&ent->ghoul2[ent->playerModel]);
 	}
-	//get the location of the animation.cfg
-	const char* gla_name = gi.G2API_GetGLAName(&ent->ghoul2[ent->playerModel]);
-	//now load and parse the animation.cfg, animevents.cfg and set the animFileIndex
+
+	const char* stripped_name;
+
 	if (!gla_name)
 	{
-		Com_Printf(S_COLOR_RED"Failed find animation file name models/players/%s\n", model_name);
-		stripped_name = "_humanoid"; //take a guess, maybe it's right?
+		Com_Printf(S_COLOR_RED "Failed to find animation file for model '%s'\n", model_name);
+		stripped_name = "_humanoid"; // fallback
 	}
 	else
 	{
 		char anim_name[MAX_QPATH];
-		Q_strncpyz(anim_name, gla_name, sizeof anim_name);
+		Q_strncpyz(anim_name, gla_name, sizeof(anim_name));
+
 		char* slash = strrchr(anim_name, '/');
 		if (slash)
-		{
 			*slash = 0;
-		}
+
 		stripped_name = COM_SkipPath(anim_name);
 	}
 
-	//now load and parse the animation.cfg, animevents.cfg and set the animFileIndex
 	ent->client->clientInfo.animFileIndex = G_ParseAnimFileSet(stripped_name, model_name);
 
 	if (ent->client->clientInfo.animFileIndex < 0)
 	{
-		Com_Printf(S_COLOR_RED"Failed to load animation file set models/players/%s/animation.cfg\n", model_name);
+		Com_Printf(S_COLOR_RED "Failed to load animation file set models/players/%s/animation.cfg\n", model_name);
+
 #ifndef FINAL_BUILD
-		Com_Error(ERR_FATAL, "Failed to load animation file set models/players/%s/animation.cfg\n", modelName);
+		Com_Error(ERR_FATAL,
+			"Failed to load animation file set models/players/%s/animation.cfg\n",
+			model_name);
 #endif
 	}
 }
@@ -4569,7 +4589,6 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 		//Spawning in after initial precache, our models are precached, we just need to set our clientInfo
 		CG_RegisterClientModels(npc->s.number);
 		CG_RegisterNPCCustomSounds(ci);
-		//CG_RegisterNPCEffects( NPC->client->playerTeam );
 	}
 
 	return qtrue;
@@ -4577,8 +4596,8 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 
 void NPC_LoadParms()
 {
-	int npc_ext_fn_len;
-	char* buffer;
+	int npc_ext_fn_len = 0;
+	char* buffer = nullptr;
 	char npc_extension_list_buf[16384]; //	The list of file names read in, EDIT: Npcs, lots and lots of npcs =D
 
 	//gi.Printf( "Parsing ext_data/npcs/*.npc definitions\n" );

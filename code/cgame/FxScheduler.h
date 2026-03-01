@@ -737,7 +737,7 @@ public:
 	// call once per CGame frame [rww ammendment - twice now actually, but first only renders portal effects]
 
 	int NumScheduledFx() const { return static_cast<int>(mFxSchedule.size()); }
-	void Clean(bool b_remove_templates = true, int id_to_preserve = 0); // clean out the system
+	void Clean(bool bRemoveTemplates = true, int idToPreserve = 0); // clean out the system
 
 	// FX Override functions
 	SEffectTemplate* GetEffectCopy(int fx_handle, int* new_handle);

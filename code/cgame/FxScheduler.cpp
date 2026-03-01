@@ -25,14 +25,18 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #if !defined(FX_SCHEDULER_H_INC)
 #include "FxScheduler.h"
 #endif
+#include "FxScheduler.h"
+#include <ghoul2_shared.h>
 
 #if !defined(GHOUL2_SHARED_H_INC)
 #include "../game/ghoul2_shared.h"	//for CGhoul2Info_v
 #endif
+#include <ghoul2\G2.h>
 
 #if !defined(G2_H_INC)
 #include "../ghoul2/G2.h"
 #endif
+#include <qcommon\q_shared.h>
 
 #if !defined(__Q_SHARED_H)
 #include "../qcommon/q_shared.h"
@@ -41,6 +45,27 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "qcommon/safe/string.h"
 #include <cmath>
 #include "qcommon/ojk_saved_game_helper.h"
+#include <surfaceflags.h>
+#include <bg_public.h>
+#include <qcommon\q_platform.h>
+#include "FxPrimitives.h"
+#include <cstdlib>
+#include <qcommon\q_math.h>
+#include <map>
+#include <gsl\gsl-lite.h>
+#include <qcommon\safe\gsl.h>
+#include <genericparser2.h>
+#include <string.h>
+#include "cg_local.h"
+#include "FxSystem.h"
+#include <qcommon\q_string.h>
+#include <qcommon\ojk_saved_game_helper_fwd.h>
+#include <g_shared.h>
+#include <vector>
+#include <qcommon\sstring.h>
+#include <list>
+#include "FxUtil.h"
+#include <cassert>
 
 CFxScheduler theFxScheduler;
 
@@ -341,7 +366,7 @@ void SEffectTemplate::operator=(const SEffectTemplate& that)
 //	None
 //
 //------------------------------------------------------
-void CFxScheduler::Clean(const bool b_remove_templates /*= true*/, const int id_to_preserve /*= 0*/)
+void CFxScheduler::Clean(const bool bRemoveTemplates /*= true*/, const int idToPreserve /*= 0*/)
 {
 	// Ditch any scheduled effects
 	auto itr = mFxSchedule.begin();
@@ -357,12 +382,12 @@ void CFxScheduler::Clean(const bool b_remove_templates /*= true*/, const int id_
 		itr = next;
 	}
 
-	if (b_remove_templates)
+	if (bRemoveTemplates)
 	{
 		// Ditch any effect templates
 		for (int i = 1; i < FX_MAX_EFFECTS; i++)
 		{
-			if (i == id_to_preserve)
+			if (i == idToPreserve)
 			{
 				continue;
 			}
@@ -379,7 +404,7 @@ void CFxScheduler::Clean(const bool b_remove_templates /*= true*/, const int id_
 			mEffectTemplates[i].mInUse = false;
 		}
 
-		if (id_to_preserve == 0)
+		if (idToPreserve == 0)
 		{
 			mEffectIDs.clear();
 		}
@@ -389,18 +414,18 @@ void CFxScheduler::Clean(const bool b_remove_templates /*= true*/, const int id_
 			// and restore it after clearing.
 			fxString_t str;
 
-			for (auto iter = mEffectIDs.begin(); iter != mEffectIDs.end(); ++iter)
+			for (const auto& mEffectID : mEffectIDs)
 			{
-				if ((*iter).second == id_to_preserve)
+				if (mEffectID.second == idToPreserve)
 				{
-					str = (*iter).first;
+					str = mEffectID.first;
 					break;
 				}
 			}
 
 			mEffectIDs.clear();
 
-			mEffectIDs[str] = id_to_preserve;
+			mEffectIDs[str] = idToPreserve;
 		}
 	}
 }
@@ -1828,18 +1853,11 @@ void CFxScheduler::CreateEffect(CPrimitiveTemplate* fx, const vec3_t origin, vec
 						{
 							ent_yaw = ent->currentAngles[YAW];
 						}
-						//if ( VectorCompare( tr.plane.normal, vec3_origin ) )
 						{
 							vec3_t hit_dir;
 							//hunh, no plane?  Use trace dir
 							VectorCopy(ax[0], hit_dir);
 						}
-						/*
-						else
-						{
-							VectorCopy( tr.plane.normal, hitDir );
-						}
-						*/
 
 						CG_AddGhoul2Mark(fx->mMediaHandles.GetHandle(), fx->mSizeStart.GetVal(), trace.endpos,
 							trace.plane.normal,

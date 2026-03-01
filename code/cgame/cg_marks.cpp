@@ -23,7 +23,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 // cg_marks.c -- wall marks
 
-#include "cg_media.h"
+#include <string.h>
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include "cg_local.h"
+#include <rd-common\tr_types.h>
 
 /*
 ===================================================================
@@ -62,18 +67,22 @@ void CG_InitMarkPolys()
 CG_FreeMarkPoly
 ==================
 */
-void CG_FreeMarkPoly(markPoly_t* le)
+static void CG_FreeMarkPoly(markPoly_t* le)
 {
 	if (!le->prevMark)
 	{
 		CG_Error("CG_FreeLocalEntity: not active");
 	}
 
-	// remove from the doubly linked active list
+	// unlink from active list
 	le->prevMark->nextMark = le->nextMark;
-	le->nextMark->prevMark = le->prevMark;
 
-	// the free list is only singly linked
+	if (le->nextMark)  // SAFETY FIX
+	{
+		le->nextMark->prevMark = le->prevMark;
+	}
+
+	// push onto free list
 	le->nextMark = cg_freeMarkPolys;
 	cg_freeMarkPolys = le;
 }
@@ -90,24 +99,32 @@ markPoly_t* CG_AllocMark()
 	if (!cg_freeMarkPolys)
 	{
 		// no free entities, so free the one at the end of the chain
-		// remove the oldest active entity
 		const int time = cg_activeMarkPolys.prevMark->time;
+
 		while (cg_activeMarkPolys.prevMark && time == cg_activeMarkPolys.prevMark->time)
 		{
 			CG_FreeMarkPoly(cg_activeMarkPolys.prevMark);
 		}
 	}
 
+	// SAFETY FIX: still no free marks?
+	if (!cg_freeMarkPolys)
+	{
+		// nothing to allocate, avoid null dereference
+		return NULL;
+	}
+
 	markPoly_t* le = cg_freeMarkPolys;
 	cg_freeMarkPolys = cg_freeMarkPolys->nextMark;
 
-	memset(le, 0, sizeof * le);
+	memset(le, 0, sizeof(*le));
 
 	// link into the active list
 	le->nextMark = cg_activeMarkPolys.nextMark;
 	le->prevMark = &cg_activeMarkPolys;
 	cg_activeMarkPolys.nextMark->prevMark = le;
 	cg_activeMarkPolys.nextMark = le;
+
 	return le;
 }
 

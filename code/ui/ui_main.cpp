@@ -47,6 +47,13 @@ extern stringID_table_t anim_table[MAX_ANIMATIONS + 1];
 #include "../qcommon/stringed_ingame.h"
 #include "../qcommon/stv_version.h"
 #include "../qcommon/q_shared.h"
+#include <corecrt.h>
+#include <cstdint>
+#include <cctype>
+#include <qcommon\qcommon.h>
+#include <client\client.h>
+#include <qcommon\qfiles.h>
+#include <search.h>
 
 #ifdef NEW_FEEDER
 static int uiModelIndex = 0;
@@ -2134,26 +2141,49 @@ Text_PaintWithCursor
 ================
 */
 // iMaxPixelWidth is 0 here for no-limit
-static void Text_PaintWithCursor(const float x, const float y, const float scale, vec4_t color, const char* text, const int cursorPos, const char cursor,
-	const int iMaxPixelWidth, const int style, const int iFontIndex)
+static void Text_PaintWithCursor(const float x,
+	const float y,
+	const float scale,
+	vec4_t color,
+	const char* text,
+	const int cursorPos,
+	const char cursor,
+	const int iMaxPixelWidth,
+	const int style,
+	const int iFontIndex)
 {
+	// Draw the base text
 	Text_Paint(x, y, scale, color, text, iMaxPixelWidth, style, iFontIndex);
 
-	// now print the cursor as well...
-	//
+	// Prepare temporary buffer for measuring cursor position
 	char sTemp[1024];
-	int iCopyCount = iMaxPixelWidth > 0 ? Q_min((int)strlen(text), iMaxPixelWidth) : static_cast<int>(strlen(text));
+
+	// Determine how many characters to copy
+	int textLen = (int)strlen(text);
+	int iCopyCount = textLen;
+
+	if (iMaxPixelWidth > 0)
+	{
+		iCopyCount = Q_min(iCopyCount, iMaxPixelWidth);
+	}
+
 	iCopyCount = Q_min(iCopyCount, cursorPos);
-	iCopyCount = Q_min(iCopyCount, (int)sizeof(sTemp));
+	iCopyCount = Q_min(iCopyCount, (int)sizeof(sTemp) - 1); // leave room for '\0'
 
-	// copy text into temp buffer for pixel measure...
-	//
-	strncpy(sTemp, text, iCopyCount);
-	sTemp[iCopyCount] = '\0';
+	// Copy substring safely
+	Q_strncpyz(sTemp, text, iCopyCount + 1);
 
+	// Measure pixel width of substring
 	const int iNextXpos = ui.R_Font_StrLenPixels(sTemp, iFontIndex, scale);
 
-	Text_Paint(x + iNextXpos, y, scale, color, va("%c", cursor), iMaxPixelWidth, style | ITEM_TEXTSTYLE_BLINK,
+	// Draw the blinking cursor at the computed position
+	Text_Paint(x + iNextXpos,
+		y,
+		scale,
+		color,
+		va("%c", cursor),
+		iMaxPixelWidth,
+		style | ITEM_TEXTSTYLE_BLINK,
 		iFontIndex);
 }
 
@@ -4337,108 +4367,115 @@ int ui_numKnownAnimFileSets;
 
 static qboolean UI_ParseAnimationFile(const char* af_filename)
 {
-	const char* text_p;
 	char text[80000];
+	const char* text_p;
 	animation_t* animations = ui_knownAnimFileSets[ui_numKnownAnimFileSets].animations;
 
-	const int len = re.GetAnimationCFG(af_filename, text, sizeof text);
+	// Load animation.cfg into buffer
+	const int len = re.GetAnimationCFG(af_filename, text, sizeof(text));
 	if (len <= 0)
 	{
 		return qfalse;
 	}
-	if (len >= static_cast<int>(sizeof text - 1))
+
+	if (len >= (int)sizeof(text) - 1)
 	{
-		Com_Error(ERR_FATAL, "UI_ParseAnimationFile: File %s too long\n (%d > %d)", af_filename, len, sizeof text - 1);
+		Com_Error(ERR_FATAL,
+			"UI_ParseAnimationFile: File %s too long\n (%d > %d)",
+			af_filename, len, (int)sizeof(text) - 1);
 	}
 
-	// parse the text
+	// Null‑terminate
+	text[len] = '\0';
 	text_p = text;
 
-	//FIXME: have some way of playing anims backwards... negative numFrames?
-
-	//initialize anim array so that from 0 to MAX_ANIMATIONS, set default values of 0 1 0 100
+	// Initialise all animations with defaults
 	for (int i = 0; i < MAX_ANIMATIONS; i++)
 	{
 		animations[i].firstFrame = 0;
 		animations[i].numFrames = 0;
 		animations[i].loopFrames = -1;
 		animations[i].frameLerp = 100;
-		//		animations[i].initialLerp = 100;
 	}
 
-	// read information for each frame
 	COM_BeginParseSession();
-	while (true)
-	{
-		const char* token = COM_Parse(&text_p);
 
+	while (qtrue)
+	{
+		// Read animation name
+		const char* token = COM_Parse(&text_p);
 		if (!token || !token[0])
 		{
-			break;
+			break; // EOF
 		}
 
 		const int animNum = GetIDForString(anim_table, token);
 		if (animNum == -1)
 		{
-			//#ifndef FINAL_BUILD
 #ifdef _DEBUG
 			if (strcmp(token, "ROOT"))
 			{
-				//Com_Printf(S_COLOR_RED"WARNING: Unknown token %s in %s\n", token, af_filename);
+				// Unknown token — skip line
+				// Com_Printf(S_COLOR_RED "WARNING: Unknown token %s in %s\n", token, af_filename);
 			}
 #endif
+			// Skip to end of line
 			while (token[0])
 			{
-				token = COM_ParseExt(&text_p, qfalse); //returns empty string when next token is EOL
+				token = COM_ParseExt(&text_p, qfalse);
 			}
 			continue;
 		}
 
+		// firstFrame
 		token = COM_Parse(&text_p);
-		if (!token)
+		if (!token || !token[0])
 		{
 			break;
 		}
 		animations[animNum].firstFrame = atoi(token);
 
+		// numFrames
 		token = COM_Parse(&text_p);
-		if (!token)
+		if (!token || !token[0])
 		{
 			break;
 		}
 		animations[animNum].numFrames = atoi(token);
 
+		// loopFrames
 		token = COM_Parse(&text_p);
-		if (!token)
+		if (!token || !token[0])
 		{
 			break;
 		}
 		animations[animNum].loopFrames = atoi(token);
 
+		// fps → frameLerp
 		token = COM_Parse(&text_p);
-		if (!token)
+		if (!token || !token[0])
 		{
 			break;
 		}
+
 		float fps = atof(token);
-		if (fps == 0)
+		if (fps == 0.0f)
 		{
-			fps = 1; //Don't allow divide by zero error
+			fps = 1.0f; // avoid divide‑by‑zero
 		}
-		if (fps < 0)
+
+		if (fps < 0.0f)
 		{
-			//backwards
-			animations[animNum].frameLerp = floor(1000.0f / fps);
+			// backwards animation
+			animations[animNum].frameLerp = (int)floor(1000.0f / fps);
 		}
 		else
 		{
-			animations[animNum].frameLerp = ceil(1000.0f / fps);
+			animations[animNum].frameLerp = (int)ceil(1000.0f / fps);
 		}
-
-		//		animations[animNum].initialLerp = ceil(1000.0f / fabs(fps));
 	}
-	COM_EndParseSession();
 
+	COM_EndParseSession();
 	return qtrue;
 }
 
@@ -4551,58 +4588,89 @@ static int UI_G2SetAnim(CGhoul2Info* ghlInfo, const char* boneName, const int an
 
 static qboolean UI_ParseColorData(const char* buf, playerSpeciesInfo_t& species)
 {
-	const char* p;
+	const char* p = buf;
 
-	p = buf;
 	COM_BeginParseSession();
+
 	species.ColorCount = 0;
 	species.ColorMax = 16;
-	species.Color = static_cast<playerColor_t*>(malloc(species.ColorMax * sizeof(playerColor_t)));
+
+	// Initial allocation
+	species.Color = static_cast<playerColor_t*>(
+		malloc(species.ColorMax * sizeof(playerColor_t)));
+
+	if (!species.Color)
+	{
+		COM_EndParseSession();
+		return qfalse;
+	}
 
 	while (p)
 	{
-		const char* token = COM_ParseExt(&p, qtrue); //looking for the shader
-		if (token[0] == 0)
+		// Read shader token
+		const char* token = COM_ParseExt(&p, qtrue);
+		if (token[0] == '\0')
 		{
 			COM_EndParseSession();
-			return static_cast<qboolean>(species.ColorCount != 0);
+			return (species.ColorCount != 0) ? qtrue : qfalse;
 		}
 
+		// Expand array if needed (SAFE REALLOC)
 		if (species.ColorCount >= species.ColorMax)
 		{
 			species.ColorMax *= 2;
-			species.Color = static_cast<playerColor_t*>(
-				realloc(species.Color, species.ColorMax * sizeof(playerColor_t)));
+
+			void* newPtr = realloc(species.Color,
+				species.ColorMax * sizeof(playerColor_t));
+
+			if (!newPtr)
+			{
+				// Free everything allocated so far
+				free(species.Color);
+				species.Color = nullptr;
+
+				COM_EndParseSession();
+				return qfalse;
+			}
+
+			species.Color = static_cast<playerColor_t*>(newPtr);
 		}
 
+		// Prepare new entry
 		memset(&species.Color[species.ColorCount], 0, sizeof(playerColor_t));
-
 		Q_strncpyz(species.Color[species.ColorCount].shader, token, MAX_QPATH);
 
-		token = COM_ParseExt(&p, qtrue); //looking for action block {
+		// Expect '{'
+		token = COM_ParseExt(&p, qtrue);
 		if (token[0] != '{')
 		{
 			COM_EndParseSession();
 			return qfalse;
 		}
 
-		token = COM_ParseExt(&p, qtrue); //looking for action commands
+		// Parse action block
+		token = COM_ParseExt(&p, qtrue);
 		while (token[0] != '}')
 		{
-			if (token[0] == 0)
+			if (token[0] == '\0')
 			{
-				//EOF
 				COM_EndParseSession();
 				return qfalse;
 			}
-			Q_strcat(species.Color[species.ColorCount].actionText, ACTION_BUFFER_SIZE, token);
-			Q_strcat(species.Color[species.ColorCount].actionText, ACTION_BUFFER_SIZE, " ");
-			token = COM_ParseExt(&p, qtrue); //looking for action commands or final }
+
+			Q_strcat(species.Color[species.ColorCount].actionText,
+				ACTION_BUFFER_SIZE, token);
+			Q_strcat(species.Color[species.ColorCount].actionText,
+				ACTION_BUFFER_SIZE, " ");
+
+			token = COM_ParseExt(&p, qtrue);
 		}
-		species.ColorCount++; //next color please
+
+		species.ColorCount++;
 	}
+
 	COM_EndParseSession();
-	return qtrue; //never get here
+	return qtrue; // logically unreachable, but kept for completeness
 }
 
 /*
@@ -4670,72 +4738,95 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 {
 	static constexpr size_t DIR_LIST_SIZE = 16384;
 
+	// Allocate directory list on heap only
+	char* dirlist = static_cast<char*>(malloc(DIR_LIST_SIZE));
+	if (!dirlist)
+	{
+		Com_Printf(S_COLOR_RED "ERROR: Failed to allocate %zu bytes for player model directory list.\n",
+			DIR_LIST_SIZE);
+		return;
+	}
+
 	size_t dirListSize = DIR_LIST_SIZE;
-	char stackDirList[8192]{};
 	int dirlen = 0;
 	const int building = Cvar_VariableIntegerValue("com_buildscript");
 
-	auto dirlist = static_cast<char*>(malloc(DIR_LIST_SIZE));
-	if (!dirlist)
-	{
-		Com_Printf(S_COLOR_YELLOW "WARNING: Failed to allocate %u bytes of memory for player model "
-			"directory list. Using stack allocated buffer of %u bytes instead.",
-			DIR_LIST_SIZE, sizeof stackDirList);
-
-		dirlist = stackDirList;
-		dirListSize = sizeof stackDirList;
-	}
-
+	// Reset species info
 	uiInfo.playerSpeciesCount = 0;
 	uiInfo.playerSpeciesIndex = 0;
 	uiInfo.playerSpeciesMax = 8;
-	uiInfo.playerSpecies = static_cast<playerSpeciesInfo_t*>(malloc(
-		uiInfo.playerSpeciesMax * sizeof(playerSpeciesInfo_t)));
 
-	// iterate directory of all player models
+	uiInfo.playerSpecies = static_cast<playerSpeciesInfo_t*>(
+		malloc(uiInfo.playerSpeciesMax * sizeof(playerSpeciesInfo_t)));
+
+	if (!uiInfo.playerSpecies)
+	{
+		free(dirlist);
+		Com_Printf(S_COLOR_RED "ERROR: Failed to allocate initial playerSpecies array.\n");
+		return;
+	}
+
+	// Get list of player model directories
 	const int numdirs = ui.FS_GetFileList("models/players", "/", dirlist, dirListSize);
 	char* dirptr = dirlist;
+
 	for (int i = 0; i < numdirs; i++, dirptr += dirlen + 1)
 	{
 		int f = 0;
 		char fpath[MAX_QPATH];
 
 		dirlen = strlen(dirptr);
-
-		if (dirlen)
-		{
-			if (dirptr[dirlen - 1] == '/')
-				dirptr[dirlen - 1] = '\0';
-		}
-		else
+		if (dirlen == 0)
 		{
 			continue;
 		}
 
+		// Strip trailing slash
+		if (dirptr[dirlen - 1] == '/')
+		{
+			dirptr[dirlen - 1] = '\0';
+			dirlen--;
+		}
+
+		// Skip "." and ".."
 		if (strcmp(dirptr, ".") == 0 || strcmp(dirptr, "..") == 0)
+		{
 			continue;
+		}
 
-		Com_sprintf(fpath, sizeof fpath, "models/players/%s/PlayerChoice.txt", dirptr);
+		// Look for PlayerChoice.txt
+		Com_sprintf(fpath, sizeof(fpath), "models/players/%s/PlayerChoice.txt", dirptr);
 		int filelen = ui.FS_FOpenFile(fpath, &f, FS_READ);
 
 		if (f)
 		{
-			char filelist[2048];
-
 			std::vector<char> buffer(filelen + 1);
-			ui.FS_Read(&buffer[0], filelen, f);
+			ui.FS_Read(buffer.data(), filelen, f);
 			ui.FS_FCloseFile(f);
 
-			buffer[filelen] = 0;
+			buffer[filelen] = '\0';
 
-			//record this species
+			// Expand species array if needed (SAFE REALLOC)
 			if (uiInfo.playerSpeciesCount >= uiInfo.playerSpeciesMax)
 			{
 				uiInfo.playerSpeciesMax *= 2;
-				uiInfo.playerSpecies = static_cast<playerSpeciesInfo_t*>(realloc(
-					uiInfo.playerSpecies, uiInfo.playerSpeciesMax * sizeof(playerSpeciesInfo_t)));
+
+				void* newPtr = realloc(uiInfo.playerSpecies,
+					uiInfo.playerSpeciesMax * sizeof(playerSpeciesInfo_t));
+
+				if (!newPtr)
+				{
+					free(dirlist);
+					Com_Printf(S_COLOR_RED "ERROR: realloc failed for playerSpecies.\n");
+					return;
+				}
+
+				uiInfo.playerSpecies = static_cast<playerSpeciesInfo_t*>(newPtr);
 			}
-			playerSpeciesInfo_t* species = &uiInfo.playerSpecies[uiInfo.playerSpeciesCount];
+
+			playerSpeciesInfo_t* species =
+				&uiInfo.playerSpecies[uiInfo.playerSpeciesCount];
+
 			memset(species, 0, sizeof(playerSpeciesInfo_t));
 			Q_strncpyz(species->Name, dirptr, MAX_QPATH);
 
@@ -4744,6 +4835,7 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 				ui.Printf("UI_BuildPlayerModel_List: Errors parsing '%s'\n", fpath);
 			}
 
+			// Initial skin array sizes
 			species->SkinHeadMax = 8;
 			species->SkinTorsoMax = 8;
 			species->SkinLegMax = 8;
@@ -4752,79 +4844,134 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 			species->SkinTorso = static_cast<skinName_t*>(malloc(species->SkinTorsoMax * sizeof(skinName_t)));
 			species->SkinLeg = static_cast<skinName_t*>(malloc(species->SkinLegMax * sizeof(skinName_t)));
 
+			if (!species->SkinHead || !species->SkinTorso || !species->SkinLeg)
+			{
+				UI_FreeSpecies(species);
+				continue;
+			}
+
 			int iSkinParts = 0;
 
-			const int numfiles = ui.
-				FS_GetFileList(va("models/players/%s", dirptr), ".skin", filelist, sizeof filelist);
+			// Scan .skin files
+			char filelist[2048];
+			const int numfiles = ui.FS_GetFileList(
+				va("models/players/%s", dirptr),
+				".skin",
+				filelist,
+				sizeof(filelist));
+
 			char* fileptr = filelist;
+
 			for (int j = 0; j < numfiles; j++, fileptr += filelen + 1)
 			{
 				char skinname[64];
+
 				if (building)
 				{
 					ui.FS_FOpenFile(va("models/players/%s/%s", dirptr, fileptr), &f, FS_READ);
 					if (f) ui.FS_FCloseFile(f);
+
 					ui.FS_FOpenFile(va("models/players/%s/sounds.cfg", dirptr), &f, FS_READ);
 					if (f) ui.FS_FCloseFile(f);
+
 					ui.FS_FOpenFile(va("models/players/%s/animevents.cfg", dirptr), &f, FS_READ);
 					if (f) ui.FS_FCloseFile(f);
 				}
 
 				filelen = strlen(fileptr);
-				COM_StripExtension(fileptr, skinname, sizeof skinname);
+				COM_StripExtension(fileptr, skinname, sizeof(skinname));
 
-				if (IsImageFile(dirptr, skinname, static_cast<qboolean>(building != 0)))
+				if (IsImageFile(dirptr, skinname, (building != 0) ? qtrue : qfalse))
 				{
-					//if it exists
+					// Head skins
 					if (Q_stricmpn(skinname, "head_", 5) == 0)
 					{
 						if (species->SkinHeadCount >= species->SkinHeadMax)
 						{
 							species->SkinHeadMax *= 2;
-							species->SkinHead = static_cast<skinName_t*>(realloc(
-								species->SkinHead, species->SkinHeadMax * sizeof(skinName_t)));
+
+							void* newPtr = realloc(species->SkinHead,
+								species->SkinHeadMax * sizeof(skinName_t));
+
+							if (!newPtr)
+							{
+								UI_FreeSpecies(species);
+								continue;
+							}
+
+							species->SkinHead = static_cast<skinName_t*>(newPtr);
 						}
-						Q_strncpyz(species->SkinHead[species->SkinHeadCount++].name, skinname, SKIN_LENGTH);
+
+						Q_strncpyz(species->SkinHead[species->SkinHeadCount++].name,
+							skinname, SKIN_LENGTH);
 						iSkinParts |= 1 << 0;
 					}
+					// Torso skins
 					else if (Q_stricmpn(skinname, "torso_", 6) == 0)
 					{
 						if (species->SkinTorsoCount >= species->SkinTorsoMax)
 						{
 							species->SkinTorsoMax *= 2;
-							species->SkinTorso = static_cast<skinName_t*>(realloc(
-								species->SkinTorso, species->SkinTorsoMax * sizeof(skinName_t)));
+
+							void* newPtr = realloc(species->SkinTorso,
+								species->SkinTorsoMax * sizeof(skinName_t));
+
+							if (!newPtr)
+							{
+								UI_FreeSpecies(species);
+								continue;
+							}
+
+							species->SkinTorso = static_cast<skinName_t*>(newPtr);
 						}
-						Q_strncpyz(species->SkinTorso[species->SkinTorsoCount++].name, skinname, SKIN_LENGTH);
+
+						Q_strncpyz(species->SkinTorso[species->SkinTorsoCount++].name,
+							skinname, SKIN_LENGTH);
 						iSkinParts |= 1 << 1;
 					}
+					// Leg skins
 					else if (Q_stricmpn(skinname, "lower_", 6) == 0)
 					{
 						if (species->SkinLegCount >= species->SkinLegMax)
 						{
 							species->SkinLegMax *= 2;
-							species->SkinLeg = static_cast<skinName_t*>(realloc(
-								species->SkinLeg, species->SkinLegMax * sizeof(skinName_t)));
+
+							void* newPtr = realloc(species->SkinLeg,
+								species->SkinLegMax * sizeof(skinName_t));
+
+							if (!newPtr)
+							{
+								UI_FreeSpecies(species);
+								continue;
+							}
+
+							species->SkinLeg = static_cast<skinName_t*>(newPtr);
 						}
-						Q_strncpyz(species->SkinLeg[species->SkinLegCount++].name, skinname, SKIN_LENGTH);
+
+						Q_strncpyz(species->SkinLeg[species->SkinLegCount++].name,
+							skinname, SKIN_LENGTH);
 						iSkinParts |= 1 << 2;
 					}
 				}
 			}
-			if (iSkinParts < 7)
+
+			// Must have head + torso + legs
+			if (iSkinParts != 7)
 			{
-				//didn't get a skin for each, then skip this model.
 				UI_FreeSpecies(species);
 				continue;
 			}
+
 			uiInfo.playerSpeciesCount++;
 
-			if (ui_com_rend2.integer == 0) //rend2 is off
+			// Optional precache
+			if (ui_com_rend2.integer == 0)
 			{
 				if (!inGameLoad && ui_PrecacheModels.integer)
 				{
 					CGhoul2Info_v ghoul2;
-					Com_sprintf(fpath, sizeof fpath, "models/players/%s/model.glm", dirptr);
+					Com_sprintf(fpath, sizeof(fpath), "models/players/%s/model.glm", dirptr);
+
 					const int g2Model = DC->g2_InitGhoul2Model(ghoul2, fpath, 0, 0, 0, 0, 0);
 					if (g2Model >= 0)
 					{
@@ -4835,10 +4982,7 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 		}
 	}
 
-	if (dirlist != stackDirList)
-	{
-		free(dirlist);
-	}
+	free(dirlist);
 }
 
 /*
@@ -5225,8 +5369,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 27/02/2026 ---------------------\n");// build date
-	Com_Printf("---------------------------Build 09------------------------------\n");
+	Com_Printf("--------------------- Build Date 01/03/2026 ---------------------\n");// build date
+	Com_Printf("---------------------------Build 01------------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -8330,23 +8474,35 @@ static void UI_LoadMissionSelectMenu(const char* cvarName)
 }
 
 // Update the player weapons with the chosen weapon
-static void UI_AddWeaponSelection(const int weaponIndex, const int ammoIndex, const int ammoAmount,
-	const char* iconItemName, const char* litIconItemName, const char* hexBackground,
+
+static void UI_AddWeaponSelection(const int weaponIndex,
+	const int ammoIndex,
+	const int ammoAmount,
+	const char* iconItemName,
+	const char* litIconItemName,
+	const char* hexBackground,
 	const char* soundfile)
 {
-	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
-
+	// Get current menu
+	const menuDef_t* menu = Menu_GetFocused();
 	if (!menu)
 	{
 		return;
 	}
 
+	// Retrieve icon items
 	const itemDef_s* iconItem = Menu_FindItemByName(menu, iconItemName);
 	const itemDef_s* litIconItem = Menu_FindItemByName(menu, litIconItemName);
 
-	const char* chosenItemName, * chosenButtonName;
+	if (!iconItem || !litIconItem)
+	{
+		return;
+	}
 
-	// has this weapon already been chosen?
+	const char* chosenItemName = NULL;
+	const char* chosenButtonName = NULL;
+
+	// If weapon already selected in slot 1 or 2, clicking again removes it
 	if (weaponIndex == uiInfo.selectedWeapon1)
 	{
 		UI_RemoveWeaponSelection(1);
@@ -8358,52 +8514,65 @@ static void UI_AddWeaponSelection(const int weaponIndex, const int ammoIndex, co
 		return;
 	}
 
-	// See if either slot is empty
+	// Determine which slot to fill
 	if (uiInfo.selectedWeapon1 == NOWEAPON)
 	{
 		chosenItemName = "chosenweapon1_icon";
 		chosenButtonName = "chosenweapon1_button";
+
 		uiInfo.selectedWeapon1 = weaponIndex;
 		uiInfo.selectedWeapon1AmmoIndex = ammoIndex;
 
-		memcpy(uiInfo.selectedWeapon1ItemName, hexBackground, sizeof uiInfo.selectedWeapon1ItemName);
+		// Safe copy (fixes original memcpy bug)
+		Q_strncpyz(uiInfo.selectedWeapon1ItemName,
+			hexBackground,
+			sizeof(uiInfo.selectedWeapon1ItemName));
 
-		//Save the lit and unlit icons for the selected weapon slot
 		uiInfo.litWeapon1Icon = litIconItem->window.background;
 		uiInfo.unlitWeapon1Icon = iconItem->window.background;
 
 		uiInfo.weapon1ItemButton = uiInfo.runScriptItem;
-		uiInfo.weapon1ItemButton->descText = "@MENUS_CLICKREMOVE";
+		if (uiInfo.weapon1ItemButton)
+		{
+			uiInfo.weapon1ItemButton->descText = "@MENUS_CLICKREMOVE";
+		}
 	}
 	else if (uiInfo.selectedWeapon2 == NOWEAPON)
 	{
 		chosenItemName = "chosenweapon2_icon";
 		chosenButtonName = "chosenweapon2_button";
+
 		uiInfo.selectedWeapon2 = weaponIndex;
 		uiInfo.selectedWeapon2AmmoIndex = ammoIndex;
 
-		memcpy(uiInfo.selectedWeapon2ItemName, hexBackground, sizeof uiInfo.selectedWeapon2ItemName);
+		Q_strncpyz(uiInfo.selectedWeapon2ItemName,
+			hexBackground,
+			sizeof(uiInfo.selectedWeapon2ItemName));
 
-		//Save the lit and unlit icons for the selected weapon slot
 		uiInfo.litWeapon2Icon = litIconItem->window.background;
 		uiInfo.unlitWeapon2Icon = iconItem->window.background;
 
 		uiInfo.weapon2ItemButton = uiInfo.runScriptItem;
-		uiInfo.weapon2ItemButton->descText = "@MENUS_CLICKREMOVE";
+		if (uiInfo.weapon2ItemButton)
+		{
+			uiInfo.weapon2ItemButton->descText = "@MENUS_CLICKREMOVE";
+		}
 	}
-	else // Both slots are used, can't add it.
+	else
 	{
+		// Both slots full
 		return;
 	}
 
-	auto item = Menu_FindItemByName(menu, chosenItemName);
-	if (item && iconItem)
+	// Update chosen weapon icon
+	itemDef_s* item = Menu_FindItemByName(menu, chosenItemName);
+	if (item)
 	{
 		item->window.background = iconItem->window.background;
 		item->window.flags |= WINDOW_VISIBLE;
 	}
 
-	// Turn on chosenweapon button so player can unchoose the weapon
+	// Update chosen weapon button
 	item = Menu_FindItemByName(menu, chosenButtonName);
 	if (item)
 	{
@@ -8411,77 +8580,83 @@ static void UI_AddWeaponSelection(const int weaponIndex, const int ammoIndex, co
 		item->window.flags |= WINDOW_VISIBLE;
 	}
 
-	// Switch hex background to be 'on'
+	// Highlight hex background
 	item = Menu_FindItemByName(menu, hexBackground);
 	if (item)
 	{
-		item->window.foreColor[0] = 0;
-		item->window.foreColor[1] = 1;
-		item->window.foreColor[2] = 0;
-		item->window.foreColor[3] = 1;
+		item->window.foreColor[0] = 0.0f;
+		item->window.foreColor[1] = 1.0f;
+		item->window.foreColor[2] = 0.0f;
+		item->window.foreColor[3] = 1.0f;
 	}
 
-	// Get player state
-	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
+	// Update player state (UI may run outside gameplay)
+	const client_t* cl = &svs.clients[0];
 
-	// NOTE : this UIScript can now be run from outside the game, so don't
-	// return out here, just skip this part
-	if (cl)
+	if (cl && cl->gentity && cl->gentity->client)
 	{
-		// Add weapon
-		if (cl->gentity && cl->gentity->client)
+		playerState_t* pState = cl->gentity->client;
+
+		// Give weapon
+		if (weaponIndex > 0 && weaponIndex < WP_NUM_WEAPONS)
 		{
-			playerState_t* pState = cl->gentity->client;
+			pState->weapons[weaponIndex] = 1;
+		}
 
-			if (weaponIndex > 0 && weaponIndex < WP_NUM_WEAPONS)
-			{
-				pState->weapons[weaponIndex] = 1;
-			}
-
-			// Give them ammo too
-			if (ammoIndex > 0 && ammoIndex < AMMO_MAX)
-			{
-				pState->ammo[ammoIndex] = ammoAmount;
-			}
+		// Give ammo
+		if (ammoIndex > 0 && ammoIndex < AMMO_MAX)
+		{
+			pState->ammo[ammoIndex] = ammoAmount;
 		}
 	}
 
+	// Play UI sound
 	if (soundfile)
 	{
 		DC->startLocalSound(DC->registerSound(soundfile, qfalse), CHAN_LOCAL);
 	}
 
-	UI_WeaponsSelectionsComplete(); // Test to see if the mission begin button should turn on or off
+	// Check if mission begin button should activate
+	UI_WeaponsSelectionsComplete();
 }
 
-static void UI_AddPistolSelection(const int weaponIndex, const int ammoIndex, const int ammoAmount,
-	const char* iconItemName, const char* litIconItemName, const char* hexBackground,
+static void UI_AddPistolSelection(const int weaponIndex,
+	const int ammoIndex,
+	const int ammoAmount,
+	const char* iconItemName,
+	const char* litIconItemName,
+	const char* hexBackground,
 	const char* soundfile)
 {
-	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
-
+	// Get current menu
+	const menuDef_t* menu = Menu_GetFocused();
 	if (!menu)
 	{
 		return;
 	}
 
+	// Retrieve icon items
 	const itemDef_s* iconItem = Menu_FindItemByName(menu, iconItemName);
 	const itemDef_s* litIconItem = Menu_FindItemByName(menu, litIconItemName);
 
-	// Has a throw weapon already been chosen?
+	// If icons are missing, abort safely
+	if (!iconItem || !litIconItem)
+	{
+		return;
+	}
+
+	// If a pistol is already selected
 	if (uiInfo.selectedPistolWeapon != NOWEAPON)
 	{
-		// Clicked on the selected throwable weapon
+		// Clicking the same pistol deselects it
 		if (uiInfo.selectedPistolWeapon == weaponIndex)
 		{
-			// Deselect it
 			UI_Removepistolselection();
 		}
 		return;
 	}
 
-	const auto chosenItemName = "chosenpistol1_icon";
-	const auto chosenButtonName = "chosenpistol1_button";
+	// Set selection state
 	uiInfo.selectedPistolWeapon = weaponIndex;
 	uiInfo.selectedPistolWeaponAmmoIndex = ammoIndex;
 	uiInfo.PistolArmButton = uiInfo.runScriptItem;
@@ -8491,28 +8666,32 @@ static void UI_AddPistolSelection(const int weaponIndex, const int ammoIndex, co
 		uiInfo.PistolArmButton->descText = "@MENUS_CLICKREMOVE";
 	}
 
-	memcpy(uiInfo.selectedPistolWeaponItemName, hexBackground, sizeof uiInfo.selectedWeapon1ItemName);
+	// Copy hex background name safely (fixes original memcpy bug)
+	Q_strncpyz(uiInfo.selectedPistolWeaponItemName,
+		hexBackground,
+		sizeof(uiInfo.selectedPistolWeaponItemName));
 
-	//Save the lit and unlit icons for the selected weapon slot
+	// Save lit/unlit icons for UI highlight logic
 	uiInfo.litPistolIcon = litIconItem->window.background;
 	uiInfo.unlitPistolIcon = iconItem->window.background;
 
-	auto item = Menu_FindItemByName(menu, chosenItemName);
-	if (item && iconItem)
-	{
-		item->window.background = iconItem->window.background;
-		item->window.flags |= WINDOW_VISIBLE;
-	}
-
-	// Turn on throwchosenweapon button so player can unchoose the weapon
-	item = Menu_FindItemByName(menu, chosenButtonName);
+	// Update chosen pistol icon
+	itemDef_s* item = Menu_FindItemByName(menu, "chosenpistol1_icon");
 	if (item)
 	{
 		item->window.background = iconItem->window.background;
 		item->window.flags |= WINDOW_VISIBLE;
 	}
 
-	// Switch hex background to be 'on'
+	// Update chosen pistol button
+	item = Menu_FindItemByName(menu, "chosenpistol1_button");
+	if (item)
+	{
+		item->window.background = iconItem->window.background;
+		item->window.flags |= WINDOW_VISIBLE;
+	}
+
+	// Highlight hex background
 	item = Menu_FindItemByName(menu, hexBackground);
 	if (item)
 	{
@@ -8522,38 +8701,34 @@ static void UI_AddPistolSelection(const int weaponIndex, const int ammoIndex, co
 		item->window.foreColor[3] = 1.0f;
 	}
 
-	// Get player state
+	// Get player state (UI may run outside gameplay)
+	const client_t* cl = &svs.clients[0];
 
-	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
-
-	// NOTE : this UIScript can now be run from outside the game, so don't
-	// return out here, just skip this part
-	if (cl) // No client, get out
+	if (cl && cl->gentity && cl->gentity->client)
 	{
-		// Add weapon
-		if (cl->gentity && cl->gentity->client)
+		playerState_t* pState = cl->gentity->client;
+
+		// Give weapon
+		if (weaponIndex > 0 && weaponIndex < WP_NUM_WEAPONS)
 		{
-			playerState_t* pState = cl->gentity->client;
+			pState->weapons[weaponIndex] = 1;
+		}
 
-			if (weaponIndex > 0 && weaponIndex < WP_NUM_WEAPONS)
-			{
-				pState->weapons[weaponIndex] = 1;
-			}
-
-			// Give them ammo too
-			if (ammoIndex > 0 && ammoIndex < AMMO_MAX)
-			{
-				pState->ammo[ammoIndex] = ammoAmount;
-			}
+		// Give ammo
+		if (ammoIndex > 0 && ammoIndex < AMMO_MAX)
+		{
+			pState->ammo[ammoIndex] = ammoAmount;
 		}
 	}
 
+	// Play UI sound
 	if (soundfile)
 	{
 		DC->startLocalSound(DC->registerSound(soundfile, qfalse), CHAN_LOCAL);
 	}
 
-	UI_WeaponsSelectionsComplete(); // Test to see if the mission begin button should turn on or off
+	// Check if mission begin button should activate
+	UI_WeaponsSelectionsComplete();
 }
 
 // Update the player weapons with the chosen weapon
@@ -8758,42 +8933,66 @@ static void UI_Removepistolselection()
 
 static void UI_NormalWeaponSelection(const int selectionslot)
 {
-	itemDef_s* item;
-
-	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
+	// Determine which menu is currently active
+	const menuDef_t* menu = Menu_GetFocused();
 	if (!menu)
 	{
 		return;
 	}
 
+	itemDef_s* item = nullptr;
+
+	// Slot 1 reset
 	if (selectionslot == 1)
 	{
 		item = Menu_FindItemByName(menu, "chosenweapon1_icon");
-		if (item)
+		if (!item)
 		{
-			item->window.background = uiInfo.unlitWeapon1Icon;
+			Com_Printf(S_COLOR_YELLOW "WARNING: chosenweapon1_icon not found in current menu\n");
+			return;
 		}
+
+		item->window.background = uiInfo.unlitWeapon1Icon;
+		return;
 	}
 
+	// Slot 2 reset
 	if (selectionslot == 2)
 	{
 		item = Menu_FindItemByName(menu, "chosenweapon2_icon");
-		if (item)
+		if (!item)
 		{
-			item->window.background = uiInfo.unlitWeapon2Icon;
+			Com_Printf(S_COLOR_YELLOW "WARNING: chosenweapon2_icon not found in current menu\n");
+			return;
 		}
+
+		item->window.background = uiInfo.unlitWeapon2Icon;
+		return;
 	}
+
+	// Invalid slot index
+	Com_Printf(S_COLOR_YELLOW "WARNING: UI_NormalWeaponSelection called with invalid slot %d\n", selectionslot);
 }
 
 static void UI_Normalpistolselection()
 {
-	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
+	// Determine which menu is currently active
+	const menuDef_t* menu = Menu_GetFocused();
 	if (!menu)
 	{
 		return;
 	}
 
-	const auto item = Menu_FindItemByName(menu, "chosenpistol1_icon");
+	// Find the UI item that displays the chosen pistol icon
+	itemDef_t* item = Menu_FindItemByName(menu, "chosenpistol1_icon");
+	if (!item)
+	{
+		// Missing UI element — avoid a crash
+		Com_Printf(S_COLOR_YELLOW "WARNING: chosenpistol1_icon not found in current menu\n");
+		return;
+	}
+
+	// Restore the unlit pistol icon
 	item->window.background = uiInfo.unlitPistolIcon;
 }
 
@@ -8839,34 +9038,43 @@ static void UI_Highlightpistolselection()
 }
 
 // Update the player throwable weapons (okay it's a bad description) with the chosen weapon
-static void UI_AddThrowWeaponSelection(const int weaponIndex, const int ammoIndex, const int ammoAmount,
-	const char* iconItemName, const char* litIconItemName, const char* hexBackground,
+static void UI_AddThrowWeaponSelection(const int weaponIndex,
+	const int ammoIndex,
+	const int ammoAmount,
+	const char* iconItemName,
+	const char* litIconItemName,
+	const char* hexBackground,
 	const char* soundfile)
 {
-	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
-
+	// Get current menu
+	const menuDef_t* menu = Menu_GetFocused();
 	if (!menu)
 	{
 		return;
 	}
 
+	// Retrieve icon items
 	const itemDef_s* iconItem = Menu_FindItemByName(menu, iconItemName);
 	const itemDef_s* litIconItem = Menu_FindItemByName(menu, litIconItemName);
 
-	// Has a throw weapon already been chosen?
+	// If icons are missing, abort safely
+	if (!iconItem || !litIconItem)
+	{
+		return;
+	}
+
+	// If a throw weapon is already selected
 	if (uiInfo.selectedThrowWeapon != NOWEAPON)
 	{
-		// Clicked on the selected throwable weapon
+		// Clicking the same weapon deselects it
 		if (uiInfo.selectedThrowWeapon == weaponIndex)
 		{
-			// Deselect it
 			UI_RemoveThrowWeaponSelection();
 		}
 		return;
 	}
 
-	const auto chosenItemName = "chosenthrowweapon_icon";
-	const auto chosenButtonName = "chosenthrowweapon_button";
+	// Set selection state
 	uiInfo.selectedThrowWeapon = weaponIndex;
 	uiInfo.selectedThrowWeaponAmmoIndex = ammoIndex;
 	uiInfo.weaponThrowButton = uiInfo.runScriptItem;
@@ -8876,28 +9084,32 @@ static void UI_AddThrowWeaponSelection(const int weaponIndex, const int ammoInde
 		uiInfo.weaponThrowButton->descText = "@MENUS_CLICKREMOVE";
 	}
 
-	memcpy(uiInfo.selectedThrowWeaponItemName, hexBackground, sizeof uiInfo.selectedWeapon1ItemName);
+	// Copy hex background name safely
+	Q_strncpyz(uiInfo.selectedThrowWeaponItemName,
+		hexBackground,
+		sizeof(uiInfo.selectedThrowWeaponItemName));
 
-	//Save the lit and unlit icons for the selected weapon slot
+	// Save lit/unlit icons for UI highlight logic
 	uiInfo.litThrowableIcon = litIconItem->window.background;
 	uiInfo.unlitThrowableIcon = iconItem->window.background;
 
-	auto item = Menu_FindItemByName(menu, chosenItemName);
-	if (item && iconItem)
-	{
-		item->window.background = iconItem->window.background;
-		item->window.flags |= WINDOW_VISIBLE;
-	}
-
-	// Turn on throwchosenweapon button so player can unchoose the weapon
-	item = Menu_FindItemByName(menu, chosenButtonName);
+	// Update chosen weapon icon
+	itemDef_s* item = Menu_FindItemByName(menu, "chosenthrowweapon_icon");
 	if (item)
 	{
 		item->window.background = iconItem->window.background;
 		item->window.flags |= WINDOW_VISIBLE;
 	}
 
-	// Switch hex background to be 'on'
+	// Update chosen weapon button
+	item = Menu_FindItemByName(menu, "chosenthrowweapon_button");
+	if (item)
+	{
+		item->window.background = iconItem->window.background;
+		item->window.flags |= WINDOW_VISIBLE;
+	}
+
+	// Highlight hex background
 	item = Menu_FindItemByName(menu, hexBackground);
 	if (item)
 	{
@@ -8907,38 +9119,34 @@ static void UI_AddThrowWeaponSelection(const int weaponIndex, const int ammoInde
 		item->window.foreColor[3] = 1.0f;
 	}
 
-	// Get player state
+	// Get player state (UI may run outside gameplay)
+	const client_t* cl = &svs.clients[0];
 
-	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
-
-	// NOTE : this UIScript can now be run from outside the game, so don't
-	// return out here, just skip this part
-	if (cl) // No client, get out
+	if (cl && cl->gentity && cl->gentity->client)
 	{
-		// Add weapon
-		if (cl->gentity && cl->gentity->client)
+		playerState_t* pState = cl->gentity->client;
+
+		// Give weapon
+		if (weaponIndex > 0 && weaponIndex < WP_NUM_WEAPONS)
 		{
-			playerState_t* pState = cl->gentity->client;
+			pState->weapons[weaponIndex] = 1;
+		}
 
-			if (weaponIndex > 0 && weaponIndex < WP_NUM_WEAPONS)
-			{
-				pState->weapons[weaponIndex] = 1;
-			}
-
-			// Give them ammo too
-			if (ammoIndex > 0 && ammoIndex < AMMO_MAX)
-			{
-				pState->ammo[ammoIndex] = ammoAmount;
-			}
+		// Give ammo
+		if (ammoIndex > 0 && ammoIndex < AMMO_MAX)
+		{
+			pState->ammo[ammoIndex] = ammoAmount;
 		}
 	}
 
+	// Play UI sound
 	if (soundfile)
 	{
 		DC->startLocalSound(DC->registerSound(soundfile, qfalse), CHAN_LOCAL);
 	}
 
-	UI_WeaponsSelectionsComplete(); // Test to see if the mission begin button should turn on or off
+	// Check if mission begin button should activate
+	UI_WeaponsSelectionsComplete();
 }
 
 // Update the player weapons with the chosen throw weapon
@@ -9402,33 +9610,38 @@ static void Menus_SaveGoToMenu(const char* menuTo)
 UI_CheckVid1Data
 =================
 */
-void UI_CheckVid1Data(const char* menuTo, const char* warningMenuName)
+static void UI_CheckVid1Data(const char* menuTo, const char* warningMenuName)
 {
-	const menuDef_t* menu = Menu_GetFocused(); // Get current menu (either video or ingame video, I would assume)
-
+	// Determine which menu is currently active (video or in‑game video)
+	const menuDef_t* menu = Menu_GetFocused();
 	if (!menu)
 	{
-		Com_Printf(S_COLOR_YELLOW"WARNING: No videoMenu was found. Video data could not be checked\n");
+		Com_Printf(S_COLOR_YELLOW "WARNING: No videoMenu was found. Video data could not be checked\n");
 		return;
 	}
 
+	// Look for the "applyChanges" button in the current menu
 	const itemDef_t* applyChanges = Menu_FindItemByName(menu, "applyChanges");
 
+	// If the menu doesn't even have an applyChanges button,
+	// then there is nothing to warn about — just go to the next menu.
 	if (!applyChanges)
 	{
-		//		Menus_CloseAll();
 		Menus_OpenByName(menuTo);
 		return;
 	}
 
-	if (applyChanges->window.flags & WINDOW_VISIBLE) // Is the APPLY CHANGES button active?
+	// If the APPLY CHANGES button is visible, the user has unsaved changes.
+	if (applyChanges->window.flags & WINDOW_VISIBLE)
 	{
-		Menus_OpenByName(warningMenuName); // Give warning
+		// Warn the user before leaving the menu
+		Menus_OpenByName(warningMenuName);
 	}
 	else
 	{
-		//		Menus_CloseAll();
-		//		Menus_OpenByName(menuTo);
+		// No unsaved changes — safe to leave.
+		// (Original code intentionally leaves this commented out.)
+		// Menus_OpenByName(menuTo);
 	}
 }
 
@@ -9502,49 +9715,75 @@ ReadSaveDirectory
 //JLFSAVEGAME MPNOTUSED
 void ReadSaveDirectory()
 {
-	char* holdChar;
-	int len;
-	int fileCnt;
-	// Clear out save data
-	memset(s_savedata, 0, sizeof s_savedata);
+	// Clear all save data
+	memset(s_savedata, 0, sizeof(s_savedata));
 	s_savegame.saveFileCnt = 0;
-	Cvar_Set("ui_gameDesc", ""); // Blank out comment
+
+	Cvar_Set("ui_gameDesc", "");
 	Cvar_Set("ui_SelectionOK", "0");
+	Cvar_Set("ui_ResumeOK", "0");
+
 #ifdef JK2_MODE
-	memset(screenShotBuf, 0, (SG_SCR_WIDTH * SG_SCR_HEIGHT * 4)); //blank out sshot
+	memset(screenShotBuf, 0, SG_SCR_WIDTH * SG_SCR_HEIGHT * 4);
 #endif
 
-	// Get everything in saves directory
-	fileCnt = ui.FS_GetFileList("Account/Saved-Missions-MovieDuels/", ".sav", s_savegame.listBuf, LISTBUFSIZE);
+	// Retrieve list of .sav files
+	int fileCnt = ui.FS_GetFileList(
+		"Account/Saved-Missions-MovieDuels/",
+		".sav",
+		s_savegame.listBuf,
+		LISTBUFSIZE
+	);
 
-	Cvar_Set("ui_ResumeOK", "0");
-	holdChar = s_savegame.listBuf;
+	char* holdChar = s_savegame.listBuf;
+
 	for (int i = 0; i < fileCnt; i++)
 	{
-		// strip extension
-		len = strlen(holdChar);
-		holdChar[len - 4] = '\0';
+		int len = strlen(holdChar);
 
+		// Safety: ensure filename is long enough to strip ".sav"
+		if (len >= 4)
+		{
+			holdChar[len - 4] = '\0';
+		}
+
+		// Skip "current.sav"
 		if (Q_stricmp("current", holdChar) != 0)
 		{
-			time_t result;
+			// Auto-save detection
 			if (Q_stricmp("auto", holdChar) == 0)
 			{
 				Cvar_Set("ui_ResumeOK", "1");
 			}
 			else
 			{
-				// Is this a valid file??? & Get comment of file
-				result = ui.SG_GetSaveGameComment(holdChar, s_savedata[s_savegame.saveFileCnt].currentSaveFileComments,
-					s_savedata[s_savegame.saveFileCnt].currentSaveFileMap);
-				if (result != 0) // ignore Bad save game
-				{
-					s_savedata[s_savegame.saveFileCnt].currentSaveFileName = holdChar;
-					s_savedata[s_savegame.saveFileCnt].currentSaveFileDateTime = result;
+				// Validate save file and retrieve metadata
+				time_t timestamp = ui.SG_GetSaveGameComment(
+					holdChar,
+					s_savedata[s_savegame.saveFileCnt].currentSaveFileComments,
+					s_savedata[s_savegame.saveFileCnt].currentSaveFileMap
+				);
 
-					const tm* localTime = localtime(&result);
-					strcpy(s_savedata[s_savegame.saveFileCnt].currentSaveFileDateTimeString, asctime(localTime));
+				if (timestamp != 0)
+				{
+					// Store filename pointer
+					s_savedata[s_savegame.saveFileCnt].currentSaveFileName = holdChar;
+					s_savedata[s_savegame.saveFileCnt].currentSaveFileDateTime = timestamp;
+
+					// Convert timestamp to readable string safely
+					const tm* localTime = localtime(&timestamp);
+					if (localTime)
+					{
+						// Use safer bounded copy
+						Q_strncpyz(
+							s_savedata[s_savegame.saveFileCnt].currentSaveFileDateTimeString,
+							asctime(localTime),
+							sizeof(s_savedata[s_savegame.saveFileCnt].currentSaveFileDateTimeString)
+						);
+					}
+
 					s_savegame.saveFileCnt++;
+
 					if (s_savegame.saveFileCnt == MAX_SAVELOADFILES)
 					{
 						break;
@@ -9553,8 +9792,10 @@ void ReadSaveDirectory()
 			}
 		}
 
-		holdChar += len + 1; //move to next item
+		// Move to next filename in list buffer
+		holdChar += len + 1;
 	}
 
+	// Sort save files by timestamp
 	qsort(s_savedata, s_savegame.saveFileCnt, sizeof(savedata_t), UI_SortSaveGames);
 }

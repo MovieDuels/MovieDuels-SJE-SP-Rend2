@@ -168,22 +168,21 @@ static void AI_SortGroupByPathCostToEnemy(AIGroupInfo_t* group)
 			{
 				if (best_members[j].number != ENTITYNUM_NONE)
 				{
-					//slot occupied
 					if (group->member[i].pathCostToEnemy < best_members[j].pathCostToEnemy)
 					{
-						//this guy has a shorter path than the one currenly in this spot, bump him and put myself in here
-						for (int k = group->numGroup; k > j; k++)
+						// shift down safely
+						for (int k = group->numGroup - 1; k > j; k--)
 						{
-							memcpy(&best_members[k], &best_members[k - 1], sizeof best_members[k]);
+							memcpy(&best_members[k], &best_members[k - 1], sizeof(best_members[k]));
 						}
-						memcpy(&best_members[j], &group->member[i], sizeof best_members[j]);
+
+						memcpy(&best_members[j], &group->member[i], sizeof(best_members[j]));
 						break;
 					}
 				}
 				else
 				{
-					//slot unoccupied, reached end of list, throw self in here
-					memcpy(&best_members[j], &group->member[i], sizeof best_members[j]);
+					memcpy(&best_members[j], &group->member[i], sizeof(best_members[j]));
 					break;
 				}
 			}

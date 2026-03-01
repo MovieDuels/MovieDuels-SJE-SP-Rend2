@@ -42,6 +42,28 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifdef _DEBUG
 #include <float.h>
 #endif //_DEBUG
+#include <rd-common\mdx_format.h>
+#include "ghoul2_shared.h"
+#include "g_public.h"
+#include "statindex.h"
+#include "anims.h"
+#include <string.h>
+#include "surfaceflags.h"
+#include "ai.h"
+#include "teams.h"
+#include "hitlocs.h"
+#include "g_shared.h"
+#include <qcommon\q_color.h>
+#include <cassert>
+#include "b_public.h"
+#include <cgame\cg_camera.h>
+#include <qcommon\q_string.h>
+#include "g_vehicles.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_math.h>
+#include "weapons.h"
+#include "bg_public.h"
 
 constexpr auto TASER_DAMAGE = 20;
 extern cvar_t* g_DebugSaberCombat;
@@ -62,11 +84,8 @@ extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern qboolean G_ControlledByNPC(const gentity_t* self);
 extern qboolean PM_SaberInStart(int move);
 extern qboolean PM_SaberInReturn(int move);
-extern int WP_SaberMustBoltBlockJKAMode(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point,
-	int rSaberNum, int rBladeNum);
-extern int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point,
-	int rSaberNum,
-	int rBladeNum);
+extern int WP_SaberMustBoltBlockJKAMode(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point,int rSaberNum, int rBladeNum);
+extern int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point,int rSaberNum,int rBladeNum);
 extern float VectorBlockDistance(vec3_t v1, vec3_t v2);
 extern void PM_AddBoltBlockFatigue(playerState_t* ps, int fatigue);
 extern void PM_VelocityForSaberMove(const playerState_t* ps, vec3_t throw_dir);
@@ -87,6 +106,7 @@ extern void jedi_decloak(gentity_t* self);
 extern void player_decloak(gentity_t* self);
 extern qboolean FighterIsLanded(const Vehicle_t* p_veh, playerState_t* parent_ps);
 extern void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength);
+extern qboolean WalkCheck(const gentity_t* self);
 constexpr auto MISSILE_PRESTEP_TIME = 50;
 //-------------------------------------------------------------------------
 static void G_MissileBounceEffect(const gentity_t* ent, vec3_t org, vec3_t dir, const qboolean hit_world)
@@ -210,7 +230,13 @@ static void G_MissileStick(gentity_t* missile, gentity_t* other, trace_t* tr)
 
 /*
 ================
-  Reflect the missile roughly back at it's owner
+G_MissileBouncedoffSaber
+
+Reflect or deflect a missile that has just been blocked by a saber.
+Keeps original behaviour, but:
+- Adds safety checks (null guards, client guards).
+- Cleans structure and removes duplication where safe.
+- Documents intent at each step.
 ================
 */
 extern gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, float min_dot);
@@ -218,12 +244,61 @@ extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingOrStanding(const gentity_t* self);
 vec3_t g_crosshairWorldCoord = { 0, 0, 0 };
 
+/*
+ * Add random angular slop to a direction vector.
+ * amount is the max absolute offset per component.
+ * (Behaviour preserved: same ranges as original call sites.)
+ */
+static void G_AddRandomSlop(vec3_t dir, float amount)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		dir[i] += Q_flrand(-amount, amount);
+	}
+}
+
+/*
+ * Apply extra wildness based on saber move state.
+ * Behaviour preserved: same ranges and conditions as original.
+ */
+static void G_ApplySaberMoveWildness(const gentity_t* owner, vec3_t bounce_dir, float mildAmount, float moderateAmount)
+{
+	if (!owner || !owner->client)
+	{
+		return;
+	}
+
+	if (!PM_SaberInParry(owner->client->ps.saber_move)
+		&& !PM_SaberInReflect(owner->client->ps.saber_move)
+		&& !PM_SaberInIdle(owner->client->ps.saber_move))
+	{
+		// A bit more wild when not in parry/reflect/idle
+		if (PM_SaberInAttack(owner->client->ps.saber_move)
+			|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
+			|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+		{
+			// Moderately more wild
+			G_AddRandomSlop(bounce_dir, moderateAmount);
+		}
+		else
+		{
+			// Mildly more wild
+			G_AddRandomSlop(bounce_dir, mildAmount);
+		}
+	}
+}
+
 void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
-	vec3_t bounce_dir;
-	int i;
-	qboolean perfect_reflection = qfalse;
-	qboolean reflected = qfalse;
+	// Safety: validate pointers (bug fix)
+	if (!ent || !missile)
+	{
+		return;
+	}
+
+	vec3_t    bounce_dir;
+	qboolean  perfect_reflection = qfalse;
+	qboolean  reflected = qfalse;
 	gentity_t* owner = ent;
 
 	if (ent->owner)
@@ -231,42 +306,48 @@ void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward
 		owner = ent->owner;
 	}
 
-	//save the original speed
+	// Save the original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
 
-	if (ent && owner && owner->client &&
+	// Decide if we get a "perfect" reflection (toward enemy/crosshair)
+	if (owner && owner->client &&
 		(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_2 && !Q_irand(0, 3)))
 	{
 		perfect_reflection = qtrue;
 	}
 
-	if (owner && owner->client->ps.saberInFlight)
+	// Need saber in-hand for perfect reflection
+	if (owner && owner->client && owner->client->ps.saberInFlight)
 	{
-		//but need saber in-hand for perfect reflection
 		perfect_reflection = qfalse;
 	}
 
-	if (g_spskill->integer == 2 && owner->client->ps.saberBlockingTime < level.time)
+	// On higher difficulty, must be actively blocking for perfect reflection
+	if (owner && owner->client && g_spskill->integer == 2 &&
+		owner->client->ps.saberBlockingTime < level.time)
 	{
-		//but need to be blocking for perfect reflection on higher difficulties
 		perfect_reflection = qfalse;
 	}
 
+	// --- Perfect reflection path ---
 	if (perfect_reflection)
 	{
-		if (owner->s.clientNum >= MAX_CLIENTS)
+		if (owner && owner->s.clientNum >= MAX_CLIENTS)
 		{
-			gentity_t* enemy;
+			// NPC: reflect toward current/nearest enemy
+			gentity_t* enemy = NULL;
+
 			if (owner->enemy && Q_irand(0, 3))
 			{
-				//toward current enemy 75% of the time
+				// Toward current enemy 75% of the time
 				enemy = owner->enemy;
 			}
 			else
 			{
-				//find another enemy
+				// Find another enemy in front
 				enemy = jedi_find_enemy_in_cone(owner, owner->enemy, 0.3f);
 			}
+
 			if (enemy)
 			{
 				vec3_t bullseye;
@@ -274,99 +355,68 @@ void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward
 				bullseye[0] += Q_irand(-4, 4);
 				bullseye[1] += Q_irand(-4, 4);
 				bullseye[2] += Q_irand(-16, 4);
+
 				VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 				VectorNormalize(bounce_dir);
-				if (!PM_SaberInParry(owner->client->ps.saber_move)
-					&& !PM_SaberInReflect(owner->client->ps.saber_move)
-					&& !PM_SaberInIdle(owner->client->ps.saber_move))
-				{
-					//a bit more wild
-					if (PM_SaberInAttack(owner->client->ps.saber_move)
-						|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-						|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
-					{
-						//moderately more wild
-						for (i = 0; i < 3; i++)
-						{
-							bounce_dir[i] += Q_flrand(-0.6f, 0.6f);
-						}
-					}
-					else
-					{
-						//mildly more wild
-						for (i = 0; i < 3; i++)
-						{
-							bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-						}
-					}
-				}
+
+				// Add wildness based on saber move state
+				G_ApplySaberMoveWildness(owner, bounce_dir, 0.4f, 0.6f);
+
 				VectorNormalize(bounce_dir);
 				reflected = qtrue;
 			}
 		}
-		else
+		else if (owner && owner->client)
 		{
+			// Player: reflect toward crosshair
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
-			{
-				//a bit more wild
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
-				{
-					//moderately more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.6f, 0.6f);
-					}
-				}
-				else
-				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-					}
-				}
-			}
+			// Add wildness based on saber move state
+			G_ApplySaberMoveWildness(owner, bounce_dir, 0.4f, 0.6f);
+
 			VectorNormalize(bounce_dir);
 			reflected = qtrue;
 		}
 	}
+
+	// --- Non-perfect reflection / generic deflection path ---
 	if (!reflected)
 	{
 		if (owner && owner->s.clientNum >= MAX_CLIENTS)
 		{
+			// NPC reflection
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{
-				//bounce back at them if you can
+				// Bounce back at original shooter if possible
 				VectorSubtract(missile->owner->currentOrigin, missile->currentOrigin, bounce_dir);
 				VectorNormalize(bounce_dir);
 			}
 			else
 			{
+				// Fallback: reflect roughly along incoming direction projected on forward
 				vec3_t missile_dir;
-
 				VectorSubtract(ent->currentOrigin, missile->currentOrigin, missile_dir);
+
 				VectorCopy(missile->s.pos.trDelta, bounce_dir);
 				VectorScale(bounce_dir, DotProduct(forward, missile_dir), bounce_dir);
 				VectorNormalize(bounce_dir);
 			}
 		}
-		else
+		else if (owner && owner->client)
 		{
-			vec3_t deflect_dir, missile_dir;
-			float force_factor;
+			// Player reflection: bias toward crosshair based on defense level
+			vec3_t deflect_dir;
+			vec3_t missile_dir;
+			float  force_factor;
+
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, deflect_dir);
 			VectorCopy(missile->s.pos.trDelta, missile_dir);
+
 			VectorNormalize(missile_dir);
 			VectorNormalize(deflect_dir);
 
-			//bigger forceFactors make the reflected shots go closer to the cross hair
+			// Bigger forceFactors make reflected shots go closer to the crosshair
 			switch (owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE])
 			{
 			case FORCE_LEVEL_1:
@@ -381,99 +431,103 @@ void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward
 			}
 
 			VectorMA(missile_dir, force_factor, deflect_dir, bounce_dir);
-
 			VectorNormalize(bounce_dir);
-		}
-		if (owner->s.weapon == WP_SABER && owner->client)
-		{
-			//saber
-			if (owner->client->ps.saberInFlight)
-			{
-				//reflecting off a thrown saber is totally wild
-				for (i = 0; i < 3; i++)
-				{
-					bounce_dir[i] += Q_flrand(-0.8f, 0.8f);
-				}
-			}
-			else if (owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
-			{
-				// at level 1 or below
-				for (i = 0; i < 3; i++)
-				{
-					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-				}
-			}
-			else
-			{
-				// at level 2
-				for (i = 0; i < 3; i++)
-				{
-					bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
-				}
-			}
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
-			{
-				//a bit more wild
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
-				{
-					//really wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.6f, 0.6f);
-					}
-				}
-				else
-				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-					}
-				}
-			}
 		}
 		else
 		{
-			//some other kind of reflection
-			for (i = 0; i < 3; i++)
+			// Non-client owner: just normalize current velocity as a fallback
+			VectorCopy(missile->s.pos.trDelta, bounce_dir);
+			VectorNormalize(bounce_dir);
+		}
+
+		// Add additional wildness based on saber/owner type
+		if (owner && owner->client && owner->s.weapon == WP_SABER)
+		{
+			// Saber reflections
+			if (owner->client->ps.saberInFlight)
 			{
-				bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
+				// Reflecting off a thrown saber is totally wild
+				G_AddRandomSlop(bounce_dir, 0.8f);
 			}
+			else if (owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
+			{
+				// At level 1 or below
+				G_AddRandomSlop(bounce_dir, 0.4f);
+			}
+			else
+			{
+				// At level 2+
+				G_AddRandomSlop(bounce_dir, 0.3f);
+			}
+
+			// Extra wildness based on saber move state
+			G_ApplySaberMoveWildness(owner, bounce_dir, 0.4f, 0.6f);
+		}
+		else
+		{
+			// Some other kind of reflection (non-saber)
+			G_AddRandomSlop(bounce_dir, 0.3f);
 		}
 	}
+
+	// Final normalize and reapply original speed
 	VectorNormalize(bounce_dir);
 	VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
 #ifdef _DEBUG
-	assert(!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]));
-#endif// _DEBUG
-	missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
+	assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+		!Q_isnan(missile->s.pos.trDelta[1]) &&
+		!Q_isnan(missile->s.pos.trDelta[2]));
+#endif // _DEBUG
+
+	// Update trajectory so it moves immediately after reflection
+	missile->s.pos.trTime = level.time - 10;
 	VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
+	// Transfer ownership (except sabers)
 	if (missile->s.weapon != WP_SABER)
 	{
-		//you are mine, now!
+		// Remember who originally shot this missile
 		if (!missile->lastEnemy)
 		{
-			//remember who originally shot this missile
 			missile->lastEnemy = missile->owner;
 		}
 		missile->owner = owner;
 	}
+
+	// Stop homing on rockets
 	if (missile->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		//stop homing
 		missile->e_ThinkFunc = thinkF_NULL;
 	}
-}
+}/*
+================
+G_ReflectMissileAuto
 
+Automatic missile reflection for NPCs (and saber entities) in SP.
+
+Behaviour:
+- High defense skill and saber in-hand:
+    - Level 3: always reflect toward an enemy.
+    - Level 2: 25% chance to reflect toward an enemy.
+    - Level 1: never a “perfect” reflection.
+- Otherwise:
+    - Try to bounce back toward the shooter.
+    - Fall back to a projection-based deflection.
+- Adds wildness based on saber state and animations.
+- Fixes crash-prone dereferences and adds safety guards.
+================
+*/
 void G_ReflectMissileAuto(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
-	vec3_t bounce_dir;
-	int i;
-	qboolean reflected = qfalse;
+	// Safety: validate pointers (bug fix)
+	if (!ent || !missile)
+	{
+		return;
+	}
+
+	vec3_t    bounce_dir;
+	qboolean  reflected = qfalse;
 	gentity_t* owner = ent;
 
 	if (ent->owner)
@@ -481,72 +535,88 @@ void G_ReflectMissileAuto(gentity_t* ent, gentity_t* missile, vec3_t forward)
 		owner = ent->owner;
 	}
 
-	//save the original speed
+	// Save the original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
 
-	if (ent && owner && owner->client && !owner->client->ps.saberInFlight &&
-		(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_2 || owner->client->ps.forcePowerLevel[
-			FP_SABER_DEFENSE] > FORCE_LEVEL_1 && !Q_irand(0, 3)))
+	// --- Perfect reflection toward an enemy (NPC auto-aim) ---
+	if (owner && owner->client &&
+		!owner->client->ps.saberInFlight &&
+		(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_2 ||
+			(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_1 && !Q_irand(0, 3))))
 	{
-		//if high enough defense skill and saber in-hand (100% at level 3, 25% at level 2, 0% at level 1), reflections are perfectly deflected toward an enemy
-		gentity_t* enemy;
+		// If high enough defense skill and saber in-hand:
+		//  - 100% at level 3
+		//  - 25% at level 2
+		//  - 0% at level 1
+		// reflections are perfectly deflected toward an enemy.
+		gentity_t* enemy = NULL;
+
 		if (owner->enemy && Q_irand(0, 3))
 		{
-			//toward current enemy 75% of the time
+			// Toward current enemy 75% of the time
 			enemy = owner->enemy;
 		}
 		else
 		{
-			//find another enemy
+			// Find another enemy in front
 			enemy = jedi_find_enemy_in_cone(owner, owner->enemy, 0.3f);
 		}
+
 		if (enemy)
 		{
 			vec3_t bullseye;
+
+			// Aim roughly at the enemy’s head, with some random offset
 			CalcEntitySpot(enemy, SPOT_HEAD, bullseye);
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
+
 			if (!PM_SaberInParry(owner->client->ps.saber_move)
 				&& !PM_SaberInReflect(owner->client->ps.saber_move)
 				&& !PM_SaberInIdle(owner->client->ps.saber_move))
 			{
-				//a bit more wild
+				// A bit more wild when not in parry/reflect/idle
 				if (PM_SaberInAttack(owner->client->ps.saber_move)
 					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
 					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
 				{
-					//moderately more wild
-					for (i = 0; i < 3; i++)
+					// Moderately more wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
 					}
 				}
 				else
 				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
+					// Mildly more wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
 					}
 				}
 			}
+
 			VectorNormalize(bounce_dir);
 			reflected = qtrue;
 		}
 	}
+
+	// --- Generic reflection / deflection path ---
 	if (!reflected)
 	{
 		if (missile->owner && missile->s.weapon != WP_SABER)
 		{
-			//bounce back at them if you can
+			// Bounce back at the original shooter if possible
 			VectorSubtract(missile->owner->currentOrigin, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 		}
 		else
 		{
+			// Fallback: reflect roughly along incoming direction projected on forward
 			vec3_t missile_dir;
 
 			VectorSubtract(ent->currentOrigin, missile->currentOrigin, missile_dir);
@@ -554,52 +624,54 @@ void G_ReflectMissileAuto(gentity_t* ent, gentity_t* missile, vec3_t forward)
 			VectorScale(bounce_dir, DotProduct(forward, missile_dir), bounce_dir);
 			VectorNormalize(bounce_dir);
 		}
+
 		if (owner && owner->client && owner->s.weapon == WP_SABER)
 		{
-			//saber
+			// Saber-based reflection
 			if (owner->client->ps.saberInFlight)
 			{
-				//reflecting off a thrown saber is totally wild
-				for (i = 0; i < 3; i++)
+				// Reflecting off a thrown saber is totally wild
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.8f, 0.8f);
 				}
 			}
 			else if (owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
 			{
-				// at level 1
-				for (i = 0; i < 3; i++)
+				// At level 1
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
 				}
 			}
 			else
 			{
-				// at level 2
-				for (i = 0; i < 3; i++)
+				// At level 2+
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
 				}
 			}
+
 			if (!PM_SaberInParry(owner->client->ps.saber_move)
 				&& !PM_SaberInReflect(owner->client->ps.saber_move)
 				&& !PM_SaberInIdle(owner->client->ps.saber_move))
 			{
-				//a bit more wild
+				// A bit more wild when not in parry/reflect/idle
 				if (PM_SaberInAttack(owner->client->ps.saber_move)
 					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
 					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
 				{
-					//really wild
-					for (i = 0; i < 3; i++)
+					// Really wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
 					}
 				}
 				else
 				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
+					// Mildly more wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
 					}
@@ -608,44 +680,74 @@ void G_ReflectMissileAuto(gentity_t* ent, gentity_t* missile, vec3_t forward)
 		}
 		else
 		{
-			//some other kind of reflection
-			for (i = 0; i < 3; i++)
+			// Some other kind of reflection (non-saber)
+			for (int i = 0; i < 3; i++)
 			{
 				bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
 			}
 		}
 	}
+
+	// Final normalize and reapply original speed
 	VectorNormalize(bounce_dir);
 	VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
 #ifdef _DEBUG
-	assert(
-		!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]
-		));
-#endif// _DEBUG
-	missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
+	assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+		!Q_isnan(missile->s.pos.trDelta[1]) &&
+		!Q_isnan(missile->s.pos.trDelta[2]));
+#endif // _DEBUG
+
+	// Update trajectory so it moves immediately after reflection
+	missile->s.pos.trTime = level.time - 10;
 	VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
+	// Transfer ownership (except sabers)
 	if (missile->s.weapon != WP_SABER)
 	{
-		//you are mine, now!
+		// Remember who originally shot this missile
 		if (!missile->lastEnemy)
 		{
-			//remember who originally shot this missile
 			missile->lastEnemy = missile->owner;
 		}
 		missile->owner = owner;
 	}
+
+	// Stop homing on rockets
 	if (missile->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		//stop homing
 		missile->e_ThinkFunc = thinkF_NULL;
 	}
 }
 
+/*
+================
+G_ReflectMissileNPC
+
+Automatic missile reflection for NPCs in SP.
+
+Behaviour:
+- If high enough defense skill and saber in-hand:
+	- Level 3: always reflect toward an enemy.
+	- Level 2: 25% chance to reflect toward an enemy.
+	- Level 1: never a “perfect” reflection.
+- Otherwise:
+	- Try to bounce back toward the shooter.
+	- Fall back to a projection-based deflection.
+- Adds wildness based on saber state and animations.
+- Fixes crash-prone dereferences and adds safety guards.
+================
+*/
 void G_ReflectMissileNPC(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
-	vec3_t bounce_dir;
-	int i;
-	qboolean reflected = qfalse;
+	// Safety: validate pointers (bug fix)
+	if (!ent || !missile)
+	{
+		return;
+	}
+
+	vec3_t    bounce_dir;
+	qboolean  reflected = qfalse;
 	gentity_t* owner = ent;
 
 	if (ent->owner)
@@ -653,72 +755,88 @@ void G_ReflectMissileNPC(gentity_t* ent, gentity_t* missile, vec3_t forward)
 		owner = ent->owner;
 	}
 
-	//save the original speed
+	// Save the original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
 
-	if (ent && owner && owner->client && !owner->client->ps.saberInFlight &&
-		(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_2 || owner->client->ps.forcePowerLevel[
-			FP_SABER_DEFENSE] > FORCE_LEVEL_1 && !Q_irand(0, 3)))
+	// --- Perfect reflection toward an enemy (NPC auto-aim) ---
+	if (owner && owner->client &&
+		!owner->client->ps.saberInFlight &&
+		(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_2 ||
+			(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_1 && !Q_irand(0, 3))))
 	{
-		//if high enough defense skill and saber in-hand (100% at level 3, 25% at level 2, 0% at level 1), reflections are perfectly deflected toward an enemy
-		gentity_t* enemy;
+		// If high enough defense skill and saber in-hand:
+		//  - 100% at level 3
+		//  - 25% at level 2
+		//  - 0% at level 1
+		// reflections are perfectly deflected toward an enemy.
+		gentity_t* enemy = NULL;
+
 		if (owner->enemy && Q_irand(0, 3))
 		{
-			//toward current enemy 75% of the time
+			// Toward current enemy 75% of the time
 			enemy = owner->enemy;
 		}
 		else
 		{
-			//find another enemy
+			// Find another enemy in front
 			enemy = jedi_find_enemy_in_cone(owner, owner->enemy, 0.3f);
 		}
+
 		if (enemy)
 		{
 			vec3_t bullseye;
+
+			// Aim roughly at the enemy’s head, with some random offset
 			CalcEntitySpot(enemy, SPOT_HEAD, bullseye);
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
+
 			if (!PM_SaberInParry(owner->client->ps.saber_move)
 				&& !PM_SaberInReflect(owner->client->ps.saber_move)
 				&& !PM_SaberInIdle(owner->client->ps.saber_move))
 			{
-				//a bit more wild
+				// A bit more wild when not in parry/reflect/idle
 				if (PM_SaberInAttack(owner->client->ps.saber_move)
 					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
 					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
 				{
-					//moderately more wild
-					for (i = 0; i < 3; i++)
+					// Moderately more wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
 					}
 				}
 				else
 				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
+					// Mildly more wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
 					}
 				}
 			}
+
 			VectorNormalize(bounce_dir);
 			reflected = qtrue;
 		}
 	}
+
+	// --- Generic reflection / deflection path ---
 	if (!reflected)
 	{
 		if (missile->owner && missile->s.weapon != WP_SABER)
 		{
-			//bounce back at them if you can
+			// Bounce back at the original shooter if possible
 			VectorSubtract(missile->owner->currentOrigin, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 		}
 		else
 		{
+			// Fallback: reflect roughly along incoming direction projected on forward
 			vec3_t missile_dir;
 
 			VectorSubtract(ent->currentOrigin, missile->currentOrigin, missile_dir);
@@ -726,52 +844,54 @@ void G_ReflectMissileNPC(gentity_t* ent, gentity_t* missile, vec3_t forward)
 			VectorScale(bounce_dir, DotProduct(forward, missile_dir), bounce_dir);
 			VectorNormalize(bounce_dir);
 		}
+
 		if (owner && owner->client && owner->s.weapon == WP_SABER)
 		{
-			//saber
+			// Saber-based reflection
 			if (owner->client->ps.saberInFlight)
 			{
-				//reflecting off a thrown saber is totally wild
-				for (i = 0; i < 3; i++)
+				// Reflecting off a thrown saber is totally wild
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.8f, 0.8f);
 				}
 			}
 			else if (owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
 			{
-				// at level 1
-				for (i = 0; i < 3; i++)
+				// At level 1
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
 				}
 			}
 			else
 			{
-				// at level 2
-				for (i = 0; i < 3; i++)
+				// At level 2+
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
 				}
 			}
+
 			if (!PM_SaberInParry(owner->client->ps.saber_move)
 				&& !PM_SaberInReflect(owner->client->ps.saber_move)
 				&& !PM_SaberInIdle(owner->client->ps.saber_move))
 			{
-				//a bit more wild
+				// A bit more wild when not in parry/reflect/idle
 				if (PM_SaberInAttack(owner->client->ps.saber_move)
 					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
 					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
 				{
-					//really wild
-					for (i = 0; i < 3; i++)
+					// Really wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
 					}
 				}
 				else
 				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
+					// Mildly more wild
+					for (int i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
 					}
@@ -780,45 +900,60 @@ void G_ReflectMissileNPC(gentity_t* ent, gentity_t* missile, vec3_t forward)
 		}
 		else
 		{
-			//some other kind of reflection
-			for (i = 0; i < 3; i++)
+			// Some other kind of reflection (non-saber)
+			for (int i = 0; i < 3; i++)
 			{
 				bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
 			}
 		}
 	}
+
+	// Final normalize and reapply original speed
 	VectorNormalize(bounce_dir);
 	VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
 #ifdef _DEBUG
-	assert(
-		!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]
-		));
-#endif// _DEBUG
-	missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
+	assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+		!Q_isnan(missile->s.pos.trDelta[1]) &&
+		!Q_isnan(missile->s.pos.trDelta[2]));
+#endif // _DEBUG
+
+	// Update trajectory so it moves immediately after reflection
+	missile->s.pos.trTime = level.time - 10;
 	VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
+	// Transfer ownership (except sabers)
 	if (missile->s.weapon != WP_SABER)
 	{
-		//you are mine, now!
+		// Remember who originally shot this missile
 		if (!missile->lastEnemy)
 		{
-			//remember who originally shot this missile
 			missile->lastEnemy = missile->owner;
 		}
 		missile->owner = owner;
 	}
+
+	// Stop homing on rockets
 	if (missile->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		//stop homing
 		missile->e_ThinkFunc = thinkF_NULL;
 	}
 }
 
-extern qboolean WalkCheck(const gentity_t* self);
+static int G_GetBlockerDefenseLevel(const gentity_t* blocker)
+{
+	if (!blocker || !blocker->client)
+	{
+		// Fallback: treat as low-skill defender
+		return FORCE_LEVEL_1;
+	}
+	return blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE];
+}
 
 static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
-	vec3_t bounce_dir;
-	int i;
+	vec3_t  bounce_dir;
+	int     i;
 	qboolean saber_block_reflection = qfalse;
 	qboolean bolt_block_reflection = qfalse;
 	qboolean npc_reflection = qfalse;
@@ -826,67 +961,85 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 	gentity_t* blocker = ent;
 	constexpr int punish = BLOCKPOINTS_TEN;
 
+	// Safety: validate pointers
+	if (!ent || !missile)
+	{
+		return;
+	}
+
 	if (ent->owner)
 	{
 		blocker = ent->owner;
 	}
 
-	const qboolean manual_blocking = blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_0 ? qtrue : qfalse;
-	const qboolean manual_proj_blocking = WalkCheck(blocker) ? qtrue : qfalse;
-	const qboolean np_cis_blocking = blocker->client->ps.ManualBlockingFlags & 1 << MBF_JKAMODENPCBLOCKING ? qtrue : qfalse;
-	float slop_factor = (FATIGUE_AUTOBOLTBLOCK - 6) * (static_cast<float>(FORCE_LEVEL_3) - blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE]) / FORCE_LEVEL_3;
+	// If we still don't have a valid blocker or client, bail out with a simple reflect
+	if (!blocker || !blocker->client)
+	{
+		const float speed = VectorNormalize(missile->s.pos.trDelta);
+		VectorCopy(missile->s.pos.trDelta, bounce_dir);
+		VectorNormalize(bounce_dir);
+		VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+		missile->s.pos.trTime = level.time - 10;
+		VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+		return;
+	}
 
-	//save the original speed
+	const qboolean manual_blocking =
+		(blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_0) ? qtrue : qfalse;
+	const qboolean manual_proj_blocking = WalkCheck(blocker) ? qtrue : qfalse;
+	const qboolean np_cis_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_JKAMODENPCBLOCKING)) ? qtrue : qfalse;
+
+	float slop_factor =
+		(FATIGUE_AUTOBOLTBLOCK - 6) *
+		(static_cast<float>(FORCE_LEVEL_3) - blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE]) /
+		FORCE_LEVEL_3;
+
+	// Save the original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
 
 	AngleVectors(blocker->client->ps.viewangles, forward, nullptr, nullptr);
 
-	if (ent && blocker && blocker->client && manual_blocking && !manual_proj_blocking)
+	// Decide reflection mode
+	if (manual_blocking && !manual_proj_blocking)
 	{
 		saber_block_reflection = qtrue;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && manual_blocking && manual_proj_blocking && blocker->client->ps.SaberActive())
+	if (manual_blocking && manual_proj_blocking && blocker->client->ps.SaberActive())
 	{
 		bolt_block_reflection = qtrue;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && np_cis_blocking)
+	if (np_cis_blocking)
 	{
 		npc_reflection = qtrue;
 	}
 
-	if (ent && blocker && blocker->client && blocker->client->ps.saberInFlight)
+	// Need saber in-hand and some defense level for these special reflections
+	if (blocker->client->ps.saberInFlight ||
+		blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] < FORCE_LEVEL_1)
 	{
-		//but need saber in-hand for perfect reflection
 		saber_block_reflection = qfalse;
 		bolt_block_reflection = qfalse;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] < FORCE_LEVEL_1)
-	{
-		//but need saber in-hand for perfect reflection
-		saber_block_reflection = qfalse;
-		bolt_block_reflection = qfalse;
-		npc_reflection = qfalse;
-	}
-
-	//play projectile block animation
-	if (saber_block_reflection && !npc_reflection) //GOES TO CROSSHAIR
+	// --- Saber block: reflect toward crosshair ---
+	if (saber_block_reflection && !npc_reflection) // GOES TO CROSSHAIR
 	{
 		vec3_t angs;
-		if (level.time - blocker->client->ps.ManualblockStartTime < 3000) //Blocking 2
+
+		if (level.time - blocker->client->ps.ManualblockStartTime < 3000) // Blocking 2 (good)
 		{
-			// good
 			vectoangles(forward, angs);
 			AngleVectors(angs, forward, nullptr, nullptr);
 		}
 		else if (blocker->client->pers.cmd.forwardmove >= 0)
 		{
-			//bad
+			// Bad
 			slop_factor += Q_irand(1, 5);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
@@ -895,26 +1048,26 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 		}
 		else
 		{
-			//average
+			// Average
 			slop_factor += Q_irand(1, 3);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
 			AngleVectors(angs, forward, nullptr, nullptr);
 		}
+
 		VectorCopy(forward, bounce_dir);
 
 		if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 		{
-			Com_Printf(S_COLOR_GREEN"JKA Mode Crosshair Deflection\n");
+			Com_Printf(S_COLOR_GREEN "JKA Mode Crosshair Deflection\n");
 		}
 
 		if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
 		{
-			//very Low points = bad blocks
+			// Very low points = bad blocks
 			if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
 			{
-				//Low points = bad blocks
 				WP_BoltBlockVictimFatigued(blocker);
 				blocker->client->ps.saberBlocked = BLOCKED_NONE;
 				blocker->client->ps.saberBounceMove = LS_NONE;
@@ -929,30 +1082,29 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			WP_SaberBlockNonRandom(blocker, missile->currentOrigin, qfalse);
 		}
 
-		const int force_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
+		const int force_points_used = WP_SaberBoltBlockCost(blocker, missile);
 
-		if (blocker->client->ps.forcePower < force_points_used_used)
+		if (blocker->client->ps.forcePower < force_points_used)
 		{
 			blocker->client->ps.forcePower = 0;
 		}
 		else
 		{
-			WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, force_points_used_used);
+			WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, force_points_used);
 		}
+
 		reflected = qtrue;
 	}
-	else if (bolt_block_reflection && !npc_reflection) //GOES TO ENEMY
+	else if (bolt_block_reflection && !npc_reflection) // GOES TO ENEMY
 	{
 		gentity_t* attacker;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
-			//toward current enemy 75% of the time
-			attacker = blocker->enemy;
+			attacker = blocker->enemy; // 75% toward current enemy
 		}
 		else
 		{
-			//find another enemy
 			attacker = jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
 		}
 
@@ -963,6 +1115,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
@@ -970,13 +1123,11 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
 				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
 				if (PM_SaberInAttack(blocker->client->ps.saber_move)
 					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
 					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim)
 					|| blocker->client->ps.forcePower < BLOCKPOINTS_KNOCKAWAY)
 				{
-					//moderately more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
@@ -984,7 +1135,6 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				}
 				else
 				{
-					//mildly more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
@@ -996,10 +1146,8 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 
 			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
 			{
-				//very Low points = bad blocks
 				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
 				{
-					//Low points = bad blocks
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
 					blocker->client->ps.saberBounceMove = LS_NONE;
@@ -1014,36 +1162,34 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
 			}
 
-			const int force_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
+			const int force_points_used = WP_SaberBoltBlockCost(blocker, missile);
 
-			if (blocker->client->ps.forcePower < force_points_used_used)
+			if (blocker->client->ps.forcePower < force_points_used)
 			{
 				blocker->client->ps.forcePower = 0;
 			}
 			else
 			{
-				WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, force_points_used_used);
+				WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, force_points_used);
 			}
 
 			if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 			{
-				Com_Printf(S_COLOR_GREEN"JKA Mode Bolt Blocking to enemy\n");
+				Com_Printf(S_COLOR_GREEN "JKA Mode Bolt Blocking to enemy\n");
 			}
 			reflected = qtrue;
 		}
 	}
-	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection) //GOES TO ENEMY
+	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection) // GOES TO ENEMY
 	{
 		gentity_t* enemy;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
-			//toward current enemy 75% of the time
 			enemy = blocker->enemy;
 		}
 		else
 		{
-			//find another enemy
 			enemy = jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
 		}
 
@@ -1054,6 +1200,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
@@ -1061,12 +1208,10 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
 				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
 				if (PM_SaberInAttack(blocker->client->ps.saber_move)
 					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
 					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
 				{
-					//moderately more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
@@ -1074,7 +1219,6 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				}
 				else
 				{
-					//mildly more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
@@ -1086,10 +1230,8 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 
 			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
 			{
-				//very Low points = bad blocks
 				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
 				{
-					//Low points = bad blocks
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
 					blocker->client->ps.saberBounceMove = LS_NONE;
@@ -1104,61 +1246,61 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
 			}
 
-			const int force_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
+			const int force_points_used = WP_SaberBoltBlockCost(blocker, missile);
 
-			if (blocker->client->ps.forcePower < force_points_used_used)
+			if (blocker->client->ps.forcePower < force_points_used)
 			{
 				blocker->client->ps.forcePower = 0;
 			}
 			else
 			{
-				WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, force_points_used_used);
+				WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, force_points_used);
 			}
 
 			if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 			{
-				Com_Printf(S_COLOR_CYAN"JKA Mode G_ReflectMissileNPC\n");
+				Com_Printf(S_COLOR_CYAN "JKA Mode G_ReflectMissileNPC\n");
 			}
 			reflected = qtrue;
 		}
 	}
 
-	if (!reflected) //GOES TO CROSSHAIR AREA
+	// --- Fallback: generic reflection toward crosshair area ---
+	if (!reflected) // GOES TO CROSSHAIR AREA
 	{
 		if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 		{
-			Com_Printf(S_COLOR_CYAN"Saber Not Blocked but Reflected off saber.\n");
+			Com_Printf(S_COLOR_CYAN "Saber Not Blocked but Reflected off saber.\n");
 		}
 
-		if (blocker && blocker->s.clientNum >= MAX_CLIENTS)
+		if (blocker->s.clientNum >= MAX_CLIENTS)
 		{
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{
-				//bounce back at them if you can
 				VectorSubtract(missile->owner->currentOrigin, missile->currentOrigin, bounce_dir);
 				VectorNormalize(bounce_dir);
 			}
 			else
 			{
 				vec3_t missile_dir;
-
 				VectorSubtract(ent->currentOrigin, missile->currentOrigin, missile_dir);
 				VectorCopy(missile->s.pos.trDelta, bounce_dir);
 				VectorScale(bounce_dir, DotProduct(forward, missile_dir), bounce_dir);
 				VectorNormalize(bounce_dir);
 			}
 		}
-		else //deflect off at an angle.
+		else // deflect off at an angle toward crosshair
 		{
 			vec3_t deflect_dir, missile_dir;
-			float force_factor;
+			float  force_factor;
+
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, deflect_dir);
 			VectorCopy(missile->s.pos.trDelta, missile_dir);
 			VectorNormalize(missile_dir);
 			VectorNormalize(deflect_dir);
 
-			//bigger forceFactors make the reflected shots go closer to the crosshair
-			switch (blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE])
+			// Bigger forceFactors make the reflected shots go closer to the crosshair
+			switch (G_GetBlockerDefenseLevel(blocker))
 			{
 			case FORCE_LEVEL_1:
 				force_factor = 2.0f;
@@ -1172,15 +1314,13 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			}
 
 			VectorMA(missile_dir, force_factor, deflect_dir, bounce_dir);
-
 			VectorNormalize(bounce_dir);
 		}
-		if (blocker->s.weapon == WP_SABER && blocker->client)
+
+		if (blocker->client && blocker->s.weapon == WP_SABER)
 		{
-			//saber
 			if (blocker->client->ps.saberInFlight)
 			{
-				//reflecting off a thrown saber is totally wild
 				for (i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.8f, 0.8f);
@@ -1188,7 +1328,6 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			}
 			else if (blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
 			{
-				// at level 1 or below
 				for (i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
@@ -1196,22 +1335,20 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			}
 			else
 			{
-				// at level 2
 				for (i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
 				}
 			}
+
 			if (!PM_SaberInParry(blocker->client->ps.saber_move)
 				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
 				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
 				if (PM_SaberInAttack(blocker->client->ps.saber_move)
 					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
 					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
 				{
-					//really wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
@@ -1219,7 +1356,6 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				}
 				else
 				{
-					//mildly more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
@@ -1229,37 +1365,39 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 		}
 		else
 		{
-			//some other kind of reflection
 			for (i = 0; i < 3; i++)
 			{
 				bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
 			}
 		}
+
 		WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, punish);
 	}
 
+	// Final normalize and reapply original speed
 	VectorNormalize(bounce_dir);
 	VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
 #ifdef _DEBUG
-	assert(
-		!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]
-		));
-#endif// _DEBUG
+	assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+		!Q_isnan(missile->s.pos.trDelta[1]) &&
+		!Q_isnan(missile->s.pos.trDelta[2]));
+#endif // _DEBUG
+
 	missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
 	VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
 	if (missile->s.weapon != WP_SABER)
 	{
-		//you are mine, now!
 		if (!missile->lastEnemy)
 		{
-			//remember who originally shot this missile
 			missile->lastEnemy = missile->owner;
 		}
 		missile->owner = blocker;
 	}
+
 	if (missile->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		//stop homing
 		missile->e_ThinkFunc = thinkF_NULL;
 	}
 }
@@ -1267,12 +1405,49 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 static qhandle_t stasisLoopSound = 0;
 gentity_t* tgt_list[MAX_GENTITIES];
 
+/*
+================
+G_StasisMissile
+
+Puts a missile into a temporary “stasis” state, slowing and redirecting it
+toward the blocker’s enemy, then later restoring normal motion.
+
+Behaviour:
+- First hit:
+	- Mark missile as in stasis for 10s (userFloat1).
+	- Schedule explosion at 20s.
+	- Redirect toward an enemy (if any) with slight randomness.
+	- Greatly slow the missile.
+- While in stasis window:
+	- Maintain slow motion and looping stasis sound.
+- After 10s:
+	- Clear stasis flag and resume normal speed (still redirected).
+- Rockets/thermals:
+	- While in stasis/normal, periodically check for nearby targets.
+	- If a valid target is near or delay expired, schedule a delayed blow.
+	- Otherwise, stop homing.
+
+Safety/bug fixes:
+- Guard null ent/missile.
+- Always initialize bounce_dir (no use of uninitialized vector).
+- Correct speed handling: derive stasis/normal speeds from original magnitude,
+  not from repeatedly normalizing the trajectory.
+================
+*/
 void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 {
-	vec3_t	bounce_dir;
-	gentity_t* blocker = ent;
 	static qboolean registered = qfalse;
+	gentity_t* blocker = ent;
+	vec3_t     bounce_dir;
+	qboolean   missile_in_stasis = qfalse;
 
+	// Safety: validate pointers
+	if (!ent || !missile)
+	{
+		return;
+	}
+
+	// One-time sound registration
 	if (!registered)
 	{
 		stasisLoopSound = G_SoundIndex("sound/effects/blaster_stasis_loop.wav");
@@ -1284,60 +1459,73 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 		blocker = ent->owner;
 	}
 
-	qboolean missile_in_stasis = qfalse;
+	// --- PHASE 1: Stasis timing state machine ---
 
 	if (missile->userFloat1 == 0)
 	{
-		missile->userFloat1 = level.time + 10000;   // unfreeze at t+10s
-		missile->nextthink = level.time + 20000;   // explode at t+20s
+		// First time: enter stasis
+		missile->userFloat1 = level.time + 10000;  // unfreeze at t+10s
+		missile->nextthink = level.time + 20000;  // explode at t+20s
 		missile->e_ThinkFunc = thinkF_wp_stasis_missile_blow;
 
 		missile_in_stasis = qtrue;
 	}
 	else if (level.time < missile->userFloat1)
 	{
+		// Still within stasis window
 		missile_in_stasis = qtrue;
 	}
 
-	//
-	// ⭐ PHASE 2 — Unfreeze at 10 seconds
-	//
+	// PHASE 2 — Unfreeze at 10 seconds
 	if (!missile_in_stasis && missile->userFloat1 > 0 && level.time >= missile->userFloat1)
 	{
+		// Clear stasis flag and resume normal physics timing
 		missile->userFloat1 = 0;
-
-		// resume normal physics
 		missile->s.pos.trTime = level.time;
 	}
 
-	//save the original speed
-	const float stasisspeed = VectorNormalize(missile->s.pos.trDelta) / 150;
-	const float normalspeed = VectorNormalize(missile->s.pos.trDelta) / 25;
+	// --- Direction and speed handling ---
 
-	if (ent &&
-		blocker &&
-		blocker->client)
+	// Get original speed and direction
+	vec3_t dir;
+	VectorCopy(missile->s.pos.trDelta, dir);
+	const float base_speed = VectorNormalize(dir);
+
+	// Derive stasis/normal speeds from original magnitude (bug fix)
+	const float stasis_speed = base_speed / 150.0f;
+	const float normal_speed = base_speed / 25.0f;
+
+	// Default bounce_dir: keep current direction if we can't find an enemy
+	VectorCopy(dir, bounce_dir);
+
+	// Try to redirect toward an enemy if we have a valid blocker client
+	if (blocker && blocker->client)
 	{
-		gentity_t* enemy;
+		gentity_t* enemy = NULL;
 
 		if (blocker->enemy && Q_irand(0, 3))
-		{//toward current enemy 75% of the time
+		{
+			// Toward current enemy 75% of the time
 			enemy = blocker->enemy;
 		}
 		else
-		{//find another enemy
+		{
+			// Find another enemy in front
 			enemy = jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
 		}
+
 		if (enemy)
 		{
-			vec3_t	bullseye;
+			vec3_t bullseye;
 			CalcEntitySpot(enemy, SPOT_CHEST, bullseye);
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
+			// Slight randomness to avoid perfect laser-like aim
 			for (int i = 0; i < 3; i++)
 			{
 				bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
@@ -1346,37 +1534,51 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 			VectorNormalize(bounce_dir);
 		}
 	}
+
 	VectorNormalize(bounce_dir);
 	missile->s.loopSound = stasisLoopSound;
 
+	// --- Apply stasis or normal motion ---
+
 	if (missile_in_stasis)
 	{
-		VectorScale(bounce_dir, stasisspeed, missile->s.pos.trDelta);
+		VectorScale(bounce_dir, stasis_speed, missile->s.pos.trDelta);
 
 #ifdef _DEBUG
-		assert(!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]));
-#endif// _DEBUG
-		missile->s.pos.trTime = level.time - 10;		// move a bit on the very first frame
+		assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+			!Q_isnan(missile->s.pos.trDelta[1]) &&
+			!Q_isnan(missile->s.pos.trDelta[2]));
+#endif // _DEBUG
+
+		missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
 		VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
 		if (missile->s.weapon != WP_SABER)
-		{//you are mine, now!
+		{
+			// You are mine, now!
 			if (!missile->lastEnemy)
-			{//remember who originally shot this missile
+			{
+				// Remember who originally shot this missile
 				missile->lastEnemy = missile->owner;
 			}
 			missile->owner = blocker;
 		}
 
 		if (missile->s.weapon == WP_ROCKET_LAUNCHER || missile->s.weapon == WP_THERMAL)
-		{//stop homing
-			qboolean	blow = qfalse;
+		{
+			// Rockets/thermals: conditional delayed blow or stop homing
+			qboolean blow = qfalse;
+
 			if (missile->delay > level.time)
 			{
 				const int count = G_RadiusList(missile->currentOrigin, 200, missile, qtrue, tgt_list);
 
 				for (int i = 0; i < count; i++)
 				{
-					if (tgt_list[i]->client && tgt_list[i]->health > 0 && missile->activator && tgt_list[i]->s.number != missile->activator->s.number)
+					if (tgt_list[i]->client &&
+						tgt_list[i]->health > 0 &&
+						missile->activator &&
+						tgt_list[i]->s.number != missile->activator->s.number)
 					{
 						blow = qtrue;
 						break;
@@ -1385,7 +1587,7 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 			}
 			else
 			{
-				// well, we must die now
+				// Lifetime expired: must die now
 				blow = qtrue;
 			}
 
@@ -1396,38 +1598,49 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 			}
 			else
 			{
-				//stop homing
+				// Stop homing
 				missile->e_ThinkFunc = thinkF_NULL;
 			}
 		}
 	}
 	else
 	{
-		VectorScale(bounce_dir, normalspeed, missile->s.pos.trDelta);
+		// Out of stasis: move faster but keep redirected trajectory
+		VectorScale(bounce_dir, normal_speed, missile->s.pos.trDelta);
 
 #ifdef _DEBUG
-		assert(!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]));
-#endif// _DEBUG
-		missile->s.pos.trTime = level.time - 10;		// move a bit on the very first frame
+		assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+			!Q_isnan(missile->s.pos.trDelta[1]) &&
+			!Q_isnan(missile->s.pos.trDelta[2]));
+#endif // _DEBUG
+
+		missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
 		VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
 		if (missile->s.weapon != WP_SABER)
-		{//you are mine, now!
+		{
+			// You are mine, now!
 			if (!missile->lastEnemy)
-			{//remember who originally shot this missile
+			{
 				missile->lastEnemy = missile->owner;
 			}
 			missile->owner = blocker;
 		}
+
 		if (missile->s.weapon == WP_ROCKET_LAUNCHER || missile->s.weapon == WP_THERMAL)
-		{//stop homing
-			qboolean	blow = qfalse;
+		{
+			qboolean blow = qfalse;
+
 			if (missile->delay > level.time)
 			{
 				const int count = G_RadiusList(missile->currentOrigin, 200, missile, qtrue, tgt_list);
 
 				for (int i = 0; i < count; i++)
 				{
-					if (tgt_list[i]->client && tgt_list[i]->health > 0 && missile->activator && tgt_list[i]->s.number != missile->activator->s.number)
+					if (tgt_list[i]->client &&
+						tgt_list[i]->health > 0 &&
+						missile->activator &&
+						tgt_list[i]->s.number != missile->activator->s.number)
 					{
 						blow = qtrue;
 						break;
@@ -1436,7 +1649,6 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 			}
 			else
 			{
-				// well, we must die now
 				blow = qtrue;
 			}
 
@@ -1447,181 +1659,191 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 			}
 			else
 			{
-				//stop homing
 				missile->e_ThinkFunc = thinkF_NULL;
 			}
 		}
 	}
 }
 
+// Safe helper: returns FORCE_LEVEL_1 if owner or client is NULL
+static int G_GetReflectLevel(const gentity_t* owner)
+{
+	if (!owner || !owner->client)
+	{
+		return FORCE_LEVEL_1;
+	}
+	return owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE];
+}
+
 void G_ReflectMissile_JKA(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
-	vec3_t bounce_dir;
-	int i;
-	qboolean reflected = qfalse;
-	gentity_t* owner = ent;
-
-	if (ent->owner)
+	// --- SAFETY GUARDS ---
+	if (!ent || !missile)
 	{
-		owner = ent->owner;
+		return;
 	}
 
-	//save the original speed
+	gentity_t* owner = ent->owner ? ent->owner : ent;
+
+	// If owner has no client, fall back to simple reflection later
+	qboolean hasClient = (owner && owner->client) ? qtrue : qfalse;
+
+	vec3_t bounce_dir;
+	VectorClear(bounce_dir); // Prevents uninitialized use
+
+	qboolean reflected = qfalse;
+
+	// Save original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
 
-	if (ent && owner && owner->client && !owner->client->ps.saberInFlight &&
-		(owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_2 || owner->client->ps.forcePowerLevel[
-			FP_SABER_DEFENSE] > FORCE_LEVEL_1 && !Q_irand(0, 3)))
+	// --- PERFECT REFLECTION (JKA auto-aim) ---
+	if (hasClient &&
+		!owner->client->ps.saberInFlight &&
+		(G_GetReflectLevel(owner) > FORCE_LEVEL_2 ||
+			(G_GetReflectLevel(owner) > FORCE_LEVEL_1 && !Q_irand(0, 3))))
 	{
-		//if high enough defense skill and saber in-hand (100% at level 3, 25% at level 2, 0% at level 1), reflections are perfectly deflected toward an enemy
-		gentity_t* enemy;
+		gentity_t* enemy = NULL;
+
 		if (owner->enemy && Q_irand(0, 3))
 		{
-			//toward current enemy 75% of the time
-			enemy = owner->enemy;
+			enemy = owner->enemy; // 75% toward current enemy
 		}
 		else
 		{
-			//find another enemy
 			enemy = jedi_find_enemy_in_cone(owner, owner->enemy, 0.3f);
 		}
+
 		if (enemy)
 		{
 			vec3_t bullseye;
 			CalcEntitySpot(enemy, SPOT_HEAD, bullseye);
+
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
+
+			// Wildness based on saber state
+			if (!PM_SaberInParry(owner->client->ps.saber_move) &&
+				!PM_SaberInReflect(owner->client->ps.saber_move) &&
+				!PM_SaberInIdle(owner->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				const float amt = (PM_SaberInAttack(owner->client->ps.saber_move) ||
+					PM_SaberInTransitionAny(owner->client->ps.saber_move) ||
+					pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+					? 0.2f
+					: 0.1f;
+
+				for (int i = 0; i < 3; i++)
 				{
-					//moderately more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
-					}
-				}
-				else
-				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
-					}
+					bounce_dir[i] += Q_flrand(-amt, amt);
 				}
 			}
+
 			VectorNormalize(bounce_dir);
 			reflected = qtrue;
 		}
 	}
+
+	// --- GENERIC REFLECTION ---
 	if (!reflected)
 	{
 		if (missile->owner && missile->s.weapon != WP_SABER)
 		{
-			//bounce back at them if you can
+			// Bounce back at shooter
 			VectorSubtract(missile->owner->currentOrigin, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 		}
 		else
 		{
+			// Reflect based on incoming direction
 			vec3_t missile_dir;
-
 			VectorSubtract(ent->currentOrigin, missile->currentOrigin, missile_dir);
+
 			VectorCopy(missile->s.pos.trDelta, bounce_dir);
 			VectorScale(bounce_dir, DotProduct(forward, missile_dir), bounce_dir);
 			VectorNormalize(bounce_dir);
 		}
-		if (owner && owner->client && owner->s.weapon == WP_SABER)
+
+		// Saber wildness
+		if (hasClient && owner->s.weapon == WP_SABER)
 		{
-			//saber
 			if (owner->client->ps.saberInFlight)
 			{
-				//reflecting off a thrown saber is totally wild
-				for (i = 0; i < 3; i++)
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.8f, 0.8f);
 				}
 			}
-			else if (owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
+			else if (G_GetReflectLevel(owner) <= FORCE_LEVEL_1)
 			{
-				// at level 1
-				for (i = 0; i < 3; i++)
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
 				}
 			}
 			else
 			{
-				// at level 2
-				for (i = 0; i < 3; i++)
+				for (int i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
 				}
 			}
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
+
+			if (!PM_SaberInParry(owner->client->ps.saber_move) &&
+				!PM_SaberInReflect(owner->client->ps.saber_move) &&
+				!PM_SaberInIdle(owner->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				const float amt = (PM_SaberInAttack(owner->client->ps.saber_move) ||
+					PM_SaberInTransitionAny(owner->client->ps.saber_move) ||
+					pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+					? 0.3f
+					: 0.1f;
+
+				for (int i = 0; i < 3; i++)
 				{
-					//really wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
-					}
-				}
-				else
-				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
-					}
+					bounce_dir[i] += Q_flrand(-amt, amt);
 				}
 			}
 		}
 		else
 		{
-			//some other kind of reflection
-			for (i = 0; i < 3; i++)
+			// Non-saber reflection
+			for (int i = 0; i < 3; i++)
 			{
 				bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
 			}
 		}
 	}
+
+	// --- FINALIZE REFLECTION ---
 	VectorNormalize(bounce_dir);
 	VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
 #ifdef _DEBUG
-	assert(
-		!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]
-		));
-#endif// _DEBUG
-	missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
+	assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+		!Q_isnan(missile->s.pos.trDelta[1]) &&
+		!Q_isnan(missile->s.pos.trDelta[2]));
+#endif
+
+	missile->s.pos.trTime = level.time - 10;
 	VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
+	// Transfer ownership
 	if (missile->s.weapon != WP_SABER)
 	{
-		//you are mine, now!
 		if (!missile->lastEnemy)
 		{
-			//remember who originally shot this missile
 			missile->lastEnemy = missile->owner;
 		}
 		missile->owner = owner;
 	}
+
+	// Stop homing
 	if (missile->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		//stop homing
 		missile->e_ThinkFunc = thinkF_NULL;
 	}
 }
@@ -1822,16 +2044,21 @@ static void G_SpawnNoghriGasCloud(gentity_t* ent)
 
 extern qboolean W_AccuracyLoggableWeapon(int weapon, qboolean alt_fire, int mod);
 
-void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3_t normal, const int hit_loc = HL_NONE)
+void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3_t normal, const int hit_loc)
 {
+	// ---------------------------------------------------------------------
+	// FIX: Validate 'other' before any dereference
+	// ---------------------------------------------------------------------
+	const qboolean otherValid = (other != NULL) ? qtrue : qfalse;
+
 	// impact damage
-	if (other->takedamage)
+	if (otherValid && other->takedamage)
 	{
 		if (ent->damage)
 		{
 			vec3_t velocity;
-
 			EvaluateTrajectoryDelta(&ent->s.pos, level.time, velocity);
+
 			if (VectorLength(velocity) == 0)
 			{
 				velocity[2] = 1; // stepped on a grenade
@@ -1843,88 +2070,76 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 			{
 				const class_t npc_class = other->client->NPC_class;
 
-				// If we are a robot and we aren't currently doing the full body electricity...
+				// droid shock effect
 				if (npc_class == CLASS_ATST || npc_class == CLASS_GONK ||
 					npc_class == CLASS_INTERROGATOR || npc_class == CLASS_MARK1 ||
 					npc_class == CLASS_MARK2 || npc_class == CLASS_MOUSE ||
 					npc_class == CLASS_PROBE || npc_class == CLASS_PROTOCOL ||
 					npc_class == CLASS_R2D2 || npc_class == CLASS_R5D2 ||
 					npc_class == CLASS_SEEKER || npc_class == CLASS_SENTRY ||
-					//npc_class == CLASS_SBD || npc_class == CLASS_BATTLEDROID ||
-					/*npc_class == CLASS_DROIDEKA ||*/ npc_class == CLASS_OBJECT ||
-					npc_class == CLASS_ASSASSIN_DROID || npc_class == CLASS_SABER_DROID)
+					npc_class == CLASS_OBJECT || npc_class == CLASS_ASSASSIN_DROID ||
+					npc_class == CLASS_SABER_DROID)
 				{
-					// special droid only behaviors
 					if (other->client->ps.powerups[PW_SHOCKED] < level.time + 100)
 					{
-						// ... do the effect for a split second for some more feedback
 						other->s.powerups |= 1 << PW_SHOCKED;
 						other->client->ps.powerups[PW_SHOCKED] = level.time + Q_irand(1500, 2000);
 					}
 				}
 			}
 
-			G_Damage(other, ent, ent->owner, velocity, impact_pos, damage, ent->dflags, ent->methodOfDeath, hit_loc);
+			G_Damage(other, ent, ent->owner, velocity, impact_pos, damage,
+				ent->dflags, ent->methodOfDeath, hit_loc);
 
-			if (ent->s.weapon == WP_DEMP2)
+			// DEMP2 special behaviour
+			if (ent->s.weapon == WP_DEMP2 && otherValid && other->client)
 			{
-				//a hit with demp2 decloaks saboteurs
-				if (other && other->client && other->client->NPC_class == CLASS_SABOTEUR)
+				if (other->client->NPC_class == CLASS_SABOTEUR)
 				{
-					//FIXME: make this disabled cloak hold for some amount of time?
 					Saboteur_Decloak(other, Q_irand(3000, 10000));
-					if (ent->methodOfDeath == MOD_DEMP2_ALT)
+
+					if (ent->methodOfDeath == MOD_DEMP2_ALT && other->NPC)
 					{
-						//direct hit with alt disabled cloak forever
-						if (other->NPC)
-						{
-							//permanently disable the saboteur's cloak
-							other->NPC->aiFlags &= ~NPCAI_SHIELDS;
-						}
+						other->NPC->aiFlags &= ~NPCAI_SHIELDS;
 					}
 				}
-				if (other && other->client && other->client->NPC_class == CLASS_VEHICLE)
+
+				if (other->client->NPC_class == CLASS_VEHICLE)
 				{
-					//hit a vehicle
-					if (other->m_pVehicle //valid vehicle ent
-						&& other->m_pVehicle->m_pVehicleInfo //valid stats
-						&& (other->m_pVehicle->m_pVehicleInfo->type == VH_SPEEDER //always affect speeders
-							|| other->m_pVehicle->m_pVehicleInfo->type == VH_FIGHTER && ent->classname &&
-							Q_stricmp("vehicle_proj", ent->classname) == 0)
-						//only vehicle ion weapons affect a fighter in this manner
-						&& !FighterIsLanded(other->m_pVehicle, &other->client->ps) //not landed
-						&& !(other->spawnflags & 2)) //and not suspended
+					if (other->m_pVehicle &&
+						other->m_pVehicle->m_pVehicleInfo &&
+						(other->m_pVehicle->m_pVehicleInfo->type == VH_SPEEDER ||
+							(other->m_pVehicle->m_pVehicleInfo->type == VH_FIGHTER &&
+								ent->classname &&
+								Q_stricmp("vehicle_proj", ent->classname) == 0)) &&
+						!FighterIsLanded(other->m_pVehicle, &other->client->ps) &&
+						!(other->spawnflags & 2))
 					{
-						//vehicles hit by "ion cannons" lose control
 						if (other->client->ps.electrifyTime > level.time)
 						{
-							//add onto it
 							other->client->ps.electrifyTime += level.time + Q_irand(1500, 2000);
 							if (other->client->ps.electrifyTime > level.time + 4000)
 							{
-								//cap it
 								other->client->ps.electrifyTime = level.time + 4000;
 							}
 						}
 						else
 						{
-							//start it
 							other->client->ps.electrifyTime = level.time + Q_irand(1500, 2000);
 						}
 					}
 				}
-				else if (other && other->client && other->client->ps.powerups[PW_CLOAKED])
+				else if (other->client->ps.powerups[PW_CLOAKED])
 				{
 					player_decloak(other);
 					jedi_decloak(other);
+
 					if (ent->methodOfDeath == MOD_DEMP2_ALT)
 					{
-						//direct hit with alt disables cloak forever //permanently disable the saboteur's cloak
 						other->client->cloakToggleTime = Q3_INFINITE;
 					}
 					else
 					{
-						//temp disable
 						other->client->cloakToggleTime = level.time + Q_irand(3000, 10000);
 					}
 				}
@@ -1932,7 +2147,10 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 		}
 	}
 
-	if (other && other->client && other->takedamage)
+	// ---------------------------------------------------------------------
+	// Impact event (safe even if 'other' is NULL)
+	// ---------------------------------------------------------------------
+	if (otherValid && other->client && other->takedamage)
 	{
 		G_AddEvent(ent, EV_MISSILE_HIT, DirToByte(normal));
 		ent->s.otherentity_num = other->s.number;
@@ -1940,32 +2158,27 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 	else
 	{
 		G_AddEvent(ent, EV_MISSILE_MISS, DirToByte(normal));
-		ent->s.otherentity_num = other->s.number;
+		ent->s.otherentity_num = otherValid ? other->s.number : ENTITYNUM_NONE;
 	}
 
 	VectorCopy(normal, ent->pos1);
 
 	if (ent->owner)
 	{
-		//Add the event
 		AddSoundEvent(ent->owner, ent->currentOrigin, 256, AEL_SUSPICIOUS, qfalse, qtrue);
 		AddSightEvent(ent->owner, ent->currentOrigin, 512, AEL_DISCOVERED, 75);
 	}
 
 	ent->freeAfterEvent = qtrue;
-
-	// change over to a normal entity right at the point of impact
 	ent->s.eType = ET_GENERAL;
 
 	VectorCopy(impact_pos, ent->s.pos.trBase);
-
 	G_SetOrigin(ent, impact_pos);
 
-	// splash damage (doesn't apply to person directly hit)
 	if (ent->splashDamage)
 	{
-		G_RadiusDamage(impact_pos, ent->owner, ent->splashDamage, ent->splashRadius,
-			other, ent->splashMethodOfDeath);
+		G_RadiusDamage(impact_pos, ent->owner, ent->splashDamage,
+			ent->splashRadius, other, ent->splashMethodOfDeath);
 	}
 
 	if (ent->s.weapon == WP_NOGHRI_STICK)
@@ -2457,7 +2670,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 			other->owner->client->sess.missionStats.saberBlocksCnt++;
 		}
 
-		if (other->owner->takedamage && other->owner->client &&
+		if (other && other->owner && other->owner->takedamage && other->owner->client &&
 			(!ent->splashDamage || !ent->splashRadius) &&
 			ent->s.weapon != WP_ROCKET_LAUNCHER &&
 			ent->s.weapon != WP_THERMAL &&
@@ -2468,6 +2681,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 			ent->methodOfDeath != MOD_FLECHETTE_ALT &&
 			ent->methodOfDeath != MOD_CONC &&
 			ent->methodOfDeath != MOD_CONC_ALT)
+
 		{
 			if (!other->owner || !other->owner->client || other->owner->client->ps.saberInFlight
 				|| InFront(ent->currentOrigin, other->owner->currentOrigin, other->owner->client->ps.viewangles, SABER_REFLECT_MISSILE_CONE)
@@ -2807,59 +3021,68 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 
 		return;
 	}
-	if (other->contents & CONTENTS_LIGHTSABER)
+	if (other && (other->contents & CONTENTS_LIGHTSABER))
 	{
-		if (other->owner && !other->owner->s.number && other->owner->client)
+		gentity_t* owner = other->owner;
+
+		if (owner && !owner->s.number && owner->client)
 		{
-			other->owner->client->sess.missionStats.saberBlocksCnt++;
+			owner->client->sess.missionStats.saberBlocksCnt++;
 		}
-		if ((g_spskill->integer <= 0 //on easy, it reflects all shots
-			|| g_spskill->integer == 1 && ent->s.weapon != WP_FLECHETTE && ent->s.weapon != WP_DEMP2
-			|| g_spskill->integer == 2 && ent->s.weapon != WP_FLECHETTE && ent->s.weapon != WP_DEMP2 && ent->s.
-			weapon != WP_BOWCASTER && ent->s.weapon != WP_REPEATER)
-			&& (!ent->splashDamage || !ent->splashRadius) && ent->s.weapon != WP_NOGHRI_STICK)
+
+		if ((g_spskill->integer <= 0 ||
+			(g_spskill->integer == 1 &&
+				ent->s.weapon != WP_FLECHETTE &&
+				ent->s.weapon != WP_DEMP2) ||
+			(g_spskill->integer == 2 &&
+				ent->s.weapon != WP_FLECHETTE &&
+				ent->s.weapon != WP_DEMP2 &&
+				ent->s.weapon != WP_BOWCASTER &&
+				ent->s.weapon != WP_REPEATER)) &&
+			(!ent->splashDamage || !ent->splashRadius) &&
+			ent->s.weapon != WP_NOGHRI_STICK)
 		{
-			if (!other->owner || !other->owner->client || other->owner->client->ps.saberInFlight
-				|| InFront(ent->currentOrigin, other->owner->currentOrigin, other->owner->client->ps.viewangles,
+			if (!owner ||
+				!owner->client ||
+				owner->client->ps.saberInFlight ||
+				(InFront(ent->currentOrigin,
+					owner->currentOrigin,
+					owner->client->ps.viewangles,
 					SABER_REFLECT_MISSILE_CONE) &&
-				!WP_DoingForcedAnimationForForcePowers(other))
+					!WP_DoingForcedAnimationForForcePowers(other)))
 			{
-				//Jedi cannot block shots from behind!
 				int block_chance = 0;
 
-				switch (other->owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE])
+				if (owner && owner->client)
 				{
-					//level 1 reflects 50% of the time, level 2 reflects 75% of the time
-				case FORCE_LEVEL_3:
-					block_chance = 10;
-					break;
-				case FORCE_LEVEL_2:
-					block_chance = 3;
-					break;
-				case FORCE_LEVEL_1:
-					block_chance = 1;
-					break;
-				default:;
+					switch (owner->client->ps.forcePowerLevel[FP_SABER_DEFENSE])
+					{
+					case FORCE_LEVEL_3: block_chance = 10; break;
+					case FORCE_LEVEL_2: block_chance = 3;  break;
+					case FORCE_LEVEL_1: block_chance = 1;  break;
+					default: break;
+					}
+
+					if (block_chance &&
+						(owner->client->ps.forcePowersActive & (1 << FP_SPEED)))
+					{
+						block_chance += owner->client->ps.forcePowerLevel[FP_SPEED] * 2;
+					}
 				}
-				if (block_chance && other->owner->client->ps.forcePowersActive & 1 << FP_SPEED)
-				{
-					//in in force speed, better chance of deflecting the shot
-					block_chance += other->owner->client->ps.forcePowerLevel[FP_SPEED] * 2;
-				}
+
 				if (Q_irand(0, block_chance))
 				{
+					vec3_t diff;
 					VectorSubtract(ent->currentOrigin, other->currentOrigin, diff);
 					VectorNormalize(diff);
+
 					G_BoltBlockMissile(other, ent, diff);
-					if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
+
+					if (owner && owner->client)
 					{
-						Com_Printf(S_COLOR_MAGENTA"G_ReflectMissile_JKA\n");
+						owner->client->ps.saberEventFlags |= SEF_DEFLECTED;
 					}
-					if (other->owner && other->owner->client)
-					{
-						other->owner->client->ps.saberEventFlags |= SEF_DEFLECTED;
-					}
-					//do the effect
+
 					VectorCopy(ent->s.pos.trDelta, diff);
 					VectorNormalize(diff);
 					G_MissileReflectEffect(ent, trace->plane.normal);
@@ -2869,7 +3092,6 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 		}
 		else
 		{
-			//still do the bounce effect
 			G_MissileReflectEffect(ent, trace->plane.normal);
 		}
 	}
@@ -3160,10 +3382,9 @@ static void G_RollMissile(gentity_t* ent)
 
 		//
 		// modify velocity so it parallels all of the clip planes
-		//
-		if (&g_entities[trace.entityNum] != nullptr && g_entities[trace.entityNum].client)
+		if (trace.entityNum < ENTITYNUM_WORLD && g_entities[trace.entityNum].client)
 		{
-			//hit a person, bounce off much less
+			// hit a person, bounce off much less
 			bounceAmt = OVERCLIP;
 		}
 		else
@@ -3513,106 +3734,180 @@ void G_RunMissile(gentity_t* ent)
 	}
 }
 
+// ================================================================
+//  SAFE HELPERS (SP-SAFE, NULL-PROOF)
+// ================================================================
+
+// Returns qtrue only if entity and its client are valid
+static qboolean G_HasClient(const gentity_t* ent)
+{
+	return (ent && ent->client) ? qtrue : qfalse;
+}
+
+// Safe access to defense level (fallback = FORCE_LEVEL_1)
+static int G_GetDefenseLevel(const gentity_t* ent)
+{
+	if (!G_HasClient(ent))
+	{
+		return FORCE_LEVEL_1;
+	}
+	return ent->client->ps.forcePowerLevel[FP_SABER_DEFENSE];
+}
+
+// Safe access to blockPoints (fallback = 0)
+static int G_GetBlockPoints(const gentity_t* ent)
+{
+	if (!G_HasClient(ent))
+	{
+		return 0;
+	}
+	return ent->client->ps.blockPoints;
+}
+
+// Adds wildness to a direction vector
+static void G_AddWildness(vec3_t dir, float amount)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		dir[i] += Q_flrand(-amount, amount);
+	}
+}
+
+
+// ================================================================
+//  MAIN FUNCTION (CLEANED, MODERNIZED, NULL-SAFE)
+// ================================================================
 static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
+	// ------------------------------------------------------------
+	//  SAFETY GUARDS
+	// ------------------------------------------------------------
+	if (!ent || !missile)
+	{
+		return;
+	}
+
+	gentity_t* blocker = ent->owner ? ent->owner : ent;
+
+	if (!G_HasClient(blocker))
+	{
+		// Fallback: simple reflection using current direction
+		vec3_t bounce_dir;
+		VectorCopy(missile->s.pos.trDelta, bounce_dir);
+		VectorNormalize(bounce_dir);
+
+		const float speed = VectorLength(missile->s.pos.trDelta);
+		VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
+		missile->s.pos.trTime = level.time - 10;
+		VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+		return;
+	}
+
+	// ------------------------------------------------------------
+	//  INITIAL SETUP
+	// ------------------------------------------------------------
 	vec3_t bounce_dir;
-	int i;
+	VectorClear(bounce_dir); // Prevent uninitialized use
+
 	qboolean saber_block_reflection = qfalse;
 	qboolean bolt_block_reflection = qfalse;
 	qboolean npc_reflection = qfalse;
 	qboolean reflected = qfalse;
-	gentity_t* blocker = ent;
-	constexpr int punish = BLOCKPOINTS_TWELVE;
 
-	if (ent->owner)
-	{
-		blocker = ent->owner;
-	}
+	const int punish = BLOCKPOINTS_TWELVE;
 
-	const qboolean manual_blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-	const qboolean manual_proj_blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	const qboolean np_cis_blocking = blocker->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING ? qtrue : qfalse;
-	float slop_factor = (FATIGUE_AUTOBOLTBLOCK - 6) * (static_cast<float>(FORCE_LEVEL_3) - blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE]) / FORCE_LEVEL_3;
-	const qboolean accurate_missile_blocking = blocker->client->ps.ManualBlockingFlags & 1 << MBF_ACCURATEMISSILEBLOCKING ? qtrue : qfalse;
+	const qboolean manual_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
 
-	//save the original speed
+	const qboolean manual_proj_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
+
+	const qboolean np_cis_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) ? qtrue : qfalse;
+
+	const qboolean accurate_missile_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) ? qtrue : qfalse;
+
+	float slop_factor =
+		(FATIGUE_AUTOBOLTBLOCK - 6) *
+		((float)FORCE_LEVEL_3 - G_GetDefenseLevel(blocker)) /
+		FORCE_LEVEL_3;
+
+	// Save original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
 
-	AngleVectors(blocker->client->ps.viewangles, forward, nullptr, nullptr);
+	// Aim forward from blocker
+	AngleVectors(blocker->client->ps.viewangles, forward, NULL, NULL);
 
-	if (ent && blocker && blocker->client && manual_blocking && !manual_proj_blocking)
+	// ------------------------------------------------------------
+	//  DETERMINE REFLECTION MODE
+	// ------------------------------------------------------------
+	if (manual_blocking && !manual_proj_blocking)
 	{
 		saber_block_reflection = qtrue;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && manual_blocking && manual_proj_blocking)
+	if (manual_blocking && manual_proj_blocking)
 	{
 		bolt_block_reflection = qtrue;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && np_cis_blocking)
+	if (np_cis_blocking)
 	{
 		npc_reflection = qtrue;
 	}
-	if (ent && blocker && blocker->client && blocker->client->ps.saberInFlight)
+
+	// Saber must be in-hand and defense >= 1
+	if (blocker->client->ps.saberInFlight ||
+		G_GetDefenseLevel(blocker) < FORCE_LEVEL_1)
 	{
-		//but need saber in-hand for perfect reflection
 		saber_block_reflection = qfalse;
 		bolt_block_reflection = qfalse;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] < FORCE_LEVEL_1)
-	{
-		//but need saber in-hand for perfect reflection
-		saber_block_reflection = qfalse;
-		bolt_block_reflection = qfalse;
-		npc_reflection = qfalse;
-	}
-
-	//play projectile block animation
-	if (saber_block_reflection && !npc_reflection) //GOES TO CROSSHAIR
+	// ============================================================
+	//  SABER BLOCK → CROSSHAIR REFLECTION
+	// ============================================================
+	if (saber_block_reflection && !npc_reflection)
 	{
 		vec3_t angs;
-		if (level.time - blocker->client->ps.ManualblockStartTime < 3000) //Blocking 2
+
+		if (level.time - blocker->client->ps.ManualblockStartTime < 3000)
 		{
-			// good
+			// Good block
 			vectoangles(forward, angs);
-			AngleVectors(angs, forward, nullptr, nullptr);
+			AngleVectors(angs, forward, NULL, NULL);
 		}
 		else if (blocker->client->pers.cmd.forwardmove >= 0)
 		{
-			//bad
+			// Bad block
 			slop_factor += Q_irand(1, 5);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
-			AngleVectors(angs, forward, nullptr, nullptr);
+			AngleVectors(angs, forward, NULL, NULL);
 		}
 		else
 		{
-			//average
+			// Average block
 			slop_factor += Q_irand(1, 3);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
-			AngleVectors(angs, forward, nullptr, nullptr);
+			AngleVectors(angs, forward, NULL, NULL);
 		}
+
 		VectorCopy(forward, bounce_dir);
 
-		if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
+		// Block animation logic
+		if (G_GetBlockPoints(blocker) < BLOCKPOINTS_THIRTY)
 		{
-			Com_Printf(S_COLOR_GREEN"Advanced MD Mode Crosshair Deflection\n");
-		}
-
-		if (blocker->client->ps.blockPoints < BLOCKPOINTS_THIRTY)
-		{
-			//very Low points = bad blocks
-			if (blocker->client->ps.blockPoints < BLOCKPOINTS_FATIGUE)
+			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FATIGUE)
 			{
-				//Low points = bad blocks
 				WP_BoltBlockVictimFatigued(blocker);
 				blocker->client->ps.saberBlocked = BLOCKED_NONE;
 				blocker->client->ps.saberBounceMove = LS_NONE;
@@ -3627,85 +3922,64 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			WP_SaberBlockBolt_AMD(blocker, missile->currentOrigin, qfalse);
 		}
 
-		int block_points_used_used;
+		// Block point cost
+		int cost = accurate_missile_blocking ? 2 : WP_SaberBoltBlockCost(blocker, missile);
 
-		if (accurate_missile_blocking)
-		{
-			// excellent
-			block_points_used_used = 2;
-		}
-		else
-		{
-			block_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
-		}
-
-		if (blocker->client->ps.blockPoints < block_points_used_used)
+		if (G_GetBlockPoints(blocker) < cost)
 		{
 			blocker->client->ps.blockPoints = 0;
 		}
 		else
 		{
-			WP_BlockPointsDrain(blocker, block_points_used_used);
+			WP_BlockPointsDrain(blocker, cost);
 		}
+
 		reflected = qtrue;
 	}
-	else if (bolt_block_reflection && !npc_reflection) //GOES TO ENEMY
-	{
-		gentity_t* attacker;
 
-		if (blocker->enemy && Q_irand(0, 3))
-		{
-			//toward current enemy 75% of the time
-			attacker = blocker->enemy;
-		}
-		else
-		{
-			//find another enemy
-			attacker = jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
-		}
+	// ============================================================
+	//  PROJECTILE BLOCK → AIM AT ENEMY
+	// ============================================================
+	else if (bolt_block_reflection && !npc_reflection)
+	{
+		gentity_t* attacker =
+			(blocker->enemy && Q_irand(0, 3))
+			? blocker->enemy
+			: jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
 
 		if (attacker)
 		{
 			vec3_t bullseye;
 			CalcEntitySpot(attacker, SPOT_HEAD, bullseye);
+
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
+			// Wildness based on saber state
 			if (!PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim)
-					|| blocker->client->ps.blockPoints < BLOCKPOINTS_KNOCKAWAY)
-				{
-					//moderately more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
-					}
-				}
-				else
-				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
-					}
-				}
+				float amt =
+					(PM_SaberInAttack(blocker->client->ps.saber_move) ||
+						PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
+						pm_saber_in_special_attack(blocker->client->ps.torsoAnim) ||
+						G_GetBlockPoints(blocker) < BLOCKPOINTS_KNOCKAWAY)
+					? 0.3f
+					: 0.1f;
+
+				G_AddWildness(bounce_dir, amt);
 			}
 
 			VectorNormalize(bounce_dir);
 
-			if (blocker->client->ps.blockPoints < BLOCKPOINTS_THIRTY)
+			// Block animation
+			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_THIRTY)
 			{
-				//very Low points = bad blocks
-				if (blocker->client->ps.blockPoints < BLOCKPOINTS_FATIGUE)
+				if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FATIGUE)
 				{
-					//Low points = bad blocks
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
 					blocker->client->ps.saberBounceMove = LS_NONE;
@@ -3720,92 +3994,66 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
 			}
 
-			int block_points_used_used;
+			// Block point cost
+			int cost = accurate_missile_blocking ? 2 : WP_SaberBoltBlockCost(blocker, missile);
 
-			if (accurate_missile_blocking)
-			{
-				// excellent
-				block_points_used_used = 2;
-			}
-			else
-			{
-				block_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
-			}
-
-			if (blocker->client->ps.blockPoints < block_points_used_used)
+			if (G_GetBlockPoints(blocker) < cost)
 			{
 				blocker->client->ps.blockPoints = 0;
 			}
 			else
 			{
-				WP_BlockPointsDrain(blocker, block_points_used_used);
+				WP_BlockPointsDrain(blocker, cost);
 			}
 
-			if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
-			{
-				Com_Printf(S_COLOR_GREEN"Advanced MD Mode Bolt Blocking to enemy\n");
-			}
 			reflected = qtrue;
 		}
 	}
-	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection) //GOES TO ENEMY
-	{
-		gentity_t* enemy;
 
-		if (blocker->enemy && Q_irand(0, 3))
-		{
-			//toward current enemy 75% of the time
-			enemy = blocker->enemy;
-		}
-		else
-		{
-			//find another enemy
-			enemy = jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
-		}
+	// ============================================================
+	//  NPC REFLECTION → AIM AT ENEMY
+	// ============================================================
+	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection)
+	{
+		gentity_t* enemy =
+			(blocker->enemy && Q_irand(0, 3))
+			? blocker->enemy
+			: jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
 
 		if (enemy)
 		{
 			vec3_t bullseye;
 			CalcEntitySpot(enemy, SPOT_CHEST, bullseye);
+
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move)
-				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
-				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
+			// Wildness
+			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
+				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
+				!PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
-				{
-					//moderately more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
-					}
-				}
-				else
-				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
-					}
-				}
+				float amt =
+					(PM_SaberInAttack(blocker->client->ps.saber_move) ||
+						PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
+						pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+					? 0.2f
+					: 0.1f;
+
+				G_AddWildness(bounce_dir, amt);
 			}
 
 			VectorNormalize(bounce_dir);
 
-			if (blocker->client->ps.blockPoints < BLOCKPOINTS_THIRTY)
+			// Block animation
+			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_THIRTY)
 			{
-				//very Low points = bad blocks
-				if (blocker->client->ps.blockPoints < BLOCKPOINTS_FATIGUE)
+				if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FATIGUE)
 				{
-					//Low points = bad blocks
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
 					blocker->client->ps.saberBounceMove = LS_NONE;
@@ -3818,263 +4066,255 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			else
 			{
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
-
-				if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->NPC && !
-					G_ControlledByPlayer(blocker)))
-				{
-					gi.Printf(S_COLOR_CYAN"NPC normal AMD Bolt Block\n");
-				}
 			}
 
-			int block_points_used_used;
+			// Block point cost
+			int cost = accurate_missile_blocking ? 2 : WP_SaberBoltBlockCost(blocker, missile);
 
-			if (accurate_missile_blocking)
-			{
-				// excellent
-				block_points_used_used = 2;
-			}
-			else
-			{
-				block_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
-			}
-
-			if (blocker->client->ps.blockPoints < block_points_used_used)
+			if (G_GetBlockPoints(blocker) < cost)
 			{
 				blocker->client->ps.blockPoints = 0;
 			}
 			else
 			{
-				WP_BlockPointsDrain(blocker, block_points_used_used);
+				WP_BlockPointsDrain(blocker, cost);
 			}
 
-			if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
-			{
-				Com_Printf(S_COLOR_GREEN"Advanced MD Mode G_ReflectMissileNPC\n");
-			}
 			reflected = qtrue;
 		}
 	}
 
-	if (!reflected) //GOES TO CROSSHAIR AREA
+	// ============================================================
+	//  GENERIC REFLECTION (NO SPECIAL MODE)
+	// ============================================================
+	if (!reflected)
 	{
-		if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
-		{
-			Com_Printf(S_COLOR_CYAN"Saber Not Blocked but Reflected off saber.\n");
-		}
-
-		if (blocker && blocker->s.clientNum >= MAX_CLIENTS)
+		if (blocker->s.clientNum >= MAX_CLIENTS)
 		{
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{
-				//bounce back at them if you can
 				VectorSubtract(missile->owner->currentOrigin, missile->currentOrigin, bounce_dir);
 				VectorNormalize(bounce_dir);
 			}
 			else
 			{
 				vec3_t missile_dir;
-
 				VectorSubtract(ent->currentOrigin, missile->currentOrigin, missile_dir);
+
 				VectorCopy(missile->s.pos.trDelta, bounce_dir);
 				VectorScale(bounce_dir, DotProduct(forward, missile_dir), bounce_dir);
 				VectorNormalize(bounce_dir);
 			}
 		}
-		else //deflect off at an angle.
+		else
 		{
 			vec3_t deflect_dir, missile_dir;
-			float force_factor;
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, deflect_dir);
+
 			VectorCopy(missile->s.pos.trDelta, missile_dir);
 			VectorNormalize(missile_dir);
 			VectorNormalize(deflect_dir);
 
-			//bigger forceFactors make the reflected shots go closer to the cross hair
-			switch (blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE])
+			float force_factor;
+			switch (G_GetDefenseLevel(blocker))
 			{
-			case FORCE_LEVEL_1:
-				force_factor = 2.0f;
-				break;
-			case FORCE_LEVEL_2:
-				force_factor = 3.0f;
-				break;
-			default:
-				force_factor = 10.0f;
-				break;
+			case FORCE_LEVEL_1: force_factor = 2.0f; break;
+			case FORCE_LEVEL_2: force_factor = 3.0f; break;
+			default:            force_factor = 10.0f; break;
 			}
 
 			VectorMA(missile_dir, force_factor, deflect_dir, bounce_dir);
-
 			VectorNormalize(bounce_dir);
 		}
-		if (blocker->s.weapon == WP_SABER && blocker->client)
+
+		// Saber wildness
+		if (blocker->s.weapon == WP_SABER)
 		{
-			//saber
 			if (blocker->client->ps.saberInFlight)
 			{
-				//reflecting off a thrown saber is totally wild
-				for (i = 0; i < 3; i++)
-				{
-					bounce_dir[i] += Q_flrand(-0.8f, 0.8f);
-				}
+				G_AddWildness(bounce_dir, 0.8f);
 			}
-			else if (blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
+			else if (G_GetDefenseLevel(blocker) <= FORCE_LEVEL_1)
 			{
-				// at level 1 or below
-				for (i = 0; i < 3; i++)
-				{
-					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-				}
+				G_AddWildness(bounce_dir, 0.4f);
 			}
 			else
 			{
-				// at level 2
-				for (i = 0; i < 3; i++)
-				{
-					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-				}
+				G_AddWildness(bounce_dir, 0.4f);
 			}
-			if (!PM_SaberInParry(blocker->client->ps.saber_move)
-				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
-				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
+
+			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
+				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
+				!PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
-				{
-					//really wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
-					}
-				}
-				else
-				{
-					//mildly more wild
-					for (i = 0; i < 3; i++)
-					{
-						bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-					}
-				}
+				float amt =
+					(PM_SaberInAttack(blocker->client->ps.saber_move) ||
+						PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
+						pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+					? 0.3f
+					: 0.4f;
+
+				G_AddWildness(bounce_dir, amt);
 			}
 		}
 		else
 		{
-			//some other kind of reflection
-			for (i = 0; i < 3; i++)
-			{
-				bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
-			}
+			G_AddWildness(bounce_dir, 0.4f);
 		}
+
 		WP_BlockPointsDrain(blocker, punish);
 		wp_bolt_block_victim_reflected(blocker);
+
 		blocker->client->ps.saberBlocked = BLOCKED_NONE;
 		blocker->client->ps.saberBounceMove = LS_NONE;
 	}
 
+	// ============================================================
+	//  FINALIZE REFLECTION
+	// ============================================================
 	VectorNormalize(bounce_dir);
 	VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
 #ifdef _DEBUG
-	assert(
-		!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]
-		));
-#endif// _DEBUG
-	missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
+	assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+		!Q_isnan(missile->s.pos.trDelta[1]) &&
+		!Q_isnan(missile->s.pos.trDelta[2]));
+#endif
+
+	missile->s.pos.trTime = level.time - 10;
 	VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
 	if (missile->s.weapon != WP_SABER)
 	{
-		//you are mine, now!
 		if (!missile->lastEnemy)
 		{
-			//remember who originally shot this missile
 			missile->lastEnemy = missile->owner;
 		}
 		missile->owner = blocker;
 	}
+
 	if (missile->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		//stop homing
 		missile->e_ThinkFunc = thinkF_NULL;
 	}
 }
 
+// Handles missile reflection when using FORCE POINTS (MD mode logic)
 static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
+	// -----------------------------------------------------------------
+	// SAFETY GUARDS
+	// -----------------------------------------------------------------
+	if (!ent || !missile)
+	{
+		return;
+	}
+
+	gentity_t* blocker = ent->owner ? ent->owner : ent;
+
+	// If we somehow don't have a valid client, fall back to a simple reflect
+	if (!blocker || !blocker->client)
+	{
+		vec3_t bounce_dir;
+		const float speed = VectorNormalize(missile->s.pos.trDelta);
+
+		// Just keep current direction
+		VectorCopy(missile->s.pos.trDelta, bounce_dir);
+		VectorNormalize(bounce_dir);
+		VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
+		missile->s.pos.trTime = level.time - 10;
+		VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+		return;
+	}
+
+	// -----------------------------------------------------------------
+	// INITIAL SETUP
+	// -----------------------------------------------------------------
 	vec3_t bounce_dir;
 	int i;
 	qboolean saber_block_reflection = qfalse;
 	qboolean bolt_block_reflection = qfalse;
 	qboolean npc_reflection = qfalse;
 	qboolean reflected = qfalse;
-	gentity_t* blocker = ent;
 
 	constexpr int punish = BLOCKPOINTS_TWELVE;
 
-	if (ent->owner)
-	{
-		blocker = ent->owner;
-	}
+	const qboolean manual_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
 
-	const qboolean manual_blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
 	const qboolean manual_proj_blocking =
-		blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	const qboolean np_cis_blocking = blocker->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING ? qtrue : qfalse;
-	const qboolean accurate_missile_blocking =
-		blocker->client->ps.ManualBlockingFlags & 1 << MBF_ACCURATEMISSILEBLOCKING ? qtrue : qfalse;
-	float slop_factor = (FATIGUE_AUTOBOLTBLOCK - 6) * (static_cast<float>(FORCE_LEVEL_3) - blocker->client->ps.forcePowerLevel[
-		FP_SABER_DEFENSE]) / FORCE_LEVEL_3;
+		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
 
-	//save the original speed
+	const qboolean np_cis_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) ? qtrue : qfalse;
+
+	const qboolean accurate_missile_blocking =
+		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) ? qtrue : qfalse;
+
+	float slop_factor =
+		(FATIGUE_AUTOBOLTBLOCK - 6) *
+		(static_cast<float>(FORCE_LEVEL_3) - blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE]) /
+		FORCE_LEVEL_3;
+
+	// Save original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
 
+	// Aim from blocker view
 	AngleVectors(blocker->client->ps.viewangles, forward, nullptr, nullptr);
 
-	if (ent && blocker && blocker->client && manual_blocking && !manual_proj_blocking)
+	// -----------------------------------------------------------------
+	// DETERMINE REFLECTION MODE
+	// -----------------------------------------------------------------
+	if (manual_blocking && !manual_proj_blocking)
 	{
 		saber_block_reflection = qtrue;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && manual_blocking && manual_proj_blocking)
+	if (manual_blocking && manual_proj_blocking)
 	{
 		bolt_block_reflection = qtrue;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && np_cis_blocking)
+	if (np_cis_blocking)
 	{
 		npc_reflection = qtrue;
 	}
-	if (ent && blocker && blocker->client && blocker->client->ps.saberInFlight)
+
+	// Need saber in-hand for perfect reflection
+	if (blocker->client->ps.saberInFlight)
 	{
-		//but need saber in-hand for perfect reflection
 		saber_block_reflection = qfalse;
 		bolt_block_reflection = qfalse;
 		npc_reflection = qfalse;
 	}
 
-	if (ent && blocker && blocker->client && blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] < FORCE_LEVEL_1)
+	// Need at least level 1 defense
+	if (blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] < FORCE_LEVEL_1)
 	{
-		//but need saber in-hand for perfect reflection
 		saber_block_reflection = qfalse;
 		bolt_block_reflection = qfalse;
 		npc_reflection = qfalse;
 	}
 
-	//play projectile block animation
-	if (saber_block_reflection && !npc_reflection) //GOES TO CROSSHAIR
+	// -----------------------------------------------------------------
+	// SABER BLOCK → CROSSHAIR REFLECTION
+	// -----------------------------------------------------------------
+	if (saber_block_reflection && !npc_reflection)
 	{
 		vec3_t angs;
-		if (level.time - blocker->client->ps.ManualblockStartTime < 3000) //Blocking 2
+
+		if (level.time - blocker->client->ps.ManualblockStartTime < 3000)
 		{
-			// good
+			// Good block
 			vectoangles(forward, angs);
 			AngleVectors(angs, forward, nullptr, nullptr);
 		}
 		else if (blocker->client->pers.cmd.forwardmove >= 0)
 		{
-			//bad
+			// Bad block
 			slop_factor += Q_irand(1, 5);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
@@ -4083,26 +4323,26 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		}
 		else
 		{
-			//average
+			// Average block
 			slop_factor += Q_irand(1, 3);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
 			AngleVectors(angs, forward, nullptr, nullptr);
 		}
+
 		VectorCopy(forward, bounce_dir);
 
 		if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 		{
-			Com_Printf(S_COLOR_GREEN"MD Mode Crosshair Deflection\n");
+			Com_Printf(S_COLOR_GREEN "MD Mode Crosshair Deflection\n");
 		}
 
+		// Block animation / fatigue logic (using forcePower)
 		if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
 		{
-			//very Low points = bad blocks
 			if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
 			{
-				//Low points = bad blocks
 				WP_BoltBlockVictimFatigued(blocker);
 				blocker->client->ps.saberBlocked = BLOCKED_NONE;
 				blocker->client->ps.saberBounceMove = LS_NONE;
@@ -4117,11 +4357,11 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			WP_SaberBlockBolt_AMD(blocker, missile->currentOrigin, qfalse);
 		}
 
+		// Force point cost
 		int force_points_used_used;
 
 		if (accurate_missile_blocking)
 		{
-			// excellent
 			force_points_used_used = 2;
 		}
 		else
@@ -4137,20 +4377,22 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		{
 			WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, force_points_used_used);
 		}
+
 		reflected = qtrue;
 	}
-	else if (bolt_block_reflection && !npc_reflection) //GOES TO ENEMY
+	// -----------------------------------------------------------------
+	// PROJECTILE BLOCK → AIM AT ENEMY
+	// -----------------------------------------------------------------
+	else if (bolt_block_reflection && !npc_reflection)
 	{
 		gentity_t* attacker;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
-			//toward current enemy 75% of the time
-			attacker = blocker->enemy;
+			attacker = blocker->enemy; // 75%: current enemy
 		}
 		else
 		{
-			//find another enemy
 			attacker = jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
 		}
 
@@ -4158,21 +4400,22 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		{
 			vec3_t bullseye;
 			CalcEntitySpot(attacker, SPOT_HEAD, bullseye);
+
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
+			// Add wildness based on saber state and forcePower
 			if (!PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim)
-					|| blocker->client->ps.forcePower < BLOCKPOINTS_KNOCKAWAY)
+				if (PM_SaberInAttack(blocker->client->ps.saber_move) ||
+					PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
+					pm_saber_in_special_attack(blocker->client->ps.torsoAnim) ||
+					blocker->client->ps.forcePower < BLOCKPOINTS_KNOCKAWAY)
 				{
-					//moderately more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
@@ -4180,7 +4423,6 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 				}
 				else
 				{
-					//mildly more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
@@ -4190,12 +4432,11 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 
 			VectorNormalize(bounce_dir);
 
+			// Block animation / fatigue logic (using forcePower)
 			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
 			{
-				//very Low points = bad blocks
 				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
 				{
-					//Low points = bad blocks
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
 					blocker->client->ps.saberBounceMove = LS_NONE;
@@ -4210,11 +4451,11 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
 			}
 
+			// Force point cost
 			int force_points_used_used;
 
 			if (accurate_missile_blocking)
 			{
-				// excellent
 				force_points_used_used = 2;
 			}
 			else
@@ -4233,23 +4474,25 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 
 			if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 			{
-				Com_Printf(S_COLOR_GREEN"MD Mode Bolt Blocking to enemy\n");
+				Com_Printf(S_COLOR_GREEN "MD Mode Bolt Blocking to enemy\n");
 			}
+
 			reflected = qtrue;
 		}
 	}
-	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection) //GOES TO ENEMY
+	// -----------------------------------------------------------------
+	// NPC REFLECTION → AIM AT ENEMY
+	// -----------------------------------------------------------------
+	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection)
 	{
 		gentity_t* enemy;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
-			//toward current enemy 75% of the time
 			enemy = blocker->enemy;
 		}
 		else
 		{
-			//find another enemy
 			enemy = jedi_find_enemy_in_cone(blocker, blocker->enemy, 0.3f);
 		}
 
@@ -4257,22 +4500,22 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		{
 			vec3_t bullseye;
 			CalcEntitySpot(enemy, SPOT_CHEST, bullseye);
+
 			bullseye[0] += Q_irand(-4, 4);
 			bullseye[1] += Q_irand(-4, 4);
 			bullseye[2] += Q_irand(-16, 4);
+
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move)
-				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
-				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
+				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
+				!PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+				if (PM_SaberInAttack(blocker->client->ps.saber_move) ||
+					PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
+					pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
 				{
-					//moderately more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.2f, 0.2f);
@@ -4280,7 +4523,6 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 				}
 				else
 				{
-					//mildly more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.1f, 0.1f);
@@ -4292,10 +4534,8 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 
 			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
 			{
-				//very Low points = bad blocks
 				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
 				{
-					//Low points = bad blocks
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
 					blocker->client->ps.saberBounceMove = LS_NONE;
@@ -4309,10 +4549,10 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			{
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
 
-				if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->NPC && !
-					G_ControlledByPlayer(blocker)))
+				if ((d_blockinfo->integer || g_DebugSaberCombat->integer) &&
+					(blocker->NPC && !G_ControlledByPlayer(blocker)))
 				{
-					gi.Printf(S_COLOR_CYAN"NPC normal MD Bolt Block\n");
+					gi.Printf(S_COLOR_CYAN "NPC normal MD Bolt Block\n");
 				}
 			}
 
@@ -4320,7 +4560,6 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 
 			if (accurate_missile_blocking)
 			{
-				// excellent
 				force_points_used_used = 2;
 			}
 			else
@@ -4339,24 +4578,27 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 
 			if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 			{
-				Com_Printf(S_COLOR_CYAN"MD Mode G_ReflectMissileNPC\n");
+				Com_Printf(S_COLOR_CYAN "MD Mode G_ReflectMissileNPC\n");
 			}
+
 			reflected = qtrue;
 		}
 	}
 
-	if (!reflected) //GOES TO CROSSHAIR AREA
+	// -----------------------------------------------------------------
+	// GENERIC REFLECTION (NO SPECIAL MODE) → CROSSHAIR AREA
+	// -----------------------------------------------------------------
+	if (!reflected)
 	{
 		if (d_JediAI->integer || d_blockinfo->integer || g_DebugSaberCombat->integer)
 		{
-			Com_Printf(S_COLOR_CYAN"Saber Not Blocked but Reflected off saber.\n");
+			Com_Printf(S_COLOR_CYAN "Saber Not Blocked but Reflected off saber.\n");
 		}
 
-		if (blocker && blocker->s.clientNum >= MAX_CLIENTS)
+		if (blocker->s.clientNum >= MAX_CLIENTS)
 		{
 			if (missile->owner && missile->s.weapon != WP_SABER)
 			{
-				//bounce back at them if you can
 				VectorSubtract(missile->owner->currentOrigin, missile->currentOrigin, bounce_dir);
 				VectorNormalize(bounce_dir);
 			}
@@ -4370,16 +4612,17 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 				VectorNormalize(bounce_dir);
 			}
 		}
-		else //deflect off at an angle.
+		else
 		{
 			vec3_t deflect_dir, missile_dir;
 			float force_factor;
+
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, deflect_dir);
 			VectorCopy(missile->s.pos.trDelta, missile_dir);
+
 			VectorNormalize(missile_dir);
 			VectorNormalize(deflect_dir);
 
-			//bigger forceFactors make the reflected shots go closer to the crosshair
 			switch (blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE])
 			{
 			case FORCE_LEVEL_1:
@@ -4394,15 +4637,13 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			}
 
 			VectorMA(missile_dir, force_factor, deflect_dir, bounce_dir);
-
 			VectorNormalize(bounce_dir);
 		}
-		if (blocker->s.weapon == WP_SABER && blocker->client)
+
+		if (blocker->s.weapon == WP_SABER)
 		{
-			//saber
 			if (blocker->client->ps.saberInFlight)
 			{
-				//reflecting off a thrown saber is totally wild
 				for (i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.8f, 0.8f);
@@ -4410,7 +4651,6 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			}
 			else if (blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] <= FORCE_LEVEL_1)
 			{
-				// at level 1 or below
 				for (i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
@@ -4418,22 +4658,20 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			}
 			else
 			{
-				// at level 2
 				for (i = 0; i < 3; i++)
 				{
 					bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
 				}
 			}
-			if (!PM_SaberInParry(blocker->client->ps.saber_move)
-				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
-				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
+
+			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
+				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
+				!PM_SaberInIdle(blocker->client->ps.saber_move))
 			{
-				//a bit more wild
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+				if (PM_SaberInAttack(blocker->client->ps.saber_move) ||
+					PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
+					pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
 				{
-					//really wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.3f, 0.3f);
@@ -4441,7 +4679,6 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 				}
 				else
 				{
-					//mildly more wild
 					for (i = 0; i < 3; i++)
 					{
 						bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
@@ -4451,40 +4688,44 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		}
 		else
 		{
-			//some other kind of reflection
 			for (i = 0; i < 3; i++)
 			{
 				bounce_dir[i] += Q_flrand(-0.4f, 0.4f);
 			}
 		}
+
 		WP_ForcePowerDrain(blocker, FP_SABER_DEFENSE, punish);
 		wp_bolt_block_victim_reflected(blocker);
 		blocker->client->ps.saberBlocked = BLOCKED_NONE;
 		blocker->client->ps.saberBounceMove = LS_NONE;
 	}
 
+	// -----------------------------------------------------------------
+	// FINALIZE REFLECTION
+	// -----------------------------------------------------------------
 	VectorNormalize(bounce_dir);
 	VectorScale(bounce_dir, speed, missile->s.pos.trDelta);
+
 #ifdef _DEBUG
-	assert(
-		!Q_isnan(missile->s.pos.trDelta[0]) && !Q_isnan(missile->s.pos.trDelta[1]) && !Q_isnan(missile->s.pos.trDelta[2]
-		));
-#endif// _DEBUG
+	assert(!Q_isnan(missile->s.pos.trDelta[0]) &&
+		!Q_isnan(missile->s.pos.trDelta[1]) &&
+		!Q_isnan(missile->s.pos.trDelta[2]));
+#endif
+
 	missile->s.pos.trTime = level.time - 10; // move a bit on the very first frame
 	VectorCopy(missile->currentOrigin, missile->s.pos.trBase);
+
 	if (missile->s.weapon != WP_SABER)
 	{
-		//you are mine, now!
 		if (!missile->lastEnemy)
 		{
-			//remember who originally shot this missile
 			missile->lastEnemy = missile->owner;
 		}
 		missile->owner = blocker;
 	}
+
 	if (missile->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		//stop homing
 		missile->e_ThinkFunc = thinkF_NULL;
 	}
 }

@@ -41,6 +41,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../cgame/cg_local.h"
 #include "g_public.h"
 #include <cmath>
+#include <cassert>
+#include <string.h>
+#include <rd-common\mdx_format.h>
+#include "teams.h"
 
 #define JK2_RAGDOLL_GRIPNOHEALTH
 
@@ -87,9 +91,16 @@ extern void G_SetViewEntity(gentity_t* self, gentity_t* view_entity);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
 extern void CG_ChangeWeapon(int num);
-extern void CG_SaberDoWeaponHitMarks(const gclient_t* client, const gentity_t* saber_ent,
-	gentity_t* hit_ent, int saber_num, int blade_num, vec3_t hit_pos, vec3_t hit_dir,
-	vec3_t uaxis, float size_time_scale);
+extern void CG_SaberDoWeaponHitMarks(
+	const gclient_t* client,
+	const gentity_t* saber_ent,
+	gentity_t* hit_ent,
+	const int saber_num,
+	const int blade_num,
+	vec3_t hit_pos,
+	vec3_t hit_dir,
+	vec3_t uaxis,
+	const float size_time_scale);
 extern void G_AngerAlert(const gentity_t* self);
 extern qboolean PM_WalkingOrRunningAnim(int anim);
 extern void G_StasisMissile(gentity_t* ent, gentity_t* missile);
@@ -876,7 +887,7 @@ qboolean DarthMaulHolster(const gentity_t* ent)
 		!Q_stricmp("md_maul_rebels4", ent->NPC_type) ||
 		!Q_stricmp("md_maul_rebels5", ent->NPC_type) ||
 		!Q_stricmp("md_maul_rebels6", ent->NPC_type) ||
-		!Q_stricmp("md_maul_wots", ent->NPC_type)    ||
+		!Q_stricmp("md_maul_wots", ent->NPC_type) ||
 		!Q_stricmp("md_maul_tcw_staff", ent->NPC_type) ||
 		!Q_stricmp("md_maul_solo", ent->NPC_type) ||
 		!Q_stricmp("md_maul_solo_hood", ent->NPC_type) ||
@@ -4990,105 +5001,126 @@ qboolean G_InScriptedCinematicSaberAnim(const gentity_t* self)
 	return qfalse;
 }
 
-constexpr auto SABER_COLLISION_BLOCKING_DIST = 10; //was 2//was 4//was 8//was 16;
-constexpr auto SABER_COLLISION_DIST_MD = 8; //was 2//was 4//was 8//was 16;
+constexpr auto SABER_COLLISION_BLOCKING_DIST = 10; // was 2/4/8/16
+constexpr auto SABER_COLLISION_DIST_MD = 8;  // was 2/4/8/16
 constexpr auto SABER_RADIUS_DAMAGE_DIST = 2;
 constexpr auto SABER_COLLISION_DIST = 6;
+
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
 
-static qboolean WP_SaberDamageForTrace(const int ignore, vec3_t start, vec3_t end, float dmg, vec3_t blade_dir,
-	const qboolean no_ghoul, const saberType_t saber_type, const qboolean extrapolate,
-	const int saber_num, const int blade_num)
+static qboolean WP_SaberDamageForTrace(const int ignore,
+	vec3_t start,
+	vec3_t end,
+	float dmg,
+	vec3_t blade_dir,
+	const qboolean no_ghoul,
+	const saberType_t saber_type,
+	const qboolean extrapolate,
+	const int saber_num,
+	const int blade_num)
 {
-	trace_t tr;
-	constexpr int mask = MASK_SHOT | CONTENTS_LIGHTSABER;
+	trace_t    tr;
+	const int  mask = MASK_SHOT | CONTENTS_LIGHTSABER;
 	gentity_t* attacker = &g_entities[ignore];
-	vec3_t end2;
+	vec3_t     end2;
+
 	VectorCopy(end, end2);
 
+	// Optional extrapolation to extend the trace
 	if (extrapolate)
 	{
 		vec3_t diff;
 		VectorSubtract(end, start, diff);
-		VectorNormalize(diff);
-		VectorMA(end2, SABER_EXTRAPOLATE_DIST, diff, end2);
+		if (VectorNormalize(diff) > 0.0f)
+		{
+			VectorMA(end2, SABER_EXTRAPOLATE_DIST, diff, end2);
+		}
 	}
 
+	// Radius-based trace for special sabers / bosses
 	if (!no_ghoul)
 	{
-		float use_radius_for_damage = 0;
+		float use_radius_for_damage = 0.0f;
 
-		if (attacker
-			&& attacker->client)
+		if (attacker && attacker->client)
 		{
-			//see if we're not drawing the blade, if so, do a trace based on radius of blade (because the radius is being used to simulate a larger/smaller piece of a solid weapon)...
-			if (!WP_SaberBladeUseSecondBladeStyle(&attacker->client->ps.saber[saber_num], blade_num)
-				&& attacker->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_BLADE)
+			saberInfo_t* saber = &attacker->client->ps.saber[saber_num];
+
+			// Blade hidden: use radius as a solid weapon
+			if (!WP_SaberBladeUseSecondBladeStyle(saber, blade_num) &&
+				(saber->saberFlags2 & SFL2_NO_BLADE))
 			{
-				//not drawing blade
-				use_radius_for_damage = attacker->client->ps.saber[saber_num].blade[blade_num].radius;
+				use_radius_for_damage = saber->blade[blade_num].radius;
 			}
-			else if (WP_SaberBladeUseSecondBladeStyle(&attacker->client->ps.saber[saber_num], blade_num)
-				&& attacker->client->ps.saber[saber_num].saberFlags2 & SFL2_NO_BLADE2)
+			else if (WP_SaberBladeUseSecondBladeStyle(saber, blade_num) &&
+				(saber->saberFlags2 & SFL2_NO_BLADE2))
 			{
-				//not drawing blade
-				use_radius_for_damage = attacker->client->ps.saber[saber_num].blade[blade_num].radius;
+				use_radius_for_damage = saber->blade[blade_num].radius;
 			}
 		}
-		if (!use_radius_for_damage)
+
+		if (!use_radius_for_damage && attacker)
 		{
-			//do normal check for larger-size saber traces
-			if (!attacker->s.number
-				|| attacker->client
-				&& (attacker->client->playerTeam == TEAM_PLAYER
-					|| attacker->client->NPC_class == CLASS_SHADOWTROOPER
-					|| attacker->client->NPC_class == CLASS_ALORA
-					|| attacker->NPC && (attacker->NPC->aiFlags & NPCAI_BOSS_CHARACTER || attacker->NPC->aiFlags &
-						NPCAI_BOSS_SERENITYJEDIENGINE)))
+			// Larger traces for player, allies, bosses
+			if (!attacker->s.number ||
+				(attacker->client &&
+					(attacker->client->playerTeam == TEAM_PLAYER ||
+						attacker->client->NPC_class == CLASS_SHADOWTROOPER ||
+						attacker->client->NPC_class == CLASS_ALORA ||
+						(attacker->NPC &&
+							(attacker->NPC->aiFlags & NPCAI_BOSS_CHARACTER ||
+								attacker->NPC->aiFlags & NPCAI_BOSS_SERENITYJEDIENGINE)))))
 			{
 				use_radius_for_damage = SABER_RADIUS_DAMAGE_DIST;
 			}
 		}
 
-		if (use_radius_for_damage > 0)
+		if (use_radius_for_damage > 0.0f)
 		{
-			//player,. player allies, shadowtroopers, tavion and desann use larger traces
 			const vec3_t trace_mins = {
-							 -use_radius_for_damage, -use_radius_for_damage, -use_radius_for_damage
-			}, trace_maxs = {
+				-use_radius_for_damage, -use_radius_for_damage, -use_radius_for_damage
+			};
+			const vec3_t trace_maxs = {
 				use_radius_for_damage, use_radius_for_damage, use_radius_for_damage
 			};
-			gi.trace(&tr, start, trace_mins, trace_maxs, end2, ignore, mask, G2_COLLIDE, 10); //G2_SUPERSIZEDBBOX
+
+			gi.trace(&tr, start, trace_mins, trace_maxs, end2, ignore, mask, G2_COLLIDE, 10);
 		}
 		else
 		{
-			//reborn use smaller traces
-			gi.trace(&tr, start, nullptr, nullptr, end2, ignore, mask, G2_COLLIDE, 10); //G2_SUPERSIZEDBBOX
+			gi.trace(&tr, start, nullptr, nullptr, end2, ignore, mask, G2_COLLIDE, 10);
 		}
 	}
 	else
 	{
+		// No Ghoul2 collision
 		gi.trace(&tr, start, nullptr, nullptr, end2, ignore, mask, G2_NOCOLLIDE, 10);
 	}
 
 #ifndef FINAL_BUILD
 	if (d_saberCombat->integer > 1)
 	{
-		if (attacker != nullptr && attacker->client != nullptr)
+		if (attacker && attacker->client)
 		{
-			G_DebugLine(start, end2, FRAMETIME, WPDEBUG_SaberColor(attacker->client->ps.saber[0].blade[0].color), qtrue);
+			G_DebugLine(start, end2, FRAMETIME,
+				WPDEBUG_SaberColor(attacker->client->ps.saber[0].blade[0].color),
+				qtrue);
 		}
 	}
 #endif
 
+	// No hit at all
 	if (tr.entityNum == ENTITYNUM_NONE)
 	{
 		return qfalse;
 	}
 
+	// Hit the world
 	if (tr.entityNum == ENTITYNUM_WORLD)
 	{
-		if (attacker && attacker->client && (attacker->client->ps.saber[saber_num].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer))
+		if (attacker && attacker->client &&
+			(attacker->client->ps.saber[saber_num].saberFlags & SFL_BOUNCE_ON_WALLS ||
+				g_SaberBounceOnWalls->integer))
 		{
 			VectorCopy(tr.endpos, saberHitLocation);
 			VectorCopy(tr.plane.normal, saberHitNormal);
@@ -5096,362 +5128,370 @@ static qboolean WP_SaberDamageForTrace(const int ignore, vec3_t start, vec3_t en
 		return qtrue;
 	}
 
-	if (&g_entities[tr.entityNum])
-	{
-		const gentity_t* hit_ent = &g_entities[tr.entityNum];
-		const gentity_t* owner = g_entities[tr.entityNum].owner;
+	// Hit an entity
+	gentity_t* hit_ent = &g_entities[tr.entityNum];
+	gentity_t* owner = hit_ent->owner;
 
-		if (hit_ent->contents & CONTENTS_LIGHTSABER)
+	// Saber vs saber (hit a lightsaber volume)
+	if (hit_ent->contents & CONTENTS_LIGHTSABER)
+	{
+		// Thrown saber vs saber owner special handling
+		if (attacker && attacker->client && attacker->client->ps.saberInFlight)
 		{
+			if (owner && owner->s.number &&
+				owner->client && owner->NPC && owner->health > 0)
+			{
+				switch (owner->client->NPC_class)
+				{
+				case CLASS_ALORA:
+				case CLASS_PLAYER:
+					// Reduced damage
+					dmg *= 0.25f;
+					break;
+
+				case CLASS_TAVION:
+				case CLASS_YODA:
+				case CLASS_GALEN:
+				case CLASS_VADER:
+				case CLASS_DESANN:
+					// Knock the thrown saber away
+					WP_SaberKnockaway(attacker, &tr);
+					jedi_play_deflect_sound(owner);
+					return qfalse;
+				default:
+					break;
+				}
+			}
+			else if (owner && owner->client && owner->health > 0)
+			{
+				// Manual blocking reduces thrown saber damage
+				if (g_SerenityJediEngineMode->integer &&
+					(owner->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)))
+				{
+					dmg *= 0.25f;
+				}
+			}
+		}
+
+		// Saber vs saber intersection / distance logic
+		qboolean sabers_intersect = WP_SabersIntersect(attacker, saber_num, blade_num, owner, qfalse);
+		float    sabers_dist = 0.0f;
+
+		if (attacker && attacker->client && attacker->client->ps.saberInFlight &&
+			owner && owner->s.number == 0 &&
+			(g_saberAutoBlocking->integer || attacker->client->ps.saberBlockingTime > level.time))
+		{
+			// NPC thrown saber hitting player's saber bbox
+			sabers_dist = 0.0f;
+		}
+		else
+		{
+			sabers_dist = WP_SabersDistance(attacker, owner);
+
 			if (attacker && attacker->client && attacker->client->ps.saberInFlight)
 			{
-				//thrown saber hit something
-				if (owner
-					&& owner->s.number
-					&& owner->client
-					&& owner->NPC
-					&& owner->health > 0)
-				{
-					if (owner->client->NPC_class == CLASS_ALORA)
-					{
-						//alora takes less damage
-						dmg *= 0.25f;
-					}
-					else if (owner->client->NPC_class == CLASS_PLAYER)
-					{
-						//player takes less damage
-						dmg *= 0.25f;
-					}
-					else if (owner->client->NPC_class == CLASS_TAVION)
-					{
-						//Tavion can toss a blocked thrown saber aside
-						WP_SaberKnockaway(attacker, &tr);
-						jedi_play_deflect_sound(owner);
-						return qfalse;
-					}
-					else if (owner->client->NPC_class == CLASS_YODA)
-					{
-						//Tavion can toss a blocked thrown saber aside
-						WP_SaberKnockaway(attacker, &tr);
-						jedi_play_deflect_sound(owner);
-						return qfalse;
-					}
-					else if (owner->client->NPC_class == CLASS_GALEN)
-					{
-						//Tavion can toss a blocked thrown saber aside
-						WP_SaberKnockaway(attacker, &tr);
-						jedi_play_deflect_sound(owner);
-						return qfalse;
-					}
-					else if (owner->client->NPC_class == CLASS_VADER)
-					{
-						//vader can toss a blocked thrown saber aside
-						WP_SaberKnockaway(attacker, &tr);
-						jedi_play_deflect_sound(owner);
-						return qfalse;
-					}
-					else if (owner->client->NPC_class == CLASS_DESANN)
-					{
-						//vader can toss a blocked thrown saber aside
-						WP_SaberKnockaway(attacker, &tr);
-						jedi_play_deflect_sound(owner);
-						return qfalse;
-					}
-				}
-				else if (owner
-					&& owner->s.number
-					&& owner->client
-					&& owner->health > 0)
-				{
-					if (g_SerenityJediEngineMode->integer && owner->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK)
-					{
-						//player takes less damage
-						dmg *= 0.25f;
-					}
-				}
-			}
-			qboolean sabers_intersect = WP_SabersIntersect(attacker, saber_num, blade_num, owner, qfalse); //qtrue );
-
-			float sabers_dist;
-
-			if (attacker && attacker->client && attacker->client->ps.saberInFlight
-				&& owner && owner->s.number == 0 && (g_saberAutoBlocking->integer || attacker->client->ps.
-					saberBlockingTime > level.time)) //NPC flying saber hit player's saber bounding box
-			{
-				sabers_dist = 0;
-			}
-			else
-			{
-				//sabers must actually collide with the attacking saber
-				sabers_dist = WP_SabersDistance(attacker, owner);
-				if (attacker && attacker->client && attacker->client->ps.saberInFlight)
-				{
-					sabers_dist /= 2.0f;
-					if (sabers_dist <= 16.0f)
-					{
-						sabers_intersect = qtrue;
-					}
-				}
-#ifndef FINAL_BUILD
-				if (d_saberCombat->integer > 1)
-				{
-					gi.Printf("sabersDist: %4.2f\n", sabersDist);
-				}
-#endif//FINAL_BUILD
-			}
-			if (sabersCrossed == -1 || sabersCrossed > sabers_dist)
-			{
-				sabersCrossed = sabers_dist;
-			}
-
-			float collision_dist;
-
-			if (g_saberRealisticCombat->integer)
-			{
-				collision_dist = SABER_COLLISION_DIST;
-			}
-			else
-			{
-				collision_dist = SABER_COLLISION_DIST + 6 + g_spskill->integer * 4;
-			}
-			{
-				if (G_InCinematicSaberAnim(owner) && G_InCinematicSaberAnim(attacker))
+				sabers_dist *= 0.5f;
+				if (sabers_dist <= 16.0f)
 				{
 					sabers_intersect = qtrue;
 				}
 			}
-			if (owner && owner->client && attacker != nullptr
-				&& sabers_dist > collision_dist
-				&& !sabers_intersect)
-			{
-				//swing came from behind and/or was not stopped by a lightsaber
-				gi.trace(&tr, start, nullptr, nullptr, end2, ignore, mask & ~CONTENTS_LIGHTSABER, G2_NOCOLLIDE, 10);
 
-				if (tr.entityNum == ENTITYNUM_WORLD)
-				{
-					return qtrue;
-				}
-				if (tr.entityNum == ENTITYNUM_NONE || &g_entities[tr.entityNum] == nullptr)
-				{
-					//didn't hit the owner
-					return qfalse; // Exit, but we didn't hit the wall.
-				}
-#ifndef FINAL_BUILD
-				if (d_saberCombat->integer > 1)
-				{
-					if (!attacker->s.number)
-					{
-						gi.Printf(S_COLOR_MAGENTA"%d saber hit owner through saber %4.2f, dist = %4.2f\n", level.time, saberHitFraction, sabersDist);
-					}
-				}
-#endif//FINAL_BUILD
-				hit_ent = &g_entities[tr.entityNum];
-				owner = g_entities[tr.entityNum].owner;
-			}
-			else
-			{
-				//hit a lightsaber
-				if ((tr.fraction < saberHitFraction || tr.startsolid)
-					&& sabers_dist < (8.0f + g_spskill->value) * 4.0f
-					&& (sabers_intersect || sabers_dist < (4.0f + g_spskill->value) * 2.0f))
-				{
-					// This saber hit closer than the last one.
-					if ((tr.allsolid || tr.startsolid) && owner && owner->client)
-					{
-						//tr.fraction will be 0, unreliable... so calculate actual
-						const float dist = Distance(start, end2);
-						if (dist)
-						{
-							float hit_frac = WP_SabersDistance(attacker, owner) / dist;
-							if (hit_frac > 1.0f)
-							{
-								//umm... minimum distance between sabers was longer than trace...?
-								hit_frac = 1.0f;
-							}
-							if (hit_frac < saberHitFraction)
-							{
-								saberHitFraction = hit_frac;
-							}
-						}
-						else
-						{
-							saberHitFraction = 0.0f;
-						}
-#ifndef FINAL_BUILD
-						if (d_saberCombat->integer > 1)
-						{
-							if (!attacker->s.number)
-							{
-								gi.Printf(S_COLOR_GREEN"%d saber hit saber dist %4.2f allsolid %4.2f\n", level.time, sabersDist, saberHitFraction);
-							}
-						}
-#endif//FINAL_BUILD
-					}
-					else
-					{
-#ifndef FINAL_BUILD
-						if (d_saberCombat->integer > 1)
-						{
-							if (!attacker->s.number)
-							{
-								gi.Printf(S_COLOR_BLUE"%d saber hit saber dist %4.2f, frac %4.2f\n", level.time, sabersDist, saberHitFraction);
-							}
-							saberHitFraction = tr.fraction;
-						}
-#endif//FINAL_BUILD
-					}
-#ifndef FINAL_BUILD
-					if (d_saberCombat->integer)
-					{
-						gi.Printf(S_COLOR_MAGENTA"hit saber: saberHitFraction %4.2f, allsolid %d, startsolid %d\n", saberHitFraction, tr.allsolid, tr.startsolid);
-					}
-#endif//FINAL_BUILD
-					VectorCopy(tr.endpos, saberHitLocation);
-					saberHitEntity = tr.entityNum;
-				}
-				return qfalse; // Exit, but we didn't hit the wall.
-			}
-		}
-		else
-		{
 #ifndef FINAL_BUILD
 			if (d_saberCombat->integer > 1)
 			{
-				if (!attacker->s.number)
-				{
-					gi.Printf(S_COLOR_RED"%d saber hit owner directly %4.2f\n", level.time, saberHitFraction);
-				}
+				gi.Printf("sabersDist: %4.2f\n", sabers_dist);
 			}
-#endif//FINAL_BUILD
+#endif
 		}
 
-		if (attacker && attacker->client && attacker->client->ps.saberInFlight)
+		if (sabersCrossed == -1 || sabersCrossed > sabers_dist)
 		{
-			//thrown saber hit something
-			if (hit_ent && hit_ent->client && hit_ent->health > 0
-				&& (hit_ent->client->NPC_class == CLASS_DESANN
-					|| hit_ent->client->NPC_class == CLASS_SITHLORD
-					|| hit_ent->client->NPC_class == CLASS_VADER
-					|| !Q_stricmp("Yoda", hit_ent->NPC_type)
-					|| hit_ent->client->NPC_class == CLASS_LUKE
-					|| hit_ent->client->NPC_class == CLASS_BOBAFETT
-					//|| hit_ent->client->NPC_class == CLASS_MANDALORIAN
-					|| hit_ent->client->NPC_class == CLASS_JANGO
-					|| hit_ent->client->NPC_class == CLASS_JANGODUAL
-					|| hit_ent->client->NPC_class == CLASS_GALAKMECH && hit_ent->client->ps.powerups[PW_GALAK_SHIELD] >
-					0
-					|| hit_ent->client->ps.powerups[PW_GALAK_SHIELD] > 0) ||
-				owner && owner->client && owner->health > 0
-				&& (owner->client->NPC_class == CLASS_DESANN
-					|| owner->client->NPC_class == CLASS_SITHLORD
-					|| owner->client->NPC_class == CLASS_VADER
-					|| !Q_stricmp("Yoda", owner->NPC_type)
-					|| owner->client->NPC_class == CLASS_LUKE
-					|| owner->client->NPC_class == CLASS_GALAKMECH && owner->client->ps.powerups[PW_GALAK_SHIELD] > 0
-					|| owner->client->ps.powerups[PW_GALAK_SHIELD] > 0))
+			sabersCrossed = sabers_dist;
+		}
+
+		float collision_dist;
+		if (g_saberRealisticCombat->integer)
+		{
+			collision_dist = SABER_COLLISION_DIST;
+		}
+		else
+		{
+			collision_dist = SABER_COLLISION_DIST + 6.0f + g_spskill->integer * 4.0f;
+		}
+
+		// Cinematic saber anims always intersect
+		if (G_InCinematicSaberAnim(owner) && G_InCinematicSaberAnim(attacker))
+		{
+			sabers_intersect = qtrue;
+		}
+
+		// Saber swing came from behind / missed the saber volume → re‑trace without saber contents
+		if (owner && owner->client &&
+			attacker &&
+			sabers_dist > collision_dist &&
+			!sabers_intersect)
+		{
+			gi.trace(&tr, start, nullptr, nullptr, end2, ignore,
+				mask & ~CONTENTS_LIGHTSABER, G2_NOCOLLIDE, 10);
+
+			if (tr.entityNum == ENTITYNUM_WORLD)
 			{
-				//Luke and Desann slap thrown sabers aside
-				WP_SaberKnockaway(attacker, &tr);
+				return qtrue;
+			}
+
+			if (tr.entityNum == ENTITYNUM_NONE)
+			{
+				// Didn't hit anything meaningful
+				return qfalse;
+			}
+
+#ifndef FINAL_BUILD
+			if (d_saberCombat->integer > 1 && attacker && !attacker->s.number)
+			{
+				gi.Printf(S_COLOR_MAGENTA"%d saber hit owner through saber %4.2f, dist = %4.2f\n",
+					level.time, saberHitFraction, sabers_dist);
+			}
+#endif
+			hit_ent = &g_entities[tr.entityNum];
+			owner = hit_ent->owner;
+		}
+		else
+		{
+			// Hit a lightsaber properly
+			if ((tr.fraction < saberHitFraction || tr.startsolid) &&
+				sabers_dist < (8.0f + g_spskill->value) * 4.0f &&
+				(sabers_intersect ||
+					sabers_dist < (4.0f + g_spskill->value) * 2.0f))
+			{
+				if ((tr.allsolid || tr.startsolid) && owner && owner->client)
+				{
+					const float dist = Distance(start, end2);
+					if (dist > 0.0f)
+					{
+						float hit_frac = WP_SabersDistance(attacker, owner) / dist;
+						if (hit_frac > 1.0f)
+						{
+							hit_frac = 1.0f;
+						}
+						if (hit_frac < saberHitFraction)
+						{
+							saberHitFraction = hit_frac;
+						}
+					}
+					else
+					{
+						saberHitFraction = 0.0f;
+					}
+
+#ifndef FINAL_BUILD
+					if (d_saberCombat->integer > 1 && attacker && !attacker->s.number)
+					{
+						gi.Printf(S_COLOR_GREEN"%d saber hit saber dist %4.2f allsolid %4.2f\n",
+							level.time, sabers_dist, saberHitFraction);
+					}
+#endif
+				}
+				else
+				{
+					saberHitFraction = tr.fraction;
+
+#ifndef FINAL_BUILD
+					if (d_saberCombat->integer > 1 && attacker && !attacker->s.number)
+					{
+						gi.Printf(S_COLOR_BLUE"%d saber hit saber dist %4.2f, frac %4.2f\n",
+							level.time, sabers_dist, saberHitFraction);
+					}
+#endif
+				}
+
+#ifndef FINAL_BUILD
+				if (d_saberCombat->integer)
+				{
+					gi.Printf(S_COLOR_MAGENTA"hit saber: saberHitFraction %4.2f, allsolid %d, startsolid %d\n",
+						saberHitFraction, tr.allsolid, tr.startsolid);
+				}
+#endif
+				VectorCopy(tr.endpos, saberHitLocation);
+				saberHitEntity = tr.entityNum;
+			}
+
+			// Hit saber, not wall
+			return qfalse;
+		}
+	}
+	else
+	{
+#ifndef FINAL_BUILD
+		if (d_saberCombat->integer > 1 && attacker && !attacker->s.number)
+		{
+			gi.Printf(S_COLOR_RED"%d saber hit owner directly %4.2f\n",
+				level.time, saberHitFraction);
+		}
+#endif
+	}
+
+	// Thrown saber vs special bosses / shielded targets
+	if (attacker && attacker->client && attacker->client->ps.saberInFlight)
+	{
+		const qboolean hit_valid = (qboolean)(
+			(hit_ent && hit_ent->client && hit_ent->health > 0 &&
+				(hit_ent->client->NPC_class == CLASS_DESANN ||
+					hit_ent->client->NPC_class == CLASS_SITHLORD ||
+					hit_ent->client->NPC_class == CLASS_VADER ||
+					!Q_stricmp("Yoda", hit_ent->NPC_type) ||
+					hit_ent->client->NPC_class == CLASS_LUKE ||
+					hit_ent->client->NPC_class == CLASS_BOBAFETT ||
+					hit_ent->client->NPC_class == CLASS_JANGO ||
+					hit_ent->client->NPC_class == CLASS_JANGODUAL ||
+					(hit_ent->client->NPC_class == CLASS_GALAKMECH &&
+						hit_ent->client->ps.powerups[PW_GALAK_SHIELD] > 0) ||
+					hit_ent->client->ps.powerups[PW_GALAK_SHIELD] > 0)) ||
+			(owner && owner->client && owner->health > 0 &&
+				(owner->client->NPC_class == CLASS_DESANN ||
+					owner->client->NPC_class == CLASS_SITHLORD ||
+					owner->client->NPC_class == CLASS_VADER ||
+					!Q_stricmp("Yoda", owner->NPC_type) ||
+					owner->client->NPC_class == CLASS_LUKE ||
+					(owner->client->NPC_class == CLASS_GALAKMECH &&
+						owner->client->ps.powerups[PW_GALAK_SHIELD] > 0) ||
+					owner->client->ps.powerups[PW_GALAK_SHIELD] > 0))
+			);
+
+		if (hit_valid)
+		{
+			WP_SaberKnockaway(attacker, &tr);
+
+			if (hit_ent && hit_ent->client)
+			{
+				jedi_play_deflect_sound(hit_ent);
+			}
+			else if (owner)
+			{
+				jedi_play_deflect_sound(owner);
+			}
+
+			return qfalse;
+		}
+	}
+
+	// Damage application
+	if (hit_ent->takedamage)
+	{
+		vec3_t dir;
+		vec3_t blade_vec = { 0.0f, 0.0f, 0.0f };
+
+		if (attacker && attacker->client)
+		{
+			VectorScale(blade_dir,
+				attacker->client->ps.saber[saber_num].blade[blade_num].length,
+				blade_vec);
+		}
+
+		VectorSubtract(end2, start, dir);
+		const float len = VectorNormalize(dir);
+
+		if (no_ghoul || hit_ent->ghoul2.size() == 0 || hit_ent->ghoul2[0].mModel == 0)
+		{
+			int hit_effect = 0;
+
+			if (dmg >= 1.0f && hit_ent->bmodel)
+			{
+				dmg = 1.0f;
+			}
+
+			if (len > 1.0f)
+			{
+				dmg *= len;
+			}
+
+#ifndef FINAL_BUILD
+			if (d_saberCombat->integer > 1 && !(hit_ent->contents & CONTENTS_LIGHTSABER))
+			{
+				gi.Printf(S_COLOR_GREEN"Hit ent, but no ghoul collisions\n");
+			}
+#endif
+			float tr_frac;
+			float dmg_frac;
+
+			if (tr.allsolid)
+			{
+				tr_frac = 1.0f;
+				dmg_frac = 0.0f;
+			}
+			else if (tr.startsolid)
+			{
+				tr_frac = 0.5f;
+				dmg_frac = 0.0f;
+			}
+			else
+			{
+				tr_frac = 1.0f - tr.fraction;
+				dmg_frac = tr.fraction;
+			}
+
+			vec3_t backdir;
+			VectorScale(dir, -1.0f, backdir);
+
+			WP_SaberDamageAdd(tr_frac,
+				tr.entityNum,
+				dir,
+				blade_vec,
+				backdir,
+				tr.endpos,
+				dmg,
+				dmg_frac,
+				HL_NONE,
+				qfalse,
+				HL_NONE);
+
+			if (!tr.allsolid && !tr.startsolid)
+			{
+				VectorScale(dir, -1.0f, dir);
+			}
+
+			// Hit effects
+			if (hit_ent)
+			{
+				int hit_effect = 0;
 
 				if (hit_ent->client)
 				{
-					jedi_play_deflect_sound(hit_ent);
-				}
-				else
-				{
-					jedi_play_deflect_sound(owner);
-				}
-				return qfalse; // Exit, but we didn't hit the wall.
-			}
-		}
+					const class_t npc_class = hit_ent->client->NPC_class;
 
-		if (hit_ent->takedamage)
-		{
-			vec3_t dir;
-			vec3_t blade_vec = { 0 };
-			if (attacker && attacker->client)
-			{
-				VectorScale(blade_dir, attacker->client->ps.saber[saber_num].blade[blade_num].length, blade_vec);
-			}
-			//multiply the damage by the total distance of the swipe
-			VectorSubtract(end2, start, dir);
-			const float len = VectorNormalize(dir); //VectorLength( dir );
-			if (no_ghoul || !hit_ent->ghoul2.size())
-			{
-				//we weren't doing a ghoul trace
-				int hit_effect = 0;
-				if (dmg >= 1.0 && hit_ent->bmodel)
-				{
-					dmg = 1.0;
-				}
-				if (len > 1)
-				{
-					dmg *= len;
-				}
-#ifndef FINAL_BUILD
-				if (d_saberCombat->integer > 1)
-				{
-					if (!(hit_ent->contents & CONTENTS_LIGHTSABER))
+					// Droids / mechanicals
+					if (npc_class == CLASS_ATST ||
+						npc_class == CLASS_GONK ||
+						npc_class == CLASS_INTERROGATOR ||
+						npc_class == CLASS_MARK1 ||
+						npc_class == CLASS_MARK2 ||
+						npc_class == CLASS_MOUSE ||
+						npc_class == CLASS_PROBE ||
+						npc_class == CLASS_PROTOCOL ||
+						npc_class == CLASS_R2D2 ||
+						npc_class == CLASS_R5D2 ||
+						npc_class == CLASS_SEEKER ||
+						npc_class == CLASS_SENTRY ||
+						npc_class == CLASS_SBD ||
+						npc_class == CLASS_BATTLEDROID ||
+						npc_class == CLASS_DROIDEKA ||
+						npc_class == CLASS_OBJECT ||
+						npc_class == CLASS_ASSASSIN_DROID ||
+						npc_class == CLASS_SABER_DROID)
 					{
-						gi.Printf(S_COLOR_GREEN"Hit ent, but no ghoul collisions\n");
-					}
-				}
-#endif
-				float tr_frac, dmg_frac;
-				if (tr.allsolid)
-				{
-					//totally inside them
-					tr_frac = 1.0;
-					dmg_frac = 0.0;
-				}
-				else if (tr.startsolid)
-				{
-					//started inside them
-					//we don't know how much was inside, we know it's less than all, so use half?
-					tr_frac = 0.5;
-					dmg_frac = 0.0;
-				}
-				else
-				{
-					//started outside them and hit them
-					//yeah. this doesn't account for coming out the other wide, but we can worry about that later (use ghoul2)
-					tr_frac = 1.0f - tr.fraction;
-					dmg_frac = tr.fraction;
-				}
-				vec3_t backdir;
-				VectorScale(dir, -1, backdir);
-				WP_SaberDamageAdd(tr_frac, tr.entityNum, dir, blade_vec, backdir, tr.endpos, dmg, dmg_frac, HL_NONE,
-					qfalse, HL_NONE);
-				if (!tr.allsolid && !tr.startsolid)
-				{
-					VectorScale(dir, -1, dir);
-				}
-				if (hit_ent != nullptr)
-				{
-					if (hit_ent->client)
-					{
-						//don't do blood sparks on non-living things
-						const class_t npc_class = hit_ent->client->NPC_class;
-
-						if (npc_class == CLASS_ATST || npc_class == CLASS_GONK ||
-							npc_class == CLASS_INTERROGATOR || npc_class == CLASS_MARK1 ||
-							npc_class == CLASS_MARK2 || npc_class == CLASS_MOUSE ||
-							npc_class == CLASS_PROBE || npc_class == CLASS_PROTOCOL ||
-							npc_class == CLASS_R2D2 || npc_class == CLASS_R5D2 ||
-							npc_class == CLASS_SEEKER || npc_class == CLASS_SENTRY ||
-							npc_class == CLASS_SBD || npc_class == CLASS_BATTLEDROID ||
-							npc_class == CLASS_DROIDEKA || npc_class == CLASS_OBJECT ||
-							npc_class == CLASS_ASSASSIN_DROID || npc_class == CLASS_SABER_DROID)
+						if (attacker && attacker->client)
 						{
-							if (!WP_SaberBladeUseSecondBladeStyle(&attacker->client->ps.saber[saber_num], blade_num)
-								&& attacker->client->ps.saber[saber_num].hitOtherEffect)
+							saberInfo_t* saber = &attacker->client->ps.saber[saber_num];
+
+							if (!WP_SaberBladeUseSecondBladeStyle(saber, blade_num) &&
+								saber->hitOtherEffect)
 							{
-								hit_effect = attacker->client->ps.saber[saber_num].hitOtherEffect;
+								hit_effect = saber->hitOtherEffect;
 							}
-							else if (WP_SaberBladeUseSecondBladeStyle(&attacker->client->ps.saber[saber_num], blade_num)
-								&& attacker->client->ps.saber[saber_num].hitOtherEffect2)
+							else if (WP_SaberBladeUseSecondBladeStyle(saber, blade_num) &&
+								saber->hitOtherEffect2)
 							{
-								hit_effect = attacker->client->ps.saber[saber_num].hitOtherEffect2;
+								hit_effect = saber->hitOtherEffect2;
 							}
 							else
 							{
@@ -5473,74 +5513,82 @@ static qboolean WP_SaberDamageForTrace(const int ignore, vec3_t start, vec3_t en
 							}
 						}
 					}
-					else
+				}
+				else
+				{
+					// Non‑client entities (brushes, misc, etc.)
+					if (dmg > 0.0f)
 					{
-						if (dmg)
+						if (hit_ent->svFlags & SVF_BBRUSH &&
+							((hit_ent->spawnflags & 1) ||
+								(hit_ent->flags & FL_DMG_BY_HEAVY_WEAP_ONLY) ||
+								(hit_ent->NPC_targetname &&
+									attacker && attacker->targetname &&
+									Q_stricmp(attacker->targetname, hit_ent->NPC_targetname))))
 						{
-							//only do these effects if actually trying to damage the thing...
-							if (hit_ent->svFlags & SVF_BBRUSH //a breakable brush
-								&& (hit_ent->spawnflags & 1 //INVINCIBLE
-									|| hit_ent->flags & FL_DMG_BY_HEAVY_WEAP_ONLY //HEAVY weapon damage only
-									|| hit_ent->NPC_targetname && attacker && attacker->targetname && Q_stricmp(
-										attacker->targetname, hit_ent->NPC_targetname)))
-								//only breakable by an entity who is not the attacker
+							// No extra effect
+						}
+						else if (attacker && attacker->client)
+						{
+							saberInfo_t* saber = &attacker->client->ps.saber[saber_num];
+
+							if (saber->hitOtherEffect &&
+								!WP_SaberBladeUseSecondBladeStyle(saber, blade_num))
 							{
-								//no hit effect (besides regular client-side one)
+								hit_effect = saber->hitOtherEffect;
+							}
+							else if (WP_SaberBladeUseSecondBladeStyle(saber, blade_num) &&
+								saber->hitOtherEffect2)
+							{
+								hit_effect = saber->hitOtherEffect2;
 							}
 							else
 							{
-								if (attacker->client->ps.saber[saber_num].hitOtherEffect
-									&& !WP_SaberBladeUseSecondBladeStyle(
-										&attacker->client->ps.saber[saber_num], blade_num))
+								if (g_SerenityJediEngineMode->integer)
 								{
-									hit_effect = attacker->client->ps.saber[saber_num].hitOtherEffect;
-								}
-								else if (WP_SaberBladeUseSecondBladeStyle(
-									&attacker->client->ps.saber[saber_num], blade_num)
-									&& attacker->client->ps.saber[saber_num].hitOtherEffect2)
-								{
-									hit_effect = attacker->client->ps.saber[saber_num].hitOtherEffect2;
-								}
-								else
-								{
-									if (g_SerenityJediEngineMode->integer)
+									if (g_SerenityJediEngineMode->integer == 2)
 									{
-										if (g_SerenityJediEngineMode->integer == 2)
-										{
-											hit_effect = G_EffectIndex(hit_saber_cut_AMD);
-										}
-										else
-										{
-											hit_effect = G_EffectIndex(hit_saber_cut_MD);
-										}
+										hit_effect = G_EffectIndex(hit_saber_cut_AMD);
 									}
 									else
 									{
-										hit_effect = G_EffectIndex(hit_saber_cut);
+										hit_effect = G_EffectIndex(hit_saber_cut_MD);
 									}
+								}
+								else
+								{
+									hit_effect = G_EffectIndex(hit_saber_cut);
 								}
 							}
 						}
 					}
 				}
 
-				if (!g_saberNoEffects && hit_effect != 0)
+				if (!g_saberNoEffects && hit_effect)
 				{
 					G_PlayEffect(hit_effect, tr.endpos, dir);
 				}
 			}
-			else
+		}
+		else
+		{
+			// Ghoul2 damage path
+			if (!attacker || !attacker->client ||
+				attacker->client->ps.saberLockTime < level.time)
 			{
-				//we were doing a ghoul trace
-				if (!attacker
-					|| !attacker->client
-					|| attacker->client->ps.saberLockTime < level.time)
+				if (!WP_SaberDamageEffects(&tr,
+					len,
+					dmg,
+					dir,
+					blade_vec,
+					attacker && attacker->client
+					? attacker->client->enemyTeam
+					: TEAM_FREE,
+					saber_type,
+					&attacker->client->ps.saber[saber_num],
+					blade_num))
 				{
-					if (!WP_SaberDamageEffects(&tr, len, dmg, dir, blade_vec, attacker->client->enemyTeam, saber_type,
-						&attacker->client->ps.saber[saber_num], blade_num))
-					{
-						//didn't hit a ghoul ent
-					}
+					// No Ghoul2 hit
 				}
 			}
 		}
@@ -8603,9 +8651,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 					hit_owner
 					&& hit_owner->client
 					&& hit_owner->NPC
-					&& hit_owner->NPC->aiFlags & NPCAI_BOSS_CHARACTER
-					//or if blocked by a Boss character FIXME: or base on defense level?
-					) //FIXME: player should not auto-block a flying saber, let him override the parry with an attack to knock the saber from the air, rather than this random chance
+					&& hit_owner->NPC->aiFlags & NPCAI_BOSS_CHARACTER) //FIXME: player should not auto-block a flying saber, let him override the parry with an attack to knock the saber from the air, rather than this random chance
 				{
 					//knock it aside and turn it off
 					if (!g_saberNoEffects)
@@ -8761,13 +8807,27 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 
 //////SERENITYJEDIENGINE MODE //////////////////////////////////////////////////////////////////////////
 
+// Shared helper
+static QINLINE int clamp_int(int v, int lo, int hi)
+{
+	return (v < lo) ? lo : (v > hi ? hi : v);
+}
+
+// Heavy slow bounce: attacker wrapper
 void sab_beh_animate_heavy_slow_bounce_attacker(gentity_t* attacker)
 {
+	if (!attacker || !attacker->client)
+		return;
+
 	G_StaggerAttacker(attacker);
 }
 
+// Heavy slow bounce: victim + inflictor
 static void SabBeh_AnimateHeavySlowBounce(gentity_t* self, gentity_t* inflictor)
 {
+	if (!self || !self->client || !inflictor || !inflictor->client)
+		return;
+
 	self->client->ps.userInt3 |= 1 << FLAG_SLOWBOUNCE;
 	self->client->ps.userInt3 |= 1 << FLAG_OLDSLOWBOUNCE;
 
@@ -8778,8 +8838,12 @@ static void SabBeh_AnimateHeavySlowBounce(gentity_t* self, gentity_t* inflictor)
 	self->client->ps.saberBlocked = BLOCKED_PARRY_BROKEN;
 }
 
+// Generic slow bounce (defender only)
 void SabBeh_AnimateSlowBounce(gentity_t* self)
 {
+	if (!self || !self->client)
+		return;
+
 	self->client->ps.userInt3 |= 1 << FLAG_SLOWBOUNCE;
 	self->client->ps.userInt3 |= 1 << FLAG_OLDSLOWBOUNCE;
 
@@ -8789,106 +8853,124 @@ void SabBeh_AnimateSlowBounce(gentity_t* self)
 	self->client->ps.saberBlocked = BLOCKED_PARRY_BROKEN;
 }
 
+// Small bounce
 void SabBeh_AnimateSmallBounce(const gentity_t* self)
 {
+	if (!self || !self->client)
+		return;
+
 	self->client->ps.userInt3 |= 1 << FLAG_SLOWBOUNCE;
 
 	self->client->ps.saberBounceMove = PM_SaberBounceForAttack(self->client->ps.saber_move);
 	self->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
 }
 
+// Massive bounce style remap (dual)
 static int SabBeh_AnimateMassiveDualSlowBounce(const int anim)
 {
 	switch (anim)
 	{
-	case BOTH_H1_S1_T_:
-		return BOTH_H6_S6_T_;
-	case BOTH_H1_S1_TR:
-		return BOTH_H6_S6_TR;
-	case BOTH_H1_S1_TL:
-		return BOTH_H6_S6_TL;
-	case BOTH_H1_S1_BR:
-		return BOTH_H6_S6_BR;
-	case BOTH_H1_S1_BL:
-		return BOTH_H6_S6_BL;
-	case BOTH_H1_S1_B_:
-		return BOTH_H6_S6_B_;
-	default:;
+	case BOTH_H1_S1_T_:  return BOTH_H6_S6_T_;
+	case BOTH_H1_S1_TR:  return BOTH_H6_S6_TR;
+	case BOTH_H1_S1_TL:  return BOTH_H6_S6_TL;
+	case BOTH_H1_S1_BR:  return BOTH_H6_S6_BR;
+	case BOTH_H1_S1_BL:  return BOTH_H6_S6_BL;
+	case BOTH_H1_S1_B_:  return BOTH_H6_S6_B_;
+	default:             return anim;
 	}
-	return anim;
 }
 
+// Massive bounce style remap (staff)
 static int SabBeh_AnimateMassiveStaffSlowBounce(const int anim)
 {
 	switch (anim)
 	{
-	case BOTH_H1_S1_T_:
-		return BOTH_H7_S7_T_;
-	case BOTH_H1_S1_TR:
-		return BOTH_H7_S7_TR;
-	case BOTH_H1_S1_TL:
-		return BOTH_H7_S7_TL;
-	case BOTH_H1_S1_BR:
-		return BOTH_H7_S7_BR;
-	case BOTH_H1_S1_BL:
-		return BOTH_H7_S7_BL;
-	case BOTH_H1_S1_B_:
-		return BOTH_H7_S7_B_;
-	default:;
+	case BOTH_H1_S1_T_:  return BOTH_H7_S7_T_;
+	case BOTH_H1_S1_TR:  return BOTH_H7_S7_TR;
+	case BOTH_H1_S1_TL:  return BOTH_H7_S7_TL;
+	case BOTH_H1_S1_BR:  return BOTH_H7_S7_BR;
+	case BOTH_H1_S1_BL:  return BOTH_H7_S7_BL;
+	case BOTH_H1_S1_B_:  return BOTH_H7_S7_B_;
+	default:             return anim;
 	}
-	return anim;
 }
 
+// Shared stagger anim table (base H1 set + bashed)
+static int G_PickStaggerAnim(void)
+{
+	static const int stag_base[7] =
+	{
+		BOTH_BASHED1,
+		BOTH_H1_S1_T_,
+		BOTH_H1_S1_TR,
+		BOTH_H1_S1_TL,
+		BOTH_H1_S1_BL,
+		BOTH_H1_S1_B_,
+		BOTH_H1_S1_BR
+	};
+
+	const int idx = irand(0, 6);
+	return stag_base[idx];
+}
+
+// Shared helper: play stagger anim with kata-aware channel
+static void G_PlayStaggerAnim(gentity_t* ent, const int use_anim)
+{
+	if (!ent || !ent->client)
+		return;
+
+	if (PM_SaberInKata((saber_moveName_t)ent->client->ps.saber_move))
+	{
+		NPC_SetAnim(ent, SETANIM_BOTH, use_anim, SETANIM_AFLAG_PACE);
+	}
+	else
+	{
+		NPC_SetAnim(ent, SETANIM_TORSO, use_anim, SETANIM_AFLAG_PACE);
+	}
+}
+
+// Shared helper: massive bounce post‑processing
+static void G_HandleMassiveBounce(gentity_t* ent)
+{
+	if (!ent || !ent->client)
+		return;
+
+	if (PM_SaberInMassiveBounce(ent->client->ps.torsoAnim))
+	{
+		ent->client->ps.saber_move = LS_NONE;
+		ent->client->ps.saberBlocked = BLOCKED_NONE;
+		ent->client->ps.weaponTime = ent->client->ps.torsoAnimTimer;
+		ent->client->MassiveBounceAnimTime = ent->client->ps.torsoAnimTimer + level.time;
+	}
+}
+
+// Stumble (pain‑style stagger)
 void G_Stumble(gentity_t* hit_ent)
 {
-	if (PM_SaberInBashedAnim(hit_ent->client->ps.torsoAnim))
-	{
+	if (!hit_ent || !hit_ent->client)
 		return;
-	}
+
+	if (PM_SaberInBashedAnim(hit_ent->client->ps.torsoAnim))
+		return;
 
 	if (PM_InGetUp(&hit_ent->client->ps) || PM_InForceGetUp(&hit_ent->client->ps))
-	{
 		return;
-	}
 
-	const int anim_choice = irand(0, 6);
-	// this could possibly be based on animation done when the clash happend, but this should do for now.
-	int use_anim;
+	static const int stumble_anims[7] =
+	{
+		BOTH_BASHED1,
+		BOTH_PAIN3,
+		BOTH_PAIN2,
+		BOTH_PAIN15,
+		BOTH_PAIN12,
+		BOTH_PAIN5,
+		BOTH_PAIN7
+	};
 
-	switch (anim_choice)
-	{
-	default:
-	case 0:
-		use_anim = BOTH_BASHED1;
-		break;
-	case 1:
-		use_anim = BOTH_PAIN3;
-		break;
-	case 2:
-		use_anim = BOTH_PAIN2;
-		break;
-	case 3:
-		use_anim = BOTH_PAIN15;
-		break;
-	case 4:
-		use_anim = BOTH_PAIN12;
-		break;
-	case 5:
-		use_anim = BOTH_PAIN5;
-		break;
-	case 6:
-		use_anim = BOTH_PAIN7;
-		break;
-	}
+	const int idx = irand(0, 6);
+	const int use_anim = stumble_anims[idx];
 
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(hit_ent->client->ps.saber_move)))
-	{
-		NPC_SetAnim(hit_ent, SETANIM_BOTH, use_anim, SETANIM_AFLAG_PACE);
-	}
-	else
-	{
-		NPC_SetAnim(hit_ent, SETANIM_TORSO, use_anim, SETANIM_AFLAG_PACE);
-	}
+	G_PlayStaggerAnim(hit_ent, use_anim);
 
 	if (PM_SaberInBashedAnim(hit_ent->client->ps.torsoAnim))
 	{
@@ -8899,200 +8981,97 @@ void G_Stumble(gentity_t* hit_ent)
 	}
 }
 
+// Generic stagger (hit victim)
 void G_Stagger(gentity_t* hit_ent)
 {
-	if (PM_InGetUp(&hit_ent->client->ps) || PM_InForceGetUp(&hit_ent->client->ps) || hit_ent->client->ps.saberInFlight)
+	if (!hit_ent || !hit_ent->client)
+		return;
+
+	if (PM_InGetUp(&hit_ent->client->ps) ||
+		PM_InForceGetUp(&hit_ent->client->ps) ||
+		hit_ent->client->ps.saberInFlight)
 	{
 		return;
 	}
 
-	const int anim_choice = irand(0, 6);
-	// this could possibly be based on animation done when the clash happend, but this should do for now.
-	int use_anim;
+	const int use_anim = G_PickStaggerAnim();
 
-	switch (anim_choice)
-	{
-	default:
-	case 0:
-		use_anim = BOTH_BASHED1;
-		break;
-	case 1:
-		use_anim = BOTH_H1_S1_T_;
-		break;
-	case 2:
-		use_anim = BOTH_H1_S1_TR;
-		break;
-	case 3:
-		use_anim = BOTH_H1_S1_TL;
-		break;
-	case 4:
-		use_anim = BOTH_H1_S1_BL;
-		break;
-	case 5:
-		use_anim = BOTH_H1_S1_B_;
-		break;
-	case 6:
-		use_anim = BOTH_H1_S1_BR;
-		break;
-	}
+	G_PlayStaggerAnim(hit_ent, use_anim);
+	G_HandleMassiveBounce(hit_ent);
 
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(hit_ent->client->ps.saber_move)))
-	{
-		NPC_SetAnim(hit_ent, SETANIM_BOTH, use_anim, SETANIM_AFLAG_PACE);
-	}
-	else
-	{
-		NPC_SetAnim(hit_ent, SETANIM_TORSO, use_anim, SETANIM_AFLAG_PACE);
-	}
+	// Style‑specific massive bounce remap
+	const int style = hit_ent->client->ps.saberAnimLevel;
 
-	if (PM_SaberInMassiveBounce(hit_ent->client->ps.torsoAnim))
-	{
-		hit_ent->client->ps.saber_move = LS_NONE;
-		hit_ent->client->ps.saberBlocked = BLOCKED_NONE;
-		hit_ent->client->ps.weaponTime = hit_ent->client->ps.torsoAnimTimer;
-		hit_ent->client->MassiveBounceAnimTime = hit_ent->client->ps.torsoAnimTimer + level.time;
-	}
-
-	if (hit_ent->client->ps.saberAnimLevel == SS_DUAL)
+	if (style == SS_DUAL)
 	{
 		SabBeh_AnimateMassiveDualSlowBounce(use_anim);
 	}
-	else if (hit_ent->client->ps.saberAnimLevel == SS_STAFF)
+	else if (style == SS_STAFF)
 	{
 		SabBeh_AnimateMassiveStaffSlowBounce(use_anim);
 	}
 
 	if (d_combatinfo->integer || g_DebugSaberCombat->integer)
 	{
-		gi.Printf("Hit Ent was forced in to a stagger\n");
+		gi.Printf("Hit Ent was forced into a stagger\n");
 	}
 }
 
+// Stagger attacker
 void G_StaggerAttacker(gentity_t* atk)
 {
-	if (PM_InGetUp(&atk->client->ps) || PM_InForceGetUp(&atk->client->ps) || atk->client->ps.saberInFlight)
+	if (!atk || !atk->client)
+		return;
+
+	if (PM_InGetUp(&atk->client->ps) ||
+		PM_InForceGetUp(&atk->client->ps) ||
+		atk->client->ps.saberInFlight)
 	{
 		return;
 	}
 
-	const int anim_choice = irand(0, 6);
-	// this could possibly be based on animation done when the clash happend, but this should do for now.
-	int use_anim;
+	const int use_anim = G_PickStaggerAnim();
 
-	switch (anim_choice)
-	{
-	default:
-	case 0:
-		use_anim = BOTH_BASHED1;
-		break;
-	case 1:
-		use_anim = BOTH_H1_S1_T_;
-		break;
-	case 2:
-		use_anim = BOTH_H1_S1_TR;
-		break;
-	case 3:
-		use_anim = BOTH_H1_S1_TL;
-		break;
-	case 4:
-		use_anim = BOTH_H1_S1_BL;
-		break;
-	case 5:
-		use_anim = BOTH_H1_S1_B_;
-		break;
-	case 6:
-		use_anim = BOTH_H1_S1_BR;
-		break;
-	}
+	G_PlayStaggerAnim(atk, use_anim);
+	G_HandleMassiveBounce(atk);
 
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(atk->client->ps.saber_move)))
-	{
-		NPC_SetAnim(atk, SETANIM_BOTH, use_anim, SETANIM_AFLAG_PACE);
-	}
-	else
-	{
-		NPC_SetAnim(atk, SETANIM_TORSO, use_anim, SETANIM_AFLAG_PACE);
-	}
+	const int style = atk->client->ps.saberAnimLevel;
 
-	if (PM_SaberInMassiveBounce(atk->client->ps.torsoAnim))
-	{
-		atk->client->ps.saber_move = LS_NONE;
-		atk->client->ps.saberBlocked = BLOCKED_NONE;
-		atk->client->ps.weaponTime = atk->client->ps.torsoAnimTimer;
-		atk->client->MassiveBounceAnimTime = atk->client->ps.torsoAnimTimer + level.time;
-	}
-
-	if (atk->client->ps.saberAnimLevel == SS_DUAL)
+	if (style == SS_DUAL)
 	{
 		SabBeh_AnimateMassiveDualSlowBounce(use_anim);
 	}
-	else if (atk->client->ps.saberAnimLevel == SS_STAFF)
+	else if (style == SS_STAFF)
 	{
 		SabBeh_AnimateMassiveStaffSlowBounce(use_anim);
 	}
 }
 
+// Maw‑specific stagger (same logic, different caller)
 void G_MawStagger(gentity_t* hit_ent)
 {
-	const int anim_choice = irand(0, 6);
-	// this could possibly be based on animation done when the clash happend, but this should do for now.
-	int use_anim;
+	if (!hit_ent || !hit_ent->client)
+		return;
 
-	switch (anim_choice)
-	{
-	default:
-	case 0:
-		use_anim = BOTH_BASHED1;
-		break;
-	case 1:
-		use_anim = BOTH_H1_S1_T_;
-		break;
-	case 2:
-		use_anim = BOTH_H1_S1_TR;
-		break;
-	case 3:
-		use_anim = BOTH_H1_S1_TL;
-		break;
-	case 4:
-		use_anim = BOTH_H1_S1_BL;
-		break;
-	case 5:
-		use_anim = BOTH_H1_S1_B_;
-		break;
-	case 6:
-		use_anim = BOTH_H1_S1_BR;
-		break;
-	}
+	const int use_anim = G_PickStaggerAnim();
 
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(hit_ent->client->ps.saber_move)))
-	{
-		NPC_SetAnim(hit_ent, SETANIM_BOTH, use_anim, SETANIM_AFLAG_PACE);
-	}
-	else
-	{
-		NPC_SetAnim(hit_ent, SETANIM_TORSO, use_anim, SETANIM_AFLAG_PACE);
-	}
+	G_PlayStaggerAnim(hit_ent, use_anim);
+	G_HandleMassiveBounce(hit_ent);
 
-	if (PM_SaberInMassiveBounce(hit_ent->client->ps.torsoAnim))
-	{
-		hit_ent->client->ps.saber_move = LS_NONE;
-		hit_ent->client->ps.saberBlocked = BLOCKED_NONE;
-		hit_ent->client->ps.weaponTime = hit_ent->client->ps.torsoAnimTimer;
-		hit_ent->client->MassiveBounceAnimTime = hit_ent->client->ps.torsoAnimTimer + level.time;
-	}
+	const int style = hit_ent->client->ps.saberAnimLevel;
 
-	if (hit_ent->client->ps.saberAnimLevel == SS_DUAL)
+	if (style == SS_DUAL)
 	{
 		SabBeh_AnimateMassiveDualSlowBounce(use_anim);
 	}
-	else if (hit_ent->client->ps.saberAnimLevel == SS_STAFF)
+	else if (style == SS_STAFF)
 	{
 		SabBeh_AnimateMassiveStaffSlowBounce(use_anim);
 	}
 
 	if (d_combatinfo->integer || g_DebugSaberCombat->integer)
 	{
-		gi.Printf("Hit Ent was forced in to a stagger\n");
+		gi.Printf("Hit Ent was forced into a stagger\n");
 	}
 }
 
@@ -9153,7 +9132,7 @@ void sab_beh_add_balance(const gentity_t* self, int amount)
 	}
 }
 
-void wp_saber_damage_trace_amd(gentity_t* ent, int saber_num, int blade_num)
+static void wp_saber_damage_trace_amd(gentity_t* ent, int saber_num, int blade_num)
 {
 	vec3_t mp1;
 	vec3_t mp2;
@@ -41077,8 +41056,6 @@ static void WP_CheckForcedPowers(gentity_t* self, usercmd_t* ucmd)
 	}
 }
 
-void BG_ReduceBlasterMishapLevel(playerState_t* ps);
-
 void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 {
 	qboolean using_force = qfalse;
@@ -41792,7 +41769,7 @@ qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker
 	VectorNormalize(parrier_move);
 
 	// ------------------------------------------------------------
-	// Style-based threshold 
+	// Style-based threshold
 	// ------------------------------------------------------------
 	float threshold = 0.40f; // default
 
@@ -41970,139 +41947,40 @@ void player_Freeze(gentity_t* self)
 
 void BG_ReduceSaberMishapLevel(playerState_t* ps)
 {
-	//reduces a player's mishap meter by one level
-	if (ps->saberFatigueChainCount >= MISHAPLEVEL_MAX)
+	static const int order[] =
 	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_FULL;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_FULL)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_THIRTEEN;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_THIRTEEN)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_HUDFLASH;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_HUDFLASH)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_ELEVEN;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_ELEVEN)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_TEN;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_TEN)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_NINE;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_NINE)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_HEAVY;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_HEAVY)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_SEVEN;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_SEVEN)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_SIX;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_SIX)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_LIGHT;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_LIGHT)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_FOUR;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_FOUR)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_SNIPER;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_SNIPER)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_TWO;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_TWO)
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_MIN;
-	}
-	else if (ps->saberFatigueChainCount >= MISHAPLEVEL_MIN)
-	{
-		if (g_debugFatigueBars->integer)
-		{
-			ps->saberFatigueChainCount = MISHAPLEVEL_MIN;
-		}
-		else
-		{
-			ps->saberFatigueChainCount = MISHAPLEVEL_NONE;
-		}
-	}
-	else
-	{
-		ps->saberFatigueChainCount = MISHAPLEVEL_NONE;
-	}
-}
+		MISHAPLEVEL_MAX,
+		MISHAPLEVEL_FULL,
+		MISHAPLEVEL_THIRTEEN,
+		MISHAPLEVEL_HUDFLASH,
+		MISHAPLEVEL_ELEVEN,
+		MISHAPLEVEL_TEN,
+		MISHAPLEVEL_NINE,
+		MISHAPLEVEL_HEAVY,
+		MISHAPLEVEL_SEVEN,
+		MISHAPLEVEL_SIX,
+		MISHAPLEVEL_LIGHT,
+		MISHAPLEVEL_FOUR,
+		MISHAPLEVEL_THREE,
+		MISHAPLEVEL_TWO,
+		MISHAPLEVEL_MIN,
+		MISHAPLEVEL_NONE
+	};
 
-void BG_ReduceBlasterMishapLevel(playerState_t* ps)
-{
-	//reduces a player's mishap meter by one level
-	if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_MAX)
+	int level = ps->saberFatigueChainCount;
+
+	// Find current level in the table
+	for (int i = 0; i < ARRAY_LEN(order) - 1; i++)
 	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_FIFTEEN;
+		if (level >= order[i])
+		{
+			ps->saberFatigueChainCount = order[i + 1];
+			return;
+		}
 	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FIFTEEN)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_FOURTEEN;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FOURTEEN)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_OVERLOAD;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_OVERLOAD)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_TWELVE;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_TWELVE)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_FULL;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_HEAVYER;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVYER)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_HALF;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_HEAVY;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVY)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_MEDIUM;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_MEDIUM)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_LIGHT;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_LIGHT)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_THREE;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_THREE)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_MIN;
-	}
-	else if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_MIN)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_NONE;
-	}
-	else
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_NONE;
-	}
+
+	// If somehow below NONE, clamp
+	ps->saberFatigueChainCount = MISHAPLEVEL_NONE;
 }
 
 void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps)

@@ -19,11 +19,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 ===========================================================================
-*/
-
-#include "common_headers.h"
-
-#include "../rd-common/tr_public.h"
 
 // bg_pmove.c -- both games player movement code
 // takes a playerstate and a usercmd as input and returns a modifed playerstate
@@ -41,7 +36,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // define GAME_INCLUDE so that g_public.h does not define the
 // short, server-visible gclient_t and gentity_t structures,
 // because we define the full size ones in this file
+*/
 
+#include "common_headers.h"
+#include "../rd-common/tr_public.h"
 #define	GAME_INCLUDE
 #include "../qcommon/q_shared.h"
 #include "g_shared.h"
@@ -53,6 +51,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "wp_saber.h"
 #include "g_vehicles.h"
 #include <qcommon\q_color.h>
+#include "hitlocs.h"
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include <cstdlib>
+#include <cmath>
+#include "bstate.h"
+#include "bg_public.h"
 
 extern qboolean G_DoDismemberment(gentity_t* self, vec3_t point, int mod, int hit_loc,
 	qboolean force = qfalse);
@@ -388,7 +393,7 @@ qboolean PM_InForceFall()
 	return qfalse;
 }
 
-qboolean PM_CheckGrabWall(const trace_t* trace)
+static qboolean PM_CheckGrabWall(const trace_t* trace)
 {
 	if (!pm->gent || !pm->gent->client)
 	{
@@ -7624,27 +7629,38 @@ static qboolean PM_CheckRollGetup()
 			pm->ps->saberBlocked = BLOCKED_NONE;
 			if (force_get_up)
 			{
-				if (pm->gent && pm->gent->client && pm->gent->client->playerTeam == TEAM_ENEMY
-					&& pm->gent->NPC && pm->gent->NPC->blockedSpeechDebounceTime < level.time
-					&& !Q_irand(0, 1))
+				// Enemy NPC combat bark
+				if (pm->gent &&
+					pm->gent->client &&
+					pm->gent->client->playerTeam == TEAM_ENEMY &&
+					pm->gent->NPC &&
+					pm->gent->NPC->blockedSpeechDebounceTime < level.time &&
+					!Q_irand(0, 1))
 				{
 					PM_AddEvent(Q_irand(EV_COMBAT1, EV_COMBAT3));
 					pm->gent->NPC->blockedSpeechDebounceTime = level.time + 1000;
 				}
 
-				if (pm->gent && g_SerenityJediEngineMode->integer == 2 && pm->gent->client->ps.forcePowerLevel[
-					FP_LEVITATION] < FORCE_LEVEL_3)
+				// Force jump sound logic (safe client check)
+				if (pm->gent &&
+					pm->gent->client &&   // <-- REQUIRED
+					g_SerenityJediEngineMode->integer == 2 &&
+					pm->gent->client->ps.forcePowerLevel[FP_LEVITATION] < FORCE_LEVEL_3)
 				{
-					//short burst
+					// short burst
 					G_SoundOnEnt(pm->gent, CHAN_BODY, "sound/weapons/force/jumpsmall.mp3");
 				}
 				else
 				{
-					//holding it
-					G_SoundOnEnt(pm->gent, CHAN_BODY, "sound/weapons/force/jump.mp3");
+					// holding it
+					if (pm->gent)  // still safe
+					{
+						G_SoundOnEnt(pm->gent, CHAN_BODY, "sound/weapons/force/jump.mp3");
+					}
 				}
-				//launch off ground?
-				pm->ps->weaponTime = 300; //just to make sure it's cleared
+
+				// launch off ground?
+				pm->ps->weaponTime = 300;
 			}
 			return qtrue;
 		}
@@ -7803,26 +7819,38 @@ qboolean PM_GettingUpFromKnockDown(const float standheight, const float crouchhe
 
 				if (force_get_up)
 				{
-					if (pm->gent && pm->gent->client && pm->gent->client->playerTeam == TEAM_ENEMY
-						&& pm->gent->NPC && pm->gent->NPC->blockedSpeechDebounceTime < level.time
-						&& !Q_irand(0, 1))
+					// Enemy NPC combat bark
+					if (pm->gent &&
+						pm->gent->client &&
+						pm->gent->client->playerTeam == TEAM_ENEMY &&
+						pm->gent->NPC &&
+						pm->gent->NPC->blockedSpeechDebounceTime < level.time &&
+						!Q_irand(0, 1))
 					{
 						PM_AddEvent(Q_irand(EV_COMBAT1, EV_COMBAT3));
 						pm->gent->NPC->blockedSpeechDebounceTime = level.time + 1000;
 					}
-					if (pm->gent && g_SerenityJediEngineMode->integer == 2 && pm->gent->client->ps.forcePowerLevel
-						[FP_LEVITATION] < FORCE_LEVEL_3)
+
+					// Force jump sound logic (safe client check)
+					if (pm->gent &&
+						pm->gent->client &&   // REQUIRED
+						g_SerenityJediEngineMode->integer == 2 &&
+						pm->gent->client->ps.forcePowerLevel[FP_LEVITATION] < FORCE_LEVEL_3)
 					{
-						//short burst
+						// short burst
 						G_SoundOnEnt(pm->gent, CHAN_BODY, "sound/weapons/force/jumpsmall.mp3");
 					}
 					else
 					{
-						//holding it
-						G_SoundOnEnt(pm->gent, CHAN_BODY, "sound/weapons/force/jump.mp3");
+						// holding it
+						if (pm->gent)  // still safe
+						{
+							G_SoundOnEnt(pm->gent, CHAN_BODY, "sound/weapons/force/jump.mp3");
+						}
 					}
-					//launch off ground?
-					pm->ps->weaponTime = 300; //just to make sure it's cleared
+
+					// launch off ground
+					pm->ps->weaponTime = 300;
 				}
 				if (PM_LockedAnim(pm->ps->torsoAnim))
 				{
@@ -10245,20 +10273,24 @@ static void PM_Footsteps()
 			qboolean saberInAir = qtrue;
 			if (pm->ps->saberInFlight)
 			{
-				//guiding saber
-				if (PM_SaberInBrokenParry(pm->ps->saber_move) || pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
+				// Guiding saber
+				if (PM_SaberInBrokenParry(pm->ps->saber_move) ||
+					pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
 					PM_DodgeAnim(pm->ps->torsoAnim))
 				{
-					//we're stuck in a broken parry
+					// Stuck in a broken parry
 					saberInAir = qfalse;
 				}
-				if (pm->ps->saberEntityNum < ENTITYNUM_NONE && pm->ps->saberEntityNum > 0) //player is 0
+
+				// Valid saber entity?
+				if (pm->ps->saberEntityNum > 0 &&
+					pm->ps->saberEntityNum < ENTITYNUM_NONE)
 				{
-					//
-					if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.
-						trType == TR_STATIONARY)
+					gentity_t* saberEnt = &g_entities[pm->ps->saberEntityNum];
+
+					// Saber has landed (stationary)
+					if (saberEnt->s.pos.trType == TR_STATIONARY)
 					{
-						//fell to the ground and we're not trying to pull it back
 						saberInAir = qfalse;
 					}
 				}
@@ -14279,14 +14311,6 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 				pm->ps->userInt3 &= ~(1 << FLAG_BLOCKDRAINED);
 			}
 		}
-
-		if (PM_SaberInAttack(new_move))
-		{
-			if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
-			{
-				pm->ps->saberFatigueChainCount++;
-			}
-		}
 	}
 
 	if (new_move == LS_READY || new_move == LS_A_FLIP_STAB || new_move == LS_A_FLIP_SLASH)
@@ -14296,8 +14320,34 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 	}
 	else if (PM_SaberInAttack(new_move))
 	{
-		//continuing with a kata, increment attack counter
-		pm->ps->saberAttackChainCount++;
+		if (g_SerenityJediEngineMode->integer)
+		{
+			//continuing with a kata, increment attack counter
+			pm->ps->saberAttackChainCount++;
+
+			if (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) //player
+			{// Only add fatigue every 2 swings (half as fast)
+				if ((pm->ps->saberAttackChainCount & 1) == 0)  // even number
+				{
+					if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+					{
+						pm->ps->saberFatigueChainCount++;
+					}
+				}
+			}
+			else
+			{
+				if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+				{
+					pm->ps->saberFatigueChainCount++;
+				}
+			}
+		}
+		else 
+		{
+			//continuing with a kata, increment attack counter
+			pm->ps->saberAttackChainCount++;
+		}
 	}
 
 	if (pm->ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_MAX)
@@ -15965,9 +16015,16 @@ static int PM_SaberLockResultAnim(gentity_t* duelist, const int lock_or_break_or
 
 constexpr auto AMPUTATE_DAMAGE = 1000;
 
-static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLockResult_t result, int victory_strength)
+static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy,
+	const saberLockResult_t result, int victory_strength)
 {
-	int break_type;
+	// Hard guard: if either side is missing a client, bail
+	if (!gent || !gent->client || !genemy || !genemy->client)
+	{
+		return;
+	}
+
+	int      break_type;
 	qboolean single_vs_single = qtrue;
 
 	if (result == LOCK_VICTORY
@@ -15975,15 +16032,14 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 		&& victory_strength > 3
 		&& Q_irand(0, 10) < victory_strength) // was 0,7
 	{
-		if (genemy
-			&& genemy->NPC
-			&& (genemy->NPC->aiFlags & NPCAI_BOSS_CHARACTER
-				|| genemy->NPC->aiFlags & NPCAI_SUBBOSS_CHARACTER
-				|| genemy->client && genemy->client->NPC_class == CLASS_SHADOWTROOPER
-				|| genemy->client && genemy->client->NPC_class == CLASS_JEDIMASTER)
-			&& Q_irand(0, 4))
+		if (genemy->NPC &&
+			(genemy->NPC->aiFlags & NPCAI_BOSS_CHARACTER ||
+				genemy->NPC->aiFlags & NPCAI_SUBBOSS_CHARACTER ||
+				(genemy->client->NPC_class == CLASS_SHADOWTROOPER) ||
+				(genemy->client->NPC_class == CLASS_JEDIMASTER)) &&
+			Q_irand(0, 4))
 		{
-			//less of a chance of getting a superbreak against a boss
+			// less of a chance of getting a superbreak against a boss
 			break_type = SABERLOCK_BREAK;
 		}
 		else
@@ -15995,51 +16051,48 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 	{
 		break_type = SABERLOCK_BREAK;
 	}
+
 	int win_anim = PM_SaberLockWinAnim(result, break_type);
+
 	if (win_anim != -1)
 	{
-		//a single vs. single break
-		if (genemy && genemy->client)
-		{
-			PM_SaberLockLoseAnim(genemy, result, break_type);
-		}
+		// a single vs. single break
+		PM_SaberLockLoseAnim(genemy, result, break_type);
 	}
 	else
 	{
-		//must be a saberlock that's not between single and single...
+		// must be a saberlock that's not between single and single...
 		single_vs_single = qfalse;
 		win_anim = PM_SaberLockResultAnim(gent, break_type, SABERLOCK_WIN);
 		pm->ps->weaponstate = WEAPON_FIRING;
-		if (genemy && genemy->client)
-		{
-			PM_SaberLockResultAnim(genemy, break_type, SABERLOCK_LOSE);
-			genemy->client->ps.weaponstate = WEAPON_READY;
-		}
+
+		PM_SaberLockResultAnim(genemy, break_type, SABERLOCK_LOSE);
+		genemy->client->ps.weaponstate = WEAPON_READY;
 	}
 
-	pm->ps->saberLockTime = genemy->client->ps.saberLockTime = 0;
-	pm->ps->saberLockEnemy = genemy->client->ps.saberLockEnemy = ENTITYNUM_NONE;
+	pm->ps->saberLockTime = 0;
+	genemy->client->ps.saberLockTime = 0;
+	pm->ps->saberLockEnemy = ENTITYNUM_NONE;
+	genemy->client->ps.saberLockEnemy = ENTITYNUM_NONE;
 	pm->ps->saberMoveNext = LS_NONE;
-	if (genemy && genemy->client)
-	{
-		genemy->client->ps.saberMoveNext = LS_NONE;
-	}
+	genemy->client->ps.saberMoveNext = LS_NONE;
 
 	PM_AddEvent(EV_JUMP);
 
 	if (result == LOCK_STALEMATE)
 	{
-		//no-one won
+		// no-one won
 		G_AddEvent(genemy, EV_JUMP, 0);
 	}
 	else
 	{
 		if (pm->ps->clientNum)
 		{
-			//an NPC
-			pm->ps->saberEventFlags |= SEF_LOCK_WON; //tell the winner to press the advantage
+			// an NPC
+			pm->ps->saberEventFlags |= SEF_LOCK_WON; // tell the winner to press the advantage
 		}
-		//painDebounceTime will stop them from doing anything
+
+		// painDebounceTime will stop them from doing anything
 		genemy->painDebounceTime = level.time + genemy->client->ps.torsoAnimTimer + 500;
 
 		if (Q_irand(0, 1))
@@ -16054,100 +16107,99 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 			}
 			G_AddVoiceEvent(genemy, Q_irand(EV_PUSHED1, EV_PUSHED3), 3000);
 		}
+
 		if (result == LOCK_VICTORY)
 		{
-			//one person won
 			if (Q_irand(FORCE_LEVEL_1, FORCE_LEVEL_2) < pm->ps->forcePowerLevel[FP_SABER_OFFENSE])
 			{
 				vec3_t throw_dir = { 0, 0, 350 };
-				int win_move = pm->ps->saber_move;
+				int    win_move = pm->ps->saber_move;
+
 				if (!single_vs_single)
 				{
-					//all others have their own super breaks
-					//so it doesn't try to set some other anim below
 					win_anim = -1;
 				}
 				else if (win_anim == BOTH_LK_S_S_S_SB_1_W || win_anim == BOTH_LK_S_S_T_SB_1_W)
 				{
-					//doing a superbreak on single-vs-single, don't do the old superbreaks this time
-					//so it doesn't try to set some other anim below
 					win_anim = -1;
 				}
 				else
 				{
-					//JK2-style
 					switch (win_anim)
 					{
 					case BOTH_A3_T__B_:
 						win_anim = BOTH_D1_TL___;
 						win_move = LS_D1_TL;
-						//FIXME: mod throwDir?
 						break;
 					case BOTH_K1_S1_T_:
-						//FIXME: mod throwDir?
 						break;
 					case BOTH_CWCIRCLEBREAK:
-						//FIXME: mod throwDir?
 						break;
 					case BOTH_CCWCIRCLEBREAK:
 						win_anim = BOTH_A1_BR_TL;
 						win_move = LS_A_BR2TL;
-						//FIXME: mod throwDir?
 						break;
-					default:;
+					default:
+						break;
 					}
+
 					if (win_anim != BOTH_CCWCIRCLEBREAK)
 					{
-						if ((!genemy->s.number && genemy->health <= 25) //player low on health
-							|| (genemy->s.number && genemy->client->NPC_class != CLASS_KYLE && genemy->client->
-								NPC_class != CLASS_LUKE && genemy->client->NPC_class != CLASS_YODA && genemy->client
-								->NPC_class != CLASS_TAVION && genemy->client->NPC_class != CLASS_ALORA && genemy->
-								client->NPC_class != CLASS_VADER && genemy->client->NPC_class != CLASS_DESANN)
-							//any NPC that's not a boss character
-							|| (genemy->s.number && genemy->health <= 50))
-							//boss character with less than 50 health left
+						if ((!genemy->s.number && genemy->health <= 25) ||
+							(genemy->s.number &&
+								genemy->client->NPC_class != CLASS_KYLE &&
+								genemy->client->NPC_class != CLASS_LUKE &&
+								genemy->client->NPC_class != CLASS_YODA &&
+								genemy->client->NPC_class != CLASS_TAVION &&
+								genemy->client->NPC_class != CLASS_ALORA &&
+								genemy->client->NPC_class != CLASS_VADER &&
+								genemy->client->NPC_class != CLASS_DESANN) ||
+							(genemy->s.number && genemy->health <= 50))
 						{
-							//possibly knock saber out of hand OR cut hand off!
-							if (g_allowSuperSaberLockBreaks->integer > 0
-								&& victory_strength > 3
-								&& Q_irand(0, 25) < victory_strength
-								&& (!genemy->s.number && genemy->health <= 10 || genemy->s.number))
+							if (g_allowSuperSaberLockBreaks->integer > 0 &&
+								victory_strength > 3 &&
+								Q_irand(0, 25) < victory_strength &&
+								((!genemy->s.number && genemy->health <= 10) || genemy->s.number))
 							{
 								NPC_SetAnim(genemy, SETANIM_BOTH, BOTH_RIGHTHANDCHOPPEDOFF,
-									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD); //force this
-								genemy->client->dismembered = false;
+									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								genemy->client->dismembered = qfalse;
 
-								G_DoDismemberment(genemy, genemy->client->renderInfo.handRPoint, MOD_SABER,
-									HL_HAND_RT,
-									qtrue);
+								G_DoDismemberment(genemy, genemy->client->renderInfo.handRPoint,
+									MOD_SABER, HL_HAND_RT, qtrue);
 
 								if (genemy->health >= 1000)
 								{
-									G_Damage(genemy, gent, gent, throw_dir, genemy->client->renderInfo.handRPoint,
+									G_Damage(genemy, gent, gent, throw_dir,
+										genemy->client->renderInfo.handRPoint,
 										genemy->health + AMPUTATE_DAMAGE,
-										DAMAGE_NO_PROTECTION | DAMAGE_NO_ARMOR | DAMAGE_NO_KNOCKBACK |
-										DAMAGE_NO_HIT_LOC, MOD_SABER, HL_NONE);
+										DAMAGE_NO_PROTECTION | DAMAGE_NO_ARMOR |
+										DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC,
+										MOD_SABER, HL_NONE);
 								}
 								else
 								{
-									G_Damage(genemy, gent, gent, throw_dir, genemy->client->renderInfo.handRPoint,
+									G_Damage(genemy, gent, gent, throw_dir,
+										genemy->client->renderInfo.handRPoint,
 										genemy->health + 10,
-										DAMAGE_NO_PROTECTION | DAMAGE_NO_ARMOR | DAMAGE_NO_KNOCKBACK |
-										DAMAGE_NO_HIT_LOC, MOD_SABER, HL_NONE);
+										DAMAGE_NO_PROTECTION | DAMAGE_NO_ARMOR |
+										DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC,
+										MOD_SABER, HL_NONE);
 								}
 
 								if (gent->s.number < MAX_CLIENTS || G_ControlledByPlayer(gent))
 								{
 									if (d_slowmoaction->integer)
 									{
-										G_StartStasisEffect_FORCE_LEVEL_1(gent, MEF_NO_SPIN, 200, 0.3f, 0);
+										G_StartStasisEffect_FORCE_LEVEL_1(gent, MEF_NO_SPIN,
+											200, 0.3f, 0);
 									}
 									CGCam_BlockShakeSP(0.45f, 100);
 								}
 
 								if (genemy->s.number && genemy->health > 1)
 								{
-									if (genemy->s.number && genemy->health > 100)
+									if (genemy->health > 100)
 									{
 										genemy->client->AmputateDamage = 200;
 										genemy->client->AmputateTime = level.time + 1000;
@@ -16159,7 +16211,8 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 									}
 								}
 
-								PM_SetAnim(pm, SETANIM_BOTH, win_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								PM_SetAnim(pm, SETANIM_BOTH, win_anim,
+									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 								pm->ps->weaponTime = pm->ps->torsoAnimTimer + 500;
 								pm->ps->saber_move = win_move;
 								pm->ps->saberBlocked = BLOCKED_NONE;
@@ -16169,17 +16222,19 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 						}
 					}
 				}
+
 				if (!(genemy->client->ps.saber[0].saberFlags & SFL_NOT_DISARMABLE))
 				{
-					//add disarmBonus into this check
 					victory_strength += pm->ps->SaberDisarmBonus(0) * 2;
-					if (genemy->client->ps.saber[0].saberFlags & SFL_TWO_HANDED
-						|| genemy->client->ps.dualSabers && genemy->client->ps.saber[1].Active())
+
+					if ((genemy->client->ps.saber[0].saberFlags & SFL_TWO_HANDED) ||
+						(genemy->client->ps.dualSabers &&
+							genemy->client->ps.saber[1].Active()))
 					{
-						//defender gets a bonus for using a 2-handed saber or 2 sabers
 						victory_strength -= 2;
 					}
-					if (pm->ps->forcePowersActive & 1 << FP_RAGE)
+
+					if (pm->ps->forcePowersActive & (1 << FP_RAGE))
 					{
 						victory_strength += gent->client->ps.forcePowerLevel[FP_RAGE];
 					}
@@ -16187,20 +16242,23 @@ static void PM_SaberLockBreak(gentity_t* gent, gentity_t* genemy, const saberLoc
 					{
 						victory_strength--;
 					}
+
 					if (genemy->client->ps.forceRageRecoveryTime > pm->cmd.serverTime)
 					{
 						victory_strength++;
 					}
+
 					if (Q_irand(0, 10) < victory_strength)
 					{
-						if (!(genemy->client->ps.saber[0].saberFlags & SFL_TWO_HANDED)
-							|| !Q_irand(0, 1))
+						if (!(genemy->client->ps.saber[0].saberFlags & SFL_TWO_HANDED) ||
+							!Q_irand(0, 1))
 						{
-							//if it's a two-handed saber, it has a 50% chance of resisting a disarming
 							WP_SaberLose(genemy, throw_dir);
+
 							if (win_anim != -1)
 							{
-								PM_SetAnim(pm, SETANIM_BOTH, win_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								PM_SetAnim(pm, SETANIM_BOTH, win_anim,
+									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 								pm->ps->weaponTime = pm->ps->torsoAnimTimer;
 								pm->ps->saber_move = win_move;
 								pm->ps->saberBlocked = BLOCKED_NONE;
@@ -16889,32 +16947,35 @@ static saber_moveName_t PM_PickAutoKick(const gentity_t* enemy)
 	return G_PickAutoKick(pm->gent, enemy, qfalse);
 }
 
+#ifdef _MSC_VER
+__declspec(noinline)
+#else
+__attribute__((noinline))
+#endif
 saber_moveName_t g_pick_auto_multi_kick(gentity_t* self, const qboolean allow_singles, const qboolean store_move)
 {
-	gentity_t* entity_list[MAX_GENTITIES];
-	vec3_t mins{}, maxs{};
-	const int radius = self->maxs[0] * 1.5f + self->maxs[0] * 1.5f + STAFF_KICK_RANGE + 24.0f;
-	//a little wide on purpose
-	vec3_t center;
-	saber_moveName_t kick_move, best_kick = LS_NONE;
-	gentity_t* best_ent = nullptr;
-	int enemies_front = 0;
-	int enemies_back = 0;
-	int enemies_right = 0;
-	int enemies_left = 0;
-	int enemies_spin = 0;
+	// Static to avoid 4–8 KB stack allocation
+	static gentity_t* entity_list[MAX_GENTITIES];
 
 	if (!self || !self->client)
 	{
 		return LS_NONE;
 	}
-	if (PM_SaberInMassiveBounce(self->client->ps.torsoAnim) || PM_SaberInBashedAnim(self->client->ps.torsoAnim))
+
+	if (PM_SaberInMassiveBounce(self->client->ps.torsoAnim) ||
+		PM_SaberInBashedAnim(self->client->ps.torsoAnim))
 	{
 		return LS_NONE;
 	}
 
+	vec3_t center;
 	VectorCopy(self->currentOrigin, center);
 
+	const float half_width = self->maxs[0] * 1.5f;
+	const float radius = half_width + half_width + STAFF_KICK_RANGE + 24.0f;
+	const float radius_sq = radius * radius;
+
+	vec3_t mins, maxs;
 	for (int i = 0; i < 3; i++)
 	{
 		mins[i] = center[i] - radius;
@@ -16923,38 +16984,64 @@ saber_moveName_t g_pick_auto_multi_kick(gentity_t* self, const qboolean allow_si
 
 	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
+	saber_moveName_t best_kick = LS_NONE;
+	gentity_t* best_ent = nullptr;
+	float            best_dist_to_ent = Q3_INFINITE;
+
+	int enemies_front = 0;
+	int enemies_back = 0;
+	int enemies_right = 0;
+	int enemies_left = 0;
+	int enemies_spin = 0;
+
 	for (int e = 0; e < num_listed_entities; e++)
 	{
 		gentity_t* ent = entity_list[e];
-
-		if (ent == self)
-			continue;
-		if (ent->owner == self)
-			continue;
-		if (!ent->inuse)
-			continue;
-		//not a client?
-		if (!ent->client)
-			continue;
-		//ally?
-		if (ent->client->playerTeam == self->client->playerTeam)
-			continue;
-		//dead?
-		if (ent->health <= 0)
-			continue;
-		//too far?
-		const float dist_to_ent = DistanceSquared(ent->currentOrigin, center);
-		if (dist_to_ent > radius * radius)
-			continue;
-		kick_move = G_PickAutoKick(self, ent, qfalse);
-
-		if (kick_move == LS_KICK_F_AIR
-			|| kick_move == LS_FLYING_KICK
-			|| kick_move == LS_KICK_B_AIR
-			|| kick_move == LS_KICK_R_AIR
-			|| kick_move == LS_KICK_L_AIR)
+		if (!ent || ent == self)
 		{
-			//in air?  Can't do multikicks
+			continue;
+		}
+
+		if (ent->owner == self)
+		{
+			continue;
+		}
+
+		if (!ent->inuse)
+		{
+			continue;
+		}
+
+		if (!ent->client)
+		{
+			continue;
+		}
+
+		if (ent->client->playerTeam == self->client->playerTeam)
+		{
+			continue;
+		}
+
+		if (ent->health <= 0)
+		{
+			continue;
+		}
+
+		const float dist_to_ent = DistanceSquared(ent->currentOrigin, center);
+		if (dist_to_ent > radius_sq)
+		{
+			continue;
+		}
+
+		saber_moveName_t kick_move = G_PickAutoKick(self, ent, qfalse);
+
+		if (kick_move == LS_KICK_F_AIR ||
+			kick_move == LS_FLYING_KICK ||
+			kick_move == LS_KICK_B_AIR ||
+			kick_move == LS_KICK_R_AIR ||
+			kick_move == LS_KICK_L_AIR)
+		{
+			// Can't do multikicks in air
 		}
 		else
 		{
@@ -16964,108 +17051,81 @@ saber_moveName_t g_pick_auto_multi_kick(gentity_t* self, const qboolean allow_si
 			case LS_KICK_F_MD:
 				enemies_front++;
 				break;
+
 			case LS_KICK_B:
 			case LS_KICK_SWEEP:
 				enemies_back++;
 				break;
+
 			case LS_KICK_R:
 				enemies_right++;
 				break;
+
 			case LS_KICK_L:
 				enemies_left++;
 				break;
+
 			default:
-				enemies_spin++;
+				if (kick_move != LS_NONE)
+				{
+					enemies_spin++;
+				}
 				break;
 			}
 		}
-		if (allow_singles)
+
+		// Corrected: pick the closest valid single‑kick target
+		if (allow_singles && kick_move != LS_NONE)
 		{
-			constexpr float best_dist_to_ent = Q3_INFINITE;
-			if (kick_move != LS_NONE
-				&& dist_to_ent < best_dist_to_ent)
+			if (dist_to_ent < best_dist_to_ent)
 			{
+				best_dist_to_ent = dist_to_ent;
 				best_kick = kick_move;
 				best_ent = ent;
 			}
 		}
 	}
-	kick_move = LS_NONE;
+
+	saber_moveName_t kick_move = LS_NONE;
 
 	if (self->client->ps.groundEntityNum != ENTITYNUM_NONE)
 	{
-		//can't do the multikicks in air
-		if (enemies_front && enemies_back
-			&& enemies_front + enemies_back - (enemies_right + enemies_left) > 1)
+		if (enemies_front && enemies_back &&
+			enemies_front + enemies_back - (enemies_right + enemies_left) > 1)
 		{
-			//more enemies in front/back than left/right
-			if (self->client->NPC_class == CLASS_VADER)
-			{
-				kick_move = LS_KICK_F;
-			}
-			else
-			{
-				kick_move = LS_KICK_BF;
-			}
+			kick_move = (self->client->NPC_class == CLASS_VADER) ? LS_KICK_F : LS_KICK_BF;
 		}
-		else if (enemies_right && enemies_left
-			&& enemies_right + enemies_left - (enemies_front + enemies_back) > 1)
+		else if (enemies_right && enemies_left &&
+			enemies_right + enemies_left - (enemies_front + enemies_back) > 1)
 		{
-			//more enemies on left & right than front/back
-			if (self->client->NPC_class == CLASS_VADER)
-			{
-				kick_move = LS_KICK_R;
-			}
-			else
-			{
-				kick_move = LS_KICK_RL;
-			}
+			kick_move = (self->client->NPC_class == CLASS_VADER) ? LS_KICK_R : LS_KICK_RL;
 		}
 		else if ((enemies_front || enemies_back) && (enemies_right || enemies_left))
 		{
-			//at least 2 enemies around us, not aligned
-			if (self->client->NPC_class == CLASS_VADER)
-			{
-				kick_move = LS_KICK_SWEEP;
-			}
-			else
-			{
-				kick_move = LS_KICK_S;
-			}
+			kick_move = (self->client->NPC_class == CLASS_VADER) ? LS_KICK_SWEEP : LS_KICK_S;
 		}
 		else if (enemies_spin > 1)
 		{
-			//at least 2 enemies around us, not aligned
-			if (self->client->NPC_class == CLASS_VADER)
-			{
-				kick_move = LS_KICK_SWEEP;
-			}
-			else
-			{
-				kick_move = LS_KICK_S;
-			}
+			kick_move = (self->client->NPC_class == CLASS_VADER) ? LS_KICK_SWEEP : LS_KICK_S;
 		}
 	}
-	if (kick_move == LS_NONE
-		&& best_kick != LS_NONE)
+
+	if (kick_move == LS_NONE && best_kick != LS_NONE)
 	{
-		//no good multi-kick move, but we do have a nice single-kick we found
 		kick_move = best_kick;
-		//get mad at him so he knows he's being targetted
-		if ((self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self))
-			&& best_ent != nullptr)
+
+		if ((self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)) &&
+			best_ent != nullptr)
 		{
-			//player
 			G_SetEnemy(self, best_ent);
 		}
 	}
-	if (kick_move != LS_NONE)
+
+	if (kick_move != LS_NONE && store_move)
 	{
-		if (store_move)
-		{
-			self->client->ps.saberMoveNext = kick_move;
-		}
+		self->client->ps.saberMoveNext = kick_move;
 	}
+
 	return kick_move;
 }
 
@@ -19727,24 +19787,28 @@ static void PM_WeaponLightsaber()
 
 	qboolean saber_in_air = qtrue;
 
-	if (!PM_SaberInBrokenParry(pm->ps->saber_move) && pm->ps->saberBlocked != BLOCKED_PARRY_BROKEN && !PM_DodgeAnim(
-		pm->ps->torsoAnim) &&
-		pm->ps->weaponstate != WEAPON_CHARGING_ALT && pm->ps->weaponstate != WEAPON_CHARGING)
+	if (!PM_SaberInBrokenParry(pm->ps->saber_move) &&
+		pm->ps->saberBlocked != BLOCKED_PARRY_BROKEN &&
+		!PM_DodgeAnim(pm->ps->torsoAnim) &&
+		pm->ps->weaponstate != WEAPON_CHARGING_ALT &&
+		pm->ps->weaponstate != WEAPON_CHARGING)
 	{
-		//we're not stuck in a broken parry
 		if (pm->ps->saberInFlight)
 		{
-			//guiding saber
-			if (pm->ps->saberEntityNum < ENTITYNUM_NONE && pm->ps->saberEntityNum > 0) //player is 0
+			int entNum = pm->ps->saberEntityNum;
+
+			// Valid entity index (avoid world entity and invalid slots)
+			if (entNum > 0 && entNum < ENTITYNUM_WORLD)
 			{
-				//
-				if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.
-					trType == TR_STATIONARY)
+				gentity_t* saberEnt = &g_entities[entNum];
+
+				// Ensure the slot is actually in use
+				if (saberEnt->inuse && saberEnt->s.pos.trType == TR_STATIONARY)
 				{
-					//fell to the ground and we're not trying to pull it back
 					saber_in_air = qfalse;
 				}
 			}
+
 			if (pm->ps->weaponTime <= 0 || pm->ps->weaponstate != WEAPON_FIRING)
 			{
 				if (pm->ps->weapon != pm->cmd.weapon)
@@ -19752,17 +19816,16 @@ static void PM_WeaponLightsaber()
 					PM_BeginWeaponChange(pm->cmd.weapon);
 				}
 			}
-			else if (pm->ps->weapon == WP_SABER
-				&& (!pm->ps->dualSabers || !pm->ps->saber[1].Active()))
+			else if (pm->ps->weapon == WP_SABER &&
+				(!pm->ps->dualSabers || !pm->ps->saber[1].Active()))
 			{
-				//guiding saber
 				if (saber_in_air)
 				{
 					if (!PM_ForceAnim(pm->ps->torsoAnim) || pm->ps->torsoAnimTimer < 300)
 					{
-						//don't interrupt a force power anim
-						if (pm->ps->torsoAnim != BOTH_LOSE_SABER && !PM_SaberInMassiveBounce(pm->ps->torsoAnim)
-							|| !pm->ps->torsoAnimTimer)
+						if (pm->ps->torsoAnim != BOTH_LOSE_SABER &&
+							!PM_SaberInMassiveBounce(pm->ps->torsoAnim) ||
+							!pm->ps->torsoAnimTimer)
 						{
 							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL,
 								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -19969,22 +20032,24 @@ static void PM_WeaponLightsaber()
 		else
 		{
 			qboolean in_air = qtrue;
+
 			if (pm->ps->saberInFlight)
 			{
-				//guiding saber
-				if (PM_SaberInBrokenParry(pm->ps->saber_move) || pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
+				if (PM_SaberInBrokenParry(pm->ps->saber_move) ||
+					pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
 					PM_DodgeAnim(pm->ps->torsoAnim))
 				{
-					//we're stuck in a broken parry
 					in_air = qfalse;
 				}
-				if (pm->ps->saberEntityNum < ENTITYNUM_NONE && pm->ps->saberEntityNum > 0) //player is 0
+
+				int entNum = pm->ps->saberEntityNum;
+
+				if (entNum > 0 && entNum < ENTITYNUM_WORLD)
 				{
-					//
-					if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.
-						trType == TR_STATIONARY)
+					gentity_t* saberEnt = &g_entities[entNum];
+
+					if (saberEnt->inuse && saberEnt->s.pos.trType == TR_STATIONARY)
 					{
-						//fell to the ground and we're not trying to pull it back
 						in_air = qfalse;
 					}
 				}
@@ -20299,19 +20364,21 @@ static void PM_WeaponLightsaber()
 
 		if (pm->ps->saberInFlight)
 		{
-			//guiding saber
-			if (PM_SaberInBrokenParry(pm->ps->saber_move) || pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
+			if (PM_SaberInBrokenParry(pm->ps->saber_move) ||
+				pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
 				PM_DodgeAnim(pm->ps->torsoAnim))
 			{
-				//we're stuck in a broken parry
 				in_air = qfalse;
 			}
-			if (pm->ps->saberEntityNum < ENTITYNUM_NONE && pm->ps->saberEntityNum > 0)
+
+			int entNum = pm->ps->saberEntityNum;
+
+			if (entNum > 0 && entNum < ENTITYNUM_WORLD)
 			{
-				if (&g_entities[pm->ps->saberEntityNum] != nullptr && g_entities[pm->ps->saberEntityNum].s.pos.
-					trType == TR_STATIONARY)
+				gentity_t* saberEnt = &g_entities[entNum];
+
+				if (saberEnt->inuse && saberEnt->s.pos.trType == TR_STATIONARY)
 				{
-					//fell to the ground and we're not trying to pull it back
 					in_air = qfalse;
 				}
 			}
@@ -20443,11 +20510,27 @@ static void PM_WeaponLightsaber()
 					{
 						newmove = PM_SaberAttackForMovement(pm->cmd.forwardmove, pm->cmd.rightmove, curmove);
 
-						if ((PM_SaberInBounce(curmove) || PM_SaberInBrokenParry(curmove))
-							&& saber_moveData[newmove].startQuad == saber_moveData[curmove].endQuad)
+						if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_TEN)
 						{
-							//this attack would be a repeat of the last (which was blocked), so don't actually use it, use the default chain attack for this bounce
-							newmove = saber_moveData[curmove].chain_attack;
+							if ((PM_SaberInBounce(curmove) || PM_SaberInBrokenParry(curmove))
+								&& saber_moveData[newmove].startQuad == saber_moveData[curmove].endQuad)
+							{
+								//this attack would be a repeat of the last (which was blocked), so don't actually use it, use the default chain attack for this bounce
+								newmove = saber_moveData[curmove].chain_attack;
+							}
+						}
+						else
+						{
+							if ((PM_SaberInBounce(curmove) || PM_SaberInParry(curmove))
+								&& newmove >= LS_A_TL2BR && newmove <= LS_A_T2B)
+							{
+								//prevent similar attack directions to prevent lightning-like bounce attacks.
+								if (saber_moveData[newmove].startQuad == saber_moveData[curmove].endQuad)
+								{
+									//can't attack in the same direction
+									newmove = LS_READY;
+								}
+							}
 						}
 					}
 
@@ -21542,45 +21625,49 @@ static void PM_Weapon()
 
 	if (!delayed_fire)
 	{
-		//didn't just finish a fire delay
 		if (PM_DoChargedWeapons())
 		{
-			// In some cases the charged weapon code may want us to short circuit the rest of the firing code
-			return;
-		}
-		if (!pm->gent->client->fireDelay //not already waiting to fire
-			&& (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) //player
-			&& pm->ps->weapon == WP_THERMAL //holding thermal
-			&& pm->gent //gent
-			&& pm->gent->client //client
-			&& pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK)) //holding fire
-		{
-			//delay the actual firing of the missile until the anim has played some
-			if (PM_StandingAnim(pm->ps->legsAnim) || pm->ps->legsAnim == BOTH_THERMAL_READY)
-			{
-				PM_SetAnim(pm, SETANIM_LEGS, BOTH_THERMAL_THROW, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-			}
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_THERMAL_THROW,
-				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
-			pm->gent->client->fireDelay = 300;
-			pm->ps->weaponstate = WEAPON_FIRING;
-			pm->gent->alt_fire = static_cast<qboolean>(pm->cmd.buttons & BUTTON_ALT_ATTACK);
 			return;
 		}
 
-		if (!pm->gent->client->fireDelay //not already waiting to fire
-			&& (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) //player
-			&& PM_WeponFatiguedAnim(pm->gent->client->ps.torsoAnim)
-			&& PM_IsFatiguedGunner()
-			&& pm->gent //gent
-			&& pm->gent->client //client
-			&& pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK)) //holding fire
+		// Fully guarded block
+		if (pm->gent && pm->gent->client)
 		{
-			//delay the actual firing of the missile until the anim has played some
-			pm->gent->client->fireDelay = 200;
-			pm->ps->weaponstate = WEAPON_FIRING;
-			pm->gent->alt_fire = static_cast<qboolean>(pm->cmd.buttons & BUTTON_ALT_ATTACK);
-			return;
+			const qboolean is_player = (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
+
+			// Thermal grenade delayed throw
+			if (!pm->gent->client->fireDelay
+				&& is_player
+				&& pm->ps->weapon == WP_THERMAL
+				&& (pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK)))
+			{
+				if (PM_StandingAnim(pm->ps->legsAnim) || pm->ps->legsAnim == BOTH_THERMAL_READY)
+				{
+					PM_SetAnim(pm, SETANIM_LEGS, BOTH_THERMAL_THROW,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+
+				PM_SetAnim(pm, SETANIM_TORSO, BOTH_THERMAL_THROW,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+
+				pm->gent->client->fireDelay = 300;
+				pm->ps->weaponstate = WEAPON_FIRING;
+				pm->gent->alt_fire = (qboolean)(pm->cmd.buttons & BUTTON_ALT_ATTACK);
+				return;
+			}
+
+			// Fatigued gunner delayed fire
+			if (!pm->gent->client->fireDelay
+				&& is_player
+				&& PM_WeponFatiguedAnim(pm->gent->client->ps.torsoAnim)
+				&& PM_IsFatiguedGunner()
+				&& (pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK)))
+			{
+				pm->gent->client->fireDelay = 200;
+				pm->ps->weaponstate = WEAPON_FIRING;
+				pm->gent->alt_fire = (qboolean)(pm->cmd.buttons & BUTTON_ALT_ATTACK);
+				return;
+			}
 		}
 	}
 
@@ -21588,24 +21675,21 @@ static void PM_Weapon()
 	{
 		if (pm->ps->weapon == WP_MELEE && (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()))
 		{
-			//melee
+			// melee
 			if ((pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK)) != (BUTTON_ATTACK | BUTTON_ALT_ATTACK))
 			{
-				//not holding both buttons
-				if (pm->cmd.buttons & BUTTON_ATTACK && pm->ps->pm_flags & PMF_ATTACK_HELD)
+				// not holding both buttons
+				if ((pm->cmd.buttons & BUTTON_ATTACK) && (pm->ps->pm_flags & PMF_ATTACK_HELD))
 				{
-					//held button
-					//clear it
 					pm->cmd.buttons &= ~BUTTON_ATTACK;
 				}
-				if (pm->cmd.buttons & BUTTON_ALT_ATTACK && pm->ps->pm_flags & PMF_ALT_ATTACK_HELD)
+				if ((pm->cmd.buttons & BUTTON_ALT_ATTACK) && (pm->ps->pm_flags & PMF_ALT_ATTACK_HELD))
 				{
-					//held button
-					//clear it
 					pm->cmd.buttons &= ~BUTTON_ALT_ATTACK;
 				}
 			}
 		}
+
 		// check for fire
 		if (!(pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK)))
 		{
@@ -21613,7 +21697,6 @@ static void PM_Weapon()
 
 			if (pm->gent && pm->gent->client && pm->gent->client->fireDelay > 0)
 			{
-				//Still firing
 				pm->ps->weaponstate = WEAPON_FIRING;
 			}
 			else if (pm->ps->weaponstate != WEAPON_READY)
@@ -21628,20 +21711,23 @@ static void PM_Weapon()
 				&& (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer())
 				&& PM_KickMove(pm->ps->saber_move))
 			{
-				//melee, not attacking, clear move
 				pm->ps->saber_move = LS_NONE;
 			}
 			return;
 		}
 
-		if (pm->gent->s.m_iVehicleNum != 0 || pm->ps->weaponfiredelaytime > level.time ||
+		// ---- FIXED VEHICLE / FAIL ANIM GATE ----
+		const qboolean on_vehicle = (pm->gent && pm->gent->s.m_iVehicleNum != 0) ? qtrue : qfalse;
+
+		if (on_vehicle ||
+			pm->ps->weaponfiredelaytime > level.time ||
 			pm->ps->torsoAnim == BOTH_PISTOLFAIL ||
 			pm->ps->torsoAnim == BOTH_RIFLEFAIL ||
 			pm->ps->torsoAnim == BOTH_ROCKETFAIL ||
 			pm->ps->torsoAnim == BOTH_2PISTOLFAIL ||
 			pm->ps->torsoAnim == BOTH_RELOAD_FAIL_MINIGUN)
 		{
-			// No Anims if on Veh
+			// No anims if on vehicle / in fail anims
 		}
 		// start the animation even if out of ammo
 		else if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_ROCKETTROOPER)
@@ -21659,8 +21745,6 @@ static void PM_Weapon()
 		}
 		else if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_HAZARD_TROOPER)
 		{
-			// Kneel attack
-			//--------------
 			if (pm->cmd.upmove == -127)
 			{
 				PM_SetAnim(pm, SETANIM_TORSO, BOTH_KNEELATTACK,
@@ -21671,21 +21755,14 @@ static void PM_Weapon()
 				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK1,
 					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 			}
-
-			// Standing attack
-			//-----------------
 		}
 		else if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_ASSASSIN_DROID)
 		{
-			// Crouched Attack
 			if (PM_CrouchAnim(pm->gent->client->ps.legsAnim))
 			{
 				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2,
 					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLDLESS);
 			}
-
-			// Standing Attack
-			//-----------------
 			else
 			{
 				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
@@ -21694,26 +21771,22 @@ static void PM_Weapon()
 		}
 		else if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_DROIDEKA)
 		{
-			// Crouched Attack
 			if (PM_CrouchAnim(pm->gent->client->ps.legsAnim))
 			{
 				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK1,
 					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLDLESS);
 			}
-
-			// Standing Attack
-			//-----------------
 			else
 			{
-				if (pm->gent && pm->gent->weaponModel[1] > 0)
+				if (pm->gent->weaponModel[1] > 0)
 				{
-					//dual pistols
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
-					//single pistol
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 			}
 		}
@@ -23411,12 +23484,11 @@ void Pmove(pmove_t* pmove)
 	}
 	else if (pml.walking)
 	{
-		// walking on ground
 		vec3_t old_org;
-
 		VectorCopy(pm->ps->origin, old_org);
 
-		if (pm->gent->client->NPC_class == CLASS_BOC)
+		// Guard the BOC logic properly
+		if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_BOC)
 		{
 			if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
 			{
@@ -23465,6 +23537,7 @@ void Pmove(pmove_t* pmove)
 
 		float thresh_hold = 0.001f;
 		const float moved_dist = DistanceSquared(old_org, pm->ps->origin);
+
 		if (PM_StandingAnim(pm->ps->legsAnim) || pm->ps->legsAnim == BOTH_CROUCH1)
 		{
 			thresh_hold = 0.005f;
@@ -23472,24 +23545,21 @@ void Pmove(pmove_t* pmove)
 
 		if (moved_dist < thresh_hold)
 		{
-			//didn't move, play no legs anim
-			//	pm->cmd.forwardmove = pm->cmd.rightmove = 0;
+			// didn't move
 		}
 	}
 	else
 	{
-		if (pm->ps->gravity <= 0)
+		// airborne or flying
+		if (pm->ps && pm->ps->gravity <= 0)
 		{
 			PM_FlyMove();
 		}
 		else
 		{
-			// airborne
 			PM_AirMove();
 		}
 	}
-
-	//PM_Animate();
 
 	// If we didn't move at all, then why bother doing this again -MW.
 	if (!VectorCompare(pm->ps->origin, pml.previous_origin))

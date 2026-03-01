@@ -575,25 +575,18 @@ constexpr auto MAX_G2_COLLISIONS = 32;
 // a trace is returned when a box is swept through the world
 using trace_t = struct
 {
-	qboolean allsolid; // if true, plane is not valid
-	qboolean startsolid; // if true, the initial point was in a solid area
-	float fraction; // time completed, 1.0 = didn't hit anything
-	vec3_t endpos; // final position
-	cplane_t plane; // surface normal at impact, transformed to world space
-	int surfaceFlags; // surface hit
-	int contents; // contents on other side of surface hit
-	int entityNum; // entity the contacted surface is a part of
-	/*
-	Ghoul2 Insert Start
-	*/
-	CCollisionRecord G2CollisionMap[MAX_G2_COLLISIONS];
-	// map that describes all of the parts of ghoul2 models that got hit
-	/*
-	Ghoul2 Insert End
-	*/
+	qboolean allsolid = qfalse;
+	qboolean startsolid = qfalse;
+	float fraction = 1.0f;
+	vec3_t endpos = { 0.0f, 0.0f, 0.0f };
+	cplane_t plane{};            // value‑initialize
+	int surfaceFlags = 0;
+	int contents = 0;
+	int entityNum = -1;
 
-	void sg_export(
-		ojk::SavedGameHelper& saved_game) const
+	CCollisionRecord G2CollisionMap[MAX_G2_COLLISIONS]{}; // zero‑init array
+
+	void sg_export(ojk::SavedGameHelper& saved_game) const
 	{
 		saved_game.write<int8_t>(allsolid);
 		saved_game.write<int8_t>(startsolid);
@@ -606,8 +599,7 @@ using trace_t = struct
 		saved_game.write<>(G2CollisionMap);
 	}
 
-	void sg_import(
-		ojk::SavedGameHelper& saved_game)
+	void sg_import(ojk::SavedGameHelper& saved_game)
 	{
 		saved_game.read<int8_t>(allsolid);
 		saved_game.read<int8_t>(startsolid);

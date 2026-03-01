@@ -2189,7 +2189,7 @@ qboolean G2API_SetNewOrigin(CGhoul2Info* ghlInfo, const int bolt_index)
 	if (G2_SetupModelPointers(ghlInfo))
 	{
 		// check for valid boltIndex before applying new origin
- 		if (bolt_index >= 0 && bolt_index < (int)ghlInfo->mBltlist.size())
+		if (bolt_index >= 0 && bolt_index < (int)ghlInfo->mBltlist.size())
 		{
 			ghlInfo->mNewOrigin = bolt_index;
 			ghlInfo->mFlags |= GHOUL2_NEWORIGIN;

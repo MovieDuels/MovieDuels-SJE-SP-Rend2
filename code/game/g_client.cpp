@@ -32,6 +32,27 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "objectives.h"
 #include "b_local.h"
 #include <cstdio>
+#include <cgame\cg_camera.h>
+#include <string>
+#include "b_public.h"
+#include <cassert>
+#include <string.h>
+#include "g_items.h"
+#include "g_public.h"
+#include <qcommon\q_string.h>
+#include <qcommon\q_color.h>
+#include "ghoul2_shared.h"
+#include <cstdlib>
+#include "surfaceflags.h"
+#include "statindex.h"
+#include "g_shared.h"
+#include "weapons.h"
+#include "bg_public.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_math.h>
+#include <cmath>
+#include "teams.h"
 
 extern int WP_SaberInitBladeData(gentity_t* ent);
 extern void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, int bolt_num, int weapon_num);
@@ -260,7 +281,7 @@ SpotWouldTelefrag
 */
 qboolean SpotWouldTelefrag(const gentity_t* spot, const team_t checkteam)
 {
-	gentity_t* touch[MAX_GENTITIES];
+	static gentity_t* touch[MAX_GENTITIES];
 	vec3_t mins, maxs;
 
 	// If we have a mins, use that instead of the hardcoded bounding box
@@ -1047,9 +1068,10 @@ static void G_SetSkin(gentity_t* ent)
 }
 
 extern cvar_t* g_DebugSaberCombat;
+
 qboolean g_standard_humanoid(gentity_t* self)
 {
-	if (!self || !self->ghoul2.size())
+	if (!self || !self->ghoul2.IsValid() || self->ghoul2.size() == 0)
 		return qfalse;
 
 	if (self->playerModel < 0 || self->playerModel >= self->ghoul2.size())
@@ -1073,7 +1095,7 @@ qboolean g_standard_humanoid(gentity_t* self)
 	static const char* humanoid_prefixes[] =
 	{
 		"models/players/_humanoid",
-		"models/players/JK2anims/",
+		"models/players/JK2anims",
 		"models/players/_humanoid_ani",
 		"models/players/_humanoid_bdroid",
 		"models/players/_humanoid_ben",
@@ -1085,18 +1107,18 @@ qboolean g_standard_humanoid(gentity_t* self)
 		"models/players/_humanoid_galen",
 		"models/players/_humanoid_gon",
 		"models/players/_humanoid_grievous",
-		"models/players/_humanoid_jabba",   // ⭐ Added
+		"models/players/_humanoid_jabba",
 		"models/players/_humanoid_jango",
 		"models/players/_humanoid_kotor",
 		"models/players/_humanoid_luke",
 		"models/players/_humanoid_mace",
 		"models/players/_humanoid_maul",
 		"models/players/_humanoid_md",
-		"models/players/_humanoid_melee",  // ⭐ Added
+		"models/players/_humanoid_melee",
 		"models/players/_humanoid_obi",
 		"models/players/_humanoid_obi3",
 		"models/players/_humanoid_pal",
-		"models/players/_humanoid_reb",    // ⭐ Added
+		"models/players/_humanoid_reb",
 		"models/players/_humanoid_ren",
 		"models/players/_humanoid_rey",
 		"models/players/_humanoid_sbd",
@@ -1107,14 +1129,16 @@ qboolean g_standard_humanoid(gentity_t* self)
 	// Exact matches that count as humanoid
 	static const char* humanoid_exact[] =
 	{
-		"models/players/protocol/protocol",            // ⭐ Added
-		"models/players/assassin_droid/model",         // ⭐ Added
-		"models/players/saber_droid/model",            // ⭐ Added
-		"models/players/hazardtrooper/hazardtrooper",  // ⭐ Added
-		"models/players/rockettrooper/rockettrooper",  // ⭐ Added
-		"models/players/wampa/wampa",                  // ⭐ Added
-		"models/players/galak_mech/galak_mech",        // ⭐ Added
-		"models/players/droideka/droideka"             // ⭐ Added
+		"models/players/protocol/protocol",
+		"models/players/assassin_droid/model",
+		"models/players/assassin_droid/assassin_droid",
+		"models/players/saber_droid/model",
+		"models/players/saber_droid/saber_droid",
+		"models/players/hazardtrooper/hazardtrooper",
+		"models/players/rockettrooper/rockettrooper",
+		"models/players/wampa/wampa",
+		"models/players/galak_mech/galak_mech",
+		"models/players/droideka/droideka"
 	};
 
 	// Check prefixes
@@ -1170,18 +1194,18 @@ qboolean G_StandardHumanoid(const char* gla_name)
 		"_humanoid_galen",
 		"_humanoid_gon",
 		"_humanoid_grievous",
-		"_humanoid_jabba",   // ⭐ Added
+		"_humanoid_jabba",
 		"_humanoid_jango",
 		"_humanoid_kotor",
 		"_humanoid_luke",
 		"_humanoid_mace",
 		"_humanoid_maul",
 		"_humanoid_md",
-		"_humanoid_melee",   // ⭐ Added
+		"_humanoid_melee",
 		"_humanoid_obi",
 		"_humanoid_obi3",
 		"_humanoid_pal",
-		"_humanoid_reb",     // ⭐ Added
+		"_humanoid_reb",
 		"_humanoid_ren",
 		"_humanoid_rey",
 		"_humanoid_sbd",
@@ -1702,7 +1726,7 @@ qboolean g_set_g2_player_model_info(gentity_t* ent, const char* model_name, cons
 			//do vehicles tags
 			//vehicleInfo_t *vehicle = ent->m_pVehicle->m_pVehicleInfo;
 		}
-		else if (ent->client->NPC_class == CLASS_HOWLER)
+		else if (ent->client && ent->client->NPC_class == CLASS_HOWLER)
 		{
 		}
 		else if (!Q_stricmp("gonk", model_name) || !Q_stricmp("seeker", model_name) || !Q_stricmp("remote", model_name))
@@ -1857,7 +1881,6 @@ qboolean g_set_g2_player_model_info(gentity_t* ent, const char* model_name, cons
 			}
 		}
 		else if (ent->client->NPC_class == CLASS_RANCOR)
-			/*!Q_stricmp( "rancor", modelName )	|| !Q_stricmp( "mutant_rancor", modelName ) )*/
 		{
 			Eorientations o_up, o_rt, o_fwd;
 			//regular bones we need

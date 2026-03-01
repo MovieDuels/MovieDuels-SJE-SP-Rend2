@@ -564,9 +564,9 @@ private:
 	////////////////////////////////////////////////////////////////////////////////////
 	struct SActorOrder
 	{
-		CVec3 mPosition;
-		int mCombatPoint;
-		bool mKneelAndShoot;
+		CVec3 mPosition{};      // zero‑init vector
+		int   mCombatPoint = -1;
+		bool  mKneelAndShoot = false;
 	};
 
 	ratl::array_vs<SActorOrder, MAX_ENTS_PER_TROOP> mOrders;

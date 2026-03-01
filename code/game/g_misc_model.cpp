@@ -24,6 +24,18 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_functions.h"
 #include "bg_public.h"
 #include "../cgame/cg_local.h"
+#include "g_public.h"
+#include <qcommon\q_platform.h>
+#include <qcommon\q_shared.h>
+#include "anims.h"
+#include <string.h>
+#include <qcommon\q_math.h>
+#include "g_shared.h"
+#include "ghoul2_shared.h"
+#include "weapons.h"
+#include "surfaceflags.h"
+#include <qcommon\q_color.h>
+
 extern cvar_t* g_spskill;
 
 //
@@ -75,15 +87,6 @@ void SetMiscModelDefaults(gentity_t* ent, const useFunc_t use_func, const char* 
 	// Set a generic use function
 
 	ent->e_UseFunc = use_func;
-	/*	if (use_func == useF_health_use)
-		{
-			G_SoundIndex("sound/player/suithealth.wav");
-		}
-		else if (use_func == useF_ammo_use )
-		{
-			G_SoundIndex("sound/player/suitenergy.wav");
-		}
-	*/
 	G_SpawnInt("material", material, reinterpret_cast<int*>(&ent->material));
 
 	if (ent->health)
@@ -147,7 +150,7 @@ void CrystalAmmoSettings(gentity_t* ent)
 "health" - how much health the model has - default 60 (zero makes non-breakable)
 */
 //------------------------------------------------------------
-#include "anims.h"
+
 extern int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullptr);
 int temp_animFileIndex;
 
@@ -181,6 +184,13 @@ void set_MiscAnim(gentity_t* ent)
 void SP_misc_model_ghoul(gentity_t* ent)
 {
 #if 1
+	if (!ent || !ent->model || !ent->model[0])
+	{
+		Com_Printf(S_COLOR_RED "SP_misc_model_ghoul: missing model key\n");
+		return;
+	}
+
+	// Register model and init Ghoul2
 	ent->s.modelindex = G_ModelIndex(ent->model);
 	gi.G2API_InitGhoul2Model(ent->ghoul2, ent->model, ent->s.modelindex, NULL_HANDLE, NULL_HANDLE, 0, 0);
 	ent->s.radius = 50;
@@ -199,84 +209,27 @@ void SP_misc_model_ghoul(gentity_t* ent)
 			bHasScale = qtrue;
 		}
 	}
+
 	if (bHasScale)
 	{
-		//scale the x axis of the bbox up.
+		// scale X
 		ent->maxs[0] *= ent->s.modelScale[0];
 		ent->mins[0] *= ent->s.modelScale[0];
 
-		//scale the y axis of the bbox up.
+		// scale Y
 		ent->maxs[1] *= ent->s.modelScale[1];
 		ent->mins[1] *= ent->s.modelScale[1];
 
-		//scale the z axis of the bbox up and adjust origin accordingly
-		ent->maxs[2] *= ent->s.modelScale[2];
+		// scale Z and adjust origin
 		const float oldMins2 = ent->mins[2];
+		ent->maxs[2] *= ent->s.modelScale[2];
 		ent->mins[2] *= ent->s.modelScale[2];
 		ent->s.origin[2] += oldMins2 - ent->mins[2];
 	}
 
 	gi.linkentity(ent);
 #else
-	char name1[200] = "models/players/kyle/model.glm";
-	ent->s.modelindex = G_ModelIndex(name1);
-
-	gi.G2API_InitGhoul2Model(ent->ghoul2, name1, ent->s.modelindex);
-	ent->s.radius = 150;
-
-	// we found the model ok - load it's animation config
-	temp_animFileIndex = G_ParseAnimFileSet("_humanoid", "kyle");
-	if (temp_animFileIndex < 0)
-	{
-		Com_Printf(S_COLOR_RED"Failed to load animation file set models/players/jedi/animation.cfg\n");
-	}
-
-	ent->s.angles[0] = 0;
-	ent->s.angles[1] = 90;
-	ent->s.angles[2] = 0;
-
-	ent->s.origin[2] = 20;
-	ent->s.origin[1] = 80;
-	//	ent->s.modelScale[0] = ent->s.modelScale[1] = ent->s.modelScale[2] = 0.8f;
-
-	VectorSet(ent->mins, -16, -16, -37);
-	VectorSet(ent->maxs, 16, 16, 32);
-	//#if _DEBUG
-	//loadsavecrash
-	//	VectorCopy(ent->mins, ent->s.mins);
-	//	VectorCopy(ent->maxs, ent->s.maxs);
-	//#endif
-	ent->contents = CONTENTS_BODY;
-	ent->clipmask = MASK_NPCSOLID;
-
-	G_SetOrigin(ent, ent->s.origin);
-	VectorCopy(ent->s.angles, ent->s.apos.trBase);
-	ent->health = 1000;
-
-	//	ent->s.modelindex = G_ModelIndex( "models/weapons2/blaster_r/g2blaster_w.glm" );
-	//	gi.G2API_InitGhoul2Model(ent->ghoul2, "models/weapons2/blaster_r/g2blaster_w.glm", ent->s.modelindex);
-	//	gi.G2API_AddBolt(&ent->ghoul2[0], "*weapon");
-	//	gi.G2API_AttachG2Model(&ent->ghoul2[1],&ent->ghoul2[0], 0, 0);
-
-	gi.linkentity(ent);
-
-	animation_t* animations = level.knownAnimFileSets[temp_animFileIndex].animations;
-	int anim = BOTH_STAND3;
-	float animSpeed = 50.0f / animations[anim].frameLerp;
-	gi.G2API_SetBoneAnim(&ent->ghoul2[0], "model_root", animations[anim].firstFrame,
-		(animations[anim].numFrames - 1) + animations[anim].firstFrame,
-		BONE_ANIM_OVERRIDE_FREEZE, animSpeed, cg.time);
-
-	//	int test = gi.G2API_GetSurfaceRenderStatus(&ent->ghoul2[0], "l_hand");
-	//	gi.G2API_SetSurfaceOnOff(&ent->ghoul2[0], "l_arm",0x00000100);
-	//	test = gi.G2API_GetSurfaceRenderStatus(&ent->ghoul2[0], "l_hand");
-
-	//	gi.G2API_SetNewOrigin(&ent->ghoul2[0], gi.G2API_AddBolt(&ent->ghoul2[0], "rhang_tag_bone"));
-	//	ent->s.apos.trDelta[1] = 10;
-	//	ent->s.apos.trType = TR_LINEAR;
-
-	ent->nextthink = level.time + 1000;
-	ent->e_ThinkFunc = thinkF_set_MiscAnim;
+	// old test block...
 #endif
 }
 
