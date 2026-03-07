@@ -22,6 +22,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "bg_public.h"
 #include "b_local.h"
+#include "g_local.h"
+#include "statindex.h"
+#include "g_shared.h"
+#include <qcommon\q_math.h>
 
 constexpr auto ASSASSIN_SHIELD_SIZE = 75;
 constexpr auto TURN_ON = 0x00000000;
@@ -41,7 +45,7 @@ static bool BubbleShield_IsOn()
 void BubbleShield_TurnOn()
 {
 	if (!BubbleShield_IsOn() && !NPC->client->ps.powerups[PW_STUNNED] && TIMER_Done(NPC, "ShieldsDown"))
-	{
+	{ 
 		NPC->flags |= FL_SHIELDED;
 		NPC->client->ps.powerups[PW_GALAK_SHIELD] = Q3_INFINITE;
 		gi.G2API_SetSurfaceOnOff(&NPC->ghoul2[NPC->playerModel], "force_shield", TURN_ON);

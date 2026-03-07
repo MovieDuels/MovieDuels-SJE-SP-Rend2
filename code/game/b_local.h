@@ -29,6 +29,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "say.h"
 
 #include "ai.h"
+#include "b_public.h"
+#include <qcommon\q_math.h>
 
 #define	AI_TIMERS 0//turn on to see print-outs of AI/nav timing
 //
@@ -95,7 +97,6 @@ extern visibility_t enemyVisibility;
 
 //AI_Default
 extern qboolean NPC_CheckInvestigate(int alert_event_num);
-extern qboolean NPC_StandTrackAndShoot(gentity_t* NPC);
 extern void NPC_BSIdle();
 extern void NPC_BSPointShoot(qboolean shoot);
 extern void NPC_BSStandGuard();
@@ -108,7 +109,6 @@ extern void NPC_BSDefault();
 
 //NPC_behavior
 extern void NPC_BSAdvanceFight();
-extern void NPC_BSInvestigate();
 extern void NPC_BSSleep();
 extern void NPC_BSFollowLeader();
 extern void NPC_BSJump();
@@ -122,14 +122,13 @@ extern void G_StartFlee(gentity_t* self, gentity_t* enemy, vec3_t danger_point, 
 	int flee_time_max);
 
 //NPC_combat
-extern int ChooseBestWeapon();
 extern void NPC_ChangeWeapon(int new_weapon);
 extern void WeaponThink();
 extern qboolean HaveWeapon(int weapon);
 extern qboolean CanShoot(const gentity_t* ent, const gentity_t* shooter);
 extern void NPC_CheckPossibleEnemy(gentity_t* other, visibility_t vis);
-extern gentity_t* NPC_PickEnemy(const gentity_t* closest_to, int enemy_team, qboolean check_vis, qboolean find_players_first,
-	qboolean find_closest);
+extern gentity_t* NPC_PickEnemy(const gentity_t* closest_to, const int enemy_team, const qboolean check_vis,
+	const qboolean find_players_first, const qboolean find_closest);
 extern gentity_t* NPC_CheckEnemy(qboolean find_new, qboolean too_far_ok, qboolean set_enemy = qtrue);
 extern qboolean NPC_CheckAttack(float scale);
 extern qboolean NPC_CheckDefend(float scale);
@@ -139,24 +138,15 @@ extern qboolean EntIsGlass(const gentity_t* check);
 extern qboolean ShotThroughGlass(trace_t* tr, const gentity_t* target, vec3_t spot, int mask);
 extern void G_ClearEnemy(gentity_t* self);
 extern void G_SetEnemy(gentity_t* self, gentity_t* enemy);
-extern gentity_t* NPC_PickAlly(qboolean facing_each_other, float range, qboolean ignore_group, qboolean moving_only);
+extern gentity_t* NPC_PickAlly(const qboolean facing_each_other, const float range, const qboolean ignore_group, const qboolean moving_only);
 extern void NPC_LostEnemyDecideChase();
 extern float NPC_MaxDistSquaredForWeapon();
-extern qboolean NPC_EvaluateShot(int hit);
+extern qboolean NPC_EvaluateShot(const int hit);
 extern int NPC_ShotEntity(const gentity_t* ent, vec3_t impact_pos = nullptr);
 extern void npc_check_speak(gentity_t* speaker_npc);
 
 //NPC_formation
 extern qboolean NPC_SlideMoveToGoal();
-extern float NPC_FindClosestTeammate(gentity_t* self);
-extern void NPC_CalcClosestFormationSpot(gentity_t* self);
-//extern void G_MaintainFormations (gentity_t *self);
-extern void NPC_BSFormation();
-extern void NPC_CreateFormation(gentity_t* self);
-extern void NPC_DropFormation(gentity_t* self);
-extern void NPC_ReorderFormation(gentity_t* self);
-extern void NPC_InsertIntoFormation(gentity_t* self);
-extern void NPC_DeleteFromFormation(gentity_t* self);
 
 #define COLLISION_RADIUS 32
 #define NUM_POSITIONS 30

@@ -23,6 +23,20 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "../cgame/cg_local.h"
 #include "g_functions.h"
+#include "ai.h"
+#include "anims.h"
+#include "bg_public.h"
+#include "b_public.h"
+#include "g_local.h"
+#include "g_shared.h"
+#include "hitlocs.h"
+#include "statindex.h"
+#include "surfaceflags.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <rd-common\mdx_format.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 constexpr auto MIN_MELEE_RANGE = 320;
 #define	MIN_MELEE_RANGE_SQR			( MIN_MELEE_RANGE * MIN_MELEE_RANGE )

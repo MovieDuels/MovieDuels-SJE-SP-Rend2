@@ -21,8 +21,22 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "b_local.h"
-#include "../cgame/cg_local.h"
 #include "g_functions.h"
+#include <cmath>
+#include <cstdlib>
+#include <cgame\cg_camera.h>
+#include "bg_public.h"
+#include "b_public.h"
+#include "ghoul2_shared.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "surfaceflags.h"
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 extern void NPC_BSST_Patrol();
 extern void Boba_FireDecide();
@@ -376,41 +390,68 @@ static void Seeker_Ranged(const qboolean visible, const qboolean advance)
 //------------------------------------
 static void Seeker_Attack()
 {
-	// Always keep a good height off the ground
-	Seeker_MaintainHeight();
-
-	// Rate our distance to the target, and our visibility
-	const float distance = DistanceHorizontalSquared(NPC->currentOrigin, NPC->enemy->currentOrigin);
-	const qboolean visible = NPC_ClearLOS(NPC->enemy);
-	auto advance = static_cast<qboolean>(distance > MIN_DISTANCE_SQR);
-
-	if (NPC->client->NPC_class == CLASS_BOBAFETT
-		|| NPC->client->NPC_class == CLASS_MANDALORIAN
-		|| NPC->client->NPC_class == CLASS_JANGO
-		|| NPC->client->NPC_class == CLASS_JANGODUAL)
+	if (!NPC || !NPC->client)
 	{
-		advance = static_cast<qboolean>(distance > 200.0f * 200.0f);
+		return;
 	}
 
-	// If we cannot see our target, move to see it
+	// Must have an enemy
+	if (!NPC->enemy || !NPC->enemy->inuse)
+	{
+		return;
+	}
+
+	// Maintain hover height
+	Seeker_MaintainHeight();
+
+	// Distance to target
+	const float distance = DistanceHorizontalSquared(NPC->currentOrigin, NPC->enemy->currentOrigin);
+
+	// Visibility check
+	const qboolean visible = NPC_ClearLOS(NPC->enemy);
+
+	// Default advance logic
+	qboolean advance = (distance > MIN_DISTANCE_SQR) ? qtrue : qfalse;
+
+	// Special classes (jetpack types) keep more distance
+	if (NPC->client->NPC_class == CLASS_BOBAFETT ||
+		NPC->client->NPC_class == CLASS_MANDALORIAN ||
+		NPC->client->NPC_class == CLASS_JANGO ||
+		NPC->client->NPC_class == CLASS_JANGODUAL)
+	{
+		advance = (distance > (200.0f * 200.0f)) ? qtrue : qfalse;
+	}
+
+	// If we cannot see our target, move to get LOS
 	if (visible == qfalse)
 	{
-		if (NPCInfo->scriptFlags & SCF_CHASE_ENEMIES)
+		if (NPCInfo && (NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
 		{
 			Seeker_Hunt(visible, advance);
 			return;
 		}
 	}
 
+	// Otherwise perform ranged attack behaviour
 	Seeker_Ranged(visible, advance);
 }
 
 //------------------------------------
 static void seeker_find_enemy()
 {
-	float best_dis = SEEKER_SEEK_RADIUS * SEEKER_SEEK_RADIUS + 1;
+	if (!NPC || !NPC->client)
+	{
+		return;
+	}
+
+	float best_dis = SEEKER_SEEK_RADIUS * SEEKER_SEEK_RADIUS + 1.0f;
+
 	vec3_t mins, maxs;
-	gentity_t* entity_list[MAX_GENTITIES], * best = nullptr;
+
+	// Move large array off the stack → static storage
+	static gentity_t* entity_list[MAX_GENTITIES];
+
+	gentity_t* best = nullptr;
 
 	VectorSet(maxs, SEEKER_SEEK_RADIUS, SEEKER_SEEK_RADIUS, SEEKER_SEEK_RADIUS);
 	VectorScale(maxs, -1, mins);
@@ -420,24 +461,43 @@ static void seeker_find_enemy()
 	for (int i = 0; i < num_found; i++)
 	{
 		gentity_t* ent = entity_list[i];
-
-		if (ent->s.number == NPC->s.number || !ent->client || !ent->NPC || ent->health <= 0 || !ent->inuse)
+		if (!ent || !ent->inuse)
 		{
 			continue;
 		}
 
-		if (ent->client->playerTeam == NPC->client->playerTeam || ent->client->playerTeam == TEAM_NEUTRAL)
-			// don't attack same team or bots
+		// Skip self
+		if (ent->s.number == NPC->s.number)
 		{
 			continue;
 		}
 
-		// try to find the closest visible one
+		// Must have client + NPC data
+		if (!ent->client || !ent->NPC)
+		{
+			continue;
+		}
+
+		// Must be alive
+		if (ent->health <= 0)
+		{
+			continue;
+		}
+
+		// Skip same team or neutral
+		if (ent->client->playerTeam == NPC->client->playerTeam ||
+			ent->client->playerTeam == TEAM_NEUTRAL)
+		{
+			continue;
+		}
+
+		// Must have LOS
 		if (!NPC_ClearLOS(ent))
 		{
 			continue;
 		}
 
+		// Distance check
 		const float dis = DistanceHorizontalSquared(NPC->currentOrigin, ent->currentOrigin);
 
 		if (dis <= best_dis)
@@ -449,8 +509,8 @@ static void seeker_find_enemy()
 
 	if (best)
 	{
-		// used to offset seekers around a circle so they don't occupy the same spot.  This is not a fool-proof method.
-		NPC->random = Q_flrand(0.0f, 1.0f) * 6.3f; // roughly 2pi
+		// Offset seekers around a circle so they don't overlap
+		NPC->random = Q_flrand(0.0f, 1.0f) * 6.2831853f; // 2π
 
 		NPC->enemy = best;
 	}

@@ -24,6 +24,19 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_functions.h"
 
 #include "b_local.h"
+#include "ai.h"
+#include "anims.h"
+#include "bg_public.h"
+#include "b_public.h"
+#include "g_local.h"
+#include "g_shared.h"
+#include "hitlocs.h"
+#include "surfaceflags.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <rd-common\mdx_format.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 constexpr auto AMMO_POD_HEALTH = 1;
 constexpr auto TURN_OFF = 0x00000100;

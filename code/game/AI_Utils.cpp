@@ -28,6 +28,18 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "g_nav.h"
 #include "g_navigator.h"
+#include <string.h>
+#include "ai.h"
+#include "bg_public.h"
+#include "b_public.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 constexpr auto MAX_RADIUS_ENTS = 128;
 constexpr auto DEFAULT_RADIUS = 45;
@@ -35,6 +47,10 @@ constexpr auto DEFAULT_RADIUS = 45;
 extern cvar_t* d_noGroupAI;
 qboolean AI_ValidateGroupMember(const AIGroupInfo_t* group, const gentity_t* member);
 
+int GetTime(int lastTime)
+{
+	return level.time - lastTime;
+}
 /*
 -------------------------
 AI_GetGroupSize

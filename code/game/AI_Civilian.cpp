@@ -21,6 +21,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 #include "b_local.h"
 #include "Q3_Interface.h"
+#include "anims.h"
+#include "bstate.h"
+#include "g_local.h"
+#include "g_shared.h"
+#include "weapons.h"
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 extern qboolean NPC_CheckSurrender();
 extern void NPC_BehaviorSet_Default(int b_state);

@@ -27,6 +27,22 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_functions.h"
 #include "wp_saber.h"
 #include "g_vehicles.h"
+#include <cmath>
+#include "ai.h"
+#include "bg_public.h"
+#include "bstate.h"
+#include "b_public.h"
+#include "g_items.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "hitlocs.h"
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_string.h>
 
 extern qboolean G_CheckForStrongAttackMomentum(const gentity_t* self);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);

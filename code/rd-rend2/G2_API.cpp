@@ -902,13 +902,13 @@ qboolean G2API_SetRootSurface(CGhoul2Info_v& ghlInfo, const int modelIndex, cons
 	return qfalse;
 }
 
-int G2API_AddSurface(CGhoul2Info* ghlInfo, const int surface_number, const int poly_number, const float barycentric_i, const float barycentric_j, const int lod)
+int G2API_AddSurface(CGhoul2Info* ghlInfo, const int surfaceNumber, const int poly_number, const float barycentric_i, const float barycentric_j, const int lod)
 {
 	if (G2_SetupModelPointers(ghlInfo))
 	{
 		// ensure we flush the cache
 		ghlInfo->mMeshFrameNum = 0;
-		return G2_AddSurface(ghlInfo, surface_number, poly_number, barycentric_i, barycentric_j, lod);
+		return G2_AddSurface(ghlInfo, surfaceNumber, poly_number, barycentric_i, barycentric_j, lod);
 	}
 	return -1;
 }
@@ -1755,7 +1755,7 @@ qboolean G2API_AttachG2Model(CGhoul2Info* ghlInfo, CGhoul2Info* ghlInfoTo, int t
 		if (toBoltIndex >= 0 && ghlInfoTo->mBltlist.size())
 		{
 			// make sure we have a model to attach, a model to attach to, and a bolt on that model
-			if (((ghlInfoTo->mBltlist[toBoltIndex].boneNumber != -1) || (ghlInfoTo->mBltlist[toBoltIndex].surface_number != -1)))
+			if (((ghlInfoTo->mBltlist[toBoltIndex].boneNumber != -1) || (ghlInfoTo->mBltlist[toBoltIndex].surfaceNumber != -1)))
 			{
 				// encode the bolt address into the model bolt link
 				to_model &= MODEL_AND;
@@ -1787,27 +1787,59 @@ qboolean G2API_DetachG2Model(CGhoul2Info* ghlInfo)
 	return qfalse;
 }
 
-qboolean G2API_AttachEnt(int* boltInfo, CGhoul2Info* ghlInfoTo, int toBoltIndex, int entNum, int to_model_num)
+qboolean G2API_AttachEnt(int* boltInfo, CGhoul2Info* ghlInfoTo, int toBoltIndex, int entNum, int toModelNum)
 {
-	if (boltInfo && G2_SetupModelPointers(ghlInfoTo))
+	qboolean ret = qfalse;
+
+	G2ERROR(boltInfo, "NULL boltInfo");
+	if (!boltInfo)
 	{
-		// make sure we have a model to attach, a model to attach to, and a
-		// bolt on that model
-		if (ghlInfoTo->mBltlist.size() &&
-			((ghlInfoTo->mBltlist[toBoltIndex].boneNumber != -1) ||
-				(ghlInfoTo->mBltlist[toBoltIndex].surface_number != -1)))
-		{
-			// encode the bolt address into the model bolt link
-			to_model_num &= MODEL_AND;
-			toBoltIndex &= BOLT_AND;
-			entNum &= ENTITY_AND;
-			*boltInfo = (toBoltIndex << BOLT_SHIFT) |
-				(to_model_num << MODEL_SHIFT) |
-				(entNum << ENTITY_SHIFT);
-			return qtrue;
-		}
+		return qfalse;
 	}
-	return qfalse;
+
+	if (!ghlInfoTo || !G2_SetupModelPointers(ghlInfoTo))
+	{
+		*boltInfo = 0;
+		G2WARNING(ret, "G2API_AttachEnt Failed (no model or setup failed)");
+		return qfalse;
+	}
+
+	const int bltCount = (int)ghlInfoTo->mBltlist.size();
+
+	// validate bolt index bounds
+	if (bltCount <= 0 || toBoltIndex < 0 || toBoltIndex >= bltCount)
+	{
+		Com_Printf("G2API_AttachEnt: invalid toBoltIndex %d for model %s (num bolts %d), entNum %d\n",
+			toBoltIndex,
+			(ghlInfoTo->mFileName && ghlInfoTo->mFileName[0]) ? ghlInfoTo->mFileName : "<unknown>",
+			bltCount,
+			entNum);
+		*boltInfo = 0;
+		G2WARNING(ret, "G2API_AttachEnt Failed (invalid bolt index)");
+		return qfalse;
+	}
+
+	// safe to index now
+	const boltInfo_t& bolt = ghlInfoTo->mBltlist[toBoltIndex];
+	if (bolt.boneNumber != -1 || bolt.surfaceNumber != -1)
+	{
+		toModelNum &= MODEL_AND;
+		toBoltIndex &= BOLT_AND;
+		entNum &= ENTITY_AND;
+
+		*boltInfo = (toBoltIndex << BOLT_SHIFT) |
+			(toModelNum << MODEL_SHIFT) |
+			(entNum << ENTITY_SHIFT);
+
+		ret = qtrue;
+	}
+	else
+	{
+		*boltInfo = 0;
+	}
+
+	G2WARNING(ret, "G2API_AttachEnt Failed");
+	return ret;
 }
 
 void G2API_DetachEnt(int* boltInfo)

@@ -29,6 +29,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "cg_media.h"
 #include "../game/objectives.h"
 #include "../game/g_vehicles.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_platform.h>
+#include <bg_public.h>
+#include <qcommon\q_math.h>
+#include <g_shared.h>
+#include <string.h>
 
 extern vmCvar_t cg_debugHealthBars;
 extern vmCvar_t cg_debugBlockBars;

@@ -28,6 +28,27 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "wp_saber.h"
 #include "g_vehicles.h"
 #include "b_local.h"
+#include <string.h>
+#include <cassert>
+#include <cmath>
+#include "ai.h"
+#include "anims.h"
+#include "bg_public.h"
+#include "b_public.h"
+#include "ghoul2_shared.h"
+#include "g_items.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "statindex.h"
+#include "surfaceflags.h"
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <rd-common\mdx_format.h>
+#include <qcommon\q_color.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_string.h>
 
 constexpr auto SLOWDOWN_DIST = 128.0f;
 constexpr auto MIN_NPC_SPEED = 16.0f;
@@ -7327,151 +7348,143 @@ usually be a couple times for each server frame on fast clients.
 ==============
 */
 
+/*
+===========================
+CG_BreathPuffsVader
+===========================
+*/
 static void CG_BreathPuffsVader(const gentity_t* ent)
 {
 	gclient_t* client = ent->client;
 
+	// --- Safety + early outs ---
+	if (!client)
+	{
+		return;
+	}
+
+	// Conditions that block breathing entirely
 	if (ent->health < 1 ||
 		client->VaderBreathTime > cg.time ||
-		in_camera || g_VaderBreath->integer == 0 ||
+		in_camera == qtrue ||
+		g_VaderBreath->integer == 0 ||
 		cg_setVaderBreath.integer == 1 ||
 		cg_setVaderBreathdamaged.integer == 1)
 	{
 		return;
 	}
 
+	// Hidden entity → no breathing
 	if (ent->s.eFlags & EF_NODRAW)
 	{
 		return;
 	}
 
-	if (PM_CrouchAnim(client->ps.legsAnim) ||
-		PM_CrouchAnim(client->ps.torsoAnim) ||
-		PM_LungeAnim(client->ps.torsoAnim) ||
-		PM_RollingAnim(client->ps.legsAnim))
+	// Animations where breathing should not play
+	if (PM_CrouchAnim(client->ps.legsAnim) == qtrue ||
+		PM_CrouchAnim(client->ps.torsoAnim) == qtrue ||
+		PM_LungeAnim(client->ps.torsoAnim) == qtrue ||
+		PM_RollingAnim(client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
 
-	if (ent->client->NPC_class == CLASS_VADER)
+	// --- Vader model groups ---
+	qboolean isVaderMain = qfalse;
+	qboolean isVaderAlt = qfalse;
+
+	// Main Vader variants
+	if (!Q_stricmp(ent->NPC_type, "md_vader_ep3") ||
+		!Q_stricmp(ent->NPC_type, "md_vader_anh") ||
+		!Q_stricmp(ent->NPC_type, "md_vader_tv") ||
+		!Q_stricmp(ent->NPC_type, "md_vad_tfu") ||
+		!Q_stricmp(ent->NPC_type, "md_vad_vr") ||
+		!Q_stricmp(ent->NPC_type, "md_vader_ds") ||
+		!Q_stricmp(ent->NPC_type, "md_vader"))
 	{
-		if (ent && !Q_stricmp("md_vader_ep3", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader_anh", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader_tv", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vad_tfu", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vad_vr", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader_ds", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader", ent->NPC_type))
-		{
-			if (ent->health <= client->ps.stats[STAT_MAX_HEALTH] / 3)
-			{
-				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath3.mp3");
-			}
-			else
-			{
-				if (client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING ||
-					client->ps.PlayerEffectFlags & 1 << PEF_WEAPONSPRINTING)
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/vader_fast_breath.mp3");
-				}
-				else
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath1.mp3");
-				}
-			}
-		}
-		else if (ent && !Q_stricmp("md_vader_bw", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vad2_tfu", ent->NPC_type))
-		{
-			if (ent->health <= client->ps.stats[STAT_MAX_HEALTH] / 3)
-			{
-				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath4.mp3");
-			}
-			else
-			{
-				if (client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING ||
-					client->ps.PlayerEffectFlags & 1 << PEF_WEAPONSPRINTING)
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/vader_fast_breath.mp3");
-				}
-				else
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath3.mp3");
-				}
-			}
-		}
+		isVaderMain = qtrue;
 	}
-	else if (client->NPC_class == CLASS_DESANN)
+
+	// Alternate Vader variants
+	if (!Q_stricmp(ent->NPC_type, "md_vader_bw") ||
+		!Q_stricmp(ent->NPC_type, "md_vad2_tfu"))
 	{
-		if (ent && !Q_stricmp("md_vader_ep3", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader_tv", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader_anh", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vad_tfu", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vad_vr", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader_ds", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vader", ent->NPC_type))
+		isVaderAlt = qtrue;
+	}
+
+	// --- Breathing logic (Vader or Desann wearing Vader suit) ---
+	if (client->NPC_class == CLASS_VADER || client->NPC_class == CLASS_DESANN)
+	{
+		qboolean lowHealth = qfalse;
+		qboolean sprinting = qfalse;
+
+		// Low health threshold
+		if (ent->health <= (client->ps.stats[STAT_MAX_HEALTH] / 3))
 		{
-			if (ent->health <= client->ps.stats[STAT_MAX_HEALTH] / 3)
+			lowHealth = qtrue;
+		}
+
+		// Sprinting flags
+		if ((client->ps.PlayerEffectFlags & (1 << PEF_SPRINTING)) ||
+			(client->ps.PlayerEffectFlags & (1 << PEF_WEAPONSPRINTING)))
+		{
+			sprinting = qtrue;
+		}
+
+		// Main Vader variants
+		if (isVaderMain == qtrue)
+		{
+			if (lowHealth == qtrue)
 			{
 				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath3.mp3");
 			}
+			else if (sprinting == qtrue)
+			{
+				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/vader_fast_breath.mp3");
+			}
 			else
 			{
-				if (client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING ||
-					client->ps.PlayerEffectFlags & 1 << PEF_WEAPONSPRINTING)
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/vader_fast_breath.mp3");
-				}
-				else
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath1.mp3");
-				}
+				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath1.mp3");
 			}
 		}
-		else if (ent && !Q_stricmp("md_vader_bw", ent->NPC_type) ||
-			ent && !Q_stricmp("md_vad2_tfu", ent->NPC_type))
+		// Alternate Vader variants
+		else if (isVaderAlt == qtrue)
 		{
-			if (ent->health <= client->ps.stats[STAT_MAX_HEALTH] / 3)
+			if (lowHealth == qtrue)
 			{
 				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath4.mp3");
 			}
+			else if (sprinting == qtrue)
+			{
+				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/vader_fast_breath.mp3");
+			}
 			else
 			{
-				if (client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING ||
-					client->ps.PlayerEffectFlags & 1 << PEF_WEAPONSPRINTING)
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/vader_fast_breath.mp3");
-				}
-				else
-				{
-					G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath3.mp3");
-				}
+				G_SoundOnEnt(ent, CHAN_VOICE, "sound/chars/darthvader/breath3.mp3");
 			}
 		}
 	}
 
-	if (PM_SaberInAttack(client->ps.saber_move))
+	// --- Breath timing logic ---
+	if (PM_SaberInAttack(client->ps.saber_move) == qtrue)
 	{
-		client->VaderBreathTime = cg.time + 4000; // every 4 seconds.
+		client->VaderBreathTime = cg.time + 4000; // every 4 seconds
 	}
-	else if (in_camera)
+	else if (in_camera == qtrue)
 	{
-		client->VaderBreathTime = cg.time + 4000; // every 4 seconds.
+		client->VaderBreathTime = cg.time + 4000;
 	}
 	else if (gi.VoiceVolume[ent->s.number] > 0)
 	{
-		client->VaderBreathTime = cg.time + 10000; // every 10 seconds.
+		client->VaderBreathTime = cg.time + 10000; // every 10 seconds
+	}
+	else if (PM_RunningAnim(client->ps.legsAnim) == qtrue)
+	{
+		client->VaderBreathTime = cg.time + 3000; // every 3 seconds
 	}
 	else
 	{
-		if (PM_RunningAnim(client->ps.legsAnim))
-		{
-			client->VaderBreathTime = cg.time + 3000; // every 2 seconds.
-		}
-		else
-		{
-			client->VaderBreathTime = cg.time + 6000; // every 6 seconds.
-		}
+		client->VaderBreathTime = cg.time + 6000; // every 6 seconds
 	}
 }
 

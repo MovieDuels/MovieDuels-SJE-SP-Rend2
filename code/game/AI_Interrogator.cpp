@@ -21,7 +21,17 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "b_local.h"
-#include "g_nav.h"
+#include "bg_public.h"
+#include "g_shared.h"
+#include <qcommon\q_shared.h>
+#include "ghoul2_shared.h"
+#include <qcommon\q_math.h>
+#include <cmath>
+#include <cstdlib>
+#include "ai.h"
+#include "b_public.h"
+#include "g_local.h"
+#include <qcommon\q_platform.h>
 
 void Interrogator_Idle();
 void DeathFX(const gentity_t* ent);
@@ -141,8 +151,6 @@ Interrogator_MaintainHeight
 static void Interrogator_MaintainHeight()
 {
 	float dif;
-	//	vec3_t	endPos;
-	//	trace_t	trace;
 
 	NPC->s.loopSound = G_SoundIndex("sound/chars/interrogator/misc/torture_droid_lp");
 	// Update our angles regardless

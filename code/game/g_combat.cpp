@@ -33,6 +33,28 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_vehicles.h"
 #include "Q3_Interface.h"
 #include "g_navigator.h"
+#include <string.h>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cgame\cg_camera.h>
+#include "bg_public.h"
+#include "b_public.h"
+#include "ghoul2_shared.h"
+#include "g_items.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "hitlocs.h"
+#include "statindex.h"
+#include "surfaceflags.h"
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <rd-common\mdx_format.h>
+#include <qcommon\q_color.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_string.h>
 
 constexpr auto TURN_OFF = 0x00000100;
 
@@ -9429,7 +9451,7 @@ G_RadiusDamage
 void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage, float radius,
 	const gentity_t* ignore, const int mod)
 {
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	vec3_t mins{}, maxs{};
 	vec3_t v{};
 	vec3_t dir;
@@ -9566,16 +9588,26 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 }
 
 //Combat Reward Code
-void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, const int means_of_death)
+void AddFatigueKillBonus(const gentity_t* attacker,
+	const gentity_t* victim,
+	const int means_of_death)
 {
-	const qboolean is_holding_block_button = attacker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-
-	//get a bonus for killing an enemy
-	if (!attacker || !attacker->client || !victim || !victim->client)
+	// Validate attacker and victim
+	if (attacker == NULL ||
+		attacker->client == NULL ||
+		victim == NULL ||
+		victim->client == NULL)
 	{
 		return;
 	}
 
+	// Compute block‑button state safely
+	const qboolean is_holding_block_button =
+		((attacker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0)
+		? qtrue
+		: qfalse;
+
+	// Ignore turret/vehicle weapons
 	if (victim->s.weapon == WP_TURRET ||
 		victim->s.weapon == WP_ATST_MAIN ||
 		victim->s.weapon == WP_ATST_SIDE ||
@@ -9587,21 +9619,27 @@ void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, con
 		return;
 	}
 
-	if (means_of_death == MOD_CRUSH || means_of_death == MOD_FORCE_GRIP || means_of_death == MOD_LIGHTNING_STRIKE ||
-		means_of_death == MOD_FORCE_LIGHTNING || means_of_death == MOD_FORCE_DRAIN)
+	// Ignore non‑saber kills
+	if (means_of_death == MOD_CRUSH ||
+		means_of_death == MOD_FORCE_GRIP ||
+		means_of_death == MOD_LIGHTNING_STRIKE ||
+		means_of_death == MOD_FORCE_LIGHTNING ||
+		means_of_death == MOD_FORCE_DRAIN)
 	{
 		return;
 	}
 
-	if (!g_SerenityJediEngineMode->integer)
+	// SJE disabled
+	if (g_SerenityJediEngineMode->integer == 0)
 	{
 		return;
 	}
 
-	if (is_holding_block_button && (attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker)))
-		//DONT GET THIS BONUS IF YOUR A BLOCK SPAMMER
+	// BLOCK‑SPAMMER CHECK
+	if (is_holding_block_button == qtrue &&
+		(attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker) != 0))
 	{
-		//add bonus
+		// Reduced bonus
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
 			WP_BlockPointsRegenerate(attacker, FATIGUE_HURTBONUSMAX);
@@ -9613,7 +9651,7 @@ void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, con
 	}
 	else
 	{
-		//add bonus
+		// Full kill bonus
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
 			WP_BlockPointsRegenerate(attacker, FATIGUE_KILLBONUS);
@@ -9622,6 +9660,8 @@ void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, con
 		{
 			WP_ForcePowerRegenerate(attacker, FATIGUE_KILLBONUS);
 		}
+
+		// Reset fatigue chain if too high
 		if (attacker->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
 		{
 			attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
@@ -9629,16 +9669,26 @@ void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, con
 	}
 }
 
-void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, const int mod)
+void AddFatigueHurtBonus(const gentity_t* attacker,
+	const gentity_t* victim,
+	const int mod)
 {
-	const qboolean is_holding_block_button = attacker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-
-	//get a small bonus for killing an enemy
-	if (!attacker || !attacker->client || !victim || !victim->client)
+	// Validate attacker and victim first
+	if (attacker == NULL ||
+		attacker->client == NULL ||
+		victim == NULL ||
+		victim->client == NULL)
 	{
 		return;
 	}
 
+	// Compute block‑button state safely
+	const qboolean is_holding_block_button =
+		((attacker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0)
+		? qtrue
+		: qfalse;
+
+	// Ignore turret/vehicle weapons
 	if (victim->s.weapon == WP_TURRET ||
 		victim->s.weapon == WP_ATST_MAIN ||
 		victim->s.weapon == WP_ATST_SIDE ||
@@ -9650,36 +9700,44 @@ void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, con
 		return;
 	}
 
-	if (mod == MOD_CRUSH || mod == MOD_FORCE_GRIP || mod == MOD_LIGHTNING_STRIKE || mod == MOD_FORCE_LIGHTNING || mod ==
-		MOD_FORCE_DRAIN)
+	// Ignore non‑saber damage types
+	if (mod == MOD_CRUSH ||
+		mod == MOD_FORCE_GRIP ||
+		mod == MOD_LIGHTNING_STRIKE ||
+		mod == MOD_FORCE_LIGHTNING ||
+		mod == MOD_FORCE_DRAIN)
 	{
 		return;
 	}
 
-	if (!g_SerenityJediEngineMode->integer)
+	// SJE disabled
+	if (g_SerenityJediEngineMode->integer == 0)
 	{
 		return;
 	}
 
-	if (is_holding_block_button && (attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker)))
-		//DONT GET THIS BONUS IF YOUR A BLOCK SPAMMER
+	// BLOCK‑SPAMMER CHECK
+	if (is_holding_block_button == qtrue &&
+		(attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker) != 0))
 	{
-		//add bonus
+		// Reduced bonus
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
-			WP_BlockPointsRegenerate(attacker, FATIGUE_HURTBONUSMIN);
+			WP_BlockPointsRegenerate(attacker, FATIGUE_SMALLBONUS);
 		}
 		else
 		{
-			WP_ForcePowerRegenerate(attacker, FATIGUE_HURTBONUSMIN);
+			WP_ForcePowerRegenerate(attacker, FATIGUE_SMALLBONUS);
 		}
 	}
 	else
 	{
-		//add bonus
+		// Full hurt bonus
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
-			if (attacker->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(attacker))
+			// NPC and not player‑controlled → maximum bonus
+			if (attacker->s.number >= MAX_CLIENTS &&
+				G_ControlledByPlayer(attacker) == 0)
 			{
 				WP_BlockPointsRegenerate(attacker, FATIGUE_HURTBONUSMAX);
 			}
@@ -9692,6 +9750,8 @@ void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, con
 		{
 			WP_ForcePowerRegenerate(attacker, FATIGUE_HURTBONUS);
 		}
+
+		// Reset fatigue chain if too high
 		if (attacker->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
 		{
 			attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
@@ -9699,16 +9759,26 @@ void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, con
 	}
 }
 
-void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, const int mod)
+void AddFatigueHurtBonusMax(const gentity_t* attacker,
+	const gentity_t* victim,
+	const int mod)
 {
-	const qboolean is_holding_block_button = attacker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-
-	//get a small bonus for killing an enemy
-	if (!attacker || !attacker->client || !victim || !victim->client)
+	// Validate attacker and victim first
+	if (attacker == NULL ||
+		attacker->client == NULL ||
+		victim == NULL ||
+		victim->client == NULL)
 	{
 		return;
 	}
 
+	// Compute block‑button state safely
+	const qboolean is_holding_block_button =
+		((attacker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0)
+		? qtrue
+		: qfalse;
+
+	// Ignore turret/vehicle weapons
 	if (victim->s.weapon == WP_TURRET ||
 		victim->s.weapon == WP_ATST_MAIN ||
 		victim->s.weapon == WP_ATST_SIDE ||
@@ -9720,33 +9790,39 @@ void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, 
 		return;
 	}
 
-	if (mod == MOD_CRUSH || mod == MOD_FORCE_GRIP || mod == MOD_LIGHTNING_STRIKE || mod == MOD_FORCE_LIGHTNING || mod ==
-		MOD_FORCE_DRAIN)
+	// Ignore non‑saber damage types
+	if (mod == MOD_CRUSH ||
+		mod == MOD_FORCE_GRIP ||
+		mod == MOD_LIGHTNING_STRIKE ||
+		mod == MOD_FORCE_LIGHTNING ||
+		mod == MOD_FORCE_DRAIN)
 	{
 		return;
 	}
 
-	if (!g_SerenityJediEngineMode->integer)
+	// SJE disabled
+	if (g_SerenityJediEngineMode->integer == 0)
 	{
 		return;
 	}
 
-	if (is_holding_block_button && (attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker)))
-		//DONT GET THIS BONUS IF YOUR A BLOCK SPAMMER
+	// BLOCK‑SPAMMER CHECK
+	if (is_holding_block_button == qtrue &&
+		(attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker) != 0))
 	{
-		//add bonus
+		// Reduced bonus
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
-			WP_BlockPointsRegenerate(attacker, FATIGUE_HURTBONUSMIN);
+			WP_BlockPointsRegenerate(attacker, FATIGUE_SMALLBONUS);
 		}
 		else
 		{
-			WP_ForcePowerRegenerate(attacker, FATIGUE_HURTBONUSMIN);
+			WP_ForcePowerRegenerate(attacker, FATIGUE_SMALLBONUS);
 		}
 	}
 	else
 	{
-		//add bonus
+		// Full max hurt bonus
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
 			WP_BlockPointsRegenerate(attacker, FATIGUE_HURTBONUSMAX);
@@ -9755,6 +9831,8 @@ void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, 
 		{
 			WP_ForcePowerRegenerate(attacker, FATIGUE_HURTBONUSMAX);
 		}
+
+		// Reset fatigue chain if too high
 		if (attacker->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
 		{
 			attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
@@ -9764,12 +9842,16 @@ void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, 
 
 void AddFatigueMeleeBonus(const gentity_t* attacker, const gentity_t* victim)
 {
-	//get a small bonus for slapping an enemy
-	if (!attacker || !attacker->client || !victim || !victim->client)
+	// Validate attacker and victim
+	if (attacker == NULL ||
+		attacker->client == NULL ||
+		victim == NULL ||
+		victim->client == NULL)
 	{
 		return;
 	}
 
+	// Ignore turret/vehicle weapons
 	if (victim->s.weapon == WP_TURRET ||
 		victim->s.weapon == WP_ATST_MAIN ||
 		victim->s.weapon == WP_ATST_SIDE ||
@@ -9781,7 +9863,7 @@ void AddFatigueMeleeBonus(const gentity_t* attacker, const gentity_t* victim)
 		return;
 	}
 
-	//add bonus
+	// Apply melee bonus
 	if (g_SerenityJediEngineMode->integer == 2)
 	{
 		WP_BlockPointsRegenerate(attacker, FATIGUE_HURTBONUS);
@@ -9790,6 +9872,8 @@ void AddFatigueMeleeBonus(const gentity_t* attacker, const gentity_t* victim)
 	{
 		WP_ForcePowerRegenerate(attacker, FATIGUE_HURTBONUS);
 	}
+
+	// Reset fatigue chain if too high
 	if (attacker->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
 	{
 		attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
@@ -9798,10 +9882,10 @@ void AddFatigueMeleeBonus(const gentity_t* attacker, const gentity_t* victim)
 
 void AddNPCBlockPointBonus(const gentity_t* self)
 {
-	//get a small bonus
-	//add bonus
+	// Add block‑point bonus
 	WP_BlockPointsRegenerate(self, FATIGUE_DAMAGEBONUS);
 
+	// Reset fatigue chain if too high
 	if (self->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
 	{
 		self->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;

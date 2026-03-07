@@ -279,7 +279,7 @@ using refexport_t = struct
 	// GHOUL 2 API
 	int (*G2API_AddBolt)(CGhoul2Info* ghlInfo, const char* boneName);
 	int (*G2API_AddBoltSurfNum)(CGhoul2Info* ghlInfo, int surf_index);
-	int (*G2API_AddSurface)(CGhoul2Info* ghlInfo, int surface_number, int poly_number,
+	int (*G2API_AddSurface)(CGhoul2Info* ghlInfo, int surfaceNumber, int poly_number,
 		float barycentric_i, float barycentric_j, int lod);
 	void (*G2API_AnimateG2Models)(CGhoul2Info_v& ghoul2, int acurrent_time, CRagDollUpdateParams* params);
 	qboolean(*G2API_AttachEnt)(int* boltInfo, CGhoul2Info* ghlInfoTo, int toBoltIndex, int entNum, int to_model_num);

@@ -3023,7 +3023,7 @@ void G2_GetBoltMatrixLow(
 
 	boltInfo_t& bolt = boltList[boltNum];
 	int boltBone = bolt.boneNumber;
-	int boltSurface = bolt.surface_number;
+	int boltSurface = bolt.surfaceNumber;
 
 	if (boltBone >= 0)
 	{

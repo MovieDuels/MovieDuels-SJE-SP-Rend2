@@ -22,6 +22,19 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "b_local.h"
 #include "g_navigator.h"
+#include <cmath>
+#include "anims.h"
+#include "bg_public.h"
+#include "b_public.h"
+#include "ghoul2_shared.h"
+#include "g_local.h"
+#include "g_shared.h"
+#include "hitlocs.h"
+#include "surfaceflags.h"
+#include "teams.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 // These define the working combat range for these suckers
 constexpr auto MIN_DISTANCE = 48;
@@ -542,46 +555,85 @@ void NPC_Wampa_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* other, con
 
 void Wampa_DropVictim(gentity_t* self)
 {
+	if (!self)
+	{
+		return;
+	}
+
+	// Play drop animation if Wampa is alive
 	if (self->health > 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_STAND2TO1,
+			SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 	}
+
+	// Stop attack timer
 	TIMER_Set(self, "attacking", -level.time);
-	if (self->activator)
+
+	gentity_t* vic = self->activator;
+
+	if (vic && vic->inuse)
 	{
-		if (self->activator->client)
+		// Clear victim's "held" flag
+		if (vic->client)
 		{
-			self->activator->client->ps.eFlags &= ~EF_HELD_BY_WAMPA;
+			vic->client->ps.eFlags &= ~EF_HELD_BY_WAMPA;
 		}
-		self->activator->activator = nullptr;
-		NPC_SetAnim(self->activator, SETANIM_BOTH, BOTH_RELEASED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-		self->activator->client->ps.legsAnimTimer += 500;
-		self->activator->client->ps.weaponTime = self->activator->client->ps.torsoAnimTimer = self->activator->client->
-			ps.legsAnimTimer;
-		if (self->activator->health > 0)
+
+		// Clear reverse activator link
+		vic->activator = nullptr;
+
+		// Play victim release animation
+		if (vic->client)
 		{
-			if (self->activator->NPC)
+			NPC_SetAnim(vic, SETANIM_BOTH, BOTH_RELEASED,
+				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
+			// Extend victim animation timers safely
+			vic->client->ps.legsAnimTimer += 500;
+			vic->client->ps.weaponTime =
+				vic->client->ps.torsoAnimTimer =
+				vic->client->ps.legsAnimTimer;
+		}
+
+		if (vic->health > 0)
+		{
+			// Resume AI thinking
+			if (vic->NPC)
 			{
-				//start thinking again
-				self->activator->NPC->nextBStateThink = level.time;
+				vic->NPC->nextBStateThink = level.time;
 			}
-			if (self->activator->client && self->activator->s.number < MAX_CLIENTS)
+
+			// If victim is a player, rotate them to face away from the Wampa
+			if (vic->client && vic->s.number < MAX_CLIENTS && self->client)
 			{
-				vec3_t vic_angles = { 30, AngleNormalize180(self->client->ps.viewangles[YAW] + 180), 0 };
-				SetClientViewAngle(self->activator, vic_angles);
+				vec3_t vic_angles =
+				{
+					30.0f,
+					AngleNormalize180(self->client->ps.viewangles[YAW] + 180.0f),
+					0.0f
+				};
+				SetClientViewAngle(vic, vic_angles);
 			}
 		}
 		else
 		{
-			if (self->enemy == self->activator)
+			// Victim died while being held
+			if (self->enemy == vic)
 			{
 				self->enemy = nullptr;
 			}
-			self->activator->clipmask &= ~CONTENTS_BODY;
+
+			// Allow corpse to be walked through
+			vic->clipmask &= ~CONTENTS_BODY;
 		}
-		self->activator = nullptr;
 	}
-	self->count = 0; //drop him
+
+	// Clear activator reference
+	self->activator = nullptr;
+
+	// Reset grab count
+	self->count = 0;
 }
 
 qboolean Wampa_CheckDropVictim(gentity_t* self, const qboolean exclude_me)

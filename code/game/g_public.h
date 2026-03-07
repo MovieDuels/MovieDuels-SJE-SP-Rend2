@@ -286,7 +286,7 @@ using game_import_t = struct
 	qboolean(*G2API_SetSurfaceOnOff)(CGhoul2Info* ghlInfo, const char* surfaceName, int flags);
 	qboolean(*G2API_SetRootSurface)(CGhoul2Info_v& ghlInfo, int modelIndex, const char* surfaceName);
 	qboolean(*G2API_RemoveSurface)(CGhoul2Info* ghlInfo, int index);
-	int (*G2API_AddSurface)(CGhoul2Info* ghlInfo, int surface_number, int poly_number, float barycentric_i,
+	int (*G2API_AddSurface)(CGhoul2Info* ghlInfo, int surfaceNumber, int poly_number, float barycentric_i,
 		float barycentric_j, int lod);
 	qboolean(*G2API_GetBoneAnim)(CGhoul2Info* ghlInfo, const char* boneName, int current_time, float* current_frame,
 		int* startFrame, int* endFrame, int* flags, float* animSpeed, int* model_list);

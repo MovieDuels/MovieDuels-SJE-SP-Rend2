@@ -27,6 +27,23 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_navigator.h"
 #include "../cgame/cg_local.h"
 #include "g_nav.h"
+#include "g_vehicles.h"
+#include "teams.h"
+#include "bg_public.h"
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_shared.h>
+#include "b_public.h"
+#include <cmath>
+#include "bstate.h"
+#include "ghoul2_shared.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "weapons.h"
+#include <icarus\IcarusInterface.h>
+#include <rd-common\mdx_format.h>
+#include <qcommon\q_string.h>
 
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
 
@@ -34,7 +51,7 @@ int teamNumbers[TEAM_NUM_TEAMS];
 int teamStrength[TEAM_NUM_TEAMS];
 int teamCounter[TEAM_NUM_TEAMS];
 
-#define	VALID_ATTACK_CONE	2.0f	//Degrees
+constexpr auto VALID_ATTACK_CONE = 2.0f;	//Degrees
 void GetAnglesForDirection(const vec3_t p1, const vec3_t p2, vec3_t out);
 extern void WP_DeactivateSaber(const gentity_t* self, qboolean clear_length = qfalse);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
@@ -1160,55 +1177,87 @@ NPC_FindEnemy
 -------------------------
 */
 
-static qboolean NPC_FindEnemy(const qboolean checkAlerts = qfalse)
+extern cvar_t* com_outcast;
+static qboolean NPC_FindEnemy(const qboolean checkAlerts)
 {
-	//We're ignoring all enemies for now
+	// 0. Exclusion: STOfficer + STOfficerAlt with flechette must NOT auto-acquire player
+	qboolean isOfficerType = qfalse;
+	qboolean isOfficerWithFlechette = qfalse;
+
+	if (Q_stricmp(NPC->NPC_type, "STOfficer") == 0 ||
+		Q_stricmp(NPC->NPC_type, "STOfficerAlt") == 0)
+	{
+		isOfficerType = qtrue;
+	}
+
+	if (isOfficerType && NPC->client->ps.weapon == WP_FLECHETTE)
+	{
+		isOfficerWithFlechette = qtrue;
+	}
+
+	if (com_outcast->integer == 0)
+	{
+		// 1. Force acquisition of the player if visible (except excluded officers)
+		if (!isOfficerWithFlechette)
+		{
+			gentity_t* player = &g_entities[0];
+			if (NPC_CheckVisibility(player, CHECK_FOV) >= VIS_FOV)
+			{
+				G_SetEnemy(NPC, player);
+				return qtrue;
+			}
+		}
+	}
+
+	// 2. Ignore enemies if flagged
 	if (NPC->svFlags & SVF_IGNORE_ENEMIES)
 	{
 		G_ClearEnemy(NPC);
 		return qfalse;
 	}
 
-	//we can't pick up any enemies for now
+	// 3. Confusion disables enemy acquisition
 	if (NPCInfo->confusionTime > level.time)
 	{
 		G_ClearEnemy(NPC);
 		return qfalse;
 	}
 
-	//Don't want a new enemy
-	if (NPC_ValidEnemy(NPC->enemy) && NPC->svFlags & SVF_LOCKEDENEMY)
+	// 4. Keep locked enemy if valid
+	if ((NPC->svFlags & SVF_LOCKEDENEMY) && NPC_ValidEnemy(NPC->enemy))
 		return qtrue;
 
-	//See if the player is closer than our current enemy
-	if (NPC->client->NPC_class != CLASS_RANCOR
-		&& NPC->client->NPC_class != CLASS_WAMPA
-		&& NPC->client->NPC_class != CLASS_SAND_CREATURE
-		&& NPC_CheckPlayerDistance())
+	// 5. Player-distance priority (except monsters)
+	if (NPC->client->NPC_class != CLASS_RANCOR &&
+		NPC->client->NPC_class != CLASS_WAMPA &&
+		NPC->client->NPC_class != CLASS_SAND_CREATURE &&
+		NPC_CheckPlayerDistance())
 	{
-		//rancors, wampas & sand creatures don't care if player is closer, they always go with closest
 		return qtrue;
 	}
 
-	//Otherwise, turn off the flag
+	// 6. Unlock enemy if we reach this point
 	NPC->svFlags &= ~SVF_LOCKEDENEMY;
 
-	//If we've gotten here alright, then our target it still valid
+	// 7. Keep current enemy if still valid
 	if (NPC_ValidEnemy(NPC->enemy))
 		return qtrue;
 
-	gentity_t* newenemy = NPC_PickEnemyExt(checkAlerts);
+	// 8. Try to pick a new enemy
+	gentity_t* newEnemy = NPC_PickEnemyExt(checkAlerts);
 
-	//if we found one, take it as the enemy
-	if (NPC_ValidEnemy(newenemy))
+	if (NPC_ValidEnemy(newEnemy))
 	{
-		G_SetEnemy(NPC, newenemy);
+		G_SetEnemy(NPC, newEnemy);
 		return qtrue;
 	}
 
+	// 9. No valid enemy found
 	G_ClearEnemy(NPC);
 	return qfalse;
 }
+
+
 
 /*
 -------------------------
@@ -1388,37 +1437,40 @@ NPC_CheckLookTarget
 */
 qboolean NPC_CheckLookTarget(const gentity_t* self)
 {
-	if (self->client)
+	if (!self || !self->client)
+		return qfalse;
+
+	const int lt = self->client->renderInfo.lookTarget;
+
+	// Valid index?
+	if (lt < 0 || lt >= ENTITYNUM_WORLD)
+		return qfalse;
+
+	gentity_t* target = &g_entities[lt];
+
+	// Target must exist and be in use
+	if (!target || !target->inuse)
 	{
-		if (self->client->renderInfo.lookTarget >= 0 && self->client->renderInfo.lookTarget < ENTITYNUM_WORLD)
-		{
-			//within valid range
-			if (&g_entities[self->client->renderInfo.lookTarget] == nullptr || !g_entities[self->client->renderInfo.
-				lookTarget].inuse)
-			{
-				//lookTarget not inuse or not valid anymore
-				NPC_ClearLookTarget(self);
-			}
-			else if (self->client->renderInfo.lookTargetClearTime && self->client->renderInfo.lookTargetClearTime <
-				level.time)
-			{
-				//Time to clear lookTarget
-				NPC_ClearLookTarget(self);
-			}
-			else if (g_entities[self->client->renderInfo.lookTarget].client && self->enemy && &g_entities[self->client
-				->renderInfo.lookTarget] != self->enemy)
-			{
-				//should always look at current enemy if engaged in battle... FIXME: this could override certain scripted lookTargets...???
-				NPC_ClearLookTarget(self);
-			}
-			else
-			{
-				return qtrue;
-			}
-		}
+		NPC_ClearLookTarget(self);
+		return qfalse;
 	}
 
-	return qfalse;
+	// Timed look target expired
+	if (self->client->renderInfo.lookTargetClearTime &&
+		self->client->renderInfo.lookTargetClearTime < level.time)
+	{
+		NPC_ClearLookTarget(self);
+		return qfalse;
+	}
+
+	// If we have an enemy, always look at them instead of a scripted target
+	if (target->client && self->enemy && target != self->enemy)
+	{
+		NPC_ClearLookTarget(self);
+		return qfalse;
+	}
+
+	return qtrue;
 }
 
 /*
@@ -1610,4 +1662,32 @@ void jet_fly_stop(gentity_t* self)
 	{
 		Boba_FlyStop(self);
 	}
+}
+
+void NPC_SetSurfaceOnOff(gentity_t* ent, const char* surfaceName, qboolean turnOn)
+{
+	if (!ent || ent->ghoul2.size() == 0)
+		return;
+
+	CGhoul2Info* g2 = &ent->ghoul2[ent->playerModel];
+	if (!g2)
+		return;
+
+	// Validate surface exists (3 args: g2, name, flags)
+	// flags = 0 (no special behaviour)
+	if (!gi.G2API_GetSurfaceIndex(g2, surfaceName))
+		return;
+
+	// Toggle surface (3 args: g2, name, flags)
+	if (turnOn)
+	{
+		gi.G2API_SetSurfaceOnOff(g2, surfaceName, 0);  // ON = flags = 0
+	}
+	else
+	{
+		gi.G2API_SetSurfaceOnOff(g2, surfaceName, G2SURFACEFLAG_OFF);  // OFF flag
+	}
+
+	// Update model index for renderer
+	g2->mModelindex = ent->s.modelindex;
 }

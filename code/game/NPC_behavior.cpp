@@ -35,6 +35,22 @@ we need it...
 #include "b_local.h"
 #include "g_functions.h"
 #include "g_nav.h"
+#include <cassert>
+#include <cmath>
+#include "ai.h"
+#include "anims.h"
+#include "bg_public.h"
+#include "bstate.h"
+#include "b_public.h"
+#include "ghoul2_shared.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "teams.h"
+#include "weapons.h"
+#include <icarus\IcarusInterface.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 extern cvar_t* g_AIsurrender;
 extern qboolean showBBoxes;
@@ -51,156 +67,141 @@ Advance towards your captureGoal and shoot anyone you can along the way.
 */
 void NPC_BSAdvanceFight()
 {
-	//Make sure we're still headed where we want to capture
+	if (!NPC || !NPCInfo)
+		return;
+
+	// Maintain capture goal movement
 	if (NPCInfo->captureGoal)
 	{
 		NPC_SetMoveGoal(NPC, NPCInfo->captureGoal->currentOrigin, 16, qtrue);
-
 		NPCInfo->goalTime = level.time + 100000;
 	}
 
+	// Update enemy
 	NPC_CheckEnemy(qtrue, qfalse);
 
-	//FIXME: Need melee code
-	if (NPC->enemy)
+	if (!NPC->enemy || !NPC->enemy->inuse)
 	{
-		//See if we can shoot him
-		vec3_t delta;
-		vec3_t angle_to_enemy;
-		vec3_t muzzle, enemy_org;
-		qboolean attack_ok = qfalse;
-		qboolean dead_on = qfalse;
-		float attack_scale = 1.0;
-
-		//Yaw to enemy
-		VectorMA(NPC->enemy->absmin, 0.5, NPC->enemy->maxs, enemy_org);
-		CalcEntitySpot(NPC, SPOT_WEAPON, muzzle);
-
-		VectorSubtract(enemy_org, muzzle, delta);
-		vectoangles(delta, angle_to_enemy);
-		const float distance_to_enemy = VectorNormalize(delta);
-
-		if (!NPC_EnemyTooFar(NPC->enemy, distance_to_enemy * distance_to_enemy, qtrue))
-		{
-			attack_ok = qtrue;
-		}
-
-		if (attack_ok)
-		{
-			NPC_UpdateShootAngles(angle_to_enemy, qfalse, qtrue);
-
-			NPCInfo->enemyLastVisibility = enemyVisibility;
-			enemyVisibility = NPC_CheckVisibility(NPC->enemy, CHECK_FOV); //CHECK_360|//CHECK_PVS|
-
-			if (enemyVisibility == VIS_FOV)
-			{
-				vec3_t enemy_head;
-				vec3_t hitspot;
-				//He's in our FOV
-				attack_ok = qtrue;
-				CalcEntitySpot(NPC->enemy, SPOT_HEAD, enemy_head);
-
-				if (attack_ok)
-				{
-					trace_t tr;
-					//are we gonna hit him if we shoot at his center?
-					gi.trace(&tr, muzzle, nullptr, nullptr, enemy_org, NPC->s.number, MASK_SHOT,
-						static_cast<EG2_Collision>(0), 0);
-					const gentity_t* traceEnt = &g_entities[tr.entityNum];
-					if (traceEnt != NPC->enemy &&
-						(!traceEnt || !traceEnt->client || !NPC->client->enemyTeam || NPC->client->enemyTeam !=
-							traceEnt
-							->client->playerTeam))
-					{
-						//no, so shoot for the head
-						attack_scale *= 0.75;
-						gi.trace(&tr, muzzle, nullptr, nullptr, enemy_head, NPC->s.number, MASK_SHOT,
-							static_cast<EG2_Collision>(0), 0);
-						traceEnt = &g_entities[tr.entityNum];
-					}
-
-					VectorCopy(tr.endpos, hitspot);
-
-					if (traceEnt == NPC->enemy || traceEnt->client && NPC->client->enemyTeam && NPC->client->enemyTeam
-						== traceEnt->client->playerTeam)
-					{
-						dead_on = qtrue;
-					}
-					else
-					{
-						attack_scale *= 0.5;
-						if (NPC->client->playerTeam)
-						{
-							if (traceEnt && traceEnt->client && traceEnt->client->playerTeam)
-							{
-								if (NPC->client->playerTeam == traceEnt->client->playerTeam)
-								{
-									//Don't shoot our own team
-									attack_ok = qfalse;
-								}
-							}
-						}
-					}
-				}
-
-				if (attack_ok)
-				{
-					//ok, now adjust pitch aim
-					VectorSubtract(hitspot, muzzle, delta);
-					vectoangles(delta, angle_to_enemy);
-					NPC->NPC->desiredPitch = angle_to_enemy[PITCH];
-					NPC_UpdateShootAngles(angle_to_enemy, qtrue, qfalse);
-
-					if (!dead_on)
-					{
-						constexpr float max_aim_off = 64;
-						vec3_t diff;
-						vec3_t forward;
-						//We're not going to hit him directly, try a suppressing fire
-						//see if where we're going to shoot is too far from his origin
-						AngleVectors(NPCInfo->shootAngles, forward, nullptr, nullptr);
-						VectorMA(muzzle, distance_to_enemy, forward, hitspot);
-						VectorSubtract(hitspot, enemy_org, diff);
-						float aim_off = VectorLength(diff);
-						if (aim_off > Q_flrand(0.0f, 1.0f) * max_aim_off) //FIXME: use aim value to allow poor aim?
-						{
-							attack_scale *= 0.75;
-							//see if where we're going to shoot is too far from his head
-							VectorSubtract(hitspot, enemy_head, diff);
-							aim_off = VectorLength(diff);
-							if (aim_off > Q_flrand(0.0f, 1.0f) * max_aim_off)
-							{
-								attack_ok = qfalse;
-							}
-						}
-						attack_scale *= (max_aim_off - aim_off + 1) / max_aim_off;
-					}
-				}
-			}
-		}
-
-		if (attack_ok)
-		{
-			if (NPC_CheckAttack(attack_scale))
-			{
-				//check aggression to decide if we should shoot
-				enemyVisibility = VIS_SHOOT;
-				WeaponThink();
-			}
-		}
-	}
-	else
-	{
+		// No enemy: just keep moving and keep aim stable
 		NPC_UpdateShootAngles(NPC->client->ps.viewangles, qtrue, qtrue);
+		return;
 	}
 
+	// --- Combat evaluation ---
+	vec3_t muzzle, enemy_org, delta, angle_to_enemy;
+	CalcEntitySpot(NPC->enemy, SPOT_HEAD, enemy_org);
+	CalcEntitySpot(NPC, SPOT_WEAPON, muzzle);
+
+	VectorSubtract(enemy_org, muzzle, delta);
+	vectoangles(delta, angle_to_enemy);
+	float distance = VectorNormalize(delta);
+
+	// Too far?
+	if (NPC_EnemyTooFar(NPC->enemy, distance * distance, qtrue))
+		return;
+
+	// Update yaw/pitch toward enemy
+	NPC_UpdateShootAngles(angle_to_enemy, qfalse, qtrue);
+
+	// Visibility check
+	NPCInfo->enemyLastVisibility = enemyVisibility;
+	enemyVisibility = NPC_CheckVisibility(NPC->enemy, CHECK_FOV);
+
+	if (enemyVisibility != VIS_FOV)
+		return;
+
+	// --- Shot evaluation ---
+	trace_t tr;
+	vec3_t hitspot;
+	qboolean attack_ok = qtrue;
+	qboolean dead_on = qfalse;
+	float attack_scale = 1.0f;
+
+	// First trace: center mass
+	gi.trace(&tr, muzzle, nullptr, nullptr, enemy_org,
+		NPC->s.number, MASK_SHOT, (EG2_Collision)0, 0);
+
+	gentity_t* hitEnt = &g_entities[tr.entityNum];
+	VectorCopy(tr.endpos, hitspot);
+
+	if (hitEnt != NPC->enemy)
+	{
+		// Try headshot
+		vec3_t enemy_head;
+		CalcEntitySpot(NPC->enemy, SPOT_HEAD, enemy_head);
+
+		attack_scale *= 0.75f;
+
+		gi.trace(&tr, muzzle, nullptr, nullptr, enemy_head,
+			NPC->s.number, MASK_SHOT, (EG2_Collision)0, 0);
+
+		hitEnt = &g_entities[tr.entityNum];
+		VectorCopy(tr.endpos, hitspot);
+	}
+
+	// Friendly fire check
+	if (hitEnt != NPC->enemy &&
+		hitEnt->client &&
+		NPC->client->playerTeam &&
+		hitEnt->client->playerTeam == NPC->client->playerTeam)
+	{
+		attack_ok = qfalse;
+	}
+
+	// Dead-on?
+	if (hitEnt == NPC->enemy ||
+		(hitEnt->client &&
+			NPC->client->enemyTeam &&
+			NPC->client->enemyTeam == hitEnt->client->playerTeam))
+	{
+		dead_on = qtrue;
+	}
+
+	// Aim error modelling
+	if (attack_ok && !dead_on)
+	{
+		const float max_aim_off = 64.0f;
+		vec3_t diff;
+		VectorSubtract(hitspot, enemy_org, diff);
+		float aim_off = VectorLength(diff);
+
+		if (aim_off > Q_flrand(0.0f, 1.0f) * max_aim_off)
+		{
+			attack_scale *= 0.75f;
+
+			// Check head deviation
+			vec3_t enemy_head;
+			CalcEntitySpot(NPC->enemy, SPOT_HEAD, enemy_head);
+			VectorSubtract(hitspot, enemy_head, diff);
+			aim_off = VectorLength(diff);
+
+			if (aim_off > Q_flrand(0.0f, 1.0f) * max_aim_off)
+				attack_ok = qfalse;
+		}
+
+		attack_scale *= (max_aim_off - aim_off + 1.0f) / max_aim_off;
+	}
+
+	// Update pitch for final shot
+	if (attack_ok)
+	{
+		VectorSubtract(hitspot, muzzle, delta);
+		vectoangles(delta, angle_to_enemy);
+		NPC_UpdateShootAngles(angle_to_enemy, qtrue, qfalse);
+	}
+
+	// Final aggression check
+	if (attack_ok && NPC_CheckAttack(attack_scale))
+	{
+		enemyVisibility = VIS_SHOOT;
+		WeaponThink();
+	}
+
+	// If not moving, capture goal reached
 	if (!ucmd.forwardmove && !ucmd.rightmove)
 	{
-		//We reached our captureGoal
-		if (NPC->m_iIcarusID != IIcarusInterface::ICARUS_INVALID /*NPC->taskManager*/)
-		{
+		if (NPC->m_iIcarusID != IIcarusInterface::ICARUS_INVALID)
 			Q3_TaskIDComplete(NPC, TID_BSTATE);
-		}
 	}
 }
 
@@ -270,157 +271,7 @@ void NPC_BSWait()
 	NPC_UpdateAngles(qtrue, qtrue);
 }
 
-void NPC_BSInvestigate()
-{
-	/*
-		//FIXME: maybe allow this to be set as a tempBState in a script?  Just specify the
-		//investigateGoal, investigateDebounceTime and investigateCount? (Needs a macro)
-		vec3_t		invDir, invAngles, spot;
-		gentity_t	*saveGoal;
-		//BS_INVESTIGATE would turn toward goal, maybe take a couple steps towards it,
-		//look for enemies, then turn away after your investigate counter was down-
-		//investigate counter goes up every time you set it...
 
-		if(level.time > NPCInfo->enemyCheckDebounceTime)
-		{
-			NPCInfo->enemyCheckDebounceTime = level.time + (NPCInfo->stats.vigilance * 1000);
-			NPC_CheckEnemy(qtrue, qfalse);
-			if(NPC->enemy)
-			{//FIXME: do anger script
-				NPCInfo->goalEntity = NPC->enemy;
-				NPCInfo->behaviorState = BS_RUN_AND_SHOOT;
-				NPCInfo->tempBehavior = BS_DEFAULT;
-				NPC_AngerSound();
-				return;
-			}
-		}
-
-		NPC_SetAnim( NPC, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL );
-
-		if(NPCInfo->stats.vigilance <= 1.0 && NPCInfo->eventOwner)
-		{
-			VectorCopy(NPCInfo->eventOwner->currentOrigin, NPCInfo->investigateGoal);
-		}
-
-		saveGoal = NPCInfo->goalEntity;
-		if(	level.time > NPCInfo->walkDebounceTime )
-		{
-			vec3_t	vec;
-
-			VectorSubtract(NPCInfo->investigateGoal, NPC->currentOrigin, vec);
-			vec[2] = 0;
-			if(VectorLength(vec) > 64)
-			{
-				if(Q_irand(0, 100) < NPCInfo->investigateCount)
-				{//take a full step
-					//NPCInfo->walkDebounceTime = level.time + 1400;
-					//actually finds length of my BOTH_WALK anim
-					NPCInfo->walkDebounceTime = PM_AnimLength( NPC->client->clientInfo.animFileIndex, BOTH_WALK1 );
-				}
-			}
-		}
-
-		if(	level.time < NPCInfo->walkDebounceTime )
-		{//walk toward investigateGoal
-			/ *
-			NPCInfo->goalEntity = NPCInfo->tempGoal;
-			VectorCopy(NPCInfo->investigateGoal, NPCInfo->tempGoal->currentOrigin);
-			*/
-
-			/*		NPC_SetMoveGoal( NPC, NPCInfo->investigateGoal, 16, qtrue );
-
-					NPC_MoveToGoal( qtrue );
-
-					//FIXME: walk2?
-					NPC_SetAnim(NPC,SETANIM_LEGS,BOTH_WALK1,SETANIM_FLAG_NORMAL);
-
-					ucmd.buttons |= BUTTON_WALKING;
-				}
-				else
-				{
-					NPC_SetAnim(NPC,SETANIM_LEGS,BOTH_STAND1,SETANIM_FLAG_NORMAL);
-
-					if(NPCInfo->hlookCount > 30)
-					{
-						if(Q_irand(0, 10) > 7)
-						{
-							NPCInfo->hlookCount = 0;
-						}
-					}
-					else if(NPCInfo->hlookCount < -30)
-					{
-						if(Q_irand(0, 10) > 7)
-						{
-							NPCInfo->hlookCount = 0;
-						}
-					}
-					else if(NPCInfo->hlookCount == 0)
-					{
-						NPCInfo->hlookCount = Q_irand(-1, 1);
-					}
-					else if(Q_irand(0, 10) > 7)
-					{
-						if(NPCInfo->hlookCount > 0)
-						{
-							NPCInfo->hlookCount++;
-						}
-						else//lookCount < 0
-						{
-							NPCInfo->hlookCount--;
-						}
-					}
-
-					if(NPCInfo->vlookCount >= 15)
-					{
-						if(Q_irand(0, 10) > 7)
-						{
-							NPCInfo->vlookCount = 0;
-						}
-					}
-					else if(NPCInfo->vlookCount <= -15)
-					{
-						if(Q_irand(0, 10) > 7)
-						{
-							NPCInfo->vlookCount = 0;
-						}
-					}
-					else if(NPCInfo->vlookCount == 0)
-					{
-						NPCInfo->vlookCount = Q_irand(-1, 1);
-					}
-					else if(Q_irand(0, 10) > 8)
-					{
-						if(NPCInfo->vlookCount > 0)
-						{
-							NPCInfo->vlookCount++;
-						}
-						else//lookCount < 0
-						{
-							NPCInfo->vlookCount--;
-						}
-					}
-
-					//turn toward investigateGoal
-					CalcEntitySpot( NPC, SPOT_HEAD, spot );
-					VectorSubtract(NPCInfo->investigateGoal, spot, invDir);
-					VectorNormalize(invDir);
-					vectoangles(invDir, invAngles);
-					NPCInfo->desiredYaw = AngleNormalize360(invAngles[YAW] + NPCInfo->hlookCount);
-					NPCInfo->desiredPitch = AngleNormalize360(invAngles[PITCH] + NPCInfo->hlookCount);
-				}
-
-				NPC_UpdateAngles(qtrue, qtrue);
-
-				NPCInfo->goalEntity = saveGoal;
-
-				if(level.time > NPCInfo->investigateDebounceTime)
-				{
-					NPCInfo->tempBehavior = BS_DEFAULT;
-				}
-
-				NPC_CheckSoundEvents();
-				*/
-}
 
 qboolean NPC_CheckInvestigate(const int alert_event_num)
 {
@@ -432,47 +283,33 @@ qboolean NPC_CheckInvestigate(const int alert_event_num)
 
 	VectorCopy(level.alertEvents[alert_event_num].position, sound_pos);
 
-	//NOTE: Trying to preserve previous investigation behavior
 	if (!owner)
-	{
 		return qfalse;
-	}
 
 	if (owner->s.eType != ET_PLAYER && owner == NPCInfo->goalEntity)
-	{
 		return qfalse;
-	}
 
 	if (owner->s.eFlags & EF_NODRAW)
-	{
 		return qfalse;
-	}
 
 	if (owner->flags & FL_NOTARGET)
-	{
 		return qfalse;
-	}
 
 	if (sound_rad < earshot)
-	{
 		return qfalse;
-	}
 
 	if (!gi.inPVS(sound_pos, NPC->currentOrigin))
-	{
-		//can hear through doors?
 		return qfalse;
-	}
 
-	if (owner->client && owner->client->playerTeam && NPC->client->playerTeam && owner->client->playerTeam != NPC->
-		client->playerTeam)
+	if (owner->client && owner->client->playerTeam &&
+		NPC->client->playerTeam &&
+		owner->client->playerTeam != NPC->client->playerTeam)
 	{
-		if (static_cast<float>(NPCInfo->investigateCount) >= NPCInfo->stats.vigilance * 200 && owner)
+		// If vigilance is high enough, treat as enemy immediately
+		if ((float)NPCInfo->investigateCount >= NPCInfo->stats.vigilance * 200)
 		{
-			//If investigateCount == 10, just take it as enemy and go
 			if (NPC_ValidEnemy(owner))
 			{
-				//FIXME: run angerscript
 				G_SetEnemy(NPC, owner);
 				NPCInfo->goalEntity = NPC->enemy;
 				NPCInfo->goalRadius = 12;
@@ -482,22 +319,31 @@ qboolean NPC_CheckInvestigate(const int alert_event_num)
 		}
 		else
 		{
+			// NEW: turn head toward the sound before deciding to investigate
+			vec3_t toSound, lookAngles;
+			VectorSubtract(sound_pos, NPC->currentOrigin, toSound);
+			vectoangles(toSound, lookAngles);
+
+			// Assign yaw/pitch to the NPC's desired aim
+			NPC->NPC->desiredYaw = lookAngles[YAW];
+			NPC->NPC->desiredPitch = lookAngles[PITCH];
+
+			// Update torso/head orientation only (no firing)
+			NPC_UpdateFiringAngles(qfalse, qfalse);
+
 			NPCInfo->investigateCount += inv_add;
 		}
-		//run awakescript
+
 		G_ActivateBehavior(NPC, BSET_AWAKE);
 
-		//NPCInfo->hlookCount = NPCInfo->vlookCount = 0;
 		NPCInfo->eventOwner = owner;
 		VectorCopy(sound_pos, NPCInfo->investigateGoal);
+
 		if (NPCInfo->investigateCount > 20)
-		{
 			NPCInfo->investigateDebounceTime = level.time + 10000;
-		}
 		else
-		{
 			NPCInfo->investigateDebounceTime = level.time + NPCInfo->investigateCount * 500;
-		}
+
 		NPCInfo->tempBehavior = BS_INVESTIGATE;
 		return qtrue;
 	}

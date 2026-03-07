@@ -22,6 +22,17 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "b_local.h"
 #include "g_functions.h"
+#include "g_local.h"
+#include "bg_public.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include "ghoul2_shared.h"
+#include <cmath>
+#include "anims.h"
+#include "b_public.h"
+#include "g_shared.h"
+#include "teams.h"
+#include <qcommon\q_platform.h>
 
 //static void R5D2_LookAround( void );
 float NPC_GetPainChance(const gentity_t* self, int damage);

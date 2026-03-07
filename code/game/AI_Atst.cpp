@@ -23,6 +23,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "g_functions.h"
 #include "../cgame/cg_local.h"
+#include "weapons.h"
 
 constexpr auto MIN_MELEE_RANGE = 640;
 #define	MIN_MELEE_RANGE_SQR	( MIN_MELEE_RANGE * MIN_MELEE_RANGE )
@@ -35,6 +36,18 @@ constexpr auto MIN_DISTANCE = 128;
 constexpr auto LEFT_ARM_HEALTH = 40;
 constexpr auto RIGHT_ARM_HEALTH = 40;
 
+#include "bg_public.h"
+#include <rd-common\mdx_format.h>
+#include <qcommon\q_math.h>
+#include <cstdlib>
+#include "ai.h"
+#include "anims.h"
+#include "b_public.h"
+#include "g_local.h"
+#include "g_shared.h"
+#include "hitlocs.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_platform.h>
 /*
 -------------------------
 NPC_ATST_Precache

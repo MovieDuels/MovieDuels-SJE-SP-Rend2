@@ -38,6 +38,16 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #if !defined(RATL_VECTOR_VS_INC)
 #include "../Ratl/vector_vs.h"
 #endif
+#include <cmath>
+#include "bg_public.h"
+#include "ghoul2_shared.h"
+#include "g_local.h"
+#include "g_shared.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <Ravl\CVec.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Defines
@@ -474,27 +484,34 @@ extern bool VEH_StartStrafeRam(Vehicle_t* p_veh, bool Right);
 ////////////////////////////////////////////////////////////////////////////////////////
 void Pilot_Steer_Vehicle()
 {
-	if (!NPC->enemy || !NPC->enemy->client)
+	if (!NPC || !NPCInfo || !NPC->client || !NPC->enemy || !NPC->enemy->client || !NPC->enemy->inuse)
+	{
+		return;
+	}
+
+	// Must have a valid vehicle parent to steer
+	if (!NPCInfo->greetEnt || !NPCInfo->greetEnt->m_pVehicle)
 	{
 		return;
 	}
 
 	// SETUP
 	//=======
-	// Setup Actor Data
-	//------------------
 	const CVec3 ActorPos(NPC->currentOrigin);
 	CVec3 ActorAngles(NPC->currentAngles);
-	ActorAngles[2] = 0;
-	Vehicle_t* ActorVeh = NPCInfo->greetEnt->m_pVehicle;
-	const bool ActorInTurbo = ActorVeh->m_iTurboTime > level.time;
-	const float ActorSpeed = ActorVeh
-		? VectorLength(ActorVeh->m_pParentEntity->client->ps.velocity)
-		: NPC->client->ps.speed;
+	ActorAngles[2] = 0.0f;
 
-	// If my vehicle is spinning out of control, just hold on, we're going to die!!!!!
-	//---------------------------------------------------------------------------------
-	if (ActorVeh && ActorVeh->m_ulFlags & VEH_OUTOFCONTROL)
+	Vehicle_t* ActorVeh = NPCInfo->greetEnt->m_pVehicle;
+	if (!ActorVeh || !ActorVeh->m_pParentEntity || !ActorVeh->m_pVehicleInfo)
+	{
+		return;
+	}
+
+	const bool ActorInTurbo = (ActorVeh->m_iTurboTime > level.time);
+	const float ActorSpeed = VectorLength(ActorVeh->m_pParentEntity->client->ps.velocity);
+
+	// If my vehicle is spinning out of control, just hold on
+	if (ActorVeh->m_ulFlags & VEH_OUTOFCONTROL)
 	{
 		if (NPC->client->ps.weapon != WP_NONE)
 		{
@@ -505,45 +522,56 @@ void Pilot_Steer_Vehicle()
 		return;
 	}
 
-	CVec3 ActorDirection{};
+	CVec3 ActorDirection;
 	AngleVectors(ActorAngles.v, ActorDirection.v, nullptr, nullptr);
 
 	CVec3 ActorFuturePos(ActorPos);
 	ActorFuturePos.ScaleAdd(ActorDirection, FUTURE_PRED_DIST);
 
 	bool ActorDoTurbo = false;
-	bool ActorAccelerate;
+	bool ActorAccelerate = false;
 	bool ActorAimAtTarget = true;
 
 	// Setup Enemy Data
 	//------------------
 	const CVec3 EnemyPos(NPC->enemy->currentOrigin);
 	CVec3 EnemyAngles(NPC->enemy->currentAngles);
-	EnemyAngles[2] = 0;
-	const Vehicle_t* EnemyVeh = NPC->enemy->s.m_iVehicleNum
-		? g_entities[NPC->enemy->s.m_iVehicleNum].m_pVehicle
-		: nullptr;
-	const bool EnemyInTurbo = EnemyVeh && EnemyVeh->m_iTurboTime > level.time;
-	const float EnemySpeed = EnemyVeh ? EnemyVeh->m_pParentEntity->client->ps.speed : NPC->enemy->resultspeed;
-	const bool EnemySlideBreak = EnemyVeh && (EnemyVeh->m_ulFlags & VEH_SLIDEBREAKING || EnemyVeh->m_ulFlags &
-		VEH_STRAFERAM);
-	const bool EnemyDead = NPC->enemy->health <= 0;
+	EnemyAngles[2] = 0.0f;
 
-	const bool ActorFlank = NPCInfo->lastAvoidSteerSideDebouncer > level.time && EnemyVeh && EnemySpeed > 10.0f;
+	Vehicle_t* EnemyVeh = nullptr;
+	if (NPC->enemy->s.m_iVehicleNum > 0 && NPC->enemy->s.m_iVehicleNum < level.num_entities)
+	{
+		gentity_t* vehEnt = &g_entities[NPC->enemy->s.m_iVehicleNum];
+		if (vehEnt && vehEnt->inuse)
+		{
+			EnemyVeh = vehEnt->m_pVehicle;
+		}
+	}
 
-	CVec3 EnemyDirection{};
-	CVec3 EnemyRight{};
+	const bool EnemyInTurbo = (EnemyVeh && EnemyVeh->m_iTurboTime > level.time);
+	const float EnemySpeed = EnemyVeh
+		? EnemyVeh->m_pParentEntity->client->ps.speed
+		: NPC->enemy->resultspeed;
+
+	const bool EnemySlideBreak = EnemyVeh &&
+		((EnemyVeh->m_ulFlags & VEH_SLIDEBREAKING) || (EnemyVeh->m_ulFlags & VEH_STRAFERAM));
+	const bool EnemyDead = (NPC->enemy->health <= 0);
+
+	const bool ActorFlank = (NPCInfo->lastAvoidSteerSideDebouncer > level.time) &&
+		EnemyVeh && (EnemySpeed > 10.0f);
+
+	CVec3 EnemyDirection;
+	CVec3 EnemyRight;
 	AngleVectors(EnemyAngles.v, EnemyDirection.v, EnemyRight.v, nullptr);
 
 	CVec3 EnemyFuturePos(EnemyPos);
 	EnemyFuturePos.ScaleAdd(EnemyDirection, FUTURE_PRED_DIST);
 
 	const ESide EnemySide = ActorPos.LRTest(EnemyPos, EnemyFuturePos);
-	CVec3 EnemyFlankPos(EnemyFuturePos);
-	EnemyFlankPos.ScaleAdd(EnemyRight, EnemySide == Side_Right ? FUTURE_SIDE_DIST : -FUTURE_SIDE_DIST);
 
-	// Debug Draw Enemy Data
-	//-----------------------
+	CVec3 EnemyFlankPos(EnemyFuturePos);
+	EnemyFlankPos.ScaleAdd(EnemyRight,
+		(EnemySide == Side_Right) ? FUTURE_SIDE_DIST : -FUTURE_SIDE_DIST);
 
 	// Setup Move And Aim Directions
 	//-------------------------------
@@ -560,7 +588,7 @@ void Pilot_Steer_Vehicle()
 	if (!ActorFlank && TIMER_Done(NPC, "FlankAttackCheck"))
 	{
 		TIMER_Set(NPC, "FlankAttackCheck", Q_irand(1000, 3000));
-		if (MoveDistance < 4000 && Q_irand(0, 1) == 0)
+		if (MoveDistance < 4000.0f && Q_irand(0, 1) == 0)
 		{
 			NPCInfo->lastAvoidSteerSideDebouncer = level.time + Q_irand(8000, 14000);
 		}
@@ -568,66 +596,47 @@ void Pilot_Steer_Vehicle()
 
 	// Fly By Sounds
 	//---------------
-	if ((ActorVeh->m_pVehicleInfo->soundFlyBy || ActorVeh->m_pVehicleInfo->soundFlyBy2) && TIMER_Done(NPC, "FlybySoundDebouncer")
-		&& (EnemyVeh && MoveDistance < 800 && ActorSpeed > 500.0f))
+	if ((ActorVeh->m_pVehicleInfo->soundFlyBy || ActorVeh->m_pVehicleInfo->soundFlyBy2) &&
+		TIMER_Done(NPC, "FlybySoundDebouncer") &&
+		EnemyVeh && (MoveDistance < 800.0f) && (ActorSpeed > 500.0f))
 	{
-		if (EnemySpeed < 100.0f || ActorDirection.Dot(EnemyDirection) * (MoveDistance / 800.0f) < -0.5f)
+		if (EnemySpeed < 100.0f ||
+			ActorDirection.Dot(EnemyDirection) * (MoveDistance / 800.0f) < -0.5f)
 		{
 			TIMER_Set(NPC, "FlybySoundDebouncer", 2000);
 
 			int soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy;
 			if (ActorVeh->m_pVehicleInfo->soundFlyBy2 && (!soundFlyBy || !Q_irand(0, 1)))
 			{
-				soundFlyBy = Q_irand(1, 13);
-				switch (soundFlyBy)
+				int choice = Q_irand(1, 13);
+				switch (choice)
 				{
-				case 1:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy2;
-					break;
-				case 2:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy3;
-					break;
-				case 3:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy4;
-					break;
-				case 4:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy5;
-					break;
-				case 5:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy6;
-					break;
-				case 6:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy7;
-					break;
-				case 7:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy8;
-					break;
-				case 8:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy9;
-					break;
-				case 9:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy10;
-					break;
-				case 10:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy11;
-					break;
-				case 11:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy12;
-					break;
-				case 12:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy13;
-					break;
-				case 13:
-					soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy14;
-					break;
-				default:;
+				case 1:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy2;  break;
+				case 2:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy3;  break;
+				case 3:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy4;  break;
+				case 4:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy5;  break;
+				case 5:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy6;  break;
+				case 6:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy7;  break;
+				case 7:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy8;  break;
+				case 8:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy9;  break;
+				case 9:  soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy10; break;
+				case 10: soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy11; break;
+				case 11: soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy12; break;
+				case 12: soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy13; break;
+				case 13: soundFlyBy = ActorVeh->m_pVehicleInfo->soundFlyBy14; break;
+				default: break;
 				}
+
 				if (soundFlyBy)
 				{
 					G_SoundIndexOnEnt(ActorVeh->m_pParentEntity, CHAN_AUTO, soundFlyBy);
 				}
 			}
-			G_Sound(ActorVeh->m_pParentEntity, soundFlyBy);
+
+			if (soundFlyBy)
+			{
+				G_Sound(ActorVeh->m_pParentEntity, soundFlyBy);
+			}
 		}
 	}
 
@@ -639,47 +648,38 @@ void Pilot_Steer_Vehicle()
 		{
 			TIMER_Set(NPC, "MinHoldDirectionTime", 500); // Hold For At Least 500 ms
 		}
-		ActorAccelerate = true; // Go
-		ActorAimAtTarget = false; // Don't Alter Our Aim Direction
-		ucmd.buttons &= ~BUTTON_VEH_SPEED; // Let Normal Vehicle Controls Go
+		ActorAccelerate = true;          // Go
+		ActorAimAtTarget = false;        // Don't Alter Our Aim Direction
+		ucmd.buttons &= ~BUTTON_VEH_SPEED;
 	}
-
 	// FLANKING BEHAVIOR
 	//===================
 	else if (ActorFlank)
 	{
 		ActorAccelerate = true;
-		ActorDoTurbo = MoveDistance > 2500 || EnemyInTurbo;
+		ActorDoTurbo = (MoveDistance > 2500.0f) || EnemyInTurbo;
 		ucmd.buttons |= BUTTON_VEH_SPEED;
-		// Tells PMove to use the ps.speed we calculate here, not the one from g_vehicles.c
 
-		// For Flanking, We Calculate The Speed By Hand, Rather Than Using Pure Accelerate / No Accelerate Functionality
-		//---------------------------------------------------------------------------------------------------------------
-		NPC->client->ps.speed = ActorVeh->m_pVehicleInfo->speedMax * (ActorInTurbo ? 1.35f : 1.15f);
+		NPC->client->ps.speed = ActorVeh->m_pVehicleInfo->speedMax *
+			(ActorInTurbo ? 1.35f : 1.15f);
 
-		// If In Slowing Distance, Scale Down The Speed As We Approach Our Move Target
-		//-----------------------------------------------------------------------------
 		if (MoveDistance < ATTACK_FLANK_SLOWING)
 		{
-			NPC->client->ps.speed *= MoveDistance / ATTACK_FLANK_SLOWING;
+			NPC->client->ps.speed *= (MoveDistance / ATTACK_FLANK_SLOWING);
 			NPC->client->ps.speed += EnemySpeed;
 
-			// Match Enemy Speed
-			//-------------------
 			if (NPC->client->ps.speed < 5.0f && EnemySpeed < 5.0f)
 			{
 				NPC->client->ps.speed = EnemySpeed;
 			}
 
-			// Extra Slow Down When Out In Front
-			//-----------------------------------
 			if (MoveAccuracy < 0.0f)
 			{
-				NPC->client->ps.speed *= MoveAccuracy + 1.0f;
+				NPC->client->ps.speed *= (MoveAccuracy + 1.0f);
 			}
 
-			MoveDirection *= MoveDistance / ATTACK_FLANK_SLOWING;
-			EnemyDirection *= 1.0f - MoveDistance / ATTACK_FLANK_SLOWING;
+			MoveDirection *= (MoveDistance / ATTACK_FLANK_SLOWING);
+			EnemyDirection *= (1.0f - (MoveDistance / ATTACK_FLANK_SLOWING));
 			MoveDirection += EnemyDirection;
 
 			if (TIMER_Done(NPC, "RamCheck"))
@@ -687,7 +687,7 @@ void Pilot_Steer_Vehicle()
 				TIMER_Set(NPC, "RamCheck", Q_irand(1000, 3000));
 				if (MoveDistance < RAM_DIST && Q_irand(0, 2) == 0)
 				{
-					VEH_StartStrafeRam(ActorVeh, EnemySide == Side_Left);
+					VEH_StartStrafeRam(ActorVeh, (EnemySide == Side_Left));
 				}
 			}
 		}
@@ -696,15 +696,16 @@ void Pilot_Steer_Vehicle()
 	//=======================
 	else
 	{
-		if (!EnemyVeh && AimAccuracy > 0.99f && MoveDistance < 500 && !EnemyDead)
+		if (!EnemyVeh && AimAccuracy > 0.99f && MoveDistance < 500.0f && !EnemyDead)
 		{
 			ActorAccelerate = true;
 			ActorDoTurbo = false;
 		}
 		else
 		{
-			ActorAccelerate = MoveDistance > 500 && EnemySpeed > 20.0f || MoveDistance > 1000;
-			ActorDoTurbo = MoveDistance > 3000 && EnemySpeed > 20.0f;
+			ActorAccelerate = (MoveDistance > 500.0f && EnemySpeed > 20.0f) ||
+				(MoveDistance > 1000.0f);
+			ActorDoTurbo = (MoveDistance > 3000.0f && EnemySpeed > 20.0f);
 		}
 		ucmd.buttons &= ~BUTTON_VEH_SPEED;
 	}
@@ -712,7 +713,6 @@ void Pilot_Steer_Vehicle()
 	// APPLY RESULTS
 	//=======================
 	// Decide Turbo
-	//--------------
 	if (ActorDoTurbo || ActorInTurbo)
 	{
 		ucmd.buttons |= BUTTON_ALT_ATTACK;
@@ -723,17 +723,14 @@ void Pilot_Steer_Vehicle()
 	}
 
 	// Decide Acceleration
-	//---------------------
 	ucmd.forwardmove = ActorAccelerate ? 127 : 0;
 
 	// Decide To Shoot
-	//-----------------
 	ucmd.buttons &= ~BUTTON_ATTACK;
 	ucmd.rightmove = 0;
-	if (AimDistance < 2000 && !EnemyDead)
+
+	if (AimDistance < 2000.0f && !EnemyDead)
 	{
-		// If Doing A Ram Attack
-		//-----------------------
 		if (AimAccuracy > ATTACK_FWD)
 		{
 			if (NPC->client->ps.weapon != WP_NONE)
@@ -754,7 +751,8 @@ void Pilot_Steer_Vehicle()
 				ucmd.buttons |= BUTTON_ATTACK;
 				WeaponThink();
 			}
-			ucmd.rightmove = EnemySide == Side_Left ? 127 : -127;
+
+			ucmd.rightmove = (EnemySide == Side_Left) ? 127 : -127;
 		}
 		else
 		{
@@ -773,13 +771,12 @@ void Pilot_Steer_Vehicle()
 	}
 
 	// Aim At Target
-	//---------------
 	if (ActorAimAtTarget)
 	{
-		constexpr float actor_yaw_offset = 0.0f;
 		MoveDirection.VecToAng();
 		NPCInfo->desiredPitch = AngleNormalize360(MoveDirection[PITCH]);
-		NPCInfo->desiredYaw = AngleNormalize360(MoveDirection[YAW] + actor_yaw_offset);
+		NPCInfo->desiredYaw = AngleNormalize360(MoveDirection[YAW]);
 	}
+
 	NPC_UpdateAngles(qtrue, qtrue);
 }

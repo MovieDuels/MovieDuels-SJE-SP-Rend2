@@ -21,6 +21,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "b_local.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_platform.h>
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_string.h>
+#include "g_local.h"
+#include "bg_public.h"
+
+
 extern cvar_t* g_SerenityJediEngineMode;
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 

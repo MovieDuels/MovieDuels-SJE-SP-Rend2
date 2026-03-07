@@ -37,6 +37,21 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "bg_vehicles.h"
 #endif
 #include <qcommon\q_math.h>
+#include <string.h>
+#include <cmath>
+#include "anims.h"
+#include "bg_public.h"
+#include "bstate.h"
+#include "ghoul2_shared.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "statindex.h"
+#include "surfaceflags.h"
+#include "teams.h"
+#include "weapons.h"
+#include <rd-common\mdx_format.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_string.h>
 
 #ifdef _JK2MP
 //this is really horrible, but it works! just be sure not to use any locals or anything
@@ -90,6 +105,12 @@ void Vehicle_SetAnim(gentity_t* ent, int setAnimParts, int anim, int setAnimFlag
 void G_VehicleTrace(trace_t* results, const vec3_t start, const vec3_t tMins, const vec3_t tMaxs, const vec3_t end, int passEntityNum, int contentmask)
 {
 	gi.trace(results, start, tMins, tMaxs, end, passEntityNum, contentmask, static_cast<EG2_Collision>(0), 0);
+}
+
+void AttachRidersGeneric(Vehicle_t* p_veh)
+{  
+	// Attach rider models to the vehicle for prediction
+	// (client-side only)
 }
 
 Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt)
@@ -2486,9 +2507,9 @@ static int G_FlyVehicleImpactDir(gentity_t* veh, trace_t* trace)
 //try to break surfaces off the ship on impact
 #define TURN_ON				0x00000000
 #define TURN_OFF			0x00000100
-extern void NPC_SetSurfaceOnOff(gentity_t* ent, const char* surfaceName, int surfaceFlags); //NPC_utils.c
+extern void NPC_SetSurfaceOnOff(gentity_t* ent, const char* surfaceName, qboolean turnOn); //NPC_utils.c
 
-void G_SetVehDamageFlags(gentity_t* veh, int shipSurf, int damageLevel)
+static void G_SetVehDamageFlags(gentity_t* veh, int shipSurf, int damageLevel)
 {
 	int dmgFlag;
 	switch (damageLevel)
@@ -2631,87 +2652,64 @@ void G_VehicleSetDamageLocFlags(gentity_t* veh, int impactDir, int deathPoint)
 
 qboolean G_FlyVehicleDestroySurface(gentity_t* veh, int surface)
 {
-	char* surfName[4]; //up to 4 surfs at once
+	const char* surfName[4]; // up to 4 surfaces
 	int numSurfs = 0;
 	int smashedBits = 0;
 
 	if (surface == -1)
-	{ //not valid?
 		return qfalse;
-	}
 
 	switch (surface)
 	{
-	case SHIPSURF_FRONT: //break the nose off
+	case SHIPSURF_FRONT:
 		surfName[0] = "nose";
-
-		smashedBits = (SHIPSURF_BROKEN_G);
-
 		numSurfs = 1;
+		smashedBits = SHIPSURF_BROKEN_G;
 		break;
-	case SHIPSURF_BACK: //break both the bottom wings off for a backward impact I guess
+
+	case SHIPSURF_BACK:
 		surfName[0] = "r_wing2";
 		surfName[1] = "l_wing2";
-
-		//get rid of the landing gear
 		surfName[2] = "r_gear";
 		surfName[3] = "l_gear";
-
-		smashedBits = (SHIPSURF_BROKEN_A | SHIPSURF_BROKEN_B | SHIPSURF_BROKEN_D | SHIPSURF_BROKEN_F);
-
 		numSurfs = 4;
+		smashedBits = SHIPSURF_BROKEN_A | SHIPSURF_BROKEN_B |
+			SHIPSURF_BROKEN_D | SHIPSURF_BROKEN_F;
 		break;
-	case SHIPSURF_RIGHT: //break both right wings off
+
+	case SHIPSURF_RIGHT:
 		surfName[0] = "r_wing1";
 		surfName[1] = "r_wing2";
-
-		//get rid of the landing gear
 		surfName[2] = "r_gear";
-
-		smashedBits = (SHIPSURF_BROKEN_B | SHIPSURF_BROKEN_E | SHIPSURF_BROKEN_F);
-
 		numSurfs = 3;
+		smashedBits = SHIPSURF_BROKEN_B | SHIPSURF_BROKEN_E | SHIPSURF_BROKEN_F;
 		break;
-	case SHIPSURF_LEFT: //break both left wings off
+
+	case SHIPSURF_LEFT:
 		surfName[0] = "l_wing1";
 		surfName[1] = "l_wing2";
-
-		//get rid of the landing gear
 		surfName[2] = "l_gear";
-
-		smashedBits = (SHIPSURF_BROKEN_A | SHIPSURF_BROKEN_C | SHIPSURF_BROKEN_D);
-
 		numSurfs = 3;
+		smashedBits = SHIPSURF_BROKEN_A | SHIPSURF_BROKEN_C | SHIPSURF_BROKEN_D;
 		break;
-	default:
-		break;
-	}
 
-	if (numSurfs < 1)
-	{ //didn't get any valid surfs..
+	default:
 		return qfalse;
 	}
 
-	while (numSurfs > 0)
-	{ //use my silly system of automatically managing surf status on both client and server
-		numSurfs--;
-		NPC_SetSurfaceOnOff(veh, surfName[numSurfs], TURN_OFF);
+	// Toggle surfaces off
+	for (int i = 0; i < numSurfs; i++)
+	{
+		NPC_SetSurfaceOnOff(veh, surfName[i], TURN_OFF);
 	}
 
-	if (!veh->m_pVehicle->m_iRemovedSurfaces)
-	{//first time something got blown off
-		//if (veh->m_pVehicle->m_pPilot)
-		//{//make the pilot scream to his death
-		//	G_EntitySound((gentity_t*)veh->m_pVehicle->m_pPilot, CHAN_VOICE, G_SoundIndex("*falling1.wav"));
-		//}
-	}
-	//so we can check what's broken
+	// Mark broken surfaces
 	veh->m_pVehicle->m_iRemovedSurfaces |= smashedBits;
 
-	//do some explosive damage, but don't damage this ship with it
+	// Explosion damage (does not hurt the vehicle itself)
 	G_RadiusDamage(veh->client->ps.origin, veh, 100, 500, veh, nullptr, MOD_SUICIDE);
 
-	//when spiraling to your death, do the electical shader
+	// Electrical effect
 	veh->client->ps.electrifyTime = level.time + 10000;
 
 	return qtrue;

@@ -66,6 +66,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #else
 #include "bg_vehicles.h"
 #endif
+#include "bg_public.h"
+#include "g_shared.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include "anims.h"
 
 #ifdef _JK2MP
 //this is really horrible, but it works! just be sure not to use any locals or anything
@@ -100,6 +106,8 @@ extern cvar_t* g_speederControlScheme;
 #ifdef _JK2MP
 #include "../namespace_begin.h"
 #endif
+#include <cassert>
+#include <cmath>
 extern void PM_SetAnim(const pmove_t* pm, int set_anim_parts, int anim, int set_anim_flags, int blend_time);
 extern int PM_AnimLength(const int index, const animNumber_t anim);
 #ifdef _JK2MP
@@ -919,37 +927,24 @@ static void AnimateRiders(Vehicle_t* p_veh)
 void AttachRidersGeneric(Vehicle_t* p_veh);
 #endif
 
-//on the client this function will only set up the process command funcs
 void G_SetAnimalVehicleFunctions(vehicleInfo_t* pVehInfo)
 {
 #ifdef QAGAME
+	// Server‑side behaviour
 	pVehInfo->AnimateVehicle = AnimateVehicle;
 	pVehInfo->AnimateRiders = AnimateRiders;
-	//	pVehInfo->ValidateBoard				=		ValidateBoard;
-	//	pVehInfo->SetParent					=		SetParent;
-	//	pVehInfo->SetPilot					=		SetPilot;
-	//	pVehInfo->AddPassenger				=		AddPassenger;
-	//	pVehInfo->Animate					=		Animate;
-	//	pVehInfo->Board						=		Board;
-	//	pVehInfo->Eject						=		Eject;
-	//	pVehInfo->EjectAll					=		EjectAll;
-	//	pVehInfo->StartDeathDelay			=		StartDeathDelay;
 	pVehInfo->DeathUpdate = DeathUpdate;
-	//	pVehInfo->RegisterAssets			=		RegisterAssets;
-	//	pVehInfo->Initialize				=		Initialize;
 	pVehInfo->Update = Update;
-	//	pVehInfo->UpdateRider				=		UpdateRider;
-#endif //QAGAME
+#endif
+
+	// Shared (server + client)
 	pVehInfo->ProcessMoveCommands = ProcessMoveCommands;
 	pVehInfo->ProcessOrientCommands = ProcessOrientCommands;
 
-#ifndef QAGAME //cgame prediction attachment func
+#ifndef QAGAME
+	// Client‑side prediction attachment
 	pVehInfo->AttachRiders = AttachRidersGeneric;
 #endif
-	//	pVehInfo->AttachRiders				=		AttachRiders;
-	//	pVehInfo->Ghost						=		Ghost;
-	//	pVehInfo->UnGhost					=		UnGhost;
-	//	pVehInfo->Inhabited					=		Inhabited;
 }
 
 // Create/Allocate a new Animal Vehicle (initializing it as well).

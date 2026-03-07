@@ -58,6 +58,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include "bstate.h"
 #include "bg_public.h"
+#include <qcommon\qcommon.h>
 
 extern qboolean G_DoDismemberment(gentity_t* self, vec3_t point, int mod, int hit_loc,
 	qboolean force = qfalse);
@@ -16975,7 +16976,7 @@ saber_moveName_t g_pick_auto_multi_kick(gentity_t* self, const qboolean allow_si
 	const float radius = half_width + half_width + STAFF_KICK_RANGE + 24.0f;
 	const float radius_sq = radius * radius;
 
-	vec3_t mins, maxs;
+	vec3_t mins = { 0 }, maxs = { 0 };
 	for (int i = 0; i < 3; i++)
 	{
 		mins[i] = center[i] - radius;

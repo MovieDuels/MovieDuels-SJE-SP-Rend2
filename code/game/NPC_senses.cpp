@@ -37,6 +37,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include "g_local.h"
 #include "teams.h"
+#include "weapons.h"
+#include <string.h>
+#include <cassert>
+#include "g_public.h"
+#include "g_shared.h"
+#include <qcommon\q_platform.h>
 
 extern int eventClearTime;
 qboolean G_ClearLineOfSight(const vec3_t point1, const vec3_t point2, const int ignore, const int clipmask)
@@ -700,12 +706,24 @@ int G_CheckAlertEvents(gentity_t* self, const qboolean checkSight, const qboolea
 	return -1;
 }
 
-int NPC_CheckAlertEvents(const qboolean checkSight, const qboolean checkSound, const int ignoreAlert,
-	const qboolean mustHaveOwner,
+int NPC_CheckAlertEvents(const qboolean checkSight, const qboolean checkSound,
+	const int ignoreAlert, const qboolean mustHaveOwner,
 	const int minAlertLevel, const qboolean onGroundOnly)
 {
-	return G_CheckAlertEvents(NPC, checkSight, checkSound, NPCInfo->stats.visrange, NPCInfo->stats.earshot, ignoreAlert,
-		mustHaveOwner, minAlertLevel, onGroundOnly);
+	if (!NPC || !NPCInfo)
+		return -1;
+
+	return G_CheckAlertEvents(
+		NPC,
+		checkSight,
+		checkSound,
+		NPCInfo->stats.visrange,
+		NPCInfo->stats.earshot,
+		ignoreAlert,
+		mustHaveOwner,
+		minAlertLevel,
+		onGroundOnly
+	);
 }
 
 extern void WP_ForcePowerStop(gentity_t* self, forcePowers_t force_power);
@@ -773,55 +791,53 @@ AddSoundEvent
 */
 qboolean RemoveOldestAlert();
 
-void AddSoundEvent(gentity_t* owner, vec3_t position, const float radius, const alertEventLevel_e alertLevel,
+void AddSoundEvent(gentity_t* owner, vec3_t position, const float radius,
+	const alertEventLevel_e alertLevel,
 	const qboolean needLOS,
 	const qboolean onGround)
 {
-	//FIXME: Handle this in another manner?
+	// Prevent overflow: remove oldest event if full
 	if (level.numAlertEvents >= MAX_ALERT_EVENTS)
 	{
 		if (!RemoveOldestAlert())
 		{
-			//how could that fail?
+			// Should never happen, but fail safely
 			return;
 		}
 	}
 
-	if (owner == nullptr && alertLevel < AEL_DANGER) //allows un-owned danger alerts
+	// Only danger alerts may be unowned
+	if (!owner && alertLevel < AEL_DANGER)
 		return;
 
-	//FIXME: why are Sand creatures suddenly crashlanding?
-	if (owner && owner->client && owner->client->NPC_class == CLASS_SAND_CREATURE)
+	// Sand creatures should not generate sound alerts
+	if (owner && owner->client &&
+		owner->client->NPC_class == CLASS_SAND_CREATURE)
 	{
 		return;
 	}
-
-	//FIXME: if owner is not a player or player ally, and there are no player allies present,
-	//			perhaps we don't need to store the alert... unless we want the player to
-	//			react to enemy alert events in some way?
 
 #ifdef _DEBUG
-	assert(!Q_isnan(position[0]) && !Q_isnan(position[1]) && !Q_isnan(position[2]));
+	assert(!Q_isnan(position[0]) &&
+		!Q_isnan(position[1]) &&
+		!Q_isnan(position[2]));
 #endif
-	VectorCopy(position, level.alertEvents[level.numAlertEvents].position);
 
-	level.alertEvents[level.numAlertEvents].radius = radius;
-	level.alertEvents[level.numAlertEvents].level = alertLevel;
-	level.alertEvents[level.numAlertEvents].type = AET_SOUND;
-	level.alertEvents[level.numAlertEvents].owner = owner;
-	if (needLOS)
-	{
-		//a very low-level sound, when check this sound event, check for LOS
-		level.alertEvents[level.numAlertEvents].addLight = 1; //will force an LOS trace on this sound
-	}
-	else
-	{
-		level.alertEvents[level.numAlertEvents].addLight = 0; //will force an LOS trace on this sound
-	}
-	level.alertEvents[level.numAlertEvents].onGround = onGround;
+	alertEvent_t* ev = &level.alertEvents[level.numAlertEvents];
 
-	level.alertEvents[level.numAlertEvents].ID = ++level.curAlertID;
-	level.alertEvents[level.numAlertEvents].timestamp = level.time;
+	VectorCopy(position, ev->position);
+	ev->radius = radius;
+	ev->level = alertLevel;
+	ev->type = AET_SOUND;
+	ev->owner = owner;
+
+	// needLOS = 1 means: force LOS trace when checking this sound
+	ev->addLight = needLOS ? 1 : 0;
+
+	ev->onGround = onGround;
+	ev->ID = level.curAlertID++;
+	ev->timestamp = level.time;
+
 	level.numAlertEvents++;
 }
 
@@ -831,39 +847,39 @@ AddSightEvent
 -------------------------
 */
 
-void AddSightEvent(gentity_t* owner, vec3_t position, const float radius, const alertEventLevel_e alertLevel,
-	const float addLight)
+void AddSightEvent(gentity_t* owner, vec3_t position, const float radius,
+	const alertEventLevel_e alertLevel, const float addLight)
 {
-	//FIXME: Handle this in another manner?
+	// Prevent overflow: remove oldest event if full
 	if (level.numAlertEvents >= MAX_ALERT_EVENTS)
 	{
 		if (!RemoveOldestAlert())
 		{
-			//how could that fail?
+			// Should never happen, but fail safely
 			return;
 		}
 	}
 
-	if (owner == nullptr && alertLevel < AEL_DANGER) //allows un-owned danger alerts
+	// Only danger alerts may be unowned
+	if (!owner && alertLevel < AEL_DANGER)
 		return;
 
-	//FIXME: if owner is not a player or player ally, and there are no player allies present,
-	//			perhaps we don't need to store the alert... unless we want the player to
-	//			react to enemy alert events in some way?
-
 #ifdef _DEBUG
-	assert(!Q_isnan(position[0]) && !Q_isnan(position[1]) && !Q_isnan(position[2]));
+	assert(!Q_isnan(position[0]) &&
+		!Q_isnan(position[1]) &&
+		!Q_isnan(position[2]));
 #endif
-	VectorCopy(position, level.alertEvents[level.numAlertEvents].position);
 
-	level.alertEvents[level.numAlertEvents].radius = radius;
-	level.alertEvents[level.numAlertEvents].level = alertLevel;
-	level.alertEvents[level.numAlertEvents].type = AET_SIGHT;
-	level.alertEvents[level.numAlertEvents].owner = owner;
-	level.alertEvents[level.numAlertEvents].addLight = addLight;
-	//will get added to actual light at that point when it's checked
-	level.alertEvents[level.numAlertEvents].ID = level.curAlertID++;
-	level.alertEvents[level.numAlertEvents].timestamp = level.time;
+	alertEvent_t* ev = &level.alertEvents[level.numAlertEvents];
+
+	VectorCopy(position, ev->position);
+	ev->radius = radius;
+	ev->level = alertLevel;
+	ev->type = AET_SIGHT;
+	ev->owner = owner;
+	ev->addLight = addLight;
+	ev->ID = level.curAlertID++;
+	ev->timestamp = level.time;
 
 	level.numAlertEvents++;
 }
@@ -964,31 +980,53 @@ qboolean G_ClearLOS(gentity_t* self, const vec3_t start, const vec3_t end)
 	trace_t tr;
 	int traceCount = 0;
 
-	//FIXME: ENTITYNUM_NONE ok?
-	gi.trace(&tr, start, nullptr, nullptr, end, ENTITYNUM_NONE,
-		CONTENTS_OPAQUE/*CONTENTS_SOLID*//*(CONTENTS_SOLID|CONTENTS_MONSTERCLIP)*/, static_cast<EG2_Collision>(0),
-		0);
-	while (tr.fraction < 1.0 && traceCount < 3)
+	// First trace: ignore nothing, hit anything opaque
+	gi.trace(
+		&tr,
+		start,
+		nullptr,
+		nullptr,
+		end,
+		ENTITYNUM_NONE,
+		CONTENTS_OPAQUE,
+		static_cast<EG2_Collision>(0),
+		0
+	);
+
+	// Allow up to 3 glass brushes to be ignored
+	while (tr.fraction < 1.0f && traceCount < 3)
 	{
-		//can see through 3 panes of glass
 		if (tr.entityNum < ENTITYNUM_WORLD)
 		{
-			if (&g_entities[tr.entityNum] != nullptr && g_entities[tr.entityNum].svFlags & SVF_GLASS_BRUSH)
+			gentity_t* hit = &g_entities[tr.entityNum];
+
+			// If the hit entity is a glass brush, trace again past it
+			if (hit->inuse && (hit->svFlags & SVF_GLASS_BRUSH))
 			{
-				//can see through glass, trace again, ignoring me
-				gi.trace(&tr, tr.endpos, nullptr, nullptr, end, tr.entityNum, MASK_OPAQUE,
-					static_cast<EG2_Collision>(0), 0);
 				traceCount++;
+
+				gi.trace(
+					&tr,
+					tr.endpos,
+					nullptr,
+					nullptr,
+					end,
+					tr.entityNum,      // ignore this glass brush
+					MASK_OPAQUE,
+					static_cast<EG2_Collision>(0),
+					0
+				);
+
 				continue;
 			}
 		}
+
+		// Hit something that is NOT glass → LOS blocked
 		return qfalse;
 	}
 
-	if (tr.fraction == 1.0)
-		return qtrue;
-
-	return qfalse;
+	// If the trace reached the end, LOS is clear
+	return (tr.fraction == 1.0f) ? qtrue : qfalse;
 }
 
 //Entity to position

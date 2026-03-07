@@ -23,6 +23,19 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "g_navigator.h"
 #include "g_functions.h"
+#include "ai.h"
+#include "bg_public.h"
+#include "bstate.h"
+#include "b_public.h"
+#include "ghoul2_shared.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 extern void CG_DrawAlert(vec3_t origin, float rating);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
@@ -526,100 +539,128 @@ static qboolean Sniper_EvaluateShot(const int hit)
 
 static void Sniper_FaceEnemy()
 {
-	if (NPC->enemy)
+	if (!NPC || !NPC->client)
 	{
-		vec3_t muzzle, target, angles, forward, right, up;
-		//Get the positions
-		AngleVectors(NPC->client->ps.viewangles, forward, right, up);
-		CalcMuzzlePoint(NPC, forward, muzzle, 0);
-		//CalcEntitySpot( NPC, SPOT_WEAPON, muzzle );
-		CalcEntitySpot(NPC->enemy, SPOT_ORIGIN, target);
+		return;
+	}
 
-		if (enemyDist > 65536 && NPCInfo->stats.aim < 5) //is 256 squared, was 16384 (128*128)
+	if (!NPC->enemy || !NPC->enemy->inuse)
+	{
+		NPC_UpdateAngles(qtrue, qtrue);
+		return;
+	}
+
+	if (!NPCInfo)
+	{
+		NPC_UpdateAngles(qtrue, qtrue);
+		return;
+	}
+
+	vec3_t muzzle, target, angles, forward, right, up;
+
+	// Get the positions
+	AngleVectors(NPC->client->ps.viewangles, forward, right, up);
+	CalcMuzzlePoint(NPC, forward, muzzle, 0);
+	CalcEntitySpot(NPC->enemy, SPOT_ORIGIN, target);
+
+	if (enemyDist > 65536.0f && NPCInfo->stats.aim < 5) // 256^2
+	{
+		if (NPC->count < 5 - NPCInfo->stats.aim)
 		{
-			if (NPC->count < 5 - NPCInfo->stats.aim)
+			// miss a few times first
+			if (shoot && TIMER_Done(NPC, "attackDelay") && level.time >= NPCInfo->shotTime)
 			{
-				//miss a few times first
-				if (shoot && TIMER_Done(NPC, "attackDelay") && level.time >= NPCInfo->shotTime)
+				qboolean aimError = qfalse;
+				qboolean hit = qtrue;
+				int tryMissCount = 0;
+				trace_t trace;
+
+				GetAnglesForDirection(muzzle, target, angles);
+				AngleVectors(angles, forward, right, up);
+
+				while (hit && tryMissCount < 10)
 				{
-					//ready to fire again
-					qboolean aimError = qfalse;
-					qboolean hit = qtrue;
-					int tryMissCount = 0;
-					trace_t trace;
+					tryMissCount++;
 
-					GetAnglesForDirection(muzzle, target, angles);
-					AngleVectors(angles, forward, right, up);
-
-					while (hit && tryMissCount < 10)
+					if (!Q_irand(0, 1))
 					{
-						tryMissCount++;
+						aimError = qtrue;
+
 						if (!Q_irand(0, 1))
 						{
-							aimError = qtrue;
-							if (!Q_irand(0, 1))
-							{
-								VectorMA(target, NPC->enemy->maxs[2] * Q_flrand(1.5, 4), right, target);
-							}
-							else
-							{
-								VectorMA(target, NPC->enemy->mins[2] * Q_flrand(1.5, 4), right, target);
-							}
+							VectorMA(target,
+								NPC->enemy->maxs[2] * Q_flrand(1.5f, 4.0f),
+								right, target);
 						}
-						if (!aimError || !Q_irand(0, 1))
+						else
 						{
-							if (!Q_irand(0, 1))
-							{
-								VectorMA(target, NPC->enemy->maxs[2] * Q_flrand(1.5, 4), up, target);
-							}
-							else
-							{
-								VectorMA(target, NPC->enemy->mins[2] * Q_flrand(1.5, 4), up, target);
-							}
+							VectorMA(target,
+								NPC->enemy->mins[2] * Q_flrand(1.5f, 4.0f),
+								right, target);
 						}
-						gi.trace(&trace, muzzle, vec3_origin, vec3_origin, target, NPC->s.number, MASK_SHOT,
-							static_cast<EG2_Collision>(0), 0);
-						hit = Sniper_EvaluateShot(trace.entityNum);
 					}
-					NPC->count++;
-				}
-				else
-				{
-					if (!enemy_los)
+
+					if (!aimError || !Q_irand(0, 1))
 					{
-						NPC_UpdateAngles(qtrue, qtrue);
-						return;
+						if (!Q_irand(0, 1))
+						{
+							VectorMA(target,
+								NPC->enemy->maxs[2] * Q_flrand(1.5f, 4.0f),
+								up, target);
+						}
+						else
+						{
+							VectorMA(target,
+								NPC->enemy->mins[2] * Q_flrand(1.5f, 4.0f),
+								up, target);
+						}
 					}
+
+					gi.trace(&trace, muzzle, vec3_origin, vec3_origin, target,
+						NPC->s.number, MASK_SHOT,
+						static_cast<EG2_Collision>(0), 0);
+
+					hit = Sniper_EvaluateShot(trace.entityNum);
 				}
+
+				NPC->count++;
 			}
 			else
 			{
-				//based on distance, aim value, difficulty and enemy movement, miss
-				//FIXME: incorporate distance as a factor?
-				int missFactor = 8 - (NPCInfo->stats.aim + g_spskill->integer) * 3;
-				if (missFactor > ENEMY_POS_LAG_STEPS)
+				if (!enemy_los)
 				{
-					missFactor = ENEMY_POS_LAG_STEPS;
+					NPC_UpdateAngles(qtrue, qtrue);
+					return;
 				}
-				else if (missFactor < 0)
-				{
-					//???
-					missFactor = 0;
-				}
-				VectorCopy(NPCInfo->enemyLaggedPos[missFactor], target);
 			}
-			GetAnglesForDirection(muzzle, target, angles);
 		}
 		else
 		{
-			target[2] += Q_flrand(0, NPC->enemy->maxs[2]);
-			//CalcEntitySpot( NPC->enemy, SPOT_HEAD_LEAN, target );
-			GetAnglesForDirection(muzzle, target, angles);
+			int missFactor = 8 - (NPCInfo->stats.aim + g_spskill->integer) * 3;
+
+			if (missFactor > ENEMY_POS_LAG_STEPS)
+			{
+				missFactor = ENEMY_POS_LAG_STEPS;
+			}
+			else if (missFactor < 0)
+			{
+				missFactor = 0;
+			}
+
+			VectorCopy(NPCInfo->enemyLaggedPos[missFactor], target);
 		}
 
-		NPCInfo->desiredYaw = AngleNormalize360(angles[YAW]);
-		NPCInfo->desiredPitch = AngleNormalize360(angles[PITCH]);
+		GetAnglesForDirection(muzzle, target, angles);
 	}
+	else
+	{
+		target[2] += Q_flrand(0.0f, NPC->enemy->maxs[2]);
+		GetAnglesForDirection(muzzle, target, angles);
+	}
+
+	NPCInfo->desiredYaw = AngleNormalize360(angles[YAW]);
+	NPCInfo->desiredPitch = AngleNormalize360(angles[PITCH]);
+
 	NPC_UpdateAngles(qtrue, qtrue);
 }
 

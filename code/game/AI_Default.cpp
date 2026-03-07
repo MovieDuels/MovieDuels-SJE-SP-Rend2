@@ -24,9 +24,23 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "g_nav.h"
 #include "Q3_Interface.h"
+#include <cmath>
+#include <cgame\cg_camera.h>
+#include "anims.h"
+#include "bg_public.h"
+#include "bstate.h"
+#include "b_public.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "teams.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 extern int g_crosshairEntNum;
-extern void npc_check_evasion();
+extern void NPC_CheckEvasion();
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
 extern cvar_t* g_Advancedaitalk;
 
@@ -343,7 +357,7 @@ static void NPC_StandIdle()
 {
 	if (!in_camera)
 	{
-		npc_check_evasion();
+		NPC_CheckEvasion();
 	}
 }
 
@@ -353,63 +367,40 @@ static qboolean NPC_StandTrackAndShoot(const gentity_t* npc, const qboolean can_
 	qboolean duck_ok = qfalse;
 	qboolean faced = qfalse;
 
-	//First see if we're hurt bad- if so, duck
-	//FIXME: if even when ducked, we can shoot someone, we should.
-	//Maybe is can be shot even when ducked, we should run away to the nearest cover?
-	if (can_duck)
+	// Update enemy every frame
+	NPC_CheckEnemy(qtrue, qfalse);
+
+	// Duck logic (reduced frequency)
+	if (can_duck && npc->health < 20)
 	{
-		if (npc->health < 20)
-		{
-			//	if( NPC->svFlags&SVF_HEALING || Q_flrand(0.0f, 1.0f) )
-			if (Q_flrand(0.0f, 1.0f))
-			{
-				duck_ok = qtrue;
-			}
-		}
-		else if (npc->health < 40)
-		{
-			//			if ( NPC->svFlags&SVF_HEALING )
-			//			{//Medic is on the way, get down!
-			//				duck_ok = qtrue;
-			//			}
-		}
+		if (Q_flrand(0.0f, 1.0f) < 0.25f)
+			duck_ok = qtrue;
 	}
 
-	//NPC_CheckEnemy( qtrue, qfalse );
-
+	// Try to attack
 	if (!duck_ok)
 	{
-		constexpr float attack_scale = 1.0;
-		//made this whole part a function call
+		float attack_scale = 1.25f; // more human-like firing
 		attack_ok = NPC_CheckCanAttack(attack_scale);
 		faced = qtrue;
 	}
 
-	if (can_duck && (duck_ok || !attack_ok && client->fireDelay == 0) && ucmd.upmove != -127)
+	// Duck if needed
+	if (can_duck && (duck_ok || (!attack_ok && client->fireDelay == 0)) && ucmd.upmove != -127)
 	{
-		//if we didn't attack check to duck if we're not already
-		if (!duck_ok)
+		if (!duck_ok && npc->enemy && npc->enemy->client)
 		{
-			if (npc->enemy->client)
+			if (npc->enemy->enemy == npc && (npc->enemy->client->buttons & BUTTON_ATTACK))
 			{
-				if (npc->enemy->enemy == npc)
-				{
-					if (npc->enemy->client->buttons & BUTTON_ATTACK)
-					{
-						//FIXME: determine if enemy fire angles would hit me or get close
-						if (NPC_CheckDefend(1.0)) //FIXME: Check self-preservation?  Health?
-						{
-							duck_ok = qtrue;
-						}
-					}
-				}
+				if (NPC_CheckDefend(1.0f))
+					duck_ok = qtrue;
 			}
 		}
 
 		if (duck_ok)
 		{
 			ucmd.upmove = -127;
-			NPCInfo->duckDebounceTime = level.time + 1000; //duck for a full second
+			NPCInfo->duckDebounceTime = level.time + 1000;
 		}
 	}
 
@@ -427,7 +418,7 @@ void NPC_BSIdle()
 
 	if (ucmd.forwardmove == 0 && ucmd.rightmove == 0 && ucmd.upmove == 0)
 	{
-		//		NPC_StandIdle();
+		NPC_StandIdle();
 	}
 
 	NPC_UpdateAngles(qtrue, qtrue);
@@ -501,7 +492,7 @@ void NPC_BSHuntAndKill()
 
 	if (!in_camera)
 	{
-		npc_check_evasion();
+		NPC_CheckEvasion();
 	}
 
 	NPC_CheckEnemy(static_cast<qboolean>(NPCInfo->tempBehavior != BS_HUNT_AND_KILL), qfalse);
@@ -563,7 +554,7 @@ void NPC_BSHuntAndKill()
 		//ok, stand guard until we find an enemy
 		if (!in_camera)
 		{
-			npc_check_evasion();
+			NPC_CheckEvasion();
 		}
 		if (NPCInfo->tempBehavior == BS_HUNT_AND_KILL)
 		{
@@ -592,7 +583,7 @@ void NPC_BSStandAndShoot()
 
 	if (!in_camera)
 	{
-		npc_check_evasion();
+		NPC_CheckEvasion();
 	}
 
 	NPC_CheckEnemy(qtrue, qfalse);
@@ -630,7 +621,7 @@ void NPC_BSRunAndShoot()
 {
 	if (!in_camera)
 	{
-		npc_check_evasion();
+		NPC_CheckEvasion();
 	}
 
 	NPC_CheckEnemy(qtrue, qfalse);
@@ -742,7 +733,7 @@ void NPC_BSPointShoot(const qboolean shoot)
 
 	if (!in_camera)
 	{
-		npc_check_evasion();
+		NPC_CheckEvasion();
 	}
 
 	CalcEntitySpot(NPC, SPOT_WEAPON, muzzle);
@@ -859,7 +850,7 @@ static void NPC_BSMove()
 	{
 		if (!in_camera)
 		{
-			npc_check_evasion();
+			NPC_CheckEvasion();
 		}
 		NPC_UpdateAngles(qtrue, qtrue);
 	}
@@ -880,7 +871,7 @@ static void NPC_BSShoot()
 {
 	if (!in_camera)
 	{
-		npc_check_evasion();
+		NPC_CheckEvasion();
 	}
 
 	enemyVisibility = VIS_SHOOT;
@@ -903,7 +894,7 @@ void NPC_BSPatrol()
 {
 	if (!in_camera)
 	{
-		npc_check_evasion();
+		NPC_CheckEvasion();
 	}
 
 	if (level.time > NPCInfo->enemyCheckDebounceTime)
@@ -919,17 +910,23 @@ void NPC_BSPatrol()
 		}
 	}
 
-	//FIXME: Implement generic sound alerts
-	/*
-	alert_event_num = NPC_CheckAlertEvents( qtrue, qtrue );
-	if( alert_event_num != -1 )
-	{//If we heard something, see if we should check it out
-		if ( NPC_CheckInvestigate( alert_event_num ) )
+	
+	// Generic sound alerts (safe re-enabled version)
+	if (!NPC->enemy &&
+		!(NPCInfo->scriptFlags & SCF_NO_GROUPS) &&
+		NPCInfo->tempBehavior != BS_INVESTIGATE &&
+		NPCInfo->behaviorState != BS_HUNT_AND_KILL)
+	{
+		int alert_event_num = NPC_CheckAlertEvents(qtrue, qtrue);
+
+		if (alert_event_num != -1)
 		{
-			return;
+			if (NPC_CheckInvestigate(alert_event_num))
+			{
+				return; // NPC switched to investigate behaviour
+			}
 		}
 	}
-	*/
 
 	NPCInfo->investigateSoundDebounceTime = 0;
 	//FIXME if there is no nav data, we need to do something else

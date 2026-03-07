@@ -415,13 +415,13 @@ struct boneInfo_t
 struct boltInfo_t
 {
 	int boneNumber; // bone number bolt attaches to
-	int surface_number; // surface number bolt attaches to
+	int surfaceNumber; // surface number bolt attaches to
 	int surfaceType;
 	// if we attach to a surface, this tells us if it is an original surface or a generated one - doesn't go across the network
 	int boltUsed; // nor does this
 	boltInfo_t() :
 		boneNumber(-1),
-		surface_number(-1),
+		surfaceNumber(-1),
 		surfaceType(0),
 		boltUsed(0)
 	{
@@ -431,7 +431,7 @@ struct boltInfo_t
 		ojk::SavedGameHelper& saved_game) const
 	{
 		saved_game.write<int32_t>(boneNumber);
-		saved_game.write<int32_t>(surface_number);
+		saved_game.write<int32_t>(surfaceNumber);
 		saved_game.write<int32_t>(surfaceType);
 		saved_game.write<int32_t>(boltUsed);
 	}
@@ -440,7 +440,7 @@ struct boltInfo_t
 		ojk::SavedGameHelper& saved_game)
 	{
 		saved_game.read<int32_t>(boneNumber);
-		saved_game.read<int32_t>(surface_number);
+		saved_game.read<int32_t>(surfaceNumber);
 		saved_game.read<int32_t>(surfaceType);
 		saved_game.read<int32_t>(boltUsed);
 	}

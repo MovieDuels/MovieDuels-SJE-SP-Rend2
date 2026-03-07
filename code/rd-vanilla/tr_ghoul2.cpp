@@ -2069,13 +2069,13 @@ void G2_GetBoltMatrixLow(CGhoul2Info& ghoul2, const int boltNum, const vec3_t sc
 			.boneNumber]);
 		Multiply_3x4Matrix(&retMatrix, &boneCache.EvalUnsmooth(boltList[boltNum].boneNumber), &skel->BasePoseMat);
 	}
-	else if (boltList[boltNum].surface_number >= 0)
+	else if (boltList[boltNum].surfaceNumber >= 0)
 	{
 		const surfaceInfo_t* surfInfo = nullptr;
 		{
 			for (surfaceInfo_t& t : ghoul2.mSlist)
 			{
-				if (t.surface == boltList[boltNum].surface_number)
+				if (t.surface == boltList[boltNum].surfaceNumber)
 				{
 					surfInfo = &t;
 				}
@@ -2084,7 +2084,7 @@ void G2_GetBoltMatrixLow(CGhoul2Info& ghoul2, const int boltNum, const vec3_t sc
 		const mdxmSurface_t* surface = nullptr;
 		if (!surfInfo)
 		{
-			surface = static_cast<mdxmSurface_t*>(G2_FindSurface(boneCache.mod, boltList[boltNum].surface_number, 0));
+			surface = static_cast<mdxmSurface_t*>(G2_FindSurface(boneCache.mod, boltList[boltNum].surfaceNumber, 0));
 		}
 		if (!surface && surfInfo && surfInfo->surface < 10000)
 		{

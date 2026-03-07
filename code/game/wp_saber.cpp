@@ -45,6 +45,23 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <rd-common\mdx_format.h>
 #include "teams.h"
+#include <cgame\cg_camera.h>
+#include "ai.h"
+#include "bg_public.h"
+#include "bstate.h"
+#include "b_public.h"
+#include "ghoul2_shared.h"
+#include "g_items.h"
+#include "g_shared.h"
+#include "hitlocs.h"
+#include "statindex.h"
+#include "surfaceflags.h"
+#include "weapons.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_color.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_string.h>
 
 #define JK2_RAGDOLL_GRIPNOHEALTH
 
@@ -753,19 +770,34 @@ void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, 
 
 void WP_SaberAddG2SaberModels(gentity_t* ent, const int specific_saber_num)
 {
-	int saber_num = 0, max_saber = 1;
-
+	//===========================
+	// Safety: validate pointers
+	//===========================
 	if (!ent || !ent->client)
-		return;
-
-	if (specific_saber_num != -1 && specific_saber_num <= max_saber)
 	{
-		saber_num = max_saber = specific_saber_num;
+		return;
 	}
 
+	int saber_num = 0;
+	int max_saber = 1;
+
+	//===========================
+	// Optional: restrict to one saber
+	//===========================
+	if (specific_saber_num != -1 && specific_saber_num <= max_saber)
+	{
+		saber_num = specific_saber_num;
+		max_saber = specific_saber_num;
+	}
+
+	//===========================
+	// Iterate through sabers
+	//===========================
 	for (; saber_num <= max_saber; saber_num++)
 	{
-		// Remove existing model if present
+		//---------------------------
+		// Remove existing model
+		//---------------------------
 		if (ent->weaponModel[saber_num] > 0)
 		{
 			gi.G2API_SetSkin(&ent->ghoul2[ent->weaponModel[saber_num]], -1, 0);
@@ -773,9 +805,12 @@ void WP_SaberAddG2SaberModels(gentity_t* ent, const int specific_saber_num)
 			ent->weaponModel[saber_num] = -1;
 		}
 
+		//---------------------------
 		// Saber activation logic
+		//---------------------------
 		if (saber_num > 0)
 		{
+			// Off‑hand saber only allowed if dual sabers are active
 			if (!ent->client->ps.dualSabers || G_IsRidingVehicle(ent))
 			{
 				return;
@@ -783,15 +818,19 @@ void WP_SaberAddG2SaberModels(gentity_t* ent, const int specific_saber_num)
 		}
 		else if (saber_num == 0)
 		{
+			// Main saber cannot be added if it's in flight
 			if (ent->client->ps.saberInFlight)
 			{
 				continue;
 			}
 		}
 
+		//---------------------------
+		// Determine bolt point
+		//---------------------------
 		int hand_bolt = (saber_num == 0) ? ent->handRBolt : ent->handLBolt;
 
-		// Wrist‑bolted sabers
+		// Wrist‑bolted sabers override bolt point
 		if (ent->client->ps.saber[saber_num].saberFlags & SFL_BOLT_TO_WRIST)
 		{
 			if (saber_num == 0)
@@ -804,21 +843,27 @@ void WP_SaberAddG2SaberModels(gentity_t* ent, const int specific_saber_num)
 			}
 		}
 
+		//---------------------------
 		// Create the saber model
-		G_CreateG2AttachedWeaponModel(ent,
+		//---------------------------
+		G_CreateG2AttachedWeaponModel(
+			ent,
 			ent->client->ps.saber[saber_num].model,
 			hand_bolt,
-			saber_num);
+			saber_num
+		);
 
-		// Apply custom skin if present
-		if (ent->client->ps.saber[saber_num].skin != nullptr)
+		//---------------------------
+		// Apply custom skin (if any)
+		//---------------------------
+		if (ent->client->ps.saber[saber_num].skin != NULL)
 		{
 			const int saber_skin =
 				gi.RE_RegisterSkin(ent->client->ps.saber[saber_num].skin);
 
-			if (saber_skin)
+			if (saber_skin > 0)
 			{
-				// ⭐ FIX: Only apply skin if the model index is valid
+				// ⭐ Safety: only apply skin if model index is valid
 				if (ent->weaponModel[saber_num] >= 0)
 				{
 					gi.G2API_SetSkin(
@@ -12358,22 +12403,42 @@ WP_SaberImpact
 */
 static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 {
+	//===========================
+	// Safety: validate pointers
+	//===========================
+	if (!saber || !trace)
+	{
+		return;
+	}
+
+	if (!owner)
+	{
+		// Some logic below assumes owner, but if it's NULL we can still safely
+		// process bounce and saber-saber collisions that don't require owner.
+	}
+
 	gentity_t* other = &g_entities[trace->entityNum];
 
-	if (other->takedamage && other->svFlags & SVF_BBRUSH)
+	//===========================
+	// Breakable brushes
+	//===========================
+	if (other &&
+		(other->takedamage != 0) &&
+		(other->svFlags & SVF_BBRUSH))
 	{
-		//a breakable brush?  break it!
-		if (other->spawnflags & 1 //INVINCIBLE
-			|| other->flags & FL_DMG_BY_HEAVY_WEAP_ONLY) //HEAVY weapon damage only
+		// A breakable brush? Try to break it.
+		if ((other->spawnflags & 1) != 0 || // INVINCIBLE
+			(other->flags & FL_DMG_BY_HEAVY_WEAP_ONLY) != 0) // HEAVY weapon damage only
 		{
-			//can't actually break it
-			//no hit effect (besides regular client-side one)
+			// Can't actually break it → no extra effect
 		}
 		else if (other->NPC_targetname &&
-			(!owner || !owner->targetname || Q_stricmp(owner->targetname, other->NPC_targetname)))
+			(!owner ||
+				!owner->targetname ||
+				Q_stricmp(owner->targetname, other->NPC_targetname)))
 		{
-			//only breakable by an entity who is not the attacker
-			//no hit effect (besides regular client-side one)
+			// Only breakable by an entity who is not the attacker
+			// → no extra effect
 		}
 		else
 		{
@@ -12386,16 +12451,18 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 			{
 				dmg = 20;
 			}
+
 			G_Damage(other, saber, owner, dir, trace->endpos, dmg, 0, MOD_SABER);
-			if (owner
-				&& owner->client
-				&& owner->client->ps.saber[0].hitOtherEffect)
+
+			if (owner &&
+				owner->client &&
+				owner->client->ps.saber[0].hitOtherEffect)
 			{
 				G_PlayEffect(owner->client->ps.saber[0].hitOtherEffect, trace->endpos, dir);
 			}
 			else
 			{
-				if (g_SerenityJediEngineMode->integer)
+				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 				{
 					if (g_SerenityJediEngineMode->integer == 2)
 					{
@@ -12411,7 +12478,8 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 					G_PlayEffect("saber/saber_cut", trace->endpos, dir);
 				}
 			}
-			if (owner->s.number == 0)
+
+			if (owner && owner->s.number == 0)
 			{
 				AddSoundEvent(owner, trace->endpos, 256, AEL_DISCOVERED);
 				AddSightEvent(owner, trace->endpos, 512, AEL_DISCOVERED, 50);
@@ -12420,16 +12488,26 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 		}
 	}
 
-	if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (owner->s.number < MAX_CLIENTS || G_ControlledByPlayer(owner)))
+	//===========================
+	// Stick saber into walls (Serenity mode, no forced return)
+	//===========================
+	if (g_SerenityJediEngineMode &&
+		g_SerenityJediEngineMode->integer &&
+		g_SaberMustReturn &&
+		g_SaberMustReturn->integer < 1 &&
+		owner &&
+		(owner->s.number < MAX_CLIENTS || G_ControlledByPlayer(owner)))
 	{
-		if (other && owner->client->ps.saberEntityState == SES_LEAVING
-			&& other->s.number == ENTITYNUM_WORLD //hit solid object.
-			&& owner->client->ps.forcePowerLevel[FP_SABERTHROW] >= FORCE_LEVEL_3)
+		if (other &&
+			owner->client &&
+			owner->client->ps.saberEntityState == SES_LEAVING &&
+			other->s.number == ENTITYNUM_WORLD && // hit solid world
+			owner->client->ps.forcePowerLevel[FP_SABERTHROW] >= FORCE_LEVEL_3)
 		{
 			// Reject floors and ceilings
 			if (trace->plane.normal[2] >= 0.8f || trace->plane.normal[2] <= -0.8f)
 			{
-				// too horizontal to stick
+				// Too horizontal to stick
 			}
 			else
 			{
@@ -12444,138 +12522,184 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 				// Blade must be pointing INTO the wall
 				if (DotProduct(bladeDir, wallInward) > 0.35f)
 				{
-					if (g_DebugSaberCombat->integer)
+					if (g_DebugSaberCombat && g_DebugSaberCombat->integer)
 					{
-						Com_Printf("SABER IMPACT:1. Stick in wall succsess WP_thrownSaberBallistics start at %i\n", level.time);
+						Com_Printf(
+							"SABER IMPACT:1. Stick in wall succsess WP_thrownSaberBallistics start at %i\n",
+							level.time);
 					}
 					WP_thrownSaberBallistics(saber, owner, trace);
 					return;
 				}
 				else
 				{
-					if (g_DebugSaberCombat->integer)
+					if (g_DebugSaberCombat && g_DebugSaberCombat->integer)
 					{
 						Com_Printf("Missed the stick in walls just drop at %i\n", level.time);
 					}
-					//hit a wall?
+					// Hit a wall → drop
 					WP_SaberDrop(saber->owner, saber);
 				}
 			}
 		}
 	}
 
+	//===========================
+	// Saber flight: return or drop
+	//===========================
 	if (saber->s.pos.trType == TR_LINEAR)
 	{
-		if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (owner->s.number < MAX_CLIENTS || G_ControlledByPlayer(owner)))
+		if (g_SerenityJediEngineMode &&
+			g_SerenityJediEngineMode->integer &&
+			g_SaberMustReturn &&
+			g_SaberMustReturn->integer < 1 &&
+			owner &&
+			(owner->s.number < MAX_CLIENTS || G_ControlledByPlayer(owner)))
 		{
-			//hit a wall?
+			// Hit a wall? Drop it.
 			WP_SaberDrop(saber->owner, saber);
 		}
 		else
 		{
-			//hit a wall? send it back
+			// Hit a wall? Send it back.
 			WP_SaberReturn(saber->owner, saber);
 		}
 	}
 
-	if (other && !other->client && other->contents & CONTENTS_LIGHTSABER)
+	//===========================
+	// Saber vs saber collision
+	//===========================
+	if (other &&
+		!other->client &&
+		(other->contents & CONTENTS_LIGHTSABER))
 	{
-		//2 in-flight sabers collided!
+		// Two in-flight sabers collided!
 		WP_SaberBlockSound(saber->owner, 0, 0);
 		WP_SaberBlockEffect(saber->owner, 0, 0, trace->endpos, nullptr, qfalse);
+
 		qboolean no_flare = qfalse;
-		if (saber->owner
-			&& saber->owner->client
-			&& saber->owner->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE)
+
+		if (saber->owner &&
+			saber->owner->client &&
+			(saber->owner->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE))
 		{
 			no_flare = qtrue;
 		}
-		if (!no_flare)
+
+		if (no_flare == qfalse)
 		{
 			g_saberFlashTime = level.time - 50;
 			VectorCopy(trace->endpos, g_saberFlashPos);
 		}
 	}
 
-	if (owner && owner->s.number == 0 && owner->client)
+	//===========================
+	// Player-owned saber: AI awareness events
+	//===========================
+	if (owner && owner->client && owner->s.number == 0)
 	{
-		//Add the event
 		if (owner->client->ps.SaberLength() > 0)
 		{
-			//saber is on, very suspicious
-			if (!owner->client->ps.saberInFlight && owner->client->ps.groundEntityNum == ENTITYNUM_WORLD
-				//holding saber and on ground
-				|| saber->s.pos.trType == TR_STATIONARY) //saber out there somewhere and on ground
+			// Saber is on → very suspicious
+			const qboolean saberOnGround =
+				((owner->client->ps.saberInFlight == qfalse &&
+					owner->client->ps.groundEntityNum == ENTITYNUM_WORLD) ||
+					(saber->s.pos.trType == TR_STATIONARY)) ? qtrue : qfalse;
+
+			if (saberOnGround == qtrue)
 			{
-				//an on-ground alert
+				// On-ground alert
 				AddSoundEvent(owner, saber->currentOrigin, 128, AEL_DISCOVERED, qfalse, qtrue);
 			}
 			else
 			{
-				//an in-air alert
+				// In-air alert
 				AddSoundEvent(owner, saber->currentOrigin, 128, AEL_DISCOVERED);
 			}
+
 			AddSightEvent(owner, saber->currentOrigin, 256, AEL_DISCOVERED, 50);
 		}
 		else
 		{
-			//saber is off, not as suspicious
+			// Saber is off → less suspicious
 			AddSoundEvent(owner, saber->currentOrigin, 128, AEL_SUSPICIOUS);
 			AddSightEvent(owner, saber->currentOrigin, 256, AEL_SUSPICIOUS);
 		}
 	}
 
-	// check for bounce
-	if (!other->takedamage && saber->s.eFlags & (EF_BOUNCE | EF_BOUNCE_HALF))
+	//===========================
+	// Bounce logic
+	//===========================
+	if (other &&
+		!(other->takedamage) &&
+		(saber->s.eFlags & (EF_BOUNCE | EF_BOUNCE_HALF)))
 	{
-		// Check to see if there is a bounce count
+		// Bounce count handling
 		if (saber->bounceCount)
 		{
-			// decrement number of bounces and then see if it should be done bouncing
+			// Decrement and see if done bouncing
 			if (--saber->bounceCount <= 0)
 			{
-				// He (or she) will bounce no more (after this current bounce, that is).
 				saber->s.eFlags &= ~(EF_BOUNCE | EF_BOUNCE_HALF);
-				if (saber->s.pos.trType == TR_LINEAR && owner && owner->client && owner->client->ps.saberEntityState ==
-					SES_RETURNING)
+
+				if (saber->s.pos.trType == TR_LINEAR &&
+					owner &&
+					owner->client &&
+					owner->client->ps.saberEntityState == SES_RETURNING)
 				{
 					WP_SaberDrop(saber->owner, saber);
 				}
 				return;
 			}
-			//bounced and still have bounces left
-			if (saber->s.pos.trType == TR_LINEAR && owner && owner->client && owner->client->ps.saberEntityState ==
-				SES_RETURNING)
+
+			// Bounced and still have bounces left
+			if (saber->s.pos.trType == TR_LINEAR &&
+				owner &&
+				owner->client &&
+				owner->client->ps.saberEntityState == SES_RETURNING)
 			{
-				//under telekinetic control
+				// Under telekinetic control
 				if (!gi.inPVS(saber->currentOrigin, owner->client->renderInfo.handRPoint))
 				{
-					//not in the PVS of my master
+					// Not in the PVS of my master
 					saber->bounceCount -= 25;
 				}
 			}
 		}
 
-		if (saber->s.pos.trType == TR_LINEAR && owner && owner->client && owner->client->ps.saberEntityState == SES_RETURNING)
+		// Handle physical bounce
+		if (saber->s.pos.trType == TR_LINEAR &&
+			owner &&
+			owner->client &&
+			owner->client->ps.saberEntityState == SES_RETURNING)
 		{
-			//don't home for a few frames so we can get around this thing
+			// Don't home for a few frames so we can get around this thing
 			trace_t bounce_tr;
 			vec3_t end;
 			const float owner_dist = Distance(owner->client->renderInfo.handRPoint, saber->currentOrigin);
 
-			VectorMA(saber->currentOrigin, 10, trace->plane.normal, end);
-			gi.trace(&bounce_tr, saber->currentOrigin, saber->mins, saber->maxs, end, owner->s.number, saber->clipmask,
-				static_cast<EG2_Collision>(0), 0);
+			VectorMA(saber->currentOrigin, 10.0f, trace->plane.normal, end);
+			gi.trace(&bounce_tr,
+				saber->currentOrigin,
+				saber->mins,
+				saber->maxs,
+				end,
+				owner->s.number,
+				saber->clipmask,
+				static_cast<EG2_Collision>(0),
+				0);
+
 			VectorCopy(bounce_tr.endpos, saber->currentOrigin);
-			if (owner_dist > 0)
+
+			if (owner_dist > 0.0f)
 			{
-				if (owner_dist > 50)
+				if (owner_dist > 50.0f)
 				{
-					owner->client->ps.saberEntityDist = owner_dist - 50;
+					owner->client->ps.saberEntityDist = owner_dist - 50.0f;
 				}
 				else
 				{
-					owner->client->ps.saberEntityDist = 0;
+					owner->client->ps.saberEntityDist = 0.0f;
 				}
 			}
 			return;
@@ -12585,43 +12709,48 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 
 		if (saber->s.pos.trType == TR_GRAVITY)
 		{
-			//bounced
-			//play a bounce sound
+			// Bounced under gravity → play sound and spin
 			WP_SaberFallSound(owner, saber);
-			//change rotation
 			VectorCopy(saber->currentAngles, saber->s.apos.trBase);
 			saber->s.apos.trType = TR_LINEAR;
 			saber->s.apos.trTime = level.time;
-			VectorSet(saber->s.apos.trDelta, Q_irand(-300, 300), Q_irand(-300, 300), Q_irand(-300, 300));
+			VectorSet(saber->s.apos.trDelta,
+				Q_irand(-300, 300),
+				Q_irand(-300, 300),
+				Q_irand(-300, 300));
 		}
-		//see if we stopped
 		else if (saber->s.pos.trType == TR_STATIONARY)
 		{
-			//stopped
-			//play a bounce sound
+			// Stopped → play sound and settle on slope
 			WP_SaberFallSound(owner, saber);
-			//stop rotation
 			VectorClear(saber->s.apos.trDelta);
 			pitch_roll_for_slope(saber, trace->plane.normal, saber->currentAngles);
 			saber->currentAngles[0] += SABER_PITCH_HACK;
 			VectorCopy(saber->currentAngles, saber->s.apos.trBase);
-			//remember when it fell so it can return automatically
-			saber->aimDebounceTime = level.time;
+			saber->aimDebounceTime = level.time; // remember when it fell
 		}
 	}
-	else if (other->client && other->health > 0
-		&& (other->NPC && (other->NPC->aiFlags & NPCAI_BOSS_CHARACTER || other->NPC->aiFlags &
-			NPCAI_BOSS_SERENITYJEDIENGINE)
-			//|| other->client->NPC_class == CLASS_ALORA
-			|| other->client->NPC_class == CLASS_BOBAFETT /*|| other->client->NPC_class == CLASS_MANDALORIAN*/ || other
-			->client->NPC_class == CLASS_JANGO || other->client->NPC_class == CLASS_JANGODUAL
-			|| other->client->ps.powerups[PW_GALAK_SHIELD] > 0))
+	//===========================
+	// Boss / shielded targets deflect thrown sabers
+	//===========================
+	else if (other &&
+		other->client &&
+		other->health > 0 &&
+		((other->NPC &&
+			((other->NPC->aiFlags & NPCAI_BOSS_CHARACTER) ||
+				(other->NPC->aiFlags & NPCAI_BOSS_SERENITYJEDIENGINE))) ||
+			other->client->NPC_class == CLASS_BOBAFETT ||
+			other->client->NPC_class == CLASS_JANGO ||
+			other->client->NPC_class == CLASS_JANGODUAL ||
+			other->client->ps.powerups[PW_GALAK_SHIELD] > 0))
 	{
-		//Luke, Desann and Tavion slap thrown sabers aside
+		// Boss-type characters slap thrown sabers aside
 		WP_SaberDrop(owner, saber);
 
-		if (owner && owner->client->ps.blockPoints < BLOCKPOINTS_HALF || owner->client->ps.forcePower <
-			BLOCKPOINTS_HALF)
+		if (owner &&
+			owner->client &&
+			(owner->client->ps.blockPoints < BLOCKPOINTS_HALF ||
+				owner->client->ps.forcePower < BLOCKPOINTS_HALF))
 		{
 			WP_SaberKnockSound(owner, 0, 0);
 		}
@@ -12629,20 +12758,25 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 		{
 			WP_SaberBlockSound(owner, 0, 0);
 		}
+
 		WP_SaberBlockEffect(owner, 0, 0, trace->endpos, nullptr, qfalse);
+
 		qboolean no_flare = qfalse;
-		if (owner
-			&& owner->client
-			&& owner->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE)
+
+		if (owner &&
+			owner->client &&
+			(owner->client->ps.saber[0].saberFlags2 & SFL2_NO_CLASH_FLARE))
 		{
 			no_flare = qtrue;
 		}
-		if (!no_flare)
+
+		if (no_flare == qfalse)
 		{
 			g_saberFlashTime = level.time - 50;
 			VectorCopy(trace->endpos, g_saberFlashPos);
 		}
-		//FIXME: make Luke/Desann/Tavion play an attack anim or some other special anim when this happens
+
+		// Play special deflect sound/anim
 		jedi_play_deflect_sound(other);
 	}
 }
@@ -15579,224 +15713,261 @@ static qboolean IsMoving(const gentity_t* ent)
 
 int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit_locs)
 {
-	//returns the cost to block this attack for this attacker/defender combo.
-	float saber_block_cost;
-	//===========================
-	// Determine Base Block Cost
-	//===========================
+	// Cost to block this attack for this attacker/defender combo.
+	float saber_block_cost = 0.0f;
 
-	if (!attacker //don't have attacker
-		|| !attacker->client //attacker isn't a NPC/player
-		|| attacker->client->ps.weapon != WP_SABER) //or the player that is attacking isn't using a saber
+	//===========================
+	// Validate attacker pointer
+	//===========================
+	const qboolean attackerValid = (attacker && attacker->client) ? qtrue : qfalse;
+
+	//===========================================================
+	// CASE 1: Attacker is NOT a saber user (blaster / projectile)
+	//===========================================================
+	if (!attackerValid || attacker->client->ps.weapon != WP_SABER)
 	{
-		//standard bolt block!
+		// Base bolt‑block cost
 		saber_block_cost = DODGE_BOLTBLOCK;
 
-		if (attacker && attacker->client && attacker->activator && attacker->activator->s.weapon == WP_BRYAR_PISTOL)
+		// Special pistol / SBD / Jawa tweaks
+		if (attacker && attacker->client && attacker->activator)
 		{
-			saber_block_cost = 4;
-		}
+			const int actWpn = attacker->activator->s.weapon;
 
-		if (attacker && attacker->client && attacker->activator && attacker->activator->s.weapon == WP_SBD_BLASTER)
-		{
-			saber_block_cost = 4;
-		}
-
-		if (attacker && attacker->client && attacker->activator && attacker->activator->s.weapon == WP_JAWA)
-		{
-			saber_block_cost = 4;
-		}
-
-		if (attacker->client && attacker->client->ps.weapon != WP_FLECHETTE)
-		{
-			saber_block_cost += 2;
-		}
-
-		if (defender->client && defender->client->ps.weapon == WP_SABER)
-		{
-			if (defender->client->ps.forcePowersActive & 1 << FP_SPEED)
+			if (actWpn == WP_BRYAR_PISTOL ||
+				actWpn == WP_SBD_BLASTER ||
+				actWpn == WP_JAWA)
 			{
-				saber_block_cost += 10; //Using force speed
+				saber_block_cost = 4.0f;
 			}
+		}
+
+		// Non‑flechette shots add +2
+		if (attackerValid && attacker->client->ps.weapon != WP_FLECHETTE)
+		{
+			saber_block_cost += 2.0f;
+		}
+
+		// Defender movement / stance modifiers (only if defender has a saber)
+		if (defender && defender->client && defender->client->ps.weapon == WP_SABER)
+		{
+			// Force speed active
+			if ((defender->client->ps.forcePowersActive & (1 << FP_SPEED)) != 0)
+			{
+				saber_block_cost += 10.0f;
+			}
+
+			// Running
 			if (PM_RunningAnim(defender->client->ps.legsAnim))
 			{
-				saber_block_cost += 5; //Running
+				saber_block_cost += 5.0f;
 			}
+
+			// Airborne
 			if (defender->client->ps.groundEntityNum == ENTITYNUM_NONE)
 			{
-				saber_block_cost += 10;
+				saber_block_cost += 10.0f;
 			}
+
+			// Walking
 			if (WalkCheck(defender) && IsMoving(defender))
 			{
-				saber_block_cost++; //Walking
+				saber_block_cost += 1.0f;
 			}
 		}
 
-		if (attacker->activator && attacker->activator->s.weapon == WP_BRYAR_PISTOL
-			|| attacker->activator && attacker->activator->s.weapon == WP_BLASTER_PISTOL
-			|| attacker->activator && attacker->activator->s.weapon == WP_DUAL_PISTOL
-			|| attacker->activator && attacker->activator->s.weapon == WP_DUAL_CLONEPISTOL
-			|| attacker->activator && attacker->activator->s.weapon == WP_DROIDEKA
-			|| attacker->activator && attacker->activator->s.weapon == WP_SBD_BLASTER
-			|| attacker->activator && attacker->activator->s.weapon == WP_REPEATER
-			|| attacker->activator && attacker->activator->s.weapon == WP_BOWCASTER
-			|| attacker->activator && attacker->activator->s.weapon == WP_DISRUPTOR
-			|| attacker->activator && attacker->activator->s.weapon == WP_EMPLACED_GUN
-			|| attacker->activator && attacker->activator->s.weapon == WP_FLECHETTE
-			|| attacker->activator && attacker->activator->s.weapon == WP_JAWA)
+		//===========================================================
+		// Projectile weapon‑specific block cost logic
+		//===========================================================
+		if (attacker && attacker->activator)
 		{
-			if (attacker->activator->s.weapon == WP_FLECHETTE)
-			{
-				const float distance = VectorBlockDistance(attacker->activator->currentOrigin, defender->currentOrigin);
+			const int actWpn = attacker->activator->s.weapon;
 
-				if (WalkCheck(defender))
+			// Large list of projectile weapons
+			if (actWpn == WP_BRYAR_PISTOL ||
+				actWpn == WP_BLASTER_PISTOL ||
+				actWpn == WP_DUAL_PISTOL ||
+				actWpn == WP_DUAL_CLONEPISTOL ||
+				actWpn == WP_DROIDEKA ||
+				actWpn == WP_SBD_BLASTER ||
+				actWpn == WP_REPEATER ||
+				actWpn == WP_BOWCASTER ||
+				actWpn == WP_DISRUPTOR ||
+				actWpn == WP_EMPLACED_GUN ||
+				actWpn == WP_FLECHETTE ||
+				actWpn == WP_JAWA)
+			{
+				//=====================
+				// Flechette behaviour
+				//=====================
+				if (actWpn == WP_FLECHETTE)
 				{
-					saber_block_cost = 2;
+					const float distance = VectorBlockDistance(attacker->activator->currentOrigin,
+						defender->currentOrigin);
+
+					// Walking defenders block flechette cheaper
+					saber_block_cost = WalkCheck(defender) ? 2.0f : 4.0f;
+
+					// Offense 3 + non‑medium stance adds +1
+					if (defender->client->ps.forcePowerLevel[FP_SABER_OFFENSE] >= FORCE_LEVEL_3 &&
+						defender->client->ps.saberAnimLevel != SS_MEDIUM)
+					{
+						saber_block_cost += 1.0f;
+					}
+
+					// Long‑range flechette adds +1.5
+					if (distance >= 200.0f)
+					{
+						saber_block_cost += 1.5f;
+					}
+
+					saber_block_cost += 1.0f; // universal flechette add
+				}
+				//=====================
+				// Non‑bowcaster logic
+				//=====================
+				else if (actWpn != WP_BOWCASTER)
+				{
+					const float distance = VectorBlockDistance(attacker->activator->currentOrigin,
+						defender->currentOrigin);
+
+					if (distance <= 125.0f)
+					{
+						saber_block_cost = DODGE_BOLTBLOCK * 3.0f;
+					}
+					else if (distance <= 300.0f)
+					{
+						saber_block_cost = DODGE_BOLTBLOCK * 2.0f;
+					}
+					else
+					{
+						saber_block_cost = DODGE_BOLTBLOCK;
+					}
+
+					// Repeater override
+					if (actWpn == WP_REPEATER)
+					{
+						saber_block_cost = DODGE_REPEATERBLOCK;
+					}
+				}
+				//=====================
+				// Bowcaster
+				//=====================
+				else if (actWpn == WP_BOWCASTER)
+				{
+					saber_block_cost = 3.0f;
+				}
+				//=====================
+				// Disruptor
+				//=====================
+				else if (actWpn == WP_DISRUPTOR)
+				{
+					saber_block_cost = 10.0f;
+				}
+				//=====================
+				// DEMP2 / Tusken rifle
+				//=====================
+				else if (actWpn == WP_DEMP2 || actWpn == WP_TUSKEN_RIFLE)
+				{
+					saber_block_cost = DODGE_TUSKENBLOCK * 3.0f;
 				}
 				else
 				{
-					saber_block_cost = 4;
+					saber_block_cost = 5.0f;
 				}
 
-				if (defender->client->ps.forcePowerLevel[FP_SABER_OFFENSE] >= FORCE_LEVEL_3 && defender->client->ps.
-					saberAnimLevel != SS_MEDIUM)
+				// Defender attacking while blocking
+				if (PM_SaberInAttack(defender->client->ps.saber_move) ||
+					PM_SaberInStart(defender->client->ps.saber_move))
 				{
-					saber_block_cost++;
+					if (actWpn == WP_FLECHETTE)
+					{
+						saber_block_cost *= 1.5f;
+					}
+					else
+					{
+						saber_block_cost *= 2.0f;
+					}
 				}
 
-				if (distance >= 200.0f)
+				// Fast stance reduces cost
+				if (defender->client->ps.saberAnimLevel == SS_FAST)
 				{
-					saber_block_cost += 1.5;
-				}
-				saber_block_cost += 1;
-			}
-			else if (attacker->activator->s.weapon != WP_BOWCASTER)
-			{
-				const float distance = VectorBlockDistance(attacker->activator->currentOrigin, defender->currentOrigin);
-
-				if (distance <= 125.0f)
-				{
-					saber_block_cost = DODGE_BOLTBLOCK * 3;
-				}
-				else if (distance <= 300.0f)
-				{
-					saber_block_cost = DODGE_BOLTBLOCK * 2;
-				}
-				else
-				{
-					saber_block_cost = DODGE_BOLTBLOCK;
-				}
-
-				if (attacker->activator->s.weapon == WP_REPEATER)
-				{
-					saber_block_cost = DODGE_REPEATERBLOCK;
+					saber_block_cost -= 1.0f;
 				}
 			}
-			else if (attacker->activator->s.weapon == WP_DISRUPTOR)
+			// Blaster rifle
+			else if (actWpn == WP_BLASTER)
 			{
-				saber_block_cost = 10;
-			}
-			else if (attacker->activator->s.weapon == WP_DEMP2)
-			{
-				saber_block_cost = DODGE_TUSKENBLOCK * 3;
-			}
-			else if (attacker->activator->s.weapon == WP_TUSKEN_RIFLE)
-			{
-				saber_block_cost = DODGE_TUSKENBLOCK * 3;
+				saber_block_cost = 2.5f;
 			}
 			else
 			{
-				saber_block_cost = 5;
-			}
-
-			if (PM_SaberInAttack(defender->client->ps.saber_move) || PM_SaberInStart(defender->client->ps.saber_move))
-			{
-				if (attacker->activator->s.weapon == WP_FLECHETTE)
-				{
-					saber_block_cost = saber_block_cost * 1.5;
-				}
-				else
-				{
-					saber_block_cost = saber_block_cost * 2;
-				}
-			}
-
-			if (attacker->activator->s.weapon == WP_BOWCASTER)
-			{
-				saber_block_cost = 3;
-			}
-
-			if (defender->client->ps.saberAnimLevel == SS_FAST)
-			{
-				saber_block_cost--;
+				saber_block_cost = DODGE_BOLTBLOCK;
 			}
 		}
-		else if (attacker->activator && attacker->activator->s.weapon == WP_BLASTER)
-		{
-			saber_block_cost = 2;
-		}
-		else
-		{
-			saber_block_cost = DODGE_BOLTBLOCK;
-		}
+
+		// Done with projectile logic
 	}
-	else if (attacker->client->ps.saber_move == LS_A_LUNGE
-		|| attacker->client->ps.saber_move == LS_SPINATTACK
-		|| attacker->client->ps.saber_move == LS_SPINATTACK_DUAL)
+	//===========================================================
+	// CASE 2: Saber‑vs‑Saber special moves
+	//===========================================================
+	else if (attacker->client->ps.saber_move == LS_A_LUNGE ||
+		attacker->client->ps.saber_move == LS_SPINATTACK ||
+		attacker->client->ps.saber_move == LS_SPINATTACK_DUAL)
 	{
-		//lunge attacks
-		saber_block_cost = .75 * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
+		saber_block_cost = 0.75f * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
 	}
 	else if (attacker->client->ps.saber_move == LS_ROLL_STAB)
 	{
-		//roll stab
-		saber_block_cost = 2 * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
+		saber_block_cost = 2.0f * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
 	}
 	else if (attacker->client->ps.saber_move == LS_A_JUMP_T__B_)
 	{
-		//DFA moves
-		saber_block_cost = 4 * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
+		saber_block_cost = 4.0f * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
 	}
-	else if (attacker->client->ps.saber_move == LS_A_FLIP_STAB
-		|| attacker->client->ps.saber_move == LS_A_FLIP_SLASH)
+	else if (attacker->client->ps.saber_move == LS_A_FLIP_STAB ||
+		attacker->client->ps.saber_move == LS_A_FLIP_SLASH)
 	{
-		//flip stabs do more DP
-		saber_block_cost = 2 * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
+		saber_block_cost = 2.0f * BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
 	}
+	//===========================================================
+	// CASE 3: Normal saber swings
+	//===========================================================
 	else
 	{
-		//"normal" swing moves
-		if (attacker->client->ps.userInt3 & 1 << FLAG_ATTACKFAKE)
+		const qboolean fakeAttack = ((attacker->client->ps.userInt3 & (1 << FLAG_ATTACKFAKE)) != 0) ? qtrue : qfalse;
+
+		if (fakeAttack)
 		{
-			//attacker is in an attack fake
-			if (attacker->client->ps.saberAnimLevel == SS_STRONG && !g_accurate_blocking(defender, attacker, hit_locs))
+			// Red stance fake attack bonus if not parried
+			if (attacker->client->ps.saberAnimLevel == SS_STRONG &&
+				!g_accurate_blocking(defender, attacker, hit_locs))
 			{
-				//Red does additional DP damage with attack fakes if they aren't parried.
-				saber_block_cost = BasicSaberBlockCost(attacker->client->ps.saberAnimLevel) * 1.35;
+				saber_block_cost = BasicSaberBlockCost(attacker->client->ps.saberAnimLevel) * 1.35f;
 			}
 			else
 			{
-				saber_block_cost = BasicSaberBlockCost(attacker->client->ps.saberAnimLevel) * 1.25;
+				saber_block_cost = BasicSaberBlockCost(attacker->client->ps.saberAnimLevel) * 1.25f;
 			}
 		}
 		else
 		{
-			//normal saber block
 			saber_block_cost = BasicSaberBlockCost(attacker->client->ps.saberAnimLevel);
 		}
 
-		//add running damage bonus to normal swings but don't apply if the defender is slow bouncing
-		if (!WalkCheck(attacker)
-			&& !(defender->client->ps.userInt3 & 1 << FLAG_SLOWBOUNCE)
-			&& !(defender->client->ps.userInt3 & 1 << FLAG_OLDSLOWBOUNCE))
+		// Running attack bonus (unless defender is slow‑bouncing)
+		if (!WalkCheck(attacker) &&
+			!(defender->client->ps.userInt3 & (1 << FLAG_SLOWBOUNCE)) &&
+			!(defender->client->ps.userInt3 & (1 << FLAG_OLDSLOWBOUNCE)))
 		{
 			if (attacker->client->ps.saberAnimLevel == SS_DUAL)
 			{
-				saber_block_cost *= 3.0;
+				saber_block_cost *= 3.0f;
 			}
 			else
 			{
-				saber_block_cost *= 1.5;
+				saber_block_cost *= 1.5f;
 			}
 		}
 	}
@@ -15804,99 +15975,106 @@ int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit
 	//======================
 	// Block Cost Modifiers
 	//======================
-
-	if (attacker && attacker->client)
+	if (attackerValid)
 	{
-		//attacker is a player so he must have just hit you with a saber blow.
+		// Parry reduces cost
 		if (g_accurate_blocking(defender, attacker, hit_locs))
 		{
-			//parried this attack, cost is less
 			if (defender->client->ps.saberAnimLevel == SS_FAST)
 			{
-				//blue parries cheaper
-				saber_block_cost = saber_block_cost / 3.25;
+				saber_block_cost /= 3.25f;
 			}
 			else
 			{
-				saber_block_cost = saber_block_cost / 3;
+				saber_block_cost /= 3.0f;
 			}
 		}
 
-		if (!InFront(attacker->client->ps.origin, defender->client->ps.origin, defender->client->ps.viewangles, -0.7f))
+		// Attacker behind defender
+		if (!InFront(attacker->client->ps.origin,
+			defender->client->ps.origin,
+			defender->client->ps.viewangles,
+			-0.7f))
 		{
-			//player is behind us, costs more to block
-			//staffs back block at normal cost.
-			if (defender->client->ps.saberAnimLevel == SS_STAFF && defender->client->ps.forcePowerLevel[
-				FP_SABER_DEFENSE] == FORCE_LEVEL_3)
+			if (defender->client->ps.saberAnimLevel == SS_STAFF)
 			{
-				// Having both staff and defense 3 allow no extra back hit damage
-				saber_block_cost *= 1;
-			}
-			else if (defender->client->ps.saberAnimLevel == SS_STAFF && defender->client->ps.forcePowerLevel[
-				FP_SABER_DEFENSE] == FORCE_LEVEL_2)
-			{
-				//level 2 defense lowers back damage more
-				saber_block_cost *= 1.50;
-			}
-			else if (defender->client->ps.saberAnimLevel == SS_STAFF && defender->client->ps.forcePowerLevel[
-				FP_SABER_DEFENSE] == FORCE_LEVEL_1)
-			{
-				//level 1 defense lowers back damage a bit
-				saber_block_cost *= 1.75;
+				const int defLvl = defender->client->ps.forcePowerLevel[FP_SABER_DEFENSE];
+
+				if (defLvl == FORCE_LEVEL_3)
+				{
+					saber_block_cost *= 1.0f;
+				}
+				else if (defLvl == FORCE_LEVEL_2)
+				{
+					saber_block_cost *= 1.50f;
+				}
+				else if (defLvl == FORCE_LEVEL_1)
+				{
+					saber_block_cost *= 1.75f;
+				}
+				else
+				{
+					saber_block_cost *= 2.0f;
+				}
 			}
 			else
 			{
-				saber_block_cost *= 2;
+				saber_block_cost *= 2.0f;
 			}
 		}
 
-		//clamp to body dodge cost since it wouldn't be fair to cost more than that.
+		// Clamp to body dodge cost
 		if (saber_block_cost > BasicWeaponBlockCosts[MOD_SABER])
 		{
 			saber_block_cost = BasicWeaponBlockCosts[MOD_SABER];
 		}
 	}
+
+	// Stumble / broken parry
 	if (PM_SaberInBrokenParry(defender->client->ps.saber_move))
 	{
-		//we're stunned/stumbling, increase DP cost
-		saber_block_cost *= 1.5;
+		saber_block_cost *= 1.5f;
 	}
 
+	// Kicking
 	if (PM_KickingAnim(defender->client->ps.legsAnim))
 	{
-		//kicking
-		saber_block_cost *= 1.5;
+		saber_block_cost *= 1.5f;
 	}
 
+	// Defender movement penalties
 	if (!WalkCheck(defender))
 	{
 		if (defender->NPC)
 		{
-			saber_block_cost *= 1.0;
+			saber_block_cost *= 1.0f;
 		}
 		else
 		{
-			saber_block_cost *= 2.5;
+			saber_block_cost *= 2.5f;
 		}
 	}
+
+	// Airborne defender
 	if (defender->client->ps.groundEntityNum == ENTITYNUM_NONE)
 	{
-		//in mid-air
-		if (defender->client->ps.saberAnimLevel == SS_DUAL) //Ataru's other perk much less cost for air hit
+		if (defender->client->ps.saberAnimLevel == SS_DUAL)
 		{
-			saber_block_cost *= .5;
+			saber_block_cost *= 0.5f;
 		}
 		else
 		{
-			saber_block_cost *= 2;
+			saber_block_cost *= 2.0f;
 		}
 	}
+
+	// Too soon after bolt block
 	if (defender->client->ps.saberBlockingTime > level.time)
 	{
-		//attempting to block something too soon after a saber bolt block
-		saber_block_cost *= 2;
+		saber_block_cost *= 2.0f;
 	}
-	return static_cast<int>(saber_block_cost);
+
+	return (int)saber_block_cost;
 }
 
 int WP_SaberBoltBlockCost(gentity_t* defender, const gentity_t* attacker)
@@ -19395,7 +19573,7 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 void wp_saber_start_missile_block_check(gentity_t* self, const usercmd_t* ucmd)
 {
 	gentity_t* incoming = nullptr;
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	vec3_t mins{}, maxs{};
 	constexpr float radius = 256;
 	vec3_t forward;
@@ -19923,7 +20101,7 @@ void wp_saber_start_missile_block_check_md(gentity_t* self, const usercmd_t* ucm
 	int swing_block_quad = Q_T;
 	int closestSwingQuad = Q_T;
 	gentity_t* incoming = nullptr;
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	vec3_t mins{}, maxs{};
 	constexpr float radius = 256;
 	vec3_t forward;
@@ -29451,7 +29629,7 @@ int IsPressingDestructButton(const gentity_t* self)
 	return qfalse;
 }
 
-static void ForceDashAnim(gentity_t* self)
+static void ForceHopAnim(gentity_t* self)
 {
 	constexpr int set_anim_override = SETANIM_AFLAG_PACE;
 
@@ -29473,7 +29651,7 @@ static void ForceDashAnim(gentity_t* self)
 	}
 }
 
-static void ForceDashAnimDash(gentity_t* self)
+void ForceDashAnimDash(gentity_t* self)
 {
 	constexpr int set_anim_override = SETANIM_AFLAG_PACE;
 
@@ -29565,7 +29743,7 @@ static void ForceSpeedDash(gentity_t* self)
 	{
 		if (PM_RunningAnim(self->client->ps.legsAnim))
 		{
-			ForceDashAnim(self);
+			ForceHopAnim(self);
 			WP_ForcePowerStop(self, FP_SPEED);
 		}
 		else
@@ -29599,14 +29777,13 @@ static void ForceSpeedDash(gentity_t* self)
 		self->client->ps.velocity[1] = self->client->ps.velocity[1] * 4;
 
 		ForceDashAnimDash(self);
+
+		G_Sound(self, G_SoundIndex("sound/weapons/force/dash.mp3"));
 	}
 	else if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 	{
 		NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEINAIR1, SETANIM_AFLAG_PACE);
 	}
-
-	G_Sound(self, G_SoundIndex("sound/weapons/force/dash.mp3"));
-	CG_PlayEffectBolted("misc/breath.efx", self->playerModel, self->headBolt, self->s.number, self->currentOrigin);
 }
 
 void player_Burn(const gentity_t* self);
@@ -31046,6 +31223,12 @@ qboolean CanBeFeared(const gentity_t* self, const gentity_t* traceEnt)
 
 static qboolean ThisGuyIsAGunner(const gentity_t* self)
 {
+	// Safety: null check
+	if (!self)
+	{
+		return qfalse;
+	}
+
 	switch (self->s.weapon)
 	{
 	case WP_BLASTER_PISTOL:
@@ -31082,9 +31265,10 @@ static qboolean ThisGuyIsAGunner(const gentity_t* self)
 	case WP_DUAL_PISTOL:
 	case WP_DUAL_CLONEPISTOL:
 		return qtrue;
-	default:;
+
+	default:
+		return qfalse;
 	}
-	return qfalse;
 }
 
 constexpr auto STRIKE_DAMAGELOW = 10;
@@ -34457,69 +34641,96 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 	}
 }
 
+/*
+===========================
+ForceShootLightning
+===========================
+*/
 void ForceShootLightning(gentity_t* self)
 {
 	trace_t tr;
 	vec3_t forward;
-	gentity_t* traceEnt;
+	gentity_t* traceEnt = NULL;
 
+	// --- Early outs ---
 	if (self->health <= 0)
 	{
 		return;
 	}
-	if (!self->s.number && cg.zoomMode)
-	{
-		//can't force lightning when zoomed in
-		return;
-	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	// Player cannot lightning while zoomed
+	if (self->s.number == 0 && cg.zoomMode == qtrue)
 	{
 		return;
 	}
 
-	AngleVectors(self->client->ps.viewangles, forward, nullptr, nullptr);
+	// Cannot lightning while in ledge movement
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
+	{
+		return;
+	}
+
+	// Compute forward direction
+	AngleVectors(self->client->ps.viewangles, forward, NULL, NULL);
 	VectorNormalize(forward);
 
+	// ============================================================
+	//  LEVEL 3+ LIGHTNING (ARC MODE)
+	// ============================================================
 	if (self->client->ps.forcePowerLevel[FP_LIGHTNING] > FORCE_LEVEL_2)
 	{
-		//arc
-		vec3_t center, mins{}, maxs{}, v{};
-		constexpr float radius = 512;
-		float dot;
-		gentity_t* entity_list[MAX_GENTITIES];
-		int i;
+		constexpr float radius = 512.0f;
+		vec3_t center;
+		vec3_t mins{};
+		vec3_t maxs{};
+		vec3_t v{};
+		static gentity_t* entityList[MAX_GENTITIES];
 
 		VectorCopy(self->currentOrigin, center);
-		for (i = 0; i < 3; i++)
+
+		// Build bounding box for entity search
+		for (int i = 0; i < 3; i++)
 		{
 			mins[i] = center[i] - radius;
 			maxs[i] = center[i] + radius;
 		}
-		const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
-		for (int e = 0; e < num_listed_entities; e++)
+		const int numListed = gi.EntitiesInBox(mins, maxs, entityList, MAX_GENTITIES);
+
+		// Loop through all entities in radius
+		for (int e = 0; e < numListed; e++)
 		{
-			vec3_t size;
-			vec3_t ent_org;
-			vec3_t dir;
-			traceEnt = entity_list[e];
+			traceEnt = entityList[e];
 
-			if (!traceEnt)
+			if (traceEnt == NULL)
+			{
 				continue;
+			}
 			if (traceEnt == self)
+			{
 				continue;
-			if (traceEnt->owner == self && traceEnt->s.weapon != WP_THERMAL) //can push your own thermals
+			}
+			if (traceEnt->owner == self && traceEnt->s.weapon != WP_THERMAL)
+			{
+				// Can push own thermals only
 				continue;
-			if (!traceEnt->inuse)
+			}
+			if (traceEnt->inuse == qfalse)
+			{
 				continue;
-			if (!traceEnt->takedamage)
+			}
+			if (traceEnt->takedamage == qfalse)
+			{
 				continue;
-			if (traceEnt->health <= 0) //no torturing corpses
+			}
+			if (traceEnt->health <= 0)
+			{
+				// No torturing corpses
 				continue;
-			//this is all to see if we need to start a saber attack, if it's in flight, this doesn't matter
-			// find the distance from the edge of the bounding box
-			for (i = 0; i < 3; i++)
+			}
+
+			// Distance from bounding box edge
+			for (int i = 0; i < 3; i++)
 			{
 				if (center[i] < traceEnt->absmin[i])
 				{
@@ -34531,118 +34742,151 @@ void ForceShootLightning(gentity_t* self)
 				}
 				else
 				{
-					v[i] = 0;
+					v[i] = 0.0f;
 				}
 			}
 
+			// Compute entity center
+			vec3_t size;
+			vec3_t entOrg;
 			VectorSubtract(traceEnt->absmax, traceEnt->absmin, size);
-			VectorMA(traceEnt->absmin, 0.5, size, ent_org);
+			VectorMA(traceEnt->absmin, 0.5f, size, entOrg);
 
-			//see if they're in front of me
-			//must be within the forward cone
-			VectorSubtract(ent_org, center, dir);
+			// Check forward cone
+			vec3_t dir;
+			VectorSubtract(entOrg, center, dir);
 			VectorNormalize(dir);
-			if ((dot = DotProduct(dir, forward)) < 0.5)
-				continue;
 
-			//must be close enough
+			const float dot = DotProduct(dir, forward);
+			if (dot < 0.5f)
+			{
+				continue;
+			}
+
+			// Check radius
 			const float dist = VectorLength(v);
 			if (dist >= radius)
 			{
 				continue;
 			}
 
-			//in PVS?
-			if (!traceEnt->bmodel && !gi.inPVS(ent_org, self->client->renderInfo.handLPoint))
+			// Check PVS
+			if (traceEnt->bmodel == qfalse &&
+				gi.inPVS(entOrg, self->client->renderInfo.handLPoint) == qfalse)
 			{
-				//must be in PVS
 				continue;
 			}
 
-			//Now check and see if we can actually hit it
-			gi.trace(&tr, self->client->renderInfo.handLPoint, vec3_origin, vec3_origin, ent_org, self->s.number,
-				MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+			// Check line of sight
+			gi.trace(&tr,
+				self->client->renderInfo.handLPoint,
+				vec3_origin,
+				vec3_origin,
+				entOrg,
+				self->s.number,
+				MASK_SHOT,
+				static_cast<EG2_Collision>(0),
+				0);
+
 			if (tr.fraction < 1.0f && tr.entityNum != traceEnt->s.number)
 			{
-				//must have clear LOS
 				continue;
 			}
 
-			if (g_SerenityJediEngineMode->integer)
+			// Apply damage depending on SJE mode
+			if (g_SerenityJediEngineMode->integer != 0)
 			{
 				if (g_SerenityJediEngineMode->integer == 2)
 				{
-					ForceLightningDamage_AMD(self, traceEnt, dir, dist, dot, ent_org);
+					ForceLightningDamage_AMD(self, traceEnt, dir, dist, dot, entOrg);
 				}
 				else
 				{
-					ForceLightningDamage_MD(self, traceEnt, dir, dist, dot, ent_org);
+					ForceLightningDamage_MD(self, traceEnt, dir, dist, dot, entOrg);
 				}
 			}
 			else
 			{
-				ForceLightningDamage(self, traceEnt, dir, dist, dot, ent_org);
+				ForceLightningDamage(self, traceEnt, dir, dist, dot, entOrg);
 			}
 		}
+
+		return;
 	}
-	else
+
+	// ============================================================
+	//  LEVEL 1–2 LIGHTNING (STRAIGHT BEAM)
+	// ============================================================
+	vec3_t start;
+	vec3_t end;
+	int ignore = self->s.number;
+	int traces = 0;
+
+	VectorCopy(self->client->renderInfo.handLPoint, start);
+	VectorMA(start, 2048.0f, forward, end);
+
+	// Trace up to 10 times (Jedi dodge logic)
+	while (traces < 10)
 	{
-		vec3_t end;
-		//trace-line
-		int ignore = self->s.number;
-		int traces = 0;
-		vec3_t start;
+		gi.trace(&tr,
+			start,
+			vec3_origin,
+			vec3_origin,
+			end,
+			ignore,
+			MASK_SHOT,
+			G2_RETURNONHIT,
+			10);
 
-		VectorCopy(self->client->renderInfo.handLPoint, start);
-		VectorMA(self->client->renderInfo.handLPoint, 2048, forward, end);
-
-		while (traces < 10)
+		if (tr.entityNum == ENTITYNUM_NONE ||
+			tr.fraction == 1.0f ||
+			tr.allsolid == qtrue ||
+			tr.startsolid == qtrue)
 		{
-			//need to loop this in case we hit a Jedi who dodges the shot
-			gi.trace(&tr, start, vec3_origin, vec3_origin, end, ignore, MASK_SHOT, G2_RETURNONHIT, 10);
-			if (tr.entityNum == ENTITYNUM_NONE || tr.fraction == 1.0 || tr.allsolid || tr.startsolid)
-			{
-				return;
-			}
-
-			traceEnt = &g_entities[tr.entityNum];
-			//NOTE: only NPCs do this auto-dodge
-			if (!in_camera && traceEnt
-				&& traceEnt->s.weapon != WP_SABER
-				&& traceEnt->s.number >= MAX_CLIENTS
-				&& traceEnt->client
-				&& traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0)
-			{
-				if (!jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
-				{
-					//act like we didn't even hit him
-					VectorCopy(tr.endpos, start);
-					ignore = tr.entityNum;
-					traces++;
-					continue;
-				}
-			}
-			//a Jedi is not dodging this shot
-			break;
+			return;
 		}
 
 		traceEnt = &g_entities[tr.entityNum];
 
-		if (g_SerenityJediEngineMode->integer)
+		// NPC Jedi dodge logic
+		if (in_camera == qfalse &&
+			traceEnt != NULL &&
+			traceEnt->s.weapon != WP_SABER &&
+			traceEnt->s.number >= MAX_CLIENTS &&
+			traceEnt->client != NULL &&
+			traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0)
 		{
-			if (g_SerenityJediEngineMode->integer == 2)
+			if (jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE) == qfalse)
 			{
-				ForceLightningDamage_AMD(self, traceEnt, forward, 0, 0, tr.endpos);
+				// Continue trace past dodging Jedi
+				VectorCopy(tr.endpos, start);
+				ignore = tr.entityNum;
+				traces++;
+				continue;
 			}
-			else
-			{
-				ForceLightningDamage_MD(self, traceEnt, forward, 0, 0, tr.endpos);
-			}
+		}
+
+		// Hit something valid
+		break;
+	}
+
+	traceEnt = &g_entities[tr.entityNum];
+
+	// Apply damage depending on SJE mode
+	if (g_SerenityJediEngineMode->integer != 0)
+	{
+		if (g_SerenityJediEngineMode->integer == 2)
+		{
+			ForceLightningDamage_AMD(self, traceEnt, forward, 0.0f, 0.0f, tr.endpos);
 		}
 		else
 		{
-			ForceLightningDamage(self, traceEnt, forward, 0, 0, tr.endpos);
+			ForceLightningDamage_MD(self, traceEnt, forward, 0.0f, 0.0f, tr.endpos);
 		}
+	}
+	else
+	{
+		ForceLightningDamage(self, traceEnt, forward, 0.0f, 0.0f, tr.endpos);
 	}
 }
 
@@ -35314,6 +35558,11 @@ static void ForceShootDrain(gentity_t* self)
 	trace_t tr;
 	int num_drained = 0;
 
+	if (!self || !self->client)
+	{
+		return;
+	}
+
 	if (self->health <= 0)
 	{
 		return;
@@ -35324,10 +35573,13 @@ static void ForceShootDrain(gentity_t* self)
 		return;
 	}
 
-	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.weapon == WP_SABER)
-		//npc force use limit
+	// NPC force use limit
+	if (self->s.number >= MAX_CLIENTS &&
+		!G_ControlledByPlayer(self) &&
+		self->client->ps.weapon == WP_SABER)
 	{
-		if (self->client->ps.blockPoints < BLOCKPOINTS_HALF || self->client->ps.forcePower < BLOCKPOINTS_HALF)
+		if (self->client->ps.blockPoints < BLOCKPOINTS_HALF ||
+			self->client->ps.forcePower < BLOCKPOINTS_HALF)
 		{
 			return;
 		}
@@ -35337,51 +35589,57 @@ static void ForceShootDrain(gentity_t* self)
 	{
 		gentity_t* traceEnt;
 		vec3_t forward;
+
 		AngleVectors(self->client->ps.viewangles, forward, nullptr, nullptr);
 		VectorNormalize(forward);
 
 		if (self->client->ps.forcePowerLevel[FP_DRAIN] > FORCE_LEVEL_2)
 		{
-			//arc
+			// Arc drain
 			vec3_t center, mins, maxs, v;
 			constexpr float radius = MAX_DRAIN_DISTANCE;
 			gentity_t* entity_list[MAX_GENTITIES];
-			int i;
 
 			VectorCopy(self->client->ps.origin, center);
-			for (i = 0; i < 3; i++)
+			for (int i = 0; i < 3; i++)
 			{
 				mins[i] = center[i] - radius;
 				maxs[i] = center[i] + radius;
 			}
+
 			const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
 			for (int e = 0; e < num_listed_entities; e++)
 			{
 				vec3_t size;
-				float dot;
 				vec3_t ent_org;
 				vec3_t dir;
+				float dot;
+
 				traceEnt = entity_list[e];
 
-				if (!traceEnt)
+				if (!traceEnt || traceEnt == self || !traceEnt->inuse || !traceEnt->takedamage)
+				{
 					continue;
-				if (traceEnt == self)
+				}
+
+				if (traceEnt->health <= 0)
+				{
 					continue;
-				if (!traceEnt->inuse)
-					continue;
-				if (!traceEnt->takedamage)
-					continue;
-				if (traceEnt->health <= 0) //no torturing corpses
-					continue;
+				}
+
 				if (!traceEnt->client)
+				{
 					continue;
-				if (self->enemy != traceEnt //not my enemy
-					&& OnSameTeam(self, traceEnt)) //on my team
+				}
+
+				if (self->enemy != traceEnt && OnSameTeam(self, traceEnt))
+				{
 					continue;
-				//this is all to see if we need to start a saber attack, if it's in flight, this doesn't matter
-				// find the distance from the edge of the bounding box
-				for (i = 0; i < 3; i++)
+				}
+
+				// Distance from edge of bounding box
+				for (int i = 0; i < 3; i++)
 				{
 					if (center[i] < traceEnt->absmin[i])
 					{
@@ -35393,117 +35651,119 @@ static void ForceShootDrain(gentity_t* self)
 					}
 					else
 					{
-						v[i] = 0;
+						v[i] = 0.0f;
 					}
 				}
 
 				VectorSubtract(traceEnt->absmax, traceEnt->absmin, size);
-				VectorMA(traceEnt->absmin, 0.5, size, ent_org);
+				VectorMA(traceEnt->absmin, 0.5f, size, ent_org);
 
-				//see if they're in front of me
-				//must be within the forward cone
+				// Must be within forward cone
 				VectorSubtract(ent_org, center, dir);
 				VectorNormalize(dir);
-				if ((dot = DotProduct(dir, forward)) < 0.5)
+				dot = DotProduct(dir, forward);
+				if (dot < 0.5f)
+				{
 					continue;
+				}
 
-				//must be close enough
+				// Must be close enough
 				const float dist = VectorLength(v);
 				if (dist >= radius)
 				{
 					continue;
 				}
 
-				//in PVS?
-				if (!traceEnt->bmodel && !gi.inPVS(ent_org, self->client->renderInfo.handLPoint))
+				// In PVS?
+				if (!traceEnt->bmodel &&
+					!gi.inPVS(ent_org, self->client->renderInfo.handLPoint))
 				{
-					//must be in PVS
 					continue;
 				}
 
-				//Now check and see if we can actually hit it
-				gi.trace(&tr, self->client->ps.origin, vec3_origin, vec3_origin, ent_org, self->s.number, MASK_SHOT,
-					G2_RETURNONHIT, 10);
+				// Clear LOS
+				gi.trace(&tr, self->client->ps.origin, vec3_origin, vec3_origin, ent_org,
+					self->s.number, MASK_SHOT, G2_RETURNONHIT, 10);
 				if (tr.fraction < 1.0f && tr.entityNum != traceEnt->s.number)
 				{
-					//must have clear LOS
 					continue;
 				}
 
-				if (g_SerenityJediEngineMode->integer)
+				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 				{
-					if (traceEnt
-						&& traceEnt->s.number >= MAX_CLIENTS //npc only
-						&& traceEnt->client
-						&& traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 &&
+					if (traceEnt->s.number >= MAX_CLIENTS &&
+						traceEnt->client &&
+						traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 &&
 						traceEnt->client->ps.weapon != WP_SABER)
 					{
-						if (!Q_irand(0, 4) && !jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
+						if (!Q_irand(0, 4) &&
+							!jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
 						{
-							//act like we didn't even hit him
 							continue;
 						}
 					}
 				}
 				else
 				{
-					if (traceEnt
-						&& traceEnt->s.number >= MAX_CLIENTS
-						&& traceEnt->client
-						&& traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0)
+					if (traceEnt->s.number >= MAX_CLIENTS &&
+						traceEnt->client &&
+						traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0)
 					{
-						if (!Q_irand(0, 4) && !jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
+						if (!Q_irand(0, 4) &&
+							!jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
 						{
-							//act like we didn't even hit him
 							continue;
 						}
 					}
 				}
 
-				// ok, we are within the radius, add us to the incoming list
 				if (WP_CheckForceDraineeStopMe(self, traceEnt))
 				{
 					continue;
 				}
+
 				ForceDrainDamage(self, traceEnt, dir, ent_org);
 				num_drained++;
 			}
 		}
 		else
 		{
+			// Line drain
 			vec3_t end;
-			//trace-line
+			vec3_t start;
 			int ignore = self->s.number;
 			int traces = 0;
-			vec3_t start;
 
 			VectorCopy(self->client->renderInfo.handLPoint, start);
 			VectorMA(start, MAX_DRAIN_DISTANCE, forward, end);
 
 			while (traces < 10)
 			{
-				//need to loop this in case we hit a Jedi who dodges the shot
-				gi.trace(&tr, start, vec3_origin, vec3_origin, end, ignore, MASK_SHOT, G2_RETURNONHIT, 10);
-				if (tr.entityNum == ENTITYNUM_NONE || tr.fraction == 1.0 || tr.allsolid || tr.startsolid)
+				gi.trace(&tr, start, vec3_origin, vec3_origin, end,
+					ignore, MASK_SHOT, G2_RETURNONHIT, 10);
+
+				if (tr.entityNum == ENTITYNUM_NONE ||
+					tr.fraction == 1.0f ||
+					tr.allsolid ||
+					tr.startsolid)
 				{
-					//always take 1 force point per frame that we're shooting this
 					WP_ForcePowerDrain(self, FP_DRAIN, 1);
 					return;
 				}
 
 				traceEnt = &g_entities[tr.entityNum];
 
-				if (g_SerenityJediEngineMode->integer)
+				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 				{
-					if (traceEnt
-						&& traceEnt->s.number >= MAX_CLIENTS
-						&& traceEnt->client
-						&& traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 &&
+					if (traceEnt &&
+						traceEnt->s.number >= MAX_CLIENTS &&
+						traceEnt->client &&
+						traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 &&
 						traceEnt->client->ps.weapon != WP_SABER)
 					{
-						if (!Q_irand(0, 2) && !jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
+						if (!Q_irand(0, 2) &&
+							!jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
 						{
-							//act like we didn't even hit him
 							VectorCopy(tr.endpos, start);
 							ignore = tr.entityNum;
 							traces++;
@@ -35513,14 +35773,14 @@ static void ForceShootDrain(gentity_t* self)
 				}
 				else
 				{
-					if (traceEnt
-						&& traceEnt->s.number >= MAX_CLIENTS
-						&& traceEnt->client
-						&& traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0)
+					if (traceEnt &&
+						traceEnt->s.number >= MAX_CLIENTS &&
+						traceEnt->client &&
+						traceEnt->client->ps.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0)
 					{
-						if (!Q_irand(0, 2) && !jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
+						if (!Q_irand(0, 2) &&
+							!jedi_dodge_evasion(traceEnt, self, &tr, HL_NONE))
 						{
-							//act like we didn't even hit him
 							VectorCopy(tr.endpos, start);
 							ignore = tr.entityNum;
 							traces++;
@@ -35530,26 +35790,27 @@ static void ForceShootDrain(gentity_t* self)
 				}
 				break;
 			}
+
 			traceEnt = &g_entities[tr.entityNum];
-			if (!WP_CheckForceDraineeStopMe(self, traceEnt))
+			if (traceEnt && !WP_CheckForceDraineeStopMe(self, traceEnt))
 			{
 				ForceDrainDamage(self, traceEnt, forward, tr.endpos);
 			}
 			num_drained = 1;
 		}
 
-		self->client->ps.forcePowerDebounce[FP_DRAIN] = level.time + 200; //so we don't drain so damn fast!
+		self->client->ps.forcePowerDebounce[FP_DRAIN] = level.time + 200;
 	}
+
 	self->client->ps.forcePowerRegenDebounceTime = level.time + 500;
 
 	if (!num_drained)
 	{
-		//always take 1 force point per frame that we're shooting this
 		WP_ForcePowerDrain(self, FP_DRAIN, 1);
 	}
 	else
 	{
-		WP_ForcePowerDrain(self, FP_DRAIN, num_drained); //was 2, but...
+		WP_ForcePowerDrain(self, FP_DRAIN, num_drained);
 	}
 }
 
@@ -36562,203 +36823,305 @@ static void forcestasis_anim(gentity_t* self)
 
 static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 {
-	float current_frame, animSpeed;
-	int junk;
-
-	if (traceEnt->s.eType != ET_PLAYER)
+	//===========================
+	// Safety: validate pointers
+	//===========================
+	if (!self || !self->client || !traceEnt)
 	{
-		// We hit an entity, but it wasn't an NPC.
 		return;
 	}
 
+	// We only care about players
+	if (traceEnt->s.eType != ET_PLAYER)
+	{
+		// We hit an entity, but it wasn't a player.
+		return;
+	}
+
+	//===========================
+	// Respect NO_FORCE script flag
+	//===========================
 	if (traceEnt->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(traceEnt))
 	{
-		if (!in_camera && traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
+		if (!in_camera &&
+			traceEnt->NPC &&
+			(traceEnt->NPC->scriptFlags & SCF_NO_FORCE))
 		{
 			return;
 		}
 	}
 
-	if (traceEnt && traceEnt->takedamage)
+	//===========================
+	// Main stasis application
+	//===========================
+	if (traceEnt->takedamage)
 	{
-		if (!traceEnt->client || traceEnt->client->playerTeam != self->client->playerTeam || self->enemy == traceEnt || traceEnt->enemy == self)
+		const qboolean is_same_team =
+			(traceEnt->client &&
+				traceEnt->client->playerTeam == self->client->playerTeam) ? qtrue : qfalse;
+
+		const qboolean is_mutual_enemy =
+			(self->enemy == traceEnt || traceEnt->enemy == self) ? qtrue : qfalse;
+
+		// Only affect enemies or non‑teammates, or explicit enemies
+		if (!traceEnt->client || is_same_team == qfalse || is_mutual_enemy == qtrue)
 		{
-			int actual_time;
-			//an enemy or object
+			float current_frame = 0.0f;
+			float animSpeed = 0.0f;
+			int junk = 0;
+			int actual_time = 0;
+
+			//===========================
+			// Case 1: Non‑Jedi / non‑saber users
+			//===========================
 			if (traceEnt->health > 0 &&
-				traceEnt->s.weapon != WP_SABER && traceEnt->client && traceEnt->client->NPC_class != CLASS_REBORN)
+				traceEnt->client &&
+				traceEnt->s.weapon != WP_SABER &&
+				traceEnt->client->NPC_class != CLASS_REBORN)
 			{
-				//doesn't affect jedi .but affects everything else??
-				if (traceEnt->client)
+				traceEnt->client->ps.stasisTime =
+					level.time + stasisTime[self->client->ps.forcePowerLevel[FP_STASIS]];
+				VectorClear(traceEnt->client->ps.velocity);
+
+				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 				{
-					traceEnt->client->ps.stasisTime = level.time + stasisTime[self->client->ps.forcePowerLevel[
-						FP_STASIS]];
-					VectorClear(traceEnt->client->ps.velocity);
+					player_Freeze(traceEnt);
 
-					if (g_SerenityJediEngineMode->integer)
+					if (traceEnt->client->NPC_class == CLASS_BOBAFETT ||
+						traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
+						traceEnt->client->NPC_class == CLASS_JANGO ||
+						traceEnt->client->NPC_class == CLASS_JANGODUAL ||
+						traceEnt->client->NPC_class == CLASS_ROCKETTROOPER)
 					{
-						player_Freeze(traceEnt);
-
-						if (traceEnt->client->NPC_class == CLASS_BOBAFETT ||
-							traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
-							traceEnt->client->NPC_class == CLASS_JANGO ||
-							traceEnt->client->NPC_class == CLASS_JANGODUAL ||
-							traceEnt->client->NPC_class == CLASS_ROCKETTROOPER)
+						// Also disables NPC jetpack
+						jet_fly_stop(traceEnt);
+						if (traceEnt->client->jetPackOn)
 						{
-							// also disables npc jetpack
-							jet_fly_stop(traceEnt);
-							if (traceEnt->client->jetPackOn)
-							{
-								//disable jetpack temporarily
-								Jetpack_Off(traceEnt);
-								traceEnt->client->jetPackToggleTime = level.time + Q_irand(3000, 10000);
-							}
+							Jetpack_Off(traceEnt);
+							traceEnt->client->jetPackToggleTime =
+								level.time + Q_irand(3000, 10000);
 						}
+					}
 
-						if (d_slowmoaction->integer && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
+					if (d_slowmoaction && d_slowmoaction->integer &&
+						(self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
+					{
+						if (g_SerenityJediEngineMode->integer == 2)
 						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								G_StartStasisEffect_FORCE_LEVEL_2(self);
-							}
+							G_StartStasisEffect_FORCE_LEVEL_2(self);
 						}
 					}
 				}
 
 				if (gi.G2API_HaveWeGhoul2Models(traceEnt->ghoul2))
 				{
-					actual_time = cg.time ? cg.time : level.time;
-					gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					actual_time = (cg.time != 0) ? cg.time : level.time;
 
-					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					gi.G2API_GetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						level.time,
+						&current_frame,
+						&junk,
+						&junk,
+						&junk,
+						&animSpeed,
+						NULL);
+
+					gi.G2API_SetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						current_frame,
+						current_frame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE,
+						animSpeed,
+						level.time,
+						current_frame,
+						100);
+
 					if (traceEnt->headModel > 0)
 					{
-						gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-							current_frame, current_frame + 1,
-							BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame,
+						gi.G2API_SetBoneAnimIndex(
+							&traceEnt->ghoul2[traceEnt->headModel],
+							traceEnt->headRootBone,
+							current_frame,
+							current_frame + 1,
+							BONE_ANIM_OVERRIDE_FREEZE,
+							animSpeed,
+							level.time,
+							current_frame,
 							100);
 					}
 				}
 			}
+			//===========================
+			// Case 2: Jedi with saber, low force/block
+			//===========================
 			else if (traceEnt->health > 0 &&
-				traceEnt->s.weapon == WP_SABER && traceEnt->client && (traceEnt->client->ps.forcePower <=
-					BLOCKPOINTS_MISSILE || traceEnt->client->ps.blockPoints <= BLOCKPOINTS_HALF) && (traceEnt->client
-						->
-						NPC_class != CLASS_GUARD && traceEnt->client->NPC_class != CLASS_JEDIMASTER))
+				traceEnt->client &&
+				traceEnt->s.weapon == WP_SABER &&
+				(traceEnt->client->ps.forcePower <= BLOCKPOINTS_MISSILE ||
+					traceEnt->client->ps.blockPoints <= BLOCKPOINTS_HALF) &&
+				(traceEnt->client->NPC_class != CLASS_GUARD &&
+					traceEnt->client->NPC_class != CLASS_JEDIMASTER))
 			{
-				//affect jedi.
-				if (traceEnt->client)
+				traceEnt->client->ps.stasisJediTime =
+					level.time + stasisJediTime[self->client->ps.forcePowerLevel[FP_STASIS]];
+				VectorClear(traceEnt->client->ps.velocity);
+
+				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 				{
-					traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[self->client->ps.forcePowerLevel[
-						FP_STASIS]];
-					VectorClear(traceEnt->client->ps.velocity);
+					player_Freeze(traceEnt);
 
-					if (g_SerenityJediEngineMode->integer)
+					if (traceEnt->client->NPC_class == CLASS_BOBAFETT ||
+						traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
+						traceEnt->client->NPC_class == CLASS_JANGO ||
+						traceEnt->client->NPC_class == CLASS_JANGODUAL ||
+						traceEnt->client->NPC_class == CLASS_ROCKETTROOPER)
 					{
-						player_Freeze(traceEnt);
-
-						if (traceEnt->client->NPC_class == CLASS_BOBAFETT ||
-							traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
-							traceEnt->client->NPC_class == CLASS_JANGO ||
-							traceEnt->client->NPC_class == CLASS_JANGODUAL ||
-							traceEnt->client->NPC_class == CLASS_ROCKETTROOPER)
+						jet_fly_stop(traceEnt);
+						if (traceEnt->client->jetPackOn)
 						{
-							// also disables npc jetpack
-							jet_fly_stop(traceEnt);
-							if (traceEnt->client->jetPackOn)
-							{
-								//disable jetpack temporarily
-								Jetpack_Off(traceEnt);
-								traceEnt->client->jetPackToggleTime = level.time + Q_irand(3000, 10000);
-							}
+							Jetpack_Off(traceEnt);
+							traceEnt->client->jetPackToggleTime =
+								level.time + Q_irand(3000, 10000);
 						}
+					}
 
-						if (d_slowmoaction->integer && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
+					if (d_slowmoaction && d_slowmoaction->integer &&
+						(self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
+					{
+						if (g_SerenityJediEngineMode->integer == 2)
 						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								G_StartStasisEffect_FORCE_LEVEL_2(self);
-							}
+							G_StartStasisEffect_FORCE_LEVEL_2(self);
 						}
 					}
 				}
 
 				if (gi.G2API_HaveWeGhoul2Models(traceEnt->ghoul2))
 				{
-					actual_time = cg.time ? cg.time : level.time;
-					gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					actual_time = (cg.time != 0) ? cg.time : level.time;
 
-					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					gi.G2API_GetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						level.time,
+						&current_frame,
+						&junk,
+						&junk,
+						&junk,
+						&animSpeed,
+						NULL);
+
+					gi.G2API_SetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						current_frame,
+						current_frame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE,
+						animSpeed,
+						level.time,
+						current_frame,
+						100);
+
 					if (traceEnt->headModel > 0)
 					{
-						gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-							current_frame, current_frame + 1,
-							BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame,
+						gi.G2API_SetBoneAnimIndex(
+							&traceEnt->ghoul2[traceEnt->headModel],
+							traceEnt->headRootBone,
+							current_frame,
+							current_frame + 1,
+							BONE_ANIM_OVERRIDE_FREEZE,
+							animSpeed,
+							level.time,
+							current_frame,
 							100);
 					}
 				}
 			}
-			else if (traceEnt->health > 0 && traceEnt->client->NPC_class == CLASS_GUARD)
+			//===========================
+			// Case 3: Guard class
+			//===========================
+			else if (traceEnt->health > 0 &&
+				traceEnt->client &&
+				traceEnt->client->NPC_class == CLASS_GUARD)
 			{
-				//affect jedi.
-				if (traceEnt->client)
+				traceEnt->client->ps.stasisJediTime =
+					level.time + stasisJediTime[self->client->ps.forcePowerLevel[FP_STASIS]];
+				VectorClear(traceEnt->client->ps.velocity);
+
+				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 				{
-					traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[self->client->ps.forcePowerLevel[
-						FP_STASIS]];
-					VectorClear(traceEnt->client->ps.velocity);
+					player_Freeze(traceEnt);
 
-					if (g_SerenityJediEngineMode->integer)
+					if (d_slowmoaction && d_slowmoaction->integer &&
+						(self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
 					{
-						player_Freeze(traceEnt);
-
-						if (d_slowmoaction->integer && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
+						if (g_SerenityJediEngineMode->integer == 2)
 						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								G_StartStasisEffect_FORCE_LEVEL_2(self);
-							}
+							G_StartStasisEffect_FORCE_LEVEL_2(self);
 						}
 					}
 				}
 
 				if (gi.G2API_HaveWeGhoul2Models(traceEnt->ghoul2))
 				{
-					actual_time = cg.time ? cg.time : level.time;
-					gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					actual_time = (cg.time != 0) ? cg.time : level.time;
 
-					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					gi.G2API_GetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						level.time,
+						&current_frame,
+						&junk,
+						&junk,
+						&junk,
+						&animSpeed,
+						NULL);
+
+					gi.G2API_SetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						current_frame,
+						current_frame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE,
+						animSpeed,
+						level.time,
+						current_frame,
+						100);
+
 					if (traceEnt->headModel > 0)
 					{
-						gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-							current_frame, current_frame + 1,
-							BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame,
+						gi.G2API_SetBoneAnimIndex(
+							&traceEnt->ghoul2[traceEnt->headModel],
+							traceEnt->headRootBone,
+							current_frame,
+							current_frame + 1,
+							BONE_ANIM_OVERRIDE_FREEZE,
+							animSpeed,
+							level.time,
+							current_frame,
 							100);
 					}
 				}
 			}
+			//===========================
+			// Case 4: Jedi Master low helper
+			//===========================
 			else if (traceEnt->health > 0 && jedi_jedi_master_low(traceEnt))
 			{
-				//affect jedi.
 				if (traceEnt->client)
 				{
-					traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[self->client->ps.forcePowerLevel[
-						FP_STASIS]];
+					traceEnt->client->ps.stasisJediTime =
+						level.time + stasisJediTime[self->client->ps.forcePowerLevel[FP_STASIS]];
 					VectorClear(traceEnt->client->ps.velocity);
 
-					if (g_SerenityJediEngineMode->integer)
+					if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 					{
 						player_Freeze(traceEnt);
 
-						if (d_slowmoaction->integer && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
+						if (d_slowmoaction && d_slowmoaction->integer &&
+							(self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
 						{
 							if (g_SerenityJediEngineMode->integer == 2)
 							{
@@ -36770,18 +37133,41 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 
 				if (gi.G2API_HaveWeGhoul2Models(traceEnt->ghoul2))
 				{
-					actual_time = cg.time ? cg.time : level.time;
-					gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					actual_time = (cg.time != 0) ? cg.time : level.time;
 
-					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					gi.G2API_GetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						level.time,
+						&current_frame,
+						&junk,
+						&junk,
+						&junk,
+						&animSpeed,
+						NULL);
+
+					gi.G2API_SetBoneAnimIndex(
+						&traceEnt->ghoul2[traceEnt->playerModel],
+						traceEnt->rootBone,
+						current_frame,
+						current_frame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE,
+						animSpeed,
+						level.time,
+						current_frame,
+						100);
+
 					if (traceEnt->headModel > 0)
 					{
-						gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-							current_frame, current_frame + 1,
-							BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame,
+						gi.G2API_SetBoneAnimIndex(
+							&traceEnt->ghoul2[traceEnt->headModel],
+							traceEnt->headRootBone,
+							current_frame,
+							current_frame + 1,
+							BONE_ANIM_OVERRIDE_FREEZE,
+							animSpeed,
+							level.time,
+							current_frame,
 							100);
 					}
 				}
@@ -36790,6 +37176,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 	}
 	else
 	{
+		// Non‑damageable or non‑matching cases: just check freeze state
 		Player_CheckFreeze(traceEnt);
 	}
 }
@@ -39222,58 +39609,88 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 	}
 }
 
-void WP_ForceForceThrow(gentity_t* thrower)
+static void WP_ForceForceThrow(gentity_t* thrower)
 {
+	//===========================
+	// Safety: validate pointers
+	//===========================
 	if (!thrower || !thrower->client)
 	{
 		return;
 	}
+
+	// Track whether we temporarily unlocked weapons
 	qboolean relock = qfalse;
-	if (!(thrower->client->ps.forcePowersKnown & 1 << FP_PUSH))
+
+	//===========================
+	// Ensure FP_PUSH is available
+	//===========================
+	if ((thrower->client->ps.forcePowersKnown & (1 << FP_PUSH)) == 0)
 	{
-		//give them push just for this specific purpose
-		thrower->client->ps.forcePowersKnown |= 1 << FP_PUSH;
+		// Give them push temporarily
+		thrower->client->ps.forcePowersKnown |= (1 << FP_PUSH);
 		thrower->client->ps.forcePowerLevel[FP_PUSH] = FORCE_LEVEL_1;
 	}
 
-	if (thrower->NPC
-		&& thrower->NPC->aiFlags & NPCAI_HEAL_ROSH
-		&& thrower->flags & FL_LOCK_PLAYER_WEAPONS)
+	//===========================
+	// Special case: Rosh healing AI
+	//===========================
+	if (thrower->NPC &&
+		(thrower->NPC->aiFlags & NPCAI_HEAL_ROSH) &&
+		(thrower->flags & FL_LOCK_PLAYER_WEAPONS))
 	{
 		thrower->flags &= ~FL_LOCK_PLAYER_WEAPONS;
 		relock = qtrue;
 	}
 
-	if (g_SerenityJediEngineMode->integer)
+	//===========================
+	// Choose Force Throw variant
+	//===========================
+	if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
 	{
-		if (thrower->client->NPC_class == CLASS_GALEN
-			&& (thrower->s.weapon == WP_MELEE || thrower->s.weapon == WP_NONE || thrower->s.weapon == WP_SABER && !
-				thrower->client->ps.SaberActive())
-			&& thrower->client->ps.groundEntityNum == ENTITYNUM_NONE)
+		const qboolean galenClass =
+			(thrower->client->NPC_class == CLASS_GALEN) ? qtrue : qfalse;
+
+		const qboolean unarmedOrInactive =
+			(thrower->s.weapon == WP_MELEE ||
+				thrower->s.weapon == WP_NONE ||
+				(thrower->s.weapon == WP_SABER &&
+					!thrower->client->ps.SaberActive())) ? qtrue : qfalse;
+
+		const qboolean airborne =
+			(thrower->client->ps.groundEntityNum == ENTITYNUM_NONE) ? qtrue : qfalse;
+
+		if (galenClass && unarmedOrInactive && airborne)
 		{
+			// Galen airborne repulse
 			ForceRepulse(thrower, qfalse);
 		}
 		else
 		{
+			// SerenityJediEngine Force Throw
 			ForceThrow_MD(thrower, qfalse);
 		}
 	}
 	else
 	{
+		// Base JKA Force Throw
 		ForceThrow_JKA(thrower, qfalse);
 	}
 
-	if (relock)
+	//===========================
+	// Restore weapon lock if needed
+	//===========================
+	if (relock == qtrue)
 	{
 		thrower->flags |= FL_LOCK_PLAYER_WEAPONS;
 	}
 
-	if (thrower)
-	{
-		//take it back off
-		thrower->client->ps.forcePowersKnown &= ~(1 << FP_PUSH);
-		thrower->client->ps.forcePowerLevel[FP_PUSH] = FORCE_LEVEL_0;
-	}
+	//===========================
+	// Remove temporary FP_PUSH
+	//===========================
+	// (thrower is guaranteed non-null here)
+	thrower->client->ps.forcePowersKnown &= ~(1 << FP_PUSH);
+	thrower->client->ps.forcePowerLevel[FP_PUSH] = FORCE_LEVEL_0;
 }
 
 extern qboolean PM_ForceJumpingUp(const gentity_t* gent);
@@ -42065,7 +42482,7 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 	return qfalse;
 }
 
-qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc)
+static qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc)
 {
 	if (!self || !self->client)
 	{

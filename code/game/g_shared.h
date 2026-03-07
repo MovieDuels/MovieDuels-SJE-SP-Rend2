@@ -32,6 +32,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_vehicles.h"
 #include "hitlocs.h"
 #include "bset.h"
+#include "ghoul2_shared.h"
 
 #define	FOFS(x) offsetof(gentity_t, x)
 

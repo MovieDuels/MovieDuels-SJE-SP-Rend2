@@ -36,6 +36,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include <vector>
 #include <string>
+#include "ai.h"
 
 //==================================================================
 
@@ -313,6 +314,7 @@ public:
 	float mRotationAdjust;
 	char* mTargetAdjust;
 	qboolean hasBspInstances;
+	int num_entities; // current number, <= MAX_GENTITIES
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -334,6 +336,7 @@ public:
 		saved_game.write<int32_t>(numKnownAnimFileSets);
 		saved_game.write<int32_t>(worldFlags);
 		saved_game.write<int32_t>(dmState);
+		saved_game.write<int32_t>(num_entities);
 	}
 
 	void sg_import(
@@ -356,6 +359,7 @@ public:
 		saved_game.read<int32_t>(numKnownAnimFileSets);
 		saved_game.read<int32_t>(worldFlags);
 		saved_game.read<int32_t>(dmState);
+		saved_game.read<int32_t>(num_entities);
 	}
 }; // level_locals_t
 

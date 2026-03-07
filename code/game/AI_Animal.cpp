@@ -26,7 +26,14 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #if !defined(RAVL_VEC_INC)
 #include "../Ravl/CVec.h"
 #endif
+#include <Ravl\CVec.h>
 #include "../Ratl/vector_vs.h"
+#include "bg_public.h"
+#include <qcommon\q_platform.h>
+#include <qcommon\q_math.h>
+#include "g_local.h"
+#include <cmath>
+#include "b_public.h"
 
 constexpr auto MAX_PACKS = 10;
 
@@ -44,103 +51,95 @@ ratl::vector_vs<gentity_t*, MAX_PACKS> mPacks;
 ////////////////////////////////////////////////////////////////////////////////////////
 static gentity_t* NPC_AnimalUpdateLeader()
 {
-	// Find The Closest Pack Leader, Not Counting Myself
-	//---------------------------------------------------
-	gentity_t* closest_leader = nullptr;
-	float closest_dist = 0;
-	int my_leader_num = 0;
-
-	for (int i = 0; i < mPacks.size(); i++)
+	// NPC must exist and must have a client
+	if (!NPC || !NPC->client)
 	{
-		// Dump Dead Leaders
-		//-------------------
-		if (mPacks[i] == nullptr || mPacks[i]->health <= 0)
+		return NULL;
+	}
+
+	gentity_t* closest_leader = NULL;
+	float closest_dist = 0.0f;
+	int my_leader_num = -1;
+
+	for (int i = 0; i < mPacks.size(); )
+	{
+		gentity_t* ent = mPacks[i];
+
+		// Remove dead or invalid leaders
+		if (!ent || ent->health <= 0)
 		{
-			if (mPacks[i] == NPC->client->leader)
+			if (NPC->client->leader == ent)
 			{
-				NPC->client->leader = nullptr;
+				NPC->client->leader = NULL;
 			}
 
 			mPacks.erase_swap(i);
-
-			if (i >= mPacks.size())
-			{
-				closest_leader = nullptr;
-				break;
-			}
+			continue; // do NOT increment i after erase_swap
 		}
 
-		// Don't Count Self
-		//------------------
-		if (mPacks[i] == NPC)
+		// Skip self
+		if (ent == NPC)
 		{
 			my_leader_num = i;
+			i++;
 			continue;
 		}
 
-		const float dist = Distance(mPacks[i]->currentOrigin, NPC->currentOrigin);
+		// Compute distance
+		float dist = Distance(ent->currentOrigin, NPC->currentOrigin);
+
 		if (!closest_leader || dist < closest_dist)
 		{
+			closest_leader = ent;
 			closest_dist = dist;
-			closest_leader = mPacks[i];
 		}
+
+		i++;
 	}
 
-	// In Joining Distance?
-	//----------------------
+	// Join a nearby leader
 	if (closest_leader && closest_dist < JOIN_PACK_DISTANCE)
 	{
-		// Am I Already A Leader?
-		//------------------------
-		if (NPC->client->leader == NPC)
+		// If I was a leader, remove myself from the pack list
+		if (NPC->client->leader == NPC && my_leader_num >= 0 && my_leader_num < mPacks.size())
 		{
-			mPacks.erase_swap(my_leader_num); // Erase Myself From The Leader List
+			mPacks.erase_swap(my_leader_num);
 		}
 
-		// Join The Pack!
-		//----------------
 		NPC->client->leader = closest_leader;
 	}
 
-	// Do I Have A Leader?
-	//---------------------
+	// If I have a leader, validate it
 	if (NPC->client->leader)
 	{
-		// AM I A Leader?
-		//----------------
-		if (NPC->client->leader != NPC)
+		gentity_t* L = NPC->client->leader;
+
+		// Leader dead or removed?
+		if (!L->inuse || L->health <= 0)
 		{
-			// If Our Leader Is Dead, Clear Him Out
-
-			if (NPC->client->leader->health <= 0 || NPC->client->leader->inuse == 0)
-			{
-				NPC->client->leader = nullptr;
-			}
-
-			// If My Leader Isn't His Own Leader, Then, Use His Leader
-			//---------------------------------------------------------
-			else if (NPC->client->leader->client->leader != NPC->client->leader)
-			{
-				// Eh.  Can this get more confusing?
-				NPC->client->leader = NPC->client->leader->client->leader;
-			}
-
-			// If Our Leader Is Too Far Away, Clear Him Out
-			//------------------------------------------------------
-			else if (Distance(NPC->client->leader->currentOrigin, NPC->currentOrigin) > LEAVE_PACK_DISTANCE)
-			{
-				NPC->client->leader = nullptr;
-			}
+			NPC->client->leader = NULL;
+		}
+		// Leader has a leader? Follow the chain
+		else if (L->client && L->client->leader != L)
+		{
+			NPC->client->leader = L->client->leader;
+		}
+		// Leader too far away?
+		else if (Distance(L->currentOrigin, NPC->currentOrigin) > LEAVE_PACK_DISTANCE)
+		{
+			NPC->client->leader = NULL;
+		}
+	}
+	else
+	{
+		// No leader → become one
+		if (!mPacks.full())
+		{
+			NPC->client->leader = NPC;
+			mPacks.push_back(NPC);
 		}
 	}
 
-	// If We Couldn't Find A Leader, Then Become One
-	//-----------------------------------------------
-	else if (!mPacks.full())
-	{
-		NPC->client->leader = NPC;
-		mPacks.push_back(NPC);
-	}
 	return NPC->client->leader;
 }
 

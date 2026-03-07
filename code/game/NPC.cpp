@@ -33,6 +33,23 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../cgame/cg_local.h"
 #include "bstate.h"
 #include "b_public.h"
+#include <string.h>
+#include <cassert>
+#include <cmath>
+#include "ai.h"
+#include "bg_public.h"
+#include "ghoul2_shared.h"
+#include "g_local.h"
+#include "g_public.h"
+#include "g_shared.h"
+#include "statindex.h"
+#include "surfaceflags.h"
+#include "teams.h"
+#include "weapons.h"
+#include <icarus\IcarusInterface.h>
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
 
 extern vec3_t playerMins;
 extern vec3_t playerMaxs;
@@ -523,8 +540,6 @@ void pitch_roll_for_slope(gentity_t* forwhom, vec3_t pass_slope, vec3_t store_an
 		endspot[2] -= 300;
 		gi.trace(&trace, forwhom->currentOrigin, vec3_origin, vec3_origin, endspot, forwhom->s.number, MASK_SOLID,
 			static_cast<EG2_Collision>(0), 0);
-		//		if(trace_fraction>0.05&&forwhom.movetype==MOVETYPE_STEP)
-		//			forwhom.flags(-)FL_ONGROUND;
 
 		if (trace.fraction >= 1.0)
 			return;

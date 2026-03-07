@@ -424,10 +424,10 @@ static int SV_G2API_AddBoltSurfNum(CGhoul2Info* ghlInfo, const int surf_index)
 	return re.G2API_AddBoltSurfNum(ghlInfo, surf_index);
 }
 
-static int SV_G2API_AddSurface(CGhoul2Info* ghlInfo, const int surface_number, const int poly_number, const float barycentric_i,
+static int SV_G2API_AddSurface(CGhoul2Info* ghlInfo, const int surfaceNumber, const int poly_number, const float barycentric_i,
 	const float barycentric_j, const int lod)
 {
-	return re.G2API_AddSurface(ghlInfo, surface_number, poly_number, barycentric_i, barycentric_j, lod);
+	return re.G2API_AddSurface(ghlInfo, surfaceNumber, poly_number, barycentric_i, barycentric_j, lod);
 }
 
 static void SV_G2API_AnimateG2Models(CGhoul2Info_v& ghoul2, const int acurrent_time, CRagDollUpdateParams* params)
