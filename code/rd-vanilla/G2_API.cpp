@@ -262,6 +262,7 @@ public:
 
 #include "assert.h"
 #include <cstddef>
+#include <qcommon\q_string.h>
 static ErrorReporter& G2APIError()
 {
 	static ErrorReporter singleton("G2API");

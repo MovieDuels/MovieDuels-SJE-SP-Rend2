@@ -147,7 +147,7 @@ extern qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc);
 qboolean jedi_evasion_roll(gentity_t* ai_ent);
 extern qboolean NPC_IsOversized(const gentity_t* self);
 extern qboolean char_is_force_user_attacker(const gentity_t* self);
-
+extern qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc);
 extern cvar_t* d_slowmodeath;
 extern cvar_t* g_saberNewControlScheme;
 extern int parryDebounce[];
@@ -2242,7 +2242,7 @@ static void jedi_combat_distance(const int enemy_dist)
 		enemy->s.weapon == WP_SABER &&
 		!PM_SaberInMassiveBounce(ps->torsoAnim) &&
 		!PM_SaberInBounce(ps->torsoAnim) &&
-		!PM_SaberInBashedAnim(ps->torsoAnim) && 
+		!PM_SaberInBashedAnim(ps->torsoAnim) &&
 		!PM_InKnockDown(&NPC->client->ps) &&
 		InFront(enemy->currentOrigin, NPC->currentOrigin, ps->viewangles, 0.7f) &&
 		(PM_SaberInKata((saber_moveName_t)enemy->client->ps.saber_move) ||
@@ -2475,7 +2475,15 @@ static void jedi_combat_distance(const int enemy_dist)
 				smack_dir[2] += 20;
 				VectorNormalize(smack_dir);
 
-				G_Sound(NPC->enemy, G_SoundIndex("sound/chars/%s/misc/pain0%d"));
+				// ✔ Play punch sound ONLY on actual hit
+				G_Sound(NPC->enemy,
+					G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+
+				// Existing pain sound (keep it)
+				G_Sound(NPC->enemy,
+					G_SoundIndex(va("sound/chars/%s/misc/pain0%d",
+						NPC->enemy->NPC_type, Q_irand(1, 3))));
+
 				G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
 					(g_spskill->integer + 1) * Q_irand(2, 5),
 					DAMAGE_NO_KNOCKBACK, MOD_MELEE);
@@ -2506,7 +2514,7 @@ static void jedi_combat_distance(const int enemy_dist)
 				? Q_irand(BOTH_A7_SLAP_L, BOTH_A7_SLAP_R)
 				: BOTH_A7_HILT;
 
-			G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+			G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
 			G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 12000);
 
 			NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim,
@@ -4979,10 +4987,20 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 					wp_saber_block_check_random(self, hitloc);
 					evasion_type = EVASION_PARRY;
 				}
-				else if (do_dodge && Q_irand(0, 3)) // 75% chance to skip dodge
+				else
 				{
+					// Saber is in flight → try dash evasion
+					if (self->client->ps.saberInFlight)
+					{
+						if (wp_saber_Off_Dash_Evasion(self, hitloc))
+						{
+							evasion_type = EVASION_DASH;
+							return EVASION_DASH;
+						}
+					}
+
 					// fallback dodge only if absolutely needed
-					if (npc_can_dodge)
+					if (do_dodge && Q_irand(0, 3) && npc_can_dodge)
 					{
 						dodge_anim = BOTH_DODGE_L;
 						evasion_type = EVASION_DODGE;
@@ -5022,9 +5040,19 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 					wp_saber_block_check_random(self, hitloc);
 					evasion_type = EVASION_PARRY;
 				}
-				else if (do_dodge && Q_irand(0, 3)) // 75% chance to skip dodge
+				else
 				{
-					if (npc_can_dodge)
+					// Saber is in flight → try dash evasion
+					if (self->client->ps.saberInFlight)
+					{
+						if (wp_saber_Off_Dash_Evasion(self, hitloc))
+						{
+							evasion_type = EVASION_DASH;
+							return EVASION_DASH;
+						}
+					}
+
+					if (do_dodge && Q_irand(0, 3) && npc_can_dodge)
 					{
 						dodge_anim = BOTH_DODGE_R;
 						evasion_type = EVASION_DODGE;
@@ -5062,13 +5090,26 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 					wp_saber_block_check_random(self, hitloc);
 					evasion_type = EVASION_PARRY;
 				}
-				else if (NPCInfo->stats.evasion >= 3 && Q_irand(0, 4) == 0)
+				else
 				{
-					// roll only 20% of the time
-					dodge_anim = BOTH_ROLL_B;
-					self->client->pers.cmd.forwardmove = -127;
-					G_SoundOnEnt(self, CHAN_BODY, "sound/player/roll1.wav");
-					evasion_type = EVASION_DODGE;
+					// Saber is in flight → try dash evasion
+					if (self->client->ps.saberInFlight)
+					{
+						if (wp_saber_Off_Dash_Evasion(self, hitloc))
+						{
+							evasion_type = EVASION_DASH;
+							return EVASION_DASH;
+						}
+					}
+
+					// fallback roll (20% chance)
+					if (NPCInfo->stats.evasion >= 3 && Q_irand(0, 4) == 0)
+					{
+						dodge_anim = BOTH_ROLL_B;
+						self->client->pers.cmd.forwardmove = -127;
+						G_SoundOnEnt(self, CHAN_BODY, "sound/player/roll1.wav");
+						evasion_type = EVASION_DODGE;
+					}
 				}
 
 				if (self->client->ps.groundEntityNum != ENTITYNUM_NONE)
@@ -5084,8 +5125,8 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 		}
 	}
 	// ============================
-// SECTION 3 — Mid‑Tier Evasion Logic (Cinematic Jedi Master)
-// ============================
+    // SECTION 3 — Mid‑Tier Evasion Logic (Cinematic Jedi Master)
+    // ============================
 
 	else if (zdiff > -22)
 	{
@@ -5137,12 +5178,12 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 		if (incoming || !saber_busy || always_dodge_or_roll)
 		{
 			// ============================
-			// MID — RIGHT‑SIDE ATTACK
-			// ============================
+// MID — RIGHT‑SIDE ATTACK
+// ============================
 			if (rightdot > 8 || (rightdot > 3 && zdiff < -11)
 				|| (!incoming && fabs(hitdir[2]) < 0.25f))
 			{
-				// Prefer parry
+				// 1. Prefer parry
 				if (self->s.weapon == WP_SABER && self->client->ps.SaberActive()
 					&& !self->client->ps.saberInFlight)
 				{
@@ -5154,6 +5195,16 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 						gi.Printf("[BLOCK] Mid Right Parry\n");
 					}
 				}
+				// 2. Saber in flight → dash immediately
+				else if (self->client->ps.saberInFlight)
+				{
+					if (wp_saber_Off_Dash_Evasion(self, hitloc))
+					{
+						evasion_type = EVASION_DASH;
+						return EVASION_DASH;
+					}
+				}
+				// 3. Dodge
 				else if (do_dodge && allowDodge && npc_can_dodge)
 				{
 					dodge_anim = BOTH_DODGE_L;
@@ -5164,6 +5215,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 						gi.Printf("[DODGE] Mid Right Emergency Dodge Left\n");
 					}
 				}
+				// 4. Roll
 				else if (NPCInfo->stats.evasion >= 3 && allowDodge)
 				{
 					dodge_anim = BOTH_ROLL_L;
@@ -5194,6 +5246,15 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 					if (d_JediAI->integer || g_DebugSaberCombat->integer)
 					{
 						gi.Printf("[BLOCK] Mid Left Parry\n");
+					}
+				}
+				// 2. Saber in flight → dash immediately
+				else if (self->client->ps.saberInFlight)
+				{
+					if (wp_saber_Off_Dash_Evasion(self, hitloc))
+					{
+						evasion_type = EVASION_DASH;
+						return EVASION_DASH;
 					}
 				}
 				else if (do_dodge && allowDodge && npc_can_dodge)
@@ -5237,6 +5298,15 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 						gi.Printf("[BLOCK] Mid Front Parry\n");
 					}
 				}
+				// 2. Saber in flight → dash immediately
+				else if (self->client->ps.saberInFlight)
+				{
+					if (wp_saber_Off_Dash_Evasion(self, hitloc))
+					{
+						evasion_type = EVASION_DASH;
+						return EVASION_DASH;
+					}
+				}
 				else if (NPCInfo->stats.evasion >= 3 && allowDodge)
 				{
 					dodge_anim = BOTH_ROLL_B;
@@ -5252,8 +5322,8 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 			}
 		}
 	}// ============================
-// SECTION 4 — Low / Very‑Low Evasion Logic (Cinematic Jedi Master)
-// ============================
+     // SECTION 4 — Low / Very‑Low Evasion Logic (Cinematic Jedi Master)
+     // ============================
 
 	else
 	{
@@ -6825,7 +6895,7 @@ static void Jedi_FaceEnemy(const qboolean do_pitch)
 	vec3_t enemy_eyes, eyes, angles;
 
 	// Basic guards
-	if (!NPC || !NPC->client || !NPC->enemy || !NPC->enemy->client)
+	if (!NPC || !NPC->client || !NPC->enemy || !NPC->enemy->client || !NPCInfo)
 	{
 		return;
 	}
@@ -6862,6 +6932,7 @@ static void Jedi_FaceEnemy(const qboolean do_pitch)
 		TIMER_Done(NPC, "flameTime") &&
 		NPC->s.weapon != WP_NONE &&
 		NPC->s.weapon != WP_DISRUPTOR &&
+		NPC->s.weapon != WP_SABER && // ⭐ added
 		(NPC->s.weapon != WP_ROCKET_LAUNCHER || !(NPCInfo->scriptFlags & SCF_ALT_FIRE)) &&
 		NPC->s.weapon != WP_THERMAL &&
 		NPC->s.weapon != WP_TRIP_MINE &&
@@ -6902,24 +6973,6 @@ static void Jedi_FaceEnemy(const qboolean do_pitch)
 		// Point away from enemy
 		GetAnglesForDirection(enemy_eyes, eyes, angles);
 	}
-	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_R)
-	{
-		// keep enemy to right – keep default angles
-	}
-	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_L)
-	{
-		// keep enemy to left – keep default angles
-	}
-	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_RL ||
-		NPC->client->ps.legsAnim == BOTH_A7_KICK_BF ||
-		NPC->client->ps.legsAnim == BOTH_A7_KICK_S)
-	{
-		// multi‑direction kicks – keep default angles
-	}
-	else
-	{
-		// default already set: face enemy
-	}
 
 	// Apply yaw
 	NPCInfo->desiredYaw = AngleNormalize360(angles[YAW]);
@@ -6931,7 +6984,6 @@ static void Jedi_FaceEnemy(const qboolean do_pitch)
 
 		if (NPC->client->ps.saberInFlight)
 		{
-			// tilt down a little when saber is in flight
 			NPCInfo->desiredPitch = AngleNormalize360(NPCInfo->desiredPitch + 10.0f);
 		}
 	}

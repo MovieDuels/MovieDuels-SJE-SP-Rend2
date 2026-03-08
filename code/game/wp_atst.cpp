@@ -22,8 +22,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "g_local.h"
 #include "b_local.h"
-#include "wp_saber.h"
 #include "w_local.h"
+#include "weapons.h"
+#include "surfaceflags.h"
+#include "bg_public.h"
+#include <qcommon\q_platform.h>
+#include <qcommon\q_math.h>
 
 // ATST Main
 //---------------------------------------------------------

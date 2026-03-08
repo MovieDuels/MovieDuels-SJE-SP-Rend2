@@ -411,6 +411,7 @@ void CG_RegisterWeapon(const int weapon_num)
 		theFxScheduler.RegisterEffect("saber/saber_block_AMD");
 		theFxScheduler.RegisterEffect("saber/saber_block_MD");
 		theFxScheduler.RegisterEffect("saber/saber_cut");
+		theFxScheduler.RegisterEffect("saber/saber_cut_AMD_MP");
 		theFxScheduler.RegisterEffect("saber/saber_cut_AMD");
 		theFxScheduler.RegisterEffect("saber/saber_cut_MD");
 		theFxScheduler.RegisterEffect("saber/saber_cut_droid");

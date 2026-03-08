@@ -286,44 +286,62 @@ void CL_AddCgameCommand(const char* cmdName)
 CL_ConfigstringModified
 =====================
 */
+/*
+==============================
+CL_ConfigstringModified
+
+Rebuilds the gameState when a configstring changes.
+
+This version avoids a massive 38 KB stack allocation by
+using a static copy of the old gameState instead of copying
+it by value onto the stack.
+==============================
+*/
 void CL_ConfigstringModified()
 {
-	const char* dup;
-
 	const int index = atoi(Cmd_Argv(1));
+
 	if (index < 0 || index >= MAX_CONFIGSTRINGS)
 	{
 		Com_Error(ERR_DROP, "configstring > MAX_CONFIGSTRINGS");
+		return; /* static analysis safety */
 	}
+
 	const char* s = Cmd_Argv(2);
 
+	/* Pointer to old string */
 	const char* old = cl.gameState.stringData + cl.gameState.stringOffsets[index];
+
+	/* If unchanged, nothing to do */
 	if (strcmp(old, s) == 0)
 	{
-		return; // unchanged
+		return;
 	}
 
-	// build the new gameState_t
-	const gameState_t oldGs = cl.gameState;
+	/* -----------------------------------------
+	   FIX: Avoid 38 KB stack allocation
+	   Use a static buffer instead of:
+		   const gameState_t oldGs = cl.gameState;
+	   ----------------------------------------- */
+	static gameState_t oldGs;
 
+	/* Copy current gameState into static buffer */
+	memcpy(&oldGs, &cl.gameState, sizeof(gameState_t));
+
+	/* Reset gameState */
 	memset(&cl.gameState, 0, sizeof(cl.gameState));
+	cl.gameState.dataCount = 1; /* leave first byte empty */
 
-	// leave the first 0 for uninitialized strings
-	cl.gameState.dataCount = 1;
-
+	/* Rebuild all configstrings */
 	for (int i = 0; i < MAX_CONFIGSTRINGS; i++)
 	{
-		if (i == index)
+		const char* dup = (i == index)
+			? s
+			: oldGs.stringData + oldGs.stringOffsets[i];
+
+		if (dup[0] == '\0')
 		{
-			dup = s;
-		}
-		else
-		{
-			dup = oldGs.stringData + oldGs.stringOffsets[i];
-		}
-		if (!dup[0])
-		{
-			continue; // leave with the default empty string
+			continue;
 		}
 
 		const int len = strlen(dup);
@@ -331,17 +349,17 @@ void CL_ConfigstringModified()
 		if (len + 1 + cl.gameState.dataCount > MAX_GAMESTATE_CHARS)
 		{
 			Com_Error(ERR_DROP, "MAX_GAMESTATE_CHARS exceeded");
+			return;
 		}
 
-		// append it to the gameState string buffer
 		cl.gameState.stringOffsets[i] = cl.gameState.dataCount;
 		memcpy(cl.gameState.stringData + cl.gameState.dataCount, dup, len + 1);
 		cl.gameState.dataCount += len + 1;
 	}
 
+	/* Systeminfo changed? */
 	if (index == CS_SYSTEMINFO)
 	{
-		// parse serverId and other cvars
 		CL_SystemInfoChanged();
 	}
 }

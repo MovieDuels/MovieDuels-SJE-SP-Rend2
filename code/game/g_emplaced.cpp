@@ -546,6 +546,12 @@ void SP_emplaced_eweb(gentity_t* ent)
 //----------------------------------------------------------
 void emplaced_gun_use(gentity_t* self, const gentity_t* other, gentity_t* activator)
 {
+	// FIX: explicit null guard to satisfy analyzer
+	if (!activator)
+	{
+		return;
+	}
+
 	if (self->health <= 0)
 	{
 		// can't use a dead gun.
@@ -570,30 +576,27 @@ void emplaced_gun_use(gentity_t* self, const gentity_t* other, gentity_t* activa
 
 	if (other && other->client && G_IsRidingVehicle(other))
 	{
-		//can't use eweb when on a vehicle
+		// can't use eweb when on a vehicle
 		return;
 	}
 
-	if (activator && activator->client && G_IsRidingVehicle(activator))
+	if (activator->client && G_IsRidingVehicle(activator))
 	{
-		//can't use eweb when on a vehicle
+		// can't use eweb when on a vehicle
 		return;
 	}
 
-	// We'll just let the designers duke this one out....I mean, as to whether they even want to limit such a thing.
+	// We'll just let the designers duke this one out...
 	if (self->spawnflags & EMPLACED_FACING)
 	{
 		vec3_t fwd2;
 		vec3_t fwd1;
-		// Let's get some direction vectors for the users
-		AngleVectors(activator->client->ps.viewangles, fwd1, nullptr, nullptr);
 
-		// Get the guns direction vector
+		AngleVectors(activator->client->ps.viewangles, fwd1, nullptr, nullptr);
 		AngleVectors(self->pos1, fwd2, nullptr, nullptr);
 
 		const float dot = DotProduct(fwd1, fwd2);
 
-		// Must be reasonably facing the way the gun points ( 90 degrees or so ), otherwise we don't allow to use it.
 		if (dot < 0.0f)
 		{
 			return;
@@ -610,78 +613,63 @@ void emplaced_gun_use(gentity_t* self, const gentity_t* other, gentity_t* activa
 			self->alt_fire = activator->client->ps.SaberActive();
 		}
 
-		// swap the users weapon with the emplaced gun and add the ammo the gun has to the player
 		activator->client->ps.weapon = self->s.weapon;
 		Add_Ammo(activator, WP_EMPLACED_GUN, self->count);
 		activator->client->ps.weapons[WP_EMPLACED_GUN] = 1;
 
-		// Allow us to point from one to the other
-		activator->owner = self; // kind of dumb, but when we are locked to the weapon, we are owned by it.
+		activator->owner = self;
 		self->activator = activator;
 
 		G_RemoveWeaponModels(activator);
+
 		if (activator->NPC)
 		{
 			ChangeWeapon(activator, WP_EMPLACED_GUN);
 		}
 		else if (activator->s.number == 0)
 		{
-			// we don't want for it to draw the weapon select stuff
 			cg.weaponSelect = WP_EMPLACED_GUN;
 			CG_CenterPrint("@SP_INGAME_EXIT_VIEW", SCREEN_HEIGHT * 0.95);
 		}
-		// Since we move the activator inside of the gun, we reserve a solid spot where they were standing in order to be able to get back out without being in solid
+
 		if (self->nextTrain)
 		{
-			//you never know
 			G_FreeEntity(self->nextTrain);
 		}
+
 		self->nextTrain = G_Spawn();
-		//self->nextTrain->classname = "emp_placeholder";
 		self->nextTrain->contents = CONTENTS_MONSTERCLIP | CONTENTS_PLAYERCLIP;
-		//hmm... playerclip too now that we're doing it for NPCs?
+
 		G_SetOrigin(self->nextTrain, activator->client->ps.origin);
 		VectorCopy(activator->mins, self->nextTrain->mins);
 		VectorCopy(activator->maxs, self->nextTrain->maxs);
 		gi.linkentity(self->nextTrain);
 
-		//need to inflate the activator's mins/maxs since the gunsit anim puts them outside of their bbox
 		VectorSet(activator->mins, -24, -24, -24);
 		VectorSet(activator->maxs, 24, 24, 40);
 
-		// Move the activator into the center of the gun.  For NPC's the only way the can get out of the gun is to die.
 		VectorCopy(self->s.origin, activator->client->ps.origin);
-		activator->client->ps.origin[2] += 30; // move them up so they aren't standing in the floor
+		activator->client->ps.origin[2] += 30;
 		gi.linkentity(activator);
 
-		// the gun will track which weapon we used to have
 		self->s.weapon = old_weapon;
 
-		// Lock the player
 		activator->client->ps.eFlags |= EF_LOCKED_TO_WEAPON;
-		activator->owner = self; // kind of dumb, but when we are locked to the weapon, we are owned by it.
+		activator->owner = self;
 		self->activator = activator;
-		self->delay = level.time; // can't disconnect from the thing for half a second
+		self->delay = level.time;
 
-		// Let the gun be considered an enemy
-		//Ugh, so much AI code seems to assume enemies are clients, maybe this shouldn't be on, but it's too late in the game to change it now without knowing what side-effects this will have
 		self->svFlags |= SVF_NONNPC_ENEMY;
 		self->noDamageTeam = activator->client->playerTeam;
 
-		// FIXME: don't do this, we'll try and actually put the player in this beast
-		// move the player to the center of the gun
-		//		activator->contents = 0;
-		//		VectorCopy( self->currentOrigin, activator->client->ps.origin );
-
 		SetClientViewAngle(activator, self->pos1);
 
-		//FIXME: should really wait a bit after spawn and get this just once?
 		self->waypoint = NAV::GetNearestNode(self);
 #ifdef _DEBUG
 		if (self->waypoint == -1)
 		{
-			gi.Printf(S_COLOR_RED"ERROR: no waypoint for emplaced_gun %s at %s\n", self->targetname,
-				vtos(self->currentOrigin));
+			gi.Printf(S_COLOR_RED "ERROR: no waypoint for emplaced_gun %s at %s\n",
+				self->targetname, vtos(self->currentOrigin));
 		}
 #endif
 
@@ -689,8 +677,6 @@ void emplaced_gun_use(gentity_t* self, const gentity_t* other, gentity_t* activa
 
 		if (!(self->spawnflags & EMPLACED_PLAYERUSE) || activator->s.number == 0)
 		{
-			//player-only usescript or any usescript
-			// Run use script
 			G_ActivateBehavior(self, BSET_USE);
 		}
 	}

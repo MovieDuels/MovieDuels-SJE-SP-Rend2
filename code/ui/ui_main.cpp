@@ -4365,14 +4365,28 @@ static ui_animFileSet_t ui_knownAnimFileSets[MAX_ANIM_FILES];
 
 int ui_numKnownAnimFileSets;
 
+/*
+==============================
+UI_ParseAnimationFile
+
+Parses animation.cfg into the UI animation table.
+
+This version removes the 80 KB stack allocation by moving
+the text buffer to static storage, eliminating MSVC warning C6262.
+==============================
+*/
 static qboolean UI_ParseAnimationFile(const char* af_filename)
 {
-	char text[80000];
-	const char* text_p;
-	animation_t* animations = ui_knownAnimFileSets[ui_numKnownAnimFileSets].animations;
+	/* FIX: move 80 KB buffer off the stack */
+	static char text[80000];
 
-	// Load animation.cfg into buffer
+	const char* text_p;
+	animation_t* animations =
+		ui_knownAnimFileSets[ui_numKnownAnimFileSets].animations;
+
+	/* Load animation.cfg into buffer */
 	const int len = re.GetAnimationCFG(af_filename, text, sizeof(text));
+
 	if (len <= 0)
 	{
 		return qfalse;
@@ -4383,13 +4397,14 @@ static qboolean UI_ParseAnimationFile(const char* af_filename)
 		Com_Error(ERR_FATAL,
 			"UI_ParseAnimationFile: File %s too long\n (%d > %d)",
 			af_filename, len, (int)sizeof(text) - 1);
+		return qfalse; /* static analysis safety */
 	}
 
-	// Null‑terminate
+	/* Null‑terminate */
 	text[len] = '\0';
 	text_p = text;
 
-	// Initialise all animations with defaults
+	/* Initialise all animations with defaults */
 	for (int i = 0; i < MAX_ANIMATIONS; i++)
 	{
 		animations[i].firstFrame = 0;
@@ -4402,11 +4417,11 @@ static qboolean UI_ParseAnimationFile(const char* af_filename)
 
 	while (qtrue)
 	{
-		// Read animation name
+		/* Read animation name */
 		const char* token = COM_Parse(&text_p);
 		if (!token || !token[0])
 		{
-			break; // EOF
+			break; /* EOF */
 		}
 
 		const int animNum = GetIDForString(anim_table, token);
@@ -4415,11 +4430,10 @@ static qboolean UI_ParseAnimationFile(const char* af_filename)
 #ifdef _DEBUG
 			if (strcmp(token, "ROOT"))
 			{
-				// Unknown token — skip line
-				// Com_Printf(S_COLOR_RED "WARNING: Unknown token %s in %s\n", token, af_filename);
+				/* Unknown token — skip line */
 			}
 #endif
-			// Skip to end of line
+			/* Skip to end of line */
 			while (token[0])
 			{
 				token = COM_ParseExt(&text_p, qfalse);
@@ -4427,51 +4441,41 @@ static qboolean UI_ParseAnimationFile(const char* af_filename)
 			continue;
 		}
 
-		// firstFrame
+		/* firstFrame */
 		token = COM_Parse(&text_p);
-		if (!token || !token[0])
-		{
-			break;
-		}
+		if (!token || !token[0]) break;
 		animations[animNum].firstFrame = atoi(token);
 
-		// numFrames
+		/* numFrames */
 		token = COM_Parse(&text_p);
-		if (!token || !token[0])
-		{
-			break;
-		}
+		if (!token || !token[0]) break;
 		animations[animNum].numFrames = atoi(token);
 
-		// loopFrames
+		/* loopFrames */
 		token = COM_Parse(&text_p);
-		if (!token || !token[0])
-		{
-			break;
-		}
+		if (!token || !token[0]) break;
 		animations[animNum].loopFrames = atoi(token);
 
-		// fps → frameLerp
+		/* fps → frameLerp */
 		token = COM_Parse(&text_p);
-		if (!token || !token[0])
-		{
-			break;
-		}
+		if (!token || !token[0]) break;
 
 		float fps = atof(token);
 		if (fps == 0.0f)
 		{
-			fps = 1.0f; // avoid divide‑by‑zero
+			fps = 1.0f; /* avoid divide‑by‑zero */
 		}
 
 		if (fps < 0.0f)
 		{
-			// backwards animation
-			animations[animNum].frameLerp = (int)floor(1000.0f / fps);
+			/* backwards animation */
+			animations[animNum].frameLerp =
+				(int)floor(1000.0f / fps);
 		}
 		else
 		{
-			animations[animNum].frameLerp = (int)ceil(1000.0f / fps);
+			animations[animNum].frameLerp =
+				(int)ceil(1000.0f / fps);
 		}
 	}
 
@@ -4806,7 +4810,7 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 
 			buffer[filelen] = '\0';
 
-			// Expand species array if needed (SAFE REALLOC)
+			// Expand species array if needed
 			if (uiInfo.playerSpeciesCount >= uiInfo.playerSpeciesMax)
 			{
 				uiInfo.playerSpeciesMax *= 2;
@@ -4883,7 +4887,9 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 
 				if (IsImageFile(dirptr, skinname, (building != 0) ? qtrue : qfalse))
 				{
-					// Head skins
+					// -----------------------------
+					// HEAD SKINS (SAFE INDEXING)
+					// -----------------------------
 					if (Q_stricmpn(skinname, "head_", 5) == 0)
 					{
 						if (species->SkinHeadCount >= species->SkinHeadMax)
@@ -4902,11 +4908,16 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 							species->SkinHead = static_cast<skinName_t*>(newPtr);
 						}
 
-						Q_strncpyz(species->SkinHead[species->SkinHeadCount++].name,
-							skinname, SKIN_LENGTH);
+						const int idx = species->SkinHeadCount;
+						Q_strncpyz(species->SkinHead[idx].name, skinname, SKIN_LENGTH);
+						species->SkinHeadCount = idx + 1;
+
 						iSkinParts |= 1 << 0;
 					}
-					// Torso skins
+
+					// -----------------------------
+					// TORSO SKINS (SAFE INDEXING)
+					// -----------------------------
 					else if (Q_stricmpn(skinname, "torso_", 6) == 0)
 					{
 						if (species->SkinTorsoCount >= species->SkinTorsoMax)
@@ -4925,11 +4936,16 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 							species->SkinTorso = static_cast<skinName_t*>(newPtr);
 						}
 
-						Q_strncpyz(species->SkinTorso[species->SkinTorsoCount++].name,
-							skinname, SKIN_LENGTH);
+						const int idx = species->SkinTorsoCount;
+						Q_strncpyz(species->SkinTorso[idx].name, skinname, SKIN_LENGTH);
+						species->SkinTorsoCount = idx + 1;
+
 						iSkinParts |= 1 << 1;
 					}
-					// Leg skins
+
+					// -----------------------------
+					// LEG SKINS (SAFE INDEXING)
+					// -----------------------------
 					else if (Q_stricmpn(skinname, "lower_", 6) == 0)
 					{
 						if (species->SkinLegCount >= species->SkinLegMax)
@@ -4948,8 +4964,10 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 							species->SkinLeg = static_cast<skinName_t*>(newPtr);
 						}
 
-						Q_strncpyz(species->SkinLeg[species->SkinLegCount++].name,
-							skinname, SKIN_LENGTH);
+						const int idx = species->SkinLegCount;
+						Q_strncpyz(species->SkinLeg[idx].name, skinname, SKIN_LENGTH);
+						species->SkinLegCount = idx + 1;
+
 						iSkinParts |= 1 << 2;
 					}
 				}

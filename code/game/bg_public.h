@@ -125,7 +125,7 @@ constexpr auto FLAG_NPCBLOCKING = 17;
 constexpr auto FLAG_MBLOCKBOUNCE = 18;
 constexpr auto FLAG_PERFECTBLOCK = 19;
 
-constexpr auto DODGE_BOLTBLOCK = 2; //standard DP cost to block a missile bolt;
+constexpr auto DODGE_BOLTBLOCK = 3; //standard DP cost to block a missile bolt;
 constexpr auto DODGE_BOWCASTERBLOCK = 5;
 constexpr auto DODGE_TUSKENBLOCK = 4;
 constexpr auto DODGE_REPEATERBLOCK = 2;

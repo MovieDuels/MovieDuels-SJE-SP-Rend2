@@ -89,7 +89,7 @@ extern qboolean PM_SaberInReflect(int move);
 extern qboolean PM_SaberInIdle(int move);
 extern qboolean PM_SaberInStart(int move);
 extern qboolean PM_SaberInReturn(int move);
-extern qboolean PM_SaberKataDone(int curmove, int newmove);
+extern qboolean PM_SaberKataDone(const int curmove, const int newmove);
 extern qboolean PM_SaberInSpecial(int move);
 extern qboolean PM_InDeathAnim();
 extern qboolean PM_StandingAnim(int anim);

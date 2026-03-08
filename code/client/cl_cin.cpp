@@ -1197,14 +1197,33 @@ static void RoQReset()
 *
 ******************************************************************************/
 
+/*
+==============================
+RoQInterrupt
+
+Processes a single RoQ frame. This version removes the
+65 KB stack allocation by moving the audio decode buffer
+to static storage, eliminating MSVC warning C6262.
+==============================
+*/
 static void RoQInterrupt()
 {
-	short sbuf[32768];
+	/* FIX: move 65 KB buffer off the stack */
+	static short sbuf[32768];
+
 	int ssize;
 
-	if (currentHandle < 0) return;
+	if (currentHandle < 0)
+	{
+		return;
+	}
 
-	FS_Read(cin.file, cinTable[currentHandle].RoQFrameSize + 8, cinTable[currentHandle].iFile);
+	/* Read next chunk */
+	FS_Read(cin.file,
+		cinTable[currentHandle].RoQFrameSize + 8,
+		cinTable[currentHandle].iFile);
+
+	/* End-of-file logic */
 	if (cinTable[currentHandle].RoQPlayed >= cinTable[currentHandle].ROQSize)
 	{
 		if (cinTable[currentHandle].holdAtEnd == qfalse)
@@ -1226,13 +1245,15 @@ static void RoQInterrupt()
 	}
 
 	byte* framedata = cin.file;
-	//
-	// new frame is ready
-	//
+
+	/* ------------------------------
+	   Decode current RoQ chunk
+	   ------------------------------ */
 redump:
 	switch (cinTable[currentHandle].roq_id)
 	{
 	case ROQ_QUAD_VQ:
+		/* unchanged logic */
 		if (cinTable[currentHandle].numQuads & 1)
 		{
 			cinTable[currentHandle].normalBuffer0 = cinTable[currentHandle].t[1];
@@ -1247,65 +1268,106 @@ redump:
 			cinTable[currentHandle].VQ0(reinterpret_cast<byte*>(cin.q_status[0]), framedata);
 			cinTable[currentHandle].buf = cin.linbuf;
 		}
+
 		if (cinTable[currentHandle].numQuads == 0)
 		{
-			// first frame
-			Com_Memcpy(cin.linbuf + cinTable[currentHandle].screenDelta, cin.linbuf,
-				cinTable[currentHandle].samplesPerLine * cinTable[currentHandle].ysize);
+			/* first frame */
+			Com_Memcpy(cin.linbuf + cinTable[currentHandle].screenDelta,
+				cin.linbuf,
+				cinTable[currentHandle].samplesPerLine *
+				cinTable[currentHandle].ysize);
 		}
+
 		cinTable[currentHandle].numQuads++;
 		cinTable[currentHandle].dirty = qtrue;
 		break;
+
 	case ROQ_CODEBOOK:
-		decodeCodeBook(framedata, static_cast<unsigned short>(cinTable[currentHandle].roq_flags));
+		decodeCodeBook(framedata,
+			static_cast<unsigned short>(cinTable[currentHandle].roq_flags));
 		break;
+
 	case ZA_SOUND_MONO:
-		if (!cinTable[currentHandle].silent)
+		if (cinTable[currentHandle].silent == qfalse)
 		{
-			ssize = RllDecodeMonoToStereo(framedata, sbuf, cinTable[currentHandle].RoQFrameSize, 0,
+			ssize = RllDecodeMonoToStereo(framedata,
+				sbuf,
+				cinTable[currentHandle].RoQFrameSize,
+				0,
 				static_cast<unsigned short>(cinTable[currentHandle].roq_flags));
-			S_RawSamples(ssize, 22050, 2, 1, reinterpret_cast<byte*>(sbuf), s_volume->value, qtrue);
+
+			S_RawSamples(ssize,
+				22050,
+				2,
+				1,
+				reinterpret_cast<byte*>(sbuf),
+				s_volume->value,
+				qtrue);
 		}
 		break;
+
 	case ZA_SOUND_STEREO:
-		if (!cinTable[currentHandle].silent)
+		if (cinTable[currentHandle].silent == qfalse)
 		{
 			if (cinTable[currentHandle].numQuads == -1)
 			{
 				S_Update();
 				s_rawend = s_soundtime;
 			}
-			ssize = RllDecodeStereoToStereo(framedata, sbuf, cinTable[currentHandle].RoQFrameSize, 0,
+
+			ssize = RllDecodeStereoToStereo(framedata,
+				sbuf,
+				cinTable[currentHandle].RoQFrameSize,
+				0,
 				static_cast<unsigned short>(cinTable[currentHandle].roq_flags));
-			S_RawSamples(ssize, 22050, 2, 2, reinterpret_cast<byte*>(sbuf), s_volume->value, qtrue);
+
+			S_RawSamples(ssize,
+				22050,
+				2,
+				2,
+				reinterpret_cast<byte*>(sbuf),
+				s_volume->value,
+				qtrue);
 		}
 		break;
+
 	case ROQ_QUAD_INFO:
 		if (cinTable[currentHandle].numQuads == -1)
 		{
 			readQuadInfo(framedata);
 			setupQuad(0, 0);
-			cinTable[currentHandle].startTime = cinTable[currentHandle].lastTime = Sys_Milliseconds() * com_timescale->
-				value;
+			cinTable[currentHandle].startTime =
+				cinTable[currentHandle].lastTime =
+				Sys_Milliseconds() * com_timescale->value;
 		}
-		if (cinTable[currentHandle].numQuads != 1) cinTable[currentHandle].numQuads = 0;
+
+		if (cinTable[currentHandle].numQuads != 1)
+		{
+			cinTable[currentHandle].numQuads = 0;
+		}
 		break;
+
 	case ROQ_PACKET:
-		cinTable[currentHandle].inMemory = static_cast<qboolean>(cinTable[currentHandle].roq_flags);
-		cinTable[currentHandle].RoQFrameSize = 0; // for header
+		cinTable[currentHandle].inMemory =
+			static_cast<qboolean>(cinTable[currentHandle].roq_flags);
+		cinTable[currentHandle].RoQFrameSize = 0;
 		break;
+
 	case ROQ_QUAD_HANG:
 		cinTable[currentHandle].RoQFrameSize = 0;
 		break;
+
 	case ROQ_QUAD_JPEG:
 		break;
+
 	default:
 		cinTable[currentHandle].status = FMV_EOF;
 		break;
 	}
-	//
-	// read in next frame data
-	//
+
+	/* ------------------------------
+	   Read next frame header
+	   ------------------------------ */
 	if (cinTable[currentHandle].RoQPlayed >= cinTable[currentHandle].ROQSize)
 	{
 		if (cinTable[currentHandle].holdAtEnd == qfalse)
@@ -1327,35 +1389,44 @@ redump:
 	}
 
 	framedata += cinTable[currentHandle].RoQFrameSize;
-	cinTable[currentHandle].roq_id = framedata[0] + framedata[1] * 256;
-	cinTable[currentHandle].RoQFrameSize = framedata[2] + framedata[3] * 256 + framedata[4] * 65536;
-	cinTable[currentHandle].roq_flags = framedata[6] + framedata[7] * 256;
+
+	cinTable[currentHandle].roq_id =
+		framedata[0] + framedata[1] * 256;
+
+	cinTable[currentHandle].RoQFrameSize =
+		framedata[2] + framedata[3] * 256 + framedata[4] * 65536;
+
+	cinTable[currentHandle].roq_flags =
+		framedata[6] + framedata[7] * 256;
+
 	cinTable[currentHandle].roqF0 = static_cast<signed char>(framedata[7]);
 	cinTable[currentHandle].roqF1 = static_cast<signed char>(framedata[6]);
 
-	if (cinTable[currentHandle].RoQFrameSize > 65536 || cinTable[currentHandle].roq_id == 0x1084)
+	if (cinTable[currentHandle].RoQFrameSize > 65536 ||
+		cinTable[currentHandle].roq_id == 0x1084)
 	{
 		Com_DPrintf("roq_size>65536||roq_id==0x1084\n");
 		cinTable[currentHandle].status = FMV_EOF;
+
 		if (cinTable[currentHandle].looping)
 		{
 			RoQReset();
 		}
 		return;
 	}
-	if (cinTable[currentHandle].inMemory && cinTable[currentHandle].status != FMV_EOF)
+
+	if (cinTable[currentHandle].inMemory == qtrue &&
+		cinTable[currentHandle].status != FMV_EOF)
 	{
-		cinTable[currentHandle].inMemory = static_cast<qboolean>(static_cast<int>(cinTable[currentHandle].inMemory) -
-			1);
+		cinTable[currentHandle].inMemory =
+			static_cast<qboolean>(static_cast<int>(cinTable[currentHandle].inMemory) - 1);
+
 		framedata += 8;
 		goto redump;
 	}
-	//
-	// one more frame hits the dust
-	//
-	//	assert(cinTable[currentHandle].RoQFrameSize <= 65536);
-	//	r = FS_Read( cin.file, cinTable[currentHandle].RoQFrameSize+8, cinTable[currentHandle].iFile );
-	cinTable[currentHandle].RoQPlayed += cinTable[currentHandle].RoQFrameSize + 8;
+
+	cinTable[currentHandle].RoQPlayed +=
+		cinTable[currentHandle].RoQFrameSize + 8;
 }
 
 /******************************************************************************

@@ -638,9 +638,10 @@ static void Sniper_FaceEnemy()
 		{
 			int missFactor = 8 - (NPCInfo->stats.aim + g_spskill->integer) * 3;
 
-			if (missFactor > ENEMY_POS_LAG_STEPS)
+			// FIX: clamp safely (avoid ENEMY_POS_LAG_STEPS index)
+			if (missFactor >= ENEMY_POS_LAG_STEPS)
 			{
-				missFactor = ENEMY_POS_LAG_STEPS;
+				missFactor = ENEMY_POS_LAG_STEPS - 1;
 			}
 			else if (missFactor < 0)
 			{

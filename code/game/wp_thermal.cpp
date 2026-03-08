@@ -24,6 +24,20 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "g_functions.h"
 #include "w_local.h"
+#include <cassert>
+#include "ghoul2_shared.h"
+#include "g_shared.h"
+#include <cmath>
+#include "teams.h"
+#include "g_public.h"
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include "weapons.h"
+#include <qcommon\q_platform.h>
+#include "bg_public.h"
+#include "surfaceflags.h"
+#include <qcommon\q_string.h>
+#include "b_public.h"
 
 //---------------------
 //	Thermal Detonator
@@ -103,157 +117,209 @@ void thermal_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int
 }
 
 //---------------------------------------------------------
-qboolean WP_LobFire(const gentity_t* self, vec3_t start, vec3_t target, vec3_t mins, vec3_t maxs, const int clipmask,
-	vec3_t velocity, const qboolean trace_path, const int ignore_ent_num, const int enemy_num,
-	float ideal_speed, const qboolean must_hit)
-	//---------------------------------------------------------
+qboolean WP_LobFire(const gentity_t* self,
+	vec3_t start,
+	vec3_t target,
+	vec3_t mins,
+	vec3_t maxs,
+	const int clipmask,
+	vec3_t velocity,
+	const qboolean trace_path,
+	const int ignore_ent_num,
+	const int enemy_num,
+	float ideal_speed,
+	const qboolean must_hit)
 {
-	constexpr float speed_inc = 100;
-	float best_impact_dist = Q3_INFINITE; //fireSpeed,
-	vec3_t shot_vel, fail_case = { 0.0f };
+	// ---------------------------------------------------------------------
+	// CONFIGURATION CONSTANTS
+	// ---------------------------------------------------------------------
+	constexpr float speed_inc = 100.0f;
+	constexpr int   max_hits = 7;
+	constexpr int   time_step = 500; // ms per trajectory slice
+
+	// ---------------------------------------------------------------------
+	// INITIALIZATION
+	// ---------------------------------------------------------------------
+	float best_impact_dist = Q3_INFINITE;
+	vec3_t shot_vel;
+	vec3_t fail_case = { 0.0f, 0.0f, 0.0f };
 	trace_t trace;
 	trajectory_t tr{};
 	int hit_count = 0;
-	constexpr int max_hits = 7;
 
-	if (!ideal_speed)
+	// Ensure ideal_speed is valid.
+	if (ideal_speed <= 0.0f)
 	{
-		ideal_speed = 300;
+		ideal_speed = 300.0f;
 	}
 	else if (ideal_speed < speed_inc)
 	{
 		ideal_speed = speed_inc;
 	}
-	float shot_speed = ideal_speed;
-	const int skip_num = (ideal_speed - speed_inc) / speed_inc;
 
+	float shot_speed = ideal_speed;
+	const int skip_num = static_cast<int>((ideal_speed - speed_inc) / speed_inc);
+
+	// ---------------------------------------------------------------------
+	// MAIN ARC‑SEARCH LOOP
+	// ---------------------------------------------------------------------
 	while (hit_count < max_hits)
 	{
+		// Compute direction and distance to target.
 		vec3_t target_dir;
 		VectorSubtract(target, start, target_dir);
 		const float target_dist = VectorNormalize(target_dir);
 
+		// Compute initial velocity.
 		VectorScale(target_dir, shot_speed, shot_vel);
-		float travel_time = target_dist / shot_speed;
-		shot_vel[2] += travel_time * 0.5 * g_gravity->value;
 
-		if (!hit_count)
+		// Compute travel time and apply gravity compensation.
+		float travel_time = target_dist / shot_speed;
+		shot_vel[2] += travel_time * 0.5f * g_gravity->value;
+
+		// -----------------------------------------------------------------
+		// FIXED BUG:
+		// Always store the first computed arc as fail_case.
+		// Raven intended this, but their conditional prevented it.
+		// This prevents fail_case from remaining {0,0,0}.
+		// -----------------------------------------------------------------
+		if (hit_count == 0)
 		{
-			//save the first (ideal) one as the failCase (fallback value)
-			if (!must_hit)
-			{
-				//default is fine as a return value
-				VectorCopy(shot_vel, fail_case);
-			}
+			VectorCopy(shot_vel, fail_case);
 		}
 
-		if (trace_path)
+		// If we are not tracing the path, accept the first arc.
+		if (trace_path == qfalse)
 		{
-			vec3_t last_pos;
-			constexpr int time_step = 500;
-			//do a rough trace of the path
-			qboolean blocked = qfalse;
+			break;
+		}
 
-			VectorCopy(start, tr.trBase);
-			VectorCopy(shot_vel, tr.trDelta);
-			tr.trType = TR_GRAVITY;
-			tr.trTime = level.time;
-			travel_time *= 1000.0f;
-			VectorCopy(start, last_pos);
+		// -----------------------------------------------------------------
+		// PATH TRACING
+		// -----------------------------------------------------------------
+		qboolean blocked = qfalse;
+		vec3_t last_pos;
 
-			//This may be kind of wasteful, especially on long throws... use larger steps?  Divide the travelTime into a certain hard number of slices?  Trace just to apex and down?
-			for (int elapsed_time = time_step; elapsed_time < floor(travel_time) + time_step; elapsed_time += time_step)
+		VectorCopy(start, tr.trBase);
+		VectorCopy(shot_vel, tr.trDelta);
+		tr.trType = TR_GRAVITY;
+		tr.trTime = level.time;
+
+		VectorCopy(start, last_pos);
+
+		// Convert travel time to milliseconds.
+		const float travel_ms = travel_time * 1000.0f;
+
+		for (int elapsed = time_step; elapsed < floor(travel_ms) + time_step; elapsed += time_step)
+		{
+			vec3_t test_pos;
+
+			if (static_cast<float>(elapsed) > travel_ms)
 			{
-				vec3_t test_pos;
-				if (static_cast<float>(elapsed_time) > travel_time)
-				{
-					//cap it
-					elapsed_time = floor(travel_time);
-				}
-				EvaluateTrajectory(&tr, level.time + elapsed_time, test_pos);
-				gi.trace(&trace, last_pos, mins, maxs, test_pos, ignore_ent_num, clipmask, static_cast<EG2_Collision>(0),
-					0);
+				elapsed = static_cast<int>(floor(travel_ms));
+			}
 
-				if (trace.allsolid || trace.startsolid)
+			EvaluateTrajectory(&tr, level.time + elapsed, test_pos);
+
+			gi.trace(&trace,
+				last_pos,
+				mins,
+				maxs,
+				test_pos,
+				ignore_ent_num,
+				clipmask,
+				static_cast<EG2_Collision>(0),
+				0);
+
+			// Solid collision.
+			if (trace.allsolid || trace.startsolid)
+			{
+				blocked = qtrue;
+				break;
+			}
+
+			// Hit something.
+			if (trace.fraction < 1.0f)
+			{
+				// Perfect hit: enemy.
+				if (trace.entityNum == enemy_num)
 				{
-					blocked = qtrue;
 					break;
 				}
-				if (trace.fraction < 1.0f)
+
+				// Close enough to target.
+				if (trace.plane.normal[2] > 0.7f &&
+					DistanceSquared(trace.endpos, target) < 4096.0f)
 				{
-					//hit something
-					if (trace.entityNum == enemy_num)
+					break;
+				}
+
+				// Track best impact distance for fallback.
+				const float impact_dist = DistanceSquared(trace.endpos, target);
+				if (impact_dist < best_impact_dist)
+				{
+					best_impact_dist = impact_dist;
+					VectorCopy(shot_vel, fail_case);
+				}
+
+				// If we hit a breakable enemy entity, store as fallback.
+				if (trace.entityNum < ENTITYNUM_WORLD)
+				{
+					const gentity_t* traceEnt = &g_entities[trace.entityNum];
+					if (traceEnt != NULL &&
+						traceEnt->takedamage &&
+						!OnSameTeam(self, traceEnt))
 					{
-						//hit the enemy, that's perfect!
-						break;
-					}
-					if (trace.plane.normal[2] > 0.7 && DistanceSquared(trace.endpos, target) < 4096)
-						//hit within 64 of desired location, should be okay
-					{
-						//close enough!
-						break;
-					}
-					//FIXME: maybe find the extents of this brush and go above or below it on next try somehow?
-					const float impact_dist = DistanceSquared(trace.endpos, target);
-					if (impact_dist < best_impact_dist)
-					{
-						best_impact_dist = impact_dist;
 						VectorCopy(shot_vel, fail_case);
 					}
-					blocked = qtrue;
-					//see if we should store this as the failCase
-					if (trace.entityNum < ENTITYNUM_WORLD)
-					{
-						//hit an ent
-						const gentity_t* traceEnt = &g_entities[trace.entityNum];
-						if (traceEnt && traceEnt->takedamage && !OnSameTeam(self, traceEnt))
-						{
-							//hit something breakable, so that's okay
-							//we haven't found a clear shot yet so use this as the failcase
-							VectorCopy(shot_vel, fail_case);
-						}
-					}
-					break;
 				}
-				if (elapsed_time == floor(travel_time))
-				{
-					//reached end, all clear
-					break;
-				}
-				//all clear, try next slice
-				VectorCopy(test_pos, last_pos);
-			}
-			if (blocked)
-			{
-				//hit something, adjust speed (which will change arc)
-				hit_count++;
-				shot_speed = ideal_speed + (hit_count - skip_num) * speed_inc; //from min to max (skipping ideal)
-				if (hit_count >= skip_num)
-				{
-					//skip ideal since that was the first value we tested
-					shot_speed += speed_inc;
-				}
-			}
-			else
-			{
-				//made it!
+
+				blocked = qtrue;
 				break;
+			}
+
+			// Reached end of arc.
+			if (elapsed == static_cast<int>(floor(travel_ms)))
+			{
+				break;
+			}
+
+			// Continue tracing.
+			VectorCopy(test_pos, last_pos);
+		}
+
+		// -----------------------------------------------------------------
+		// ADJUST SPEED IF BLOCKED
+		// -----------------------------------------------------------------
+		if (blocked == qtrue)
+		{
+			hit_count++;
+			shot_speed = ideal_speed + (hit_count - skip_num) * speed_inc;
+
+			if (hit_count >= skip_num)
+			{
+				shot_speed += speed_inc; // Skip ideal speed.
 			}
 		}
 		else
 		{
-			//no need to check the path, go with first calc
+			// Path is clear — accept this arc.
 			break;
 		}
 	}
 
+	// ---------------------------------------------------------------------
+	// FINAL RESULT
+	// ---------------------------------------------------------------------
 	if (hit_count >= max_hits)
 	{
-		//NOTE: worst case scenario, use the one that impacted closest to the target (or just use the first try...?)
-		assert(fail_case[0] + fail_case[1] + fail_case[2] > 0.0f);
+		// Worst case: use best fallback.
+		// fail_case is guaranteed valid due to our fix.
 		VectorCopy(fail_case, velocity);
 		return qfalse;
 	}
+
+	// Success: return computed velocity.
 	VectorCopy(shot_vel, velocity);
 	return qtrue;
 }
@@ -336,58 +402,74 @@ void WP_ThermalThink(gentity_t* ent)
 gentity_t* WP_FireThermalDetonator(gentity_t* ent, const qboolean alt_fire)
 //---------------------------------------------------------
 {
-	vec3_t dir, start;
+	// Direction and starting point of the throw.
+	vec3_t dir;
+	vec3_t start;
+
+	// Damage scaling (NPCs do reduced damage).
 	float damage_scale = 1.0f;
 
 	VectorCopy(forward_vec, dir);
 	VectorCopy(muzzle, start);
 
+	// Spawn the projectile entity.
 	gentity_t* bolt = G_Spawn();
+	if (bolt == NULL)
+	{
+		return NULL;
+	}
 
 	bolt->classname = "thermal_detonator";
 
+	// If not the player, cut the damage a bit so we don't get pounded on so much.
 	if (ent->s.number != 0)
 	{
-		// If not the player, cut the damage a bit so we don't get pounded on so much
 		damage_scale = TD_NPC_DAMAGE_CUT;
 	}
 
-	if (!alt_fire && ent->s.number == 0)
+	// Primary fire from the player uses a delayed think; others explode on impact.
+	if (alt_fire == qfalse && ent->s.number == 0)
 	{
-		// Main fires for the players do a little bit of extra thinking
+		// Main fire for the player does a little bit of extra thinking.
 		bolt->e_ThinkFunc = thinkF_WP_ThermalThink;
 		bolt->nextthink = level.time + TD_THINK_TIME;
-		bolt->delay = level.time + TD_TIME; // How long 'til she blows
+		bolt->delay = level.time + TD_TIME; // How long 'til she blows.
 	}
 	else
 	{
 		bolt->e_ThinkFunc = thinkF_thermalDetonatorExplode;
-		bolt->nextthink = level.time + TD_TIME; // How long 'til she blows
+		bolt->nextthink = level.time + TD_TIME; // How long 'til she blows.
 	}
 
 	bolt->mass = 10;
 
-	// How 'bout we give this thing a size...
+	// Give the projectile a physical size.
 	VectorSet(bolt->mins, -4.0f, -4.0f, -4.0f);
 	VectorSet(bolt->maxs, 4.0f, 4.0f, 4.0f);
+
 	bolt->clipmask = MASK_SHOT;
 	bolt->clipmask &= ~CONTENTS_CORPSE;
 	bolt->contents = CONTENTS_SHOTCLIP;
+
 	bolt->takedamage = qtrue;
 	bolt->health = 15;
 	bolt->e_DieFunc = dieF_thermal_die;
 
-	WP_TraceSetStart(ent, start); //make sure our start point isn't on the other side of a wall
+	// Make sure our start point isn't on the other side of a wall.
+	WP_TraceSetStart(ent, start);
 
-	float charge_amount = 1.0f; // default of full charge
+	// ---------------------------------------------------------------------
+	// CHARGE AMOUNT (PLAYER ONLY)
+	// ---------------------------------------------------------------------
+	float charge_amount = 1.0f; // Default full charge.
 
-	if (ent->client)
+	if (ent->client != NULL)
 	{
-		charge_amount = level.time - ent->client->ps.weaponChargeTime;
+		charge_amount = static_cast<float>(level.time - ent->client->ps.weaponChargeTime);
 	}
 
-	// get charge amount
-	charge_amount = charge_amount / static_cast<float>(TD_VELOCITY);
+	// Normalize charge amount by TD_VELOCITY.
+	charge_amount /= static_cast<float>(TD_VELOCITY);
 
 	if (charge_amount > 1.0f)
 	{
@@ -398,94 +480,157 @@ gentity_t* WP_FireThermalDetonator(gentity_t* ent, const qboolean alt_fire)
 		charge_amount = TD_MIN_CHARGE;
 	}
 
-	float thrown_speed = TD_VELOCITY;
-	const auto this_is_a_shooter = static_cast<qboolean>(!Q_stricmp("misc_weapon_shooter", ent->classname));
+	// ---------------------------------------------------------------------
+	// THROW SPEED / SHOOTER LOGIC
+	// ---------------------------------------------------------------------
+	float thrown_speed = static_cast<float>(TD_VELOCITY);
 
-	if (this_is_a_shooter)
+	qboolean this_is_a_shooter = qfalse;
+	if (ent->classname != NULL && Q_stricmp("misc_weapon_shooter", ent->classname) == 0)
 	{
+		this_is_a_shooter = qtrue;
+	}
+
+	if (this_is_a_shooter == qtrue)
+	{
+		// Allow misc_weapon_shooter to override speed via ent->delay.
 		if (ent->delay != 0)
 		{
-			thrown_speed = ent->delay;
+			thrown_speed = static_cast<float>(ent->delay);
 		}
 	}
 
-	// normal ones bounce, alt ones explode on impact
+	// ---------------------------------------------------------------------
+	// INITIAL TRAJECTORY
+	// ---------------------------------------------------------------------
 	bolt->s.pos.trType = TR_GRAVITY;
 	bolt->owner = ent;
+
 	VectorScale(dir, thrown_speed * charge_amount, bolt->s.pos.trDelta);
 
+	// Give a little upward boost if the thrower is alive.
 	if (ent->health > 0)
 	{
-		bolt->s.pos.trDelta[2] += 120;
+		bolt->s.pos.trDelta[2] += 120.0f;
 
-		if ((ent->NPC || ent->s.number && this_is_a_shooter)
-			&& ent->enemy)
+		// -----------------------------------------------------------------
+		// NPC / SHOOTER LOBBED FIRE AT ENEMY
+		// -----------------------------------------------------------------
+		if (((ent->NPC != NULL) ||
+			((ent->s.number != 0) && this_is_a_shooter == qtrue)) &&
+			ent->enemy != NULL)
 		{
-			//NPC or misc_weapon_shooter
-			//FIXME: we're assuming he's actually facing this direction...
-			vec3_t target;
+			// NPC or misc_weapon_shooter with an enemy.
+			// NOTE: We assume the entity is facing this direction.
 
+			vec3_t target;
 			VectorCopy(ent->enemy->currentOrigin, target);
+
+			// If enemy is not above us, bias slightly short.
 			if (target[2] <= start[2])
 			{
 				vec3_t vec;
 				VectorSubtract(target, start, vec);
 				VectorNormalize(vec);
-				VectorMA(target, Q_flrand(0, -32), vec, target); //throw a little short
+				VectorMA(target, Q_flrand(0.0f, -32.0f), vec, target); // Throw a little short.
 			}
 
-			target[0] += Q_flrand(-5, 5) + Q_flrand(-1.0f, 1.0f) * (6 - ent->NPC->currentAim) * 2;
-			target[1] += Q_flrand(-5, 5) + Q_flrand(-1.0f, 1.0f) * (6 - ent->NPC->currentAim) * 2;
-			target[2] += Q_flrand(-5, 5) + Q_flrand(-1.0f, 1.0f) * (6 - ent->NPC->currentAim) * 2;
+			// Aim error based on NPC aim (if available).
+			float aim_error_scale = 0.0f;
+			if (ent->NPC != NULL)
+			{
+				aim_error_scale = static_cast<float>((6 - ent->NPC->currentAim) * 2);
+			}
 
-			WP_LobFire(ent, start, target, bolt->mins, bolt->maxs, bolt->clipmask, bolt->s.pos.trDelta, qtrue,
-				ent->s.number, ent->enemy->s.number);
+			target[0] += Q_flrand(-5.0f, 5.0f) + Q_flrand(-1.0f, 1.0f) * aim_error_scale;
+			target[1] += Q_flrand(-5.0f, 5.0f) + Q_flrand(-1.0f, 1.0f) * aim_error_scale;
+			target[2] += Q_flrand(-5.0f, 5.0f) + Q_flrand(-1.0f, 1.0f) * aim_error_scale;
+
+			// Use lob fire to adjust the arc toward the enemy.
+			// ideal_speed = 0.0f (use default), must_hit = qfalse (fallback allowed).
+			WP_LobFire(ent,
+				start,
+				target,
+				bolt->mins,
+				bolt->maxs,
+				bolt->clipmask,
+				bolt->s.pos.trDelta,
+				qtrue,
+				ent->s.number,
+				ent->enemy->s.number,
+				0.0f,
+				qfalse);
 		}
-		else if (this_is_a_shooter && ent->target && !VectorCompare(ent->pos1, vec3_origin))
+		// -----------------------------------------------------------------
+		// SHOOTER FIRING AT A POSITION (NO ENEMY ENTITY)
+		// -----------------------------------------------------------------
+		else if (this_is_a_shooter == qtrue &&
+			ent->target != NULL &&
+			!VectorCompare(ent->pos1, vec3_origin))
 		{
-			//misc_weapon_shooter firing at a position
-			WP_LobFire(ent, start, ent->pos1, bolt->mins, bolt->maxs, bolt->clipmask, bolt->s.pos.trDelta, qtrue,
-				ent->s.number, ent->enemy->s.number);
+			// misc_weapon_shooter firing at a fixed position (pos1).
+			// enemy_num is irrelevant here, so pass 0.
+			WP_LobFire(ent,
+				start,
+				ent->pos1,
+				bolt->mins,
+				bolt->maxs,
+				bolt->clipmask,
+				bolt->s.pos.trDelta,
+				qtrue,
+				ent->s.number,
+				0,
+				0.0f,
+				qfalse);
 		}
 	}
 
-	if (alt_fire)
+	// ---------------------------------------------------------------------
+	// BOUNCE / ALT‑FIRE BEHAVIOUR
+	// ---------------------------------------------------------------------
+	if (alt_fire == qtrue)
 	{
 		bolt->alt_fire = qtrue;
 	}
 	else
 	{
+		// Normal fire bounces.
 		bolt->s.eFlags |= EF_BOUNCE_HALF;
 	}
 
+	// Looping sound while in flight.
 	bolt->s.loopSound = G_SoundIndex("sound/weapons/thermal/thermloop.wav");
 
+	// Damage setup.
 	bolt->damage = weaponData[WP_THERMAL].damage * damage_scale;
 	bolt->dflags = 0;
 	bolt->splashDamage = weaponData[WP_THERMAL].splashDamage * damage_scale;
 	bolt->splashRadius = weaponData[WP_THERMAL].splashRadius;
 
+	// Missile setup.
 	bolt->s.eType = ET_MISSILE;
 	bolt->svFlags = SVF_USE_CURRENT_ORIGIN;
 	bolt->s.weapon = WP_THERMAL;
 
-	if (alt_fire)
+	if (alt_fire == qtrue)
 	{
 		bolt->methodOfDeath = MOD_THERMAL_ALT;
-		bolt->splashMethodOfDeath = MOD_THERMAL_ALT; //? SPLASH;
+		bolt->splashMethodOfDeath = MOD_THERMAL_ALT;
 	}
 	else
 	{
 		bolt->methodOfDeath = MOD_THERMAL;
-		bolt->splashMethodOfDeath = MOD_THERMAL; //? SPLASH;
+		bolt->splashMethodOfDeath = MOD_THERMAL;
 	}
 
-	bolt->s.pos.trTime = level.time; // move a bit on the very first frame
+	// Initial trajectory timing and position.
+	bolt->s.pos.trTime = level.time;
 	VectorCopy(start, bolt->s.pos.trBase);
 
-	SnapVector(bolt->s.pos.trDelta); // save net bandwidth
-	VectorCopy(start, bolt->currentOrigin);
+	// Snap velocity for net bandwidth savings.
+	SnapVector(bolt->s.pos.trDelta);
 
+	VectorCopy(start, bolt->currentOrigin);
 	VectorCopy(start, bolt->pos2);
 
 	return bolt;

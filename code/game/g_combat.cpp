@@ -565,58 +565,84 @@ static void G_CheckVictoryScript(gentity_t* self)
 	{
 		if (self->NPC && self->s.weapon == WP_SABER)
 		{
-			//Jedi taunt from within their AI
-			self->NPC->blockedSpeechDebounceTime = 0; //get them ready to taunt
+			// Jedi taunt from within their AI
+			self->NPC->blockedSpeechDebounceTime = 0;
 			return;
 		}
+
 		if (self->client && self->client->NPC_class == CLASS_GALAKMECH)
 		{
 			self->wait = 1;
 			TIMER_Set(self, "gloatTime", Q_irand(5000, 8000));
-			self->NPC->blockedSpeechDebounceTime = 0; //get him ready to taunt
+
+			// FIX: ensure NPC exists before dereferencing
+			if (self->NPC)
+			{
+				self->NPC->blockedSpeechDebounceTime = 0;
+			}
+
 			return;
 		}
-		//FIXME: any way to not say this *right away*?  Wait for victim's death anim/scream to finish?
-		if (self->NPC && self->NPC->group && self->NPC->group->commander && self->NPC->group->commander->NPC && self->
-			NPC->group->commander->NPC->rank > self->NPC->rank && !Q_irand(0, 2))
+
+		// Commander taunts
+		if (self->NPC &&
+			self->NPC->group &&
+			self->NPC->group->commander &&
+			self->NPC->group->commander->NPC &&
+			self->NPC->group->commander->NPC->rank > self->NPC->rank &&
+			!Q_irand(0, 2))
 		{
-			//sometimes have the group commander speak instead
-			self->NPC->group->commander->NPC->greetingDebounceTime = level.time + Q_irand(2000, 5000);
+			self->NPC->group->commander->NPC->greetingDebounceTime =
+				level.time + Q_irand(2000, 5000);
 		}
 		else if (self->NPC)
 		{
-			self->NPC->greetingDebounceTime = level.time + Q_irand(2000, 5000);
+			self->NPC->greetingDebounceTime =
+				level.time + Q_irand(2000, 5000);
 		}
 	}
 }
 
-void G_CheckAlmostVictoryScript(gentity_t* self)
+static void G_CheckAlmostVictoryScript(gentity_t* self)
 {
 	if (!G_ActivateBehavior(self, UNDYINGPLAYERVICTORY))
 	{
 		if (self->NPC && self->s.weapon == WP_SABER)
 		{
-			//Jedi taunt from within their AI
-			self->NPC->blockedSpeechDebounceTime = 0; //get them ready to taunt
+			// Jedi taunt from within their AI
+			self->NPC->blockedSpeechDebounceTime = 0;
 			return;
 		}
+
 		if (self->client && self->client->NPC_class == CLASS_GALAKMECH)
 		{
 			self->wait = 1;
 			TIMER_Set(self, "gloatTime", Q_irand(5000, 8000));
-			self->NPC->blockedSpeechDebounceTime = 0; //get him ready to taunt
+
+			// FIX: ensure NPC exists before dereferencing
+			if (self->NPC)
+			{
+				self->NPC->blockedSpeechDebounceTime = 0;
+			}
+
 			return;
 		}
-		//FIXME: any way to not say this *right away*?  Wait for victim's death anim/scream to finish?
-		if (self->NPC && self->NPC->group && self->NPC->group->commander && self->NPC->group->commander->NPC && self->
-			NPC->group->commander->NPC->rank > self->NPC->rank && !Q_irand(0, 2))
+
+		// Commander taunts
+		if (self->NPC &&
+			self->NPC->group &&
+			self->NPC->group->commander &&
+			self->NPC->group->commander->NPC &&
+			self->NPC->group->commander->NPC->rank > self->NPC->rank &&
+			!Q_irand(0, 2))
 		{
-			//sometimes have the group commander speak instead
-			self->NPC->group->commander->NPC->greetingDebounceTime = level.time + Q_irand(2000, 5000);
+			self->NPC->group->commander->NPC->greetingDebounceTime =
+				level.time + Q_irand(2000, 5000);
 		}
 		else if (self->NPC)
 		{
-			self->NPC->greetingDebounceTime = level.time + Q_irand(2000, 5000);
+			self->NPC->greetingDebounceTime =
+				level.time + Q_irand(2000, 5000);
 		}
 	}
 }
@@ -7175,21 +7201,26 @@ static void G_CheckLightningKnockdown(gentity_t* targ, gentity_t* attacker, vec3
 
 void G_ApplyKnockback(gentity_t* targ, vec3_t new_dir, float knockback)
 {
-	vec3_t kvel;
-	float mass;
-
-	if (targ
-		&& targ->client
-		&& (targ->client->NPC_class == CLASS_ATST
-			|| targ->client->NPC_class == CLASS_RANCOR
-			|| targ->client->NPC_class == CLASS_SAND_CREATURE
-			|| targ->client->NPC_class == CLASS_WAMPA))
+	// FIX: explicit null guard to satisfy analyzer
+	if (!targ)
 	{
-		//much to large to *ever* throw
 		return;
 	}
 
-	//--- TEMP TEST
+	vec3_t kvel;
+	float mass;
+
+	if (targ->client &&
+		(targ->client->NPC_class == CLASS_ATST ||
+			targ->client->NPC_class == CLASS_RANCOR ||
+			targ->client->NPC_class == CLASS_SAND_CREATURE ||
+			targ->client->NPC_class == CLASS_WAMPA))
+	{
+		// much too large to *ever* throw
+		return;
+	}
+
+	// --- TEMP TEST
 	if (new_dir[2] <= 0.0f)
 	{
 		new_dir[2] += (0.0f - new_dir[2]) * 1.2f;
@@ -7201,40 +7232,45 @@ void G_ApplyKnockback(gentity_t* targ, vec3_t new_dir, float knockback)
 	{
 		knockback = 120;
 	}
-	//--- TEMP TEST
+	// --- TEMP TEST
 
-	if (targ && targ->physicsBounce > 0) //override the mass
+	if (targ->physicsBounce > 0)
+	{
 		mass = targ->physicsBounce;
+	}
 	else
+	{
 		mass = 200;
+	}
 
 	if (g_gravity->value > 0)
 	{
-		VectorScale(new_dir, g_knockback->value * knockback / mass * 0.8, kvel);
-		kvel[2] = new_dir[2] * (g_knockback->value * knockback) / (mass * 1.5) + 20;
+		VectorScale(new_dir, g_knockback->value * knockback / mass * 0.8f, kvel);
+		kvel[2] = new_dir[2] * (g_knockback->value * knockback) / (mass * 1.5f) + 20.0f;
 	}
 	else
 	{
 		VectorScale(new_dir, g_knockback->value * knockback / mass, kvel);
 	}
 
-	if (targ && targ->client)
+	if (targ->client)
 	{
 		VectorAdd(targ->client->ps.velocity, kvel, targ->client->ps.velocity);
 	}
-	else if (targ && targ->s.pos.trType != TR_STATIONARY && targ->s.pos.trType != TR_LINEAR_STOP && targ->s.pos.trType
-		!= TR_NONLINEAR_STOP)
+	else if (targ->s.pos.trType != TR_STATIONARY &&
+		targ->s.pos.trType != TR_LINEAR_STOP &&
+		targ->s.pos.trType != TR_NONLINEAR_STOP)
 	{
 		VectorAdd(targ->s.pos.trDelta, kvel, targ->s.pos.trDelta);
 		VectorCopy(targ->currentOrigin, targ->s.pos.trBase);
 		targ->s.pos.trTime = level.time;
 	}
 
-	// set the timer so that the other client can't cancel
-	// out the movement immediately
+	// set the timer so that the other client can't cancel out the movement immediately
 	if (targ->client && !targ->client->ps.pm_time)
 	{
 		int t = knockback * 2;
+
 		if (t < 50)
 		{
 			t = 50;
@@ -7243,6 +7279,7 @@ void G_ApplyKnockback(gentity_t* targ, vec3_t new_dir, float knockback)
 		{
 			t = 200;
 		}
+
 		targ->client->ps.pm_time = t;
 		targ->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 	}

@@ -30,6 +30,34 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../qcommon/sstring.h"
 #include "qcommon/ojk_saved_game_helper.h"
 #include "../game/wp_saber.h"
+#include <map>
+#include <bg_public.h>
+#include <g_shared.h>
+#include <g_vehicles.h>
+#include <qcommon\q_shared.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_math.h>
+#include <ghoul2_shared.h>
+#include <g_items.h>
+#include <rd-common\tr_types.h>
+#include "cg_local.h"
+#include <iterator>
+#include "cg_camera.h"
+#include <weapons.h>
+#include <cstdarg>
+#include <qcommon\q_string.h>
+#include <string.h>
+#include <cassert>
+#include <icarus\StdAfx.h>
+#include <surfaceflags.h>
+#include <qcommon\q_color.h>
+#include "FxUtil.h"
+#include <g_public.h>
+#include <cstdint>
+#include <qcommon\ojk_saved_game_helper_fwd.h>
+#include "FxPrimitives.h"
+#include <statindex.h>
+#include <cstdlib>
 
 //NOTENOTE: Be sure to change the mirrored code in g_shared.h
 using namePrecache_m = std::map<sstring_t, unsigned char>;
@@ -718,7 +746,7 @@ static constexpr size_t cvarTableSize = std::size(cvarTable);
 CG_RegisterCvars
 =================
 */
-void CG_RegisterCvars()
+static void CG_RegisterCvars()
 {
 	size_t i;
 	cvarTable_t* cv;
@@ -930,7 +958,7 @@ CG_LoadingString
 
 ======================
 */
-void CG_LoadingString(const char* s)
+static void CG_LoadingString(const char* s)
 {
 	Q_strncpyz(cg.infoScreenText, s, sizeof cg.infoScreenText);
 	cgi_UpdateScreen();
@@ -1144,7 +1172,7 @@ CLIENT INFO
 CG_RegisterClientSkin
 ==========================
 */
-qboolean CG_RegisterClientSkin(clientInfo_t* ci,
+static qboolean CG_RegisterClientSkin(clientInfo_t* ci,
 	const char* headModelName, const char* headSkinName,
 	const char* torsoModelName, const char* torsoSkinName,
 	const char* legsModelName, const char* legsSkinName)
@@ -3166,7 +3194,7 @@ void CG_DrawMiscEnts()
 	}
 }
 
-void CG_TransitionPermanent()
+static void CG_TransitionPermanent()
 {
 	centity_t* cent = cg_entities;
 
@@ -3666,7 +3694,7 @@ constexpr auto MAX_MENUDEFFILE = 4096;
 // new hud stuff ( mission pack )
 // ==============================
 //
-qboolean CG_Asset_Parse(const char** p)
+static qboolean CG_Asset_Parse(const char** p)
 {
 	const char* tempStr;
 	int pointSize;
@@ -3971,7 +3999,7 @@ void cgi_UI_EndParseSession(char* buf);
 CG_ParseMenu();
 =================
 */
-void CG_ParseMenu(const char* menuFile)
+static void CG_ParseMenu(const char* menuFile)
 {
 	char* token;
 	char* buf;
@@ -4047,7 +4075,7 @@ CG_Load_Menu();
 
 =================
 */
-qboolean CG_Load_Menu(const char** p)
+static qboolean CG_Load_Menu(const char** p)
 {
 	const char* token = COM_ParseExt(p, qtrue);
 
@@ -4389,7 +4417,7 @@ void CG_PrevInventory_f()
 FindInventoryItemTag
 ===================
 */
-gitem_t* FindInventoryItemTag(const int tag)
+static gitem_t* FindInventoryItemTag(const int tag)
 {
 	for (int i = 1; i < bg_numItems; i++)
 	{
@@ -4953,7 +4981,7 @@ void CG_DrawDataPadInventorySelect()
 SetForcePowerTime
 ===============
 */
-void SetForcePowerTime()
+static void SetForcePowerTime()
 {
 	if (cg.weaponSelectTime + WEAPON_SELECT_TIME > cg.time ||
 		// The Weapon HUD was currently active to just swap it out with Force HUD
@@ -5064,7 +5092,7 @@ int showDataPadPowers[MAX_DPSHOWPOWERS] =
 ForcePower_Valid
 ===============
 */
-qboolean ForcePower_Valid(const int index)
+static qboolean ForcePower_Valid(const int index)
 {
 	const gentity_t* player = &g_entities[0];
 
@@ -5524,7 +5552,7 @@ void CG_DrawForceSelect_side()
 ForcePowerDataPad_Valid
 ===============
 */
-qboolean ForcePowerDataPad_Valid(const int index)
+static qboolean ForcePowerDataPad_Valid(const int index)
 {
 	const gentity_t* player = &g_entities[0];
 

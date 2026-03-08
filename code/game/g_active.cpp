@@ -220,13 +220,16 @@ void ClientEndPowerUps(const gentity_t* ent);
 
 static int G_FindLookItem(gentity_t* self)
 {
+	// FIX: move large array off the stack
+	static gentity_t* entity_list[MAX_GENTITIES];
+
 	int best_ent_num = ENTITYNUM_NONE;
-	gentity_t* entity_list[MAX_GENTITIES];
-	vec3_t center, mins{}, maxs{}, fwdangles{}, forward;
-	constexpr float radius = 256;
+	vec3_t center, mins{}, maxs{}, fwdangles, forward;
+	constexpr float radius = 256.0f;
 	float best_rating = 0.0f;
 
-	//FIXME: no need to do this in 1st person?
+	// Only yaw matters for forward vector
+	VectorClear(fwdangles);
 	fwdangles[1] = self->client->ps.viewangles[1];
 	AngleVectors(fwdangles, forward, nullptr, nullptr);
 
@@ -237,9 +240,11 @@ static int G_FindLookItem(gentity_t* self)
 		mins[i] = center[i] - radius;
 		maxs[i] = center[i] + radius;
 	}
-	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
-	if (!num_listed_entities)
+	const int num_listed_entities =
+		gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
+
+	if (num_listed_entities <= 0)
 	{
 		return ENTITYNUM_NONE;
 	}
@@ -257,53 +262,53 @@ static int G_FindLookItem(gentity_t* self)
 		{
 			continue;
 		}
-		if (ent->spawnflags & 4/*ITMSF_MONSTER*/)
+		if (ent->spawnflags & 4) // ITMSF_MONSTER
 		{
-			//NPCs only
 			continue;
 		}
 		if (!BG_CanItemBeGrabbed(&ent->s, &self->client->ps))
 		{
-			//don't need it
 			continue;
 		}
 		if (!gi.inPVS(self->currentOrigin, ent->currentOrigin))
 		{
-			//not even potentially visible
+			continue;
+		}
+		if (!G_ClearLOS(self, self->client->renderInfo.eyePoint, ent))
+		{
 			continue;
 		}
 
-		if (!G_ClearLOS(self, self->client->renderInfo.eyePoint, ent))
+		// Special case: saber pickups
+		if (ent->item->giType == IT_WEAPON &&
+			ent->item->giTag == WP_SABER)
 		{
-			//can't see him
-			continue;
-		}
-		if (ent->item->giType == IT_WEAPON
-			&& ent->item->giTag == WP_SABER)
-		{
-			//a weapon_saber pickup
-			if (self->client->ps.dualSabers //using 2 sabers already
-				|| self->client->ps.saber[0].saberFlags & SFL_TWO_HANDED) //using a 2-handed saber
+			if (self->client->ps.dualSabers ||
+				(self->client->ps.saber[0].saberFlags & SFL_TWO_HANDED))
 			{
-				//hands are full already, don't look at saber pickups
 				continue;
 			}
 		}
-		//rate him based on how close & how in front he is
+
+		// Rate based on distance + angle
 		VectorSubtract(ent->currentOrigin, center, dir);
 		float rating = 1.0f - VectorNormalize(dir) / radius;
 		rating *= DotProduct(forward, dir);
-		if (ent->item->giType == IT_HOLDABLE && ent->item->giTag == INV_SECURITY_KEY)
+
+		// Security keys are high priority
+		if (ent->item->giType == IT_HOLDABLE &&
+			ent->item->giTag == INV_SECURITY_KEY)
 		{
-			//security keys are of the highest importance
 			rating *= 2.0f;
 		}
+
 		if (rating > best_rating)
 		{
 			best_ent_num = ent->s.number;
 			best_rating = rating;
 		}
 	}
+
 	return best_ent_num;
 }
 
@@ -480,15 +485,17 @@ static qboolean G_ValidateLookEnemy(gentity_t* self, gentity_t* enemy)
 static void G_ChooseLookEnemy(gentity_t* self, const usercmd_t* ucmd)
 {
 	gentity_t* best_ent = nullptr;
-	gentity_t* entity_list[MAX_GENTITIES];
-	vec3_t center, mins{}, maxs{}, fwdangles{}, forward;
-	constexpr float radius = 256;
+
+	// FIX: move large array off the stack
+	static gentity_t* entity_list[MAX_GENTITIES];
+
+	vec3_t center, mins{}, maxs{}, fwdangles, forward;
+	constexpr float radius = 256.0f;
 	float best_rating = 0.0f;
 
-	//FIXME: no need to do this in 1st person?
-	fwdangles[0] = 0; //Must initialize data!
+	// Build forward vector (yaw only)
+	VectorClear(fwdangles);
 	fwdangles[1] = self->client->ps.viewangles[1];
-	fwdangles[2] = 0;
 	AngleVectors(fwdangles, forward, nullptr, nullptr);
 
 	VectorCopy(self->currentOrigin, center);
@@ -498,11 +505,12 @@ static void G_ChooseLookEnemy(gentity_t* self, const usercmd_t* ucmd)
 		mins[i] = center[i] - radius;
 		maxs[i] = center[i] + radius;
 	}
-	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
-	if (!num_listed_entities)
+	const int num_listed_entities =
+		gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
+
+	if (num_listed_entities <= 0)
 	{
-		//should we clear the enemy?
 		return;
 	}
 
@@ -513,73 +521,78 @@ static void G_ChooseLookEnemy(gentity_t* self, const usercmd_t* ucmd)
 
 		if (!gi.inPVS(self->currentOrigin, ent->currentOrigin))
 		{
-			//not even potentially visible
 			continue;
 		}
 
 		if (!G_ValidateLookEnemy(self, ent))
 		{
-			//doesn't meet criteria of valid look enemy (don't check current since we would have done that before this func's call
 			continue;
 		}
 
 		if (!G_ClearLOS(self, self->client->renderInfo.eyePoint, ent))
 		{
-			//can't see him
 			continue;
 		}
-		//rate him based on how close & how in front he is
+
+		// Rate based on distance + angle
 		VectorSubtract(ent->currentOrigin, center, dir);
 		float rating = 1.0f - VectorNormalize(dir) / radius;
 		rating *= DotProduct(forward, dir) + 1.0f;
+
+		// Dead enemies are less important unless attacking
 		if (ent->health <= 0)
 		{
-			if (ucmd->buttons & BUTTON_ATTACK
-				|| ucmd->buttons & BUTTON_ALT_ATTACK
-				|| ucmd->buttons & BUTTON_FORCE_FOCUS)
+			if (ucmd->buttons & BUTTON_ATTACK ||
+				ucmd->buttons & BUTTON_ALT_ATTACK ||
+				ucmd->buttons & BUTTON_FORCE_FOCUS)
 			{
-				//if attacking, don't consider dead enemies
 				continue;
 			}
+
 			if (ent->message)
 			{
-				//keyholder
-				rating *= 0.5f;
+				rating *= 0.5f; // keyholder
 			}
 			else
 			{
 				rating *= 0.1f;
 			}
 		}
+
+		// Saber users are more important
 		if (ent->s.weapon == WP_SABER)
 		{
 			rating *= 2.0f;
 		}
+
+		// If he's targeting me, he's more important
 		if (ent->enemy == self)
 		{
-			//he's mad at me, he's more important
 			rating *= 2.0f;
 		}
-		else if (ent->NPC && ent->NPC->blockedSpeechDebounceTime > level.time - 6000)
+		else if (ent->NPC &&
+			ent->NPC->blockedSpeechDebounceTime > level.time - 6000)
 		{
-			//he's detected me, he's more important
+			// Recently detected me
 			if (ent->NPC->blockedSpeechDebounceTime > level.time + 4000)
 			{
 				rating *= 1.5f;
 			}
 			else
 			{
-				//from 1.0f to 1.5f
-				rating += rating * (static_cast<float>(ent->NPC->blockedSpeechDebounceTime - level.time) + 6000.0f) /
+				rating += rating *
+					(static_cast<float>(ent->NPC->blockedSpeechDebounceTime - level.time) + 6000.0f) /
 					20000.0f;
 			}
 		}
+
 		if (rating > best_rating)
 		{
 			best_ent = ent;
 			best_rating = rating;
 		}
 	}
+
 	if (best_ent)
 	{
 		self->enemy = best_ent;
@@ -993,14 +1006,10 @@ void DoImpact(gentity_t* self, gentity_t* other, const qboolean damage_self, con
 
 		if (attacker && victim)
 		{
-			//	float		maxMoveSpeed	= pSelfVeh->m_pVehicleInfo->speedMax;
-			//	float		minLockingSpeed = maxMoveSpeed * 0.75;
-
-			vec3_t attacker_move_dir;
-
-			vec3_t victim_move_dir;
-			vec3_t victim_toward_attacker;
-			vec3_t victim_right;
+			vec3_t attacker_move_dir = { 0 };
+			vec3_t victim_move_dir = { 0 };
+			vec3_t victim_toward_attacker = { 0 };
+			vec3_t victim_right = { 0 };
 
 			VectorCopy(attacker->client->ps.velocity, attacker_move_dir);
 			VectorCopy(victim->client->ps.velocity, victim_move_dir);
@@ -1008,17 +1017,16 @@ void DoImpact(gentity_t* self, gentity_t* other, const qboolean damage_self, con
 			AngleVectors(victim->currentAngles, nullptr, victim_right, nullptr);
 
 			VectorSubtract(victim->currentOrigin, attacker->currentOrigin, victim_toward_attacker);
-			/*victimTowardAttackerDistance = */
 			VectorNormalize(victim_toward_attacker);
 
 			const float victim_right_accuracy = DotProduct(victim_toward_attacker, victim_right);
 
-			if (fabsf(victim_right_accuracy) > 0.25)
+			if (fabsf(victim_right_accuracy) > 0.25f)
 			{
 				thrown = true;
 
-				vec3_t vec_out;
-				vec3_t victim_angles;
+				vec3_t vec_out = { 0 };
+				vec3_t victim_angles = { 0 };
 				VectorCopy(victim->currentAngles, victim_angles);
 				victim_angles[2] = 0;
 				AngleVectors(victim_angles, nullptr, vec_out, nullptr);
@@ -1613,7 +1621,11 @@ static void G_TouchTriggersLerped(gentity_t* ent)
 	trace_t trace;
 	vec3_t diff;
 	constexpr vec3_t range = { 40, 40, 52 };
-	qboolean touched[MAX_GENTITIES];
+
+	// FIX: move large arrays off the stack
+	static qboolean   touched[MAX_GENTITIES];
+	static gentity_t* touch[MAX_GENTITIES];
+
 	qboolean done = qfalse;
 
 	if (!ent->client)
@@ -1636,25 +1648,28 @@ static void G_TouchTriggersLerped(gentity_t* ent)
 		assert(!Q_isnan(ent->currentOrigin[j]));
 		assert(!Q_isnan(ent->lastOrigin[j]));
 	}
-#endif// _DEBUG
+#endif // _DEBUG
+
 	VectorSubtract(ent->currentOrigin, ent->lastOrigin, diff);
 	dist = VectorNormalize(diff);
+
 #ifdef _DEBUG
 	assert(dist < 1024 && "insane distance in G_TouchTriggersLerped!");
-#endif// _DEBUG
+#endif // _DEBUG
 
 	if (dist > 1024)
 	{
 		return;
 	}
-	memset(touched, qfalse, sizeof touched);
 
-	for (float cur_dist = 0; !done && ent->maxs[1] > 0; cur_dist += ent->maxs[1] / 2.0f)
+	memset(touched, qfalse, sizeof(touched));
+
+	for (float cur_dist = 0.0f; !done && ent->maxs[1] > 0.0f; cur_dist += ent->maxs[1] / 2.0f)
 	{
 		vec3_t maxs;
 		vec3_t mins;
 		vec3_t end;
-		gentity_t* touch[MAX_GENTITIES];
+
 		if (cur_dist >= dist)
 		{
 			VectorCopy(ent->currentOrigin, end);
@@ -1664,6 +1679,7 @@ static void G_TouchTriggersLerped(gentity_t* ent)
 		{
 			VectorMA(ent->lastOrigin, cur_dist, diff, end);
 		}
+
 		VectorSubtract(end, range, mins);
 		VectorAdd(end, range, maxs);
 
@@ -1688,19 +1704,21 @@ static void G_TouchTriggersLerped(gentity_t* ent)
 
 			if (touched[i] == qtrue)
 			{
-				continue; //already touched this move
+				continue; // already touched this move
 			}
+
 			if (ent->client->ps.stats[STAT_HEALTH] <= 0)
 			{
-				if (Q_stricmp("trigger_teleport", hit->classname) || !(hit->spawnflags & 16/*TTSF_DEAD_OK*/))
+				if (Q_stricmp("trigger_teleport", hit->classname) ||
+					!(hit->spawnflags & 16 /*TTSF_DEAD_OK*/))
 				{
-					//dead clients can only touch tiogger_teleports that are marked as touchable
+					// dead clients can only touch trigger_teleports that are marked as touchable
 					continue;
 				}
 			}
-			// use seperate code for determining if an item is picked up
-			// so you don't have to actually contact its bounding box
 
+			// use separate code for determining if an item is picked up
+			// so you don't have to actually contact its bounding box
 			if (!gi.EntityContact(mins, maxs, hit))
 			{
 				continue;
@@ -1708,7 +1726,7 @@ static void G_TouchTriggersLerped(gentity_t* ent)
 
 			touched[i] = qtrue;
 
-			memset(&trace, 0, sizeof trace);
+			memset(&trace, 0, sizeof(trace));
 
 			if (hit->e_TouchFunc != touchF_NULL)
 			{
@@ -1726,9 +1744,11 @@ Find all trigger entities that ent's current position touches.
 Spectators will only interact with teleporters.
 ============
 */
-void G_TouchTriggers(gentity_t* ent)
+static void G_TouchTriggers(gentity_t* ent)
 {
-	gentity_t* touch[MAX_GENTITIES];
+	// FIX: move large array off the stack
+	static gentity_t* touch[MAX_GENTITIES];
+
 	trace_t trace;
 	vec3_t mins, maxs;
 	constexpr vec3_t range = { 40, 40, 52 };
@@ -1766,15 +1786,14 @@ void G_TouchTriggers(gentity_t* ent)
 			continue;
 		}
 
-		// use seperate code for determining if an item is picked up
+		// use separate code for determining if an item is picked up
 		// so you don't have to actually contact its bounding box
-
 		if (!gi.EntityContact(mins, maxs, hit))
 		{
 			continue;
 		}
 
-		memset(&trace, 0, sizeof trace);
+		memset(&trace, 0, sizeof(trace));
 
 		if (hit->e_TouchFunc != touchF_NULL)
 		{
@@ -1803,6 +1822,9 @@ void G_MoverTouchPushTriggers(gentity_t* ent, vec3_t old_org)
 	vec3_t size;
 	constexpr vec3_t range = { 40, 40, 52 };
 
+	// FIX: move large array off the stack
+	static gentity_t* touch[MAX_GENTITIES];
+
 	// non-moving movers don't hit triggers!
 	if (!VectorLengthSquared(ent->s.pos.trDelta))
 	{
@@ -1811,19 +1833,20 @@ void G_MoverTouchPushTriggers(gentity_t* ent, vec3_t old_org)
 
 	VectorSubtract(ent->mins, ent->maxs, size);
 	float step_size = VectorLength(size);
-	if (step_size < 1)
+	if (step_size < 1.0f)
 	{
-		step_size = 1;
+		step_size = 1.0f;
 	}
 
 	VectorSubtract(ent->currentOrigin, old_org, dir);
 	const float dist = VectorNormalize(dir);
-	for (float step = 0; step <= dist; step += step_size)
+
+	for (float step = 0.0f; step <= dist; step += step_size)
 	{
 		vec3_t check_spot;
 		vec3_t maxs;
 		vec3_t mins;
-		gentity_t* touch[MAX_GENTITIES];
+
 		VectorMA(ent->currentOrigin, step, dir, check_spot);
 		VectorSubtract(check_spot, range, mins);
 		VectorAdd(check_spot, range, maxs);
@@ -1858,7 +1881,7 @@ void G_MoverTouchPushTriggers(gentity_t* ent, vec3_t old_org)
 				continue;
 			}
 
-			memset(&trace, 0, sizeof trace);
+			memset(&trace, 0, sizeof(trace));
 
 			if (hit->e_TouchFunc != touchF_NULL)
 			{
@@ -9767,10 +9790,15 @@ extern qboolean PM_GentCantJump(const gentity_t* gent);
 
 void ClientThink(const int clientNum, usercmd_t* ucmd)
 {
+	// FIX: ent->client can be NULL during certain transitions
+	gentity_t* ent = g_entities + clientNum;
+	if (!ent->client)
+	{
+		return;
+	}
+
 	qboolean restore_ucmd = qfalse;
 	usercmd_t sav_ucmd = { 0 };
-
-	gentity_t* ent = g_entities + clientNum;
 
 	if (ent->s.number < MAX_CLIENTS)
 	{
@@ -9779,6 +9807,7 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 			//you're controlling another NPC
 			const gentity_t* controlled = &g_entities[ent->client->ps.viewEntity];
 			qboolean freed = qfalse;
+
 			if (controlled->NPC
 				&& controlled->NPC->controlledTime
 				&& ent->client->ps.forcePowerLevel[FP_TELEPATHY] > FORCE_LEVEL_3)
@@ -9792,35 +9821,29 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 				}
 				else if (ucmd->upmove > 0 || ucmd->buttons & BUTTON_BLOCK)
 				{
-					//jumping gets you out of it FIXME: check some other button instead... like ESCAPE... so you could even have total control over an NPC?
+					//jumping gets you out of it
 					G_ClearViewEntity(ent);
-					ucmd->upmove = 0; //ucmd->buttons = 0;
-					//stop player from doing anything for a half second after
+					ucmd->upmove = 0;
 					ent->aimDebounceTime = level.time + 500;
 					freed = qtrue;
 				}
 			}
-			else if (controlled->client //an NPC
-				&& PM_GentCantJump(controlled) //that cannot jump
-				&& controlled->client->moveType != MT_FLYSWIM) //and does not use upmove to fly
+			else if (controlled->client
+				&& PM_GentCantJump(controlled)
+				&& controlled->client->moveType != MT_FLYSWIM)
 			{
-				//these types use jump to get out
 				if (ucmd->upmove > 0 || ucmd->buttons & BUTTON_BLOCK)
 				{
-					//jumping gets you out of it FIXME: check some other button instead... like ESCAPE... so you could even have total control over an NPC?
 					G_ClearViewEntity(ent);
-					ucmd->upmove = 0; //ucmd->buttons = 0;
-					//stop player from doing anything for a half second after
+					ucmd->upmove = 0;
 					ent->aimDebounceTime = level.time + 500;
 					freed = qtrue;
 				}
 			}
 			else
 			{
-				//others use the blocking key
 				if (ucmd->buttons & BUTTON_BLOCK)
 				{
-					//jumping gets you out of it FIXME: check some other button instead... like ESCAPE... so you could even have total control over an NPC?
 					G_ClearViewEntity(ent);
 					ucmd->buttons = 0;
 					freed = qtrue;
@@ -9829,27 +9852,26 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 
 			if (!freed)
 			{
-				//still controlling, save off my ucmd and clear it for my actual run through pmove
 				restore_ucmd = qtrue;
 				memcpy(&sav_ucmd, ucmd, sizeof(usercmd_t));
 				memset(ucmd, 0, sizeof(usercmd_t));
-				//to keep pointing in same dir, need to set ucmd->angles
-				ucmd->angles[PITCH] = ANGLE2SHORT(ent->client->ps.viewangles[PITCH]) - ent->client->ps.delta_angles[
-					PITCH];
+
+				ucmd->angles[PITCH] = ANGLE2SHORT(ent->client->ps.viewangles[PITCH]) - ent->client->ps.delta_angles[PITCH];
 				ucmd->angles[YAW] = ANGLE2SHORT(ent->client->ps.viewangles[YAW]) - ent->client->ps.delta_angles[YAW];
 				ucmd->angles[ROLL] = 0;
+
 				if (controlled->NPC)
 				{
 					VectorClear(controlled->client->ps.moveDir);
-					controlled->client->ps.speed = sav_ucmd.buttons & BUTTON_WALKING
+					controlled->client->ps.speed =
+						(sav_ucmd.buttons & BUTTON_WALKING)
 						? controlled->NPC->stats.walkSpeed
 						: controlled->NPC->stats.runSpeed;
 				}
 			}
 			else
 			{
-				ucmd->angles[PITCH] = ANGLE2SHORT(ent->client->ps.viewangles[PITCH]) - ent->client->ps.delta_angles[
-					PITCH];
+				ucmd->angles[PITCH] = ANGLE2SHORT(ent->client->ps.viewangles[PITCH]) - ent->client->ps.delta_angles[PITCH];
 				ucmd->angles[YAW] = ANGLE2SHORT(ent->client->ps.viewangles[YAW]) - ent->client->ps.delta_angles[YAW];
 				ucmd->angles[ROLL] = 0;
 			}
@@ -9858,9 +9880,8 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 		{
 			if (ucmd->upmove > 0)
 			{
-				//get out of ATST
 				GEntity_UseFunc(ent->activator, ent, ent);
-				ucmd->upmove = 0; //ucmd->buttons = 0;
+				ucmd->upmove = 0;
 			}
 		}
 
@@ -9869,8 +9890,6 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 
 	Vehicle_t* p_vehicle;
 
-	// Rider logic.
-	// NOTE: Maybe this should be extracted into a RiderUpdate() within the vehicle.
 	if ((p_vehicle = G_IsRidingVehicle(ent)) != nullptr)
 	{
 		if (p_vehicle->m_pVehicleInfo->UpdateRider(p_vehicle, ent, ucmd))
@@ -9878,48 +9897,33 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 			restore_ucmd = qtrue;
 			memcpy(&sav_ucmd, ucmd, sizeof(usercmd_t));
 			memset(ucmd, 0, sizeof(usercmd_t));
+
 			ucmd->angles[PITCH] = sav_ucmd.angles[PITCH];
 			ucmd->angles[YAW] = sav_ucmd.angles[YAW];
 			ucmd->angles[ROLL] = sav_ucmd.angles[ROLL];
-			{
-				//trying to change weapons to a valid weapon for this vehicle, to preserve this weapon change command
-				ucmd->weapon = sav_ucmd.weapon;
-			}
-			{
-				//keep our current weapon
-				{
-					//not changing weapons and we are using one of our weapons, not using vehicle weapon
-					//so we actually want to do our fire weapon on us, not the vehicle
-					ucmd->buttons = sav_ucmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK);
-				}
-			}
+
+			ucmd->weapon = sav_ucmd.weapon;
+			ucmd->buttons = sav_ucmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK);
 		}
 	}
 
 	ent->client->usercmd = *ucmd;
 
-	//	if ( !g_syncronousClients->integer )
-	{
-		ClientThink_real(ent, ucmd);
-	}
+	ClientThink_real(ent, ucmd);
 
-	// If a vehicle, make sure to attach our driver and passengers here (after we pmove, which is done in Think_Real))
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
 	{
 		p_vehicle = ent->m_pVehicle;
 		p_vehicle->m_pVehicleInfo->AttachRiders(p_vehicle);
 	}
 
-	// ClientThink_real can end up freeing this ent, need to check
 	if (restore_ucmd && ent->client)
 	{
-		//restore ucmd for later so NPC you're controlling can refer to them
 		memcpy(&ent->client->usercmd, &sav_ucmd, sizeof(usercmd_t));
 	}
 
 	if (ent->s.number)
 	{
-		//NPCs drown, burn from lava, etc, also
 		P_WorldEffects(ent);
 	}
 }

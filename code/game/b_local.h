@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "ai.h"
 #include "b_public.h"
 #include <qcommon\q_math.h>
+#include <string.h>
 
 #define	AI_TIMERS 0//turn on to see print-outs of AI/nav timing
 //
@@ -363,11 +364,22 @@ struct navInfo_s
 using navInfo_t = struct navInfo_s
 {
 	gentity_t* blocker;
-	vec3_t direction;
-	vec3_t pathDirection;
-	float distance;
-	trace_t trace;
-	int flags;
+	vec3_t     direction;
+	vec3_t     pathDirection;
+	float      distance;
+	trace_t    trace;
+	int        flags;
+
+	// Constructor ensures all members are initialized
+	navInfo_s()
+		: blocker(nullptr)
+		, distance(0.0f)
+		, flags(0)
+	{
+		VectorClear(direction);
+		VectorClear(pathDirection);
+		memset(&trace, 0, sizeof(trace));
+	}
 };
 
 extern void NAV_GetLastMove(navInfo_t& info);

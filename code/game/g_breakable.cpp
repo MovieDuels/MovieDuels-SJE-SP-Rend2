@@ -491,23 +491,31 @@ void misc_model_breakable_die(gentity_t* self, const gentity_t* inflictor, genti
 	int means_of_death,
 	int d_flags, int hit_loc)
 {
-	float size = 0;
+	float size = 0.0f;
 	vec3_t dir, up, dis;
 
-	if (self->e_DieFunc == dieF_NULL) //i was probably already killed since my die func was removed
+	// FIX: defensive guard – make the contract explicit for the analyzer
+	if (!self)
+	{
+		return;
+	}
+
+	if (self->e_DieFunc == dieF_NULL) // i was probably already killed since my die func was removed
 	{
 #ifndef FINAL_BUILD
-		gi.Printf(S_COLOR_YELLOW"Recursive misc_model_breakable_die.  Use targets probably pointing back at self.\n");
+		gi.Printf(S_COLOR_YELLOW "Recursive misc_model_breakable_die.  Use targets probably pointing back at self.\n");
 #endif
-		return; //this happens when you have a cyclic target chain!
+		return; // this happens when you have a cyclic target chain!
 	}
-	//NOTE: Stop any scripts that are currently running (FLUSH)... ?
-	//Turn off animation
+
+	// NOTE: Stop any scripts that are currently running (FLUSH)... ?
+	// Turn off animation
 	self->s.frame = self->startFrame = self->endFrame = 0;
 	self->svFlags &= ~SVF_ANIMATING;
 
 	self->health = 0;
-	//Throw some chunks
+
+	// Throw some chunks
 	AngleVectors(self->s.apos.trBase, dir, nullptr, nullptr);
 	VectorNormalize(dir);
 
@@ -517,15 +525,15 @@ void misc_model_breakable_die(gentity_t* self, const gentity_t* inflictor, genti
 
 	// This formula really has no logical basis other than the fact that it seemed to be the closest to yielding the results that I wanted.
 	// Volume is length * width * height...then break that volume down based on how many chunks we have
-	float scale = sqrt(sqrt(dis[0] * dis[1] * dis[2])) * 1.75f;
+	float scale = sqrtf(sqrtf(dis[0] * dis[1] * dis[2])) * 1.75f;
 
-	if (scale > 48)
+	if (scale > 48.0f)
 	{
-		size = 2;
+		size = 2.0f;
 	}
-	else if (scale > 24)
+	else if (scale > 24.0f)
 	{
-		size = 1;
+		size = 1.0f;
 	}
 
 	scale = scale / num_chunks;
@@ -533,8 +541,8 @@ void misc_model_breakable_die(gentity_t* self, const gentity_t* inflictor, genti
 	if (self->radius > 0.0f)
 	{
 		// designer wants to scale number of chunks, helpful because the above scale code is far from perfect
-		//	I do this after the scale calculation because it seems that the chunk size generally seems to be very close, it's just the number of chunks is a bit weak
-		num_chunks *= self->radius;
+		// I do this after the scale calculation because it seems that the chunk size generally seems to be very close, it's just the number of chunks is a bit weak
+		num_chunks = static_cast<int>(num_chunks * self->radius);
 	}
 
 	VectorAdd(self->absmax, self->absmin, dis);
@@ -545,31 +553,30 @@ void misc_model_breakable_die(gentity_t* self, const gentity_t* inflictor, genti
 
 	self->e_PainFunc = painF_NULL;
 	self->e_DieFunc = dieF_NULL;
-	//	self->e_UseFunc  = useF_NULL;
+	// self->e_UseFunc  = useF_NULL;
 
 	self->takedamage = qfalse;
 
 	if (!(self->spawnflags & 4))
 	{
-		//We don't want to stay solid
+		// We don't want to stay solid
 		self->s.solid = 0;
 		self->contents = 0;
 		self->clipmask = 0;
-		if (self != nullptr)
-		{
-			NAV::WayEdgesNowClear(self);
-		}
+
+		NAV::WayEdgesNowClear(self);
+
 		gi.linkentity(self);
 	}
 
-	VectorSet(up, 0, 0, 1);
+	VectorSet(up, 0.0f, 0.0f, 1.0f);
 
-	if (self && self->target)
+	if (self->target)
 	{
 		G_UseTargets(self, attacker);
 	}
 
-	if (inflictor->client)
+	if (inflictor && inflictor->client)
 	{
 		VectorSubtract(self->currentOrigin, inflictor->currentOrigin, dir);
 		VectorNormalize(dir);
@@ -584,27 +591,26 @@ void misc_model_breakable_die(gentity_t* self, const gentity_t* inflictor, genti
 		// Ok, we are allowed to explode, so do it now!
 		if (self->splashDamage > 0 && self->splashRadius > 0)
 		{
-			//explode
+			// explode
 			vec3_t org;
 			AddSightEvent(attacker, self->currentOrigin, 256, AEL_DISCOVERED, 100);
 			AddSoundEvent(attacker, self->currentOrigin, 128, AEL_DISCOVERED, qfalse, qtrue);
-			//FIXME: am I on ground or not?
-			//FIXME: specify type of explosion?  (barrel, electrical, etc.)  Also, maybe just use the explosion effect below since it's
-			//				a bit better?
-			// up the origin a little for the damage check, because several models have their origin on the ground, so they don't alwasy do damage, not the optimal solution...
+
 			VectorCopy(self->currentOrigin, org);
-			if (self->mins[2] > -4)
+			if (self->mins[2] > -4.0f)
 			{
-				//origin is going to be below it or very very low in the model
-				//center the origin
+				// origin is going to be below it or very very low in the model
+				// center the origin
 				org[2] = self->currentOrigin[2] + self->mins[2] + (self->maxs[2] - self->mins[2]) / 2.0f;
 			}
+
 			G_RadiusDamage(org, self, self->splashDamage, self->splashRadius, self, MOD_UNKNOWN);
 
-			if (self->model && (Q_stricmp("models/map_objects/ships/tie_fighter.md3", self->model) == 0 ||
-				Q_stricmp("models/map_objects/ships/tie_bomber.md3", self->model) == 0))
+			if (self->model &&
+				(Q_stricmp("models/map_objects/ships/tie_fighter.md3", self->model) == 0 ||
+					Q_stricmp("models/map_objects/ships/tie_bomber.md3", self->model) == 0))
 			{
-				//TEMP HACK for Tie Fighters- they're HUGE
+				// TEMP HACK for Tie Fighters- they're HUGE
 				G_PlayEffect("explosions/fighter_explosion2", self->currentOrigin);
 				G_Sound(self, G_SoundIndex("sound/weapons/tie_fighter/TIEexplode.wav"));
 				self->s.loopSound = 0;
@@ -618,11 +624,10 @@ void misc_model_breakable_die(gentity_t* self, const gentity_t* inflictor, genti
 		}
 		else
 		{
-			//just break
+			// just break
 			AddSightEvent(attacker, self->currentOrigin, 128, AEL_DISCOVERED);
 			AddSoundEvent(attacker, self->currentOrigin, 64, AEL_SUSPICIOUS, qfalse, qtrue);
-			//FIXME: am I on ground or not?
-			// This is the default explosion
+
 			CG_MiscModelExplosion(self->absmin, self->absmax, size, self->material);
 			G_Sound(self, G_SoundIndex("sound/weapons/explosions/cargoexplode.wav"));
 		}
@@ -633,7 +638,7 @@ void misc_model_breakable_die(gentity_t* self, const gentity_t* inflictor, genti
 
 	if (self->s.modelindex2 != -1 && !(self->spawnflags & 8))
 	{
-		//FIXME: modelindex doesn't get set to -1 if the damage model doesn't exist
+		// FIXME: modelindex doesn't get set to -1 if the damage model doesn't exist
 		self->svFlags |= SVF_BROKEN;
 		self->s.modelindex = self->s.modelindex2;
 		G_ActivateBehavior(self, BSET_DEATH);

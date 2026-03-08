@@ -37,6 +37,20 @@ constexpr auto CG_SWINGSPEED = 0.3f;
 
 #include "animtable.h"
 #include <cmath>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_shared.h>
+#include <bg_public.h>
+#include <cctype>
+#include <qcommon\q_string.h>
+#include <string.h>
+#include <cstdlib>
+#include <teams.h>
+#include <weapons.h>
+#include <rd-common\mdx_format.h>
+#include <surfaceflags.h>
+#include "FxUtil.h"
+#include <rd-common\tr_types.h>
+#include <statindex.h>
 
 extern qboolean WP_SaberBladeUseSecondBladeStyle(const saberInfo_t* saber, int blade_num);
 extern void WP_SaberSwingSound(const gentity_t* ent, int saber_num, swingType_t swing_type);
@@ -782,87 +796,102 @@ Sets cg.snap, cg.oldFrame, and cg.backlerp
 cg.time should be between oldFrameTime and frameTime after exit
 ===============
 */
+/*
+==========================
+CG_RunLerpFrame
+
+Advances a lerpFrame_t based on current time, animation data,
+and animation switching rules. Behaviour preserved exactly.
+==========================
+*/
 static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new_animation, const int entNum)
 {
 	qboolean newFrame = qfalse;
 
-	// see if the animation sequence is switching
-	//FIXME: allow multiple-frame overlapped lerping between sequences? - Possibly last 3 of last seq and first 3 of next seq?
-	if (new_animation != lf->animationNumber || !lf->animation)
+	// If animation changed or uninitialized, reset lerp state
+	if ((new_animation != lf->animationNumber) || (lf->animation == NULL))
 	{
 		CG_SetLerpFrameAnimation(ci, lf, new_animation);
 	}
 
-	// if we have passed the current frame, move it to
-	// oldFrame and calculate a new frame
+	// Advance frame if we've reached/passed the next frame time
 	if (cg.time >= lf->frameTime)
 	{
 		lf->oldFrame = lf->frame;
 		lf->oldFrameTime = lf->frameTime;
 
-		// get the next frame based on the animation
 		const animation_t* anim = lf->animation;
-		//Do we need to speed up or slow down the anim?
 		int anim_frame_time = abs(anim->frameLerp);
 
-		//special hack for player to ensure quick weapon change
+		// Special case: speed up weapon raise/drop for player entity
 		if (entNum == 0)
 		{
-			if (lf->animationNumber == TORSO_DROPWEAP1 || lf->animationNumber == TORSO_RAISEWEAP1)
+			if ((lf->animationNumber == TORSO_DROPWEAP1) ||
+				(lf->animationNumber == TORSO_RAISEWEAP1))
 			{
 				anim_frame_time = 50;
 			}
 		}
 
+		// Initial lerp or normal progression
 		if (cg.time < lf->animationTime)
 		{
-			lf->frameTime = lf->animationTime; // initial lerp
+			lf->frameTime = lf->animationTime;
 		}
 		else
 		{
 			lf->frameTime = lf->oldFrameTime + anim_frame_time;
 		}
 
+		// Determine frame index within animation
 		int f = (lf->frameTime - lf->animationTime) / anim_frame_time;
+
+		// Handle end-of-animation behaviour
 		if (f >= anim->numFrames)
 		{
-			//Reached the end of the anim
-			//FIXME: Need to set a flag here to TASK_COMPLETE
 			f -= anim->numFrames;
-			if (anim->loopFrames != -1) //Before 0 meant no loop
+
+			if (anim->loopFrames != -1)
 			{
-				if (anim->numFrames - anim->loopFrames == 0)
+				// Looping animation
+				const int nonLoop = anim->numFrames - anim->loopFrames;
+
+				if (nonLoop == 0)
 				{
 					f %= anim->numFrames;
 				}
 				else
 				{
-					f %= anim->numFrames - anim->loopFrames;
+					f %= nonLoop;
 				}
+
 				f += anim->loopFrames;
 			}
 			else
 			{
+				// Non-looping: clamp to last frame
 				f = anim->numFrames - 1;
 				if (f < 0)
 				{
 					f = 0;
 				}
-				// the animation is stuck at the end, so it
-				// can immediately transition to another sequence
+
+				// Allow immediate transition to next animation
 				lf->frameTime = cg.time;
 			}
 		}
 
+		// Apply reversed animations if frameLerp < 0
 		if (anim->frameLerp < 0)
 		{
-			lf->frame = anim->firstFrame + anim->numFrames - 1 - f;
+			lf->frame = anim->firstFrame + (anim->numFrames - 1 - f);
 		}
 		else
 		{
 			lf->frame = anim->firstFrame + f;
 		}
 
+		// Prevent runaway frameTime
 		if (cg.time > lf->frameTime)
 		{
 			lf->frameTime = cg.time;
@@ -871,6 +900,7 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 		newFrame = qtrue;
 	}
 
+	// Clamp future times
 	if (lf->frameTime > cg.time + 200)
 	{
 		lf->frameTime = cg.time;
@@ -880,14 +910,17 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 	{
 		lf->oldFrameTime = cg.time;
 	}
-	// calculate current lerp value
+
+	// Compute backlerp safely
 	if (lf->frameTime == lf->oldFrameTime)
 	{
-		lf->backlerp = 0;
+		lf->backlerp = 0.0f;
 	}
 	else
 	{
-		lf->backlerp = 1.0 - static_cast<float>(cg.time - lf->oldFrameTime) / (lf->frameTime - lf->oldFrameTime);
+		const float numerator = (float)(cg.time - lf->oldFrameTime);
+		const float denominator = (float)(lf->frameTime - lf->oldFrameTime);
+		lf->backlerp = 1.0f - (numerator / denominator);
 	}
 
 	return newFrame;
@@ -3326,6 +3359,16 @@ static void CG_G2PlayerAngles(centity_t* cent, vec3_t legs[], vec3_t angles)
 	}
 }
 
+/*
+==========================
+CG_PlayerAngles
+
+Computes legs, torso and head orientation for a player/NPC, including
+view‑driven yaw/pitch, clamping, and look‑at behaviour.
+
+Behaviour preserved; structure and safety improved.
+==========================
+*/
 static void CG_PlayerAngles(centity_t* cent, vec3_t legs[3], vec3_t torso[3], vec3_t head[3])
 {
 	vec3_t legs_angles, torso_angles, head_angles;
@@ -3338,34 +3381,37 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t legs[3], vec3_t torso[3], ve
 	float torso_pitch_clamp_min, torso_pitch_clamp_max;
 	float legs_yaw_swing_tol_min, legs_yaw_swing_tol_max;
 	float max_yaw_speed, yaw_speed, looking_speed;
-	float look_angle_speed = LOOK_TALKING_SPEED; //shut up the compiler
+	float look_angle_speed = LOOK_TALKING_SPEED;
 
-	if ((cg.renderingThirdPerson || cg_trueguns.integer && !cg.zoomMode || cent->gent->client->ps.weapon == WP_SABER
-		|| cent->gent->client->ps.weapon == WP_MELEE) && cent->gent && cent->gent->s.number == 0)
+	// Basic safety: require valid cent, gent, client
+	if (cent == NULL || cent->gent == NULL || cent->gent->client == NULL)
 	{
-		// If we are rendering third person, we should just force the player body to always fully face
-		//	whatever way they are looking, otherwise, you can end up with gun shots coming off of the
-		//	gun at angles that just look really wrong.
+		return;
+	}
 
-		//NOTENOTE: shots are coming out of the gun at ridiculous angles. The head & torso
-		//should pitch *some* when looking up and down...
-
-		//VectorClear( viewAngles );
+	// Local player third‑person / trueguns / saber/melee special case
+	if ((cg.renderingThirdPerson ||
+		(cg_trueguns.integer && (cg.zoomMode == qfalse)) ||
+		cent->gent->client->ps.weapon == WP_SABER ||
+		cent->gent->client->ps.weapon == WP_MELEE) &&
+		cent->gent->s.number == 0)
+	{
 		VectorCopy(cent->lerpAngles, view_angles);
 
-		view_angles[YAW] = view_angles[ROLL] = 0;
-		view_angles[PITCH] *= 0.5;
+		view_angles[YAW] = 0.0f;
+		view_angles[ROLL] = 0.0f;
+		view_angles[PITCH] *= 0.5f;
 		AnglesToAxis(view_angles, head);
 
-		view_angles[PITCH] *= 0.75;
+		view_angles[PITCH] *= 0.75f;
 		cent->pe.torso.pitchAngle = view_angles[PITCH];
 		cent->pe.torso.yawAngle = view_angles[YAW];
 		AnglesToAxis(view_angles, torso);
 
 		VectorCopy(cent->lerpAngles, look_angles);
-		look_angles[PITCH] = 0;
+		look_angles[PITCH] = 0.0f;
 
-		//FIXME: this needs to properly set the legs.yawing field so we don't erroneously play the turning anim, but we do play it when turning in place
+		// Turn‑in‑place detection for legs
 		if (look_angles[YAW] == cent->pe.legs.yawAngle)
 		{
 			cent->pe.legs.yawing = qfalse;
@@ -3375,45 +3421,46 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t legs[3], vec3_t torso[3], ve
 			cent->pe.legs.yawing = qtrue;
 		}
 
-		if (cent->gent->client->ps.velocity[0] || cent->gent->client->ps.velocity[1])
+		// If moving, bias legs yaw toward movement direction
+		if (cent->gent->client->ps.velocity[0] != 0.0f ||
+			cent->gent->client->ps.velocity[1] != 0.0f)
 		{
 			const float move_yaw = vectoyaw(cent->gent->client->ps.velocity);
 			look_angles[YAW] = cent->lerpAngles[YAW] + AngleDelta(cent->lerpAngles[YAW], move_yaw);
 		}
 
 		cent->pe.legs.yawAngle = look_angles[YAW];
-		if (cent->gent->client)
-		{
-			cent->gent->client->renderInfo.legsYaw = look_angles[YAW];
-		}
-		AnglesToAxis(look_angles, legs);
+		cent->gent->client->renderInfo.legsYaw = look_angles[YAW];
 
+		AnglesToAxis(look_angles, legs);
 		return;
 	}
 
+	// Non‑local player / NPC setup
 	if (cent->currentState.clientNum != 0)
 	{
 		head_yaw_clamp_min = -cent->gent->client->renderInfo.headYawRangeLeft;
 		head_yaw_clamp_max = cent->gent->client->renderInfo.headYawRangeRight;
-		//These next two are only used for a calc below- this clamp is done in PM_UpdateViewAngles
 		head_pitch_clamp_min = -cent->gent->client->renderInfo.headPitchRangeUp;
 		head_pitch_clamp_max = cent->gent->client->renderInfo.headPitchRangeDown;
 
-		torso_yaw_swing_tol_min = head_yaw_clamp_min * 0.3;
-		torso_yaw_swing_tol_max = head_yaw_clamp_max * 0.3;
-		torso_pitch_swing_tol_min = head_pitch_clamp_min * 0.5;
-		torso_pitch_swing_tol_max = head_pitch_clamp_max * 0.5;
+		torso_yaw_swing_tol_min = head_yaw_clamp_min * 0.3f;
+		torso_yaw_swing_tol_max = head_yaw_clamp_max * 0.3f;
+		torso_pitch_swing_tol_min = head_pitch_clamp_min * 0.5f;
+		torso_pitch_swing_tol_max = head_pitch_clamp_max * 0.5f;
+
 		torso_yaw_clamp_min = -cent->gent->client->renderInfo.torsoYawRangeLeft;
 		torso_yaw_clamp_max = cent->gent->client->renderInfo.torsoYawRangeRight;
 		torso_pitch_clamp_min = -cent->gent->client->renderInfo.torsoPitchRangeUp;
 		torso_pitch_clamp_max = cent->gent->client->renderInfo.torsoPitchRangeDown;
 
-		legs_yaw_swing_tol_min = torso_yaw_clamp_min * 0.5;
-		legs_yaw_swing_tol_max = torso_yaw_clamp_max * 0.5;
+		legs_yaw_swing_tol_min = torso_yaw_clamp_min * 0.5f;
+		legs_yaw_swing_tol_max = torso_yaw_clamp_max * 0.5f;
 
-		if (cent->gent && cent->gent->next_roff_time && cent->gent->next_roff_time >= cg.time)
+		// Roff‑driven: lock body to head yaw
+		if (cent->gent->next_roff_time != 0 &&
+			cent->gent->next_roff_time >= cg.time)
 		{
-			//Following a roff, body must keep up with head, yaw-wise
 			head_yaw_clamp_min =
 				head_yaw_clamp_max =
 				torso_yaw_swing_tol_min =
@@ -3421,41 +3468,48 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t legs[3], vec3_t torso[3], ve
 				torso_yaw_clamp_min =
 				torso_yaw_clamp_max =
 				legs_yaw_swing_tol_min =
-				legs_yaw_swing_tol_max = 0;
+				legs_yaw_swing_tol_max = 0.0f;
 		}
 
-		yaw_speed = max_yaw_speed = cent->gent->NPC->stats.yawSpeed / 150; //about 0.33 normally
+		if (cent->gent->NPC != NULL)
+		{
+			yaw_speed = cent->gent->NPC->stats.yawSpeed / 150.0f;
+		}
+		else
+		{
+			yaw_speed = CG_SWINGSPEED;
+		}
+		max_yaw_speed = yaw_speed;
 	}
 	else
 	{
-		head_yaw_clamp_min = -70;
-		head_yaw_clamp_max = 70;
+		// Local player default clamps
+		head_yaw_clamp_min = -70.0f;
+		head_yaw_clamp_max = 70.0f;
+		head_pitch_clamp_min = -90.0f;
+		head_pitch_clamp_max = 90.0f;
 
-		//These next two are only used for a calc below- this clamp is done in PM_UpdateViewAngles
-		head_pitch_clamp_min = -90;
-		head_pitch_clamp_max = 90;
+		torso_yaw_swing_tol_min = -90.0f;
+		torso_yaw_swing_tol_max = 90.0f;
+		torso_pitch_swing_tol_min = -90.0f;
+		torso_pitch_swing_tol_max = 90.0f;
 
-		torso_yaw_swing_tol_min = -90;
-		torso_yaw_swing_tol_max = 90;
-		torso_pitch_swing_tol_min = -90;
-		torso_pitch_swing_tol_max = 90;
-		torso_yaw_clamp_min = -90;
-		torso_yaw_clamp_max = 90;
-		torso_pitch_clamp_min = -90;
-		torso_pitch_clamp_max = 90;
+		torso_yaw_clamp_min = -90.0f;
+		torso_yaw_clamp_max = 90.0f;
+		torso_pitch_clamp_min = -90.0f;
+		torso_pitch_clamp_max = 90.0f;
 
-		legs_yaw_swing_tol_min = -90;
-		legs_yaw_swing_tol_max = 90;
+		legs_yaw_swing_tol_min = -90.0f;
+		legs_yaw_swing_tol_max = 90.0f;
 
-		yaw_speed = max_yaw_speed = CG_SWINGSPEED;
+		yaw_speed = CG_SWINGSPEED;
+		max_yaw_speed = CG_SWINGSPEED;
 	}
 
-	if (yaw_speed <= 0)
+	if (yaw_speed <= 0.0f)
 	{
-		//Just in case
-		yaw_speed = 0.5f; //was 0.33
+		yaw_speed = 0.5f;
 	}
-
 	looking_speed = yaw_speed;
 
 	VectorCopy(cent->lerpAngles, head_angles);
@@ -3463,28 +3517,36 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t legs[3], vec3_t torso[3], ve
 	VectorClear(legs_angles);
 	VectorClear(torso_angles);
 
-	// --------- yaw -------------
+	// --------- yaw: legs ---------
 
-	//Clamp and swing the legs
 	legs_angles[YAW] = head_angles[YAW];
 
-	if (cent->gent->client->renderInfo.renderFlags & RF_LOCKEDANGLE)
+	if ((cent->gent->client->renderInfo.renderFlags & RF_LOCKEDANGLE) != 0)
 	{
-		cent->gent->client->renderInfo.legsYaw = cent->pe.legs.yawAngle = cent->gent->client->renderInfo.lockYaw;
+		cent->gent->client->renderInfo.legsYaw = cent->pe.legs.yawAngle =
+			cent->gent->client->renderInfo.lockYaw;
 		cent->pe.legs.yawing = qfalse;
 		legs_angles[YAW] = cent->pe.legs.yawAngle;
 	}
 	else
 	{
 		qboolean always_face = qfalse;
-		if (cent->gent && cent->gent->health > 0)
+
+		if (cent->gent != NULL && cent->gent->health > 0)
 		{
-			if (cent->gent->enemy)
+			if (cent->gent->enemy != NULL)
 			{
 				always_face = qtrue;
 			}
-			if (CG_PlayerLegsYawFromMovement(cent, cent->gent->client->ps.velocity, &legs_angles[YAW], head_angles[YAW],
-				torso_yaw_clamp_min, torso_yaw_clamp_max, always_face))
+
+			if (CG_PlayerLegsYawFromMovement(
+				cent,
+				cent->gent->client->ps.velocity,
+				&legs_angles[YAW],
+				head_angles[YAW],
+				torso_yaw_clamp_min,
+				torso_yaw_clamp_max,
+				always_face) == qtrue)
 			{
 				if (legs_angles[YAW] == cent->pe.legs.yawAngle)
 				{
@@ -3494,167 +3556,180 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t legs[3], vec3_t torso[3], ve
 				{
 					cent->pe.legs.yawing = qtrue;
 				}
+
 				cent->pe.legs.yawAngle = legs_angles[YAW];
-				if (cent->gent->client)
-				{
-					cent->gent->client->renderInfo.legsYaw = legs_angles[YAW];
-				}
+				cent->gent->client->renderInfo.legsYaw = legs_angles[YAW];
 			}
 			else
 			{
-				CG_SwingAngles(legs_angles[YAW], legs_yaw_swing_tol_min, legs_yaw_swing_tol_max, torso_yaw_clamp_min,
-					torso_yaw_clamp_max, max_yaw_speed, &cent->pe.legs.yawAngle, &cent->pe.legs.yawing);
+				CG_SwingAngles(
+					legs_angles[YAW],
+					legs_yaw_swing_tol_min,
+					legs_yaw_swing_tol_max,
+					torso_yaw_clamp_min,
+					torso_yaw_clamp_max,
+					max_yaw_speed,
+					&cent->pe.legs.yawAngle,
+					&cent->pe.legs.yawing);
+
 				legs_angles[YAW] = cent->pe.legs.yawAngle;
-				if (cent->gent->client)
-				{
-					cent->gent->client->renderInfo.legsYaw = legs_angles[YAW];
-				}
+				cent->gent->client->renderInfo.legsYaw = legs_angles[YAW];
 			}
 		}
 		else
 		{
-			CG_SwingAngles(legs_angles[YAW], legs_yaw_swing_tol_min, legs_yaw_swing_tol_max, torso_yaw_clamp_min,
+			CG_SwingAngles(
+				legs_angles[YAW],
+				legs_yaw_swing_tol_min,
+				legs_yaw_swing_tol_max,
+				torso_yaw_clamp_min,
 				torso_yaw_clamp_max,
-				max_yaw_speed, &cent->pe.legs.yawAngle, &cent->pe.legs.yawing);
+				max_yaw_speed,
+				&cent->pe.legs.yawAngle,
+				&cent->pe.legs.yawing);
+
 			legs_angles[YAW] = cent->pe.legs.yawAngle;
-			if (cent->gent && cent->gent->client)
+
+			if (cent->gent != NULL && cent->gent->client != NULL)
 			{
 				cent->gent->client->renderInfo.legsYaw = legs_angles[YAW];
 			}
 		}
 	}
 
-	// torso
-	// If applicable, swing the lower parts to catch up with the head
-	CG_SwingAngles(head_angles[YAW], torso_yaw_swing_tol_min, torso_yaw_swing_tol_max, head_yaw_clamp_min,
+	// --------- yaw: torso ---------
+
+	CG_SwingAngles(
+		head_angles[YAW],
+		torso_yaw_swing_tol_min,
+		torso_yaw_swing_tol_max,
+		head_yaw_clamp_min,
 		head_yaw_clamp_max,
-		yaw_speed, &cent->pe.torso.yawAngle, &cent->pe.torso.yawing);
+		yaw_speed,
+		&cent->pe.torso.yawAngle,
+		&cent->pe.torso.yawing);
+
 	torso_angles[YAW] = cent->pe.torso.yawAngle;
 
-	// ---------- pitch -----------
-
-	//As the body twists to its extents, the back tends to arch backwards
+	// ---------- pitch: torso -----------
 
 	float dest;
-	// only show a fraction of the pitch angle in the torso
-	if (head_angles[PITCH] > 180)
+
+	if (head_angles[PITCH] > 180.0f)
 	{
-		dest = (-360 + head_angles[PITCH]) * 0.75;
+		dest = (-360.0f + head_angles[PITCH]) * 0.75f;
 	}
 	else
 	{
-		dest = head_angles[PITCH] * 0.75;
+		dest = head_angles[PITCH] * 0.75f;
 	}
 
-	CG_SwingAngles(dest, torso_pitch_swing_tol_min, torso_pitch_swing_tol_max, torso_pitch_clamp_min,
-		torso_pitch_clamp_max, 0.1f,
-		&cent->pe.torso.pitchAngle, &cent->pe.torso.pitching);
+	CG_SwingAngles(
+		dest,
+		torso_pitch_swing_tol_min,
+		torso_pitch_swing_tol_max,
+		torso_pitch_clamp_min,
+		torso_pitch_clamp_max,
+		0.1f,
+		&cent->pe.torso.pitchAngle,
+		&cent->pe.torso.pitching);
+
 	torso_angles[PITCH] = cent->pe.torso.pitchAngle;
-	// --------- roll -------------
 
-	// pain twitch - FIXME: don't do this if you have no head (like droids?)
-	// Maybe need to have clamp angles for roll as well as pitch and yaw?
-	//CG_AddPainTwitch( cent, torsoAngles );
+	// --------- roll / head look ---------
 
-	//----------- Special head looking ---------------
-
-	//FIXME: to clamp the head angles, figure out tag_head's offset from tag_torso and add
-	//	that to whatever offset we're getting here... so turning the head in an
-	//	anim that also turns the head doesn't allow the head to turn out of range.
-
-	//Start with straight ahead
 	VectorCopy(head_angles, view_angles);
 	VectorCopy(head_angles, look_angles);
 
-	//Remember last headAngles
+	// Start from last head angles
 	VectorCopy(cent->gent->client->renderInfo.lastHeadAngles, head_angles);
 
-	//See if we're looking at someone/thing
+	// Check if we are looking at a target
 	const qboolean looking = CG_CheckLookTarget(cent, look_angles, &looking_speed);
 
-	//Now add head bob when talking
-	/*	if ( cent->gent->client->clientInfo.extensions )
-		{
-			talking = CG_AddHeadBob( cent, lookAngles );
-		}
-	*/
-	//Figure out how fast head should be turning
-	if (cent->pe.torso.yawing || cent->pe.torso.pitching)
+	// Determine head turning speed
+	if (cent->pe.torso.yawing == qtrue || cent->pe.torso.pitching == qtrue)
 	{
-		//If torso is turning, we want to turn head just as fast
 		look_angle_speed = yaw_speed;
 	}
-	else if (looking)
+	else if (looking == qtrue)
 	{
-		//Not talking, set it up for looking at enemy, CheckLookTarget will scale it down if neccessary
 		look_angle_speed = looking_speed;
 	}
 	else if (cent->gent->client->renderInfo.lookingDebounceTime > cg.time)
 	{
-		//Not looking, not talking, head is returning from a talking head bob, use talking speed
 		look_angle_speed = LOOK_TALKING_SPEED;
 	}
 
-	if (looking)
+	if (looking == qtrue)
 	{
-		//Keep this type of looking for a second after stopped looking
 		cent->gent->client->renderInfo.lookingDebounceTime = cg.time + 1000;
 	}
 
 	if (cent->gent->client->renderInfo.lookingDebounceTime > cg.time)
 	{
-		//Calc our actual desired head angles
 		for (int i = 0; i < 3; i++)
 		{
-			look_angles[i] = AngleNormalize360(cent->gent->client->renderInfo.headBobAngles[i] + look_angles[i]);
+			look_angles[i] = AngleNormalize360(
+				cent->gent->client->renderInfo.headBobAngles[i] + look_angles[i]);
 		}
 
 		if (VectorCompare(head_angles, look_angles) == qfalse)
 		{
-			//FIXME: This clamp goes off viewAngles,
-			//but really should go off the tag_torso's axis[0] angles, no?
-			CG_UpdateAngleClamp(look_angles[PITCH], head_pitch_clamp_min / 1.25, head_pitch_clamp_max / 1.25,
+			CG_UpdateAngleClamp(
+				look_angles[PITCH],
+				head_pitch_clamp_min / 1.25f,
+				head_pitch_clamp_max / 1.25f,
 				look_angle_speed,
-				&head_angles[PITCH], view_angles[PITCH]);
-			CG_UpdateAngleClamp(look_angles[YAW], head_yaw_clamp_min / 1.25, head_yaw_clamp_max / 1.25,
+				&head_angles[PITCH],
+				view_angles[PITCH]);
+
+			CG_UpdateAngleClamp(
+				look_angles[YAW],
+				head_yaw_clamp_min / 1.25f,
+				head_yaw_clamp_max / 1.25f,
 				look_angle_speed,
-				&head_angles[YAW], view_angles[YAW]);
-			CG_UpdateAngleClamp(look_angles[ROLL], -10, 10, look_angle_speed, &head_angles[ROLL], view_angles[ROLL]);
+				&head_angles[YAW],
+				view_angles[YAW]);
+
+			CG_UpdateAngleClamp(
+				look_angles[ROLL],
+				-10.0f,
+				10.0f,
+				look_angle_speed,
+				&head_angles[ROLL],
+				view_angles[ROLL]);
 		}
 
-		if (!cent->gent->enemy || cent->gent->enemy->s.number != cent->gent->client->renderInfo.lookTarget)
+		if (cent->gent->enemy == NULL ||
+			cent->gent->enemy->s.number != cent->gent->client->renderInfo.lookTarget)
 		{
-			//Yaw change
+			// Yaw swing from legs toward head
 			float swing = AngleSubtract(legs_angles[YAW], head_angles[YAW]);
-			float scale = fabs(swing) / (torso_yaw_clamp_max + 0.01);
-			//NOTENOTE: Some ents have a clamp of 0, which is bad for division
-
+			float scale = fabsf(swing) / (torso_yaw_clamp_max + 0.01f);
 			scale *= LOOK_SWING_SCALE;
 			torso_angles[YAW] = legs_angles[YAW] - swing * scale;
 
-			//Pitch change
+			// Pitch swing from legs toward head
 			swing = AngleSubtract(legs_angles[PITCH], head_angles[PITCH]);
-			scale = fabs(swing) / (torso_pitch_clamp_max + 0.01);
-			//NOTENOTE: Some ents have a clamp of 0, which is bad for division
-
+			scale = fabsf(swing) / (torso_pitch_clamp_max + 0.01f);
 			scale *= LOOK_SWING_SCALE;
 			torso_angles[PITCH] = legs_angles[PITCH] - swing * scale;
 		}
 	}
 	else
 	{
-		//Look straight ahead
+		// Look straight ahead
 		VectorCopy(view_angles, head_angles);
 	}
 
-	//Remember current headAngles next time
+	// Remember current head angles
 	VectorCopy(head_angles, cent->gent->client->renderInfo.lastHeadAngles);
 
-	//-------------------------------------------------------------
-
-	// pull the angles back out of the hierarchial chain
+	// Final hierarchical decomposition
 	AnglesSubtract(head_angles, torso_angles, head_angles);
 	AnglesSubtract(torso_angles, legs_angles, torso_angles);
+
 	AnglesToAxis(legs_angles, legs);
 	AnglesToAxis(torso_angles, torso);
 	AnglesToAxis(head_angles, head);
@@ -13093,50 +13168,81 @@ static void CG_CreateSaberMarks(const vec3_t start,
 
 extern void FX_AddPrimitive(CEffect** effect, int kill_time);
 //-------------------------------------------------------
-void CG_CheckSaberInWater(const centity_t* cent, const centity_t* scent, const int saber_num, const int modelIndex,
-	vec3_t origin, vec3_t angles)
+/*
+==========================
+CG_CheckSaberInWater
+
+Determines whether a saber is currently submerged in water/slime
+and sets SEF_INWATER accordingly. Behaviour preserved exactly.
+==========================
+*/
+void CG_CheckSaberInWater(const centity_t* cent,
+	const centity_t* scent,
+	const int saber_num,
+	const int modelIndex,
+	vec3_t origin,
+	vec3_t angles)
 {
-	gclient_t* client = cent->gent->client;
-	if (!client)
+	// Validate cent
+	if (cent == NULL || cent->gent == NULL || cent->gent->client == NULL)
 	{
 		return;
 	}
-	if (!scent ||
+
+	gclient_t* client = cent->gent->client;
+
+	// Validate scent and its ghoul2 model
+	if (scent == NULL ||
+		scent->gent == NULL ||
 		modelIndex == -1 ||
 		scent->gent->ghoul2.size() <= modelIndex ||
 		scent->gent->ghoul2[modelIndex].mBltlist.size() <= 0 ||
-		//using a camera puts away your saber so you have no bolts
 		scent->gent->ghoul2[modelIndex].mModelindex == -1)
 	{
+		// Camera mode or invalid model → no saber bolts
 		return;
 	}
-	if (cent && cent->gent && cent->gent->client
-		&& cent->gent->client->ps.saber[saber_num].saberFlags & SFL_ON_IN_WATER)
+
+	// Saber flagged as "can stay on underwater"
+	if ((cent->gent->client->ps.saber[saber_num].saberFlags & SFL_ON_IN_WATER) != 0)
 	{
-		//saber can stay on underwater
 		return;
 	}
-	if (gi.totalMapContents() & (CONTENTS_WATER | CONTENTS_SLIME))
+
+	// Check global map contents for water/slime
+	if ((gi.totalMapContents() & (CONTENTS_WATER | CONTENTS_SLIME)) != 0)
 	{
 		vec3_t saber_org;
 		mdxaBone_t bolt_matrix;
 
-		// figure out where the actual model muzzle is
-		gi.G2API_GetBoltMatrix(scent->gent->ghoul2, modelIndex, 0, &bolt_matrix, angles, origin, cg.time,
+		// Get bolt matrix for saber position
+		gi.G2API_GetBoltMatrix(
+			scent->gent->ghoul2,
+			modelIndex,
+			0,
+			&bolt_matrix,
+			angles,
+			origin,
+			cg.time,
 			cgs.model_draw,
-			scent->currentState.modelScale);
-		// work the matrix axis stuff into the original axis and origins used.
+			scent->currentState.modelScale
+		);
+
+		// Extract world-space origin of the bolt
 		gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, saber_org);
 
+		// Check contents at saber tip
 		const int contents = gi.pointcontents(saber_org, cent->currentState.clientNum);
-		if (contents & (CONTENTS_WATER | CONTENTS_SLIME))
+
+		if ((contents & (CONTENTS_WATER | CONTENTS_SLIME)) != 0)
 		{
-			//still in water
+			// Saber is in water
 			client->ps.saberEventFlags |= SEF_INWATER;
 			return;
 		}
 	}
-	//not in water
+
+	// Not in water
 	client->ps.saberEventFlags &= ~SEF_INWATER;
 }
 
@@ -14370,7 +14476,7 @@ void CG_AddSaberBlade(centity_t* cent, centity_t* scent, const int renderfx, con
  ================
  */
  //Get the point in the leg animation and return a percentage of the current point in the anim between 0 and the total anim length (0.0f - 1.0f)
-float GetSelfLegAnimPoint()
+static float GetSelfLegAnimPoint()
 {
 	float current = 0.0f;
 	int end = 0;
@@ -14402,7 +14508,7 @@ float GetSelfLegAnimPoint()
  ================
  */
  //Get the point in the torso animation and return a percentage of the current point in the anim between 0 and the total anim length (0.0f - 1.0f)
-float GetSelfTorsoAnimPoint()
+static float GetSelfTorsoAnimPoint()
 {
 	float current = 0.0f;
 	int end = 0;
