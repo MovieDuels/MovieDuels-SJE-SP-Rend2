@@ -25,6 +25,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "bstate.h"
 #include "ai.h"
+#include <qcommon\ojk_saved_game_helper_fwd.h>
+#include "bg_public.h"
+#include <qcommon\q_math.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_shared.h>
+#include <cstdint>
 
 #define NPCAI_CHECK_WEAPON		0x00000001
 #define NPCAI_BURST_WEAPON		0x00000002
@@ -229,8 +235,8 @@ public:
 	}
 }; // gNPCstats_t
 
-#define	MAX_ENEMY_POS_LAG	2400
-#define	ENEMY_POS_LAG_INTERVAL	100
+constexpr auto MAX_ENEMY_POS_LAG = 2400;
+constexpr auto ENEMY_POS_LAG_INTERVAL = 100;
 #define	ENEMY_POS_LAG_STEPS	(MAX_ENEMY_POS_LAG/ENEMY_POS_LAG_INTERVAL)
 
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
