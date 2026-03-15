@@ -17,9 +17,9 @@
 #============================================================================
 
 # Make sure the user is not executing this script directly
-if(NOT InOpenJK)
+if(NOT InMovieDuels)
 	message(FATAL_ERROR "Use the top-level cmake script!")
-endif(NOT InOpenJK)
+endif(NOT InMovieDuels)
 
 set(SPGameDefines ${SharedDefines} "SP_GAME")
 set(SPGameIncludeDirectories
@@ -374,7 +374,7 @@ set(SPGameFiles ${SPGameFiles} ${SPGameClientFiles})
 
 if(WIN32)
 	set(SPGameWin32Files
-		"${SPDir}/win32/game.rc")
+		"${SPDir}/win32/MovieDuels-SP.rc")
 	source_group("win32" FILES ${SPGameWin32Files})
 	set(SPGameFiles ${SPGameFiles} ${SPGameWin32Files})
 endif(WIN32)

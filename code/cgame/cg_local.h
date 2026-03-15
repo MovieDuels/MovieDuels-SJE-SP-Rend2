@@ -729,7 +729,7 @@ void CG_NewClientinfo(int clientNum);
 //
 // cg_main.c
 //
-const char* CG_ConfigString(int index);
+const char* CG_ConfigString(const int index);
 const char* CG_Argv(int arg);
 
 void QDECL CG_Printf(const char* msg, ...);

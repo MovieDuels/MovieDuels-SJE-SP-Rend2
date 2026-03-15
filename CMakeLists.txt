@@ -20,12 +20,12 @@ cmake_minimum_required(VERSION 3.5...4.2) # Support for latest version added
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
 # For checks in subdirectories
-set(InOpenJK TRUE)
+set(InMovieDuels TRUE)
 
 
 
 # Project name
-set(ProjectName "MovieDuels-SJE-1.1-SP-Rend2" CACHE STRING "Project Name")
+set(ProjectName "MovieDuels-SP" CACHE STRING "Project Name")
 project(${ProjectName})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

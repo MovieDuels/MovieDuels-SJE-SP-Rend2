@@ -1,7 +1,7 @@
 # Make sure the user is not executing this script directly
-if(NOT InOpenJK)
+if(NOT InMovieDuels)
 	message(FATAL_ERROR "Use the top-level cmake script!")
-endif(NOT InOpenJK)
+endif(NOT InMovieDuels)
 
 set(SPRend2IncludeDirectories
 	"${SharedDir}"
@@ -199,14 +199,14 @@ if(BuildJK2SPRdRend2)
 	add_sp_renderer_project(${JK2SPRend2Renderer} "JK2 SP Rend2 Renderer" ${JK2SPEngine} ${JK2InstallDir} ${JK2SPClientComponent})
 endif(BuildJK2SPRdRend2)
 
-set_source_files_properties(../win32/iconsp_glsl.rc PROPERTIES LANGUAGE RC)
+set_source_files_properties(../win32/MovieDuels-glsl-SP.rc PROPERTIES LANGUAGE RC)
 # GLSL shader file generator
 add_executable(MovieDuels-glsl-SP
 	${SharedDir}/rd-rend2/glsl/compact.cpp
 	${SharedDir}/rd-rend2/tr_allocator.cpp
 	${SharedDir}/rd-rend2/tr_allocator.h
 	${SharedDir}/rd-rend2/tr_glsl_parse.cpp)
-target_sources(MovieDuels-glsl-SP PRIVATE ../win32/iconsp_glsl.rc)
+target_sources(MovieDuels-glsl-SP PRIVATE ../win32/MovieDuels-glsl-SP.rc)
 target_compile_definitions(MovieDuels-glsl-SP PRIVATE "GLSL_BUILDTOOL" "NOMINMAX" "REND2_SP")
 if (NOT WIN32 AND NOT APPLE)
 	target_compile_definitions(MovieDuels-glsl-SP PRIVATE "ARCH_STRING=\"${Architecture}\"")

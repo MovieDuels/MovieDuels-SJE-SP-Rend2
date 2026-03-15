@@ -54,6 +54,18 @@ extern stringID_table_t anim_table[MAX_ANIMATIONS + 1];
 #include <client\client.h>
 #include <qcommon\qfiles.h>
 #include <search.h>
+#include <ctime>
+#include <game\statindex.h>
+#include <game\weapons.h>
+#include "ui_public.h"
+#include <sys\sys_public.h>
+#include <qcommon\q_color.h>
+#include <malloc.h>
+#include <game\ghoul2_shared.h>
+#include <client\keycodes.h>
+#include <cmath>
+#include <server\server.h>
+#include <cstdlib>
 
 #ifdef NEW_FEEDER
 static int uiModelIndex = 0;
@@ -2777,8 +2789,6 @@ static qboolean UI_RunMenuScript(const char** args)
 #ifdef NEW_FEEDER
 		else if (Q_stricmp(name, "md_char") == 0)
 		{
-			//Cvar_Set("ui_md_name", charMD[uiModelIndex].name);
-			//Cvar_Set("ui_md_title", charMD[uiModelIndex].title);
 			const menuDef_t* menu = Menu_GetFocused();
 			if (menu && !strcmp(menu->window.name, "ingamecharacter"))
 			{
@@ -2821,18 +2831,6 @@ static qboolean UI_RunMenuScript(const char** args)
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("npc spawn %s %s %s %d\n", charMD[uiVariantIndex].npc, targetname, team, npcHealth));
 				ui.Cmd_ExecuteText(EXEC_APPEND, va("set npc_spawn_recent npc spawn %s %s %s %d\n", charMD[uiVariantIndex].npc, targetname, team, npcHealth));
 			}
-
-			/*
-			const menuDef_t* menu = Menu_GetFocused();
-			if (menu && !strcmp(menu->window.name, "ingamecharacter"))
-			{
-				const auto item = Menu_FindItemByName(menu, "character");
-				if (item) {
-					ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].npcAnimation].name);
-					uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
-				}
-			}
-			*/
 
 			if (strcmp(charMD[uiVariantIndex].npcSelectSound, "") && ui_char_mute_voice_line.integer == 0)
 				DC->startLocalSound(DC->registerSound(charMD[uiVariantIndex].npcSelectSound, qfalse), CHAN_VOICE);
@@ -5387,8 +5385,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 14/03/2026 ---------------------\n");// build date
-	Com_Printf("---------------------------Build 03------------------------------\n");
+	Com_Printf("--------------------- Build Date 15/03/2026 ---------------------\n");// build date
+	Com_Printf("---------------------------Build 04------------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -6326,29 +6324,6 @@ static void UI_DrawGLInfo(const rectDef_t* rect, const float scale, vec4_t color
 		y += 16;
 	}
 }
-
-/*
-=================
-UI_DataPad_Inventory
-=================
-*/
-/*
-static void UI_DataPad_Inventory(rectDef_t *rect, float scale, vec4_t color, int iFontIndex)
-{
-	Text_Paint(rect->x, rect->y, scale, color, "INVENTORY", 0, 1, iFontIndex);
-}
-*/
-/*
-=================
-UI_DataPad_ForcePowers
-=================
-*/
-/*
-static void UI_DataPad_ForcePowers(rectDef_t *rect, float scale, vec4_t color, int iFontIndex)
-{
-	Text_Paint(rect->x, rect->y, scale, color, "FORCE POWERS", 0, 1, iFontIndex);
-}
-*/
 
 static void UI_DrawCrosshair(const rectDef_t* rect, float scale, vec4_t color)
 {
