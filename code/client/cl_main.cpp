@@ -33,6 +33,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "qcommon/stringed_ingame.h"
 #include "sys/sys_loadlib.h"
 #include "qcommon/ojk_saved_game.h"
+#include <server\server.h>
 
 constexpr auto RETRANSMIT_TIMEOUT = 3000; // time between connection packet retransmits;
 
@@ -1374,7 +1375,7 @@ void CL_Init()
 
 #ifdef JK2_MODE
 	// this is required for savegame compatibility - not ever actually used
-	Cvar_Get("snaps", "20", CVAR_USERINFO);
+	Cvar_Get("snaps", "120", CVAR_USERINFO);
 	Cvar_Get("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE);
 	Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_SAVEGAME);
 #else

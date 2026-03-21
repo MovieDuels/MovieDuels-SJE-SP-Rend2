@@ -29632,45 +29632,45 @@ int IsPressingDestructButton(const gentity_t* self)
 
 static void ForceHopAnim(gentity_t* self)
 {
-	constexpr int set_anim_override = SETANIM_AFLAG_PACE;
+	constexpr int setAnimOverride = SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD;
 
 	if (self->client->pers.cmd.rightmove > 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_R, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_R, setAnimOverride);
 	}
 	else if (self->client->pers.cmd.rightmove < 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_L, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_L, setAnimOverride);
 	}
 	else if (self->client->pers.cmd.forwardmove < 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_B, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_B, setAnimOverride);
 	}
 	else
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_F, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_F, setAnimOverride);
 	}
 }
 
 void ForceDashAnimDash(gentity_t* self)
 {
-	constexpr int set_anim_override = SETANIM_AFLAG_PACE;
+	constexpr int setAnimOverride = SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD;
 
 	if (self->client->pers.cmd.rightmove > 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_R, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_R, setAnimOverride);
 	}
 	else if (self->client->pers.cmd.rightmove < 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_L, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_L, setAnimOverride);
 	}
 	else if (self->client->pers.cmd.forwardmove < 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_B, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_B, setAnimOverride);
 	}
 	else
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_F, set_anim_override);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_F, setAnimOverride);
 	}
 }
 
