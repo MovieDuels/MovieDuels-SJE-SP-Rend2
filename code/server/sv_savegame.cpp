@@ -24,7 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include "../server/exe_headers.h"
 
-#define JPEG_IMAGE_QUALITY 95
+constexpr auto JPEG_IMAGE_QUALITY = 95;
 
 //#define USE_LAST_SAVE_FROM_THIS_MAP	// enable this if you want to use the last explicity-loaded savegame from this map
 //	when respawning after dying, else it'll just load "auto" regardless
@@ -40,6 +40,22 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "qcommon/ojk_saved_game.h"
 #include "qcommon/ojk_saved_game_helper.h"
+#include <game\g_public.h>
+#include <qcommon\q_shared.h>
+#include <qcommon\qfiles.h>
+#include <qcommon\q_color.h>
+#include <string.h>
+#include <qcommon\q_string.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\qcommon.h>
+#include <qcommon\ojk_saved_game_helper_fwd.h>
+#include <cstdint>
+#include <string>
+#include <corecrt.h>
+#include <ctime>
+#include <client\client.h>
+#include <qcommon\cm_public.h>
+#include <qcommon\ojk_scope_guard.h>
 
 static char saveGameComment[iSG_COMMENT_SIZE];
 
@@ -515,7 +531,7 @@ static qboolean ReadGame()
 extern cvar_t* cvar_vars;
 // I know this is really unpleasant, but I need access for scanning/writing latched cvars during save games
 
-void SG_WriteCvars()
+static void SG_WriteCvars()
 {
 	cvar_t* var;
 	int iCount = 0;
@@ -569,7 +585,7 @@ void SG_WriteCvars()
 	}
 }
 
-void SG_ReadCvars()
+static void SG_ReadCvars()
 {
 	int iCount = 0;
 	std::string psName;
@@ -599,7 +615,7 @@ void SG_ReadCvars()
 	}
 }
 
-void SG_WriteServerConfigStrings()
+static void SG_WriteServerConfigStrings()
 {
 	ojk::SavedGameHelper saved_game(
 		&ojk::SavedGame::get_instance());
@@ -646,7 +662,7 @@ void SG_WriteServerConfigStrings()
 	}
 }
 
-void SG_ReadServerConfigStrings()
+static void SG_ReadServerConfigStrings()
 {
 	// trash the whole table...
 	//

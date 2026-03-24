@@ -84,8 +84,8 @@ extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern qboolean G_ControlledByNPC(const gentity_t* self);
 extern qboolean PM_SaberInStart(int move);
 extern qboolean PM_SaberInReturn(int move);
-extern int WP_SaberMustBoltBlockJKAMode(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point,int rSaberNum, int rBladeNum);
-extern int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point,int rSaberNum,int rBladeNum);
+extern int WP_SaberMustBoltBlockJKAMode(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point, int rSaberNum, int rBladeNum);
+extern int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point, int rSaberNum, int rBladeNum);
 extern float VectorBlockDistance(vec3_t v1, vec3_t v2);
 extern void PM_AddBoltBlockFatigue(playerState_t* ps, int fatigue);
 extern void PM_VelocityForSaberMove(const playerState_t* ps, vec3_t throw_dir);
@@ -100,13 +100,13 @@ extern cvar_t* g_SaberPerfectBlockingTimerMissile;
 extern cvar_t* g_SerenityJediEngineMode;
 extern void WP_ForcePowerDrain(const gentity_t* self, forcePowers_t force_power, int override_amt);
 extern void WP_BlockPointsDrain(const gentity_t* self, int fatigue);
-extern int WP_SaberBoltBlockCost(gentity_t* defender, const gentity_t* attacker);
 extern void PM_AddBlockFatigue(playerState_t* ps, int fatigue);
 extern void jedi_decloak(gentity_t* self);
 extern void player_decloak(gentity_t* self);
 extern qboolean FighterIsLanded(const Vehicle_t* p_veh, playerState_t* parent_ps);
 extern void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength);
 extern qboolean WalkCheck(const gentity_t* self);
+extern int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit_locs);
 constexpr auto MISSILE_PRESTEP_TIME = 50;
 //-------------------------------------------------------------------------
 static void G_MissileBounceEffect(const gentity_t* ent, vec3_t org, vec3_t dir, const qboolean hit_world)
@@ -508,12 +508,12 @@ Automatic missile reflection for NPCs (and saber entities) in SP.
 
 Behaviour:
 - High defense skill and saber in-hand:
-    - Level 3: always reflect toward an enemy.
-    - Level 2: 25% chance to reflect toward an enemy.
-    - Level 1: never a “perfect” reflection.
+	- Level 3: always reflect toward an enemy.
+	- Level 2: 25% chance to reflect toward an enemy.
+	- Level 1: never a “perfect” reflection.
 - Otherwise:
-    - Try to bounce back toward the shooter.
-    - Fall back to a projection-based deflection.
+	- Try to bounce back toward the shooter.
+	- Fall back to a projection-based deflection.
 - Adds wildness based on saber state and animations.
 - Fixes crash-prone dereferences and adds safety guards.
 ================
@@ -1082,7 +1082,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			WP_SaberBlockNonRandom(blocker, missile->currentOrigin, qfalse);
 		}
 
-		const int force_points_used = WP_SaberBoltBlockCost(blocker, missile);
+		const int force_points_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 
 		if (blocker->client->ps.forcePower < force_points_used)
 		{
@@ -1162,7 +1162,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
 			}
 
-			const int force_points_used = WP_SaberBoltBlockCost(blocker, missile);
+			const int force_points_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 
 			if (blocker->client->ps.forcePower < force_points_used)
 			{
@@ -1246,7 +1246,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				WP_SaberBlockBolt_MD(blocker, missile->currentOrigin, qfalse);
 			}
 
-			const int force_points_used = WP_SaberBoltBlockCost(blocker, missile);
+			const int force_points_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 
 			if (blocker->client->ps.forcePower < force_points_used)
 			{
@@ -3773,7 +3773,6 @@ static void G_AddWildness(vec3_t dir, float amount)
 	}
 }
 
-
 // ================================================================
 //  MAIN FUNCTION (CLEANED, MODERNIZED, NULL-SAFE)
 // ================================================================
@@ -3923,7 +3922,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 		}
 
 		// Block point cost
-		int cost = accurate_missile_blocking ? 2 : WP_SaberBoltBlockCost(blocker, missile);
+		int cost = accurate_missile_blocking ? 2 : WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 
 		if (G_GetBlockPoints(blocker) < cost)
 		{
@@ -3995,7 +3994,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			}
 
 			// Block point cost
-			int cost = accurate_missile_blocking ? 2 : WP_SaberBoltBlockCost(blocker, missile);
+			int cost = accurate_missile_blocking ? 2 : WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 
 			if (G_GetBlockPoints(blocker) < cost)
 			{
@@ -4069,7 +4068,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			}
 
 			// Block point cost
-			int cost = accurate_missile_blocking ? 2 : WP_SaberBoltBlockCost(blocker, missile);
+			int cost = accurate_missile_blocking ? 2 : WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 
 			if (G_GetBlockPoints(blocker) < cost)
 			{
@@ -4366,7 +4365,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		}
 		else
 		{
-			force_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
+			force_points_used_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 		}
 
 		if (blocker->client->ps.forcePower < force_points_used_used)
@@ -4460,7 +4459,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			}
 			else
 			{
-				force_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
+				force_points_used_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 			}
 
 			if (blocker->client->ps.forcePower < force_points_used_used)
@@ -4564,7 +4563,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			}
 			else
 			{
-				force_points_used_used = WP_SaberBoltBlockCost(blocker, missile);
+				force_points_used_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
 			}
 
 			if (blocker->client->ps.forcePower < force_points_used_used)
