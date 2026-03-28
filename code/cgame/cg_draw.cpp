@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // active (after loading) gameplay
 
 #include "cg_headers.h"
+
 #include "cg_media.h"
 #include "../game/objectives.h"
 #include "../game/g_vehicles.h"
@@ -34,18 +35,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <qcommon\q_math.h>
 #include <g_shared.h>
 #include <string.h>
-#include <rd-common\tr_types.h>
-#include <b_local.h>
-#include <g_public.h>
-#include "cg_camera.h"
-#include <g_items.h>
-#include <teams.h>
-#include <cstdint>
-#include <g_local.h>
-#include <statindex.h>
-#include <weapons.h>
-#include <qcommon\q_color.h>
-#include <qcommon\q_string.h>
 
 extern vmCvar_t cg_debugHealthBars;
 extern vmCvar_t cg_debugBlockBars;
@@ -2352,132 +2341,95 @@ static void CG_DrawDF_ForcePowers(const centity_t* cent)
 	}
 }
 
-// ----------------------------------------------------------------------
-// CG_DrawDF_SaberStyle_Fatigue
-// Draws the saber style icon with fatigue overlay.
-// Safe against null cent->gent and cent->gent->client.
-// ----------------------------------------------------------------------
 static void CG_DrawDF_SaberStyle_Fatigue(const centity_t* cent)
 {
-	// Validate cent
-	if (cent == NULL)
+	int index;
+
+	if (!cent->currentState.weapon) // We don't have a weapon right now
 	{
 		return;
 	}
 
-	// Must have a weapon
-	if (cent->currentState.weapon == WP_NONE)
+	if (cent->currentState.weapon != WP_SABER || !cent->gent)
 	{
 		return;
 	}
 
-	// Must be using a saber AND have a valid gent
-	if (cent->currentState.weapon != WP_SABER || cent->gent == NULL)
-	{
-		return;
-	}
-
-	// Must have a valid client
-	if (cent->gent->client == NULL)
-	{
-		return;
-	}
-
-	// Set default color
 	cgi_R_SetColor(colorTable[CT_WHITE]);
 
-	// SP carried this over after loadgame; MP never initializes this
-	if (cg.saberAnimLevelPending == 0 && cent->gent->client != NULL)
+	if (!cg.saberAnimLevelPending && cent->gent->client)
 	{
+		//uninitialized after a load game, cheat across and get it
 		cg.saberAnimLevelPending = cent->gent->client->ps.saberAnimLevel;
 	}
 
-	// Determine saber style icon index
-	int index = OHB_SABERSTYLE_STRONG_DF;
-
-	switch (cg.saberAnimLevelPending)
+	// don't need to draw ammo, but we will draw the current saber style in this window
+	if (cg.saberAnimLevelPending == SS_FAST)
 	{
-	case SS_FAST:
 		index = OHB_SABERSTYLE_FAST_DF;
-		break;
-
-	case SS_MEDIUM:
-		index = OHB_SABERSTYLE_MEDIUM_DF;
-		break;
-
-	case SS_TAVION:
-		index = OHB_SABERSTYLE_TAVION_DF;
-		break;
-
-	case SS_DESANN:
-		index = OHB_SABERSTYLE_DESANN_DF;
-		break;
-
-	case SS_STAFF:
-		index = OHB_SABERSTYLE_STAFF_DF;
-		break;
-
-	case SS_DUAL:
-		index = OHB_SABERSTYLE_DUAL_DF;
-		break;
-
-	default:
-		index = OHB_SABERSTYLE_STRONG_DF;
-		break;
 	}
-
-	// Apply HUD color for this icon
-	cgi_R_SetColor(otherHUDBits[index].color);
-
-	// ------------------------------------------------------------------
-	// Compute fatigue percentage
-	// ------------------------------------------------------------------
-	float fatigue_percent = 0.0f;
-
-	if (cg_SerenityJediEngineMode.integer != 0)
+	else if (cg.saberAnimLevelPending == SS_MEDIUM)
 	{
-		fatigue_percent =
-			(float)cent->gent->client->ps.saberFatigueChainCount /
-			(float)(MISHAPLEVEL_MAX + 1);
+		index = OHB_SABERSTYLE_MEDIUM_DF;
+	}
+	else if (cg.saberAnimLevelPending == SS_TAVION)
+	{
+		index = OHB_SABERSTYLE_TAVION_DF;
+	}
+	else if (cg.saberAnimLevelPending == SS_DESANN)
+	{
+		index = OHB_SABERSTYLE_DESANN_DF;
+	}
+	else if (cg.saberAnimLevelPending == SS_STAFF)
+	{
+		index = OHB_SABERSTYLE_STAFF_DF;
+	}
+	else if (cg.saberAnimLevelPending == SS_DUAL)
+	{
+		index = OHB_SABERSTYLE_DUAL_DF;
 	}
 	else
 	{
-		fatigue_percent =
-			(float)cent->gent->client->ps.saberAttackChainCount /
-			(float)(MISHAPLEVEL_MAX + 1);
+		index = OHB_SABERSTYLE_STRONG_DF;
 	}
 
-	if (fatigue_percent < 0.0f)
+	cgi_R_SetColor(otherHUDBits[index].color);
+
+	// Show saber fatigue by changing height and position of saber style/blade image
+	float fatigue_percent;
+	if (cg_SerenityJediEngineMode.integer)
+	{
+		fatigue_percent = static_cast<float>(cent->gent->client->ps.saberFatigueChainCount) / (MISHAPLEVEL_MAX + 1);
+	}
+	else
+	{
+		fatigue_percent = static_cast<float>(cent->gent->client->ps.saberAttackChainCount) / (MISHAPLEVEL_MAX + 1);
+	}
+
+	if (fatigue_percent < 0)
 	{
 		fatigue_percent = 0.0f;
 	}
 
-	// ------------------------------------------------------------------
-	// Draw vertical or horizontal fatigue bar
-	// ------------------------------------------------------------------
-	if (cg_SerenityJediEngineHudMode.integer == 4)
+	if (cg_SerenityJediEngineHudMode.integer == 4) // vertical
 	{
-		// Vertical mode
 		CG_DrawPic(
 			SCREEN_WIDTH - (SCREEN_WIDTH - otherHUDBits[index].xPos),
-			otherHUDBits[index].yPos + (fatigue_percent * 100.0f),
+			otherHUDBits[index].yPos + fatigue_percent * 100,
 			otherHUDBits[index].width,
-			otherHUDBits[index].height - (fatigue_percent * 100.0f),
+			otherHUDBits[index].height - fatigue_percent * 100,
 			otherHUDBits[index].background
 		);
 	}
-	else
+	else // horizontal
 	{
-		// Horizontal mode
-		const int offset_y = 132;
-		const int offset_x = 55;
-
+		constexpr int offset_y = 132;
+		constexpr int offset_x = 55;
 		CG_DrawRotatePic2(
-			SCREEN_WIDTH - (SCREEN_WIDTH + offset_x - otherHUDBits[index].xPos)
-			+ (fatigue_percent * 60.0f),
+			SCREEN_WIDTH - (SCREEN_WIDTH + offset_x - otherHUDBits[index].xPos) + fatigue_percent * 60,
 			otherHUDBits[index].yPos + offset_y,
 			otherHUDBits[index].width,
-			otherHUDBits[index].height - (fatigue_percent * 100.0f),
+			otherHUDBits[index].height - fatigue_percent * 100,
 			-90,
 			otherHUDBits[index].background
 		);
@@ -5847,8 +5799,8 @@ static void CG_DrawHealthBar(const centity_t* cent, const float ch_x, const floa
 	CG_FillRect(x + 1.0f, y + 1.0f, percent * ch_w - 2.0f, ch_h - 2.0f, aColor);
 }
 
-constexpr auto HACK_WIDTH = 33.5f;
-constexpr auto HACK_HEIGHT = 3.5f;
+#define HACK_WIDTH		33.5f
+#define HACK_HEIGHT		3.5f
 //same routine (at least for now), draw progress of a "hack" or whatever
 static void CG_DrawHaqrBar(const float chX, const float chY, const float chW, const float chH)
 {
@@ -8624,7 +8576,8 @@ static void CG_Draw2D()
 			}
 			CG_DrawInventorySelect();
 
-			if ((cg_SerenityJediEngineHudMode.integer == 4 || cg_SerenityJediEngineHudMode.integer == 5) && !cg_drawSelectionScrollBar.integer)
+			if ((cg_SerenityJediEngineHudMode.integer == 4 || cg_SerenityJediEngineHudMode.integer == 5) && !
+				cg_drawSelectionScrollBar.integer)
 			{
 				//
 			}

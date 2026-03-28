@@ -4890,19 +4890,15 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 					// -----------------------------
 					if (Q_stricmpn(skinname, "head_", 5) == 0)
 					{
-						// Ensure we have room for a new entry
 						if (species->SkinHeadCount >= species->SkinHeadMax)
 						{
 							species->SkinHeadMax *= 2;
 
-							void* newPtr = realloc(
-								species->SkinHead,
-								species->SkinHeadMax * sizeof(skinName_t)
-							);
+							void* newPtr = realloc(species->SkinHead,
+								species->SkinHeadMax * sizeof(skinName_t));
 
-							if (newPtr == NULL)
+							if (!newPtr)
 							{
-								Com_Printf("UI WARNING: realloc failed while expanding SkinHead array\n");
 								UI_FreeSpecies(species);
 								continue;
 							}
@@ -4910,29 +4906,11 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 							species->SkinHead = static_cast<skinName_t*>(newPtr);
 						}
 
-						// SAFETY: validate index before writing
 						const int idx = species->SkinHeadCount;
-
-						if (idx < 0 || idx >= species->SkinHeadMax)
-						{
-							Com_Printf(
-								"UI WARNING: SkinHead index %d out of bounds (max %d)\n",
-								idx, species->SkinHeadMax
-							);
-							continue;
-						}
-
-						// Store the skin name
-						Q_strncpyz(
-							species->SkinHead[idx].name,
-							skinname,
-							SKIN_LENGTH
-						);
-
+						Q_strncpyz(species->SkinHead[idx].name, skinname, SKIN_LENGTH);
 						species->SkinHeadCount = idx + 1;
 
-						// Mark that we found a head skin
-						iSkinParts |= (1 << 0);
+						iSkinParts |= 1 << 0;
 					}
 
 					// -----------------------------
@@ -4940,19 +4918,15 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 					// -----------------------------
 					else if (Q_stricmpn(skinname, "torso_", 6) == 0)
 					{
-						// Ensure we have room for a new torso skin entry
 						if (species->SkinTorsoCount >= species->SkinTorsoMax)
 						{
 							species->SkinTorsoMax *= 2;
 
-							void* newPtr = realloc(
-								species->SkinTorso,
-								species->SkinTorsoMax * sizeof(skinName_t)
-							);
+							void* newPtr = realloc(species->SkinTorso,
+								species->SkinTorsoMax * sizeof(skinName_t));
 
-							if (newPtr == NULL)
+							if (!newPtr)
 							{
-								Com_Printf("UI WARNING: realloc failed while expanding SkinTorso array\n");
 								UI_FreeSpecies(species);
 								continue;
 							}
@@ -4960,29 +4934,11 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 							species->SkinTorso = static_cast<skinName_t*>(newPtr);
 						}
 
-						// SAFETY: validate index before writing
 						const int idx = species->SkinTorsoCount;
-
-						if (idx < 0 || idx >= species->SkinTorsoMax)
-						{
-							Com_Printf(
-								"UI WARNING: SkinTorso index %d out of bounds (max %d)\n",
-								idx, species->SkinTorsoMax
-							);
-							continue;
-						}
-
-						// Store the torso skin name
-						Q_strncpyz(
-							species->SkinTorso[idx].name,
-							skinname,
-							SKIN_LENGTH
-						);
-
+						Q_strncpyz(species->SkinTorso[idx].name, skinname, SKIN_LENGTH);
 						species->SkinTorsoCount = idx + 1;
 
-						// Mark torso part found
-						iSkinParts |= (1 << 1);
+						iSkinParts |= 1 << 1;
 					}
 
 					// -----------------------------
@@ -4990,19 +4946,15 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 					// -----------------------------
 					else if (Q_stricmpn(skinname, "lower_", 6) == 0)
 					{
-						// Ensure we have room for a new leg skin entry
 						if (species->SkinLegCount >= species->SkinLegMax)
 						{
 							species->SkinLegMax *= 2;
 
-							void* newPtr = realloc(
-								species->SkinLeg,
-								species->SkinLegMax * sizeof(skinName_t)
-							);
+							void* newPtr = realloc(species->SkinLeg,
+								species->SkinLegMax * sizeof(skinName_t));
 
-							if (newPtr == NULL)
+							if (!newPtr)
 							{
-								Com_Printf("UI WARNING: realloc failed while expanding SkinLeg array\n");
 								UI_FreeSpecies(species);
 								continue;
 							}
@@ -5010,29 +4962,11 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 							species->SkinLeg = static_cast<skinName_t*>(newPtr);
 						}
 
-						// SAFETY: validate index before writing
 						const int idx = species->SkinLegCount;
-
-						if (idx < 0 || idx >= species->SkinLegMax)
-						{
-							Com_Printf(
-								"UI WARNING: SkinLeg index %d out of bounds (max %d)\n",
-								idx, species->SkinLegMax
-							);
-							continue;
-						}
-
-						// Store the leg skin name
-						Q_strncpyz(
-							species->SkinLeg[idx].name,
-							skinname,
-							SKIN_LENGTH
-						);
-
+						Q_strncpyz(species->SkinLeg[idx].name, skinname, SKIN_LENGTH);
 						species->SkinLegCount = idx + 1;
 
-						// Mark leg part found
-						iSkinParts |= (1 << 2);
+						iSkinParts |= 1 << 2;
 					}
 				}
 			}

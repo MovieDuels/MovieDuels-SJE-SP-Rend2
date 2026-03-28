@@ -25,18 +25,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "cg_media.h"	//for cgs.model_draw for G2
-#include <rd-common\mdx_format.h>
-#include <bg_public.h>
-#include <g_vehicles.h>
-#include <qcommon\q_platform.h>
-#include <string>
-#include <gsl\gsl-lite.h>
-#include <rd-common\tr_types.h>
-#include <g_shared.h>
-#include "cg_local.h"
-#include <qcommon\q_math.h>
-#include <qcommon\q_shared.h>
-#include "FxSystem.h"
 
 extern vmCvar_t fx_debug;
 extern vmCvar_t fx_freeze;
@@ -181,112 +169,54 @@ void SFxHelper::CameraShake(vec3_t origin, const float intensity, const int radi
 }
 
 //------------------------------------------------------
-int SFxHelper::GetOriginAxisFromBolt(
-    const centity_t& cent,
-    const int modelNum,
-    const int boltNum,
-    vec3_t /*out*/ origin,
-    vec3_t /*out*/ axis[3])
+int SFxHelper::GetOriginAxisFromBolt(const centity_t& cent, const int modelNum, const int boltNum, vec3_t /*out*/origin,
+	vec3_t /*out*/axis[3])
 {
-    // If the entity snapshot is too old, the bolt is no longer valid
-    if ((cg.time - cent.snapShotTime) > 200)
-    {
-        return 0;
-    }
+	if (cg.time - cent.snapShotTime > 200)
+	{
+		//you were added more than 200ms ago, so I say you are no longer valid/in our snapshot.
+		return 0;
+	}
 
-    // SAFETY: ensure gent exists
-    if (cent.gent == NULL)
-    {
-        Com_Printf("GetOriginAxisFromBolt WARNING: cent.gent is NULL for ent %d\n",
-            cent.currentState.number);
-        return 0;
-    }
+	mdxaBone_t bolt_matrix;
+	vec3_t G2Angles = { cent.lerpAngles[0], cent.lerpAngles[1], cent.lerpAngles[2] };
+	if (cent.currentState.eType == ET_PLAYER)
+	{
+		//players use cent.renderAngles
+		VectorCopy(cent.renderAngles, G2Angles);
 
-    // SAFETY: ensure ghoul2 is valid
-    if (cent.gent->ghoul2.IsValid() == qfalse)
-    {
-        Com_Printf("GetOriginAxisFromBolt WARNING: ghoul2 invalid for ent %d\n",
-            cent.currentState.number);
-        return 0;
-    }
+		if (cent.gent //has a game entity
+			&& cent.gent->s.m_iVehicleNum != 0 //in a vehicle
+			&& cent.gent->m_pVehicle //have a valid vehicle pointer
+			&& cent.gent->m_pVehicle->m_pVehicleInfo->type != VH_FIGHTER //it's not a fighter
+			&& cent.gent->m_pVehicle->m_pVehicleInfo->type != VH_SPEEDER //not a speeder
+			)
+		{
+			G2Angles[PITCH] = 0;
+			G2Angles[ROLL] = 0;
+		}
+	}
 
-    // SAFETY: ensure model index is valid
-    if (modelNum < 0 || modelNum >= cent.gent->ghoul2.size())
-    {
-        Com_Printf("GetOriginAxisFromBolt WARNING: modelNum %d out of range for ent %d\n",
-            modelNum, cent.currentState.number);
-        return 0;
-    }
+	// go away and get me the bolt position for this frame please
+	const int doesBoltExist = gi.G2API_GetBoltMatrix(cent.gent->ghoul2, modelNum,
+		boltNum, &bolt_matrix, G2Angles,
+		cent.lerpOrigin, cg.time, cgs.model_draw,
+		cent.currentState.modelScale);
+	// set up the axis and origin we need for the actual effect spawning
+	origin[0] = bolt_matrix.matrix[0][3];
+	origin[1] = bolt_matrix.matrix[1][3];
+	origin[2] = bolt_matrix.matrix[2][3];
 
-    // SAFETY: ensure model actually exists
-    if (cent.gent->ghoul2[modelNum].mModelindex < 0)
-    {
-        Com_Printf("GetOriginAxisFromBolt WARNING: modelNum %d has no model for ent %d\n",
-            modelNum, cent.currentState.number);
-        return 0;
-    }
+	axis[1][0] = bolt_matrix.matrix[0][0];
+	axis[1][1] = bolt_matrix.matrix[1][0];
+	axis[1][2] = bolt_matrix.matrix[2][0];
 
-    // Prepare angles
-    vec3_t G2Angles = {
-        cent.lerpAngles[0],
-        cent.lerpAngles[1],
-        cent.lerpAngles[2]
-    };
+	axis[0][0] = bolt_matrix.matrix[0][1];
+	axis[0][1] = bolt_matrix.matrix[1][1];
+	axis[0][2] = bolt_matrix.matrix[2][1];
 
-    // Player entities use renderAngles
-    if (cent.currentState.eType == ET_PLAYER)
-    {
-        VectorCopy(cent.renderAngles, G2Angles);
-
-        // Vehicle pitch/roll override
-        if (cent.gent->s.m_iVehicleNum != 0 &&
-            cent.gent->m_pVehicle != NULL &&
-            cent.gent->m_pVehicle->m_pVehicleInfo != NULL &&
-            cent.gent->m_pVehicle->m_pVehicleInfo->type != VH_FIGHTER &&
-            cent.gent->m_pVehicle->m_pVehicleInfo->type != VH_SPEEDER)
-        {
-            G2Angles[PITCH] = 0.0f;
-            G2Angles[ROLL] = 0.0f;
-        }
-    }
-
-    // Retrieve bolt matrix
-    mdxaBone_t bolt_matrix;
-
-    const int doesBoltExist = gi.G2API_GetBoltMatrix(
-        cent.gent->ghoul2,
-        modelNum,
-        boltNum,
-        &bolt_matrix,
-        G2Angles,
-        cent.lerpOrigin,
-        cg.time,
-        cgs.model_draw,
-        cent.currentState.modelScale
-    );
-
-    if (doesBoltExist == 0)
-    {
-        return 0;
-    }
-
-    // Extract origin
-    origin[0] = bolt_matrix.matrix[0][3];
-    origin[1] = bolt_matrix.matrix[1][3];
-    origin[2] = bolt_matrix.matrix[2][3];
-
-    // Extract axis
-    axis[1][0] = bolt_matrix.matrix[0][0];
-    axis[1][1] = bolt_matrix.matrix[1][0];
-    axis[1][2] = bolt_matrix.matrix[2][0];
-
-    axis[0][0] = bolt_matrix.matrix[0][1];
-    axis[0][1] = bolt_matrix.matrix[1][1];
-    axis[0][2] = bolt_matrix.matrix[2][1];
-
-    axis[2][0] = bolt_matrix.matrix[0][2];
-    axis[2][1] = bolt_matrix.matrix[1][2];
-    axis[2][2] = bolt_matrix.matrix[2][2];
-
-    return doesBoltExist;
+	axis[2][0] = bolt_matrix.matrix[0][2];
+	axis[2][1] = bolt_matrix.matrix[1][2];
+	axis[2][2] = bolt_matrix.matrix[2][2];
+	return doesBoltExist;
 }

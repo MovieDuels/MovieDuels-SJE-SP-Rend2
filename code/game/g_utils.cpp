@@ -914,6 +914,7 @@ static gentity_t* find_remove_able_gent(void)
 	return NULL;
 }
 
+
 static const char* DecodeEF(int ef)
 {
 	static char buffer[512];
@@ -1078,6 +1079,7 @@ static void G_SpewEntList_SP(void)
 
 	Com_Printf("^3=================================================\n\n");
 }
+
 
 gentity_t* G_Spawn(void)
 {

@@ -32,20 +32,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../qcommon/sstring.h"
 #include "qcommon/ojk_saved_game_helper.h"
 #include "b_public.h"
-#include <cstdint>
-#include <cstddef>
-#include <qcommon\q_platform.h>
-#include "g_vehicles.h"
-#include "ai.h"
-#include <iterator>
-#include <qcommon\q_shared.h>
-#include <string.h>
-#include <cassert>
-#include <cstdarg>
-#include <list>
-#include "bg_public.h"
-#include "g_shared.h"
-#include <qcommon\ojk_saved_game_helper_fwd.h>
 
 extern void G_LoadSave_WriteMiscData();
 extern void G_LoadSave_ReadMiscData();
@@ -1207,8 +1193,6 @@ static void ReadGEntities(const qboolean qbAutosave)
 	}
 }
 
-
-extern void CG_WriteTheEvilCGHackStuff();
 void WriteLevel(const qboolean qbAutosave)
 {
 	if (!qbAutosave) //-always save the client
@@ -1229,6 +1213,8 @@ void WriteLevel(const qboolean qbAutosave)
 	WriteGEntities(qbAutosave);
 	Quake3Game()->VariableSave();
 	G_LoadSave_WriteMiscData();
+
+	extern void CG_WriteTheEvilCGHackStuff();
 	CG_WriteTheEvilCGHackStuff();
 
 	// (Do NOT put any write-code below this line)

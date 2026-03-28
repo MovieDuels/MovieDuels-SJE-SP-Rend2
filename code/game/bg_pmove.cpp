@@ -4670,7 +4670,6 @@ static void PM_CrashLand()
 	//Get rid of queued buttons
 	pm->cmd.buttons &= ~BUTTON_ATTACK;
 	pm->cmd.buttons &= ~BUTTON_BLOCK;
-	pm->cmd.buttons &= ~BUTTON_KICK;
 
 	if (pm->ps->pm_flags & PMF_TRIGGER_PUSHED)
 	{

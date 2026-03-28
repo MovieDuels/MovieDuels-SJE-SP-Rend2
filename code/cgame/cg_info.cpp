@@ -38,7 +38,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <qcommon\q_shared.h>
 #include <qcommon\q_platform.h>
 #include <qcommon\q_string.h>
-#include <cstdio>
 
 // For printing objectives
 static constexpr short objectiveStartingYpos = 75; // Y starting position for objective text
@@ -689,81 +688,63 @@ static void CG_DrawLoadForcePowers(const int forceBits)
 static void CG_GetLoadScreenInfo(char* weapons, int* forceBits)
 {
 	char s[MAX_STRING_CHARS];
-	int iDummy = 0;
-	float fDummy = 0.0f;
-	const char* var = NULL;
+	int iDummy;
+	float fDummy;
+	const char* var;
 
-	// Read save data
-	gi.Cvar_VariableStringBuffer(sCVARNAME_PLAYERSAVE, s, sizeof(s));
+	gi.Cvar_VariableStringBuffer(sCVARNAME_PLAYERSAVE, s, sizeof s);
 
-	// Parse player save string (weapons + force powers)
-	if (s[0] != '\0')
+	// Get player weapons and force powers known
+	if (s[0])
 	{
-		const int expected = 11;
-		const int count = sscanf(
-			s,
-			"%i %i %i %i %i %i %f %f %f %i %i",
-			&iDummy,     // health
-			&iDummy,     // armor
-			&iDummy,     // items
-			&iDummy,     // weapon
-			&iDummy,     // weaponstate
-			&iDummy,     // batteryCharge
-			&fDummy,     // viewangles[0]
-			&fDummy,     // viewangles[1]
-			&fDummy,     // viewangles[2]
-			forceBits,   // forcePowersKnown
-			&iDummy      // forcePower
-		);
+		//				|general info				  |-force powers
+		sscanf(s, "%i %i %i %i %i %i %f %f %f %i %i",
+			&iDummy, //	&client->ps.stats[STAT_HEALTH],
+			&iDummy, //	&client->ps.stats[STAT_ARMOR],
+			&iDummy, //	&client->ps.stats[STAT_ITEMS],
+			&iDummy, //	&client->ps.weapon,
+			&iDummy, //	&client->ps.weaponstate,
+			&iDummy, //	&client->ps.batteryCharge,
+			&fDummy, //	&client->ps.viewangles[0],
+			&fDummy, //	&client->ps.viewangles[1],
+			&fDummy, //	&client->ps.viewangles[2],
+			//force power data
+			&*forceBits, //	&client->ps.forcePowersKnown,
+			&iDummy //	&client->ps.forcePower,
 
-		if (count != expected)
-		{
-			Com_Printf("CG_GetLoadScreenInfo WARNING: sscanf parsed %d/%d fields from save string.\n",
-				count, expected);
-		}
+		);
 	}
 
-	// Read weapon list
-	gi.Cvar_VariableStringBuffer("playerweaps", s, sizeof(s));
-
+	gi.Cvar_VariableStringBuffer("playerweaps", s, sizeof s);
 	int i = 0;
-	if (s[0] != '\0')
+	if (s[0])
 	{
 		var = strtok(s, " ");
-		while (var != NULL && i < WP_NUM_WEAPONS)
+		while (var != nullptr)
 		{
-			weapons[i] = atoi(var);
-			i++;
-			var = strtok(NULL, " ");
+			/* While there are tokens in "s" */
+			weapons[i++] = atoi(var);
+			/* Get next token: */
+			var = strtok(nullptr, " ");
 		}
-
-		if (i != WP_NUM_WEAPONS)
-		{
-			Com_Printf("CG_GetLoadScreenInfo WARNING: Expected %d weapons, got %d.\n",
-				WP_NUM_WEAPONS, i);
-		}
+		assert(i == WP_NUM_WEAPONS);
 	}
 	else
 	{
 		weapons[0] = -1;
 	}
 
-	// Read force power levels
-	gi.Cvar_VariableStringBuffer("playerfplvl", s, sizeof(s));
-
+	// the new JK2 stuff - force powers, etc...
+	//
+	gi.Cvar_VariableStringBuffer("playerfplvl", s, sizeof s);
 	i = 0;
 	var = strtok(s, " ");
-	while (var != NULL && i < NUM_FORCE_POWERS)
+	while (var != nullptr)
 	{
-		loadForcePowerLevel[i] = atoi(var);
-		i++;
-		var = strtok(NULL, " ");
-	}
-
-	if (i < NUM_FORCE_POWERS)
-	{
-		Com_Printf("CG_GetLoadScreenInfo WARNING: Expected %d force power levels, got %d.\n",
-			NUM_FORCE_POWERS, i);
+		/* While there are tokens in "s" */
+		loadForcePowerLevel[i++] = atoi(var);
+		/* Get next token: */
+		var = strtok(nullptr, " ");
 	}
 }
 

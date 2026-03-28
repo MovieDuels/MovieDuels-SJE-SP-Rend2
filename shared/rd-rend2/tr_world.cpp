@@ -20,13 +20,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "tr_local.h"
-#include <rd-common\tr_public.h>
-#include <qcommon\q_shared.h>
-#include <cassert>
-#include "tr_extramath.h"
-#include <rd-common\tr_types.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
 
 world_t* R_GetWorld(int worldIndex)
 {
@@ -715,56 +708,26 @@ void R_RecursiveWorldNode(mnode_t* node, int planeBits, int dlightBits, int psha
 R_PointInLeaf
 ===============
 */
-static mnode_t* R_PointInLeaf(const vec3_t p)
-{
-	// SAFETY: world must exist
-	if (tr.world == NULL)
-	{
-		Com_Printf("R_PointInLeaf WARNING: tr.world is NULL\n");
-		return NULL;    // safest possible fallback
+static mnode_t* R_PointInLeaf(const vec3_t p) {
+	mnode_t* node;
+	float		d;
+	cplane_t* plane;
+
+	if (!tr.world) {
+		ri.Error(ERR_DROP, "R_PointInLeaf: bad model");
 	}
 
-	mnode_t* node = tr.world->nodes;
-
-	// SAFETY: nodes must exist
-	if (node == NULL)
-	{
-		Com_Printf("R_PointInLeaf WARNING: tr.world->nodes is NULL\n");
-		return NULL;
-	}
-
-	// Walk BSP tree
-	while (1)
-	{
-		if (node->contents != -1)
-		{
-			break;  // reached a leaf
+	node = tr.world->nodes;
+	while (1) {
+		if (node->contents != -1) {
+			break;
 		}
-
-		cplane_t* plane = node->plane;
-
-		// SAFETY: plane must exist
-		if (plane == NULL)
-		{
-			Com_Printf("R_PointInLeaf WARNING: node->plane is NULL\n");
-			return node;    // return best available node
-		}
-
-		const float d = DotProduct(p, plane->normal) - plane->dist;
-
-		// SAFETY: children must exist
-		if (node->children[0] == NULL || node->children[1] == NULL)
-		{
-			Com_Printf("R_PointInLeaf WARNING: node->children[] is NULL\n");
-			return node;
-		}
-
-		if (d >= 0.0f)
-		{
+		plane = node->plane;
+		d = DotProduct(p, plane->normal) - plane->dist;
+		if (d >= 0) {
 			node = node->children[0];
 		}
-		else
-		{
+		else {
 			node = node->children[1];
 		}
 	}
