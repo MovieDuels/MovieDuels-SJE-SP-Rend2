@@ -814,13 +814,30 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 		CG_SetLerpFrameAnimation(ci, lf, new_animation);
 	}
 
+	// SAFETY CHECK: lf->animation may still be NULL if CG_SetLerpFrameAnimation failed
+	if (lf->animation == NULL)
+	{
+		Com_Printf("CG_RunLerpFrame WARNING: lf->animation is NULL for entNum %d, anim %d\n",
+			entNum, new_animation);
+
+		// Prevent crash: force safe defaults
+		lf->frame = 0;
+		lf->oldFrame = 0;
+		lf->backlerp = 0.0f;
+		lf->frameTime = cg.time;
+		lf->oldFrameTime = cg.time;
+
+		return qfalse;
+	}
+
+	const animation_t* anim = lf->animation;
+
 	// Advance frame if we've reached/passed the next frame time
 	if (cg.time >= lf->frameTime)
 	{
 		lf->oldFrame = lf->frame;
 		lf->oldFrameTime = lf->frameTime;
 
-		const animation_t* anim = lf->animation;
 		int anim_frame_time = abs(anim->frameLerp);
 
 		// Special case: speed up weapon raise/drop for player entity
@@ -3025,7 +3042,7 @@ static void CG_G2PlayerAngles(centity_t* cent, vec3_t legs[], vec3_t angles)
 			CG_G2ClientSpineAngles(cent, view_angles, angles, thoracic_angles, ul_angles, ll_angles);
 		}
 
-		vec3_t trailing_legs_angles;
+		vec3_t trailing_legs_angles{};
 		if (cent->gent->client && cent->gent->client->NPC_class == CLASS_ATST)
 		{
 			CG_ATSTLegsYaw(cent, trailing_legs_angles);

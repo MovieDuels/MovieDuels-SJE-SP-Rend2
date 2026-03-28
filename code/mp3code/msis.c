@@ -203,11 +203,13 @@ exit:
 }
 
 /*===============================================================*/
-void is_process_MPEG2(float x[][1152], /* intensity stereo */
+void is_process_MPEG2(
+	float x[][1152],                 /* intensity stereo samples */
 	const SCALEFACT* sf,
-	CB_INFO cb_info[2], /* [ch] */
+	CB_INFO cb_info[2],              /* [ch] */
 	const IS_SF_INFO* is_sf_info,
-	const int nsamp, const int ms_mode)
+	const int nsamp,
+	const int ms_mode)
 {
 	int i, j, k, n, cb;
 	float fl, fr;
@@ -217,46 +219,74 @@ void is_process_MPEG2(float x[][1152], /* intensity stereo */
 	int r;
 	int cb0;
 
+	/* SAFETY: fully initialize il[] to zero */
+	for (i = 0; i < 21; i++)
+	{
+		il[i] = 0;
+	}
+
 	const ARRAY2* lr = lr2[is_sf_info->intensity_scale][ms_mode];
 
-	if (cb_info[1].cbtype)
+	/* If right channel uses short blocks, jump to short block logic */
+	if (cb_info[1].cbtype != 0)
+	{
 		goto short_blocks;
+	}
 
 	/*------------------------*/
 	/* long_blocks: */
+
 	cb0 = cb_info[1].cbmax; /* start at end of right */
 	i = pMP3Stream->sfBandIndex[0][cb0];
 	int m = nsamp - i; /* process to len of left */
-	/* gen sf info */
+
+	/* generate scalefactor info */
 	for (k = r = 0; r < 3; r++)
 	{
 		tmp = (1 << is_sf_info->slen[r]) - 1;
-		for (j = 0; j < is_sf_info->nr[r]; j++, k++)
+		for (j = 0; j < is_sf_info->nr[r] && k < 21; j++, k++)
+		{
 			il[k] = tmp;
+		}
 	}
+
 	for (cb = cb0 + 1; cb < 21; cb++)
 	{
 		isf = il[cb] + sf->l[cb];
 		fl = lr[isf][0];
 		fr = lr[isf][1];
 		n = pMP3Stream->nBand[0][cb];
+
 		for (j = 0; j < n; j++, i++)
 		{
 			if (--m < 0)
+			{
 				goto exit;
+			}
+
 			x[1][i] = fr * x[0][i];
 			x[0][i] = fl * x[0][i];
 		}
 	}
+
 	return;
+
 	/*------------------------*/
 short_blocks:
+
+	/* regenerate il[] for short blocks */
+	for (i = 0; i < 21; i++)
+	{
+		il[i] = 0;
+	}
 
 	for (k = r = 0; r < 3; r++)
 	{
 		tmp = (1 << is_sf_info->slen[r]) - 1;
-		for (j = 0; j < is_sf_info->nr[r]; j++, k++)
+		for (j = 0; j < is_sf_info->nr[r] && k < 21; j++, k++)
+		{
 			il[k] = tmp;
+		}
 	}
 
 	for (int w = 0; w < 3; w++)
@@ -265,12 +295,13 @@ short_blocks:
 		i = pMP3Stream->sfBandIndex[1][cb0] + w;
 		const int cb1 = cb_info[0].cbmax_s[w]; /* process to end of left */
 
-		for (cb = cb0 + 1; cb <= cb1; cb++)
+		for (cb = cb0 + 1; cb <= cb1 && cb < 21; cb++)
 		{
 			isf = il[cb] + sf->s[w][cb];
 			fl = lr[isf][0];
 			fr = lr[isf][1];
 			n = pMP3Stream->nBand[1][cb];
+
 			for (j = 0; j < n; j++)
 			{
 				x[1][i] = fr * x[0][i];

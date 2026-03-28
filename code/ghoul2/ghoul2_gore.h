@@ -21,6 +21,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <cassert>
+#include <qcommon\q_math.h>
+#include <map>
+#include <qcommon\q_shared.h>
 #ifndef __GHOUL2_GORE_H
 #define __GHOUL2_GORE_H
 
@@ -109,7 +112,22 @@ struct SRagDollEffectorCollision
 class CRagDollUpdateParams
 {
 public:
+	CRagDollUpdateParams() noexcept
+	{
+		for (int i = 0; i < 3; ++i) {
+			angles[i] = 0.0f;
+			position[i] = 0.0f;
+			velocity[i] = 0.0f;
+			// default scale = 1.0f (common default); change to 0.0f if you prefer
+			scale[i] = 1.0f;
+		}
+		me = -1;         // invalid index by default
+		settleFrame = 0;
+		groundEnt = -1;  // invalid entity by default
+	}
+
 	virtual ~CRagDollUpdateParams() = default;
+
 	vec3_t angles;
 	vec3_t position;
 	vec3_t scale;

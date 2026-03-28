@@ -2791,23 +2791,11 @@ static void CG_RegisterGraphics()
 					}
 				}
 			}
-			else if (g_entities[i].svFlags & SVF_NPC_PRECACHE && g_entities[i].NPC_type && g_entities[i].NPC_type[
-				0])
+			else if (g_entities[i].svFlags & SVF_NPC_PRECACHE && g_entities[i].NPC_type && g_entities[i].NPC_type[0])
 			{
 				//Precache the NPC_type
-				//FIXME: make sure we didn't precache this NPC_type already
 				CG_LoadingString(va("NPC %s", g_entities[i].NPC_type));
-				/*
-				if (g_entities[i].classname && g_entities[i].classname[0] && Q_stricmp( g_entities[i].classname, "NPC_Vehicle" ) == 0)
-				{
-					// Get The Index, And Make Sure To Register All The Skins
-					int iVehIndex = BG_VehicleGetIndex( g_entities[i].NPC_type );
-				}
-				else
-				*/
-				{
-					CG_NPC_Precache(&g_entities[i]);
-				}
+				CG_NPC_Precache(&g_entities[i]);
 			}
 		}
 	}
@@ -2877,21 +2865,24 @@ static void CG_RegisterGraphics()
 		}
 	}
 
-	for (i = 1; i < MAX_TERRAINS; i++)
+	if (MAX_TERRAINS > 1)
 	{
-		const char* terrainInfo = CG_ConfigString(CS_TERRAINS + i);
-		if (!terrainInfo[0])
+		for (i = 1; i < MAX_TERRAINS; ++i)
 		{
-			break;
+			const char* terrainInfo = CG_ConfigString(CS_TERRAINS + i);
+			if (!terrainInfo[0])
+			{
+				break;
+			}
+			CG_LoadingString("Creating terrain");
+
+			const int terrainID = cgi_CM_RegisterTerrain(terrainInfo);
+
+			cgi_RMG_Init(terrainID, terrainInfo);
+
+			// Send off the terrainInfo to the renderer
+			cgi_RE_InitRendererTerrain(terrainInfo);
 		}
-		CG_LoadingString("Creating terrain");
-
-		const int terrainID = cgi_CM_RegisterTerrain(terrainInfo);
-
-		cgi_RMG_Init(terrainID, terrainInfo);
-
-		// Send off the terrainInfo to the renderer
-		cgi_RE_InitRendererTerrain(terrainInfo);
 	}
 
 	for (i = 1; i < MAX_ICONS; i++)
@@ -4461,8 +4452,7 @@ void CG_DrawInventorySelect()
 		return;
 	}
 
-	if ((cg_SerenityJediEngineHudMode.integer == 4 || cg_SerenityJediEngineHudMode.integer == 5) && !
-		cg_drawSelectionScrollBar.integer)
+	if ((cg_SerenityJediEngineHudMode.integer == 4 || cg_SerenityJediEngineHudMode.integer == 5) && !cg_drawSelectionScrollBar.integer)
 	{
 		return;
 	}

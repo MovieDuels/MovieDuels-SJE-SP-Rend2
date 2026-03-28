@@ -31,6 +31,26 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "FxScheduler.h"
 #include "../game/wp_saber.h"
 #include "../game/g_vehicles.h"
+#include <cstdlib>
+#include <anims.h>
+#include <teams.h>
+#include <g_local.h>
+#include <string.h>
+#include <qcommon\q_string.h>
+#include "cg_camera.h"
+#include <ghoul2_shared.h>
+#include <g_public.h>
+#include "FxPrimitives.h"
+#include <iterator>
+#include <rd-common\mdx_format.h>
+#include <weapons.h>
+#include <cmath>
+#include "FxUtil.h"
+#include <bg_public.h>
+#include <qcommon\q_shared.h>
+#include <qcommon\q_math.h>
+#include <g_shared.h>
+#include <qcommon\q_platform.h>
 
 extern void CG_AddSaberBlade(centity_t* cent, centity_t* scent, int renderfx, int modelIndex,
 	vec3_t origin, vec3_t angles);
@@ -1040,17 +1060,25 @@ static void CG_General(centity_t* cent)
 
 	if (s1->eFlags & EF_ALT_FIRING)
 	{
-		// hack for the spotlight
+		// SAFETY: ensure gent exists before using it
+		if (cent->gent == NULL)
+		{
+			Com_Printf("CG_Item WARNING: cent->gent is NULL for entity %d during EF_ALT_FIRING.\n",
+				cent->currentState.number);
+			return;
+		}
+
 		vec3_t org, axis[3], dir;
 
-		AngleVectors(cent->lerpAngles, dir, nullptr, nullptr);
+		AngleVectors(cent->lerpAngles, dir, NULL, NULL);
 
 		CG_GetTagWorldPosition(&ent, "tag_flash", org, axis);
 
 		theFxScheduler.PlayEffect("env/light_cone", org, axis[0]);
 
-		VectorMA(cent->lerpOrigin, cent->gent->radius - 5, dir, org);
-		// stay a bit back from the impact point...this may not be enough?
+		// stay a bit back from the impact point
+		const float radius = cent->gent->radius;
+		VectorMA(cent->lerpOrigin, radius - 5.0f, dir, org);
 
 		cgi_R_AddLightToScene(org, 225, 1.0f, 1.0f, 1.0f);
 	}
@@ -1139,58 +1167,68 @@ CG_Item
 static void CG_Item(centity_t* cent)
 {
 	refEntity_t ent;
-
 	const entityState_t* es = &cent->currentState;
+
+	// Validate item index
 	if (es->modelindex >= bg_numItems)
 	{
-		CG_Error("Bad item index %i on entity", es->modelindex);
+		Com_Printf("CG_Item ERROR: Bad item index %i on entity %i\n",
+			es->modelindex, cent->currentState.number);
+		return;
 	}
-	/*
-	Ghoul2 Insert Start
-	*/
 
-	// if set to invisible, skip
-	if (!es->modelindex && !cent->gent->ghoul2.IsValid() || es->eFlags & EF_NODRAW)
+	// SAFETY: Check gent pointer before using it
+	const qboolean hasGent = (cent->gent != NULL) ? qtrue : qfalse;
+
+	// Invisible or nodraw
+	if ((es->modelindex == 0 &&
+		(!hasGent || (hasGent && !cent->gent->ghoul2.IsValid()))) ||
+		(es->eFlags & EF_NODRAW))
 	{
 		return;
 	}
-	/*
-	Ghoul2 Insert End
-	*/
-	if (cent->gent && !cent->gent->inuse)
+
+	// If gent exists but is not in use, skip drawing
+	if (hasGent && !cent->gent->inuse)
 	{
-		// Yeah, I know....items were being freed on touch, but it could still get here and draw incorrectly...
 		return;
 	}
 
 	const gitem_t* item = &bg_itemlist[es->modelindex];
 
+	// Simple item rendering
 	if (cg_simpleItems.integer)
 	{
-		memset(&ent, 0, sizeof ent);
+		memset(&ent, 0, sizeof(ent));
 		ent.reType = RT_SPRITE;
+
 		VectorCopy(cent->lerpOrigin, ent.origin);
 		ent.origin[2] += 16;
+
 		ent.radius = 14;
 		ent.customShader = cg_items[es->modelindex].icon;
+
 		ent.shaderRGBA[0] = 255;
 		ent.shaderRGBA[1] = 255;
 		ent.shaderRGBA[2] = 255;
 		ent.shaderRGBA[3] = 255;
+
 		ent.renderfx |= RF_FORCE_ENT_ALPHA;
+
 		cgi_R_AddRefEntityToScene(&ent);
 		return;
 	}
 
-	memset(&ent, 0, sizeof ent);
+	memset(&ent, 0, sizeof(ent));
 
-	// items bob up and down continuously
+	// Holocron bobbing
 	if (item->giType == IT_HOLOCRON)
 	{
 		const float scale = 0.005f + cent->currentState.number * 0.00001f;
-		cent->lerpOrigin[2] += 4 + cos((cg.time + 1000) * scale) * 3 + 8; // just raised them up a bit
+		cent->lerpOrigin[2] += 4 + cos((cg.time + 1000) * scale) * 3 + 8;
 	}
 
+	// Holocron rotation
 	if (item->giType == IT_HOLOCRON)
 	{
 		VectorCopy(cg.autoAngles, cent->lerpAngles);
@@ -1198,43 +1236,33 @@ static void CG_Item(centity_t* cent)
 	}
 
 	vec3_t spinAngles;
+	VectorCopy(hasGent ? cent->gent->s.angles : vec3_origin, spinAngles);
 
-	//AxisClear( ent.axis );
-	VectorCopy(cent->gent->s.angles, spinAngles);
-
-	if (cent->gent->ghoul2.IsValid()
-		&& cent->gent->ghoul2.size())
+	// Choose model
+	if (hasGent && cent->gent->ghoul2.IsValid() && cent->gent->ghoul2.size())
 	{
-		//since modelindex is used by items as an index into items(not models), we need to ignore the hModel here to force it to use the ghoul2 model if we have one
 		ent.hModel = cgs.model_draw[0];
 	}
 	else
 	{
 		ent.hModel = cg_items[es->modelindex].models;
 	}
-	/*
-	Ghoul2 Insert Start
-	*/
+
+	// Ghoul2 setup
 	CG_SetGhoul2Info(&ent, cent);
-	/*
-	Ghoul2 Insert End
-	*/
 
 	VectorCopy(cent->lerpOrigin, ent.origin);
 	VectorCopy(cent->lerpOrigin, ent.oldorigin);
 
 	ent.nonNormalizedAxes = qfalse;
 
-	// lovely...this is for weapons that should be oriented vertically.  For weapons lockers and such.
-	if (cent->gent->spawnflags & 16)
+	// Vertical orientation for certain items
+	if (hasGent && (cent->gent->spawnflags & 16))
 	{
-		//VectorClear( spinAngles );
-		if (item->giType == IT_WEAPON
-			&& item->giTag == WP_SABER)
+		if (item->giType == IT_WEAPON && item->giTag == WP_SABER)
 		{
 			if (cent->gent->random)
 			{
-				//pitch specified
 				spinAngles[PITCH] += cent->gent->random;
 			}
 			else
@@ -1253,52 +1281,50 @@ static void CG_Item(centity_t* cent)
 		AnglesToAxis(spinAngles, ent.axis);
 	}
 
-	// items without glow textures need to keep a minimum light value
-	// so they are always visible
-	/*	if (( item->giType == IT_WEAPON ) || ( item->giType == IT_ARMOR ))
-		{
-			ent.renderfx |= RF_MINLIGHT;
-		}
-	*/
-	// increase the size of the weapons when they are presented as items
-	//	if ( item->giType == IT_WEAPON ) {
-	//		VectorScale( ent.axis[0], 1.5f, ent.axis[0] );
-	//		VectorScale( ent.axis[1], 1.5f, ent.axis[1] );
-	//		VectorScale( ent.axis[2], 1.5f, ent.axis[2] );
-	//		ent.nonNormalizedAxes = qtrue;
-	//	}
-
-	// add to refresh list
+	// Add to scene
 	cgi_R_AddRefEntityToScene(&ent);
 
-	if (cg.snap->ps.forcePowersActive & 1 << FP_SEE
-		&& cg.snap->ps.clientNum != cent->currentState.number
-		&& CG_PlayerCanSeeCent(cent))
+	// Force Sight shell
+	if ((cg.snap->ps.forcePowersActive & (1 << FP_SEE)) &&
+		(cg.snap->ps.clientNum != cent->currentState.number) &&
+		CG_PlayerCanSeeCent(cent))
 	{
 		CG_AddForceSightShell(&ent, cent);
 	}
 
-	if (item->giType == IT_WEAPON
-		&& item->giTag == WP_SABER
-		&& (!cent->gent || !(cent->gent->spawnflags & 64)))
+	// Dropped saber glow effect
+	if (item->giType == IT_WEAPON &&
+		item->giTag == WP_SABER &&
+		(!hasGent || !(cent->gent->spawnflags & 64)))
 	{
 		ent.customShader = cgi_R_RegisterShader("gfx/effects/solidWhite_cull");
 		ent.renderfx = RF_RGB_TINT;
+
 		const float wv = sin(cg.time * 0.002f) * 0.08f + 0.2f;
-		ent.shaderRGBA[0] = ent.shaderRGBA[1] = wv * 255;
+		const int tint = (int)(wv * 255);
+
+		ent.shaderRGBA[0] = tint;
+		ent.shaderRGBA[1] = tint;
 		ent.shaderRGBA[2] = 0;
+
 		cgi_R_AddRefEntityToScene(&ent);
 
-		for (int i = -4; i < 10; i += 1)
+		for (int i = -4; i < 10; i++)
 		{
 			vec3_t org;
 			VectorMA(ent.origin, -i, ent.axis[2], org);
 
-			FX_AddSprite(org, nullptr, nullptr, 10.0f, wv * 0.5f, wv * 0.5f, 0.0f, 0.0f, 1.0f, cgs.media.yellowDroppedSaberShader,
-				0x08000000);
+			FX_AddSprite(
+				org, NULL, NULL,
+				10.0f,
+				wv * 0.5f, wv * 0.5f,
+				0.0f, 0.0f,
+				1.0f,
+				cgs.media.yellowDroppedSaberShader,
+				0x08000000
+			);
 		}
 
-		// THIS light looks crappy...maybe it should just be removed...
 		cgi_R_AddLightToScene(ent.origin, wv * 100, 1.0f, 1.0f, 0.0f);
 	}
 }

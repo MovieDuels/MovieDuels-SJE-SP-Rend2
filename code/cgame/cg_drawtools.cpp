@@ -22,8 +22,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "cg_headers.h"
-
 #include "cg_media.h"
+#include <qcommon\q_math.h>
+#include <string.h>
+#include <qcommon\q_color.h>
+#include <qcommon\q_platform.h>
+#include <qcommon\q_shared.h>
+#include "cg_local.h"
 
 /*
 ================
@@ -32,14 +37,14 @@ CG_DrawSides
 Coords are virtual 640x480
 ================
 */
-void CG_DrawSides(const float x, const float y, const float w, const float h, const float size)
+static void CG_DrawSides(const float x, const float y, const float w, const float h, const float size)
 {
 	//size *= cgs.screenXScale;
 	cgi_R_DrawStretchPic(x, y, size, h, 0, 0, 0, 0, cgs.media.whiteShader);
 	cgi_R_DrawStretchPic(x + w - size, y, size, h, 0, 0, 0, 0, cgs.media.whiteShader);
 }
 
-void CG_DrawTopBottom(const float x, const float y, const float w, const float h, const float size)
+static void CG_DrawTopBottom(const float x, const float y, const float w, const float h, const float size)
 {
 	//size *= cgs.screenYScale;
 	cgi_R_DrawStretchPic(x, y, w, size, 0, 0, 0, 0, cgs.media.whiteShader);
@@ -157,7 +162,7 @@ CG_DrawChar
 Coordinates and size in 640*480 virtual screen size
 ===============
 */
-void CG_DrawChar(const int x, const int y, const int width, const int height, int ch)
+static void CG_DrawChar(const int x, const int y, const int width, const int height, int ch)
 {
 	ch &= 255;
 
@@ -203,56 +208,82 @@ to a fixed color.
 Coordinates are at 640 by 480 virtual resolution
 ==================
 */
-void CG_DrawStringExt(const int x, const int y, const char* string, const float* set_color,
-	const qboolean force_color, const qboolean shadow, const int char_width, const int char_height)
+void CG_DrawStringExt(const int x, const int y, const char* string,
+	const float* set_color, const qboolean force_color,
+	const qboolean shadow, const int char_width, const int char_height)
 {
-	vec4_t color{};
-	const char* s;
-	int xx;
+	vec4_t color = { 0 };
+	const char* s = NULL;
+	int xx = 0;
 
-	// draw the drop shadow
-	if (shadow)
+	// SAFETY: string must not be NULL
+	if (string == NULL)
 	{
-		color[0] = color[1] = color[2] = 0;
+		Com_Printf("CG_DrawStringExt WARNING: NULL string passed to draw function.\n");
+		return;
+	}
+
+	// SAFETY: set_color must not be NULL
+	if (set_color == NULL)
+	{
+		Com_Printf("CG_DrawStringExt WARNING: NULL set_color passed to draw function.\n");
+		return;
+	}
+
+	// Draw drop shadow
+	if (shadow == qtrue)
+	{
+		color[0] = 0.0f;
+		color[1] = 0.0f;
+		color[2] = 0.0f;
 		color[3] = set_color[3];
+
 		cgi_R_SetColor(color);
+
 		s = string;
 		xx = x;
-		while (*s)
+
+		while (*s != '\0')
 		{
-			if (Q_IsColorString(s))
+			if (Q_IsColorString(s) == qtrue)
 			{
 				s += 2;
 				continue;
 			}
+
 			CG_DrawChar(xx + 2, y + 2, char_width, char_height, *s);
 			xx += char_width;
 			s++;
 		}
 	}
 
-	// draw the colored text
+	// Draw colored text
 	s = string;
 	xx = x;
+
 	cgi_R_SetColor(set_color);
-	while (*s)
+
+	while (*s != '\0')
 	{
-		if (Q_IsColorString(s))
+		if (Q_IsColorString(s) == qtrue)
 		{
-			if (!force_color)
+			if (force_color == qfalse)
 			{
-				memcpy(color, g_color_table[ColorIndex(*(s + 1))], sizeof color);
+				memcpy(color, g_color_table[ColorIndex(*(s + 1))], sizeof(color));
 				color[3] = set_color[3];
 				cgi_R_SetColor(color);
 			}
+
 			s += 2;
 			continue;
 		}
+
 		CG_DrawChar(xx, y, char_width, char_height, *s);
 		xx += char_width;
 		s++;
 	}
-	cgi_R_SetColor(nullptr);
+
+	cgi_R_SetColor(NULL);
 }
 
 void CG_DrawSmallStringColor(const int x, const int y, const char* s, vec4_t color)

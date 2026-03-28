@@ -373,7 +373,7 @@ void CFxScheduler::Clean(const bool bRemoveTemplates /*= true*/, const int idToP
 
 	while (itr != mFxSchedule.end())
 	{
-		auto next = itr;
+		auto& next = itr;
 		++next;
 
 		mScheduledEffectsPool.Free(*itr);
@@ -1362,90 +1362,145 @@ void CFxScheduler::PlayEffect(const char* file, vec3_t origin, vec3_t forward, c
 //------------------------------------------------------
 void CFxScheduler::AddScheduledEffects(const bool portal)
 {
-	int oldEntNum = -1, old_bolt_index = -1, old_model_num = -1;
+	int      oldEntNum = -1;
+	int      old_bolt_index = -1;
+	int      old_model_num = -1;
 	qboolean does_bolt_exist = qfalse;
 
-	if (portal)
+	// Mark whether we are inside a portal pass
+	if (portal == true)
 	{
-		gEffectsInPortal = true;
+		gEffectsInPortal = qtrue;
 	}
 	else
 	{
 		AddLoopedEffects();
 	}
 
-	for (auto itr = mFxSchedule.begin(); itr != mFxSchedule.end(); /* do nothing */)
+	for (auto itr = mFxSchedule.begin(); itr != mFxSchedule.end(); /* no increment here */)
 	{
 		SScheduledEffect* effect = *itr;
 
-		if (portal == effect->mPortalEffect && effect->mStartTime <= theFxHelper.mTime)
+		if ((portal == effect->mPortalEffect) &&
+			(effect->mStartTime <= theFxHelper.mTime))
 		{
+			// 1) Client‑bound effect
 			if (effect->mClientID >= 0)
 			{
 				CreateEffect(effect->mpTemplate, effect->mClientID);
 			}
+			// 2) World / origin‑based effect (no bolt)
 			else if (effect->mBoltNum == -1)
 			{
-				// normal effect
-				if (effect->mEntNum != -1) // -1
+				if (effect->mEntNum != -1)
 				{
-					// Find out where the entity currently is
-					CreateEffect(effect->mpTemplate,
-						cg_entities[effect->mEntNum].lerpOrigin, effect->mAxis,
-						theFxHelper.mTime - (*itr)->mStartTime);
+					// SAFETY: validate entity index before using cg_entities[]
+					if (effect->mEntNum < 0 || effect->mEntNum >= MAX_GENTITIES)
+					{
+						Com_Printf(
+							"CFxScheduler::AddScheduledEffects WARNING: Invalid mEntNum %d (max %d) for non-bolt effect\n",
+							effect->mEntNum, MAX_GENTITIES
+						);
+					}
+					else
+					{
+						// Find out where the entity currently is
+						const centity_t& cent = cg_entities[effect->mEntNum];
+
+						CreateEffect(
+							effect->mpTemplate,
+							cent.lerpOrigin,
+							effect->mAxis,
+							theFxHelper.mTime - effect->mStartTime
+						);
+					}
 				}
 				else
 				{
-					CreateEffect(effect->mpTemplate,
-						effect->mOrigin, effect->mAxis,
-						theFxHelper.mTime - effect->mStartTime);
+					// Pure origin‑based effect
+					CreateEffect(
+						effect->mpTemplate,
+						effect->mOrigin,
+						effect->mAxis,
+						theFxHelper.mTime - effect->mStartTime
+					);
 				}
 			}
+			// 3) Bolted‑on effect
 			else
 			{
 				vec3_t axis[3];
 				vec3_t origin;
-				//bolted on effect
-				// do we need to go and re-get the bolt matrix again? Since it takes time lets try to do it only once
-				if (effect->mModelNum != old_model_num || effect->mEntNum != oldEntNum || effect->mBoltNum !=
-					old_bolt_index)
+
+				does_bolt_exist = qfalse;
+
+				// SAFETY: validate entity index before using cg_entities[]
+				if (effect->mEntNum < 0 || effect->mEntNum >= MAX_GENTITIES)
 				{
-					const centity_t& cent = cg_entities[effect->mEntNum];
-					if (cent.gent->ghoul2.IsValid())
+					Com_Printf(
+						"CFxScheduler::AddScheduledEffects WARNING: Invalid mEntNum %d (max %d) for bolt effect\n",
+						effect->mEntNum, MAX_GENTITIES
+					);
+				}
+				else
+				{
+					// Only re‑query the bolt if something changed
+					if (effect->mModelNum != old_model_num ||
+						effect->mEntNum != oldEntNum ||
+						effect->mBoltNum != old_bolt_index)
 					{
-						if (effect->mModelNum >= 0 && effect->mModelNum < cent.gent->ghoul2.size())
+						const centity_t& cent = cg_entities[effect->mEntNum];
+
+						if (cent.gent != NULL && cent.gent->ghoul2.IsValid())
 						{
-							if (cent.gent->ghoul2[effect->mModelNum].mModelindex >= 0)
+							if (effect->mModelNum >= 0 &&
+								effect->mModelNum < cent.gent->ghoul2.size() &&
+								cent.gent->ghoul2[effect->mModelNum].mModelindex >= 0)
 							{
-								does_bolt_exist = static_cast<qboolean>(theFxHelper.GetOriginAxisFromBolt(
-									cent, effect->mModelNum, effect->mBoltNum, origin, axis) != 0);
+								does_bolt_exist = (theFxHelper.GetOriginAxisFromBolt(
+									cent,
+									effect->mModelNum,
+									effect->mBoltNum,
+									origin,
+									axis
+								) != 0) ? qtrue : qfalse;
 							}
 						}
-					}
 
-					old_model_num = effect->mModelNum;
-					oldEntNum = effect->mEntNum;
-					old_bolt_index = effect->mBoltNum;
+						old_model_num = effect->mModelNum;
+						oldEntNum = effect->mEntNum;
+						old_bolt_index = effect->mBoltNum;
+					}
 				}
 
-				// only do this if we found the bolt
-				if (does_bolt_exist)
+				// Only spawn if we successfully resolved the bolt
+				if (does_bolt_exist == qtrue)
 				{
-					if (effect->mIsRelative)
+					if (effect->mIsRelative == qtrue)
 					{
-						CreateEffect(effect->mpTemplate,
-							vec3_origin, axis,
-							0, effect->mEntNum, effect->mModelNum, effect->mBoltNum);
+						CreateEffect(
+							effect->mpTemplate,
+							vec3_origin,
+							axis,
+							0,
+							effect->mEntNum,
+							effect->mModelNum,
+							effect->mBoltNum
+						);
 					}
 					else
 					{
-						CreateEffect(effect->mpTemplate,
-							origin, axis,
-							theFxHelper.mTime - effect->mStartTime);
+						CreateEffect(
+							effect->mpTemplate,
+							origin,
+							axis,
+							theFxHelper.mTime - effect->mStartTime
+						);
 					}
 				}
 			}
 
+			// Free and erase the scheduled effect we just processed
 			mScheduledEffectsPool.Free(effect);
 			itr = mFxSchedule.erase(itr);
 		}
@@ -1458,7 +1513,7 @@ void CFxScheduler::AddScheduledEffects(const bool portal)
 	// Add all active effects into the scene
 	FX_Add(portal);
 
-	gEffectsInPortal = false;
+	gEffectsInPortal = qfalse;
 }
 
 //------------------------------------------------------

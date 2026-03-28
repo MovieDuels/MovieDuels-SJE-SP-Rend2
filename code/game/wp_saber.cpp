@@ -195,7 +195,7 @@ extern void JET_FlyStart(gentity_t* self);
 extern void Mando_DoFlameThrower(gentity_t* self);
 extern void Boba_StopFlameThrower(const gentity_t* self);
 extern qboolean SaberAttacking(const gentity_t* self);
-void G_SaberBounce(const gentity_t* self, gentity_t* other);
+void G_SaberBounce(const gentity_t* attacker, gentity_t* victim);
 extern qboolean PM_InGetUp(const playerState_t* ps);
 extern qboolean PM_InForceGetUp(const playerState_t* ps);
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
@@ -601,7 +601,7 @@ stringID_table_t SaberStyleTable[] =
 
 //SABER INITIALIZATION======================================================================
 
-void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,
+static void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,
 	const int weapon_num, vec3_t angles, vec3_t offset)
 {
 	if (!ps_weapon_model)
@@ -5650,7 +5650,7 @@ constexpr auto LOCK_IDEAL_DIST_JKA = 46.0f;
 extern void PM_SetAnimFrame(gentity_t* gent, int frame, qboolean torso, qboolean legs);
 extern qboolean ValidAnimFileIndex(int index);
 
-int G_SaberLockAnim(const int attacker_saber_style, const int defender_saber_style, const int top_or_side,
+static int G_SaberLockAnim(const int attacker_saber_style, const int defender_saber_style, const int top_or_side,
 	const int lock_or_break_or_super_break,
 	const int win_or_lose)
 {
@@ -41713,52 +41713,51 @@ qboolean Jedi_DrainReaction(gentity_t* self)
 	return qfalse;
 }
 
-void G_SaberBounce(const gentity_t* self, gentity_t* other)
+void G_SaberBounce(const gentity_t* attacker, gentity_t* victim)
 {
 	if (g_SerenityJediEngineMode->integer < 2)
 	{
 		return;
 	}
-
-	if (other->health <= 30)
+	if (victim->health <= 20)
 	{
 		return;
 	}
 
-	if (self->client->ps.saberFatigueChainCount < MISHAPLEVEL_TEN)
+	if (pm_saber_innonblockable_attack(attacker->client->ps.torsoAnim))
 	{
 		return;
 	}
 
-	if (pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
+	if (attacker->client->ps.saberFatigueChainCount < MISHAPLEVEL_HEAVY)
 	{
 		return;
 	}
 
-	if (!g_standard_humanoid(other))
+	if (!g_standard_humanoid(victim))
 	{
 		return;
 	}
 
-	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
+	if (attacker->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(attacker))
 	{
 		return;
 	}
 
-	if (self->client->ps.saberBlocked == BLOCKED_NONE)
+	if (attacker->client->ps.saberBlocked == BLOCKED_NONE)
 	{
-		if (!pm_saber_in_special_attack(self->client->ps.torsoAnim))
+		if (!pm_saber_in_special_attack(attacker->client->ps.torsoAnim))
 		{
-			if (SaberAttacking(self))
+			if (SaberAttacking(attacker))
 			{
 				// Saber is in attack, use bounce for this attack.
-				self->client->ps.saberBounceMove = PM_SaberBounceForAttack(self->client->ps.saber_move);
-				self->client->ps.saberBlocked = BLOCKED_BOUNCE_MOVE;
+				attacker->client->ps.saber_move = PM_SaberBounceForAttack(attacker->client->ps.saber_move);
+				attacker->client->ps.saberBlocked = BLOCKED_BOUNCE_MOVE;
 			}
 			else
 			{
 				// Saber is in defense, use defensive bounce.
-				self->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
+				attacker->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
 			}
 		}
 	}

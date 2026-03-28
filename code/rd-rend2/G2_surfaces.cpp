@@ -25,20 +25,28 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifndef __Q_SHARED_H
 #include "qcommon/q_shared.h"
 #endif
+#include <qcommon\q_shared.h>
 
 #if !defined(TR_LOCAL_H)
 #include "tr_local.h"
 #endif
+#include <ghoul2\G2.h>
 
 #if !defined(G2_H_INC)
 #include "ghoul2/G2.h"
 #endif
 
-#include "rd-common/tr_types.h"
 #include "tr_local.h"
 #ifdef _MSC_VER
 #pragma warning(disable : 4512)		//assignment op could not be genereated
 #endif
+#include <string.h>
+#include <qcommon\q_string.h>
+#include <rd-common\mdx_format.h>
+#include <cstdint>
+#include <cassert>
+#include <qcommon\q_platform.h>
+#include <game\ghoul2_shared.h>
 
 #define G2_MODEL_OK(g) ((g)&&(g)->mValid&&(g)->aHeader&&(g)->currentModel&&(g)->animModel)
 
@@ -71,29 +79,46 @@ class CQuickOverride
 	int mOverride[512];
 	int mAt[512];
 	int mCurrentTouch;
+
 public:
 	CQuickOverride()
+		: mCurrentTouch(1)
 	{
-		mCurrentTouch = 1;
-		memset(mOverride, 0, sizeof(int) * 512);
+		// Initialize both arrays to zero
+		memset(mOverride, 0, sizeof(mOverride));
+		memset(mAt, 0, sizeof(mAt));
 	}
+
 	void Invalidate()
 	{
 		mCurrentTouch++;
 	}
+
 	void Set(int index, int pos)
 	{
 		if (index == 10000)
 		{
 			return;
 		}
-		assert(index >= 0 && index < 512);
+
+		if (index < 0 || index >= 512)
+		{
+			Com_Printf("CQuickOverride::Set WARNING: index %d out of range\n", index);
+			return;
+		}
+
 		mOverride[index] = mCurrentTouch;
 		mAt[index] = pos;
 	}
+
 	int Test(int index) const
 	{
-		assert(index >= 0 && index < 512);
+		if (index < 0 || index >= 512)
+		{
+			Com_Printf("CQuickOverride::Test WARNING: index %d out of range\n", index);
+			return -1;
+		}
+
 		return (mOverride[index] == mCurrentTouch)
 			? mAt[index]
 			: -1;

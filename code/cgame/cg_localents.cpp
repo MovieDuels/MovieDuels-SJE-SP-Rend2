@@ -27,6 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "cg_headers.h"
 
 #include "cg_media.h"
+#include <qcommon\q_shared.h>
 
 constexpr auto MAX_LOCAL_ENTITIES = 512;
 localEntity_t cg_localEntities[MAX_LOCAL_ENTITIES];
@@ -83,24 +84,45 @@ Will allways succeed, even if it requires freeing an old active entity
 */
 localEntity_t* CG_AllocLocalEntity()
 {
-	if (!cg_freeLocalEntities)
+	// If no free entities, try freeing the oldest active one
+	if (cg_freeLocalEntities == NULL)
 	{
-		// no free entities, so free the one at the end of the chain
-		// remove the oldest active entity
-		CG_FreeLocalEntity(cg_activeLocalEntities.prev);
+		if (cg_activeLocalEntities.prev != &cg_activeLocalEntities)
+		{
+			// Free the oldest active entity
+			CG_FreeLocalEntity(cg_activeLocalEntities.prev);
+		}
+		else
+		{
+			// No active entities to free either — this is a hard failure
+			Com_Printf("CG_AllocLocalEntity WARNING: No free or active local entities available.\n");
+			return NULL;
+		}
 	}
 
+	// SAFETY CHECK: free list still empty?
+	if (cg_freeLocalEntities == NULL)
+	{
+		Com_Printf("CG_AllocLocalEntity ERROR: cg_freeLocalEntities is NULL after attempted recovery.\n");
+		return NULL;
+	}
+
+	// Pop from free list
 	localEntity_t* le = cg_freeLocalEntities;
 	cg_freeLocalEntities = cg_freeLocalEntities->next;
 
-	memset(le, 0, sizeof * le);
+	// Clear the entity
+	memset(le, 0, sizeof(*le));
 
-	// link into the active list
+	// Link into active list
 	le->next = cg_activeLocalEntities.next;
 	le->prev = &cg_activeLocalEntities;
+
 	cg_activeLocalEntities.next->prev = le;
 	cg_activeLocalEntities.next = le;
+
 	le->ownerGentNum = -1;
+
 	return le;
 }
 
