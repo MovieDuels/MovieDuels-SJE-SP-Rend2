@@ -15743,7 +15743,11 @@ int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit
 
 			if (actWpn == WP_BRYAR_PISTOL ||
 				actWpn == WP_SBD_BLASTER ||
-				actWpn == WP_JAWA)
+				actWpn == WP_JAWA ||
+				actWpn == WP_REY ||
+				actWpn == WP_JANGO ||
+				actWpn == WP_BOBA ||
+				actWpn == WP_CLONEPISTOL)
 			{
 				saber_block_cost = 4.0f;
 			}
@@ -15859,7 +15863,10 @@ int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit
 				}
 			}
 			// Blaster rifle
-			else if (actWpn == WP_BLASTER)
+			else if (actWpn == WP_BLASTER ||
+				actWpn == WP_BATTLEDROID ||
+				actWpn == WP_REBELBLASTER ||
+				actWpn == WP_REBELRIFLE)
 			{
 				saber_block_cost = 2.5f;
 			}
@@ -41725,7 +41732,7 @@ void G_SaberBounce(const gentity_t* self, gentity_t* other)
 		return;
 	}
 
-	if (self->client->ps.saberFatigueChainCount < MISHAPLEVEL_NINE)
+	if (self->client->ps.saberFatigueChainCount < MISHAPLEVEL_HEAVY)
 	{
 		return;
 	}

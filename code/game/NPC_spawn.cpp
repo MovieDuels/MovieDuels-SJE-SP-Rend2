@@ -382,6 +382,14 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		}
 		ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
 	}
+	else if (ent->client->NPC_class == CLASS_SHADOWTROOPER)
+	{
+		if (char_has_beskar_armor(ent))
+		{
+			ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
+		}
+		ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
+	}
 	else if (NPC->client->ps.weapon == WP_CLONECARBINE || NPC->client->ps.weapon == WP_CLONERIFLE ||
 		NPC->client->ps.weapon == WP_CLONECOMMANDO || NPC->client->ps.weapon == WP_REBELRIFLE)
 	{
