@@ -252,7 +252,8 @@ void CG_RegisterWeapon(const int weapon_num)
 	{
 		if (cg_com_kotor.integer == 1 || cent->client->charKOTORWeapons == 1) //playing kotor
 		{
-			if (weapon_num != WP_DISRUPTOR) {
+			if (weapon_num != WP_DISRUPTOR)
+			{
 				Q_strncpyz(path, weaponData[weapon_num].altweaponMdl, sizeof path);
 			}
 		}
@@ -267,8 +268,21 @@ void CG_RegisterWeapon(const int weapon_num)
 			Q_strcat(path, sizeof path, va("_barrel%d.md3", i + 1));
 		}
 		else
+		{
 			Q_strcat(path, sizeof path, "_barrel.md3");
+		}
 		weaponInfo->barrelModel[i] = cgi_R_RegisterModel(path);
+	}
+	if (weapon_num == WP_STUN_BATON)
+	{
+		//only weapon with more than 1 barrel..
+		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel.md3");
+		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel2.md3");
+		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel3.md3");
+	}
+	else
+	{
+		weaponInfo->barrelModel[i] = 0;
 	}
 
 	// set up the world model for the weapon
@@ -479,6 +493,10 @@ void CG_RegisterWeapon(const int weapon_num)
 		for (i = 1; i < 18; i++)
 		{
 			cgi_S_RegisterSound(va("sound/weapons/saber/saberkill%d.mp3", i));
+		}
+		for (i = 1; i < 5; i++)
+		{
+			cgi_S_RegisterSound(va("sound/weapons/saber/saberhit_droid_md%d.mp3", i));
 		}
 		for (i = 1; i < 12; i++)
 		{
@@ -1393,13 +1411,12 @@ static void CG_CalculateWeaponPosition(vec3_t origin, vec3_t angles)
 CG_MachinegunSpinAngle
 ======================
 */
-constexpr auto SPIN_SPEED = 0.9;
+constexpr auto SPIN_SPEED = 0.9f;
 constexpr auto COAST_TIME = 1000;
 
 static float CG_MachinegunSpinAngle(centity_t* cent)
 {
 	float angle;
-
 	int delta = cg.time - cent->pe.barrelTime;
 
 	if (cent->pe.barrelSpinning)
@@ -1413,17 +1430,27 @@ static float CG_MachinegunSpinAngle(centity_t* cent)
 			delta = COAST_TIME;
 		}
 
-		const float speed = 0.5 * (SPIN_SPEED + static_cast<float>(COAST_TIME - delta) / COAST_TIME);
+		const float speed = 0.5f * (SPIN_SPEED + static_cast<float>(COAST_TIME - delta) / COAST_TIME);
 		angle = cent->pe.barrelAngle + delta * speed;
 	}
 
-	if (cent->pe.barrelSpinning == !!(cent->currentState.eFlags & EF_FIRING))
+	// --- FIXED: detect state change ---
+	if (cent->pe.barrelSpinning != !!(cent->currentState.eFlags & EF_FIRING))
 	{
 		cent->pe.barrelTime = cg.time;
 		cent->pe.barrelAngle = AngleNormalize360(angle);
 		cent->pe.barrelSpinning = !!(cent->currentState.eFlags & EF_FIRING);
-		// just switching between not spinning and spinning, play the appropriate weapon sound
-		//cgi_S_StartSound(NULL, cent->currentState.number, CHAN_WEAPON, cgi_S_RegisterSound("sound/weapons/barrelSpinning/barrelSpinning.wav"));
+
+		// play spin sound only on state change
+		if (cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON)
+		{
+			cgi_S_StartSound(
+				NULL,
+				cent->currentState.number,
+				CHAN_WEAPON,
+				cgi_S_RegisterSound("sound/weapons/z6/spinny.wav")
+			);
+		}
 	}
 
 	return angle;
@@ -1915,7 +1942,11 @@ void CG_AddViewWeapon(playerState_t* ps)
 			angles[YAW] = 0;
 			angles[PITCH] = 0;
 
-			if (cg_SpinningBarrels.integer && ps->weapon == WP_REPEATER)
+			if (cg_SpinningBarrels.integer && ps->weapon == WP_Z6_ROTARY_CANNON)
+			{
+				angles[ROLL] = CG_MachinegunSpinAngle(cent);
+			}
+			else if (cg_SpinningBarrels.integer && ps->weapon == WP_STUN_BATON)
 			{
 				angles[ROLL] = CG_MachinegunSpinAngle(cent);
 			}
@@ -1924,11 +1955,13 @@ void CG_AddViewWeapon(playerState_t* ps)
 				angles[ROLL] = 0;
 			}
 			AnglesToAxis(angles, barrel.axis);
+
 			if (!i)
 			{
 				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 				{
-					if (ps->weapon != WP_DISRUPTOR) {
+					if (ps->weapon != WP_DISRUPTOR)
+					{
 						CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
 					}
 				}
@@ -1941,7 +1974,8 @@ void CG_AddViewWeapon(playerState_t* ps)
 			{
 				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 				{
-					if (ps->weapon != WP_DISRUPTOR) {
+					if (ps->weapon != WP_DISRUPTOR)
+					{
 						CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
 					}
 				}
@@ -2435,7 +2469,11 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			angles[YAW] = 0;
 			angles[PITCH] = 0;
 
-			if (cg_SpinningBarrels.integer && ps->weapon == WP_REPEATER)
+			if (cg_SpinningBarrels.integer && ps->weapon == WP_Z6_ROTARY_CANNON)
+			{
+				angles[ROLL] = CG_MachinegunSpinAngle(cent);
+			}
+			else if (cg_SpinningBarrels.integer && ps->weapon == WP_STUN_BATON)
 			{
 				angles[ROLL] = CG_MachinegunSpinAngle(cent);
 			}
@@ -5283,7 +5321,7 @@ void CG_Weapon_f()
 				}
 			}
 		}
-	}	
+	}
 	else if (num >= WP_THERMAL && num <= WP_DET_PACK) // these weapons cycle
 	{
 		int weap, i = 0;
