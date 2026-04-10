@@ -2043,13 +2043,58 @@ static void G_SpawnNoghriGasCloud(gentity_t* ent)
 }
 
 extern qboolean W_AccuracyLoggableWeapon(int weapon, qboolean alt_fire, int mod);
-
+extern qboolean PM_InDeathAnim();
+extern int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc);
 void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3_t normal, const int hit_loc)
 {
 	// ---------------------------------------------------------------------
 	// FIX: Validate 'other' before any dereference
 	// ---------------------------------------------------------------------
 	const qboolean otherValid = (other != NULL) ? qtrue : qfalse;
+
+
+	auto beskar = static_cast<qboolean>((other->flags & FL_DINDJARIN)
+		&& !ent->splashDamage
+		&& !ent->splashRadius
+		&& ent->methodOfDeath != MOD_SABER
+		&& ent->methodOfDeath != MOD_REPEATER_ALT
+		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
+		&& ent->methodOfDeath != MOD_ROCKET
+		&& ent->methodOfDeath != MOD_ROCKET_ALT
+		&& ent->methodOfDeath != MOD_CONC_ALT
+		&& ent->methodOfDeath != MOD_THERMAL
+		&& ent->methodOfDeath != MOD_THERMAL_ALT
+		&& ent->methodOfDeath != MOD_DEMP2
+		&& ent->methodOfDeath != MOD_DEMP2_ALT
+		&& ent->methodOfDeath != MOD_EXPLOSIVE
+		&& ent->methodOfDeath != MOD_DETPACK
+		&& ent->methodOfDeath != MOD_LASERTRIP
+		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
+		&& ent->methodOfDeath != MOD_SEEKER
+		&& ent->methodOfDeath != MOD_CONC
+		&& ent->methodOfDeath != WP_NOGHRI_STICK
+		&& (!Q_irand(0, 2)));
+
+	auto boba_fett = static_cast<qboolean>((other->flags & FL_BOBAFETT)
+		&& !ent->splashDamage
+		&& !ent->splashRadius
+		&& ent->methodOfDeath != MOD_SABER
+		&& ent->methodOfDeath != MOD_REPEATER_ALT
+		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
+		&& ent->methodOfDeath != MOD_ROCKET
+		&& ent->methodOfDeath != MOD_ROCKET_ALT
+		&& ent->methodOfDeath != MOD_CONC_ALT
+		&& ent->methodOfDeath != MOD_THERMAL
+		&& ent->methodOfDeath != MOD_THERMAL_ALT
+		&& ent->methodOfDeath != MOD_DEMP2
+		&& ent->methodOfDeath != MOD_DEMP2_ALT
+		&& ent->methodOfDeath != MOD_EXPLOSIVE
+		&& ent->methodOfDeath != MOD_DETPACK
+		&& ent->methodOfDeath != MOD_LASERTRIP
+		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
+		&& ent->methodOfDeath != MOD_SEEKER
+		&& ent->methodOfDeath != MOD_CONC
+		&& ent->methodOfDeath != WP_NOGHRI_STICK);
 
 	// impact damage
 	if (otherValid && other->takedamage)
@@ -2088,8 +2133,27 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				}
 			}
 
-			G_Damage(other, ent, ent->owner, velocity, impact_pos, damage,
-				ent->dflags, ent->methodOfDeath, hit_loc);
+			G_Damage(other, ent, ent->owner, velocity, impact_pos, damage, ent->dflags, ent->methodOfDeath, hit_loc);
+			//
+            // Universal directional pain animation (Singleplayer)
+            //
+			if (other->client && 
+				beskar == qfalse &&
+				boba_fett == qfalse &&
+				other->health > 0 &&
+				!PM_InDeathAnim() &&
+				!WP_DoingForcedAnimationForForcePowers(other))
+			{
+				int painAnim = G_PickPainAnim(other, impact_pos, hit_loc);
+
+				if (painAnim != -1)
+				{
+					NPC_SetAnim(other,
+						SETANIM_TORSO,
+						painAnim,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
 
 			// DEMP2 special behaviour
 			if (ent->s.weapon == WP_DEMP2 && otherValid && other->client)
