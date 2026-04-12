@@ -570,7 +570,7 @@ static sfxHandle_t CG_CustomSound(const int entityNum, const char* sound_name, c
 #ifdef FINAL_BUILD
 	CG_Printf("Unknown custom sound: %s", sound_name);
 #else
-	CG_Error("Unknown custom sound: %s", soundName);
+	CG_Error("Unknown custom sound: %s", sound_name);
 #endif
 	return 0;
 }
@@ -767,7 +767,7 @@ static void CG_SetLerpFrameAnimation(clientInfo_t* ci, lerpFrame_t* lf, int new_
 #ifdef FINAL_BUILD
 		new_animation = 0;
 #else
-		CG_Error("Bad animation number: %i for ", newAnimation, ci->name);
+		CG_Error("Bad animation number: %i for ", new_animation, ci->name);
 #endif
 	}
 

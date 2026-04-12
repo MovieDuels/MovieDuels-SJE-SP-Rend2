@@ -2109,7 +2109,7 @@ static void ST_Commander()
 
 	group->processed = qtrue;
 
-	if (!group->enemy || !group->enemy->client)
+	if (!group->enemy || !group->enemy->inuse || !group->enemy->client)
 	{
 		// No valid enemy
 		return;
@@ -2922,7 +2922,7 @@ static void Noghri_StickTrace()
 #ifndef FINAL_BUILD
 			if (d_saberCombat->integer > 1)
 			{
-				G_DebugLine(base, tip, FRAMETIME, 0x000000ff, qtrue);
+				G_DebugLine(base, tip, FRAMETIME, 0x000000ff);
 			}
 #endif
 			gi.trace(&trace, base, mins, maxs, tip, NPC->s.number, MASK_SHOT, G2_RETURNONHIT, 10);
@@ -2984,7 +2984,7 @@ void Noghri_StickTracennew(gentity_t* self)
 #ifndef FINAL_BUILD
 			if (d_saberCombat->integer > 1)
 			{
-				G_DebugLine(base, tip, FRAMETIME, 0x000000ff, qtrue);
+				G_DebugLine(base, tip, FRAMETIME, 0x000000ff);
 			}
 #endif
 			gi.trace(&trace, base, mins, maxs, tip, self->s.number, MASK_SHOT, G2_RETURNONHIT, 10);
@@ -3217,6 +3217,12 @@ void NPC_BSST_Attack()
 		NPC_BSST_Patrol();
 		return;
 	}
+	if (!NPC->enemy->inuse || !NPC->enemy->client)
+	{
+		G_ClearEnemy(NPC);
+		NPC_BSST_Patrol();
+		return;
+	}
 
 	if (NPCInfo->goalEntity && NPCInfo->goalEntity != NPC->enemy)
 	{
@@ -3231,6 +3237,12 @@ void NPC_BSST_Attack()
 	shoot = qfalse;
 	hitAlly = qfalse;
 	VectorClear(impactPos);
+	if (!NPC->enemy || !NPC->enemy->inuse || !NPC->enemy->client)
+	{
+		G_ClearEnemy(NPC);
+		NPC_BSST_Patrol();
+		return;
+	}
 
 	enemyDist = DistanceSquared(NPC->currentOrigin, NPC->enemy->currentOrigin);
 

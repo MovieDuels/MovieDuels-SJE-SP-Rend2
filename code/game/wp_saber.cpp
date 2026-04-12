@@ -604,10 +604,9 @@ stringID_table_t SaberStyleTable[] =
 void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,
 	const int weapon_num, vec3_t angles, vec3_t offset)
 {
-	if (!ps_weapon_model)
+	if (!ps_weapon_model || !ps_weapon_model[0])
 	{
-		assert(ps_weapon_model);
-		return;
+		ps_weapon_model = DEFAULT_SABER_MODEL;
 	}
 	if (ent->playerModel == -1)
 	{
@@ -624,7 +623,7 @@ void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model,
 	}
 	char weapon_model[64];
 
-	strcpy(weapon_model, ps_weapon_model);
+	Q_strncpyz(weapon_model, ps_weapon_model, sizeof(weapon_model));
 	if (char* spot = strstr(weapon_model, ".md3"))
 	{
 		*spot = 0;
@@ -694,10 +693,9 @@ void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, 
 	{
 		return;
 	}
-	if (!ps_weapon_model)
+	if (!ps_weapon_model || !ps_weapon_model[0])
 	{
-		assert(ps_weapon_model);
-		return;
+		ps_weapon_model = DEFAULT_SABER_MODEL;
 	}
 	if (ent->playerModel == -1)
 	{
@@ -721,7 +719,7 @@ void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, 
 	}
 	char weapon_model[64];
 
-	strcpy(weapon_model, ps_weapon_model);
+	Q_strncpyz(weapon_model, ps_weapon_model, sizeof(weapon_model));
 	if (char* spot = strstr(weapon_model, ".md3"))
 	{
 		*spot = 0;
@@ -847,9 +845,16 @@ void WP_SaberAddG2SaberModels(gentity_t* ent, const int specific_saber_num)
 		//---------------------------
 		// Create the saber model
 		//---------------------------
+		const char* saber_model = ent->client->ps.saber[saber_num].model;
+		if (!saber_model || !saber_model[0])
+		{
+			saber_model = DEFAULT_SABER_MODEL;
+			ent->client->ps.saber[saber_num].model = DEFAULT_SABER_MODEL;
+		}
+
 		G_CreateG2AttachedWeaponModel(
 			ent,
-			ent->client->ps.saber[saber_num].model,
+			saber_model,
 			hand_bolt,
 			saber_num
 		);
@@ -1497,7 +1502,14 @@ void WP_SaberAddHolsteredG2SaberModels(gentity_t* ent, const int specific_saber_
 			}
 		}
 
-		G_CreateG2HolsteredWeaponModel(ent, ent->client->ps.saber[saber_num].model, hand_bolt, saber_num, angles,
+		const char* holster_model = ent->client->ps.saber[saber_num].model;
+		if (!holster_model || !holster_model[0])
+		{
+			holster_model = DEFAULT_SABER_MODEL;
+			ent->client->ps.saber[saber_num].model = DEFAULT_SABER_MODEL;
+		}
+
+		G_CreateG2HolsteredWeaponModel(ent, holster_model, hand_bolt, saber_num, angles,
 			offset);
 
 		if (ent->client->ps.saber[saber_num].skin != nullptr)
@@ -4298,7 +4310,7 @@ static float WP_SabersDistance(const gentity_t* ent1, const gentity_t* ent2)
 #ifndef FINAL_BUILD
 	if (d_saberCombat->integer > 2)
 	{
-		G_DebugLine(saberPoint1, saberPoint2, FRAMETIME, 0x00ffffff, qtrue);
+		G_DebugLine(saber_point1, saber_point2, FRAMETIME, 0x00ffffff);
 	}
 #endif
 	return sabers_dist;
@@ -5149,8 +5161,7 @@ static qboolean WP_SaberDamageForTrace(const int ignore,
 		if (attacker && attacker->client)
 		{
 			G_DebugLine(start, end2, FRAMETIME,
-				WPDEBUG_SaberColor(attacker->client->ps.saber[0].blade[0].color),
-				qtrue);
+				WPDEBUG_SaberColor(attacker->client->ps.saber[0].blade[0].color));
 		}
 	}
 #endif
@@ -6114,7 +6125,7 @@ qboolean WP_SabersCheckLock2(gentity_t* attacker, gentity_t* defender, sabersLoc
 #ifndef FINAL_BUILD
 			if (d_saberCombat->integer)
 			{
-				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", attacker->NPC_type, anim_table[attAnim].name, anim->numFrames - advance);
+				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", attacker->NPC_type, anim_table[att_anim].name, anim->numFrames - advance);
 			}
 #endif
 		}
@@ -6130,7 +6141,7 @@ qboolean WP_SabersCheckLock2(gentity_t* attacker, gentity_t* defender, sabersLoc
 #ifndef FINAL_BUILD
 			if (d_saberCombat->integer)
 			{
-				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", defender->NPC_type, anim_table[defAnim].name, advance);
+				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", defender->NPC_type, anim_table[def_anim].name, advance);
 			}
 #endif
 		}
@@ -8402,7 +8413,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 #ifndef FINAL_BUILD
 							if (d_saberCombat->integer)
 							{
-								gi.Printf(S_COLOR_RED"%s knockaway %s's attack, new move = %s, anim = %s\n", hitOwner->NPC_type, ent->NPC_type, saber_moveData[ent->client->ps.saberBounceMove].name, anim_table[saber_moveData[ent->client->ps.saberBounceMove].animToUse].name);
+								gi.Printf(S_COLOR_RED"%s knockaway %s's attack, new move = %s, anim = %s\n", hit_owner->NPC_type, ent->NPC_type, saber_moveData[ent->client->ps.saberBounceMove].name, anim_table[saber_moveData[ent->client->ps.saberBounceMove].animToUse].name);
 							}
 #endif
 						}
@@ -8470,11 +8481,11 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 							{
 								if (ent->client->ps.saberEventFlags & SEF_BLOCKED)
 								{
-									gi.Printf(S_COLOR_RED"%s parry broken (bounce/deflect)!\n", hitOwner->targetname);
+									gi.Printf(S_COLOR_RED"%s parry broken (bounce/deflect)!\n", hit_owner->targetname);
 								}
 								else
 								{
-									gi.Printf(S_COLOR_RED"%s parry broken (follow-through)!\n", hitOwner->targetname);
+									gi.Printf(S_COLOR_RED"%s parry broken (follow-through)!\n", hit_owner->targetname);
 								}
 							}
 #endif
@@ -8832,7 +8843,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 #ifndef FINAL_BUILD
 		if (d_saberCombat->integer)
 		{
-			gi.Printf("base damage was %4.2f\n", baseDamage);
+			gi.Printf("base damage was %4.2f\n", base_damage);
 		}
 #endif
 		WP_SaberHitSound(ent, saber_num, blade_num);
@@ -17108,7 +17119,7 @@ qboolean WP_SaberBlockNonRandom(gentity_t* self, vec3_t hitloc, const qboolean m
 			switch (self->client->ps.saberBlocked)
 			{
 			case BLOCKED_TOP:
-			case BLOCKED_TOP_MD:
+			case BLOCKED_TOP_PROJ:
 				gi.Printf("BLOCKED_TOP\n");
 				break;
 			case BLOCKED_UPPER_RIGHT:
@@ -20770,7 +20781,7 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 #ifndef FINAL_BUILD
 	if (d_saberCombat->integer > 2)
 	{
-		CG_CubeOutline(saberent->absmin, saberent->absmax, 50, WPDEBUG_SaberColor(self->client->ps.saber[0].blade[0].color), 1);
+		CG_CubeOutline(saberent->absmin, saberent->absmax, 50, WPDEBUG_SaberColor(self->client->ps.saber[0].blade[0].color));
 	}
 #endif
 

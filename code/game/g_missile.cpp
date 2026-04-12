@@ -2043,7 +2043,7 @@ static void G_SpawnNoghriGasCloud(gentity_t* ent)
 }
 
 extern qboolean W_AccuracyLoggableWeapon(int weapon, qboolean alt_fire, int mod);
-extern qboolean PM_InDeathAnim();
+extern qboolean PM_Dyinganim(const playerState_t* ps);
 extern int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc);
 void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3_t normal, const int hit_loc)
 {
@@ -2141,7 +2141,7 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				beskar == qfalse &&
 				boba_fett == qfalse &&
 				other->health > 0 &&
-				!PM_InDeathAnim() &&
+				!PM_Dyinganim(&other->client->ps) &&
 				!WP_DoingForcedAnimationForForcePowers(other))
 			{
 				int painAnim = G_PickPainAnim(other, impact_pos, hit_loc);

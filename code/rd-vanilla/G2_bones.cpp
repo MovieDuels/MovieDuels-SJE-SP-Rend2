@@ -1746,7 +1746,12 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 
 	if (!G2_RagDollSetup(ghoul2, curTime, qtrue, parms->position, qfalse))
 	{
-		Com_Printf("Debug: G2_SetRagDoll - G2_RagDollSetup failed to add rag bones\n");
+		static qboolean warned_missing_rag_bones = qfalse;
+		if (!warned_missing_rag_bones)
+		{
+			Com_Printf("WARNING: G2_SetRagDoll - model has no usable rag bones; skipping ragdoll for this model\n");
+			warned_missing_rag_bones = qtrue;
+		}
 		return;
 	}
 
@@ -4340,7 +4345,12 @@ qboolean G2_SetBoneIKState(CGhoul2Info_v& ghoul2, const int time, const char* bo
 
 	if (!G2_RagDollSetup(g2, curTime, true, params->origin, false))
 	{
-		assert(!"failed to add any rag bones");
+		static qboolean warned_ik_missing_rag_bones = qfalse;
+		if (!warned_ik_missing_rag_bones)
+		{
+			Com_Printf("WARNING: G2_IKChain - failed to add rag bones; aborting IK rag setup for this model\n");
+			warned_ik_missing_rag_bones = qtrue;
+		}
 		return qfalse;
 	}
 

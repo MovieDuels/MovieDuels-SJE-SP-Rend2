@@ -1392,7 +1392,7 @@ bool NAV::TestEdge(const TNodeHandle NodeA, const TNodeHandle NodeB, const qbool
 				{
 #ifndef FINAL_BUILD
 					assert("Max Edges Perh Handle Reached, Unable To Add To Edge Map!" == 0);
-					gi.Printf("WARNING: Too many nav edges pass through entity %d (%s)\n", EntHit, g_entities[EntHit].targetname);
+					gi.Printf("WARNING: Too many nav edges pass through entity %d (%s)\n", ent_hit, g_entities[ent_hit].targetname);
 #endif
 				}
 			}

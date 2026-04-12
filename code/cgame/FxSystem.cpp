@@ -42,6 +42,8 @@ void SFxHelper::Init()
 void SFxHelper::Print(const char* msg, ...)
 {
 #ifndef FINAL_BUILD
+	if (!gi.Cvar_VariableIntegerValue("developer"))
+		return;
 
 	va_list		argptr;
 	char		text[1024];

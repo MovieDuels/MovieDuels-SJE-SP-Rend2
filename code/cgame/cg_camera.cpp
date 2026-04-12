@@ -1042,7 +1042,7 @@ void CGCam_Update()
 		// x = x0 + vt + 0.5*a*t*t
 		float actual_fov_x = client_camera.FOV;
 		const float t = (cg.time - client_camera.FOV_time) * 0.001; // mult by 0.001 cuz otherwise t is too darned big
-		const float fov_duration = client_camera.FOV_duration;
+		float fov_duration = client_camera.FOV_duration;
 
 #ifndef FINAL_BUILD
 		if (cg_roffval4.integer)
@@ -1058,9 +1058,9 @@ void CGCam_Update()
 		{
 			constexpr float sanity_max = 180;
 			constexpr float sanity_min = 1;
-			const float initial_pos_val = client_camera.FOV2;
-			const float vel_val = client_camera.FOV_vel;
-			const float acc_val = client_camera.FOV_acc;
+			float initial_pos_val = client_camera.FOV2;
+			float vel_val = client_camera.FOV_vel;
+			float acc_val = client_camera.FOV_acc;
 
 #ifndef FINAL_BUILD
 			if (cg_roffdebug.integer)
@@ -1443,7 +1443,7 @@ void CGCam_NotetrackProcessFov(const char* addl_arg)
 			t[d++] = addl_arg[a++];
 		}
 		// now the contents of t represent our desired fov
-		const float new_fov = atof(t);
+		float new_fov = atof(t);
 #ifndef FINAL_BUILD
 		if (cg_roffdebug.integer)
 		{
@@ -1509,7 +1509,7 @@ void CGCam_NotetrackProcessFovZoom(const char* addl_arg)
 			t[d++] = addl_arg[a++];
 		}
 		// now the contents of t represent our end fov
-		const float end_fov = atof(t);
+		float end_fov = atof(t);
 
 		// eat leading whitespace
 		while (addl_arg[a] && addl_arg[a] == ' ')

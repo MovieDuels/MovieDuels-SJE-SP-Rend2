@@ -242,7 +242,7 @@ static void Howler_TryDamage(const int damage, const qboolean tongue, const qboo
 #ifndef FINAL_BUILD
 	if (d_saberCombat->integer > 1)
 	{
-		G_DebugLine(start, end, 1000, 0x000000ff, qtrue);
+		G_DebugLine(start, end, 1000, 0x000000ff);
 	}
 #endif
 	// Should probably trace from the mouth, but, ah well.
