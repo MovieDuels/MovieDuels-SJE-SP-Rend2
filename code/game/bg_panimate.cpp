@@ -10042,6 +10042,119 @@ qboolean PM_InDeathAnim()
 	}
 }
 
+static qboolean BG_InSpecialDeathAnim(const int anim)
+{
+	switch (anim)
+	{
+	case BOTH_DEATH_ROLL: //# Death anim from a roll
+	case BOTH_DEATH_FLIP: //# Death anim from a flip
+	case BOTH_DEATH_SPIN_90_R: //# Death anim when facing 90 degrees right
+	case BOTH_DEATH_SPIN_90_L: //# Death anim when facing 90 degrees left
+	case BOTH_DEATH_SPIN_180: //# Death anim when facing backwards
+	case BOTH_DEATH_LYING_UP: //# Death anim when lying on back
+	case BOTH_DEATH_LYING_DN: //# Death anim when lying on front
+	case BOTH_DEATH_FALLING_DN: //# Death anim when falling on face
+	case BOTH_DEATH_FALLING_UP: //# Death anim when falling on back
+	case BOTH_DEATH_CROUCHED: //# Death anim when crouched
+		return qtrue;
+	default:
+		return qfalse;
+	}
+}
+
+qboolean BG_InDeathAnim(const int anim)
+{
+	//Purposely does not cover stumble death and fall death...
+	switch (anim)
+	{
+	case BOTH_DEATH1: //# First Death anim
+	case BOTH_DEATH2: //# Second Death anim
+	case BOTH_DEATH3: //# Third Death anim
+	case BOTH_DEATH4: //# Fourth Death anim
+	case BOTH_DEATH5: //# Fifth Death anim
+	case BOTH_DEATH6: //# Sixth Death anim
+	case BOTH_DEATH7: //# Seventh Death anim
+	case BOTH_DEATH8: //#
+	case BOTH_DEATH9: //#
+	case BOTH_DEATH10: //#
+	case BOTH_DEATH11: //#
+	case BOTH_DEATH12: //#
+	case BOTH_DEATH13: //#
+	case BOTH_DEATH14: //#
+	case BOTH_DEATH14_UNGRIP: //# Desann's end death (cin #35)
+	case BOTH_DEATH14_SITUP: //# Tavion sitting up after having been thrown (cin #23)
+	case BOTH_DEATH15: //#
+	case BOTH_DEATH16: //#
+	case BOTH_DEATH17: //#
+	case BOTH_DEATH18: //#
+	case BOTH_DEATH19: //#
+	case BOTH_DEATH20: //#
+	case BOTH_DEATH21: //#
+	case BOTH_DEATH22: //#
+	case BOTH_DEATH23: //#
+	case BOTH_DEATH24: //#
+	case BOTH_DEATH25: //#
+
+	case BOTH_DEATHFORWARD1: //# First Death in which they get thrown forward
+	case BOTH_DEATHFORWARD2: //# Second Death in which they get thrown forward
+	case BOTH_DEATHFORWARD3: //# Tavion's falling in cin# 23
+	case BOTH_DEATHBACKWARD1: //# First Death in which they get thrown backward
+	case BOTH_DEATHBACKWARD2: //# Second Death in which they get thrown backward
+
+	case BOTH_DEATH1IDLE: //# Idle while close to death
+	case BOTH_LYINGDEATH1: //# Death to play when killed lying down
+	case BOTH_STUMBLEDEATH1: //# Stumble forward and fall face first death
+	case BOTH_FALLDEATH1: //# Fall forward off a high cliff and splat death - start
+	case BOTH_FALLDEATH1INAIR: //# Fall forward off a high cliff and splat death - loop
+	case BOTH_FALLDEATH1LAND: //# Fall forward off a high cliff and splat death - hit bottom
+		//# #sep case BOTH_ DEAD POSES # Should be last frame of corresponding previous anims
+	case BOTH_DEAD1: //# First Death finished pose
+	case BOTH_DEAD2: //# Second Death finished pose
+	case BOTH_DEAD3: //# Third Death finished pose
+	case BOTH_DEAD4: //# Fourth Death finished pose
+	case BOTH_DEAD5: //# Fifth Death finished pose
+	case BOTH_DEAD6: //# Sixth Death finished pose
+	case BOTH_DEAD7: //# Seventh Death finished pose
+	case BOTH_DEAD8: //#
+	case BOTH_DEAD9: //#
+	case BOTH_DEAD10: //#
+	case BOTH_DEAD11: //#
+	case BOTH_DEAD12: //#
+	case BOTH_DEAD13: //#
+	case BOTH_DEAD14: //#
+	case BOTH_DEAD15: //#
+	case BOTH_DEAD16: //#
+	case BOTH_DEAD17: //#
+	case BOTH_DEAD18: //#
+	case BOTH_DEAD19: //#
+	case BOTH_DEAD20: //#
+	case BOTH_DEAD21: //#
+	case BOTH_DEAD22: //#
+	case BOTH_DEAD23: //#
+	case BOTH_DEAD24: //#
+	case BOTH_DEAD25: //#
+	case BOTH_DEADFORWARD1: //# First thrown forward death finished pose
+	case BOTH_DEADFORWARD2: //# Second thrown forward death finished pose
+	case BOTH_DEADBACKWARD1: //# First thrown backward death finished pose
+	case BOTH_DEADBACKWARD2: //# Second thrown backward death finished pose
+	case BOTH_LYINGDEAD1: //# Killed lying down death finished pose
+	case BOTH_STUMBLEDEAD1: //# Stumble forward death finished pose
+	case BOTH_FALLDEAD1LAND: //# Fall forward and splat death finished pose
+		//# #sep case BOTH_ DEAD TWITCH/FLOP # React to being shot from death poses
+	case BOTH_DEADFLOP1: //# React to being shot from First Death finished pose
+	case BOTH_DEADFLOP2: //# React to being shot from Second Death finished pose
+	case BOTH_DISMEMBER_HEAD1: //#
+	case BOTH_DISMEMBER_TORSO1: //#
+	case BOTH_DISMEMBER_LLEG: //#
+	case BOTH_DISMEMBER_RLEG: //#
+	case BOTH_DISMEMBER_RARM: //#
+	case BOTH_DISMEMBER_LARM: //#
+		return qtrue;
+	default:
+		return BG_InSpecialDeathAnim(anim);
+	}
+}
+
 qboolean PM_InCartwheel(const int anim)
 {
 	switch (anim)

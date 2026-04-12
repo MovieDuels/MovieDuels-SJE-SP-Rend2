@@ -3060,8 +3060,10 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		}
 		else
 		{
-			G_LoadAnimFileSet(ent, ent->NPC_type);
-			G_SetSkin(ent);
+			// Rebuild the player from the saved character cvars after a full save-load.
+			// This mirrors the in-game character menu workaround and refreshes model,
+			// sound, saber, and weapon state that can otherwise go stale.
+			G_InitPlayerFromCvars(ent);
 		}
 
 		//setup sabers

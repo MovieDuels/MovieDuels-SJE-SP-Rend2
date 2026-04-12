@@ -273,12 +273,17 @@ void CG_RegisterWeapon(const int weapon_num)
 		}
 		weaponInfo->barrelModel[i] = cgi_R_RegisterModel(path);
 	}
+
 	if (weapon_num == WP_STUN_BATON)
 	{
 		//only weapon with more than 1 barrel..
 		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel.md3");
 		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel2.md3");
 		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel3.md3");
+	}
+	else if (weapon_num == WP_Z6_ROTARY_CANNON)
+	{
+		cgi_R_RegisterModel("models/weapons2/z6_rotary/rotary_cannon_barrel.md3");
 	}
 	else
 	{
@@ -1411,17 +1416,32 @@ static void CG_CalculateWeaponPosition(vec3_t origin, vec3_t angles)
 CG_MachinegunSpinAngle
 ======================
 */
+
 constexpr auto SPIN_SPEED = 0.9f;
 constexpr auto COAST_TIME = 1000;
 
 static float CG_MachinegunSpinAngle(centity_t* cent)
 {
 	float angle;
-	int delta = cg.time - cent->pe.barrelTime;
+	int   delta;
 
-	if (cent->pe.barrelSpinning)
+	// -----------------------------------------------------------------
+	// Safety: never touch cent if it's NULL
+	// -----------------------------------------------------------------
+	if (cent == NULL)
 	{
-		angle = cent->pe.barrelAngle + delta * SPIN_SPEED;
+		return 0.0f;
+	}
+
+	delta = cg.time - cent->pe.barrelTime;
+
+	// -----------------------------------------------------------------
+	// Spinning / coasting logic
+	// -----------------------------------------------------------------
+
+	if (cent->pe.barrelSpinning == qtrue)
+	{
+		angle = cent->pe.barrelAngle + (float)delta * SPIN_SPEED;
 	}
 	else
 	{
@@ -1430,26 +1450,53 @@ static float CG_MachinegunSpinAngle(centity_t* cent)
 			delta = COAST_TIME;
 		}
 
-		const float speed = 0.5f * (SPIN_SPEED + static_cast<float>(COAST_TIME - delta) / COAST_TIME);
-		angle = cent->pe.barrelAngle + delta * speed;
+		const float t = (float)(COAST_TIME - delta) / (float)COAST_TIME;
+		const float speed = 0.5f * (SPIN_SPEED + t * SPIN_SPEED);
+
+		angle = cent->pe.barrelAngle + (float)delta * speed;
 	}
 
-	// --- FIXED: detect state change ---
-	if (cent->pe.barrelSpinning != !!(cent->currentState.eFlags & EF_FIRING))
+	// -----------------------------------------------------------------
+	// State change detection: EF_FIRING drives barrelSpinning
+	// -----------------------------------------------------------------
 	{
-		cent->pe.barrelTime = cg.time;
-		cent->pe.barrelAngle = AngleNormalize360(angle);
-		cent->pe.barrelSpinning = !!(cent->currentState.eFlags & EF_FIRING);
+		qboolean firingNow = qfalse;
 
-		// play spin sound only on state change
-		if (cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON)
+		if (cg.snap != NULL &&
+			cent->currentState.number == cg.predictedPlayerState.clientNum)
 		{
-			cgi_S_StartSound(
-				NULL,
-				cent->currentState.number,
-				CHAN_WEAPON,
-				cgi_S_RegisterSound("sound/weapons/z6/spinny.wav")
-			);
+			firingNow =
+				(((cg.predictedPlayerState.eFlags & EF_FIRING) != 0 ||
+					(cg.predictedPlayerState.eFlags & EF_ALT_FIRING) != 0)
+					? qtrue : qfalse);
+		}
+		else
+		{
+			firingNow =
+				(((cent->currentState.eFlags & EF_FIRING) != 0 ||
+					(cent->currentState.eFlags & EF_ALT_FIRING) != 0)
+					? qtrue : qfalse);
+		}
+
+		// -----------------------------------------------------------------
+		// FIX: avoid BOOL vs qboolean mismatch (C4805)
+		// -----------------------------------------------------------------
+		if (cent->pe.barrelSpinning != static_cast<bool>(firingNow))
+		{
+			cent->pe.barrelTime = cg.time;
+			cent->pe.barrelAngle = AngleNormalize360(angle);
+			cent->pe.barrelSpinning = static_cast<bool>(firingNow);
+
+			if (firingNow == qtrue &&
+				cg.snap != NULL &&
+				cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON)
+			{
+				cgi_S_StartSound(
+					NULL,
+					cent->currentState.number,
+					CHAN_WEAPON,
+					cgi_S_RegisterSound("sound/weapons/z6/spinny.wav"));
+			}
 		}
 	}
 
@@ -1943,10 +1990,6 @@ void CG_AddViewWeapon(playerState_t* ps)
 			angles[PITCH] = 0;
 
 			if (cg_SpinningBarrels.integer && ps->weapon == WP_Z6_ROTARY_CANNON)
-			{
-				angles[ROLL] = CG_MachinegunSpinAngle(cent);
-			}
-			else if (cg_SpinningBarrels.integer && ps->weapon == WP_STUN_BATON)
 			{
 				angles[ROLL] = CG_MachinegunSpinAngle(cent);
 			}
@@ -2473,10 +2516,6 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			{
 				angles[ROLL] = CG_MachinegunSpinAngle(cent);
 			}
-			else if (cg_SpinningBarrels.integer && ps->weapon == WP_STUN_BATON)
-			{
-				angles[ROLL] = CG_MachinegunSpinAngle(cent);
-			}
 			else
 			{
 				angles[ROLL] = 0;
@@ -2486,7 +2525,8 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			{
 				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
 				{
-					if (ps->weapon != WP_DISRUPTOR) {
+					if (ps->weapon != WP_DISRUPTOR)
+					{
 						CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
 					}
 				}
@@ -2511,8 +2551,10 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			cgi_R_AddRefEntityToScene(&barrel);
 		}
 
+		//
+		// Common flash entity (used for first-person charge FX origin)
+		//
 		memset(&flash, 0, sizeof flash);
-
 		// Seems like we should always do this in case we have an animating muzzle flash....that way we can always store the correct muzzle dir, etc.
 		CG_PositionEntityOnTagDual(&flash, &gun, gun.hModel, "tag_flash");
 

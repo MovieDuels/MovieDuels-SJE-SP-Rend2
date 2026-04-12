@@ -2042,59 +2042,91 @@ static void G_SpawnNoghriGasCloud(gentity_t* ent)
 	ent->s.time = level.time;
 }
 
+static qboolean G_IsBeskarDeflect(const gentity_t* ent, const gentity_t* other)
+{
+	if (ent == NULL || other == NULL)
+	{
+		return qfalse;
+	}
+
+	if (!(other->flags & FL_DINDJARIN))
+	{
+		return qfalse;
+	}
+
+	if (ent->splashDamage ||
+		ent->splashRadius ||
+		ent->methodOfDeath == MOD_SABER ||
+		ent->methodOfDeath == MOD_REPEATER_ALT ||
+		ent->methodOfDeath == MOD_FLECHETTE_ALT ||
+		ent->methodOfDeath == MOD_ROCKET ||
+		ent->methodOfDeath == MOD_ROCKET_ALT ||
+		ent->methodOfDeath == MOD_CONC_ALT ||
+		ent->methodOfDeath == MOD_THERMAL ||
+		ent->methodOfDeath == MOD_THERMAL_ALT ||
+		ent->methodOfDeath == MOD_DEMP2 ||
+		ent->methodOfDeath == MOD_DEMP2_ALT ||
+		ent->methodOfDeath == MOD_EXPLOSIVE ||
+		ent->methodOfDeath == MOD_DETPACK ||
+		ent->methodOfDeath == MOD_LASERTRIP ||
+		ent->methodOfDeath == MOD_LASERTRIP_ALT ||
+		ent->methodOfDeath == MOD_SEEKER ||
+		ent->methodOfDeath == MOD_CONC ||
+		ent->methodOfDeath == WP_NOGHRI_STICK)
+	{
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
+static qboolean G_IsBobaDeflect(const gentity_t* ent, const gentity_t* other)
+{
+	if (ent == NULL || other == NULL)
+	{
+		return qfalse;
+	}
+
+	if (!(other->flags & FL_BOBAFETT))
+	{
+		return qfalse;
+	}
+
+	if (ent->splashDamage ||
+		ent->splashRadius ||
+		ent->methodOfDeath == MOD_SABER ||
+		ent->methodOfDeath == MOD_REPEATER_ALT ||
+		ent->methodOfDeath == MOD_FLECHETTE_ALT ||
+		ent->methodOfDeath == MOD_ROCKET ||
+		ent->methodOfDeath == MOD_ROCKET_ALT ||
+		ent->methodOfDeath == MOD_CONC_ALT ||
+		ent->methodOfDeath == MOD_THERMAL ||
+		ent->methodOfDeath == MOD_THERMAL_ALT ||
+		ent->methodOfDeath == MOD_DEMP2 ||
+		ent->methodOfDeath == MOD_DEMP2_ALT ||
+		ent->methodOfDeath == MOD_EXPLOSIVE ||
+		ent->methodOfDeath == MOD_DETPACK ||
+		ent->methodOfDeath == MOD_LASERTRIP ||
+		ent->methodOfDeath == MOD_LASERTRIP_ALT ||
+		ent->methodOfDeath == MOD_SEEKER ||
+		ent->methodOfDeath == MOD_CONC ||
+		ent->methodOfDeath == WP_NOGHRI_STICK)
+	{
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
 extern qboolean W_AccuracyLoggableWeapon(int weapon, qboolean alt_fire, int mod);
-extern qboolean PM_InDeathAnim();
-extern int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc);
+extern qboolean BG_InDeathAnim(int anim);
+
 void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3_t normal, const int hit_loc)
 {
-	// ---------------------------------------------------------------------
-	// FIX: Validate 'other' before any dereference
-	// ---------------------------------------------------------------------
 	const qboolean otherValid = (other != NULL) ? qtrue : qfalse;
 
-
-	auto beskar = static_cast<qboolean>((other->flags & FL_DINDJARIN)
-		&& !ent->splashDamage
-		&& !ent->splashRadius
-		&& ent->methodOfDeath != MOD_SABER
-		&& ent->methodOfDeath != MOD_REPEATER_ALT
-		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
-		&& ent->methodOfDeath != MOD_ROCKET
-		&& ent->methodOfDeath != MOD_ROCKET_ALT
-		&& ent->methodOfDeath != MOD_CONC_ALT
-		&& ent->methodOfDeath != MOD_THERMAL
-		&& ent->methodOfDeath != MOD_THERMAL_ALT
-		&& ent->methodOfDeath != MOD_DEMP2
-		&& ent->methodOfDeath != MOD_DEMP2_ALT
-		&& ent->methodOfDeath != MOD_EXPLOSIVE
-		&& ent->methodOfDeath != MOD_DETPACK
-		&& ent->methodOfDeath != MOD_LASERTRIP
-		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
-		&& ent->methodOfDeath != MOD_SEEKER
-		&& ent->methodOfDeath != MOD_CONC
-		&& ent->methodOfDeath != WP_NOGHRI_STICK
-		&& (!Q_irand(0, 2)));
-
-	auto boba_fett = static_cast<qboolean>((other->flags & FL_BOBAFETT)
-		&& !ent->splashDamage
-		&& !ent->splashRadius
-		&& ent->methodOfDeath != MOD_SABER
-		&& ent->methodOfDeath != MOD_REPEATER_ALT
-		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
-		&& ent->methodOfDeath != MOD_ROCKET
-		&& ent->methodOfDeath != MOD_ROCKET_ALT
-		&& ent->methodOfDeath != MOD_CONC_ALT
-		&& ent->methodOfDeath != MOD_THERMAL
-		&& ent->methodOfDeath != MOD_THERMAL_ALT
-		&& ent->methodOfDeath != MOD_DEMP2
-		&& ent->methodOfDeath != MOD_DEMP2_ALT
-		&& ent->methodOfDeath != MOD_EXPLOSIVE
-		&& ent->methodOfDeath != MOD_DETPACK
-		&& ent->methodOfDeath != MOD_LASERTRIP
-		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
-		&& ent->methodOfDeath != MOD_SEEKER
-		&& ent->methodOfDeath != MOD_CONC
-		&& ent->methodOfDeath != WP_NOGHRI_STICK);
+	const qboolean beskar = G_IsBeskarDeflect(ent, other);
+	const qboolean boba_fett = G_IsBobaDeflect(ent, other);
 
 	// impact damage
 	if (otherValid && other->takedamage)
@@ -2104,9 +2136,9 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 			vec3_t velocity;
 			EvaluateTrajectoryDelta(&ent->s.pos, level.time, velocity);
 
-			if (VectorLength(velocity) == 0)
+			if (VectorLength(velocity) == 0.0f)
 			{
-				velocity[2] = 1; // stepped on a grenade
+				velocity[2] = 1.0f; // stepped on a grenade
 			}
 
 			const int damage = ent->damage;
@@ -2122,8 +2154,9 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 					npc_class == CLASS_PROBE || npc_class == CLASS_PROTOCOL ||
 					npc_class == CLASS_R2D2 || npc_class == CLASS_R5D2 ||
 					npc_class == CLASS_SEEKER || npc_class == CLASS_SENTRY ||
-					npc_class == CLASS_OBJECT || npc_class == CLASS_ASSASSIN_DROID ||
-					npc_class == CLASS_SABER_DROID)
+					npc_class == CLASS_SBD || npc_class == CLASS_BATTLEDROID ||
+					npc_class == CLASS_DROIDEKA || npc_class == CLASS_OBJECT ||
+					npc_class == CLASS_ASSASSIN_DROID || npc_class == CLASS_SABER_DROID)
 				{
 					if (other->client->ps.powerups[PW_SHOCKED] < level.time + 100)
 					{
@@ -2134,25 +2167,18 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 			}
 
 			G_Damage(other, ent, ent->owner, velocity, impact_pos, damage, ent->dflags, ent->methodOfDeath, hit_loc);
+
 			//
-            // Universal directional pain animation (Singleplayer)
-            //
-			if (other->client && 
+			// Universal directional pain animation (Singleplayer)
+			//
+			if (other->client &&
 				beskar == qfalse &&
 				boba_fett == qfalse &&
 				other->health > 0 &&
-				!PM_InDeathAnim() &&
+				!BG_InDeathAnim(other->client->ps.torsoAnim) &&
 				!WP_DoingForcedAnimationForForcePowers(other))
 			{
-				int painAnim = G_PickPainAnim(other, impact_pos, hit_loc);
-
-				if (painAnim != -1)
-				{
-					NPC_SetAnim(other,
-						SETANIM_TORSO,
-						painAnim,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				}
+				NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN1, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 
 			// DEMP2 special behaviour
@@ -2181,7 +2207,7 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 					{
 						if (other->client->ps.electrifyTime > level.time)
 						{
-							other->client->ps.electrifyTime += level.time + Q_irand(1500, 2000);
+							other->client->ps.electrifyTime += Q_irand(1500, 2000);
 							if (other->client->ps.electrifyTime > level.time + 4000)
 							{
 								other->client->ps.electrifyTime = level.time + 4000;
@@ -2211,9 +2237,7 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 		}
 	}
 
-	// ---------------------------------------------------------------------
 	// Impact event (safe even if 'other' is NULL)
-	// ---------------------------------------------------------------------
 	if (otherValid && other->client && other->takedamage)
 	{
 		G_AddEvent(ent, EV_MISSILE_HIT, DirToByte(normal));
@@ -2327,48 +2351,8 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		|| (trace->surfaceFlags & SURF_FORCEFIELD || other->flags & FL_SHIELDED)
 		&& !ent->splashDamage && !ent->splashRadius && ent->s.weapon != WP_NOGHRI_STICK);
 
-	auto beskar = static_cast<qboolean>((other->flags & FL_DINDJARIN)
-		&& !ent->splashDamage
-		&& !ent->splashRadius
-		&& ent->methodOfDeath != MOD_SABER
-		&& ent->methodOfDeath != MOD_REPEATER_ALT
-		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
-		&& ent->methodOfDeath != MOD_ROCKET
-		&& ent->methodOfDeath != MOD_ROCKET_ALT
-		&& ent->methodOfDeath != MOD_CONC_ALT
-		&& ent->methodOfDeath != MOD_THERMAL
-		&& ent->methodOfDeath != MOD_THERMAL_ALT
-		&& ent->methodOfDeath != MOD_DEMP2
-		&& ent->methodOfDeath != MOD_DEMP2_ALT
-		&& ent->methodOfDeath != MOD_EXPLOSIVE
-		&& ent->methodOfDeath != MOD_DETPACK
-		&& ent->methodOfDeath != MOD_LASERTRIP
-		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
-		&& ent->methodOfDeath != MOD_SEEKER
-		&& ent->methodOfDeath != MOD_CONC
-		&& ent->methodOfDeath != WP_NOGHRI_STICK
-		&& (!Q_irand(0, 2)));
-
-	auto boba_fett = static_cast<qboolean>((other->flags & FL_BOBAFETT)
-		&& !ent->splashDamage
-		&& !ent->splashRadius
-		&& ent->methodOfDeath != MOD_SABER
-		&& ent->methodOfDeath != MOD_REPEATER_ALT
-		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
-		&& ent->methodOfDeath != MOD_ROCKET
-		&& ent->methodOfDeath != MOD_ROCKET_ALT
-		&& ent->methodOfDeath != MOD_CONC_ALT
-		&& ent->methodOfDeath != MOD_THERMAL
-		&& ent->methodOfDeath != MOD_THERMAL_ALT
-		&& ent->methodOfDeath != MOD_DEMP2
-		&& ent->methodOfDeath != MOD_DEMP2_ALT
-		&& ent->methodOfDeath != MOD_EXPLOSIVE
-		&& ent->methodOfDeath != MOD_DETPACK
-		&& ent->methodOfDeath != MOD_LASERTRIP
-		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
-		&& ent->methodOfDeath != MOD_SEEKER
-		&& ent->methodOfDeath != MOD_CONC
-		&& ent->methodOfDeath != WP_NOGHRI_STICK);
+	qboolean beskar = G_IsBeskarDeflect(ent, other);
+	qboolean boba_fett = G_IsBobaDeflect(ent, other);
 
 	if (ent->dflags & DAMAGE_HEAVY_WEAP_CLASS)
 	{
@@ -2849,48 +2833,8 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 		|| (trace->surfaceFlags & SURF_FORCEFIELD || other->flags & FL_SHIELDED)
 		&& !ent->splashDamage && !ent->splashRadius && ent->s.weapon != WP_NOGHRI_STICK);
 
-	auto beskar = static_cast<qboolean>((other->flags & FL_DINDJARIN)
-		&& !ent->splashDamage
-		&& !ent->splashRadius
-		&& ent->methodOfDeath != MOD_SABER
-		&& ent->methodOfDeath != MOD_REPEATER_ALT
-		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
-		&& ent->methodOfDeath != MOD_ROCKET
-		&& ent->methodOfDeath != MOD_ROCKET_ALT
-		&& ent->methodOfDeath != WP_NOGHRI_STICK
-		&& ent->methodOfDeath != MOD_CONC_ALT
-		&& ent->methodOfDeath != MOD_THERMAL
-		&& ent->methodOfDeath != MOD_THERMAL_ALT
-		&& ent->methodOfDeath != MOD_DEMP2
-		&& ent->methodOfDeath != MOD_DEMP2_ALT
-		&& ent->methodOfDeath != MOD_EXPLOSIVE
-		&& ent->methodOfDeath != MOD_DETPACK
-		&& ent->methodOfDeath != MOD_LASERTRIP
-		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
-		&& ent->methodOfDeath != MOD_SEEKER
-		&& ent->methodOfDeath != MOD_CONC
-		&& (!Q_irand(0, 1)));
-
-	auto boba_fett = static_cast<qboolean>((other->flags & FL_BOBAFETT)
-		&& !ent->splashDamage
-		&& !ent->splashRadius
-		&& ent->methodOfDeath != MOD_SABER
-		&& ent->methodOfDeath != MOD_REPEATER_ALT
-		&& ent->methodOfDeath != MOD_FLECHETTE_ALT
-		&& ent->methodOfDeath != MOD_ROCKET
-		&& ent->methodOfDeath != MOD_ROCKET_ALT
-		&& ent->methodOfDeath != WP_NOGHRI_STICK
-		&& ent->methodOfDeath != MOD_CONC_ALT
-		&& ent->methodOfDeath != MOD_THERMAL
-		&& ent->methodOfDeath != MOD_THERMAL_ALT
-		&& ent->methodOfDeath != MOD_DEMP2
-		&& ent->methodOfDeath != MOD_DEMP2_ALT
-		&& ent->methodOfDeath != MOD_EXPLOSIVE
-		&& ent->methodOfDeath != MOD_DETPACK
-		&& ent->methodOfDeath != MOD_LASERTRIP
-		&& ent->methodOfDeath != MOD_LASERTRIP_ALT
-		&& ent->methodOfDeath != MOD_SEEKER
-		&& ent->methodOfDeath != MOD_CONC);
+	qboolean beskar = G_IsBeskarDeflect(ent, other);
+	qboolean boba_fett = G_IsBobaDeflect(ent, other);
 
 	if (ent->dflags & DAMAGE_HEAVY_WEAP_CLASS)
 	{
