@@ -1628,7 +1628,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 		return;
 
 	default:
+#ifdef _DEBUG
 		Com_Printf("Debug: G2_SetRagDoll - unknown RagPhase %d\n", parms->RagPhase);
+#endif
 		return;
 	}
 
@@ -1919,7 +1921,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 
 	if (!G2_RagDollSetup(ghoul2, curTime, qtrue, parms->position, qfalse))
 	{
+#ifdef _DEBUG
 		Com_Printf("Debug: G2_SetRagDoll - G2_RagDollSetup failed to add any rag bones\n");
+#endif
 		return;
 	}
 
