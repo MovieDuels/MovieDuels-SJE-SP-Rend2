@@ -986,8 +986,16 @@ qboolean G2API_RemoveGhoul2Model(CGhoul2Info_v& ghlInfo, const int modelIndex)
 	if (!ghlInfo.size() || ghlInfo.size() <= modelIndex || modelIndex < 0 || ghlInfo[modelIndex].mModelindex < 0)
 	{
 		// This can happen during cleanup paths where a model was already removed.
-		// Treat as a no-op to avoid crashing gameplay.
-		G2WARNING(0, "Remove Nonexistant Model");
+		// Treat as a no-op to avoid crashing gameplay. Log only once to avoid
+		// massive per-frame spam that kills performance.
+		{
+			static qboolean warned_remove_nonexistent = qfalse;
+			if (!warned_remove_nonexistent)
+			{
+				G2WARNING(0, "Remove Nonexistant Model");
+				warned_remove_nonexistent = qtrue;
+			}
+		}
 		return qfalse;
 	}
 
@@ -1846,7 +1854,12 @@ qboolean G2API_GetBoltMatrix(CGhoul2Info_v& ghoul2, const int modelIndex, const 
 	}
 	else
 	{
-		G2WARNING(0, "G2API_GetBoltMatrix Failed on empty or bad model");
+		static qboolean warned_getboltmatrix = qfalse;
+		if (!warned_getboltmatrix)
+		{
+			G2WARNING(0, "G2API_GetBoltMatrix Failed on empty or bad model");
+			warned_getboltmatrix = qtrue;
+		}
 	}
 	Multiply_3x4Matrix(matrix, &worldMatrix, &identity_matrix);
 	return qfalse;
@@ -2111,7 +2124,12 @@ char* G2API_GetSurfaceName(CGhoul2Info* ghlInfo, const int surf_number)
 			return surf_info->name;
 		}
 	}
-	G2WARNING(0, "Surface Not Found");
+	static qboolean warned_surface_not_found = qfalse;
+	if (!warned_surface_not_found)
+	{
+		G2WARNING(0, "Surface Not Found");
+		warned_surface_not_found = qtrue;
+	}
 	return no_surface;
 }
 
@@ -2315,6 +2333,7 @@ bool G2_TestModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is 
 bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is properly set up
 {
 	G2ERROR(ghlInfo, "NULL ghlInfo");
+	char safe_model_name[MAX_QPATH];
 	if (!ghlInfo)
 	{
 		return false;
@@ -2323,14 +2342,33 @@ bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is
 	//	G2WARNING(ghlInfo->mModelindex != -1,"Setup request on non-used info slot?");
 	if (ghlInfo->mModelindex != -1)
 	{
-		G2ERROR(ghlInfo->mFileName[0], "empty ghlInfo->mFileName");
-		ghlInfo->mModel = RE_RegisterModel(ghlInfo->mFileName);
+		if (!ghlInfo->mFileName[0])
+		{
+			static qboolean warned_empty_filename = qfalse;
+			if (!warned_empty_filename)
+			{
+				G2WARNING(0, "empty ghlInfo->mFileName");
+				warned_empty_filename = qtrue;
+			}
+			return false;
+		}
+
+		Q_strncpyz(safe_model_name, ghlInfo->mFileName, sizeof(safe_model_name));
+		ghlInfo->mModel = RE_RegisterModel(safe_model_name);
 		ghlInfo->currentModel = R_GetModelByHandle(ghlInfo->mModel);
-		G2ERROR(ghlInfo->currentModel, va("NULL Model (glm) %s", ghlInfo->mFileName));
+		G2ERROR(ghlInfo->currentModel, va("NULL Model (glm) %s", safe_model_name));
 		if (ghlInfo->currentModel)
 		{
-			G2ERROR(ghlInfo->currentModel->mdxm, va("Model has no mdxm (glm) %s", ghlInfo->mFileName));
-			if (ghlInfo->currentModel->mdxm)
+			if (!ghlInfo->currentModel->mdxm)
+			{
+				static qboolean warned_no_mdxm = qfalse;
+				if (!warned_no_mdxm)
+				{
+					G2WARNING(0, va("Model has no mdxm (glm) %s", safe_model_name));
+					warned_no_mdxm = qtrue;
+				}
+			}
+				if (ghlInfo->currentModel->mdxm)
 			{
 				if (ghlInfo->currentModelSize)
 				{
@@ -2340,19 +2378,19 @@ bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is
 					}
 				}
 				ghlInfo->currentModelSize = ghlInfo->currentModel->mdxm->ofsEnd;
-				G2ERROR(ghlInfo->currentModelSize, va("Zero sized Model? (glm) %s", ghlInfo->mFileName));
+				G2ERROR(ghlInfo->currentModelSize, va("Zero sized Model? (glm) %s", safe_model_name));
 
 				ghlInfo->animModel = R_GetAnimModelByHandle(
 					ghlInfo, ghlInfo->currentModel->mdxm->animIndex + ghlInfo->animModelIndexOffset);
-				G2ERROR(ghlInfo->animModel, va("NULL Model (gla) %s", ghlInfo->mFileName));
+				G2ERROR(ghlInfo->animModel, va("NULL Model (gla) %s", safe_model_name));
 				if (ghlInfo->animModel)
 				{
 					ghlInfo->aHeader = ghlInfo->animModel->mdxa;
-					G2ERROR(ghlInfo->aHeader, va("Model has no mdxa (gla) %s", ghlInfo->mFileName));
+					G2ERROR(ghlInfo->aHeader, va("Model has no mdxa (gla) %s", safe_model_name));
 					if (!ghlInfo->aHeader)
 					{
 						Com_Error(ERR_DROP, "Ghoul2 (set up model pointers)Model has no mdxa (gla) %s",
-							ghlInfo->mFileName);
+							safe_model_name);
 					}
 					if (ghlInfo->currentAnimModelSize)
 					{

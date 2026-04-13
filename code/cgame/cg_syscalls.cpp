@@ -291,6 +291,11 @@ void cgi_R_LoadWorldMap(const char* mapname)
 
 qhandle_t cgi_R_RegisterModel(const char* name)
 {
+	if (!name || !name[0])
+	{
+		return 0;
+	}
+
 	return Q_syscall(CG_R_REGISTERMODEL, name);
 }
 
