@@ -644,13 +644,10 @@ void CG_NewClientinfo(const int clientNum)
 	Q_strncpyz(g_entities[clientNum].client->renderInfo.headModelName, v,
 		sizeof g_entities[clientNum].client->renderInfo.headModelName);
 
-	// Check if NPC sounds are already registered
-	if (ci->customBasicSoundDir && ci->customBasicSoundDir[0])
-	{
-		//Com_Printf(S_COLOR_YELLOW "Skipping SP sounds because NPC sounds are already registered.\n");
-		ci->infoValid = qfalse;
-		return;
-	}
+	// Always refresh the player sound set here.
+	// After save/load, the clientInfo can survive while the underlying sound
+	// handles are no longer valid, which causes out-of-range S_StartSound errors.
+	memset(ci->sounds, 0, sizeof ci->sounds);
 
 	// sounds
 	v = Info_ValueForKey(configstring, "snd");
