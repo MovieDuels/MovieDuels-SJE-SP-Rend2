@@ -985,10 +985,9 @@ qboolean G2API_RemoveGhoul2Model(CGhoul2Info_v& ghlInfo, const int modelIndex)
 	// sanity check
 	if (!ghlInfo.size() || ghlInfo.size() <= modelIndex || modelIndex < 0 || ghlInfo[modelIndex].mModelindex < 0)
 	{
-		// if we hit this assert then we are trying to delete a ghoul2 model on a ghoul2 instance that
-		// one way or another is already gone.
-		G2ERROR(0, "Remove Nonexistant Model");
-		assert(0 && "remove non existing model");
+		// This can happen during cleanup paths where a model was already removed.
+		// Treat as a no-op to avoid crashing gameplay.
+		G2WARNING(0, "Remove Nonexistant Model");
 		return qfalse;
 	}
 
