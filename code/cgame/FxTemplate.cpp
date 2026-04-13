@@ -1845,7 +1845,6 @@ bool CPrimitiveTemplate::ParsePrimitive(const CGPGroup& grp)
 		// Error
 		else
 		{
-			theFxHelper.Print("Unknown key parsing an effect primitive!\n");
 		}
 	}
 

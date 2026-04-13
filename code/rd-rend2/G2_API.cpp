@@ -1874,7 +1874,6 @@ qboolean G2API_GetBoltMatrix(CGhoul2Info_v& ghoul2, const int modelIndex, const 
 		{
 			const int frameNum = G2API_GetTime(aframe_num);
 			CGhoul2Info* ghlInfo = &ghoul2[modelIndex];
-			G2ERROR(bolt_index >= 0 && (bolt_index < ghlInfo->mBltlist.size()), va("Invalid Bolt Index (%d:%s)", bolt_index, ghlInfo->mFileName));
 
 			if (bolt_index >= 0 && ghlInfo && bolt_index < static_cast<int>(ghlInfo->mBltlist.size()))
 			{
