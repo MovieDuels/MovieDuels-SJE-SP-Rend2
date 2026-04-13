@@ -859,7 +859,9 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 {
 	if (!pMDXAHeader)
 	{
+#ifdef _DEBUG
 		Com_Printf("Debug: G2_GetBonePoolIndex - pMDXAHeader was NULL\n");
+#endif
 		return 0;
 	}
 
@@ -871,10 +873,10 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 	// ------------------------------------------------------------
 	if (iFrame < 0 || iFrame >= pMDXAHeader->numFrames)
 	{
-		Com_Printf(
-			"Debug: G2_GetBonePoolIndex - iFrame %d out of range (0..%d). Clamping.\n",
-			iFrame, pMDXAHeader->numFrames - 1);
 
+#ifdef _DEBUG
+		Com_Printf("Debug: G2_GetBonePoolIndex - iFrame %d out of range (0..%d). Clamping.\n",iFrame, pMDXAHeader->numFrames - 1);
+#endif
 		if (iFrame < 0)
 		{
 			iFrame = 0;
@@ -890,10 +892,9 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 	// ------------------------------------------------------------
 	if (iBone < 0 || iBone >= pMDXAHeader->numBones)
 	{
-		Com_Printf(
-			"Debug: G2_GetBonePoolIndex - iBone %d out of range (0..%d). Clamping.\n",
-			iBone, pMDXAHeader->numBones - 1);
-
+#ifdef _DEBUG
+		Com_Printf("Debug: G2_GetBonePoolIndex - iBone %d out of range (0..%d). Clamping.\n",iBone, pMDXAHeader->numBones - 1);
+#endif
 		if (iBone < 0)
 		{
 			iBone = 0;

@@ -1628,7 +1628,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 		return;
 
 	default:
+#ifdef _DEBUG
 		Com_Printf("Debug: G2_SetRagDoll - unknown RagPhase %d\n", parms->RagPhase);
+#endif
 		return;
 	}
 
@@ -1677,10 +1679,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 
 	if (startFrame < 0 || startFrame >= mod_a->numFrames)
 	{
-		Com_Printf(
-			"Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n",
-			startFrame, mod_a->numFrames - 1);
-
+#ifdef _DEBUG
+		Com_Printf("Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n",startFrame, mod_a->numFrames - 1);
+		#endif
 		if (startFrame < 0)
 		{
 			startFrame = 0;
@@ -1693,9 +1694,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 
 	if (endFrame < 0 || endFrame >= mod_a->numFrames)
 	{
-		Com_Printf(
-			"Debug: G2_SetRagDoll - endFrame %d out of range (0..%d). Clamping.\n",
-			endFrame, mod_a->numFrames - 1);
+#ifdef _DEBUG
+		Com_Printf("Debug: G2_SetRagDoll - endFrame %d out of range (0..%d). Clamping.\n", endFrame, mod_a->numFrames - 1);
+#endif
 
 		if (endFrame < 0)
 		{
@@ -1710,9 +1711,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 	// Ensure we have at least one frame in [startFrame, endFrame)
 	if (endFrame <= startFrame)
 	{
-		Com_Printf(
-			"Debug: G2_SetRagDoll - endFrame (%d) <= startFrame (%d). Adjusting.\n",
-			endFrame, startFrame);
+#ifdef _DEBUG
+		Com_Printf("Debug: G2_SetRagDoll - endFrame (%d) <= startFrame (%d). Adjusting.\n", endFrame, startFrame);
+#endif
 
 		if (startFrame < mod_a->numFrames - 1)
 		{
@@ -1729,9 +1730,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 	// If still degenerate, do not try to drive anim
 	if (startFrame == endFrame)
 	{
-		Com_Printf(
-			"Debug: G2_SetRagDoll - startFrame == endFrame == %d after clamping. Skipping anim setup.\n",
-			startFrame);
+#ifdef _DEBUG
+		Com_Printf("Debug: G2_SetRagDoll - startFrame == endFrame == %d after clamping. Skipping anim setup.\n",startFrame);
+#endif
 	}
 	else
 	{
@@ -1922,7 +1923,9 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 		static qboolean warned_missing_rag_bones = qfalse;
 		if (!warned_missing_rag_bones)
 		{
+#ifdef _DEBUG
 			Com_Printf("WARNING: G2_SetRagDoll - model has no usable rag bones; skipping ragdoll for this model\n");
+#endif
 			warned_missing_rag_bones = qtrue;
 		}
 		return;
