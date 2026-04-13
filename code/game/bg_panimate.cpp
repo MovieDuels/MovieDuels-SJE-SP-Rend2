@@ -673,9 +673,19 @@ static int PM_AnimLevelForSaberAnim(const int anim)
 
 int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saber_num)
 {
+	if (!ps)
+	{
+		return FORCE_LEVEL_0;
+	}
+
 	int anim = ps->torsoAnim;
-	const int anim_time_elapsed = PM_AnimLength(g_entities[ps->clientNum].client->clientInfo.animFileIndex,
-		static_cast<animNumber_t>(anim)) - ps->torsoAnimTimer;
+	// Avoid entity-table animation dereferences here: this function is hit during
+	// transitional states where client animation data may be stale.
+	int anim_time_elapsed = 0;
+	if (anim >= 0 && anim < MAX_ANIMATIONS)
+	{
+		anim_time_elapsed = 9999 - ps->torsoAnimTimer;
+	}
 	if (anim >= BOTH_A1_T__B_ && anim <= BOTH_D1_B____)
 	{
 		//FIXME: these two need their own style
@@ -6015,7 +6025,7 @@ void PM_SetAnimFinal(int* torso_anim, int* legs_anim,
 #ifndef FINAL_BUILD
 		if (g_AnimWarning->integer == 1)
 		{
-			if (animFlags & BONE_ANIM_OVERRIDE_LOOP)
+			if (anim_flags & BONE_ANIM_OVERRIDE_LOOP)
 			{
 				gi.Printf(S_COLOR_YELLOW"PM_SetAnimFinal: WARNING: Anim (%s) looping backwards!\n", anim_table[anim].name);
 			}
@@ -6172,7 +6182,7 @@ void PM_SetAnimFinal(int* torso_anim, int* legs_anim,
 		(cg_debugAnim.integer == 4 && gent->s.number != cg_debugAnimTarget.integer) 	// 4 = specific entnum
 		)
 	{
-		if (bodyPlay || torsPlay)
+		if (body_play || tors_play)
 		{
 			char* entName = gent->targetname;
 			char* location;
@@ -6198,11 +6208,11 @@ void PM_SetAnimFinal(int* torso_anim, int* legs_anim,
 
 			// Select Play Location
 			//----------------------
-			if (bodyPlay && torsPlay)
+			if (body_play && tors_play)
 			{
 				location = "BOTH ";
 			}
-			else if (bodyPlay)
+			else if (body_play)
 			{
 				location = "LEGS ";
 			}
@@ -6214,7 +6224,7 @@ void PM_SetAnimFinal(int* torso_anim, int* legs_anim,
 			// Print It!
 			//-----------
 			Com_Printf("[%10d] ent[%3d-%18s] %s anim[%3d] - %s\n",
-				actualTime,
+				actual_time,
 				gent->s.number,
 				entName,
 				location,
@@ -9931,6 +9941,11 @@ qboolean PM_InOnGroundAnims(const int anim)
 
 static qboolean PM_InSpecialDeathAnim()
 {
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
 	switch (pm->ps->legsAnim)
 	{
 	case BOTH_DEATH_ROLL: //# Death anim from a roll
@@ -9951,6 +9966,11 @@ static qboolean PM_InSpecialDeathAnim()
 
 qboolean PM_InDeathAnim()
 {
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
 	//Purposely does not cover stumble death and fall death...
 	switch (pm->ps->legsAnim)
 	{

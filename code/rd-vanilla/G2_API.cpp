@@ -88,7 +88,7 @@ public:
 			Com_DPrintf(mess);
 		}
 
-		sprintf(mess, "****** %s Error Report End   %d errors of %ld kinds******\n", mName.c_str(), total, mErrors.size());
+		sprintf(mess, "****** %s Error Report End   %d errors of %zu kinds******\n", mName.c_str(), total, mErrors.size());
 		Com_DPrintf(mess);
 	}
 	int AnimTest(CGhoul2Info_v& ghoul2, const char* m, const char*, int line)
@@ -289,7 +289,7 @@ void G2_Bone_Not_Found(const char* boneName)
 	G2ERROR(boneName[0], "Empty Bone Name");
 	if (boneName)
 	{
-		G2NOTE(0, va("Bone Not Found (%s:%s)", boneName, mod_name));
+		G2NOTE(0, va("Bone Not Found (%s)", boneName));
 	}
 }
 
@@ -299,7 +299,7 @@ void G2_Bolt_Not_Found(const char* boneName)
 	G2ERROR(boneName[0], "Empty Bolt/Bone Name");
 	if (boneName)
 	{
-		G2NOTE(0, va("Bolt/Bone Not Found (%s:%s)", boneName, mod_name));
+		G2NOTE(0, va("Bolt/Bone Not Found (%s)", boneName));
 	}
 }
 #endif
@@ -556,7 +556,7 @@ public:
 		{
 #if G2API_DEBUG
 			char mess[1000];
-			sprintf(mess, "************************\nLeaked %ld ghoul2info slots\n", MAX_G2_MODELS - mFreeIndecies.size());
+			sprintf(mess, "************************\nLeaked %zu ghoul2info slots\n", static_cast<size_t>(MAX_G2_MODELS) - m_free_indecies_.size());
 			Com_DPrintf(mess);
 #endif
 			for (int i = 0; i < MAX_G2_MODELS; i++)
@@ -570,11 +570,11 @@ public:
 				if (j == m_free_indecies_.end())
 				{
 #if G2API_DEBUG
-					sprintf(mess, "Leaked Info idx=%d id=%d sz=%ld\n", i, mIds[i], mInfos[i].size());
+					sprintf(mess, "Leaked Info idx=%d id=%d sz=%zu\n", i, m_ids_[i], m_infos_[i].size());
 					Com_DPrintf(mess);
-					if (mInfos[i].size())
+					if (m_infos_[i].size())
 					{
-						sprintf(mess, "%s\n", mInfos[i][0].mFileName);
+						sprintf(mess, "%s\n", m_infos_[i][0].mFileName);
 						Com_DPrintf(mess);
 					}
 #endif
@@ -700,15 +700,15 @@ public:
 #if G2API_DEBUG
 	std::vector<CGhoul2Info>& GetDebug(int handle)
 	{
-		assert(!(handle <= 0 || (handle & G2_INDEX_MASK) < 0 || (handle & G2_INDEX_MASK) >= MAX_G2_MODELS || mIds[handle & G2_INDEX_MASK] != handle));
+		assert(!(handle <= 0 || (handle & G2_INDEX_MASK) < 0 || (handle & G2_INDEX_MASK) >= MAX_G2_MODELS || m_ids_[handle & G2_INDEX_MASK] != handle));
 
-		return mInfos[handle & G2_INDEX_MASK];
+		return m_infos_[handle & G2_INDEX_MASK];
 	}
 	void TestAllAnims()
 	{
 		for (size_t j = 0; j < MAX_G2_MODELS; j++)
 		{
-			std::vector<CGhoul2Info>& ghoul2 = mInfos[j];
+			std::vector<CGhoul2Info>& ghoul2 = m_infos_[j];
 			for (size_t i = 0; i < ghoul2.size(); i++)
 			{
 				if (G2_SetupModelPointers(&ghoul2[i]))
@@ -985,10 +985,17 @@ qboolean G2API_RemoveGhoul2Model(CGhoul2Info_v& ghlInfo, const int modelIndex)
 	// sanity check
 	if (!ghlInfo.size() || ghlInfo.size() <= modelIndex || modelIndex < 0 || ghlInfo[modelIndex].mModelindex < 0)
 	{
-		// if we hit this assert then we are trying to delete a ghoul2 model on a ghoul2 instance that
-		// one way or another is already gone.
-		G2ERROR(0, "Remove Nonexistant Model");
-		assert(0 && "remove non existing model");
+		// This can happen during cleanup paths where a model was already removed.
+		// Treat as a no-op to avoid crashing gameplay. Log only once to avoid
+		// massive per-frame spam that kills performance.
+		{
+			static qboolean warned_remove_nonexistent = qfalse;
+			if (!warned_remove_nonexistent)
+			{
+				G2WARNING(0, "Remove Nonexistant Model");
+				warned_remove_nonexistent = qtrue;
+			}
+		}
 		return qfalse;
 	}
 
@@ -1068,8 +1075,8 @@ qboolean G2API_SetBoneAnimIndex(CGhoul2Info* ghlInfo, const int index, const int
 		G2ERROR(startFrame < ghlInfo->aHeader->numFrames, "startframe>=numframes");
 		G2ERROR(endFrame > 0, "endframe<=0");
 		G2ERROR(endFrame <= ghlInfo->aHeader->numFrames, "endframe>numframes");
-		G2ERROR(setFrame < ghlInfo->aHeader->numFrames, "setframe>=numframes");
-		G2ERROR(setFrame == -1.0f || setFrame >= 0.0f, "setframe<0 but not -1");
+		G2ERROR(set_frame < ghlInfo->aHeader->numFrames, "setframe>=numframes");
+		G2ERROR(set_frame == -1.0f || set_frame >= 0.0f, "setframe<0 but not -1");
 		if (startFrame < 0 || startFrame >= ghlInfo->aHeader->numFrames)
 		{
 			*const_cast<int*>(&startFrame) = 0; // cast away const
@@ -1113,8 +1120,8 @@ qboolean G2API_SetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int
 		G2ERROR(startFrame < ghlInfo->aHeader->numFrames, "startframe>=numframes");
 		G2ERROR(endFrame > 0, "endframe<=0");
 		G2ERROR(endFrame <= ghlInfo->aHeader->numFrames, "endframe>numframes");
-		G2ERROR(setFrame < ghlInfo->aHeader->numFrames, "setframe>=numframes");
-		G2ERROR(setFrame == -1.0f || setFrame >= 0.0f, "setframe<0 but not -1");
+		G2ERROR(set_frame < ghlInfo->aHeader->numFrames, "setframe>=numframes");
+		G2ERROR(set_frame == -1.0f || set_frame >= 0.0f, "setframe<0 but not -1");
 		if (startFrame < 0 || startFrame >= ghlInfo->aHeader->numFrames)
 		{
 			*const_cast<int*>(&startFrame) = 0; // cast away const
@@ -1802,7 +1809,6 @@ qboolean G2API_GetBoltMatrix(CGhoul2Info_v& ghoul2, const int modelIndex, const 
 		{
 			const int frameNum = G2API_GetTime(aframe_num);
 			CGhoul2Info* ghlInfo = &ghoul2[modelIndex];
-			G2ERROR(bolt_index >= 0 && (bolt_index < (int)ghlInfo->mBltlist.size()), va("Invalid Bolt Index (%d:%s)", bolt_index, ghlInfo->mFileName));
 
 			if (bolt_index >= 0 && ghlInfo && bolt_index < static_cast<int>(ghlInfo->mBltlist.size()))
 			{
@@ -1848,7 +1854,12 @@ qboolean G2API_GetBoltMatrix(CGhoul2Info_v& ghoul2, const int modelIndex, const 
 	}
 	else
 	{
-		G2WARNING(0, "G2API_GetBoltMatrix Failed on empty or bad model");
+		static qboolean warned_getboltmatrix = qfalse;
+		if (!warned_getboltmatrix)
+		{
+			G2WARNING(0, "G2API_GetBoltMatrix Failed on empty or bad model");
+			warned_getboltmatrix = qtrue;
+		}
 	}
 	Multiply_3x4Matrix(matrix, &worldMatrix, &identity_matrix);
 	return qfalse;
@@ -1954,7 +1965,7 @@ static int QDECL QsortDistance(const void* a, const void* b) {
 void G2API_CollisionDetect(CCollisionRecord* coll_rec_map, CGhoul2Info_v& ghoul2, const vec3_t angles, const vec3_t position, const int aframe_number, int entNum, vec3_t ray_start, vec3_t ray_end, vec3_t scale, CMiniHeap* G2VertSpace, EG2_Collision eG2TraceType, int useLod, float f_radius)
 {
 	G2ERROR(ghoul2.IsValid(), "Invalid ghlInfo");
-	G2ERROR(collRecMap, "NULL Collision Rec");
+	G2ERROR(coll_rec_map, "NULL Collision Rec");
 	if (G2_SetupModelPointers(ghoul2) && coll_rec_map)
 	{
 		const int frame_number = G2API_GetTime(aframe_number);
@@ -1973,7 +1984,7 @@ void G2API_CollisionDetect(CCollisionRecord* coll_rec_map, CGhoul2Info_v& ghoul2
 #ifdef _G2_GORE
 		G2_TransformModel(ghoul2, frame_number, scale, ri.GetG2VertSpaceServer(), useLod, false);
 #else
-		G2_TransformModel(ghoul2, frameNumber, scale, ri.GetG2VertSpaceServer(), useLod);
+		G2_TransformModel(ghoul2, frame_number, scale, ri.GetG2VertSpaceServer(), useLod);
 #endif
 
 		// model is built. Lets check to see if any triangles are actually hit.
@@ -1985,7 +1996,7 @@ void G2API_CollisionDetect(CCollisionRecord* coll_rec_map, CGhoul2Info_v& ghoul2
 #ifdef _G2_GORE
 		G2_TraceModels(ghoul2, trans_ray_start, trans_ray_end, coll_rec_map, entNum, eG2TraceType, useLod, f_radius, 0, 0, 0, 0, nullptr, qfalse);
 #else
-		G2_TraceModels(ghoul2, transRayStart, transRayEnd, collRecMap, entNum, eG2TraceType, useLod, fRadius);
+		G2_TraceModels(ghoul2, trans_ray_start, trans_ray_end, coll_rec_map, entNum, eG2TraceType, useLod, f_radius);
 #endif
 
 		ri.GetG2VertSpaceServer()->ResetHeap();
@@ -2093,8 +2104,8 @@ void G2API_CopyGhoul2Instance(const CGhoul2Info_v& ghoul2_from, CGhoul2Info_v& g
 			model++;
 		}
 #endif
-		G2ANIM(ghoul2_from, "G2API_CopyGhoul2Instance (source)");
-		G2ANIM(ghoul2To, "G2API_CopyGhoul2Instance (dest)");
+		G2ANIM(const_cast<CGhoul2Info_v&>(ghoul2_from), "G2API_CopyGhoul2Instance (source)");
+		G2ANIM(ghoul2_to, "G2API_CopyGhoul2Instance (dest)");
 	}
 }
 
@@ -2113,7 +2124,12 @@ char* G2API_GetSurfaceName(CGhoul2Info* ghlInfo, const int surf_number)
 			return surf_info->name;
 		}
 	}
-	G2WARNING(0, "Surface Not Found");
+	static qboolean warned_surface_not_found = qfalse;
+	if (!warned_surface_not_found)
+	{
+		G2WARNING(0, "Surface Not Found");
+		warned_surface_not_found = qtrue;
+	}
 	return no_surface;
 }
 
@@ -2317,6 +2333,7 @@ bool G2_TestModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is 
 bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is properly set up
 {
 	G2ERROR(ghlInfo, "NULL ghlInfo");
+	char safe_model_name[MAX_QPATH];
 	if (!ghlInfo)
 	{
 		return false;
@@ -2325,14 +2342,33 @@ bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is
 	//	G2WARNING(ghlInfo->mModelindex != -1,"Setup request on non-used info slot?");
 	if (ghlInfo->mModelindex != -1)
 	{
-		G2ERROR(ghlInfo->mFileName[0], "empty ghlInfo->mFileName");
-		ghlInfo->mModel = RE_RegisterModel(ghlInfo->mFileName);
+		if (!ghlInfo->mFileName[0])
+		{
+			static qboolean warned_empty_filename = qfalse;
+			if (!warned_empty_filename)
+			{
+				G2WARNING(0, "empty ghlInfo->mFileName");
+				warned_empty_filename = qtrue;
+			}
+			return false;
+		}
+
+		Q_strncpyz(safe_model_name, ghlInfo->mFileName, sizeof(safe_model_name));
+		ghlInfo->mModel = RE_RegisterModel(safe_model_name);
 		ghlInfo->currentModel = R_GetModelByHandle(ghlInfo->mModel);
-		G2ERROR(ghlInfo->currentModel, va("NULL Model (glm) %s", ghlInfo->mFileName));
+		G2ERROR(ghlInfo->currentModel, va("NULL Model (glm) %s", safe_model_name));
 		if (ghlInfo->currentModel)
 		{
-			G2ERROR(ghlInfo->currentModel->mdxm, va("Model has no mdxm (glm) %s", ghlInfo->mFileName));
-			if (ghlInfo->currentModel->mdxm)
+			if (!ghlInfo->currentModel->mdxm)
+			{
+				static qboolean warned_no_mdxm = qfalse;
+				if (!warned_no_mdxm)
+				{
+					G2WARNING(0, va("Model has no mdxm (glm) %s", safe_model_name));
+					warned_no_mdxm = qtrue;
+				}
+			}
+				if (ghlInfo->currentModel->mdxm)
 			{
 				if (ghlInfo->currentModelSize)
 				{
@@ -2342,19 +2378,19 @@ bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is
 					}
 				}
 				ghlInfo->currentModelSize = ghlInfo->currentModel->mdxm->ofsEnd;
-				G2ERROR(ghlInfo->currentModelSize, va("Zero sized Model? (glm) %s", ghlInfo->mFileName));
+				G2ERROR(ghlInfo->currentModelSize, va("Zero sized Model? (glm) %s", safe_model_name));
 
 				ghlInfo->animModel = R_GetAnimModelByHandle(
 					ghlInfo, ghlInfo->currentModel->mdxm->animIndex + ghlInfo->animModelIndexOffset);
-				G2ERROR(ghlInfo->animModel, va("NULL Model (gla) %s", ghlInfo->mFileName));
+				G2ERROR(ghlInfo->animModel, va("NULL Model (gla) %s", safe_model_name));
 				if (ghlInfo->animModel)
 				{
 					ghlInfo->aHeader = ghlInfo->animModel->mdxa;
-					G2ERROR(ghlInfo->aHeader, va("Model has no mdxa (gla) %s", ghlInfo->mFileName));
+					G2ERROR(ghlInfo->aHeader, va("Model has no mdxa (gla) %s", safe_model_name));
 					if (!ghlInfo->aHeader)
 					{
 						Com_Error(ERR_DROP, "Ghoul2 (set up model pointers)Model has no mdxa (gla) %s",
-							ghlInfo->mFileName);
+							safe_model_name);
 					}
 					if (ghlInfo->currentAnimModelSize)
 					{

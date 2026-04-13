@@ -972,46 +972,114 @@ static void Player_RestoreFromPrevLevel(gentity_t* ent)
 			// weapons
 			gi.Cvar_VariableStringBuffer("playerweaps", s, sizeof s);
 			int i = 0;
-			const char* var = strtok(s, " ");
-			while (var != nullptr)
+			if (s[0])
 			{
-				client->ps.weapons[i++] = atoi(var);
-				var = strtok(nullptr, " ");
+				const char* var = strtok(s, " ");
+				while (var != nullptr)
+				{
+					if (i < WP_NUM_WEAPONS)
+					{
+						client->ps.weapons[i] = atoi(var);
+					}
+					i++;
+					var = strtok(nullptr, " ");
+				}
+				if (i < WP_NUM_WEAPONS)
+				{
+					for (int j = i; j < WP_NUM_WEAPONS; j++)
+					{
+						client->ps.weapons[j] = 0;
+					}
+				}
+				if (i != WP_NUM_WEAPONS)
+				{
+					Com_Printf(S_COLOR_YELLOW "Player_RestoreFromPrevLevel: playerweaps count %d (expected %d)\\n", i, WP_NUM_WEAPONS);
+				}
 			}
-			assert(i == WP_NUM_WEAPONS);
 
 			// ammo
 			gi.Cvar_VariableStringBuffer("playerammo", s, sizeof s);
 			i = 0;
-			var = strtok(s, " ");
-			while (var != nullptr)
+			if (s[0])
 			{
-				client->ps.ammo[i++] = atoi(var);
-				var = strtok(nullptr, " ");
+				const char* var = strtok(s, " ");
+				while (var != nullptr)
+				{
+					if (i < AMMO_MAX)
+					{
+						client->ps.ammo[i] = atoi(var);
+					}
+					i++;
+					var = strtok(nullptr, " ");
+				}
+				if (i < AMMO_MAX)
+				{
+					for (int j = i; j < AMMO_MAX; j++)
+					{
+						client->ps.ammo[j] = 0;
+					}
+				}
+				if (i != AMMO_MAX)
+				{
+					Com_Printf(S_COLOR_YELLOW "Player_RestoreFromPrevLevel: playerammo count %d (expected %d)\\n", i, AMMO_MAX);
+				}
 			}
-			assert(i == AMMO_MAX);
 
 			// inventory
 			gi.Cvar_VariableStringBuffer("playerinv", s, sizeof s);
 			i = 0;
-			var = strtok(s, " ");
-			while (var != nullptr)
+			if (s[0])
 			{
-				client->ps.inventory[i++] = atoi(var);
-				var = strtok(nullptr, " ");
+				const char* var = strtok(s, " ");
+				while (var != nullptr)
+				{
+					if (i < INV_MAX)
+					{
+						client->ps.inventory[i] = atoi(var);
+					}
+					i++;
+					var = strtok(nullptr, " ");
+				}
+				if (i < INV_MAX)
+				{
+					for (int j = i; j < INV_MAX; j++)
+					{
+						client->ps.inventory[j] = 0;
+					}
+				}
+				if (i != INV_MAX)
+				{
+					Com_Printf(S_COLOR_YELLOW "Player_RestoreFromPrevLevel: playerinv count %d (expected %d)\\n", i, INV_MAX);
+				}
 			}
-			assert(i == INV_MAX);
 
 			// force powers
 			gi.Cvar_VariableStringBuffer("playerfplvl", s, sizeof s);
 			i = 0;
-			var = strtok(s, " ");
-			while (var != nullptr)
+			if (s[0])
 			{
-				client->ps.forcePowerLevel[i++] = atoi(var);
-				var = strtok(nullptr, " ");
+				const char* var = strtok(s, " ");
+				while (var != nullptr)
+				{
+					if (i < NUM_FORCE_POWERS)
+					{
+						client->ps.forcePowerLevel[i] = atoi(var);
+					}
+					i++;
+					var = strtok(nullptr, " ");
+				}
+				if (i < NUM_FORCE_POWERS)
+				{
+					for (int j = i; j < NUM_FORCE_POWERS; j++)
+					{
+						client->ps.forcePowerLevel[j] = 0;
+					}
+				}
+				if (i != NUM_FORCE_POWERS)
+				{
+					Com_Printf(S_COLOR_YELLOW "Player_RestoreFromPrevLevel: playerfplvl count %d (expected %d)\\n", i, NUM_FORCE_POWERS);
+				}
 			}
-			assert(i == NUM_FORCE_POWERS);
 
 			client->ps.forceGripEntityNum = ENTITYNUM_NONE;
 			client->ps.forceDrainEntityNum = ENTITYNUM_NONE;
@@ -1711,7 +1779,7 @@ qboolean g_set_g2_player_model_info(gentity_t* ent, const char* model_name, cons
 #ifndef FINAL_BUILD
 		if (g_developer->integer && ent->rootBone == -1)
 		{
-			Com_Error(ERR_DROP, "ERROR: model %s has no model_root bone (and hence cannot animate)!!!\n", modelName);
+			Com_Error(ERR_DROP, "ERROR: model %s has no model_root bone (and hence cannot animate)!!!\n", model_name);
 		}
 #endif
 		ent->footLBone = BONE_INDEX_INVALID;

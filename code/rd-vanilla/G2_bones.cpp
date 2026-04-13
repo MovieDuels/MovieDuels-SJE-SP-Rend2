@@ -1606,9 +1606,7 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 		return;
 
 	default:
-#ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - unknown RagPhase %d\n", parms->RagPhase);
-#endif
+		Com_Printf("Debug: G2_SetRagDoll - Unknown RagPhase %d\n", parms->RagPhase);
 		return;
 	}
 
@@ -1662,27 +1660,24 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 
 	if (startFrame < 0 || startFrame >= mod_a->numFrames)
 	{
-#ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n", startFrame, mod_a->numFrames - 1);
-#endif
+		Com_Printf("Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n",
+			startFrame, mod_a->numFrames - 1);
 
 		startFrame = (startFrame < 0) ? 0 : (mod_a->numFrames - 1);
 	}
 
 	if (endFrame < 0 || endFrame >= mod_a->numFrames)
 	{
-#ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - endFrame %d out of range (0..%d). Clamping.\n", endFrame, mod_a->numFrames - 1);
-#endif
+		Com_Printf("Debug: G2_SetRagDoll - endFrame %d out of range (0..%d). Clamping.\n",
+			endFrame, mod_a->numFrames - 1);
 
 		endFrame = (endFrame < 0) ? 0 : (mod_a->numFrames - 1);
 	}
 
 	if (endFrame <= startFrame)
 	{
-#ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - endFrame (%d) <= startFrame (%d). Adjusting.\n", endFrame, startFrame);
-#endif
+		Com_Printf("Debug: G2_SetRagDoll - endFrame (%d) <= startFrame (%d). Adjusting.\n",
+			endFrame, startFrame);
 
 		if (startFrame < mod_a->numFrames - 1)
 		{
@@ -1738,9 +1733,8 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 	}
 	else
 	{
-#ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - startFrame == endFrame (%d). Skipping anim setup.\n", startFrame);
-#endif
+		Com_Printf("Debug: G2_SetRagDoll - startFrame == endFrame (%d). Skipping anim setup.\n",
+			startFrame);
 	}
 
 	// ------------------------------------------------------------
@@ -1752,9 +1746,12 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 
 	if (!G2_RagDollSetup(ghoul2, curTime, qtrue, parms->position, qfalse))
 	{
-#ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - G2_RagDollSetup failed to add any rag bones\n");
-#endif
+		static qboolean warned_missing_rag_bones = qfalse;
+		if (!warned_missing_rag_bones)
+		{
+			Com_Printf("WARNING: G2_SetRagDoll - model has no usable rag bones; skipping ragdoll for this model\n");
+			warned_missing_rag_bones = qtrue;
+		}
 		return;
 	}
 
@@ -1788,6 +1785,7 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 			qfalse);
 	}
 }
+
 
 static void G2_SetRagDollBullet(CGhoul2Info& ghoul2, const vec3_t ray_start, const vec3_t hit)
 {
@@ -4347,7 +4345,12 @@ qboolean G2_SetBoneIKState(CGhoul2Info_v& ghoul2, const int time, const char* bo
 
 	if (!G2_RagDollSetup(g2, curTime, true, params->origin, false))
 	{
-		assert(!"failed to add any rag bones");
+		static qboolean warned_ik_missing_rag_bones = qfalse;
+		if (!warned_ik_missing_rag_bones)
+		{
+			Com_Printf("WARNING: G2_IKChain - failed to add rag bones; aborting IK rag setup for this model\n");
+			warned_ik_missing_rag_bones = qtrue;
+		}
 		return qfalse;
 	}
 

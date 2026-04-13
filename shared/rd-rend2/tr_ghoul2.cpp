@@ -1138,9 +1138,7 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 {
 	if (!pMDXAHeader)
 	{
-#ifdef _DEBUG
 		Com_Printf("Debug: G2_GetBonePoolIndex - pMDXAHeader was NULL\n");
-#endif
 		return 0;
 	}
 
@@ -1203,6 +1201,7 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 		(pIndex->iIndex[1] << 8) |
 		pIndex->iIndex[0];
 }
+
 
 static void UnCompressBone(float mat[3][4], int iBoneIndex, const mdxaHeader_t* pMDXAHeader, int iFrame)
 {
@@ -1559,6 +1558,7 @@ void G2_TimingModel(
 		}
 	}
 }
+
 
 #ifdef _RAG_PRINT_TEST
 void G2_RagPrintMatrix(mdxaBone_t* mat);

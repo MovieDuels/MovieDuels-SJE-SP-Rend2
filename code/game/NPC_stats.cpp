@@ -3345,9 +3345,6 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 			// fullName
 			if (!Q_stricmp(token, "fullName"))
 			{
-#ifndef FINAL_BUILD
-				gi.Printf(S_COLOR_YELLOW"WARNING: fullname ignored in NPC '%s'\n", NPCName);
-#endif
 				if (COM_ParseString(&p, &value))
 				{
 				}

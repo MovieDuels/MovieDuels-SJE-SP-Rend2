@@ -5309,7 +5309,7 @@ menuDef_t* Menus_ActivateByName(const char* p)
 		}
 		else
 		{
-			Com_Printf(S_COLOR_YELLOW"WARNING: Menus_ActivateByName: Unable to find menu \"%s\"\n", p);
+			Com_DPrintf(S_COLOR_YELLOW"WARNING: Menus_ActivateByName: Unable to find menu \"%s\"\n", p);
 		}
 	}
 

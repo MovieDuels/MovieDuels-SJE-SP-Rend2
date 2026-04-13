@@ -497,10 +497,6 @@ int CFxScheduler::RegisterEffect(const char* path, const bool b_has_correct_path
 	CGenericParser2 parser;
 	if (!parser.Parse(pfile))
 	{
-		if (!parser.ValidFile())
-		{
-			theFxHelper.Print("RegisterEffect: INVALID file: %s\n", pfile);
-		}
 		return false;
 	}
 	// Lets convert the effect file into something that we can work with
