@@ -280,6 +280,11 @@ void CG_RegisterWeapon(const int weapon_num)
 		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel2.md3");
 		cgi_R_RegisterModel("models/weapons2/stun_baton/baton_barrel3.md3");
 	}
+	else if (weapon_num == WP_Z6_ROTARY_CANNON)
+	{
+		//only weapon with more than 1 barrel..
+		cgi_R_RegisterModel("models/weapons2/z6_rotary/rotary_cannon_barrel.md3");
+	}
 	else
 	{
 		weaponInfo->barrelModel[i] = 0;
@@ -1411,46 +1416,94 @@ static void CG_CalculateWeaponPosition(vec3_t origin, vec3_t angles)
 CG_MachinegunSpinAngle
 ======================
 */
+
 constexpr auto SPIN_SPEED = 0.9f;
 constexpr auto COAST_TIME = 1000;
 
 static float CG_MachinegunSpinAngle(centity_t* cent)
 {
-	float angle;
-	int delta = cg.time - cent->pe.barrelTime;
+	float angle = 0.0f;
+	int   delta = 0;
 
-	if (cent->pe.barrelSpinning)
+	// -----------------------------------------------------------------
+	// Safety: never dereference cent if it's NULL
+	// -----------------------------------------------------------------
+	if (cent == NULL)
 	{
-		angle = cent->pe.barrelAngle + delta * SPIN_SPEED;
+		return 0.0f;
+	}
+
+	delta = cg.time - cent->pe.barrelTime;
+
+	// -----------------------------------------------------------------
+	// Spinning / coasting logic
+	// -----------------------------------------------------------------
+
+	if (cent->pe.barrelSpinning == qtrue)
+	{
+		// Constant spin speed
+		angle = cent->pe.barrelAngle + ((float)delta * SPIN_SPEED);
 	}
 	else
 	{
+		// Coasting down
 		if (delta > COAST_TIME)
 		{
 			delta = COAST_TIME;
 		}
 
-		const float speed = 0.5f * (SPIN_SPEED + static_cast<float>(COAST_TIME - delta) / COAST_TIME);
-		angle = cent->pe.barrelAngle + delta * speed;
+		const float t = (float)(COAST_TIME - delta) / (float)COAST_TIME;
+		const float speed = 0.5f * (SPIN_SPEED + (t * SPIN_SPEED));
+
+		angle = cent->pe.barrelAngle + ((float)delta * speed);
 	}
 
-	// --- FIXED: detect state change ---
-	if (cent->pe.barrelSpinning != !!(cent->currentState.eFlags & EF_FIRING))
+	// -----------------------------------------------------------------
+	// State change detection: EF_FIRING drives barrelSpinning
+	// Use predicted player state for the local client so the viewmodel
+	// barrel responds immediately to player input.
+	// -----------------------------------------------------------------
 	{
-		cent->pe.barrelTime = cg.time;
-		cent->pe.barrelAngle = AngleNormalize360(angle);
-		cent->pe.barrelSpinning = !!(cent->currentState.eFlags & EF_FIRING);
+		qboolean firingNow = qfalse;
 
-		// play spin sound only on state change
-		if (cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON)
+		if (cg.snap != NULL &&
+			cent->currentState.number == cg.predictedPlayerState.clientNum)
 		{
-			cgi_S_StartSound(
-				NULL,
-				cent->currentState.number,
-				CHAN_WEAPON,
-				cgi_S_RegisterSound("sound/weapons/z6/spinny.wav")
-			);
+			// Local player: use predicted state
+			firingNow =
+				(((cg.predictedPlayerState.eFlags & EF_FIRING) != 0 ||
+					(cg.predictedPlayerState.eFlags & EF_ALT_FIRING) != 0)
+					? qtrue : qfalse);
 		}
+		else
+		{
+			// Remote players: use server state
+			firingNow =
+				(((cent->currentState.eFlags & EF_FIRING) != 0 ||
+					(cent->currentState.eFlags & EF_ALT_FIRING) != 0)
+					? qtrue : qfalse);
+		}
+
+		// Transition: start or stop spinning
+		if (cent->pe.barrelSpinning != (firingNow != 0))
+		{
+			cent->pe.barrelTime = cg.time;
+			cent->pe.barrelAngle = AngleNormalize360(angle);
+			cent->pe.barrelSpinning = (firingNow != 0);
+
+			// Play spin-up sound for Z6
+			if (firingNow == qtrue &&
+				cg.snap != NULL &&
+				cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON)
+			{
+				cgi_S_StartSound(
+					NULL,
+					cent->currentState.number,
+					CHAN_WEAPON,
+					cgi_S_RegisterSound("sound/weapons/z6/spinny.wav"));
+			}
+		}
+
 	}
 
 	return angle;
@@ -1943,10 +1996,6 @@ void CG_AddViewWeapon(playerState_t* ps)
 			angles[PITCH] = 0;
 
 			if (cg_SpinningBarrels.integer && ps->weapon == WP_Z6_ROTARY_CANNON)
-			{
-				angles[ROLL] = CG_MachinegunSpinAngle(cent);
-			}
-			else if (cg_SpinningBarrels.integer && ps->weapon == WP_STUN_BATON)
 			{
 				angles[ROLL] = CG_MachinegunSpinAngle(cent);
 			}
@@ -2470,10 +2519,6 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 			angles[PITCH] = 0;
 
 			if (cg_SpinningBarrels.integer && ps->weapon == WP_Z6_ROTARY_CANNON)
-			{
-				angles[ROLL] = CG_MachinegunSpinAngle(cent);
-			}
-			else if (cg_SpinningBarrels.integer && ps->weapon == WP_STUN_BATON)
 			{
 				angles[ROLL] = CG_MachinegunSpinAngle(cent);
 			}

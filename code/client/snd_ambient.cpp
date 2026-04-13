@@ -265,22 +265,38 @@ static void AS_SkipLine()
 -------------------------
 AS_GetTimeBetweenWaves
 
-getTimeBetweenWaves <start> <end>
+Parses:
+	timeBetweenWaves <start> <end>
+
+Stores the values into the ambientSet_t.
 -------------------------
 */
-
 static void AS_GetTimeBetweenWaves(ambientSet_t& set)
 {
-	int startTime, endTime;
+	int startTime = 0;
+	int endTime = 0;
 
-	//Get the data
-	sscanf(parseBuffer + parsePos, "%s %d %d", tempBuffer, &startTime, &endTime);
+	// Attempt to parse two integers from the current line.
+	// sscanf return value must be checked to avoid C6031 warning.
+	const int parsed = sscanf(parseBuffer + parsePos, "%s %d %d", tempBuffer, &startTime, &endTime);
 
-	//Check for swapped start / end
+	if (parsed != 3)
+	{
+		// Debug print instead of assert (Rule 9)
+		Com_Printf(S_COLOR_RED "AS_GetTimeBetweenWaves: WARNING - malformed timeBetweenWaves line. "
+			"Expected 2 integers, got %d\n", parsed);
+
+		// Skip line and leave set unchanged (Rule 4: preserve behaviour)
+		AS_SkipLine();
+		return;
+	}
+
+	// If start > end, swap them (original behaviour preserved)
 	if (startTime > endTime)
 	{
 #ifndef FINAL_BUILD
-		Com_Printf(S_COLOR_YELLOW"WARNING: Corrected swapped start / end times in a \"timeBetweenWaves\" keyword\n");
+		Com_Printf(S_COLOR_YELLOW
+			"AS_GetTimeBetweenWaves: Corrected swapped start/end times in a \"timeBetweenWaves\" keyword\n");
 #endif
 
 		const int swap = startTime;
@@ -288,118 +304,207 @@ static void AS_GetTimeBetweenWaves(ambientSet_t& set)
 		endTime = swap;
 	}
 
-	//Store it
+	// Store parsed values
 	set.time_start = startTime;
 	set.time_end = endTime;
 
+	// Move parser to next line
 	AS_SkipLine();
 }
+
 
 /*
 -------------------------
 AS_GetSubWaves
 
 subWaves <directory> <wave1> <wave2> ...
+Parses a directory name followed by one or more wave names.
+Each wave is registered as "sound/<directory>/<wave>.wav".
 -------------------------
 */
-
 static void AS_GetSubWaves(ambientSet_t& set)
 {
 	char dirBuffer[512];
 
-	//Get the directory for these sets
-	sscanf(parseBuffer + parsePos, "%s %s", tempBuffer, dirBuffer);
+	// ------------------------------------------------------------
+	// Parse directory name and first token after the keyword.
+	// Fix C6031: check sscanf return value.
+	// ------------------------------------------------------------
+	const int parsed = sscanf(parseBuffer + parsePos, "%s %s", tempBuffer, dirBuffer);
 
-	//Move the pointer past these two strings
-	parsePos += ((strlen(keywordNames[SET_KEYWORD_SUBWAVES]) + 1) + (strlen(dirBuffer) + 1));
+	if (parsed != 2)
+	{
+		Com_Printf(S_COLOR_RED
+			"AS_GetSubWaves: WARNING - malformed subWaves line. Expected directory + first wave.\n");
 
-	//Get all the subwaves
+		AS_SkipLine();
+		return;
+	}
+
+	// ------------------------------------------------------------
+	// Move parsePos past: "<keyword> <directory>"
+	// ------------------------------------------------------------
+	parsePos += (strlen(keywordNames[SET_KEYWORD_SUBWAVES]) + 1);
+	parsePos += (strlen(dirBuffer) + 1);
+
+	// ------------------------------------------------------------
+	// Parse all subwave names until newline or buffer end
+	// ------------------------------------------------------------
 	while (parsePos <= parseSize)
 	{
 		char waveBuffer[256];
-		//Get the data
-		sscanf(parseBuffer + parsePos, "%s", waveBuffer);
 
+		// Fix C6031: check sscanf return value
+		const int waveParsed = sscanf(parseBuffer + parsePos, "%s", waveBuffer);
+
+		if (waveParsed != 1)
+		{
+			Com_Printf(S_COLOR_RED
+				"AS_GetSubWaves: WARNING - malformed wave entry in set \"%s\"\n", set.name);
+			break;
+		}
+
+		// --------------------------------------------------------
+		// Enforce maximum subwave count
+		// --------------------------------------------------------
 		if (set.numSubWaves >= MAX_WAVES_PER_GROUP)
 		{
 #ifndef FINAL_BUILD
-			Com_Printf(S_COLOR_YELLOW"WARNING: Too many subwaves on set \"%s\"\n", set.name);
+			Com_Printf(S_COLOR_YELLOW
+				"AS_GetSubWaves: WARNING - Too many subwaves on set \"%s\"\n", set.name);
 #endif
 		}
 		else
 		{
 			char waveName[1024];
-			//Construct the wave name (pretty, huh?)
-			Com_sprintf(waveName, sizeof(waveName), "sound/%s/%s.wav", dirBuffer, waveBuffer);
 
-			//Place this onto the sound directory name
+			// Build full path: sound/<directory>/<wave>.wav
+			Com_sprintf(waveName, sizeof(waveName),
+				"sound/%s/%s.wav", dirBuffer, waveBuffer);
 
-			//Precache the file at this point and store off the ID instead of the name
-			if ((set.subWaves[set.numSubWaves++] = S_RegisterSound(waveName)) <= 0)
+			// Register sound and store ID
+			const sfxHandle_t id = S_RegisterSound(waveName);
+
+			if (id <= 0)
 			{
 #ifndef FINAL_BUILD
-				Com_DPrintf(S_COLOR_RED"ERROR: Unable to load ambient sound \"%s\"\n", waveName);
+				Com_Printf(S_COLOR_RED
+					"AS_GetSubWaves: ERROR - Unable to load ambient sound \"%s\"\n", waveName);
 #endif
+			}
+			else
+			{
+				set.subWaves[set.numSubWaves++] = id;
 			}
 		}
 
-		//Move the pointer past this string
+		// --------------------------------------------------------
+		// Advance parsePos past this wave token
+		// --------------------------------------------------------
 		parsePos += strlen(waveBuffer) + 1;
 
-		if (((parseBuffer + parsePos)[0] == '\n') || ((parseBuffer + parsePos)[0] == '\r'))
+		// Stop if newline reached
+		const char nextChar = (parseBuffer + parsePos)[0];
+		if (nextChar == '\n' || nextChar == '\r')
+		{
 			break;
+		}
 	}
 
 	AS_SkipLine();
-}
-
-/*
+}/*
 -------------------------
 AS_GetLoopedWave
 
 loopedWave <name>
+
+Parses a single looped ambient sound and registers it.
 -------------------------
 */
-
 static void AS_GetLoopedWave(ambientSet_t& set)
 {
-	char waveBuffer[256], waveName[1024];
+	char waveBuffer[256];
+	char waveName[1024];
 
-	//Get the looped wave name
-	sscanf(parseBuffer + parsePos, "%s %s", tempBuffer, waveBuffer);
+	// ------------------------------------------------------------
+	// Parse: "<keyword> <waveName>"
+	// Fix C6031: check sscanf return value.
+	// ------------------------------------------------------------
+	const int parsed = sscanf(parseBuffer + parsePos, "%s %s", tempBuffer, waveBuffer);
 
-	//Construct the wave name
-	Com_sprintf(waveName, sizeof(waveName), "sound/%s.wav", waveBuffer);
-
-	//Precache the file at this point and store off the ID instead of the name
-	if ((set.loopedWave = S_RegisterSound(waveName)) <= 0)
+	if (parsed != 2)
 	{
-#ifndef FINAL_BUILD
-		Com_DPrintf(S_COLOR_RED"ERROR: Unable to load ambient sound \"%s\"\n", waveName);
-#endif
+		Com_Printf(S_COLOR_RED
+			"AS_GetLoopedWave: WARNING - malformed loopedWave line. Expected a single wave name.\n");
+
+		AS_SkipLine();
+		return;
 	}
 
+	// ------------------------------------------------------------
+	// Build full path: sound/<wave>.wav
+	// ------------------------------------------------------------
+	Com_sprintf(waveName, sizeof(waveName), "sound/%s.wav", waveBuffer);
+
+	// ------------------------------------------------------------
+	// Register the sound and store the ID
+	// ------------------------------------------------------------
+	const sfxHandle_t id = S_RegisterSound(waveName);
+
+	if (id <= 0)
+	{
+#ifndef FINAL_BUILD
+		Com_Printf(S_COLOR_RED
+			"AS_GetLoopedWave: ERROR - Unable to load ambient sound \"%s\"\n", waveName);
+#endif
+	}
+	else
+	{
+		set.loopedWave = id;
+	}
+
+	// ------------------------------------------------------------
+	// Advance to next line
+	// ------------------------------------------------------------
 	AS_SkipLine();
 }
-
 /*
 -------------------------
 AS_GetVolumeRange
+
+volRange <min> <max>
+
+Parses a minimum and maximum volume range for an ambient set.
 -------------------------
 */
-
 static void AS_GetVolumeRange(ambientSet_t& set)
 {
-	int min, max;
+	int min = 0;
+	int max = 0;
 
-	//Get the data
-	sscanf(parseBuffer + parsePos, "%s %d %d", tempBuffer, &min, &max);
+	// ------------------------------------------------------------
+	// Parse: "<keyword> <min> <max>"
+	// Fix C6031: check sscanf return value.
+	// ------------------------------------------------------------
+	const int parsed = sscanf(parseBuffer + parsePos, "%s %d %d", tempBuffer, &min, &max);
 
-	//Check for swapped min / max
+	if (parsed != 3)
+	{
+		Com_Printf(S_COLOR_RED
+			"AS_GetVolumeRange: WARNING - malformed volRange line. Expected 2 integers.\n");
+
+		AS_SkipLine();
+		return;
+	}
+
+	// ------------------------------------------------------------
+	// Swap if reversed (original behaviour preserved)
+	// ------------------------------------------------------------
 	if (min > max)
 	{
 #ifndef FINAL_BUILD
-		Com_Printf(S_COLOR_YELLOW"WARNING: Corrected swapped min / max range in a \"volRange\" keyword\n");
+		Com_Printf(S_COLOR_YELLOW
+			"AS_GetVolumeRange: Corrected swapped min/max range in a \"volRange\" keyword\n");
 #endif
 
 		const int swap = min;
@@ -407,26 +512,57 @@ static void AS_GetVolumeRange(ambientSet_t& set)
 		max = swap;
 	}
 
-	//Store the data
+	// ------------------------------------------------------------
+	// Store parsed values
+	// ------------------------------------------------------------
 	set.volRange_start = min;
 	set.volRange_end = max;
 
+	// ------------------------------------------------------------
+	// Advance to next line
+	// ------------------------------------------------------------
 	AS_SkipLine();
 }
 
 /*
 -------------------------
 AS_GetRadius
+
+radius <value>
+
+Parses a single integer radius value for an ambient set.
 -------------------------
 */
-
 static void AS_GetRadius(ambientSet_t& set)
 {
-	//Get the data
-	sscanf(parseBuffer + parsePos, "%s %d", tempBuffer, &set.radius);
+	int radius = 0;
 
+	// ------------------------------------------------------------
+	// Parse: "<keyword> <radius>"
+	// Fix C6031: check sscanf return value.
+	// ------------------------------------------------------------
+	const int parsed = sscanf(parseBuffer + parsePos, "%s %d", tempBuffer, &radius);
+
+	if (parsed != 2)
+	{
+		Com_Printf(S_COLOR_RED
+			"AS_GetRadius: WARNING - malformed radius line. Expected a single integer.\n");
+
+		AS_SkipLine();
+		return;
+	}
+
+	// ------------------------------------------------------------
+	// Store parsed radius
+	// ------------------------------------------------------------
+	set.radius = radius;
+
+	// ------------------------------------------------------------
+	// Advance to next line
+	// ------------------------------------------------------------
 	AS_SkipLine();
 }
+
 
 /*
 -------------------------
@@ -586,111 +722,176 @@ static void AS_GetBModelSet(ambientSet_t& set)
 			return;
 		}
 	}
-}
-
-/*
+}/*
 -------------------------
 AS_ParseSet
 
-Parses an individual set group out of a set file buffer
+Parses an individual ambient set group out of a set file buffer.
 -------------------------
 */
-
 static qboolean AS_ParseSet(const int setID, CSetGroup* sg)
 {
-	//Make sure we're not overstepping the name array
+	// ------------------------------------------------------------
+	// Validate set index
+	// ------------------------------------------------------------
 	if (setID >= NUM_AS_SETS)
+	{
 		return qfalse;
+	}
 
-	//Reset the pointers for this run through
+	// Reset parser position for this run
 	parsePos = 0;
 
 	const char* name = setNames[setID];
 
-	//Iterate through the whole file and find every occurance of a set
+	// ------------------------------------------------------------
+	// Iterate through the entire buffer looking for occurrences
+	// of the set keyword (e.g., "set1", "set2", etc.)
+	// ------------------------------------------------------------
 	while (parsePos <= parseSize)
 	{
-		//Check for a valid set group
+		// Check if this line begins with the set keyword
 		if (Q_strncmp(parseBuffer + parsePos, name, strlen(name)) == 0)
 		{
-			//Update the debug info
 			numSets++;
 
-			//Push past the set specifier and on to the name
-			parsePos += strlen(name) + 1; //Also take the following space out
+			// Move past "<keyword> "
+			parsePos += strlen(name) + 1;
 
-			//Get the set name (this MUST be first)
-			sscanf(parseBuffer + parsePos, "%s", tempBuffer);
-			AS_SkipLine();
+			// --------------------------------------------------------
+			// Parse the set name (must be first token)
+			// Fix C6031: check sscanf return value
+			// --------------------------------------------------------
+			const int parsed = sscanf(parseBuffer + parsePos, "%s", tempBuffer);
 
-			//Test the string against the precaches
-			if (tempBuffer[0])
+			if (parsed != 1)
 			{
-				//Not in our precache listings, so skip it
-				if ((pMap->find(reinterpret_cast<const char*>(&tempBuffer)) == pMap->end()))
-					continue;
+				Com_Printf(S_COLOR_RED
+					"AS_ParseSet: WARNING - malformed set name for setID %d\n", setID);
+
+				AS_SkipLine();
+				continue;
 			}
 
-			//Create a new set
+			AS_SkipLine();
+
+			// --------------------------------------------------------
+			// Validate against precache map
+			// If not precached, skip this set entirely
+			// --------------------------------------------------------
+			if (tempBuffer[0] != '\0')
+			{
+				if (pMap->find(reinterpret_cast<const char*>(&tempBuffer)) == pMap->end())
+				{
+					continue;
+				}
+			}
+
+			// --------------------------------------------------------
+			// Create a new ambient set entry
+			// --------------------------------------------------------
 			ambientSet_t* set = sg->AddSet(reinterpret_cast<const char*>(&tempBuffer));
 
-			//Run the function to parse the data out
+			// --------------------------------------------------------
+			// Parse the set's internal data using the appropriate function
+			// --------------------------------------------------------
 			parseFuncs[setID](*set);
 			continue;
 		}
 
-		//If not found on this line, go down another and check again
+		// Not found on this line — skip to next
 		AS_SkipLine();
 	}
 
 	return qtrue;
-}
-
-/*
+}/*
 -------------------------
 AS_ParseHeader
 
-Parses the directory information out of the beginning of the file
+Parses the directory/type information at the beginning of the file.
+Stops when it finds:
+    type ambientSet
 -------------------------
 */
-
 static void AS_ParseHeader()
 {
 	while (parsePos <= parseSize)
 	{
 		char typeBuffer[128];
-		sscanf(parseBuffer + parsePos, "%s", tempBuffer);
 
+		// ------------------------------------------------------------
+		// Parse first token on the line
+		// Fix C6031: check sscanf return value
+		// ------------------------------------------------------------
+		const int parsed = sscanf(parseBuffer + parsePos, "%s", tempBuffer);
+
+		if (parsed != 1)
+		{
+			Com_Printf(S_COLOR_RED
+				"AS_ParseHeader: WARNING - malformed header line (missing keyword)\n");
+			AS_SkipLine();
+			continue;
+		}
+
+		// Identify keyword
 		const int keywordID = AS_GetKeywordIDForString(reinterpret_cast<const char*>(&tempBuffer));
 
 		switch (keywordID)
 		{
+			// --------------------------------------------------------
+			// TYPE keyword: must be "ambientSet"
+			// --------------------------------------------------------
 		case SET_KEYWORD_TYPE:
-			sscanf(parseBuffer + parsePos, "%s %s", tempBuffer, typeBuffer);
+		{
+			const int parsedType = sscanf(parseBuffer + parsePos, "%s %s", tempBuffer, typeBuffer);
 
-			if (!Q_stricmp(typeBuffer, "ambientSet"))
+			if (parsedType != 2)
 			{
-				return;
+				Com_Printf(S_COLOR_RED
+					"AS_ParseHeader: WARNING - malformed type line\n");
+				AS_SkipLine();
+				continue;
 			}
-			Com_Error(ERR_DROP, "AS_ParseHeader: Set type \"%s\" is not a valid set type!\n", typeBuffer);
 
+			// Valid type?
+			if (Q_stricmp(typeBuffer, "ambientSet") == 0)
+			{
+				return; // Header complete
+			}
+
+			// Invalid type → drop with error (original behaviour)
+			Com_Error(ERR_DROP,
+				"AS_ParseHeader: Set type \"%s\" is not a valid set type!\n",
+				typeBuffer);
+			break;
+		}
+
+		// --------------------------------------------------------
+		// AMSDIR / OUTDIR / BASEDIR
+		// Not implemented in original code — preserve behaviour
+		// --------------------------------------------------------
 		case SET_KEYWORD_AMSDIR:
-			//TODO: Implement
+			// TODO: Implement
 			break;
 
 		case SET_KEYWORD_OUTDIR:
-			//TODO: Implement
+			// TODO: Implement
 			break;
 
 		case SET_KEYWORD_BASEDIR:
-			//TODO: Implement
+			// TODO: Implement
 			break;
-		default:;
+
+		default:
+			// Unknown keyword — skip line
+			break;
 		}
 
+		// Move to next line
 		AS_SkipLine();
 	}
 }
+
 
 /*
 -------------------------
@@ -854,24 +1055,6 @@ void AS_Free()
 		oldSetTime = 0;
 
 		numSets = 0;
-	}
-}
-
-void AS_FreePartial()
-{
-	if (aSets)
-	{
-		aSets->Free();
-		currentSet = -1;
-		oldSet = -1;
-
-		currentSetTime = 0;
-		oldSetTime = 0;
-
-		numSets = 0;
-
-		pMap = TheNamePrecache();
-		pMap->clear();
 	}
 }
 
