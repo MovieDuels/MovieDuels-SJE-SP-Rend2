@@ -911,13 +911,12 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 	// Use static storage to avoid large per-call stack usage
 	static gentity_t* entity_list[MAX_GENTITIES];
 
-	vec3_t mins{};
-	vec3_t maxs{};
-
-	for (int i = 0; i < 3; i++)
-	{
-		mins[i] = NPC->client->renderInfo.eyePoint[i] - NPC->speed;
-		maxs[i] = NPC->client->renderInfo.eyePoint[i] + NPC->speed;
+	// Limit detection to a fixed radius to prevent map-wide aggro
+	constexpr float DETECTION_RADIUS = 1024.0f; // 1024 units is a reasonable sight/hearing range
+	vec3_t mins, maxs;
+	for (int i = 0; i < 3; i++) {
+		mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS;
+		maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS;
 	}
 
 	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
@@ -943,41 +942,42 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 			continue;
 		}
 
-		// Primary cone check
-		if (InFOV(enemy->currentOrigin,
-			NPC->client->renderInfo.eyePoint,
-			NPC->client->renderInfo.eyeAngles,
-			NPCInfo->stats.hfov,
-			NPCInfo->stats.vfov))
-		{
-			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
-
-			// 16^2 fudge factor
-			if (dist_sq - 256.0f <= NPC->speed * NPC->speed)
+		// Primary cone check with distance limit
+		const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
+		if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS) {
+			if (InFOV(enemy->currentOrigin,
+				NPC->client->renderInfo.eyePoint,
+				NPC->client->renderInfo.eyeAngles,
+				NPCInfo->stats.hfov,
+				NPCInfo->stats.vfov))
 			{
-				if (G_ClearLOS(NPC, enemy))
-				{
-					G_SetEnemy(NPC, enemy);
-					TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
-					return qtrue;
+				// 16^2 fudge factor
+				if (dist_sq - 256.0f <= DETECTION_RADIUS * DETECTION_RADIUS) {
+					if (G_ClearLOS(NPC, enemy)) {
+						G_SetEnemy(NPC, enemy);
+						TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
+						return qtrue;
+					}
 				}
 			}
 		}
 
-		// Wider "suspicion" cone
-		if (InFOV(enemy->currentOrigin,
-			NPC->client->renderInfo.eyePoint,
-			NPC->client->renderInfo.eyeAngles,
-			90.0f,
-			NPCInfo->stats.vfov * 3.0f))
-		{
-			if (G_ClearLOS(NPC, enemy))
+		// Wider "suspicion" cone with distance limit
+		if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS) {
+			if (InFOV(enemy->currentOrigin,
+				NPC->client->renderInfo.eyePoint,
+				NPC->client->renderInfo.eyeAngles,
+				90.0f,
+				NPCInfo->stats.vfov * 3.0f))
 			{
-				if (!suspect ||
-					DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
-					DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+				if (G_ClearLOS(NPC, enemy))
 				{
-					suspect = enemy;
+					if (!suspect ||
+						DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
+						DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+					{
+						suspect = enemy;
+					}
 				}
 			}
 		}
