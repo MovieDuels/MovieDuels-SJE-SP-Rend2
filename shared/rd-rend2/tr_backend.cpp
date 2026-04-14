@@ -23,6 +23,63 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_allocator.h"
 #include "glext.h"
 #include <algorithm>
+#include <cstring>
+
+// SmallVector: lightweight growable array that allocates from the per-frame Allocator
+template<typename T>
+struct SmallVector
+{
+	T* data_ = nullptr;
+	int sz = 0;
+	int cap = 0;
+	Allocator* allocator = nullptr;
+
+	void init(Allocator& a, int capacity)
+	{
+		allocator = &a;
+		cap = capacity;
+		sz = 0;
+		if (cap > 0)
+			data_ = ojkAllocArray<T>(a, cap);
+		else
+			data_ = nullptr;
+	}
+
+	int size() const { return sz; }
+	int capacity() const { return cap; }
+	T* data() { return data_; }
+	const T* data() const { return data_; }
+
+	T& operator[](int i) { return data_[i]; }
+
+	bool reserve(int newCap)
+	{
+		if (newCap <= cap)
+			return true;
+		if (!allocator)
+			return false;
+		T* newData = ojkAllocArray<T>(*allocator, newCap);
+		if (!newData)
+			return false;
+		if (sz > 0 && data_)
+			memcpy(newData, data_, sizeof(T) * sz);
+		data_ = newData;
+		cap = newCap;
+		return true;
+	}
+
+	bool push_back(const T& v)
+	{
+		if (sz >= cap)
+		{
+			int newCap = cap ? cap * 2 : 8;
+			if (!reserve(newCap))
+				return false;
+		}
+		data_[sz++] = v;
+		return true;
+	}
+};
 
 backEndData_t* backEndData;
 backEndState_t	backEnd;
@@ -1026,10 +1083,8 @@ SamplerBinding* SamplerBindingsWriter::Finish(Allocator& destHeap, uint32_t* num
 
 struct Pass
 {
-	int maxDrawItems;
-	int numDrawItems;
-	DrawItem* drawItems;
-	uint32_t* sortKeys;
+	SmallVector<DrawItem> drawItems;
+	SmallVector<uint32_t> sortKeys;
 };
 
 static void RB_BindTextures(size_t numBindings, const SamplerBinding* bindings)
@@ -1176,14 +1231,17 @@ void RB_AddDrawItem(Pass* pass, uint32_t sortKey, const DrawItem& drawItem)
 	// There will be no pass if we are drawing a 2D object.
 	if (pass)
 	{
-		if (pass->numDrawItems >= pass->maxDrawItems)
+        if (!pass->sortKeys.push_back(sortKey))
 		{
-			assert(!"Ran out of space for pass");
+			assert(!"Ran out of space for pass (allocation failed)");
 			return;
 		}
 
-		pass->sortKeys[pass->numDrawItems] = sortKey;
-		pass->drawItems[pass->numDrawItems++] = drawItem;
+		if (!pass->drawItems.push_back(drawItem))
+		{
+			assert(!"Ran out of space for pass (allocation failed)");
+			return;
+		}
 	}
 	else
 	{
@@ -1196,9 +1254,8 @@ static Pass* RB_CreatePass(Allocator& allocator, int capacity)
 {
 	Pass* pass = ojkAlloc<Pass>(*backEndData->perFrameMemory);
 	*pass = {};
-	pass->maxDrawItems = capacity;
-	pass->drawItems = ojkAllocArray<DrawItem>(allocator, pass->maxDrawItems);
-	pass->sortKeys = ojkAllocArray<uint32_t>(allocator, pass->maxDrawItems);
+	pass->drawItems.init(allocator, capacity);
+	pass->sortKeys.init(allocator, capacity);
 	return pass;
 }
 
@@ -1415,20 +1472,18 @@ static void RB_SubmitRenderPass(
 	Pass& renderPass,
 	Allocator& allocator)
 {
-	uint32_t* drawOrder = ojkAllocArray<uint32_t>(
-		allocator, renderPass.numDrawItems);
-
-	uint32_t numDrawItems = renderPass.numDrawItems;
+	uint32_t numDrawItems = renderPass.sortKeys.size();
+	uint32_t* drawOrder = ojkAllocArray<uint32_t>(allocator, numDrawItems);
 	for (uint32_t i = 0; i < numDrawItems; ++i)
 		drawOrder[i] = i;
 
-	uint32_t* sortKeys = renderPass.sortKeys;
+	uint32_t* sortKeys = renderPass.sortKeys.data();
 	std::sort(drawOrder, drawOrder + numDrawItems, [sortKeys](uint32_t a, uint32_t b)
 		{
 			return sortKeys[a] < sortKeys[b];
 		});
 
-	RB_DrawItems(renderPass.numDrawItems, renderPass.drawItems, drawOrder);
+	RB_DrawItems(numDrawItems, renderPass.drawItems.data(), drawOrder);
 }
 
 /*

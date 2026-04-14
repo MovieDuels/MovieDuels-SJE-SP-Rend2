@@ -15007,8 +15007,12 @@ void CG_Player(centity_t* cent)
 			}
 		}
 	}
+	if (cent->gent->client->isRagging)
+	{
+		G_RagDoll(cent->gent, cent->lerpAngles);
+	}
 
-	G_RagDoll(cent->gent, cent->lerpAngles);
+	//G_RagDoll(cent->gent, cent->lerpAngles);
 
 	if (cent->currentState.weapon)
 	{

@@ -913,7 +913,7 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 
 	// Limit detection to a fixed radius to prevent map-wide aggro
 	constexpr float DETECTION_RADIUS = 1024.0f; // 1024 units is a reasonable sight/hearing range
-	vec3_t mins, maxs;
+	vec3_t mins{}, maxs{};
 	for (int i = 0; i < 3; i++) {
 		mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS;
 		maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS;

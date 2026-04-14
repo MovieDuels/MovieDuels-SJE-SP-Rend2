@@ -1959,8 +1959,10 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 		CGameRagDollUpdateParams tuParms;
 		const int               ragAnim = G_RagAnimForPositioning(ent);
 
-		memset(&tParms, 0, sizeof(tParms));
-		memset(&tuParms, 0, sizeof(tuParms));
+		// Value‑initialize objects instead of memset to preserve vptrs for polymorphic types
+		// (memset on polymorphic objects can zero the vptr and cause crashes on virtual calls).
+		tParms = CRagDollParams();
+		tuParms = CGameRagDollUpdateParams();
 
 		// Base frames for ragdoll settling
 		tParms.startFrame =
@@ -2370,7 +2372,7 @@ void G_RunFrame(const int level_time)
 			else if (ent->client->ps.cloakFuel < 100)
 			{
 				//recharge cloak
-				if (ent->client->cloakDebRecharge < level.time)
+				if (ent->client->cloakDebRecharge < level.time && !ent->client->ps.powerups[PW_CLOAKED])
 				{
 					ent->client->ps.cloakFuel++;
 					ent->client->cloakDebRecharge = level.time + CLOAK_REFUEL_RATE;
@@ -2403,7 +2405,7 @@ void G_RunFrame(const int level_time)
 			else if (ent->client->ps.BarrierFuel < 100)
 			{
 				//recharge cloak
-				if (ent->client->BarrierDebRecharge < level.time)
+				if (ent->client->BarrierDebRecharge < level.time && !ent->client->ps.powerups[PW_GALAK_SHIELD])
 				{
 					ent->client->ps.BarrierFuel++;
 					ent->client->BarrierDebRecharge = level.time + BARRIER_REFUEL_RATE;

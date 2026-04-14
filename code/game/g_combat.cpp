@@ -4370,6 +4370,7 @@ qboolean G_RagDollDisallowedClass(const class_t npc_class)
 	}
 }
 
+extern qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles);
 /*
 ==================
 player_die
@@ -4388,92 +4389,85 @@ extern void Wampa_DropVictim(gentity_t* self);
 extern void WP_StopForceHealEffects(const gentity_t* self);
 extern void Boba_NoDeadFlameThrower(const gentity_t* self);
 
-void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const int damage, const int means_of_death,
+void player_die(gentity_t* self,
+	gentity_t* inflictor,
+	gentity_t* attacker,
+	const int damage,
+	const int means_of_death,
 	const int d_flags,
 	const int hit_loc)
 {
-	int anim;
-	int contents;
+	int      anim = -1;
+	int      contents = 0;
 	qboolean death_script = qfalse;
 	qboolean last_in_group = qfalse;
 	qboolean special_anim = qfalse;
 	qboolean holding_saber = qfalse;
-	int cliff_fall = 0;
+	int      cliff_fall = 0;
 
-	if (self->client->hook)
+	// -----------------------------------------------------------------
+	// Safety: basic pointer sanity (should never be null in normal flow)
+	// -----------------------------------------------------------------
+	if (self == NULL || self->client == NULL)
 	{
-		// free it!
+#ifdef _DEBUG
+		Com_Printf("Debug: player_die called with invalid self/client\n");
+#endif
+		return;
+	}
+
+	// -----------------------------------------------------------------
+	// Free any active hook / stun weapons
+	// -----------------------------------------------------------------
+	if (self->client->hook != NULL)
+	{
 		Weapon_HookFree(self->client->hook);
+		self->client->hook = NULL;
 	}
 
-	if (self->client->stun)
+	if (self->client->stun != NULL)
 	{
-		// free it!
 		Weapon_StunFree(self->client->stun);
+		self->client->stun = NULL;
 	}
 
-	//FIXME: somehow people are sometimes not completely dying???
-	if (self->client->ps.pm_type == PM_DEAD && (means_of_death != MOD_SNIPER && means_of_death != MOD_PROJECTION_END ||
-		self
-		->flags & FL_DISINTEGRATED))
+	// -----------------------------------------------------------------
+	// Early-out: entity is already in PM_DEAD (legacy "double death" fix)
+	// -----------------------------------------------------------------
+	if (self->client->ps.pm_type == PM_DEAD &&
+		((means_of_death != MOD_SNIPER && means_of_death != MOD_PROJECTION_END) ||
+			(self->flags & FL_DISINTEGRATED)))
 	{
-		//do dismemberment/twitching
+		// Already dead: just handle death FX / twitch / cleanup
+
 		if (self->client->NPC_class == CLASS_MARK1)
 		{
+			// MARK1: custom death FX and immediate removal
 			DeathFX(self);
+
 			self->takedamage = qfalse;
 			self->client->ps.eFlags |= EF_NODRAW;
 			self->contents = 0;
+
 			self->e_ThinkFunc = thinkF_G_FreeEntity;
 			self->nextthink = level.time + FRAMETIME;
 		}
 		else
 		{
+			// Normal NPC: pick a death anim and handle dismemberment/gibbing
+
 			anim = G_PickDeathAnim(self, self->pos1, damage, hit_loc);
 
-			if (d_flags & DAMAGE_DISMEMBER || means_of_death == MOD_SABER)
+			// ---------------------------------------------------------
+			// Saber / explicit dismemberment
+			// ---------------------------------------------------------
+			if ((d_flags & DAMAGE_DISMEMBER) || means_of_death == MOD_SABER)
 			{
-				if (self->client->NPC_class == CLASS_PROJECTION)
-				{
-					//gentity_t* tent;
-					//vec3_t		spot;
-
-					//VectorCopy(self->currentOrigin, spot);
-
-					//self->flags |= FL_DISINTEGRATED;
-					//self->svFlags |= SVF_BROADCAST;
-					//tent = G_TempEntity(spot, EV_DISINTEGRATION);
-					//tent->s.eventParm = PW_DISRUPTION;
-					//tent->svFlags |= SVF_BROADCAST;
-					//tent->owner = self;
-
-					//G_AlertTeam(self, attacker, 512, 88);
-
-					//if (self->playerModel >= 0)
-					//{
-					//	// don't let 'em animate
-					//	gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->rootBone, cg.time);
-					//	gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->motionBone, cg.time);
-					//	gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->lowerLumbarBone, cg.time);
-					//	anim = -1;
-					//}
-
-					////not solid anymore
-					//self->contents = 0;
-					//self->maxs[2] = -8;
-
-					//if (self->NPC)
-					//{
-					//	//need to pad deathtime some to stick around long enough for death effect to play
-					//	self->NPC->timeOfDeath = level.time + 2000;
-					//}
-					G_DoDismemberment(self, self->pos1, means_of_death, hit_loc);
-				}
-				else
-				{
-					G_DoDismemberment(self, self->pos1, means_of_death, hit_loc);
-				}
+				G_DoDismemberment(self, self->pos1, means_of_death, hit_loc);
 			}
+			// ---------------------------------------------------------
+			// Gun / explosive dismemberment (gibbing)
+			// ---------------------------------------------------------
 			else if (means_of_death == MOD_BLASTER
 				|| means_of_death == MOD_BLASTER_ALT
 				|| means_of_death == MOD_REBELBLASTER
@@ -4496,101 +4490,77 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 				|| means_of_death == MOD_FLECHETTE
 				|| means_of_death == MOD_BRYAR_ALT
 				|| means_of_death == MOD_BRYAR
-				|| means_of_death == MOD_EMPLACED && !NPC_IsNotDismemberable(self))
+				|| (means_of_death == MOD_EMPLACED && !NPC_IsNotDismemberable(self)))
 			{
-				if (self->client->NPC_class == CLASS_PROJECTION)
-				{
-					//gentity_t* tent;
-					//vec3_t		spot;
-
-					//VectorCopy(self->currentOrigin, spot);
-
-					//self->flags |= FL_DISINTEGRATED;
-					//self->svFlags |= SVF_BROADCAST;
-					//tent = G_TempEntity(spot, EV_DISINTEGRATION);
-					//tent->s.eventParm = PW_DISRUPTION;
-					//tent->svFlags |= SVF_BROADCAST;
-					//tent->owner = self;
-
-					//G_AlertTeam(self, attacker, 512, 88);
-
-					//if (self->playerModel >= 0)
-					//{
-					//	// don't let 'em animate
-					//	gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->rootBone, cg.time);
-					//	gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->motionBone, cg.time);
-					//	gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->lowerLumbarBone, cg.time);
-					//	anim = -1;
-					//}
-
-					////not solid anymore
-					//self->contents = 0;
-					//self->maxs[2] = -8;
-
-					//if (self->NPC)
-					//{
-					//	//need to pad deathtime some to stick around long enough for death effect to play
-					//	self->NPC->timeOfDeath = level.time + 2000;
-					//}
-					GibEntity(self);
-					G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc);
-				}
-				else
-				{
-					GibEntity(self);
-					G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc);
-				}
+				GibEntity(self);
+				G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc);
 			}
+
+			// ---------------------------------------------------------
+			// Apply death animation if valid
+			// ---------------------------------------------------------
 			if (anim >= 0)
 			{
-				NPC_SetAnim(self, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+				NPC_SetAnim(self,
+					SETANIM_BOTH,
+					anim,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 			}
 		}
+
+		// Already-dead path is done
 		return;
 	}
 
-	// If the entity is in a vehicle.
-	if (self->client && self->client->NPC_class != CLASS_VEHICLE && self->s.m_iVehicleNum != 0)
+	// -----------------------------------------------------------------
+	// Vehicle handling: eject and send vehicle to its death
+	// -----------------------------------------------------------------
+	if (self->client &&
+		self->client->NPC_class != CLASS_VEHICLE &&
+		self->s.m_iVehicleNum != 0)
 	{
 		Vehicle_t* p_veh = g_entities[self->s.m_iVehicleNum].m_pVehicle;
-		if (p_veh)
+
+		if (p_veh != NULL)
 		{
-			if (p_veh->m_pOldPilot != self
-				&& p_veh->m_pPilot != self)
+			if (p_veh->m_pOldPilot != self &&
+				p_veh->m_pPilot != self)
 			{
-				//whaaa?  I'm not on this bike?  er....
-				assert(!!"How did we get to this point?");
+#ifdef _DEBUG
+				Com_Printf("Debug: player_die - entity %d flagged in vehicle %d but not pilot/oldPilot\n",
+					self->s.number, self->s.m_iVehicleNum);
+#endif
 			}
 			else
 			{
 				// Get thrown out.
 				p_veh->m_pVehicleInfo->Eject(p_veh, self, qtrue);
 
-				// Now Send The Vehicle Flying To It's Death
-				if (p_veh->m_pVehicleInfo->type == VH_SPEEDER && p_veh->m_pParentEntity && p_veh->m_pParentEntity->
-					client)
+				// Now send the vehicle flying to its death (speeders only)
+				if (p_veh->m_pVehicleInfo->type == VH_SPEEDER &&
+					p_veh->m_pParentEntity != NULL &&
+					p_veh->m_pParentEntity->client != NULL)
 				{
 					gentity_t* parent = p_veh->m_pParentEntity;
-					float cur_speed = VectorLength(parent->client->ps.velocity);
+					float      cur_speed = VectorLength(parent->client->ps.velocity);
 
-					// If Moving
-					//-----------
+					// If moving fast enough
 					if (cur_speed > p_veh->m_pVehicleInfo->speedMax * 0.5f)
 					{
-						// Send The Bike Out Of Control
-						//------------------------------
+						// Send the bike out of control
 						p_veh->m_pVehicleInfo->StartDeathDelay(p_veh, 10000);
 						p_veh->m_ulFlags |= VEH_OUTOFCONTROL;
 						VectorScale(parent->client->ps.velocity, 1.25f, parent->pos3);
 
-						// Try To Accelerate A Slowing Moving Vehicle To Full Speed
-						//----------------------------------------------------------
+						// Try to accelerate a slowing vehicle to full speed
 						if (cur_speed < p_veh->m_pVehicleInfo->speedMax * 0.9f)
 						{
 							VectorNormalize(parent->pos3);
 							if (fabsf(parent->pos3[2]) < 0.3f)
 							{
-								VectorScale(parent->pos3, p_veh->m_pVehicleInfo->speedMax * 1.25f, parent->pos3);
+								VectorScale(parent->pos3,
+									p_veh->m_pVehicleInfo->speedMax * 1.25f,
+									parent->pos3);
 							}
 							else
 							{
@@ -4598,9 +4568,8 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 							}
 						}
 
-						// Throw The Pilot
-						//----------------
-						if (parent->pos3[0] || parent->pos3[1])
+						// Throw the pilot
+						if (parent->pos3[0] != 0.0f || parent->pos3[1] != 0.0f)
 						{
 							vec3_t throw_dir;
 
@@ -4609,8 +4578,9 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 							throw_dir[2] += 0.3f; // up a little
 
 							self->client->noRagTime = -1; // no ragdoll for you
+
 							cur_speed /= 10.0f;
-							if (cur_speed < 50.0)
+							if (cur_speed < 50.0f)
 							{
 								cur_speed = 50.0f;
 							}
@@ -4626,6 +4596,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 							{
 								throw_dir[1] = Q_flrand(-0.5f, 0.5f);
 							}
+
 							G_Throw(self, throw_dir, cur_speed);
 						}
 					}
@@ -4634,98 +4605,136 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		}
 		else
 		{
-			assert(!!"How did we get to this point?");
+#ifdef _DEBUG
+			Com_Printf("Debug: player_die - vehicle index %d has no Vehicle_t\n",
+				self->s.m_iVehicleNum);
+#endif
 		}
 	}
 
 #ifndef FINAL_BUILD
-	if (d_saberCombat->integer && attacker && attacker->client)
+	if (d_saberCombat->integer && attacker != NULL && attacker->client != NULL)
 	{
-		gi.Printf(S_COLOR_YELLOW"combatant %s died, killer anim = %s\n", self->targetname, anim_table[attacker->client->ps.torsoAnim].name);
+		gi.Printf(S_COLOR_YELLOW "combatant %s died, killer anim = %s\n",
+			self->targetname,
+			anim_table[attacker->client->ps.torsoAnim].name);
 	}
-#endif//FINAL_BUILD
+#endif // FINAL_BUILD
 
-	// Remove The Bubble Shield
-	if (self->client && (self->flags & FL_SHIELDED || self->client->ps.powerups[PW_GALAK_SHIELD]))
+	// -----------------------------------------------------------------
+	// Shields / special NPC shutdown
+	// -----------------------------------------------------------------
+
+	// Remove bubble shield
+	if (self->client != NULL &&
+		((self->flags & FL_SHIELDED) ||
+			self->client->ps.powerups[PW_GALAK_SHIELD]))
 	{
 		TurnBarrierOff(self);
 	}
 
-	if (self->client &&
+	// Boba / Mandalorian / Jango / Rocket Trooper flame cleanup
+	if (self->client != NULL &&
 		(self->client->NPC_class == CLASS_BOBAFETT
 			|| self->client->NPC_class == CLASS_MANDALORIAN
 			|| self->client->NPC_class == CLASS_JANGO
 			|| self->client->NPC_class == CLASS_JANGODUAL
-			|| self->client->NPC_class == CLASS_ROCKETTROOPER || rocket_trooper_player(self)))
+			|| self->client->NPC_class == CLASS_ROCKETTROOPER
+			|| rocket_trooper_player(self)))
 	{
 		Boba_NoDeadFlameThrower(self);
 	}
 
-	if (self->NPC)
+	// -----------------------------------------------------------------
+	// NPC-specific cleanup: nav, groups, shields, special effects
+	// -----------------------------------------------------------------
+	if (self->NPC != NULL)
 	{
 		if (NAV::HasPath(self))
 		{
 			NAV::ClearPath(self);
 		}
+
 		if (self->NPC->troop)
 		{
 			NPC_LeaveTroop(self);
 		}
 
-		//clear charmed
+		// Clear charmed
 		G_CheckCharmed(self);
 
-		// Remove The Bubble Shield From The Assassin Droid
-		if (self->client && self->client->NPC_class == CLASS_ASSASSIN_DROID && self->flags & FL_SHIELDED)
+		// Assassin droid shield
+		if (self->client != NULL &&
+			self->client->NPC_class == CLASS_ASSASSIN_DROID &&
+			(self->flags & FL_SHIELDED))
 		{
 			self->flags &= ~FL_SHIELDED;
 			self->client->ps.stats[STAT_ARMOR] = 0;
 			self->client->ps.powerups[PW_GALAK_SHIELD] = 0;
-			gi.G2API_SetSurfaceOnOff(&self->ghoul2[self->playerModel], "force_shield", TURN_OFF);
+			gi.G2API_SetSurfaceOnOff(&self->ghoul2[self->playerModel],
+				"force_shield", TURN_OFF);
 		}
-		if (self->client && self->client->NPC_class == CLASS_DROIDEKA && self->flags & FL_SHIELDED)
+
+		// Droideka shield
+		if (self->client != NULL &&
+			self->client->NPC_class == CLASS_DROIDEKA &&
+			(self->flags & FL_SHIELDED))
 		{
 			self->flags &= ~FL_SHIELDED;
 			self->client->ps.stats[STAT_ARMOR] = 0;
 			self->client->ps.powerups[PW_GALAK_SHIELD] = 0;
-			gi.G2API_SetSurfaceOnOff(&self->ghoul2[self->playerModel], "force_shield", TURN_OFF);
+			gi.G2API_SetSurfaceOnOff(&self->ghoul2[self->playerModel],
+				"force_shield", TURN_OFF);
 		}
 
-		if (self->client && self->client->NPC_class == CLASS_HOWLER)
+		// Howler sonic effect
+		if (self->client != NULL &&
+			self->client->NPC_class == CLASS_HOWLER)
 		{
-			G_StopEffect(G_EffectIndex("howler/sonic"), self->playerModel, self->genericBolt1, self->s.number);
+			G_StopEffect(G_EffectIndex("howler/sonic"),
+				self->playerModel, self->genericBolt1, self->s.number);
 		}
 
-		if (self->client && jedi_waiting_ambush(self))
+		// Ambushing Jedi: clear noclip
+		if (self->client != NULL &&
+			jedi_waiting_ambush(self))
 		{
-			//ambushing trooper
-			self->client->noclip = false;
+			self->client->noclip = qfalse;
 		}
+
+		// Free combat point
 		NPC_FreeCombatPoint(self->NPC->combatPoint);
-		if (self->NPC->group)
+
+		// Group handling
+		if (self->NPC->group != NULL)
 		{
-			last_in_group = static_cast<qboolean>(self->NPC->group->numGroup < 2);
+			last_in_group = (self->NPC->group->numGroup < 2) ? qtrue : qfalse;
 			AI_GroupMemberKilled(self);
 			AI_DeleteSelfFromGroup(self);
 		}
 
-		if (self->NPC->tempGoal)
+		// Temp goal cleanup
+		if (self->NPC->tempGoal != NULL)
 		{
 			G_FreeEntity(self->NPC->tempGoal);
-			self->NPC->tempGoal = nullptr;
+			self->NPC->tempGoal = NULL;
 		}
+
+		// Locked to emplaced weapon: force exit
 		if (self->s.eFlags & EF_LOCKED_TO_WEAPON)
 		{
-			// dumb, just get the NPC out of the chair
 			extern void RunEmplacedWeapon(gentity_t * ent, usercmd_t * *ucmd);
 
-			usercmd_t cmd = {}, * ad_cmd;
+			usercmd_t  cmd;
+			usercmd_t* ad_cmd;
 
-			//gentity_t *old = self->owner;
+			memset(&cmd, 0, sizeof(cmd));
 
-			if (self->owner)
+			if (self->owner != NULL)
 			{
-				self->owner->s.frame = self->owner->startFrame = self->owner->endFrame = 0;
+				self->owner->s.frame = 0;
+				self->owner->startFrame = 0;
+				self->owner->endFrame = 0;
 				self->owner->svFlags &= ~SVF_ANIMATING;
 			}
 
@@ -4734,99 +4743,143 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			RunEmplacedWeapon(self, &ad_cmd);
 		}
 
-		if (self->client->NPC_class == CLASS_BOBAFETT || self->client->NPC_class == CLASS_MANDALORIAN || self->client->
-			NPC_class == CLASS_JANGO || self->client->NPC_class == CLASS_JANGODUAL
-			|| self->client->NPC_class == CLASS_ROCKETTROOPER || rocket_trooper_player(self))
+		// Jetpack users: stop flight and disable jetpack
+		if (self->client != NULL &&
+			(self->client->NPC_class == CLASS_BOBAFETT
+				|| self->client->NPC_class == CLASS_MANDALORIAN
+				|| self->client->NPC_class == CLASS_JANGO
+				|| self->client->NPC_class == CLASS_JANGODUAL
+				|| self->client->NPC_class == CLASS_ROCKETTROOPER
+				|| rocket_trooper_player(self)))
 		{
-			if (self->client->moveType == MT_FLYSWIM || self->client->ps.groundEntityNum == ENTITYNUM_NONE)
+			if (self->client->moveType == MT_FLYSWIM ||
+				self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 			{
 				jet_fly_stop(self);
 			}
+
 			if (self->client->jetPackOn)
 			{
-				//disable jetpack temporarily
 				Jetpack_Off(self);
-				client->jetPackToggleTime = level.time + Q_irand(3000, 10000);
+				self->client->jetPackToggleTime =
+					level.time + Q_irand(3000, 10000);
 			}
 		}
-		if (self->client->NPC_class == CLASS_ROCKETTROOPER)
+
+		// Rocket trooper spotlight
+		if (self->client != NULL &&
+			self->client->NPC_class == CLASS_ROCKETTROOPER)
 		{
 			self->client->ps.eFlags &= ~EF_SPOTLIGHT;
 		}
-		if (self->client->NPC_class == CLASS_SAND_CREATURE)
+
+		// Sand creature: ensure visible
+		if (self->client != NULL &&
+			self->client->NPC_class == CLASS_SAND_CREATURE)
 		{
 			self->client->ps.eFlags &= ~EF_NODRAW;
 			self->s.eFlags &= ~EF_NODRAW;
 		}
-		if (self->client->NPC_class == CLASS_RANCOR)
+
+		// Rancor victim drop
+		if (self->client != NULL &&
+			self->client->NPC_class == CLASS_RANCOR)
 		{
 			if (self->count)
 			{
 				Rancor_DropVictim(self);
 			}
 		}
-		if (self->client->NPC_class == CLASS_WAMPA)
+
+		// Wampa victim drop / arm dismember
+		if (self->client != NULL &&
+			self->client->NPC_class == CLASS_WAMPA)
 		{
 			if (self->count)
 			{
-				if (self->activator && attacker == self->activator && means_of_death == MOD_SABER)
+				if (self->activator != NULL &&
+					attacker == self->activator &&
+					means_of_death == MOD_SABER)
 				{
-					self->client->dismembered = false;
-					//FIXME: the limb should just disappear, cuz I ate it
-					G_DoDismemberment(self, self->currentOrigin, MOD_SABER, HL_ARM_RT, qtrue);
+					self->client->dismembered = qfalse;
+					G_DoDismemberment(self, self->currentOrigin,
+						MOD_SABER, HL_ARM_RT, qtrue);
 				}
 				Wampa_DropVictim(self);
 			}
 		}
+
+		// Heal Rosh AI flag cleanup
 		if (self->NPC->aiFlags & NPCAI_HEAL_ROSH)
 		{
-			if (self->client->leader)
+			if (self->client->leader != NULL)
 			{
 				self->client->leader->flags &= ~FL_UNDYING;
-				if (self->client->leader->client)
+				if (self->client->leader->client != NULL)
 				{
-					self->client->leader->client->ps.forcePowersKnown &= ~FORCE_POWERS_ROSH_FROM_TWINS;
+					self->client->leader->client->ps.forcePowersKnown &=
+						~FORCE_POWERS_ROSH_FROM_TWINS;
 				}
 			}
 		}
+
+		// Scepter effects
 		if (self->client->ps.weapons[WP_SCEPTER])
 		{
-			G_StopEffect(G_EffectIndex("scepter/beam_warmup.efx"), self->weaponModel[1], self->genericBolt1,
-				self->s.number);
-			G_StopEffect(G_EffectIndex("scepter/beam.efx"), self->weaponModel[1], self->genericBolt1, self->s.number);
-			G_StopEffect(G_EffectIndex("scepter/slam_warmup.efx"), self->weaponModel[1], self->genericBolt1,
-				self->s.number);
+			G_StopEffect(G_EffectIndex("scepter/beam_warmup.efx"),
+				self->weaponModel[1], self->genericBolt1, self->s.number);
+			G_StopEffect(G_EffectIndex("scepter/beam.efx"),
+				self->weaponModel[1], self->genericBolt1, self->s.number);
+			G_StopEffect(G_EffectIndex("scepter/slam_warmup.efx"),
+				self->weaponModel[1], self->genericBolt1, self->s.number);
 			self->s.loopSound = 0;
 		}
 	}
-	if (attacker && attacker->NPC && attacker->NPC->group && attacker->NPC->group->enemy == self)
+
+	// Attacker group enemy cleanup
+	if (attacker != NULL &&
+		attacker->NPC != NULL &&
+		attacker->NPC->group != NULL &&
+		attacker->NPC->group->enemy == self)
 	{
-		attacker->NPC->group->enemy = nullptr;
+		attacker->NPC->group->enemy = NULL;
 	}
+
+	// Saber state
 	if (self->s.weapon == WP_SABER)
 	{
 		holding_saber = qtrue;
 	}
-	if (self->client && self->client->ps.saberEntityNum != ENTITYNUM_NONE && self->client->ps.saberEntityNum > 0)
+
+	// -----------------------------------------------------------------
+	// Saber entity handling (drop / free / keep)
+	// -----------------------------------------------------------------
+	if (self->client != NULL &&
+		self->client->ps.saberEntityNum != ENTITYNUM_NONE &&
+		self->client->ps.saberEntityNum > 0)
 	{
 		if (self->client->ps.saberInFlight)
 		{
-			//just drop it
+			// Just drop it
 			self->client->ps.saber[0].Deactivate();
 		}
 		else
 		{
 			if (g_saberPickuppableDroppedSabers->integer)
 			{
-				//always drop your sabers
+				// Always drop sabers
 				TossClientItems(self);
-				self->client->ps.weapon = self->s.weapon = WP_NONE;
+				self->client->ps.weapon = WP_NONE;
+				self->s.weapon = WP_NONE;
 			}
-			else if ((hit_loc != HL_HAND_RT && hit_loc != HL_CHEST_RT && hit_loc != HL_ARM_RT && hit_loc != HL_BACK_LT
-				|| self->client->dismembered
-				|| means_of_death != MOD_SABER) //if might get hand cut off, leave saber in hand
-				&& holding_saber
-				&& (Q_irand(0, 1)
+			else if (((hit_loc != HL_HAND_RT &&
+				hit_loc != HL_CHEST_RT &&
+				hit_loc != HL_ARM_RT &&
+				hit_loc != HL_BACK_LT) ||
+				self->client->dismembered ||
+				means_of_death != MOD_SABER) &&
+				holding_saber == qtrue &&
+				(Q_irand(0, 1)
 					|| means_of_death == MOD_EXPLOSIVE
 					|| means_of_death == MOD_REPEATER_ALT
 					|| means_of_death == MOD_FLECHETTE_ALT
@@ -4848,13 +4901,14 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 					|| means_of_death == MOD_EXPLOSIVE_SPLASH
 					|| means_of_death == MOD_DESTRUCTION))
 			{
-				//drop it
+				// Drop saber
 				TossClientItems(self);
-				self->client->ps.weapon = self->s.weapon = WP_NONE;
+				self->client->ps.weapon = WP_NONE;
+				self->s.weapon = WP_NONE;
 			}
 			else
 			{
-				//just free it
+				// Just free the saber entity
 				if (g_entities[self->client->ps.saberEntityNum].inuse)
 				{
 					G_FreeEntity(&g_entities[self->client->ps.saberEntityNum]);
@@ -4863,48 +4917,51 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			}
 		}
 	}
-	if (self->client && self->client->NPC_class == CLASS_SHADOWTROOPER)
+
+	// -----------------------------------------------------------------
+	// Shadowtrooper: drop force crystal
+	// -----------------------------------------------------------------
+	if (self->client != NULL &&
+		self->client->NPC_class == CLASS_SHADOWTROOPER)
 	{
-		//drop a force crystal
 		if (Q_stricmpn("shadowtrooper", self->NPC_type, 13) == 0)
 		{
 			gitem_t* item = FindItemForAmmo(AMMO_FORCE);
 			Drop_Item(self, item, 0, qtrue);
 		}
 	}
-	//Use any target we had
+
+	// -----------------------------------------------------------------
+	// Use any targets we had (except knockout)
+	// -----------------------------------------------------------------
 	if (means_of_death != MOD_KNOCKOUT)
 	{
 		G_UseTargets(self, self);
 	}
 
-	if (attacker)
+	// -----------------------------------------------------------------
+	// Kill tracking, mission stats, slow-mo death
+	// -----------------------------------------------------------------
+	if (attacker != NULL)
 	{
 		if (g_ffamode->integer)
 		{
-			// MESSAGE TO MIKE - We need some sort of CVAR to be activated when playing this FFA Mode
-			// If we dont have a cvar it will effect other SP game stuff possibly ???
-			// Can you activate g_ffamode in scripts somehow and then put everything in the cvar bracket to avoid any
-			// conflictions
-
-			// Change this to be how you need it
-
 			if (self->client->ps.stats[STAT_HEALTH] <= 3)
 			{
-				if (attacker->client && !attacker->s.number)
+				if (attacker->client != NULL && attacker->s.number == 0)
 				{
-					if (self->client)
+					if (self->client != NULL)
 					{
-						//killed a client
 						if (self->client->playerTeam == TEAM_ENEMY
 							|| self->client->playerTeam == TEAM_FREE
-							|| self->NPC && self->NPC->charmedTime > level.time
-							|| (self->client->playerTeam == TEAM_PLAYER && attacker->client->playerTeam == TEAM_ENEMY))
+							|| (self->NPC != NULL && self->NPC->charmedTime > level.time)
+							|| (self->client->playerTeam == TEAM_PLAYER &&
+								attacker->client->playerTeam == TEAM_ENEMY))
 						{
-							//killed an enemy
 							attacker->client->sess.missionStats.enemiesKilled++;
 						}
 					}
+
 					if (attacker != self)
 					{
 						G_TrackWeaponUsage(attacker, inflictor, 30, means_of_death);
@@ -4915,20 +4972,20 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		}
 		else
 		{
-			if (attacker->client && !attacker->s.number)
+			if (attacker->client != NULL && attacker->s.number == 0)
 			{
-				if (self->client)
+				if (self->client != NULL)
 				{
-					//killed a client
 					if (self->client->playerTeam == TEAM_ENEMY
 						|| self->client->playerTeam == TEAM_FREE
-						|| self->NPC && self->NPC->charmedTime > level.time
-						|| (self->client->playerTeam == TEAM_PLAYER && attacker->client->playerTeam == TEAM_ENEMY))
+						|| (self->NPC != NULL && self->NPC->charmedTime > level.time)
+						|| (self->client->playerTeam == TEAM_PLAYER &&
+							attacker->client->playerTeam == TEAM_ENEMY))
 					{
-						//killed an enemy
 						attacker->client->sess.missionStats.enemiesKilled++;
 					}
 				}
+
 				if (attacker != self)
 				{
 					G_TrackWeaponUsage(attacker, inflictor, 30, means_of_death);
@@ -4937,30 +4994,29 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			G_CheckVictoryScript(attacker);
 		}
 
-		//player killing a jedi with a lightsaber spawns a matrix-effect entity
+		// Slow-mo death logic
 		if (d_slowmodeath->integer)
 		{
-			if (!self->s.number)
+			if (self->s.number == 0)
 			{
-				//what the hell, always do slow-mo when player dies
-				//FIXME: don't do this when crushed to death?
-				if (means_of_death == MOD_FALLING && self->client->ps.groundEntityNum == ENTITYNUM_NONE)
+				// Always slow-mo when player dies (except some crush cases)
+				if (means_of_death == MOD_FALLING &&
+					self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 				{
-					//falling to death, have not hit yet
-					G_StartMatrixEffect(self, MEF_NO_VERTBOB | MEF_HIT_GROUND_STOP | MEF_MULTI_SPIN, 10000, 0.25f);
+					G_StartMatrixEffect(self,
+						MEF_NO_VERTBOB | MEF_HIT_GROUND_STOP | MEF_MULTI_SPIN,
+						10000, 0.25f);
 				}
 				else if (means_of_death != MOD_CRUSH)
 				{
-					//for all deaths except being crushed
 					G_StartMatrixEffect(self);
 				}
 			}
 			else if (d_slowmodeath->integer < 4)
 			{
-				//any jedi killed by player-saber
+				// Any Jedi killed by player saber
 				if (d_slowmodeath->integer < 3)
 				{
-					//must be the last jedi in the room
 					if (!G_JediInRoom(attacker->currentOrigin))
 					{
 						last_in_group = qtrue;
@@ -4970,20 +5026,17 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 						last_in_group = qfalse;
 					}
 				}
-				if (!attacker->s.number
-					&& (holding_saber || self->client->NPC_class == CLASS_WAMPA)
-					&& means_of_death == MOD_SABER
-					&& attacker->client
-					&& attacker->client->ps.weapon == WP_SABER
-					&& !attacker->client->ps.saberInFlight
-					//FIXME: if dualSabers, should still do slowmo if this killing blow was struck with the left-hand saber...
-					&& (d_slowmodeath->integer > 2 || last_in_group))
-					//either slow mo death level 3 (any jedi) or 2 and I was the last jedi in the room
+
+				if (attacker->s.number == 0 &&
+					(holding_saber == qtrue || self->client->NPC_class == CLASS_WAMPA) &&
+					means_of_death == MOD_SABER &&
+					attacker->client != NULL &&
+					attacker->client->ps.weapon == WP_SABER &&
+					!attacker->client->ps.saberInFlight &&
+					(d_slowmodeath->integer > 2 || last_in_group == qtrue))
 				{
-					//Matrix!
 					if (attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 					{
-						//don't override the range and vertbob
 						G_StartMatrixEffect(self, MEF_NO_RANGEVAR | MEF_NO_VERTBOB);
 					}
 					else
@@ -4994,20 +5047,19 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			}
 			else
 			{
-				//all player-saber kills
-				if (!attacker->s.number
-					&& means_of_death == MOD_SABER
-					&& attacker->client
-					&& attacker->client->ps.weapon == WP_SABER
-					&& !attacker->client->ps.saberInFlight
-					&& (d_slowmodeath->integer > 4 || last_in_group || holding_saber || self->client->NPC_class ==
-						CLASS_WAMPA))
-					//either slow mo death level 5 (any enemy) or 4 and I was the last in my group or I'm a saber user
+				// All player-saber kills
+				if (attacker->s.number == 0 &&
+					means_of_death == MOD_SABER &&
+					attacker->client != NULL &&
+					attacker->client->ps.weapon == WP_SABER &&
+					!attacker->client->ps.saberInFlight &&
+					(d_slowmodeath->integer > 4 ||
+						last_in_group == qtrue ||
+						holding_saber == qtrue ||
+						self->client->NPC_class == CLASS_WAMPA))
 				{
-					//Matrix!
 					if (attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 					{
-						//don't override the range and vertbob
 						G_StartMatrixEffect(self, MEF_NO_RANGEVAR | MEF_NO_VERTBOB);
 					}
 					else
@@ -5019,31 +5071,35 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		}
 	}
 
+	// -----------------------------------------------------------------
+	// Score, team stats, player death handling
+	// -----------------------------------------------------------------
 	self->enemy = attacker;
 	self->client->renderInfo.lookTarget = ENTITYNUM_NONE;
 
 	self->client->ps.persistant[PERS_KILLED]++;
+
 	if (self->client->playerTeam == TEAM_PLAYER)
 	{
-		// Don't count player
-		if ((g_entities[0].inuse && g_entities[0].client) && (self->s.number != 0))
+		if (g_entities[0].inuse &&
+			g_entities[0].client != NULL &&
+			self->s.number != 0)
 		{
-			//add to the number of teammates lost
 			g_entities[0].client->ps.persistant[PERS_TEAMMATES_KILLED]++;
 		}
-		else // Player died, fire off scoreboard soon
+		else
 		{
-			cg.missionStatusDeadTime = level.time + 1000; // Too long?? Too short??
-			cg.zoomMode = 0; // turn off zooming when we die
+			cg.missionStatusDeadTime = level.time + 1000;
+			cg.zoomMode = 0;
 		}
 	}
 
-	if (self->s.number == 0 && attacker)
+	if (self->s.number == 0 && attacker != NULL)
 	{
 		G_MakeTeamVulnerable();
 	}
 
-	if (attacker && attacker->client)
+	if (attacker != NULL && attacker->client != NULL)
 	{
 		if (attacker == self || OnSameTeam(self, attacker))
 		{
@@ -5060,113 +5116,134 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		AddScore(self, -1);
 	}
 
-	// if client is in a nodrop area, don't drop anything
+	// -----------------------------------------------------------------
+	// Item dropping / weapon cleanup
+	// -----------------------------------------------------------------
 	contents = gi.pointcontents(self->currentOrigin, -1);
 
-	if (!holding_saber
-		&& !(contents & CONTENTS_NODROP)
-		&& means_of_death != MOD_SNIPER
-		&& (!self->client || self->client->NPC_class != CLASS_GALAKMECH))
+	if (holding_saber == qfalse &&
+		!(contents & CONTENTS_NODROP) &&
+		means_of_death != MOD_SNIPER &&
+		(self->client == NULL ||
+			self->client->NPC_class != CLASS_GALAKMECH))
 	{
 		TossClientItems(self);
 	}
 
 	if (means_of_death == MOD_SNIPER)
 	{
-		//I was disintegrated
-		if (self->message)
+		if (self->message != NULL)
 		{
-			//I was holding a key
-			//drop the key
 			G_DropKey(self);
 		}
 	}
 
-	if (holding_saber)
+	if (holding_saber == qtrue)
 	{
-		//never drop a lightsaber!
+		// Never drop a lightsaber
 		if (self->client->ps.SaberActive())
 		{
 			self->client->ps.SaberDeactivate();
 			G_SoundIndexOnEnt(self, CHAN_AUTO, self->client->ps.saber[0].soundOff);
 		}
 	}
-	else if (self->s.weapon != WP_BRYAR_PISTOL && self->s.weapon != WP_SBD_BLASTER && self->s.weapon != WP_JAWA
-		&& self->s.weapon != WP_DUAL_PISTOL && self->s.weapon != WP_DUAL_CLONEPISTOL && self->s.weapon != WP_WRIST_BLASTER && self->s.weapon != WP_DROIDEKA)
+	else if (self->s.weapon != WP_BRYAR_PISTOL &&
+		self->s.weapon != WP_SBD_BLASTER &&
+		self->s.weapon != WP_JAWA &&
+		self->s.weapon != WP_DUAL_PISTOL &&
+		self->s.weapon != WP_DUAL_CLONEPISTOL &&
+		self->s.weapon != WP_WRIST_BLASTER &&
+		self->s.weapon != WP_DROIDEKA)
 	{
-		//since player can't pick up bryar pistols, never drop those
+		// Player can't pick up bryar pistols, never drop those
 		self->s.weapon = WP_NONE;
 		G_RemoveWeaponModels(self);
 	}
 
-	self->s.powerups &= ~PW_REMOVE_AT_DEATH; //removes everything but electricity and force push
+	self->s.powerups &= ~PW_REMOVE_AT_DEATH;
 
-	if (!self->s.number)
+	// Player corpse setup
+	if (self->s.number == 0)
 	{
-		//player
 		self->contents = CONTENTS_CORPSE;
 		self->maxs[2] = -8;
 	}
-	self->clipmask &= ~(CONTENTS_MONSTERCLIP | CONTENTS_BOTCLIP); //so dead NPC can fly off ledges
 
-	//FACING==========================================================
-	if (attacker && self->s.number == 0)
+	// Let dead NPCs fly off ledges
+	self->clipmask &= ~(CONTENTS_MONSTERCLIP | CONTENTS_BOTCLIP);
+
+	// -----------------------------------------------------------------
+	// Facing / view / force effects cleanup
+	// -----------------------------------------------------------------
+	if (attacker != NULL && self->s.number == 0)
 	{
-		self->client->ps.stats[STAT_DEAD_YAW] = AngleNormalize180(self->client->ps.viewangles[YAW]);
+		self->client->ps.stats[STAT_DEAD_YAW] =
+			AngleNormalize180(self->client->ps.viewangles[YAW]);
 	}
-	self->currentAngles[PITCH] = 0;
-	self->currentAngles[ROLL] = 0;
-	if (self->NPC)
+
+	self->currentAngles[PITCH] = 0.0f;
+	self->currentAngles[ROLL] = 0.0f;
+
+	if (self->NPC != NULL)
 	{
-		self->NPC->desiredYaw = 0;
-		self->NPC->desiredPitch = 0;
+		self->NPC->desiredYaw = 0.0f;
+		self->NPC->desiredPitch = 0.0f;
 		self->NPC->confusionTime = 0;
 		self->NPC->charmedTime = 0;
+
 		if (self->ghoul2.size())
 		{
 			if (self->chestBolt != -1)
 			{
-				G_StopEffect("force/rage2", self->playerModel, self->chestBolt, self->s.number);
+				G_StopEffect("force/rage2",
+					self->playerModel, self->chestBolt, self->s.number);
 			}
 			if (self->headBolt != -1)
 			{
-				G_StopEffect("force/confusion", self->playerModel, self->headBolt, self->s.number);
+				G_StopEffect("force/confusion",
+					self->playerModel, self->headBolt, self->s.number);
 			}
 			WP_StopForceHealEffects(self);
 		}
 	}
+
 	self->client->ps.stasisTime = 0;
 	self->client->ps.stasisJediTime = 0;
 	VectorCopy(self->currentAngles, self->client->ps.viewangles);
-	//Make sure the jetpack is turned off.
+
+	// Make sure the jetpack is turned off
 	Jetpack_Off(self);
+
 	self->client->isHacking = 0;
 	self->client->ps.hackingTime = 0;
-	//FACING==========================================================
-	if (player && player->client && player->client->ps.viewEntity == self->s.number)
+
+	// View entity cleanup
+	if (player != NULL &&
+		player->client != NULL &&
+		player->client->ps.viewEntity == self->s.number)
 	{
-		//I was the player's viewentity and I died, kick him back to his normal view
 		G_ClearViewEntity(player);
 	}
-	else if (!self->s.number && self->client->ps.viewEntity > 0 && self->client->ps.viewEntity < ENTITYNUM_NONE)
-	{
-		G_ClearViewEntity(self);
-	}
-	else if (!self->s.number && self->client->ps.viewEntity > 0 && self->client->ps.viewEntity < ENTITYNUM_NONE)
+	else if (self->s.number == 0 &&
+		self->client->ps.viewEntity > 0 &&
+		self->client->ps.viewEntity < ENTITYNUM_NONE)
 	{
 		G_ClearViewEntity(self);
 	}
 
 	self->s.loopSound = 0;
 
-	// remove powerups
-	memset(self->client->ps.powerups, 0, sizeof self->client->ps.powerups);
+	// Remove powerups
+	memset(self->client->ps.powerups, 0, sizeof(self->client->ps.powerups));
 
-	if (self->client->ps.eFlags & EF_HELD_BY_RANCOR
-		|| self->client->ps.eFlags & EF_HELD_BY_SAND_CREATURE
-		|| self->client->ps.eFlags & EF_HELD_BY_WAMPA)
+	// -----------------------------------------------------------------
+	// Special NPC death handlers / fall deaths / normal deaths
+	// -----------------------------------------------------------------
+	if ((self->client->ps.eFlags & EF_HELD_BY_RANCOR) ||
+		(self->client->ps.eFlags & EF_HELD_BY_SAND_CREATURE) ||
+		(self->client->ps.eFlags & EF_HELD_BY_WAMPA))
 	{
-		//do nothing special here
+		// Do nothing special here
 	}
 	else if (self->client->NPC_class == CLASS_MARK1)
 	{
@@ -5178,35 +5255,39 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 	}
 	else if (self->client->NPC_class == CLASS_GALAKMECH)
 	{
-		//FIXME: need keyframed explosions?
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DEATH1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DEATH1,
+			SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		G_AddEvent(self, Q_irand(EV_DEATH1, EV_DEATH3), self->health);
 	}
 	else if (self->client->NPC_class == CLASS_ATST)
 	{
-		//FIXME: need keyframed explosions
-		if (!self->s.number)
+		if (self->s.number == 0)
 		{
 			G_DrivableATSTDie(self);
 		}
-		anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25); //initialize to good data
+
+		anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25);
 		if (anim != -1)
 		{
-			NPC_SetAnim(self, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			NPC_SetAnim(self, SETANIM_BOTH, anim,
+				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 	}
 	else if (self->client->NPC_class == CLASS_DROIDEKA)
 	{
-		anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH1); //initialize to good data
+		anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH1);
 		if (anim != -1)
 		{
-			NPC_SetAnim(self, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			NPC_SetAnim(self, SETANIM_BOTH, anim,
+				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 	}
-	else if (self->s.number && self->message && means_of_death != MOD_SNIPER && means_of_death != MOD_PROJECTION_END)
+	else if (self->s.number &&
+		self->message != NULL &&
+		means_of_death != MOD_SNIPER &&
+		means_of_death != MOD_PROJECTION_END)
 	{
-		//imp with a key on his arm
-		//pick a death anim that leaves key visible
+		// Imp with a key on his arm: pick a death anim that leaves key visible
 		switch (Q_irand(0, 3))
 		{
 		case 0:
@@ -5223,17 +5304,15 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			anim = BOTH_DEATH18;
 			break;
 		}
-		//FIXME: verify we have this anim?
-		NPC_SetAnim(self, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
+		NPC_SetAnim(self, SETANIM_BOTH, anim,
+			SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
 		if (means_of_death == MOD_KNOCKOUT || means_of_death == MOD_MELEE)
 		{
 			G_AddEvent(self, EV_JUMP, 0);
 		}
-		else if (means_of_death == MOD_FORCE_DRAIN)
-		{
-			G_AddEvent(self, EV_WATER_DROWN, 0);
-		}
-		else if (means_of_death == MOD_GAS)
+		else if (means_of_death == MOD_FORCE_DRAIN || means_of_death == MOD_GAS)
 		{
 			G_AddEvent(self, EV_WATER_DROWN, 0);
 		}
@@ -5242,125 +5321,143 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			G_AddEvent(self, Q_irand(EV_DEATH1, EV_DEATH3), self->health);
 		}
 	}
-	else if (means_of_death == MOD_FALLING || self->client->ps.legsAnim == BOTH_FALLDEATH1INAIR && self->client->ps.
-		torsoAnim == BOTH_FALLDEATH1INAIR || self->client->ps.legsAnim == BOTH_FALLDEATH1 && self->client->ps.
-		torsoAnim == BOTH_FALLDEATH1)
+	else if (means_of_death == MOD_FALLING ||
+		(self->client->ps.legsAnim == BOTH_FALLDEATH1INAIR &&
+			self->client->ps.torsoAnim == BOTH_FALLDEATH1INAIR) ||
+		(self->client->ps.legsAnim == BOTH_FALLDEATH1 &&
+			self->client->ps.torsoAnim == BOTH_FALLDEATH1))
 	{
-		//FIXME: no good way to predict you're going to fall to your death... need falling bushes/triggers?
-		if (self->client->ps.groundEntityNum == ENTITYNUM_NONE //in the air
-			&& self->client->ps.velocity[2] < 0 //falling
-			&& self->client->ps.legsAnim != BOTH_FALLDEATH1INAIR //not already in falling loop
-			&& self->client->ps.torsoAnim != BOTH_FALLDEATH1INAIR) //not already in falling loop
+		// Fall death handling
+		if (self->client->ps.groundEntityNum == ENTITYNUM_NONE &&
+			self->client->ps.velocity[2] < 0.0f &&
+			self->client->ps.legsAnim != BOTH_FALLDEATH1INAIR &&
+			self->client->ps.torsoAnim != BOTH_FALLDEATH1INAIR)
 		{
-			NPC_SetAnim(self, SETANIM_BOTH, BOTH_FALLDEATH1INAIR, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-			if (!self->NPC)
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_FALLDEATH1INAIR,
+				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
+			if (self->NPC == NULL)
 			{
-				G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav"); //CHAN_VOICE_ATTEN
+				G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav");
 			}
 			else if (!(self->NPC->aiFlags & NPCAI_DIE_ON_IMPACT))
 			{
-				G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav"); //CHAN_VOICE_ATTEN
-				//so we don't do this again
+				G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav");
 				self->NPC->aiFlags |= NPCAI_DIE_ON_IMPACT;
-				//self->client->ps.gravity *= 0.5;//Fall a bit slower
 				self->client->ps.friction = 1;
 			}
 		}
 		else
 		{
 			int death_anim = BOTH_FALLDEATH1LAND;
+
 			if (PM_InOnGroundAnim(&self->client->ps))
 			{
-				if (AngleNormalize180(self->client->renderInfo.torsoAngles[PITCH]) < 0)
+				if (AngleNormalize180(self->client->renderInfo.torsoAngles[PITCH]) < 0.0f)
 				{
-					death_anim = BOTH_DEATH_LYING_UP; //# Death anim when lying on back
+					death_anim = BOTH_DEATH_LYING_UP;
 				}
 				else
 				{
-					death_anim = BOTH_DEATH_LYING_DN; //# Death anim when lying on front
+					death_anim = BOTH_DEATH_LYING_DN;
 				}
 			}
 			else if (PM_InKnockDown(&self->client->ps))
 			{
-				if (AngleNormalize180(self->client->renderInfo.torsoAngles[PITCH]) < 0)
+				if (AngleNormalize180(self->client->renderInfo.torsoAngles[PITCH]) < 0.0f)
 				{
-					death_anim = BOTH_DEATH_FALLING_UP; //# Death anim when falling on back
+					death_anim = BOTH_DEATH_FALLING_UP;
 				}
 				else
 				{
-					death_anim = BOTH_DEATH_FALLING_DN; //# Death anim when falling on face
+					death_anim = BOTH_DEATH_FALLING_DN;
 				}
 			}
-			NPC_SetAnim(self, SETANIM_BOTH, death_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-			//HMM: check for nodrop?
+
+			NPC_SetAnim(self, SETANIM_BOTH, death_anim,
+				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
 			G_SoundOnEnt(self, CHAN_BODY, "sound/player/fallsplat.wav");
-			if (gi.VoiceVolume[self->s.number]
-				&& self->NPC && self->NPC->aiFlags & NPCAI_DIE_ON_IMPACT)
+
+			if (gi.VoiceVolume[self->s.number] &&
+				self->NPC != NULL &&
+				(self->NPC->aiFlags & NPCAI_DIE_ON_IMPACT))
 			{
-				//I was talking, so cut it off... with a jump sound?
 				G_SoundOnEnt(self, CHAN_VOICE_ATTEN, "*pain100.wav");
 			}
 		}
 	}
 	else
 	{
-		// normal death
+		// --------------------------------------------------------
+		// Normal death: pick appropriate death animation
+		// --------------------------------------------------------
 		anim = G_CheckSpecialDeathAnim(self);
+
 		if (anim == -1)
 		{
-			if (PM_InOnGroundAnim(&self->client->ps) && PM_HasAnimation(self, BOTH_LYINGDEATH1))
+			if (PM_InOnGroundAnim(&self->client->ps) &&
+				PM_HasAnimation(self, BOTH_LYINGDEATH1))
 			{
-				//on ground, need different death anim
 				anim = BOTH_LYINGDEATH1;
 			}
 			else if (self->client->AmputateTime > 0)
 			{
-				//anim = BOTH_DEATH_LYING_UP;
-				//do nothing special here
+				// Do nothing special here; anim stays -1
 			}
-			else if (means_of_death == MOD_TRIGGER_HURT && self->s.powerups & 1 << PW_SHOCKED)
+			else if (means_of_death == MOD_TRIGGER_HURT &&
+				(self->s.powerups & (1 << PW_SHOCKED)))
 			{
-				//electrocuted
 				anim = BOTH_DEATH17;
 			}
-			else if (means_of_death == MOD_WATER || means_of_death == MOD_GAS || means_of_death == MOD_FORCE_DRAIN)
+			else if (means_of_death == MOD_WATER ||
+				means_of_death == MOD_GAS ||
+				means_of_death == MOD_FORCE_DRAIN)
 			{
-				//drowned
 				anim = BOTH_DEATH17;
 			}
-			else if (means_of_death != MOD_SNIPER && means_of_death != MOD_PROJECTION_END //disintegrates
-				&& means_of_death != MOD_CONC_ALT) //does its own death throw
+			else if (means_of_death != MOD_SNIPER &&
+				means_of_death != MOD_PROJECTION_END &&
+				means_of_death != MOD_CONC_ALT)
 			{
-				cliff_fall = G_CheckLedgeDive(self, 128, self->client->ps.velocity, qtrue, qfalse);
+				cliff_fall = G_CheckLedgeDive(self, 128,
+					self->client->ps.velocity,
+					qtrue, qfalse);
+
 				if (cliff_fall == 2)
 				{
-					if (!FlyingCreature(self) && g_gravity->value > 0)
+					if (!FlyingCreature(self) && g_gravity->value > 0.0f)
 					{
-						if (!self->NPC)
+						if (self->NPC == NULL)
 						{
-							G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav"); //CHAN_VOICE_ATTEN
+							G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav");
 						}
 						else if (!(self->NPC->aiFlags & NPCAI_DIE_ON_IMPACT))
 						{
-							G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav"); //CHAN_VOICE_ATTEN
+							G_SoundOnEnt(self, CHAN_VOICE, "*falling1.wav");
 							self->NPC->aiFlags |= NPCAI_DIE_ON_IMPACT;
 							self->client->ps.friction = 0;
 						}
 					}
 				}
-				if (self->client->ps.pm_time > 0 && self->client->ps.pm_flags & PMF_TIME_KNOCKBACK && self->client->ps.
-					velocity[2] > 0)
-				{
-					vec3_t throwdir, forward;
 
-					AngleVectors(self->currentAngles, forward, nullptr, nullptr);
+				if (self->client->ps.pm_time > 0 &&
+					(self->client->ps.pm_flags & PMF_TIME_KNOCKBACK) &&
+					self->client->ps.velocity[2] > 0.0f)
+				{
+					vec3_t throwdir;
+					vec3_t forward;
+
+					AngleVectors(self->currentAngles, forward, NULL, NULL);
+
 					const float thrown = VectorNormalize2(self->client->ps.velocity, throwdir);
 					const float dot = DotProduct(forward, throwdir);
-					if (thrown > 100)
+
+					if (thrown > 100.0f)
 					{
-						if (dot > 0.3)
+						if (dot > 0.3f)
 						{
-							//falling forward
+							// Falling forward
 							if (cliff_fall == 2 && PM_HasAnimation(self, BOTH_FALLDEATH1))
 							{
 								anim = BOTH_FALLDEATH1;
@@ -5387,15 +5484,18 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 								case 7:
 									anim = BOTH_DEATH14;
 									break;
-								default:;
+								default:
+									break;
 								}
+
 								if (PM_HasAnimation(self, anim))
 								{
-									self->client->ps.gravity *= 0.8;
+									self->client->ps.gravity *= 0.8f;
 									self->client->ps.friction = 0;
-									if (self->client->ps.velocity[2] > 0 && self->client->ps.velocity[2] < 100)
+									if (self->client->ps.velocity[2] > 0.0f &&
+										self->client->ps.velocity[2] < 100.0f)
 									{
-										self->client->ps.velocity[2] = 100;
+										self->client->ps.velocity[2] = 100.0f;
 									}
 								}
 								else
@@ -5404,9 +5504,9 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 								}
 							}
 						}
-						else if (dot < -0.3)
+						else if (dot < -0.3f)
 						{
-							if (thrown >= 250 && !Q_irand(0, 3))
+							if (thrown >= 250.0f && !Q_irand(0, 3))
 							{
 								if (Q_irand(0, 1))
 								{
@@ -5437,16 +5537,19 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 								case 7:
 									anim = BOTH_DEATH23;
 									break;
-								default:;
+								default:
+									break;
 								}
 							}
+
 							if (PM_HasAnimation(self, anim))
 							{
-								self->client->ps.gravity *= 0.8;
+								self->client->ps.gravity *= 0.8f;
 								self->client->ps.friction = 0;
-								if (self->client->ps.velocity[2] > 0 && self->client->ps.velocity[2] < 100)
+								if (self->client->ps.velocity[2] > 0.0f &&
+									self->client->ps.velocity[2] < 100.0f)
 								{
-									self->client->ps.velocity[2] = 100;
+									self->client->ps.velocity[2] = 100.0f;
 								}
 							}
 							else
@@ -5456,13 +5559,14 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 						}
 						else
 						{
-							//falling to one of the sides
+							// Falling to one of the sides
 							if (cliff_fall == 2 && PM_HasAnimation(self, BOTH_FALLDEATH1))
 							{
 								anim = BOTH_FALLDEATH1;
-								if (self->client->ps.velocity[2] > 0 && self->client->ps.velocity[2] < 100)
+								if (self->client->ps.velocity[2] > 0.0f &&
+									self->client->ps.velocity[2] < 100.0f)
 								{
-									self->client->ps.velocity[2] = 100;
+									self->client->ps.velocity[2] = 100.0f;
 								}
 							}
 						}
@@ -5475,17 +5579,18 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			special_anim = qtrue;
 		}
 
+		// Fallback anims for electrocute / crush
 		if (anim == -1)
 		{
-			if (means_of_death == MOD_ELECTROCUTE
-				|| means_of_death == MOD_FORCE_DRAIN && self->s.eFlags & EF_FORCE_DRAINED)
+			if (means_of_death == MOD_ELECTROCUTE ||
+				(means_of_death == MOD_FORCE_DRAIN &&
+					(self->s.eFlags & EF_FORCE_DRAINED)))
 			{
-				//electrocuted
 				anim = BOTH_DEATH17;
 			}
-			else if (means_of_death == MOD_CRUSH && self->s.eFlags & EF_FORCE_GRIPPED)
+			else if (means_of_death == MOD_CRUSH &&
+				(self->s.eFlags & EF_FORCE_GRIPPED))
 			{
-				//choked to death
 				if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 				{
 					anim = BOTH_DEATH10;
@@ -5495,9 +5600,9 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 					anim = BOTH_DEATH17;
 				}
 			}
-			else if (means_of_death == MOD_CRUSH && self->s.eFlags & EF_FORCE_GRASPED)
+			else if (means_of_death == MOD_CRUSH &&
+				(self->s.eFlags & EF_FORCE_GRASPED))
 			{
-				//choked to death
 				if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 				{
 					anim = BOTH_DEATH10;
@@ -5508,30 +5613,34 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 				}
 			}
 		}
+
+		// Final fallback: pick any valid death anim
 		if (anim == -1)
 		{
-			anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25); //initialize to good data
-			//TEMP HACK: these spinny deaths should happen less often
+			anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25);
+
+			// TEMP: spinny deaths less often
 			if ((anim == BOTH_DEATH8 || anim == BOTH_DEATH14) && Q_irand(0, 1))
 			{
-				anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25); //initialize to good data
+				anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25);
 			}
 		}
 		else if (!PM_HasAnimation(self, anim))
 		{
-			//crap, still missing an anim, so pick one that we do have
-			anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25); //initialize to good data
+			anim = PM_PickAnim(self, BOTH_DEATH1, BOTH_DEATH25);
 		}
 
+		// --------------------------------------------------------
+		// Death events / alerts by cause
+		// --------------------------------------------------------
 		if (means_of_death == MOD_KNOCKOUT)
 		{
-			//FIXME: knock-out sound, and don't remove me
 			G_AddEvent(self, EV_JUMP, 0);
 			G_UseTargets2(self, self, self->target2);
 			G_AlertTeam(self, attacker, 512, 32);
-			if (self->NPC)
+
+			if (self->NPC != NULL)
 			{
-				//stick around for a while
 				self->NPC->timeOfDeath = level.time + 10000;
 			}
 		}
@@ -5539,21 +5648,23 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		{
 			G_AddEvent(self, EV_WATER_DROWN, 0);
 			G_AlertTeam(self, attacker, 512, 32);
-			if (self->NPC)
+
+			if (self->NPC != NULL)
 			{
-				//stick around for a while
 				self->NPC->timeOfDeath = level.time + 10000;
 			}
 		}
 		else if (means_of_death == MOD_SNIPER || means_of_death == MOD_PROJECTION_END)
 		{
-			vec3_t spot;
+			vec3_t    spot;
+			gentity_t* tent;
 
 			VectorCopy(self->currentOrigin, spot);
 
 			self->flags |= FL_DISINTEGRATED;
 			self->svFlags |= SVF_BROADCAST;
-			gentity_t* tent = G_TempEntity(spot, EV_DISINTEGRATION);
+
+			tent = G_TempEntity(spot, EV_DISINTEGRATION);
 			tent->s.eventParm = PW_DISRUPTION;
 			tent->svFlags |= SVF_BROADCAST;
 			tent->owner = self;
@@ -5562,50 +5673,46 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 
 			if (self->playerModel >= 0)
 			{
-				// don't let 'em animate
-				gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->rootBone, cg.time);
-				gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->motionBone, cg.time);
-				gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel], self->lowerLumbarBone, cg.time);
+				gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel],
+					self->rootBone, cg.time);
+				gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel],
+					self->motionBone, cg.time);
+				gi.G2API_PauseBoneAnimIndex(&self->ghoul2[self->playerModel],
+					self->lowerLumbarBone, cg.time);
 				anim = -1;
 			}
 
-			//not solid anymore
 			self->contents = 0;
 			self->maxs[2] = -8;
 
-			if (self->NPC)
+			if (self->NPC != NULL)
 			{
-				//need to pad deathtime some to stick around long enough for death effect to play
 				self->NPC->timeOfDeath = level.time + 2000;
 			}
 		}
 		else
 		{
-			if (hit_loc == HL_HEAD
-				&& !(d_flags & DAMAGE_RADIUS)
-				&& means_of_death != MOD_REPEATER_ALT
-				&& means_of_death != MOD_FLECHETTE_ALT
-				&& means_of_death != MOD_ROCKET
-				&& means_of_death != MOD_ROCKET_ALT
-				&& means_of_death != MOD_CONC
-				&& means_of_death != MOD_THERMAL
-				&& means_of_death != MOD_THERMAL_ALT
-				&& means_of_death != MOD_DETPACK
-				&& means_of_death != MOD_LASERTRIP
-				&& means_of_death != MOD_LASERTRIP_ALT
-				&& means_of_death != MOD_EXPLOSIVE
-				&& means_of_death != MOD_EXPLOSIVE_SPLASH
-				&& means_of_death != MOD_DESTRUCTION)
+			if (hit_loc == HL_HEAD &&
+				!(d_flags & DAMAGE_RADIUS) &&
+				means_of_death != MOD_REPEATER_ALT &&
+				means_of_death != MOD_FLECHETTE_ALT &&
+				means_of_death != MOD_ROCKET &&
+				means_of_death != MOD_ROCKET_ALT &&
+				means_of_death != MOD_CONC &&
+				means_of_death != MOD_THERMAL &&
+				means_of_death != MOD_THERMAL_ALT &&
+				means_of_death != MOD_DETPACK &&
+				means_of_death != MOD_LASERTRIP &&
+				means_of_death != MOD_LASERTRIP_ALT &&
+				means_of_death != MOD_EXPLOSIVE &&
+				means_of_death != MOD_EXPLOSIVE_SPLASH &&
+				means_of_death != MOD_DESTRUCTION)
 			{
-				//no sound when killed by headshot (explosions don't count)
 				G_AlertTeam(self, attacker, 512, 0);
+
 				if (gi.VoiceVolume[self->s.number])
 				{
-					//I was talking, so cut it off... with a jump sound?
-					if (G_IsRidingVehicle(self))
-					{
-					}
-					else
+					if (!G_IsRidingVehicle(self))
 					{
 						G_SoundOnEnt(self, CHAN_VOICE, "*jump1.wav");
 					}
@@ -5613,10 +5720,10 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			}
 			else
 			{
-				if (self->client->ps.eFlags & EF_FORCE_GRIPPED || self->client->ps.eFlags & EF_FORCE_DRAINED || self->
-					client->ps.eFlags & EF_FORCE_GRASPED)
+				if ((self->client->ps.eFlags & EF_FORCE_GRIPPED) ||
+					(self->client->ps.eFlags & EF_FORCE_DRAINED) ||
+					(self->client->ps.eFlags & EF_FORCE_GRASPED))
 				{
-					//killed while gripped - no loud scream
 					G_AlertTeam(self, attacker, 512, 32);
 				}
 				else if (cliff_fall != 2)
@@ -5633,42 +5740,48 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 					{
 						G_AddEvent(self, Q_irand(EV_DEATH1, EV_DEATH3), self->health);
 					}
+
 					G_DeathAlert(self, attacker);
 				}
 				else
 				{
-					//screaming death is louder
 					G_AlertTeam(self, attacker, 512, 1024);
 				}
 			}
 		}
 
-		if (attacker && attacker->s.number == 0)
+		// Player killed someone: add sight event
+		if (attacker != NULL && attacker->s.number == 0)
 		{
-			//killed by player
-			//FIXME: this should really be wherever my body comes to rest...
-			AddSightEvent(attacker, self->currentOrigin, 384, AEL_DISCOVERED, 10);
-			//FIXME: danger event so that others will run away from this area since it's obviously dangerous
+			AddSightEvent(attacker, self->currentOrigin, 384,
+				AEL_DISCOVERED, 10);
 		}
 
-		if (anim >= 0) //can be -1 if it fails, -2 if it's already in a death anim
+		if (anim >= 0)
 		{
-			NPC_SetAnim(self, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			NPC_SetAnim(self, SETANIM_BOTH, anim,
+				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 	}
 
-	//do any dismemberment if there's any to do...
-	if (d_flags & DAMAGE_DISMEMBER
-		&& G_DoDismemberment(self, self->pos1, means_of_death, hit_loc)
-		&& !special_anim)
+	// -----------------------------------------------------------------
+	// Post-anim dismemberment / bodyshot/headshot gibbing
+	// -----------------------------------------------------------------
+
+	// Do any dismemberment if there's any to do...
+	if ((d_flags & DAMAGE_DISMEMBER) &&
+		G_DoDismemberment(self, self->pos1, means_of_death, hit_loc) &&
+		special_anim == qfalse)
 	{
-		//we did dismemberment and our death anim is okay to override
-		if (hit_loc == HL_HAND_RT && self->locationDamage[hit_loc] >= Q3_INFINITE && cliff_fall != 2 && self->client->ps
-			.
-			groundEntityNum != ENTITYNUM_NONE)
+		// We did dismemberment and our death anim is okay to override
+		if (hit_loc == HL_HAND_RT &&
+			self->locationDamage[hit_loc] >= Q3_INFINITE &&
+			cliff_fall != 2 &&
+			self->client->ps.groundEntityNum != ENTITYNUM_NONE)
 		{
-			//just lost our right hand and we're on the ground, use the special anim
-			NPC_SetAnim(self, SETANIM_BOTH, BOTH_RIGHTHANDCHOPPEDOFF, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			// Just lost our right hand and we're on the ground, use the special anim
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_RIGHTHANDCHOPPEDOFF,
+				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 	}
 
@@ -5687,41 +5800,64 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		self->client->noHead = qfalse;
 	}
 
-	// don't allow player to respawn for a few seconds
-	self->client->respawnTime = level.time + 2000; //self->client->ps.legsAnimTimer;
+	// -----------------------------------------------------------------
+	// Respawn timing and ragdoll setup
+	// -----------------------------------------------------------------
 
-	//rww - RAGDOLL_BEGIN
-	if (g_broadsword->integer && !G_RagDollDisallowedClass(self->client->NPC_class))
+	// Don't allow player to respawn for a few seconds
+	self->client->respawnTime = level.time + 2000;
+
+	// rww - RAGDOLL_BEGIN
+	if (g_broadsword->integer &&
+		!G_RagDollDisallowedClass(self->client->NPC_class))
 	{
-		if (self->client && (!self->NPC || !g_standard_humanoid(self)))
+		// Clear anim timers so ragdoll can take over
+		if (self->client != NULL &&
+			(self->NPC == NULL || !g_standard_humanoid(self)))
 		{
 			PM_SetLegsAnimTimer(self, &self->client->ps.legsAnimTimer, -1);
 			PM_SetTorsoAnimTimer(self, &self->client->ps.torsoAnimTimer, -1);
+		}
+
+		// ------------------------------------------------------------
+		// NEW: Attempt to start ragdoll (server‑side authoritative)
+		// ------------------------------------------------------------
+		{
+			vec3_t forcedAngles;
+			VectorCopy(self->client->ps.viewangles, forcedAngles);
+
+			if (G_RagDoll(self, forcedAngles) == qtrue)
+			{
+#ifdef _DEBUG
+				Com_Printf("Debug: Ragdoll started for %s\n", self->NPC_type);
+#endif
+			}
 		}
 	}
 	else
 	{
-		if (self->client)
+		// Not allowed to ragdoll: still clear timers so death anim plays correctly
+		if (self->client != NULL)
 		{
 			PM_SetLegsAnimTimer(self, &self->client->ps.legsAnimTimer, -1);
 			PM_SetTorsoAnimTimer(self, &self->client->ps.torsoAnimTimer, -1);
 		}
 	}
+	// rww - RAGDOLL_END
 
-	//rww - RAGDOLL_END
 
-	//Flying creatures should drop when killed
-	//FIXME: This may screw up certain things that expect to float even while dead <?>
+	// Flying creatures should drop when killed
 	self->svFlags &= ~SVF_CUSTOM_GRAVITY;
 
 	self->client->ps.pm_type = PM_DEAD;
 	self->client->ps.pm_flags &= ~PMF_STUCK_TO_WALL;
-	//need to update STAT_HEALTH here because ClientThink_real for self may happen before STAT_HEALTH is updated from self->health and pmove will stomp death anim with a move anim
+
+	// Need to update STAT_HEALTH here so pmove doesn't stomp death anim
 	self->client->ps.stats[STAT_HEALTH] = self->health;
 
-	if (self->NPC)
+	if (self->NPC != NULL)
 	{
-		//If an NPC, make sure we start running our scripts again- this gets set to infinite while we fall to our deaths
+		// If an NPC, make sure we start running our scripts again
 		self->NPC->nextBStateThink = level.time;
 	}
 
@@ -5730,20 +5866,20 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		death_script = qtrue;
 	}
 
-	if (self->NPC && self->NPC->scriptFlags & SCF_FFDEATH)
+	if (self->NPC != NULL &&
+		(self->NPC->scriptFlags & SCF_FFDEATH))
 	{
 		if (G_ActivateBehavior(self, BSET_FFDEATH))
 		{
-			//FIXME: should running this preclude running the normal deathscript?
 			death_script = qtrue;
 		}
 		G_UseTargets2(self, self, self->target4);
 	}
 
-	if (!death_script && !(self->svFlags & SVF_KILLED_SELF))
+	if (death_script == qfalse &&
+		!(self->svFlags & SVF_KILLED_SELF))
 	{
-		//Should no longer run scripts
-		//WARNING!!! DO NOT DO THIS WHILE RUNNING A SCRIPT, ICARUS WILL HANDLE IT, but it's bad
+		// Should no longer run scripts
 		Quake3Game()->FreeEntity(self);
 	}
 
@@ -5755,16 +5891,18 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 
 	gi.linkentity(self);
 
-	self->bounceCount = -1; // This is a cheap hack for optimizing the pointcontents check in deadthink
-	if (self->NPC)
+	self->bounceCount = -1; // Cheap hack for optimizing pointcontents check in deadthink
+
+	if (self->NPC != NULL)
 	{
-		self->NPC->timeOfDeath = level.time; //this will change - used for debouncing post-death events
-		self->s.time = level.time; //this will not chage- this is actual time of death
+		self->NPC->timeOfDeath = level.time; // used for debouncing post-death events
+		self->s.time = level.time; // actual time of death
 	}
 
 	// Start any necessary death fx for this entity
 	DeathFX(self);
 }
+
 
 qboolean G_CheckForStrongAttackMomentum(const gentity_t* self)
 {
