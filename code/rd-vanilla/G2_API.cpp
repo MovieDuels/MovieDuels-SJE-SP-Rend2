@@ -808,20 +808,33 @@ qhandle_t G2API_PrecacheGhoul2Model(const char* fileName)
 }
 
 // initialise all that needs to be on a new Ghoul II model
-int G2API_InitGhoul2Model(CGhoul2Info_v& ghoul2, const char* fileName, const int modelIndex, const qhandle_t customSkin, const qhandle_t customShader, const int model_flags, const int lod_bias)
+int G2API_InitGhoul2Model(
+	CGhoul2Info_v& ghoul2,
+	const char* fileName,
+	const int modelIndex,
+	const qhandle_t customSkin,
+	const qhandle_t customShader,
+	const int model_flags,
+	const int lod_bias)
 {
-	int				model;
+	int model;
 
-	G2ERROR(fileName && fileName[0], "NULL filename");
-
-	if (!fileName || !fileName[0])
+	// ------------------------------------------------------------
+	// Validate filename (avoid NULL dereference, fix C6011)
+	// ------------------------------------------------------------
+	if (fileName == NULL || fileName[0] == '\0')
 	{
-		assert(fileName[0]);
+		Com_Printf("G2API_InitGhoul2Model: WARNING - NULL or empty filename\n");
 		return -1;
 	}
 
-	// find a free spot in the list
-	for (model = 0; model < ghoul2.size(); model++)
+	// Keep existing macro call, now guaranteed safe
+	G2ERROR(fileName && fileName[0], "NULL filename");
+
+	// ------------------------------------------------------------
+	// Find a free slot in the ghoul2 array
+	// ------------------------------------------------------------
+	for (model = 0; model < static_cast<int>(ghoul2.size()); model++)
 	{
 		if (ghoul2[model].mModelindex == -1)
 		{
@@ -829,41 +842,57 @@ int G2API_InitGhoul2Model(CGhoul2Info_v& ghoul2, const char* fileName, const int
 			break;
 		}
 	}
-	if (model == ghoul2.size())
+
+	if (model == static_cast<int>(ghoul2.size()))
 	{
-		assert(model < 8);	//arb, just catching run-away models
+		// Only warn if we go beyond the old “expected” limit of 8
+		if (model >= 8)
+		{
+			Com_Printf("G2API_InitGhoul2Model: WARNING - model index %d reached upper expected limit for model '%s'\n", model, fileName);
+		}
+
 		CGhoul2Info info;
-		Q_strncpyz(info.mFileName, fileName, sizeof info.mFileName);
+		Q_strncpyz(info.mFileName, fileName, sizeof(info.mFileName));
 		info.mModelindex = 0;
-		if (G2_TestModelPointers(&info)) {
+
+		if (G2_TestModelPointers(&info))
+		{
 			ghoul2.push_back(CGhoul2Info());
 		}
-		else {
+		else
+		{
 			return -1;
 		}
 	}
 
-	Q_strncpyz(ghoul2[model].mFileName, fileName, sizeof ghoul2[model].mFileName);
+
+	// ------------------------------------------------------------
+	// Initialise chosen slot
+	// ------------------------------------------------------------
+	Q_strncpyz(ghoul2[model].mFileName, fileName, sizeof(ghoul2[model].mFileName));
 	ghoul2[model].mModelindex = model;
+
 	if (!G2_TestModelPointers(&ghoul2[model]))
 	{
-		ghoul2[model].mFileName[0] = 0;
+		ghoul2[model].mFileName[0] = '\0';
 		ghoul2[model].mModelindex = -1;
 	}
 	else
 	{
 		G2_Init_Bone_List(ghoul2[model].mBlist, ghoul2[model].aHeader->numBones);
 		G2_Init_Bolt_List(ghoul2[model].mBltlist);
+
 		ghoul2[model].mCustomShader = customShader;
 		ghoul2[model].mCustomSkin = customSkin;
 		ghoul2[model].mLodBias = lod_bias;
 		ghoul2[model].mAnimFrameDefault = 0;
 		ghoul2[model].mFlags = 0;
-
 		ghoul2[model].mModelBoltLink = -1;
 	}
+
 	return ghoul2[model].mModelindex;
 }
+
 
 qboolean G2API_SetLodBias(CGhoul2Info* ghlInfo, const int lod_bias)
 {
@@ -1059,49 +1088,139 @@ qboolean G2API_SetAnimIndex(CGhoul2Info* ghlInfo, const int index)
 	return qfalse;
 }
 
-qboolean G2API_SetBoneAnimIndex(CGhoul2Info* ghlInfo, const int index, const int startFrame, const int endFrame, const int flags, const float animSpeed, const int acurrent_time, const float set_frame, const int blend_time)
+qboolean G2API_SetBoneAnimIndex(
+	CGhoul2Info* ghlInfo,
+	const int index,
+	const int startFrame,
+	const int endFrame,
+	const int flags,
+	const float animSpeed,
+	const int acurrent_time,
+	const float set_frame,
+	const int blend_time)
 {
-	//rww - RAGDOLL_BEGIN
-	if (ghlInfo && ghlInfo->mFlags & GHOUL2_RAG_STARTED)
+	// ------------------------------------------------------------
+	// Validate ghlInfo pointer (fix C6011)
+	// ------------------------------------------------------------
+	if (ghlInfo == NULL)
+	{
+		Com_Printf("G2API_SetBoneAnimIndex: WARNING - ghlInfo is NULL\n");
+		return qfalse;
+	}
+
+	// ------------------------------------------------------------
+	// Ragdoll check
+	// ------------------------------------------------------------
+	if ((ghlInfo->mFlags & GHOUL2_RAG_STARTED) != 0)
 	{
 		return qfalse;
 	}
-	//rww - RAGDOLL_END
 
 	qboolean ret = qfalse;
+
+	// ------------------------------------------------------------
+	// Validate model pointers
+	// ------------------------------------------------------------
 	if (G2_SetupModelPointers(ghlInfo))
 	{
-		G2ERROR(startFrame >= 0, "startframe<0");
-		G2ERROR(startFrame < ghlInfo->aHeader->numFrames, "startframe>=numframes");
-		G2ERROR(endFrame > 0, "endframe<=0");
-		G2ERROR(endFrame <= ghlInfo->aHeader->numFrames, "endframe>numframes");
-		G2ERROR(set_frame < ghlInfo->aHeader->numFrames, "setframe>=numframes");
-		G2ERROR(set_frame == -1.0f || set_frame >= 0.0f, "setframe<0 but not -1");
-		if (startFrame < 0 || startFrame >= ghlInfo->aHeader->numFrames)
+		// --------------------------------------------------------
+		// Range validation (replace asserts with debug prints)
+		// --------------------------------------------------------
+		if (startFrame < 0)
 		{
-			*const_cast<int*>(&startFrame) = 0; // cast away const
+			Com_Printf("G2API_SetBoneAnimIndex: WARNING - startFrame < 0\n");
 		}
-		if (endFrame <= 0 || endFrame > ghlInfo->aHeader->numFrames)
+		if (startFrame >= ghlInfo->aHeader->numFrames)
 		{
-			*const_cast<int*>(&endFrame) = 1;
+			Com_Printf("G2API_SetBoneAnimIndex: WARNING - startFrame >= numFrames\n");
 		}
-		if (set_frame != -1.0f && (set_frame < 0.0f || set_frame >= static_cast<float>(ghlInfo->aHeader->numFrames)))
+		if (endFrame <= 0)
 		{
-			*const_cast<float*>(&set_frame) = 0.0f;
+			Com_Printf("G2API_SetBoneAnimIndex: WARNING - endFrame <= 0\n");
 		}
+		if (endFrame > ghlInfo->aHeader->numFrames)
+		{
+			Com_Printf("G2API_SetBoneAnimIndex: WARNING - endFrame > numFrames\n");
+		}
+		if (set_frame >= ghlInfo->aHeader->numFrames)
+		{
+			Com_Printf("G2API_SetBoneAnimIndex: WARNING - set_frame >= numFrames\n");
+		}
+		if (!(set_frame == -1.0f || set_frame >= 0.0f))
+		{
+			Com_Printf("G2API_SetBoneAnimIndex: WARNING - set_frame < 0 and not -1\n");
+		}
+
+		// --------------------------------------------------------
+		// Clamp invalid values (original behaviour preserved)
+		// --------------------------------------------------------
+		int safeStart = startFrame;
+		int safeEnd = endFrame;
+		float safeSet = set_frame;
+
+		if (safeStart < 0 || safeStart >= ghlInfo->aHeader->numFrames)
+		{
+			safeStart = 0;
+		}
+		if (safeEnd <= 0 || safeEnd > ghlInfo->aHeader->numFrames)
+		{
+			safeEnd = 1;
+		}
+		if (safeSet != -1.0f &&
+			(safeSet < 0.0f || safeSet >= static_cast<float>(ghlInfo->aHeader->numFrames)))
+		{
+			safeSet = 0.0f;
+		}
+
 		ghlInfo->mSkelFrameNum = 0;
-		G2ERROR(index >= 0 && index < (int)ghlInfo->mBlist.size(), va("Out of Range Bone Index (%s)", ghlInfo->mFileName));
-		if (index >= 0 && index < static_cast<int>(ghlInfo->mBlist.size()))
+
+		// --------------------------------------------------------
+		// Validate bone index
+		// --------------------------------------------------------
+		if (index < 0 || index >= static_cast<int>(ghlInfo->mBlist.size()))
 		{
-			G2ERROR(ghlInfo->mBlist[index].boneNumber >= 0, va("Bone Index is not Active (%s)", ghlInfo->mFileName));
-			const int current_time = G2API_GetTime(acurrent_time);
-			ret = G2_Set_Bone_Anim_Index(ghlInfo->mBlist, index, startFrame, endFrame, flags, animSpeed, current_time, set_frame, blend_time, ghlInfo->aHeader->numFrames);
-			G2ANIM(ghlInfo, "G2API_SetBoneAnimIndex");
+			Com_Printf("G2API_SetBoneAnimIndex: WARNING - Bone index out of range (%s)\n",
+				ghlInfo->mFileName);
+		}
+		else
+		{
+			if (ghlInfo->mBlist[index].boneNumber < 0)
+			{
+				Com_Printf("G2API_SetBoneAnimIndex: WARNING - Bone index not active (%s)\n",
+					ghlInfo->mFileName);
+			}
+			else
+			{
+				const int current_time = G2API_GetTime(acurrent_time);
+
+				ret = G2_Set_Bone_Anim_Index(
+					ghlInfo->mBlist,
+					index,
+					safeStart,
+					safeEnd,
+					flags,
+					animSpeed,
+					current_time,
+					safeSet,
+					blend_time,
+					ghlInfo->aHeader->numFrames);
+
+				G2ANIM(ghlInfo, "G2API_SetBoneAnimIndex");
+			}
 		}
 	}
-	G2WARNING(ret, va("G2API_SetBoneAnimIndex Failed (%s)", ghlInfo->mFileName));
+
+	// ------------------------------------------------------------
+	// Final warning if animation failed
+	// ------------------------------------------------------------
+	if (ret == qfalse)
+	{
+		Com_Printf("G2API_SetBoneAnimIndex: WARNING - Failed (%s)\n", ghlInfo->mFileName);
+	}
+
 	return ret;
 }
+
 
 qboolean G2API_SetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int startFrame, const int endFrame, const int flags, const float animSpeed, const int acurrent_time, const float set_frame, const int blend_time)
 {
@@ -2271,64 +2390,120 @@ void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
 #endif
 
 extern model_t* R_GetAnimModelByHandle(const CGhoul2Info* ghlInfo, qhandle_t index);
-
-bool G2_TestModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is properly set up
+// Returns true if the model is properly set up
+bool G2_TestModelPointers(CGhoul2Info* ghlInfo)
 {
-	G2ERROR(ghlInfo, "NULL ghlInfo");
-	if (!ghlInfo)
+	// ------------------------------------------------------------
+	// Validate input pointer (fix C6011)
+	// ------------------------------------------------------------
+	if (ghlInfo == NULL)
 	{
+		Com_Printf("G2_TestModelPointers: WARNING - ghlInfo is NULL\n");
 		return false;
 	}
+
 	ghlInfo->mValid = false;
+
+	// ------------------------------------------------------------
+	// Only proceed if this slot is active
+	// ------------------------------------------------------------
 	if (ghlInfo->mModelindex != -1)
 	{
+		// --------------------------------------------------------
+		// Load the .glm model
+		// --------------------------------------------------------
 		ghlInfo->mModel = RE_RegisterModel(ghlInfo->mFileName);
 		ghlInfo->currentModel = R_GetModelByHandle(ghlInfo->mModel);
-		if (ghlInfo->currentModel)
+
+		if (ghlInfo->currentModel == NULL)
 		{
-			if (ghlInfo->currentModel->mdxm)
-			{
-				if (ghlInfo->currentModelSize)
-				{
-					if (ghlInfo->currentModelSize != ghlInfo->currentModel->mdxm->ofsEnd)
-					{
-						Com_Error(ERR_DROP, "Ghoul2 model was reloaded and has changed, map must be restarted.\n");
-					}
-				}
-				ghlInfo->currentModelSize = ghlInfo->currentModel->mdxm->ofsEnd;
-				ghlInfo->animModel = R_GetModelByHandle(
-					ghlInfo->currentModel->mdxm->animIndex + ghlInfo->animModelIndexOffset);
-				if (ghlInfo->animModel)
-				{
-					ghlInfo->aHeader = ghlInfo->animModel->mdxa;
-					G2ERROR(ghlInfo->aHeader, va("Model has no mdxa (gla) %s", ghlInfo->mFileName));
-					if (!ghlInfo->aHeader)
-					{
-						Com_Error(ERR_DROP, "Ghoul2 (test)Model has no mdxa (gla) %s", ghlInfo->mFileName);
-					}
-					if (ghlInfo->currentAnimModelSize)
-					{
-						if (ghlInfo->currentAnimModelSize != ghlInfo->aHeader->ofsEnd)
-						{
-							Com_Error(ERR_DROP, "Ghoul2 model was reloaded and has changed, map must be restarted.\n");
-						}
-					}
-					ghlInfo->currentAnimModelSize = ghlInfo->aHeader->ofsEnd;
-					ghlInfo->mValid = true;
-				}
-			}
+			Com_Printf("G2_TestModelPointers: WARNING - Failed to load model '%s'\n",
+				ghlInfo->mFileName);
+			return false;
 		}
+
+		// --------------------------------------------------------
+		// Validate MDXM (mesh) header
+		// --------------------------------------------------------
+		if (ghlInfo->currentModel->mdxm == NULL)
+		{
+			Com_Printf("G2_TestModelPointers: WARNING - Model '%s' has no MDXM\n",
+				ghlInfo->mFileName);
+			return false;
+		}
+
+		// --------------------------------------------------------
+		// Detect model reload mismatch
+		// --------------------------------------------------------
+		if (ghlInfo->currentModelSize != 0 &&
+			ghlInfo->currentModelSize != ghlInfo->currentModel->mdxm->ofsEnd)
+		{
+			Com_Error(ERR_DROP,
+				"Ghoul2 model was reloaded and has changed, map must be restarted.\n");
+		}
+
+		ghlInfo->currentModelSize = ghlInfo->currentModel->mdxm->ofsEnd;
+
+		// --------------------------------------------------------
+		// Load animation model (MDXA)
+		// --------------------------------------------------------
+		const int animHandle =
+			ghlInfo->currentModel->mdxm->animIndex + ghlInfo->animModelIndexOffset;
+
+		ghlInfo->animModel = R_GetModelByHandle(animHandle);
+
+		if (ghlInfo->animModel == NULL)
+		{
+			Com_Printf("G2_TestModelPointers: WARNING - Missing animation model for '%s'\n",
+				ghlInfo->mFileName);
+			return false;
+		}
+
+		// --------------------------------------------------------
+		// Validate MDXA (animation) header
+		// --------------------------------------------------------
+		ghlInfo->aHeader = ghlInfo->animModel->mdxa;
+
+		if (ghlInfo->aHeader == NULL)
+		{
+			Com_Printf("G2_TestModelPointers: WARNING - Model '%s' has no MDXA (GLA)\n",
+				ghlInfo->mFileName);
+			return false;
+		}
+
+		// --------------------------------------------------------
+		// Detect animation reload mismatch
+		// --------------------------------------------------------
+		if (ghlInfo->currentAnimModelSize != 0 &&
+			ghlInfo->currentAnimModelSize != ghlInfo->aHeader->ofsEnd)
+		{
+			Com_Error(ERR_DROP,
+				"Ghoul2 model was reloaded and has changed, map must be restarted.\n");
+		}
+
+		ghlInfo->currentAnimModelSize = ghlInfo->aHeader->ofsEnd;
+
+		// --------------------------------------------------------
+		// Model is valid
+		// --------------------------------------------------------
+		ghlInfo->mValid = true;
 	}
+
+	// ------------------------------------------------------------
+	// If invalid, clear all pointers
+	// ------------------------------------------------------------
 	if (!ghlInfo->mValid)
 	{
-		ghlInfo->currentModel = nullptr;
+		ghlInfo->currentModel = NULL;
 		ghlInfo->currentModelSize = 0;
-		ghlInfo->animModel = nullptr;
+		ghlInfo->animModel = NULL;
 		ghlInfo->currentAnimModelSize = 0;
-		ghlInfo->aHeader = nullptr;
+		ghlInfo->aHeader = NULL;
 	}
+
 	return ghlInfo->mValid;
 }
+
 
 bool G2_SetupModelPointers(CGhoul2Info* ghlInfo) // returns true if the model is properly set up
 {

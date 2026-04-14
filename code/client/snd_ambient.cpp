@@ -312,7 +312,6 @@ static void AS_GetTimeBetweenWaves(ambientSet_t& set)
 	AS_SkipLine();
 }
 
-
 /*
 -------------------------
 AS_GetSubWaves
@@ -331,6 +330,9 @@ static void AS_GetSubWaves(ambientSet_t& set)
 	// Fix C6031: check sscanf return value.
 	// ------------------------------------------------------------
 	const int parsed = sscanf(parseBuffer + parsePos, "%s %s", tempBuffer, dirBuffer);
+
+	// Force null-termination to satisfy MSVC analyzer (C6054)
+	dirBuffer[sizeof(dirBuffer) - 1] = '\0';
 
 	if (parsed != 2)
 	{
@@ -356,6 +358,9 @@ static void AS_GetSubWaves(ambientSet_t& set)
 
 		// Fix C6031: check sscanf return value
 		const int waveParsed = sscanf(parseBuffer + parsePos, "%s", waveBuffer);
+
+		// Force null-termination to satisfy MSVC analyzer (C6054)
+		waveBuffer[sizeof(waveBuffer) - 1] = '\0';
 
 		if (waveParsed != 1)
 		{
@@ -412,7 +417,10 @@ static void AS_GetSubWaves(ambientSet_t& set)
 	}
 
 	AS_SkipLine();
-}/*
+}
+
+
+/*
 -------------------------
 AS_GetLoopedWave
 

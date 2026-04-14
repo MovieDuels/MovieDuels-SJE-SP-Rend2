@@ -250,81 +250,81 @@ void MP3_InitCvars()
 //
 // (note: the reason I pass in the unpacked size rather than working it out here is simply because I already have it)
 //
-qboolean MP3Stream_InitFromFile(sfx_t* sfx, byte* pbSrcData, const int iSrcDatalen, const char* psSrcDataFilename,
-	const int iMP3UnPackedSize, const qboolean bStereoDesired /* = qfalse */
-)
+qboolean MP3Stream_InitFromFile(
+	sfx_t* sfx,
+	byte* pbSrcData,
+	const int iSrcDatalen,
+	const char* psSrcDataFilename,
+	const int iMP3UnPackedSize,
+	const qboolean bStereoDesired)
 {
-	// first, make a decision based on size here as to whether or not it's worth it because of MP3 buffer space
-	//	making small files much bigger (and therefore best left as WAV)...
-	//
-
+	// ------------------------------------------------------------
+	// Decide whether MP3 is worth using based on overhead
+	// ------------------------------------------------------------
 	if (cv_MP3overhead &&
-		(
-			//iSrcDatalen + sizeof(MP3STREAM) + FUZZY_AMOUNT < iMP3UnPackedSize
-			iSrcDatalen + cv_MP3overhead->integer < iMP3UnPackedSize
-			)
-		)
+		(iSrcDatalen + cv_MP3overhead->integer < iMP3UnPackedSize))
 	{
-		// ok, let's keep it as MP3 then...
-		//
-		float fMaxVol = 128;
-		// seems to be a reasonable typical default for maxvol (for lip synch). Naturally there's no #define I can use instead...
+		float fMaxVol = 128.0f;
 
-		MP3_ReadSpecialTagInfo(pbSrcData, iSrcDatalen, nullptr, nullptr, &fMaxVol);
-		// try and read a read maxvol from MP3 header
+		// Read optional maxvol tag
+		MP3_ReadSpecialTagInfo(pbSrcData, iSrcDatalen, NULL, NULL, &fMaxVol);
 
-		// fill in some sfx_t fields...
-		//
-		//		Q_strncpyz( sfx->name, psSrcDataFilename, sizeof(sfx->name) );
+		// Fill sfx fields
 		sfx->eSoundCompressionMethod = ct_MP3;
 		sfx->fVolRange = fMaxVol;
-		//sfx->width  = 2;
-		sfx->iSoundLengthInSamples = ((iMP3UnPackedSize / 2/*sfx->width*/) / (44100 / dma.speed)) / (
-			bStereoDesired ? 2 : 1);
-		//
-		// alloc mem for data and store it (raw MP3 in this case)...
-		//
+
+		sfx->iSoundLengthInSamples =
+			((iMP3UnPackedSize / 2) / (44100 / dma.speed)) /
+			(bStereoDesired ? 2 : 1);
+
+		// Allocate and copy raw MP3 data
 		sfx->pSoundData = reinterpret_cast<short*>(SND_malloc(iSrcDatalen, sfx));
 		memcpy(sfx->pSoundData, pbSrcData, iSrcDatalen);
 
-		// now init the low-level MP3 stuff...
-		//
-		MP3STREAM SFX_MP3Stream = {}; // important to init to all zeroes!
-		char* psError = C_MP3Stream_DecodeInit(&SFX_MP3Stream, /*sfx->data*/ /*sfx->soundData*/ pbSrcData, iSrcDatalen,
-			dma.speed, //(s_khz->value == 44)?44100:(s_khz->value == 22)?22050:11025,
-			2/*sfx->width*/ * 8,
-			bStereoDesired
-		);
-		SFX_MP3Stream.pbSourceData = reinterpret_cast<byte*>(sfx->pSoundData);
+		// ------------------------------------------------------------
+		// FIX FOR C6262:
+		// Allocate MP3STREAM on the heap instead of stack.
+		// ------------------------------------------------------------
+		MP3STREAM* pTempStream =
+			static_cast<MP3STREAM*>(Z_Malloc(sizeof(MP3STREAM), TAG_SND_MP3STREAMHDR, qfalse));
+
+		memset(pTempStream, 0, sizeof(MP3STREAM));
+
+		// Init decoder
+		char* psError = C_MP3Stream_DecodeInit(
+			pTempStream,
+			pbSrcData,
+			iSrcDatalen,
+			dma.speed,
+			2 * 8,
+			bStereoDesired);
+
+		pTempStream->pbSourceData = reinterpret_cast<byte*>(sfx->pSoundData);
+
 		if (psError)
 		{
-			// This should never happen, since any errors or problems with the MP3 file would have stopped us getting
-			//	to this whole function, but just in case...
-			//
 			Com_Printf(va(S_COLOR_YELLOW"File \"%s\": %s\n", psSrcDataFilename, psError));
-
-			// This will leave iSrcDatalen bytes on the hunk stack (since you can't dealloc that), but MP3 files are
-			//	usually small, and like I say, it should never happen.
-			//
-			// Strictly speaking, I should do a Z_Malloc above, then I could do a Z_Free if failed, else do a Hunk_Alloc
-			//	to copy the Z_Malloc data into, then Z_Free, but for something that shouldn't happen it seemed bad to
-			//	penalise the rest of the game with extra alloc demands.
-			//
+			Z_Free(pTempStream);
 			return qfalse;
 		}
 
-		// success ( ...on a plate).
-		//
-		// make a copy of the filled-in stream struct and attach to the sfx_t struct...
-		//
-		sfx->pMP3StreamHeader = static_cast<MP3STREAM*>(Z_Malloc(sizeof(MP3STREAM), TAG_SND_MP3STREAMHDR, qfalse));
-		memcpy(sfx->pMP3StreamHeader, &SFX_MP3Stream, sizeof(MP3STREAM));
-		//
+		// ------------------------------------------------------------
+		// Copy initialized stream into sfx->pMP3StreamHeader
+		// ------------------------------------------------------------
+		sfx->pMP3StreamHeader =
+			static_cast<MP3STREAM*>(Z_Malloc(sizeof(MP3STREAM), TAG_SND_MP3STREAMHDR, qfalse));
+
+		memcpy(sfx->pMP3StreamHeader, pTempStream, sizeof(MP3STREAM));
+
+		// Free temporary heap struct
+		Z_Free(pTempStream);
+
 		return qtrue;
 	}
 
 	return qfalse;
 }
+
 
 // decode one packet of MP3 data only (typical output size is 2304, or 2304*2 for stereo, so input size is less
 //

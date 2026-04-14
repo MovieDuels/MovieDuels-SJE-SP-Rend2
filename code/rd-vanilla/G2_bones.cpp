@@ -1493,6 +1493,7 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 		return;
 	}
 
+
 	// ------------------------------------------------------------
 	// Find first valid model
 	// ------------------------------------------------------------

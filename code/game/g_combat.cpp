@@ -4341,6 +4341,35 @@ static void GibEntity_Headshot(gentity_t* self)
 	self->client->noHead = qtrue;
 }
 
+qboolean G_RagDollDisallowedClass(const class_t npc_class)
+{
+	switch (npc_class)
+	{
+	case CLASS_ATST:
+	case CLASS_GONK:
+	case CLASS_INTERROGATOR:
+	case CLASS_MARK1:
+	case CLASS_MARK2:
+	case CLASS_MOUSE:
+	case CLASS_PROBE:
+	case CLASS_PROTOCOL:
+	case CLASS_R2D2:
+	case CLASS_R5D2:
+	case CLASS_SEEKER:
+	case CLASS_SENTRY:
+	case CLASS_SBD:
+	//case CLASS_BATTLEDROID:
+	case CLASS_DROIDEKA:
+	case CLASS_OBJECT:
+	case CLASS_ASSASSIN_DROID:
+	case CLASS_SABER_DROID:
+		return qtrue;
+
+	default:
+		return qfalse;
+	}
+}
+
 /*
 ==================
 player_die
@@ -5662,7 +5691,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 	self->client->respawnTime = level.time + 2000; //self->client->ps.legsAnimTimer;
 
 	//rww - RAGDOLL_BEGIN
-	if (g_broadsword->integer && self->client->NPC_class != CLASS_SBD && self->client->NPC_class != CLASS_DROIDEKA)
+	if (g_broadsword->integer && !G_RagDollDisallowedClass(self->client->NPC_class))
 	{
 		if (self->client && (!self->NPC || !g_standard_humanoid(self)))
 		{
@@ -5678,6 +5707,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			PM_SetTorsoAnimTimer(self, &self->client->ps.torsoAnimTimer, -1);
 		}
 	}
+
 	//rww - RAGDOLL_END
 
 	//Flying creatures should drop when killed

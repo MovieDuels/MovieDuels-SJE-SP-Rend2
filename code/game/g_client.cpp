@@ -1132,33 +1132,31 @@ static void G_SetSkin(gentity_t* ent)
 		ent->client->renderInfo.customRGBA[3] = 255;
 	}
 }
-
-extern cvar_t* g_DebugSaberCombat;
-
+// Returns qtrue if the entity uses a humanoid-compatible GLA
 qboolean g_standard_humanoid(gentity_t* self)
 {
-	if (!self || !self->ghoul2.IsValid() || self->ghoul2.size() == 0)
-		return qfalse;
-
-	if (self->playerModel < 0 || self->playerModel >= self->ghoul2.size())
-		return qfalse;
-
-	const char* gla_name = gi.G2API_GetGLAName(&self->ghoul2[self->playerModel]);
-
-	if (!gla_name)
+	if (self == NULL || self->ghoul2.size() == 0)
 	{
-		if (g_DebugSaberCombat->integer)
-		{
-			Com_Printf(
-				"WARNING: g_standard_humanoid: NULL GLA for entity %d (model index %d)\n",
-				self->s.number, self->playerModel
-			);
-		}
 		return qfalse;
 	}
 
-	// Prefixes that count as humanoid
-	static const char* humanoid_prefixes[] =
+	if (self->playerModel < 0 || self->playerModel >= self->ghoul2.size())
+	{
+		return qfalse;
+	}
+
+	const char* gla_name = gi.G2API_GetGLAName(&self->ghoul2[self->playerModel]);
+
+	if (gla_name == NULL || gla_name[0] == '\0')
+	{
+		Com_Printf("g_standard_humanoid: WARNING - NULL or empty GLA name\n");
+		return qfalse;
+	}
+
+	// ------------------------------------------------------------
+	// List of all humanoid-compatible GLA prefixes
+	// ------------------------------------------------------------
+	static const char* humanoidPrefixes[] =
 	{
 		"models/players/_humanoid",
 		"models/players/JK2anims",
@@ -1189,48 +1187,31 @@ qboolean g_standard_humanoid(gentity_t* self)
 		"models/players/_humanoid_rey",
 		"models/players/_humanoid_sbd",
 		"models/players/_humanoid_vader",
-		"models/players/_humanoid_yoda"
-	};
+		"models/players/_humanoid_yoda",
 
-	// Exact matches that count as humanoid
-	static const char* humanoid_exact[] =
-	{
+		// Full-path GLAs (non-prefix)
 		"models/players/protocol/protocol",
 		"models/players/assassin_droid/model",
-		"models/players/assassin_droid/assassin_droid",
 		"models/players/saber_droid/model",
-		"models/players/saber_droid/saber_droid",
 		"models/players/hazardtrooper/hazardtrooper",
 		"models/players/rockettrooper/rockettrooper",
 		"models/players/wampa/wampa",
 		"models/players/galak_mech/galak_mech",
-		"models/players/droideka/droideka"
+		"models/players/droideka/droideka",
 	};
 
-	// Check prefixes
-	for (size_t i = 0; i < ARRAY_LEN(humanoid_prefixes); i++)
+	// ------------------------------------------------------------
+	// Check against all prefixes
+	// ------------------------------------------------------------
+	for (int i = 0; i < ARRAY_LEN(humanoidPrefixes); i++)
 	{
-		if (!Q_stricmpn(gla_name, humanoid_prefixes[i], strlen(humanoid_prefixes[i])))
-			return qtrue;
-	}
+		const char* prefix = humanoidPrefixes[i];
+		const int prefixLen = strlen(prefix);
 
-	// Check exact matches
-	for (size_t i = 0; i < ARRAY_LEN(humanoid_exact); i++)
-	{
-		if (!Q_stricmp(gla_name, humanoid_exact[i]))
+		if (!Q_stricmpn(gla_name, prefix, prefixLen))
+		{
 			return qtrue;
-	}
-
-	// ⭐ Added: support for bare GLA names like "_humanoid_mp"
-	static const char* bare_names[] =
-	{
-		"_humanoid_mp"
-	};
-
-	for (size_t i = 0; i < ARRAY_LEN(bare_names); i++)
-	{
-		if (!Q_stricmp(gla_name, bare_names[i]))
-			return qtrue;
+		}
 	}
 
 	return qfalse;
@@ -1238,15 +1219,17 @@ qboolean g_standard_humanoid(gentity_t* self)
 
 qboolean G_StandardHumanoid(const char* gla_name)
 {
-	if (!gla_name)
-		return qfalse;
-
-	//
-	// Bare GLA names that count as humanoid
-	//
-	static const char* humanoid_bare[] =
+	if (gla_name == NULL || gla_name[0] == '\0')
 	{
-		"_humanoid_mp",
+		Com_Printf("g_standard_humanoid: WARNING - NULL or empty GLA name\n");
+		return qfalse;
+	}
+
+	// ------------------------------------------------------------
+	// List of all humanoid-compatible GLA names (exact matches)
+	// ------------------------------------------------------------
+	static const char* humanoidExact[] =
+	{
 		"_humanoid",
 		"JK2anims",
 		"_humanoid_ani",
@@ -1276,21 +1259,9 @@ qboolean G_StandardHumanoid(const char* gla_name)
 		"_humanoid_rey",
 		"_humanoid_sbd",
 		"_humanoid_vader",
-		"_humanoid_yoda"
-	};
+		"_humanoid_yoda",
 
-	for (size_t i = 0; i < ARRAY_LEN(humanoid_bare); i++)
-	{
-		if (!Q_stricmp(gla_name, humanoid_bare[i]))
-			return qtrue;
-	}
-
-	//
-	// Exact-match droid/creature GLAs (converted to bare names)
-	// These appear as full paths in g_standard_humanoid, but here we only get the GLA name.
-	//
-	static const char* humanoid_exact[] =
-	{
+		// Non-humanoid but compatible rigs
 		"protocol",        // models/players/protocol/protocol
 		"assassin_droid",  // models/players/assassin_droid/model
 		"saber_droid",     // models/players/saber_droid/model
@@ -1298,13 +1269,18 @@ qboolean G_StandardHumanoid(const char* gla_name)
 		"rockettrooper",   // models/players/rockettrooper/rockettrooper
 		"wampa",           // models/players/wampa/wampa
 		"galak_mech",      // models/players/galak_mech/galak_mech
-		"droideka"         // models/players/droideka/droideka
+		"droideka",
 	};
 
-	for (size_t i = 0; i < ARRAY_LEN(humanoid_exact); i++)
+	// ------------------------------------------------------------
+	// Check exact matches
+	// ------------------------------------------------------------
+	for (int i = 0; i < ARRAY_LEN(humanoidExact); i++)
 	{
-		if (!Q_stricmp(gla_name, humanoid_exact[i]))
+		if (!Q_stricmp(gla_name, humanoidExact[i]))
+		{
 			return qtrue;
+		}
 	}
 
 	return qfalse;
