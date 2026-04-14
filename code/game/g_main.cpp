@@ -306,6 +306,7 @@ cvar_t* g_debugFatigueBars;
 cvar_t* g_Advancedaitalk;
 cvar_t* com_kotor;
 cvar_t* g_attackskill;
+cvar_t* g_npcSpecialAttackFreq; // Modifier for special/kata attack frequency
 cvar_t* g_saberLockCinematicCamera;
 cvar_t* g_ffamode;
 
@@ -938,6 +939,8 @@ static void G_InitCvars()
 	com_kotor = gi.cvar("com_kotor", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_attackskill = gi.cvar("g_attackskill", "3", CVAR_ARCHIVE);
+	// Modifier for special/kata attack frequency (1.0 = default, lower = less frequent, higher = more frequent)
+	g_npcSpecialAttackFreq = gi.cvar("g_npcSpecialAttackFreq", "1.0", CVAR_ARCHIVE);
 
 	g_saberLockCinematicCamera = gi.cvar("g_saberLockCinematicCamera", "0", CVAR_ARCHIVE);
 
