@@ -4358,7 +4358,6 @@ qboolean G_RagDollDisallowedClass(const class_t npc_class)
 	case CLASS_SEEKER:
 	case CLASS_SENTRY:
 	case CLASS_SBD:
-	//case CLASS_BATTLEDROID:
 	case CLASS_DROIDEKA:
 	case CLASS_OBJECT:
 	case CLASS_ASSASSIN_DROID:
@@ -5845,7 +5844,6 @@ void player_die(gentity_t* self,
 	}
 	// rww - RAGDOLL_END
 
-
 	// Flying creatures should drop when killed
 	self->svFlags &= ~SVF_CUSTOM_GRAVITY;
 
@@ -5902,7 +5900,6 @@ void player_die(gentity_t* self,
 	// Start any necessary death fx for this entity
 	DeathFX(self);
 }
-
 
 qboolean G_CheckForStrongAttackMomentum(const gentity_t* self)
 {

@@ -325,6 +325,8 @@ cvar_t* g_AllowWeather;
 cvar_t* g_debugItems;
 cvar_t* g_fixJOItems;
 
+cvar_t* g_npc_is_smart;
+
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
@@ -964,6 +966,8 @@ static void G_InitCvars()
 
 	g_debugItems = gi.cvar("g_debugItems", "0", CVAR_CHEAT);
 	g_fixJOItems = gi.cvar("g_fixJOItems", "1", CVAR_ARCHIVE);
+
+	g_npc_is_smart = gi.cvar("g_npc_is_smart", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
 }
 
 /*
@@ -1785,13 +1789,12 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 	{
 		return qfalse;
 	}
-	
+
 	// If Broadsword is off OR this NPC class is not allowed to ragdoll
 	if (!g_broadsword->integer || G_RagDollDisallowedClass(ent->client->NPC_class))
 	{
 		return qfalse;
 	}
-
 
 	// ------------------------------------------------------------
 	// Eligibility checks for entering ragdoll
@@ -1856,7 +1859,6 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 			inSomething = qtrue;
 			ent->client->ps.velocity[2] += 32.0f;
 		}
-
 
 		// If still undecided, do bolt‑based obstruction checks
 		if (inSomething == qfalse)
@@ -2210,7 +2212,6 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 
 	return qfalse;
 }
-
 
 //rww - RAGDOLL_END
 

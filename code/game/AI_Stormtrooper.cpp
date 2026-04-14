@@ -901,7 +901,9 @@ qboolean NPC_CheckPlayerTeamStealth()
 	return qfalse;
 }
 
-static qboolean NPC_CheckEnemiesInSpotlight()
+extern cvar_t* g_npc_is_smart;
+
+static qboolean NPC_CheckEnemiesInSpotlight(void)
 {
 	if (!NPC || !NPC->client || !NPCInfo)
 	{
@@ -913,10 +915,23 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 
 	// Limit detection to a fixed radius to prevent map-wide aggro
 	constexpr float DETECTION_RADIUS = 1024.0f; // 1024 units is a reasonable sight/hearing range
+	constexpr float DETECTION_RADIUS_LEVEL_HARD = 2048.0f; // 2048 units is a reasonable sight/hearing range on hard difficulty
+
 	vec3_t mins{}, maxs{};
-	for (int i = 0; i < 3; i++) {
-		mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS;
-		maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS;
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (g_npc_is_smart->integer != 1)
+		{// create a box around the NPC's head to check for entities in, instead of checking the whole map,
+			//which is what happens if we just iterate through all entities and check distance
+			mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS;
+			maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS;
+		}
+		else
+		{//Expand the search box by our speed in all directions, so we can notice people running past us
+			mins[i] = NPC->client->renderInfo.eyePoint[i] - NPC->speed;
+			maxs[i] = NPC->client->renderInfo.eyePoint[i] + NPC->speed;
+		}
 	}
 
 	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
@@ -944,32 +959,81 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 
 		// Primary cone check with distance limit
 		const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
-		if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS) {
+
+		if (g_npc_is_smart->integer != 1)
+		{
+			if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS)
+			{
+				if (InFOV(enemy->currentOrigin,
+					NPC->client->renderInfo.eyePoint,
+					NPC->client->renderInfo.eyeAngles,
+					NPCInfo->stats.hfov,
+					NPCInfo->stats.vfov))
+				{// Don't let them notice us if they're just barely in the cone and we're not moving,
+					// 16^2 fudge factor
+					if (dist_sq - 256.0f <= DETECTION_RADIUS * DETECTION_RADIUS)
+					{
+						if (G_ClearLOS(NPC, enemy))
+						{
+							G_SetEnemy(NPC, enemy);
+							TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
+							return qtrue;
+						}
+					}
+				}
+			}
+
+			// Wider "suspicion" cone with distance limit
+			if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS)
+			{// Don't let them notice us if they're just barely in the cone and we're not moving,
+				if (InFOV(enemy->currentOrigin,
+					NPC->client->renderInfo.eyePoint,
+					NPC->client->renderInfo.eyeAngles,
+					90.0f,
+					NPCInfo->stats.vfov * 3.0f))
+				{
+					if (G_ClearLOS(NPC, enemy))
+					{
+						if (!suspect ||
+							DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
+							DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+						{
+							suspect = enemy;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			// Primary cone check
 			if (InFOV(enemy->currentOrigin,
 				NPC->client->renderInfo.eyePoint,
 				NPC->client->renderInfo.eyeAngles,
 				NPCInfo->stats.hfov,
 				NPCInfo->stats.vfov))
-			{
+			{// Don't let them notice us if they're just barely in the cone and we're not moving,
+				//but if we're moving fast enough, we can notice them even if they're at the edge of our vision
 				// 16^2 fudge factor
-				if (dist_sq - 256.0f <= DETECTION_RADIUS * DETECTION_RADIUS) {
-					if (G_ClearLOS(NPC, enemy)) {
+				if (dist_sq - 256.0f <= NPC->speed * NPC->speed)
+				{
+					if (G_ClearLOS(NPC, enemy))
+					{
 						G_SetEnemy(NPC, enemy);
 						TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
 						return qtrue;
 					}
 				}
 			}
-		}
 
-		// Wider "suspicion" cone with distance limit
-		if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS) {
+			// Wider "suspicion" cone
 			if (InFOV(enemy->currentOrigin,
 				NPC->client->renderInfo.eyePoint,
 				NPC->client->renderInfo.eyeAngles,
 				90.0f,
 				NPCInfo->stats.vfov * 3.0f))
-			{
+			{ //Don't let them notice us if they're just barely in the cone and we're not moving,
+				//but if we're moving fast enough, we can notice them even if they're at the edge of our vision
 				if (G_ClearLOS(NPC, enemy))
 				{
 					if (!suspect ||
@@ -988,31 +1052,32 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 		const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin);
 		const float vis_rng_sq = NPCInfo->stats.visrange * NPCInfo->stats.visrange;
 
-		if (Q_flrand(0.0f, vis_rng_sq) > dist_sq)
+		// Must still have LOS
+		if (G_ClearLOS(NPC, suspect))
 		{
-			// First time noticing
-			if (TIMER_Done(NPC, "enemyLastVisible"))
+			if (Q_flrand(0.0f, vis_rng_sq) > dist_sq)
 			{
-				const int look_time = Q_irand(4500, 8500);
-				TIMER_Set(NPC, "enemyLastVisible", look_time);
-				ST_Speech(NPC, SPEECH_SIGHT, 0);
-				NPC_FacePosition(suspect->currentOrigin, qtrue);
-			}
-			// Escalate to "interrogating"
-			else if (TIMER_Get(NPC, "enemyLastVisible") <= level.time + 500 &&
-				(NPCInfo->scriptFlags & SCF_LOOK_FOR_ENEMIES))
-			{
-				if (!Q_irand(0, 2))
+				// First time noticing
+				if (TIMER_Done(NPC, "enemyLastVisible"))
 				{
-					const int interrogate_time = Q_irand(2000, 4000);
-					ST_Speech(NPC, SPEECH_SUSPICIOUS, 0);
-					TIMER_Set(NPC, "interrogating", interrogate_time);
+					TIMER_Set(NPC, "enemyLastVisible", Q_irand(4500, 8500));
+					ST_Speech(NPC, SPEECH_SIGHT, 0);
 					NPC_FacePosition(suspect->currentOrigin, qtrue);
+				}
+				// Escalate to interrogation
+				else if (TIMER_Get(NPC, "enemyLastVisible") <= level.time + 500 &&
+					(NPCInfo->scriptFlags & SCF_LOOK_FOR_ENEMIES))
+				{
+					if (!Q_irand(0, 2))
+					{
+						TIMER_Set(NPC, "interrogating", Q_irand(2000, 4000));
+						ST_Speech(NPC, SPEECH_SUSPICIOUS, 0);
+						NPC_FacePosition(suspect->currentOrigin, qtrue);
+					}
 				}
 			}
 		}
 	}
-
 	return qfalse;
 }
 

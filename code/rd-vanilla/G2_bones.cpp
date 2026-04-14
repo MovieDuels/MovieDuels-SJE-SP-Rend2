@@ -1493,7 +1493,6 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 		return;
 	}
 
-
 	// ------------------------------------------------------------
 	// Find first valid model
 	// ------------------------------------------------------------
@@ -1664,7 +1663,7 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 	if (startFrame < 0 || startFrame >= mod_a->numFrames)
 	{
 #ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n",startFrame, mod_a->numFrames - 1);
+		Com_Printf("Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n", startFrame, mod_a->numFrames - 1);
 #endif
 		startFrame = (startFrame < 0) ? 0 : (mod_a->numFrames - 1);
 	}
@@ -1737,7 +1736,7 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2V, CRagDollParams* parms)
 	else
 	{
 #ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - startFrame == endFrame (%d). Skipping anim setup.\n",startFrame);
+		Com_Printf("Debug: G2_SetRagDoll - startFrame == endFrame (%d). Skipping anim setup.\n", startFrame);
 #endif
 	}
 
