@@ -73,7 +73,6 @@ class CRagDollParams;
 //rww - RAGDOLL_END
 
 using gentity_t = struct gentity_s;
-//typedef struct gclient_s gclient_t;
 
 using SavedGameJustLoaded_e = enum
 {

@@ -1153,7 +1153,7 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 	if (iFrame < 0 || iFrame >= pMDXAHeader->numFrames)
 	{
 #ifdef _DEBUG
-		Com_Printf("Debug: G2_GetBonePoolIndex - iFrame %d out of range (0..%d). Clamping.\n",iFrame, pMDXAHeader->numFrames - 1);
+		Com_Printf("Debug: G2_GetBonePoolIndex - iFrame %d out of range (0..%d). Clamping.\n", iFrame, pMDXAHeader->numFrames - 1);
 #endif
 		if (iFrame < 0)
 		{
@@ -1171,7 +1171,7 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 	if (iBone < 0 || iBone >= pMDXAHeader->numBones)
 	{
 #ifdef _DEBUG
-		Com_Printf("Debug: G2_GetBonePoolIndex - iBone %d out of range (0..%d). Clamping.\n",iBone, pMDXAHeader->numBones - 1);
+		Com_Printf("Debug: G2_GetBonePoolIndex - iBone %d out of range (0..%d). Clamping.\n", iBone, pMDXAHeader->numBones - 1);
 #endif
 		if (iBone < 0)
 		{
@@ -1201,7 +1201,6 @@ static int G2_GetBonePoolIndex(const mdxaHeader_t* pMDXAHeader, const int iFrame
 		(pIndex->iIndex[1] << 8) |
 		pIndex->iIndex[0];
 }
-
 
 static void UnCompressBone(float mat[3][4], const int iBoneIndex, const mdxaHeader_t* pMDXAHeader, const int iFrame)
 {
@@ -1235,9 +1234,11 @@ void G2_TimingModel(
 	// --------------------------------------------------------
 	if (bone.startFrame < 0 || bone.startFrame >= numFramesInFile)
 	{
+#ifdef _DEBUG
 		Com_Printf(
 			"Debug: G2_TimingModel - startFrame %d out of range (0..%d). Clamping.\n",
 			bone.startFrame, numFramesInFile - 1);
+#endif
 
 		if (bone.startFrame < 0)
 		{
@@ -1251,9 +1252,11 @@ void G2_TimingModel(
 
 	if (bone.endFrame < 0 || bone.endFrame >= numFramesInFile)
 	{
+#ifdef _DEBUG
 		Com_Printf(
 			"Debug: G2_TimingModel - endFrame %d out of range (0..%d). Clamping.\n",
 			bone.endFrame, numFramesInFile - 1);
+#endif
 
 		if (bone.endFrame < 0)
 		{
@@ -1413,9 +1416,11 @@ void G2_TimingModel(
 
 				if (current_frame < 0 || current_frame >= numFramesInFile)
 				{
+#ifdef _DEBUG
 					Com_Printf(
 						"Debug: G2_TimingModel - current_frame %d out of range (0..%d). Clamping.\n",
 						current_frame, numFramesInFile - 1);
+#endif
 
 					if (current_frame < 0)
 					{
@@ -1431,9 +1436,11 @@ void G2_TimingModel(
 
 				if ((int)endFrame > numFramesInFile)
 				{
+#ifdef _DEBUG
 					Com_Printf(
 						"Debug: G2_TimingModel - endFrame %d > numFramesInFile %d. Clamping.\n",
 						(int)endFrame, numFramesInFile);
+#endif
 				}
 
 				if (newFrame >= (int)endFrame)
@@ -1512,9 +1519,11 @@ void G2_TimingModel(
 	// --------------------------------------------------------
 	if (current_frame < 0 || current_frame >= numFramesInFile)
 	{
+#ifdef _DEBUG
 		Com_Printf(
 			"Debug: G2_TimingModel - final current_frame %d out of range (0..%d). Clamping.\n",
 			current_frame, numFramesInFile - 1);
+#endif
 
 		if (current_frame < 0)
 		{
@@ -1528,9 +1537,11 @@ void G2_TimingModel(
 
 	if (newFrame < 0 || newFrame >= numFramesInFile)
 	{
+#ifdef _DEBUG
 		Com_Printf(
 			"Debug: G2_TimingModel - final newFrame %d out of range (0..%d). Clamping.\n",
 			newFrame, numFramesInFile - 1);
+#endif
 
 		if (newFrame < 0)
 		{
@@ -1544,9 +1555,11 @@ void G2_TimingModel(
 
 	if (lerp < 0.0f || lerp > 1.0f)
 	{
+#ifdef _DEBUG
 		Com_Printf(
 			"Debug: G2_TimingModel - final lerp %f out of range (0.0..1.0). Clamping.\n",
 			lerp);
+#endif
 
 		if (lerp < 0.0f)
 		{
@@ -1558,7 +1571,6 @@ void G2_TimingModel(
 		}
 	}
 }
-
 
 #ifdef _RAG_PRINT_TEST
 void G2_RagPrintMatrix(mdxaBone_t* mat);

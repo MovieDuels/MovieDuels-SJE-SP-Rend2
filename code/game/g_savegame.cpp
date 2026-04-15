@@ -416,19 +416,6 @@ static void EnumerateField(const save_field_t* pField, const byte* pbBase)
 	}
 	break;
 
-	/*MCG
-		case F_BODYQUEUE:
-			{
-				gentity_t **p = (gentity_t **) pv;
-				for (int i=0; i<BODY_QUEUE_SIZE; i++)
-				{
-					pv = &p[i];	// since you can't ++ a void ptr
-					*(int *)pv = GetGEntityNum(*(gentity_t **)pv);
-				}
-			}
-			break;
-	*/
-
 	case F_ALERTEVENT: // convert all gentity_t ptrs in an alert_event array into indexes...
 	{
 		const auto p = static_cast<alertEvent_t*>(pv);
@@ -577,18 +564,6 @@ static void EvaluateField(const save_field_t* pField, byte* pbBase, byte* pbOrig
 		}
 	}
 	break;
-
-	/*MCG
-		case F_BODYQUEUE:
-			{
-				gentity_t **p = (gentity_t **) pv;
-				for (int i=0; i<BODY_QUEUE_SIZE; i++, p++)
-				{
-					*p = GetGEntityPtr(*(int *)p);
-				}
-			}
-			break;
-	*/
 
 	case F_ALERTEVENT:
 	{

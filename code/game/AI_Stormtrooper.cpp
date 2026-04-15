@@ -903,7 +903,7 @@ qboolean NPC_CheckPlayerTeamStealth()
 
 extern cvar_t* g_npc_is_smart;
 
-static qboolean NPC_CheckEnemiesInSpotlight(void)
+static qboolean NPC_CheckEnemiesInSpotlight()
 {
 	if (!NPC || !NPC->client || !NPCInfo)
 	{
@@ -922,15 +922,14 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 	for (int i = 0; i < 3; i++)
 	{
 		if (g_npc_is_smart->integer != 1)
-		{// create a box around the NPC's head to check for entities in, instead of checking the whole map,
-			//which is what happens if we just iterate through all entities and check distance
+		{// Normal detection radius for non-smart NPCs
 			mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS;
 			maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS;
 		}
 		else
-		{//Expand the search box by our speed in all directions, so we can notice people running past us
-			mins[i] = NPC->client->renderInfo.eyePoint[i] - NPC->speed;
-			maxs[i] = NPC->client->renderInfo.eyePoint[i] + NPC->speed;
+		{
+			mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_LEVEL_HARD;
+			maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_LEVEL_HARD;
 		}
 	}
 
@@ -957,11 +956,11 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 			continue;
 		}
 
-		// Primary cone check with distance limit
-		const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
-
 		if (g_npc_is_smart->integer != 1)
-		{
+		{// Normal detection logic for non-smart NPCs
+			// Primary cone check with distance limit
+			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
+
 			if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS)
 			{
 				if (InFOV(enemy->currentOrigin,
@@ -969,12 +968,11 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 					NPC->client->renderInfo.eyeAngles,
 					NPCInfo->stats.hfov,
 					NPCInfo->stats.vfov))
-				{// Don't let them notice us if they're just barely in the cone and we're not moving,
+				{
 					// 16^2 fudge factor
 					if (dist_sq - 256.0f <= DETECTION_RADIUS * DETECTION_RADIUS)
 					{
-						if (G_ClearLOS(NPC, enemy))
-						{
+						if (G_ClearLOS(NPC, enemy)) {
 							G_SetEnemy(NPC, enemy);
 							TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
 							return qtrue;
@@ -985,7 +983,7 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 
 			// Wider "suspicion" cone with distance limit
 			if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS)
-			{// Don't let them notice us if they're just barely in the cone and we're not moving,
+			{
 				if (InFOV(enemy->currentOrigin,
 					NPC->client->renderInfo.eyePoint,
 					NPC->client->renderInfo.eyeAngles,
@@ -1006,41 +1004,46 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 		}
 		else
 		{
-			// Primary cone check
-			if (InFOV(enemy->currentOrigin,
-				NPC->client->renderInfo.eyePoint,
-				NPC->client->renderInfo.eyeAngles,
-				NPCInfo->stats.hfov,
-				NPCInfo->stats.vfov))
-			{// Don't let them notice us if they're just barely in the cone and we're not moving,
-				//but if we're moving fast enough, we can notice them even if they're at the edge of our vision
-				// 16^2 fudge factor
-				if (dist_sq - 256.0f <= NPC->speed * NPC->speed)
+			// Primary cone check with distance limit
+			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
+
+			if (dist_sq <= DETECTION_RADIUS_LEVEL_HARD * DETECTION_RADIUS_LEVEL_HARD)
+			{
+				if (InFOV(enemy->currentOrigin,
+					NPC->client->renderInfo.eyePoint,
+					NPC->client->renderInfo.eyeAngles,
+					NPCInfo->stats.hfov,
+					NPCInfo->stats.vfov))
 				{
-					if (G_ClearLOS(NPC, enemy))
+					// 16^2 fudge factor
+					if (dist_sq - 256.0f <= DETECTION_RADIUS_LEVEL_HARD * DETECTION_RADIUS_LEVEL_HARD)
 					{
-						G_SetEnemy(NPC, enemy);
-						TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
-						return qtrue;
+						if (G_ClearLOS(NPC, enemy)) {
+							G_SetEnemy(NPC, enemy);
+							TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
+							return qtrue;
+						}
 					}
 				}
 			}
 
-			// Wider "suspicion" cone
-			if (InFOV(enemy->currentOrigin,
-				NPC->client->renderInfo.eyePoint,
-				NPC->client->renderInfo.eyeAngles,
-				90.0f,
-				NPCInfo->stats.vfov * 3.0f))
-			{ //Don't let them notice us if they're just barely in the cone and we're not moving,
-				//but if we're moving fast enough, we can notice them even if they're at the edge of our vision
-				if (G_ClearLOS(NPC, enemy))
+			// Wider "suspicion" cone with distance limit
+			if (dist_sq <= DETECTION_RADIUS_LEVEL_HARD * DETECTION_RADIUS_LEVEL_HARD)
+			{
+				if (InFOV(enemy->currentOrigin,
+					NPC->client->renderInfo.eyePoint,
+					NPC->client->renderInfo.eyeAngles,
+					90.0f,
+					NPCInfo->stats.vfov * 3.0f))
 				{
-					if (!suspect ||
-						DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
-						DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+					if (G_ClearLOS(NPC, enemy))
 					{
-						suspect = enemy;
+						if (!suspect ||
+							DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
+							DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+						{
+							suspect = enemy;
+						}
 					}
 				}
 			}
@@ -1054,7 +1057,7 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 
 		// Must still have LOS
 		if (G_ClearLOS(NPC, suspect))
-		{
+		{// Random chance to notice based on distance, even if they have LOS
 			if (Q_flrand(0.0f, vis_rng_sq) > dist_sq)
 			{
 				// First time noticing
@@ -2155,37 +2158,42 @@ FIXME: work in pairs?
 
 -------------------------
 */
-static void ST_Commander()
+static void ST_Commander(void)
 {
+	// Basic safety: no NPC, no info, or no group → nothing to do
 	if (!NPC || !NPCInfo || !NPCInfo->group)
 	{
 		return;
 	}
 
-	int i, j;
-	int cp, cp_flags;
+	int i;
+	int j;
+	int cp;
+	int cp_flags;
+	int squad_state;
 	AIGroupInfo_t* group = NPCInfo->group;
-	gentity_t* member;
+	gentity_t* member = nullptr;
+
 	qboolean runner = qfalse;
 	qboolean enemy_lost = qfalse;
 	qboolean enemy_protected = qfalse;
 	float avoid_dist = 0.0f;
-	int squad_state;
 
 	group->processed = qtrue;
 
+	// Require a valid enemy with a client
 	if (!group->enemy || !group->enemy->inuse || !group->enemy->client)
 	{
-		// No valid enemy
 		return;
 	}
 
 	SaveNPCGlobals();
 
-	// Group dissolves if enemy not seen for 3 minutes
+	// If the group has not seen the enemy for 3 minutes, dissolve the group and switch to search
 	if (group->lastSeenEnemyTime < level.time - 180000)
 	{
 		ST_Speech(NPC, SPEECH_LOST, 0.0f);
+
 		group->enemy->waypoint = NAV::GetNearestNode(group->enemy);
 
 		for (i = 0; i < group->numGroup; i++)
@@ -2237,7 +2245,7 @@ static void ST_Commander()
 		return;
 	}
 
-	// Someone is running?
+	// Someone in the group is in a "running" state?
 	if (group->numState[SQUAD_SCOUT] > 0 ||
 		group->numState[SQUAD_TRANSITION] > 0 ||
 		group->numState[SQUAD_RETREAT] > 0)
@@ -2261,19 +2269,19 @@ static void ST_Commander()
 		NPCInfo->blockedSpeechDebounceTime = level.time + 3000;
 	}
 
-	// Enemy lost?
+	// Enemy considered "lost" if not seen for 7 seconds
 	if (group->lastSeenEnemyTime < level.time - 7000)
 	{
 		enemy_lost = qtrue;
 	}
 
-	// Enemy protected (no clear shot)?
+	// Enemy considered "protected" if no clear shot for 5 seconds
 	if (group->lastClearShotTime < level.time - 5000)
 	{
 		enemy_protected = qtrue;
 	}
 
-	// Asynchronous group AI: process one member per frame
+	// Asynchronous group AI: process one member per frame if enabled
 	int cur_member_num;
 	int last_member_num;
 
@@ -2324,16 +2332,19 @@ static void ST_Commander()
 			continue;
 		}
 
+		// Skip if currently fleeing
 		if (!TIMER_Done(NPC, "flee"))
 		{
 			continue;
 		}
 
+		// Skip if already moving via nav task
 		if (Q3_TaskIDPending(NPC, TID_MOVE_NAV))
 		{
 			continue;
 		}
 
+		// If unarmed and moving to pick up an item, don't override that
 		if (NPC->s.weapon == WP_NONE &&
 			NPCInfo->goalEntity &&
 			NPCInfo->goalEntity == NPCInfo->tempGoal &&
@@ -2354,14 +2365,16 @@ static void ST_Commander()
 			}
 		}
 
+		// If not allowed to chase enemies, skip tactical logic
 		if (!(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
 		{
 			continue;
 		}
 
-		// Retreat / hide logic
+		// Retreat / hide logic when not already in retreat state
 		if (NPCInfo->squadState != SQUAD_RETREAT)
 		{
+			// Unarmed: try to flee/hide if appropriate
 			if (NPC->client->ps.weapon == WP_NONE)
 			{
 				if (!NPCInfo->goalEntity ||
@@ -2372,13 +2385,17 @@ static void ST_Commander()
 						(DistanceSquared(group->enemy->currentOrigin, NPC->currentOrigin) < 65536.0f &&
 							NPC_ClearLOS(NPC->enemy)))
 					{
-						NPC_StartFlee(NPC->enemy, NPC->enemy->currentOrigin,
-							AEL_DANGER_GREAT, 5000, 10000);
+						NPC_StartFlee(NPC->enemy,
+							NPC->enemy->currentOrigin,
+							AEL_DANGER_GREAT,
+							5000,
+							10000);
 					}
 				}
 				continue;
 			}
 
+			// Armed: consider roaming or cover based on visibility and health
 			if (TIMER_Done(NPC, "roamTime") &&
 				TIMER_Done(NPC, "hideTime") &&
 				NPC->health > 10 &&
@@ -2388,6 +2405,7 @@ static void ST_Commander()
 			}
 			else if (NPCInfo->localState == LSTATE_UNDERFIRE)
 			{
+				// Under fire: react based on enemy weapon and health
 				switch (group->enemy->client->ps.weapon)
 				{
 				case WP_SABER:
@@ -2423,6 +2441,7 @@ static void ST_Commander()
 			}
 			else
 			{
+				// Not under fire: adjust based on weapon and distance
 				if (gi.inPVS(NPC->currentOrigin, group->enemy->currentOrigin))
 				{
 					if (NPC->client->ps.weapon == WP_ROCKET_LAUNCHER &&
@@ -2459,11 +2478,12 @@ static void ST_Commander()
 			}
 		}
 
-		// No enemy‑driven CP flags yet → tactical logic
+		// If no enemy‑driven CP flags yet, run tactical / morale logic
 		if (!cp_flags)
 		{
-			if (runner && NPCInfo->combatPoint != -1)
+			if (runner == qtrue && NPCInfo->combatPoint != -1)
 			{
+				// Already has a combat point and group is in motion
 				if (NPCInfo->squadState != SQUAD_SCOUT &&
 					NPCInfo->squadState != SQUAD_TRANSITION &&
 					NPCInfo->squadState != SQUAD_RETREAT)
@@ -2483,6 +2503,7 @@ static void ST_Commander()
 				}
 				else
 				{
+					// If blocked, transfer move goal to the blocking member
 					if (NPCInfo->aiFlags & NPCAI_BLOCKED)
 					{
 						for (j = 0; j < group->numGroup; j++)
@@ -2499,6 +2520,7 @@ static void ST_Commander()
 			}
 			else
 			{
+				// Not currently "runner" or no combat point yet
 				if (NPCInfo->combatPoint != -1)
 				{
 					if (NPCInfo->squadState != SQUAD_SCOUT &&
@@ -2517,8 +2539,9 @@ static void ST_Commander()
 					}
 				}
 
-				if (enemy_lost)
+				if (enemy_lost == qtrue)
 				{
+					// Enemy lost: track last seen position and set scout state
 					if (group->numState[SQUAD_SCOUT] <= 0)
 					{
 						NPC_ST_StoreMovementSpeech(SPEECH_CHASE, 0.0f);
@@ -2528,8 +2551,9 @@ static void ST_Commander()
 					AI_GroupUpdateSquadstates(group, NPC, SQUAD_SCOUT);
 					runner = qtrue;
 				}
-				else if (enemy_protected)
+				else if (enemy_protected == qtrue)
 				{
+					// Enemy protected: occasionally approach
 					if (TIMER_Done(NPC, "roamTime") && !Q_irand(0, group->numGroup))
 					{
 						cp_flags |= ST_ApproachEnemy(NPC);
@@ -2538,19 +2562,23 @@ static void ST_Commander()
 				}
 				else
 				{
+					// Normal tactical behavior
 					if (NPCInfo->combatPoint == -1)
 					{
 						cp_flags |= ST_GetCPFlags();
 					}
 					else if (TIMER_Done(NPC, "roamTime"))
 					{
+						const int morale_delta = group->morale - group->numGroup;
+
 						if (i == 0)
 						{
-							if (group->morale - group->numGroup > 0 && !Q_irand(0, 4))
+							// First member: more aggressive / leading behavior
+							if (morale_delta > 0 && !Q_irand(0, 4))
 							{
 								cp_flags |= CP_CLEAR | CP_COVER | CP_FLANK | CP_APPROACH_ENEMY;
 							}
-							else if (group->morale - group->numGroup < 0)
+							else if (morale_delta < 0)
 							{
 								cp_flags |= ST_GetCPFlags();
 							}
@@ -2564,12 +2592,13 @@ static void ST_Commander()
 						}
 						else if (i == group->numGroup - 1)
 						{
-							if (group->morale - group->numGroup < 0)
+							// Last member: more conservative / trailing behavior
+							if (morale_delta < 0)
 							{
 								TIMER_Set(NPC, "roamTime", Q_irand(2000, 5000));
 								TIMER_Set(NPC, "stick", Q_irand(2000, 5000));
 							}
-							else if (group->morale - group->numGroup > 0)
+							else if (morale_delta > 0)
 							{
 								cp_flags |= ST_ApproachEnemy(NPC);
 								AI_GroupUpdateSquadstates(group, NPC, SQUAD_SCOUT);
@@ -2581,7 +2610,8 @@ static void ST_Commander()
 						}
 						else
 						{
-							if (group->morale - group->numGroup < 0 || !Q_irand(0, 4))
+							// Middle members: mix of behavior based on morale
+							if (morale_delta < 0 || !Q_irand(0, 4))
 							{
 								cp_flags |= ST_GetCPFlags();
 							}
@@ -2593,6 +2623,7 @@ static void ST_Commander()
 						}
 					}
 
+					// Idle behavior: look / duck occasionally
 					if (!cp_flags)
 					{
 						if (NPC->attackDebounceTime < level.time - 2000)
@@ -2619,8 +2650,8 @@ static void ST_Commander()
 			}
 		}
 
-		// If enemy lost but still in same region, track directly
-		if (enemy_lost && NPC->enemy && NAV::InSameRegion(NPC, NPC->enemy->currentOrigin))
+		// If enemy is lost but still in same region, track directly instead of using CP
+		if (enemy_lost == qtrue && NPC->enemy && NAV::InSameRegion(NPC, NPC->enemy->currentOrigin))
 		{
 			ST_TrackEnemy(NPC, NPC->enemy->currentOrigin);
 			continue;
@@ -2631,7 +2662,7 @@ static void ST_Commander()
 			continue;
 		}
 
-		// Grenade proximity check
+		// Grenade proximity check (thermal detonators)
 		if (TIMER_Done(NPC, "checkGrenadeTooCloseDebouncer"))
 		{
 			TIMER_Set(NPC, "checkGrenadeTooCloseDebouncer", Q_irand(300, 600));
@@ -2639,7 +2670,7 @@ static void ST_Commander()
 			vec3_t mins{};
 			vec3_t maxs{};
 			qboolean fled = qfalse;
-			gentity_t* ent;
+			gentity_t* ent = nullptr;
 
 			static gentity_t* entity_list[MAX_GENTITIES];
 
@@ -2675,8 +2706,11 @@ static void ST_Commander()
 						(!ent->owner || !OnSameTeam(ent->owner, NPC)))
 					{
 						ST_Speech(NPC, SPEECH_COVER, 0);
-						NPC_StartFlee(NPC->enemy, ent->currentOrigin,
-							AEL_DANGER_GREAT, 1000, 2000);
+						NPC_StartFlee(NPC->enemy,
+							ent->currentOrigin,
+							AEL_DANGER_GREAT,
+							1000,
+							2000);
 						fled = qtrue;
 						TIMER_Set(NPC, "checkGrenadeTooCloseDebouncer", Q_irand(2000, 4000));
 						break;
@@ -2684,13 +2718,13 @@ static void ST_Commander()
 				}
 			}
 
-			if (fled)
+			if (fled == qtrue)
 			{
 				continue;
 			}
 		}
 
-		// Enemy visibility check
+		// Enemy visibility check: if we lose LOS, try to move to a clearer / covered point
 		if (TIMER_Done(NPC, "checkEnemyVisDebouncer"))
 		{
 			TIMER_Set(NPC, "checkEnemyVisDebouncer", Q_irand(3000, 7000));
@@ -2700,7 +2734,7 @@ static void ST_Commander()
 			}
 		}
 
-		// Enemy too close for comfort
+		// Enemy too close for comfort based on our weapon
 		if (NPC->client->NPC_class != CLASS_ASSASSIN_DROID &&
 			NPC->client->NPC_class != CLASS_DROIDEKA)
 		{
@@ -2748,11 +2782,13 @@ static void ST_Commander()
 		// Clear local state each loop
 		NPCInfo->localState = LSTATE_NONE;
 
+		// Never force "nearest" here; we manage flags explicitly
 		cp_flags &= ~CP_NEAREST;
 
-		// Assign combat points
+		// Assign combat points if we have any flags
 		if (cp_flags)
 		{
+			// Adjust avoidance and flags based on enemy saber usage
 			if (group->enemy->client->ps.weapon == WP_SABER &&
 				group->enemy->client->ps.SaberLength() > 0.0f)
 			{
@@ -2765,6 +2801,7 @@ static void ST_Commander()
 				avoid_dist = 200.0f;
 			}
 
+			// First attempt: retry‑aware CP search
 			if (cp == -1)
 			{
 				cp = NPC_FindCombatPointRetry(NPC->currentOrigin,
@@ -2775,6 +2812,7 @@ static void ST_Commander()
 					NPCInfo->lastFailedCombatPoint);
 			}
 
+			// If that fails, progressively relax flags until we find something or fall back to CP_ANY
 			while (cp == -1 && cp_flags != CP_ANY)
 			{
 				if (cp_flags & CP_INVESTIGATE)
@@ -2848,6 +2886,7 @@ static void ST_Commander()
 					avoid_dist);
 			}
 
+			// If we found a combat point, commit to it and update squad state / speech
 			if (cp != -1)
 			{
 				runner = qtrue;
@@ -2871,6 +2910,7 @@ static void ST_Commander()
 					AI_GroupUpdateSquadstates(group, NPC, SQUAD_TRANSITION);
 				}
 
+				// Movement / tactical speech based on CP flags
 				if ((cp_flags & CP_COVER) && (cp_flags & CP_CLEAR))
 				{
 					if (group->numGroup > 1)
@@ -2901,7 +2941,8 @@ static void ST_Commander()
 
 						if (!Q_irand(0, 3))
 						{
-							vec3_t e_dir2_me, e_dir2_cp;
+							vec3_t e_dir2_me;
+							vec3_t e_dir2_cp;
 
 							VectorSubtract(NPC->currentOrigin, group->enemy->currentOrigin, e_dir2_me);
 							VectorNormalize(e_dir2_me);
@@ -2944,6 +2985,7 @@ static void ST_Commander()
 			}
 			else if (NPCInfo->squadState == SQUAD_SCOUT)
 			{
+				// No CP found while scouting: fall back to hunt behavior
 				ST_HuntEnemy(NPC);
 				AI_GroupUpdateSquadstates(group, NPC, SQUAD_SCOUT);
 			}
@@ -3531,12 +3573,16 @@ void NPC_BSST_Attack()
 
 	if (!do_move)
 	{
-		if (NPC->client->NPC_class != CLASS_ASSASSIN_DROID &&
-			NPC->client->NPC_class != CLASS_DROIDEKA)
+		// Safety: NPC->client may be NULL for some entity types
+		if (NPC->client != NULL)
 		{
-			if (!TIMER_Done(NPC, "duck"))
+			if (NPC->client->NPC_class != CLASS_ASSASSIN_DROID &&
+				NPC->client->NPC_class != CLASS_DROIDEKA)
 			{
-				ucmd.upmove = -127;
+				if (TIMER_Done(NPC, "duck") == qfalse)
+				{
+					ucmd.upmove = -127;
+				}
 			}
 		}
 	}
