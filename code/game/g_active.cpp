@@ -126,7 +126,7 @@ extern void WP_ForcePowerDrain(const gentity_t* self, forcePowers_t force_power,
 extern qboolean manual_saberblocking(const gentity_t* defender);
 extern qboolean manual_running_and_saberblocking(const gentity_t* defender);
 extern qboolean Manual_NPCSaberblocking(const gentity_t* defender);
-extern qboolean NPC_Can_Do_Blocking_stances_In_SJE_Mode(const gentity_t* defender);
+extern qboolean NPC_Should_Block(const gentity_t* npc);
 extern qboolean Manual_JKAMode_NPCSaberblocking(const gentity_t* defender);
 extern qboolean BG_InSlowBounce(const playerState_t* ps);
 extern int BG_InGrappleMove(int move);
@@ -8889,61 +8889,47 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		client->ps.ManualBlockingFlags &= ~(1 << MBF_MELEEDODGE);
 	}
 
-	if (/*g_SerenityJediEngineMode->integer
-		&&*/ ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
+	// NPC‑only logic (no players, no player‑controlled entities)
+	if (ent->s.clientNum >= MAX_CLIENTS && G_ControlledByPlayer(ent) == qfalse)
 	{
-		if (NPC_Can_Do_Blocking_stances_In_SJE_Mode(ent))
+		// Safety: must have a client
+		if (client == NULL)
 		{
-			if (client->ps.ManualblockStartTime <= 0) //fresh start
+			return;
+		}
+
+		// Unified block stance logic
+		if (NPC_Should_Block(ent) == qtrue)
+		{
+			// Activate stance flag if not already active
+			if ((client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) == 0)
 			{
-				// They just pressed block. Mark the time...
-				if (!(client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKSTANCE))
+				client->ps.ManualBlockingFlags |= (1 << MBF_NPCBLOCKSTANCE);
+
+				if (d_combatinfo->integer != 0)
 				{
-					client->ps.ManualBlockingFlags |= 1 << MBF_NPCBLOCKSTANCE; // activate the function
-					client->ps.ManualblockStartTime = level.time;
-				}
-				if (d_combatinfo->integer || g_DebugSaberCombat->integer)
-				{
-					Com_Printf(S_COLOR_ORANGE"NPC MANUAL BLOCK was pressed, MBlocking is activated at time % i.\n",
-						client->ps.ManualblockStartTime);
-				}
-			}
-			else
-			{
-				if (client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKSTANCE && level.time - client->ps.
-					ManualblockStartTime >= 5000) // NPC 5 SECONDS LIMIT
-				{
-					// Been holding block for too long....Turn off
-					client->ps.ManualBlockingFlags &= ~(1 << MBF_NPCBLOCKSTANCE);
-					if (d_combatinfo->integer)
-					{
-						Com_Printf(S_COLOR_ORANGE"NPC MANUAL BLOCK has Deactivated because you hit the timer limit\n");
-					}
-				}
-				else if (!(client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKSTANCE) && level.time - client->ps.
-					ManualblockStartTime >= 10000) // NPC 5 SECONDS LIMIT
-				{
-					// Been holding block for too long....Turn off
-					client->ps.ManualBlockingFlags |= 1 << MBF_NPCBLOCKSTANCE; // activate the function
-					client->ps.ManualblockStartTime = level.time;
-					if (d_combatinfo->integer)
-					{
-						Com_Printf(S_COLOR_ORANGE"NPC MANUAL BLOCK has activated because you hit the timer limit\n");
-					}
+					Com_Printf(S_COLOR_ORANGE "NPC MANUAL BLOCK activated (NPC_Should_Block)\n");
 				}
 			}
 		}
 		else
 		{
+			// Ensure stance flag is OFF
 			client->ps.ManualBlockingFlags &= ~(1 << MBF_NPCBLOCKSTANCE);
 		}
 
-		if (Manual_NPCSaberblocking(ent))
+		// Saber blocking flag (unchanged logic, cleaned)
+		if (Manual_NPCSaberblocking(ent) == qtrue)
 		{
-			if (!(client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING))
+			if ((client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) == 0)
 			{
-				client->ps.ManualBlockingFlags |= 1 << MBF_NPCBLOCKING;
-				client->ps.userInt3 |= 1 << FLAG_NPCBLOCKING;
+				client->ps.ManualBlockingFlags |= (1 << MBF_NPCBLOCKING);
+				client->ps.userInt3 |= (1 << FLAG_NPCBLOCKING);
+
+				if (d_combatinfo->integer != 0)
+				{
+					Com_Printf(S_COLOR_ORANGE "NPC MANUAL BLOCK activated (Manual_NPCSaberblocking)\n");
+				}
 			}
 		}
 		else

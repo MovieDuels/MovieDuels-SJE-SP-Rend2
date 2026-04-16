@@ -411,6 +411,7 @@ public:
 	//sigh... you'd think I'd be able to find a way to do this without having to use 3 int fields, but...
 	int ffireDebounce;
 	int ffireFadeDebounce;
+	int kataDebounceTime;
 	int lastKataTime; // timestamp (level.time) when kata is next allowed; 0 = allowed now
 	int nextKillAttackCheck;
 	int nextKillAttackBackCheck;
@@ -535,6 +536,7 @@ public:
 		saved_game.write<int32_t>(ffireCount);
 		saved_game.write<int32_t>(ffireDebounce);
 		saved_game.write<int32_t>(ffireFadeDebounce);
+		saved_game.write<int32_t>(kataDebounceTime);
 		saved_game.write<int32_t>(lastKataTime);
 		saved_game.write<int32_t>(nextKillAttackCheck);
 		saved_game.write<int32_t>(nextKillAttackBackCheck);
@@ -660,6 +662,7 @@ public:
 		saved_game.read<int32_t>(ffireCount);
 		saved_game.read<int32_t>(ffireDebounce);
 		saved_game.read<int32_t>(ffireFadeDebounce);
+		saved_game.read<int32_t>(kataDebounceTime);
 		saved_game.read<int32_t>(lastKataTime);
 		saved_game.read<int32_t>(nextKillAttackCheck);
 		saved_game.read<int32_t>(nextKillAttackBackCheck);

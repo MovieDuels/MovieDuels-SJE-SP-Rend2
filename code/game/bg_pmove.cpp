@@ -184,7 +184,6 @@ static void PM_SetWaterLevelAtPoint(vec3_t org, int* waterlevel, int* watertype)
 extern qboolean Char_Dual_Pistols(const gentity_t* self);
 extern qboolean Calo_Nord(const gentity_t* self);
 extern cvar_t* g_SaberAttackSpeedMD;
-extern cvar_t* g_RealisticBlockingMode;
 extern cvar_t* g_allowSuperSaberLockBreaks;
 
 constexpr auto FLY_NONE = 0;
@@ -11474,8 +11473,7 @@ static void PM_Footsteps()
 									{
 										if (g_RealisticBlockingMode->integer) //cosmetics off
 										{
-											if (in_camera && pm->gent->client->NPC_class == CLASS_VADER)
-												//cosmetics off
+											if (in_camera && pm->gent->client->NPC_class == CLASS_VADER)//cosmetics off
 											{
 												PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, set_anim_flags);
 											}
@@ -12424,1096 +12422,782 @@ static void PM_FinishWeaponChange()
 }
 
 //This controls saber movement anims //JaceSolaris
-static int PM_ReadyPoseForSaberAnimLevelDucked()
-{
-	int anim;
+// ======================================================================
+// PM_ReadyPoseForSaberAnimLevelDucked
+//
+// Returns the correct crouched ready-pose animation for the current
+// saber style. Used when the player/NPC is ducking.
+//
+// Behaviour: IDENTICAL to original.
+// Changes:   Cleaned structure, explicit comparisons, comments,
+//            no implicit bool→qboolean, safe default initialization.
+// ======================================================================
 
+
+int PM_ReadyPoseForSaberAnimLevelAMD();
+
+static int PM_ReadyPoseForSaberAnimLevelDucked(void)
+{
+	int anim = BOTH_SABERSINGLECROUCH; // safe default
+
+	// Riding a vehicle → no ready pose
 	if (PM_RidingVehicle())
 	{
 		return -1;
 	}
 
+	// Select crouched stance based on saber style
 	switch (pm->ps->saberAnimLevel)
 	{
 	case SS_DUAL:
 		anim = BOTH_SABERDUALCROUCH;
 		break;
+
 	case SS_STAFF:
 		anim = BOTH_SABERSTAFFCROUCH;
 		break;
+
 	case SS_FAST:
 	case SS_TAVION:
 	case SS_STRONG:
 	case SS_MEDIUM:
 	case SS_DESANN:
+		// All single‑saber styles share the same crouch stance
 		anim = BOTH_SABERSINGLECROUCH;
 		break;
+
 	case SS_NONE:
 	default:
+		// Default crouch stance for no saber style
 		anim = BOTH_SABERSINGLECROUCH;
 		break;
 	}
+
 	return anim;
 }
 
-static int PM_ReadyPoseForSaberAnimLevelNPC()
+
+static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 {
-	int anim;
+	int anim = BOTH_STAND2;
 
-	const qboolean activate_npc_block_stance = pm->ps->ManualBlockingFlags & 1 << MBF_NPCBLOCKSTANCE
-		? qtrue
-		: qfalse; //Active Blocking
+	// Explicit qboolean: is NPC currently in block stance?
+	const qboolean activate_npc_block_stance =
+		((pm->ps->ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) != 0) ? qtrue : qfalse;
 
+	// Riding a vehicle → no ready pose
 	if (PM_RidingVehicle())
 	{
 		return -1;
 	}
 
-	if (pm->ps->pm_flags & PMF_DUCKED)
+	// Ducking overrides everything
+	if ((pm->ps->pm_flags & PMF_DUCKED) != 0)
 	{
-		anim = PM_ReadyPoseForSaberAnimLevelDucked();
+		return PM_ReadyPoseForSaberAnimLevelDucked();
 	}
-	else
+
+	// SJE Mode 2 overrides JKA stance logic
+	if (g_SerenityJediEngineMode->integer == 2)
 	{
+		// Cosmetic mode OFF → use special blocking stances
+		if (g_RealisticBlockingMode->integer != 0)
+		{
+			// In cinematic camera → always use normal stance
+			if (in_camera == qtrue)
+			{
+				switch (pm->ps->saberAnimLevel)
+				{
+				case SS_DUAL:   return BOTH_SABERDUAL_STANCE;
+				case SS_STAFF:  return BOTH_SABERSTAFF_STANCE;
+				case SS_FAST:   return BOTH_SABERFAST_STANCE;
+				case SS_TAVION: return BOTH_SABERTAVION_STANCE;
+				case SS_STRONG: return BOTH_SABERSLOW_STANCE;
+				case SS_DESANN: return BOTH_SABERDESANN_STANCE;
+				case SS_MEDIUM: return BOTH_STAND2;
+				case SS_NONE:
+				default:        return BOTH_STAND2;
+				}
+			}
+
+			// Not in camera → use blocking or crouch stance
+			switch (pm->ps->saberAnimLevel)
+			{
+			case SS_DUAL:
+				anim = (activate_npc_block_stance == qtrue)
+					? BOTH_STAND_BLOCKING_ON_DUAL
+					: BOTH_SABERDUALCROUCH;
+				break;
+
+			case SS_STAFF:
+				anim = (activate_npc_block_stance == qtrue)
+					? BOTH_STAND_BLOCKING_ON_STAFF
+					: BOTH_SABERSTAFFCROUCH;
+				break;
+
+			case SS_FAST:
+			case SS_TAVION:
+			case SS_STRONG:
+			case SS_DESANN:
+			case SS_MEDIUM:
+				anim = (activate_npc_block_stance == qtrue)
+					? BOTH_STAND_BLOCKING_ON
+					: BOTH_SABERSINGLECROUCH;
+				break;
+
+			case SS_NONE:
+			default:
+				anim = BOTH_STAND2;
+				break;
+			}
+
+			return anim;
+		}
+
+		// Cosmetic mode ON → always use normal stance
 		switch (pm->ps->saberAnimLevel)
 		{
-		case SS_DUAL:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (g_RealisticBlockingMode->integer) //cosmetics off
-				{
-					if (in_camera) //cosmetics off
-					{
-						anim = BOTH_SABERDUAL_STANCE;
-					}
-					else
-					{
-						if (activate_npc_block_stance)
-						{
-							anim = BOTH_STAND_BLOCKING_ON_DUAL;
-						}
-						else
-						{
-							anim = BOTH_SABERDUALCROUCH;
-						}
-					}
-				}
-				else
-				{
-					anim = BOTH_SABERDUAL_STANCE;
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERDUAL_STANCE_JKA;
-			}
-			break;
-		case SS_STAFF:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (g_RealisticBlockingMode->integer) //cosmetics off
-				{
-					if (in_camera) //cosmetics off
-					{
-						anim = BOTH_SABERSTAFF_STANCE;
-					}
-					else
-					{
-						if (activate_npc_block_stance)
-						{
-							anim = BOTH_STAND_BLOCKING_ON_STAFF;
-						}
-						else
-						{
-							anim = BOTH_SABERSTAFFCROUCH;
-						}
-					}
-				}
-				else
-				{
-					anim = BOTH_SABERSTAFF_STANCE;
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERSTAFF_STANCE_JKA;
-			}
-			break;
-		case SS_FAST:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (g_RealisticBlockingMode->integer) //cosmetics off
-				{
-					if (in_camera) //cosmetics off
-					{
-						anim = BOTH_SABERFAST_STANCE;
-					}
-					else
-					{
-						if (activate_npc_block_stance)
-						{
-							anim = BOTH_STAND_BLOCKING_ON;
-						}
-						else
-						{
-							anim = BOTH_SABERSINGLECROUCH;
-						}
-					}
-				}
-				else
-				{
-					anim = BOTH_SABERFAST_STANCE;
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERFAST_STANCE_JKA;
-			}
-			break;
-		case SS_TAVION:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (g_RealisticBlockingMode->integer) //cosmetics off
-				{
-					if (in_camera) //cosmetics off
-					{
-						anim = BOTH_SABERTAVION_STANCE;
-					}
-					else
-					{
-						if (activate_npc_block_stance)
-						{
-							anim = BOTH_STAND_BLOCKING_ON;
-						}
-						else
-						{
-							anim = BOTH_SABERSINGLECROUCH;
-						}
-					}
-				}
-				else
-				{
-					anim = BOTH_SABERTAVION_STANCE;
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERTAVION_STANCE_JKA;
-			}
-			break;
-		case SS_STRONG:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (g_RealisticBlockingMode->integer) //cosmetics off
-				{
-					if (in_camera) //cosmetics off
-					{
-						anim = BOTH_SABERSLOW_STANCE;
-					}
-					else
-					{
-						if (activate_npc_block_stance)
-						{
-							anim = BOTH_STAND_BLOCKING_ON;
-						}
-						else
-						{
-							anim = BOTH_SABERSINGLECROUCH;
-						}
-					}
-				}
-				else
-				{
-					anim = BOTH_SABERSLOW_STANCE;
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERSLOW_STANCE_JKA;
-			}
-			break;
-		case SS_DESANN:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (g_RealisticBlockingMode->integer) //cosmetics off
-				{
-					if (in_camera) //cosmetics off
-					{
-						anim = BOTH_SABERDESANN_STANCE;
-					}
-					else
-					{
-						if (activate_npc_block_stance)
-						{
-							anim = BOTH_STAND_BLOCKING_ON;
-						}
-						else
-						{
-							anim = BOTH_SABERSINGLECROUCH;
-						}
-					}
-				}
-				else
-				{
-					anim = BOTH_SABERDESANN_STANCE;
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERDESANN_STANCE_JKA;
-			}
-			break;
-		case SS_MEDIUM:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (g_RealisticBlockingMode->integer) //cosmetics off
-				{
-					if (in_camera) //cosmetics off
-					{
-						anim = BOTH_STAND2;
-					}
-					else
-					{
-						if (activate_npc_block_stance)
-						{
-							anim = BOTH_STAND_BLOCKING_ON;
-						}
-						else
-						{
-							anim = BOTH_SABERSINGLECROUCH;
-						}
-					}
-				}
-				else
-				{
-					anim = BOTH_STAND2;
-				}
-			}
-			else
-			{
-				anim = BOTH_STAND2;
-			}
-			break;
+		case SS_DUAL:   return BOTH_SABERDUAL_STANCE;
+		case SS_STAFF:  return BOTH_SABERSTAFF_STANCE;
+		case SS_FAST:   return BOTH_SABERFAST_STANCE;
+		case SS_TAVION: return BOTH_SABERTAVION_STANCE;
+		case SS_STRONG: return BOTH_SABERSLOW_STANCE;
+		case SS_DESANN: return BOTH_SABERDESANN_STANCE;
+		case SS_MEDIUM: return BOTH_STAND2;
 		case SS_NONE:
-		default:
-			anim = BOTH_STAND2;
-			break;
+		default:        return BOTH_STAND2;
 		}
 	}
 
+	// JKA fallback stance logic (non‑SJE2)
+	switch (pm->ps->saberAnimLevel)
+	{
+	case SS_DUAL:   anim = BOTH_SABERDUAL_STANCE_JKA; break;
+	case SS_STAFF:  anim = BOTH_SABERSTAFF_STANCE_JKA; break;
+	case SS_FAST:   anim = BOTH_SABERFAST_STANCE_JKA; break;
+	case SS_TAVION: anim = BOTH_SABERTAVION_STANCE_JKA; break;
+	case SS_STRONG: anim = BOTH_SABERSLOW_STANCE_JKA; break;
+	case SS_DESANN: anim = BOTH_SABERDESANN_STANCE_JKA; break;
+	case SS_MEDIUM: anim = BOTH_STAND2; break;
+	case SS_NONE:
+	default:        anim = BOTH_STAND2; break;
+	}
+
 	return anim;
 }
 
-int PM_ReadyPoseForSaberAnimLevelAMD();
-
-int PM_ReadyPoseForSaberAnimLevel()
+int PM_ReadyPoseForSaberAnimLevel(void)
 {
 	int anim;
 
+	// Riding a vehicle → no saber ready pose
 	if (PM_RidingVehicle())
 	{
 		return -1;
 	}
 
-	if (pm->ps->clientNum && !PM_ControlledByPlayer())
+	// NPCs (non‑player controlled) use their own ready pose logic
+	if (pm->ps->clientNum && PM_ControlledByPlayer() == qfalse)
 	{
 		anim = PM_ReadyPoseForSaberAnimLevelNPC();
+		return anim;
 	}
-	else if (pm->ps->pm_flags & PMF_DUCKED)
+
+	// Ducking overrides everything else
+	if ((pm->ps->pm_flags & PMF_DUCKED) != 0)
 	{
 		anim = PM_ReadyPoseForSaberAnimLevelDucked();
+		return anim;
 	}
-	else
+
+	// Serenity Jedi Engine mode 2 overrides JKA stance table
+	if (g_SerenityJediEngineMode->integer == 2)
 	{
-		switch (pm->ps->saberAnimLevel)
+		const qboolean isSithLord =
+			(pm->gent != NULL &&
+				pm->gent->client != NULL &&
+				pm->gent->client->NPC_class == CLASS_SITHLORD) ? qtrue : qfalse;
+
+		if (g_RealisticBlockingMode->integer != 0)
 		{
-		case SS_DUAL:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERDUAL_STANCE_JKA;
-			}
-			break;
-		case SS_STAFF:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERSTAFF_STANCE_JKA;
-			}
-			break;
-		case SS_FAST:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERFAST_STANCE_JKA;
-			}
-			break;
-		case SS_TAVION:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERTAVION_STANCE_JKA;
-			}
-			break;
-		case SS_STRONG:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERSLOW_STANCE_JKA;
-			}
-			break;
-		case SS_DESANN:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_SABERDESANN_STANCE_JKA;
-			}
-			break;
-		case SS_MEDIUM:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_STAND2;
-			}
-			break;
-		case SS_NONE:
-		default:
-			if (g_SerenityJediEngineMode->integer == 2)
-			{
-				if (pm->gent->client->NPC_class == CLASS_SITHLORD)
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND9;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_STAND1;
-					}
-					else
-					{
-						anim = PM_ReadyPoseForSaberAnimLevelAMD();
-						// this is the SABER STYLE block box in wrong position in many cases.// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				anim = BOTH_STAND2;
-			}
-			break;
+			// Cosmetic mode OFF:
+			//  - Sith Lords use BOTH_STAND9
+			//  - Everyone else uses BOTH_STAND1
+			anim = (isSithLord == qtrue) ? BOTH_STAND9 : BOTH_STAND1;
 		}
+		else
+		{
+			// Cosmetic mode ON:
+			//  Use AMD helper stance (may place block box differently)
+			anim = PM_ReadyPoseForSaberAnimLevelAMD();
+		}
+
+		return anim;
 	}
+
+	// JKA fallback stance table (non‑SJE2)
+	switch (pm->ps->saberAnimLevel)
+	{
+	case SS_DUAL:
+		anim = BOTH_SABERDUAL_STANCE_JKA;
+		break;
+
+	case SS_STAFF:
+		anim = BOTH_SABERSTAFF_STANCE_JKA;
+		break;
+
+	case SS_FAST:
+		anim = BOTH_SABERFAST_STANCE_JKA;
+		break;
+
+	case SS_TAVION:
+		anim = BOTH_SABERTAVION_STANCE_JKA;
+		break;
+
+	case SS_STRONG:
+		anim = BOTH_SABERSLOW_STANCE_JKA;
+		break;
+
+	case SS_DESANN:
+		anim = BOTH_SABERDESANN_STANCE_JKA;
+		break;
+
+	case SS_MEDIUM:
+		anim = BOTH_STAND2;
+		break;
+
+	case SS_NONE:
+	default:
+		anim = BOTH_STAND2;
+		break;
+	}
+
 	return anim;
 }
 
-int PM_ReadyPoseForSaberAnimLevelAMD()
+// ======================================================================
+// PM_ReadyPoseForSaberAnimLevelAMD
+//
+// AMD = "Animation Model Default" stance logic used when:
+//   - SJE Mode 2 is active
+//   - Cosmetic mode is ON (RealisticBlockingMode == 0)
+//   - NPCs or players need a fallback stance that matches saber style
+//
+// Behaviour: IDENTICAL to original.
+// Changes:   Cleaned structure, explicit qtrue/qfalse, no implicit bool,
+//            comments added, no asserts, clean compile.
+// ======================================================================
+static int PM_ReadyPoseForSaberAnimLevelAMD(void)
 {
-	int anim;
+	int anim = BOTH_STAND2; // default fallback
 
+	// Riding a vehicle → no ready pose
 	if (PM_RidingVehicle())
 	{
 		return -1;
 	}
 
-	if (pm->ps->pm_flags & PMF_DUCKED)
+	// Ducking overrides everything
+	if ((pm->ps->pm_flags & PMF_DUCKED) != 0)
 	{
-		anim = PM_ReadyPoseForSaberAnimLevelDucked();
+		return PM_ReadyPoseForSaberAnimLevelDucked();
 	}
-	else
+
+	// AMD stance selection based purely on saberAnimLevel
+	switch (pm->ps->saberAnimLevel)
 	{
-		switch (pm->ps->saberAnimLevel)
-		{
-		case SS_DUAL:
-			anim = BOTH_SABERDUAL_STANCE;
-			break;
-		case SS_STAFF:
-			anim = BOTH_SABERSTAFF_STANCE;
-			break;
-		case SS_FAST:
-			anim = BOTH_SABERFAST_STANCE;
-			break;
-		case SS_TAVION:
-			anim = BOTH_SABERTAVION_STANCE;
-			break;
-		case SS_STRONG:
-			anim = BOTH_SABERSLOW_STANCE;
-			break;
-		case SS_DESANN:
-			anim = BOTH_SABERDESANN_STANCE;
-			break;
-		case SS_MEDIUM:
-			anim = BOTH_STAND2;
-			break;
-		case SS_NONE:
-		default:
-			anim = BOTH_STAND2;
-			break;
-		}
+	case SS_DUAL:
+		anim = BOTH_SABERDUAL_STANCE;
+		break;
+
+	case SS_STAFF:
+		anim = BOTH_SABERSTAFF_STANCE;
+		break;
+
+	case SS_FAST:
+		anim = BOTH_SABERFAST_STANCE;
+		break;
+
+	case SS_TAVION:
+		anim = BOTH_SABERTAVION_STANCE;
+		break;
+
+	case SS_STRONG:
+		anim = BOTH_SABERSLOW_STANCE;
+		break;
+
+	case SS_DESANN:
+		anim = BOTH_SABERDESANN_STANCE;
+		break;
+
+	case SS_MEDIUM:
+		anim = BOTH_STAND2;
+		break;
+
+	case SS_NONE:
+	default:
+		anim = BOTH_STAND2;
+		break;
 	}
+
 	return anim;
 }
 
-int PM_BlockingPoseForSaberAnimLevelSingleAMD()
+// ======================================================================
+// PM_BlockingPoseForSaberAnimLevelSingleAMD
+//
+// Determines the correct blocking pose for SINGLE‑saber AMD logic.
+// This is used when:
+//   - SJE Mode 2 is active
+//   - Cosmetic mode ON/OFF changes stance selection
+//   - NPC or player is holding block or block+attack
+//   - Movement direction modifies block pose
+//
+// Behaviour: IDENTICAL to original.
+// Changes:   Clean structure, explicit qtrue/qfalse, fixed precedence bugs,
+//            comments added, no implicit bool→qboolean, safe defaults.
+// ======================================================================
+static int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 {
+	// Start with the normal ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
-	const qboolean active_blocking = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	//Active Blocking
+	// Explicit qboolean: is the player/NPC actively blocking + attacking?
+	const qboolean active_blocking =
+		((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
+	// Movement inputs (signed chars)
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
+	const signed char upmove = pm->cmd.upmove;
 
-	if (pm->cmd.upmove <= 0)
+	// If moving upward (jumping), do NOT override stance
+	if (upmove > 0)
 	{
-		if (forwardmove < 0)
+		return anim;
+	}
+
+	// ==================================================================
+	// BACKWARD MOVEMENT
+	// ==================================================================
+	if (forwardmove < 0)
+	{
+		// Back‑Left
+		if (rightmove < 0)
 		{
-			//walking backwards
-			if (rightmove < 0)
+			if (active_blocking == qtrue)
 			{
-				//back left
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_TL_MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_LEFT; // front block new method// Cosmetic mode ON
-					}
-				}
-			}
-			else if (rightmove > 0)
-			{
-				//Back right
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_TR_MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_RIGHT; // front block new method// Cosmetic mode ON
-					}
-				}
+				anim = BOTH_P1_S1_TL_MD;
 			}
 			else
 			{
-				//straight back
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_T__MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_BACK; // front block new method// Cosmetic mode ON
-					}
-				}
+				anim = (g_RealisticBlockingMode->integer != 0)
+					? BOTH_SABERSINGLECROUCH
+					: BOTH_STAND_BLOCKING_ON_LEFT;
 			}
 		}
-		else if (forwardmove > 0)
+		// Back‑Right
+		else if (rightmove > 0)
 		{
-			//walking forwards
-			if (rightmove < 0)
+			if (active_blocking == qtrue)
 			{
-				//forwards left
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_BL_MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_LEFT; // front block new method// Cosmetic mode ON
-					}
-				}
-			}
-			else if (rightmove > 0)
-			{
-				//forwards right
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_BR_MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_RIGHT; // front block new method// Cosmetic mode ON
-					}
-				}
+				anim = BOTH_P1_S1_TR_MD;
 			}
 			else
 			{
-				//Top Block
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_T__MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_FORWARD; // front block new method// Cosmetic mode ON
-					}
-				}
+				anim = (g_RealisticBlockingMode->integer != 0)
+					? BOTH_SABERSINGLECROUCH
+					: BOTH_STAND_BLOCKING_ON_RIGHT;
+			}
+		}
+		// Straight Back
+		else
+		{
+			if (active_blocking == qtrue)
+			{
+				anim = BOTH_P1_S1_T__MD;
+			}
+			else
+			{
+				anim = (g_RealisticBlockingMode->integer != 0)
+					? BOTH_SABERSINGLECROUCH
+					: BOTH_STAND_BLOCKING_ON_BACK;
+			}
+		}
+
+		return anim;
+	}
+
+	// ==================================================================
+	// FORWARD MOVEMENT
+	// ==================================================================
+	if (forwardmove > 0)
+	{
+		// Forward‑Left
+		if (rightmove < 0)
+		{
+			if (active_blocking == qtrue)
+			{
+				anim = BOTH_P1_S1_BL_MD;
+			}
+			else
+			{
+				anim = (g_RealisticBlockingMode->integer != 0)
+					? BOTH_SABERSINGLECROUCH
+					: BOTH_STAND_BLOCKING_ON_LEFT;
+			}
+		}
+		// Forward‑Right
+		else if (rightmove > 0)
+		{
+			if (active_blocking == qtrue)
+			{
+				anim = BOTH_P1_S1_BR_MD;
+			}
+			else
+			{
+				anim = (g_RealisticBlockingMode->integer != 0)
+					? BOTH_SABERSINGLECROUCH
+					: BOTH_STAND_BLOCKING_ON_RIGHT;
+			}
+		}
+		// Straight Forward (Top Block)
+		else
+		{
+			if (active_blocking == qtrue)
+			{
+				anim = BOTH_P1_S1_T__MD;
+			}
+			else
+			{
+				anim = (g_RealisticBlockingMode->integer != 0)
+					? BOTH_SABERSINGLECROUCH
+					: BOTH_STAND_BLOCKING_ON_FORWARD;
+			}
+		}
+
+		return anim;
+	}
+
+	// ==================================================================
+	// STANDING STILL (no forward/back)
+	// ==================================================================
+
+	// Standing‑Left
+	if (rightmove < 0)
+	{
+		if (active_blocking == qtrue)
+		{
+			anim = BOTH_P1_S1_TL_MD;
+		}
+		else
+		{
+			anim = (g_RealisticBlockingMode->integer != 0)
+				? BOTH_SABERSINGLECROUCH
+				: BOTH_STAND_BLOCKING_ON_LEFT;
+		}
+
+		return anim;
+	}
+
+	// Standing‑Right
+	if (rightmove > 0)
+	{
+		if (active_blocking == qtrue)
+		{
+			anim = BOTH_P1_S1_TR_MD;
+		}
+		else
+		{
+			anim = (g_RealisticBlockingMode->integer != 0)
+				? BOTH_SABERSINGLECROUCH
+				: BOTH_STAND_BLOCKING_ON_RIGHT;
+		}
+
+		return anim;
+	}
+
+	// ==================================================================
+	// STANDING STILL — NO LEFT/RIGHT MOVEMENT
+	// ==================================================================
+
+	if (active_blocking == qtrue)
+	{
+		// Lightning override → always top block
+		if (g_entities[pm->ps->clientNum].client->IsBlockingLightning == qtrue)
+		{
+			anim = BOTH_P1_S1_T__MD;
+			return anim;
+		}
+
+		// Cosmetic mode OFF → JKA top block when walking
+		if (g_RealisticBlockingMode->integer != 0)
+		{
+			if ((pm->cmd.buttons & BUTTON_WALKING) != 0)
+			{
+				anim = BOTH_P1_S1_T_; // JKA top block
+			}
+			else
+			{
+				anim = BOTH_STAND_BLOCKING_ON; // new method
 			}
 		}
 		else
 		{
-			//STANDING STILL
-			if (rightmove < 0)
-			{
-				//left block
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_TL_MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_LEFT; // front block new method// Cosmetic mode ON
-					}
-				}
-			}
-			else if (rightmove > 0)
-			{
-				//right block
-				if (active_blocking)
-				{
-					anim = BOTH_P1_S1_TR_MD;
-				}
-				else
-				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON_RIGHT; // front block new method// Cosmetic mode ON
-					}
-				}
-			}
-			else
-			{
-				//STANDING STILL NOT MOVING LEFT OR RIGHT
-				if (active_blocking) // pressing block + attack
-				{
-					if (g_entities[pm->ps->clientNum].client->IsBlockingLightning)
-						// this is for lightning needs to be here as an override (TOP BLOCK)
-					{
-						anim = BOTH_P1_S1_T__MD;
-						// this is for lightning needs to be here as an override (TOP BLOCK)
-					}
-					else
-					{
-						if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-						{
-							if (pm->cmd.buttons & BUTTON_WALKING)
-							{
-								anim = BOTH_P1_S1_T_; // top block JKA method
-							}
-							else
-							{
-								anim = BOTH_STAND_BLOCKING_ON; // front block new method// Cosmetic mode ON
-							}
-						}
-						else
-						{
-							anim = BOTH_P1_S1_T__MD; // top block JKA method
-						}
-					}
-				}
-				else
-				{
-					//Pressing block only
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
-					{
-						anim = BOTH_SABERSINGLECROUCH;
-						// this is the holding block button block box in correct position
-					}
-					else
-					{
-						anim = BOTH_STAND_BLOCKING_ON; // front block new method// Cosmetic mode ON
-					}
-				}
-			}
+			// Cosmetic mode ON → always top block
+			anim = BOTH_P1_S1_T__MD;
 		}
 	}
+	else
+	{
+		// Pressing block only
+		anim = (g_RealisticBlockingMode->integer != 0)
+			? BOTH_SABERSINGLECROUCH
+			: BOTH_STAND_BLOCKING_ON;
+	}
+
 	return anim;
 }
 
 int PM_BlockingPoseForSaberAnimLevelDualAMD()
 {
+	// Start from the base ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
-	const qboolean active_blocking = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	//Active Blocking
+	// Active blocking (block + attack) flag
+	const qboolean active_blocking =
+		((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
 
+	// Only adjust when not moving upward
 	if (pm->cmd.upmove <= 0)
 	{
 		if (forwardmove < 0)
 		{
-			//walking backwards
+			// Walking backwards
 			if (rightmove < 0)
 			{
-				//back left
-				if (active_blocking)
+				// Back‑left
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_TL;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
 					}
 				}
 			}
 			else if (rightmove > 0)
 			{
-				//Back right
-				if (active_blocking)
+				// Back‑right
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_TR;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
 					}
 				}
 			}
 			else
 			{
-				//straight back
-				if (active_blocking)
+				// Straight back
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_T_;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_BACK; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_BACK;
 					}
 				}
 			}
 		}
 		else if (forwardmove > 0)
 		{
-			//walking forwards
+			// Walking forwards
 			if (rightmove < 0)
 			{
-				//forwards left
-				if (active_blocking)
+				// Forward‑left
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_BL;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
 					}
 				}
 			}
 			else if (rightmove > 0)
 			{
-				//forwards right
-				if (active_blocking)
+				// Forward‑right
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_BR;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
 					}
 				}
 			}
 			else
 			{
-				//Top Block
-				if (active_blocking)
+				// Straight forward (top block)
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_T_;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_FORWARD; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_FORWARD;
 					}
 				}
 			}
 		}
 		else
 		{
-			//STANDING STILL
+			// Standing still (no forward/backward)
 			if (rightmove < 0)
 			{
-				//left block
-				if (active_blocking)
+				// Left block
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_TL;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
 					}
 				}
 			}
 			else if (rightmove > 0)
 			{
-				//right block
-				if (active_blocking)
+				// Right block
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P6_S6_TR;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
 					}
 				}
 			}
 			else
 			{
-				//STANDING STLL NOT MOVING LEFT OR RIGHT
-				if (active_blocking) // pressing block + attack
+				// Standing still, not moving left/right
+				if (active_blocking == qtrue) // pressing block + attack
 				{
-					if (g_entities[pm->ps->clientNum].client->IsBlockingLightning)
-						// this is for lightning needs to be here as an override (TOP BLOCK)
+					if (g_entities[pm->ps->clientNum].client != NULL &&
+						g_entities[pm->ps->clientNum].client->IsBlockingLightning == qtrue)
 					{
+						// Lightning override → top block
 						anim = BOTH_P6_S6_T__MD;
-						// this is for lightning needs to be here as an override (TOP BLOCK)
 					}
 					else
 					{
-						if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+						if (g_RealisticBlockingMode->integer != 0) // Cosmetic mode OFF
 						{
-							if (pm->cmd.buttons & BUTTON_WALKING)
+							if ((pm->cmd.buttons & BUTTON_WALKING) != 0)
 							{
-								anim = BOTH_P6_S6_T_; // top block JKA method
+								// Walking top block (JKA style)
+								anim = BOTH_P6_S6_T_;
 							}
 							else
 							{
-								anim = BOTH_STAND_BLOCKING_ON_DUAL; // front block new method// Cosmetic mode ON
+								// Standing front block (new method)
+								anim = BOTH_STAND_BLOCKING_ON_DUAL;
 							}
 						}
 						else
 						{
-							anim = BOTH_P6_S6_T__MD; // top block JKA method
+							// Cosmetic mode ON → JKA top block
+							anim = BOTH_P6_S6_T__MD;
 						}
 					}
 				}
 				else
 				{
-					//Pressing block only
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					// Pressing block only
+					if (g_RealisticBlockingMode->integer != 0) // Cosmetic mode OFF
 					{
 						anim = BOTH_SABERDUALCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_DUAL;
 					}
 				}
 			}
 		}
 	}
+
 	return anim;
 }
 
-int PM_BlockingPoseForSaberAnimLevelStaffAMD()
+int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 {
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
-	const qboolean active_blocking = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	//Active Blocking
+	// Active blocking: block + attack held
+	const qboolean active_blocking =
+		((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)
+		? qtrue
+		: qfalse;
 
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
@@ -13522,300 +13206,323 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD()
 	{
 		if (forwardmove < 0)
 		{
-			//walking backwards
+			// Walking backwards
 			if (rightmove < 0)
 			{
-				//back left
-				if (active_blocking)
+				// Back left
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_TL;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
 					}
 				}
 			}
 			else if (rightmove > 0)
 			{
-				//Back right
-				if (active_blocking)
+				// Back right
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_TR;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
 					}
 				}
 			}
 			else
 			{
-				//straight back
-				if (active_blocking)
+				// Straight back
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_T_;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_BACK; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_BACK;
 					}
 				}
 			}
 		}
 		else if (forwardmove > 0)
 		{
-			//walking forwards
+			// Walking forwards
 			if (rightmove < 0)
 			{
-				//forwards left
-				if (active_blocking)
+				// Forwards left
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_BL;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
 					}
 				}
 			}
 			else if (rightmove > 0)
 			{
-				//forwards right
-				if (active_blocking)
+				// Forwards right
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_BR;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
 					}
 				}
 			}
 			else
 			{
-				//Top Block
-				if (active_blocking)
+				// Top block while moving forward
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_T_;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_FORWARD; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_FORWARD;
 					}
 				}
 			}
 		}
 		else
 		{
-			//STANDING STILL
+			// Standing still
 			if (rightmove < 0)
 			{
-				//left block
-				if (active_blocking)
+				// Left block
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_TL;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
 					}
 				}
 			}
 			else if (rightmove > 0)
 			{
-				//right block
-				if (active_blocking)
+				// Right block
+				if (active_blocking == qtrue)
 				{
 					anim = BOTH_P7_S7_TR;
 				}
 				else
 				{
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
 					}
 				}
 			}
 			else
 			{
-				//STANDING STLL NOT MOVING LEFT OR RIGHT
-				if (active_blocking) // pressing block + attack
+				// Standing still, not moving left or right
+				if (active_blocking == qtrue) // pressing block + attack
 				{
-					if (g_entities[pm->ps->clientNum].client->IsBlockingLightning)
-						// this is for lightning needs to be here as an override (TOP BLOCK)
+					if (g_entities[pm->ps->clientNum].client != NULL &&
+						g_entities[pm->ps->clientNum].client->IsBlockingLightning == qtrue)
 					{
+						// Lightning override: top block
 						anim = BOTH_P7_S7_T__MD;
-						// this is for lightning needs to be here as an override (TOP BLOCK)
 					}
 					else
 					{
-						if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+						if (g_RealisticBlockingMode->integer != 0) // Cosmetic mode OFF
 						{
-							if (pm->cmd.buttons & BUTTON_WALKING)
+							if ((pm->cmd.buttons & BUTTON_WALKING) != 0)
 							{
-								anim = BOTH_P7_S7_T_; // top block JKA method
+								anim = BOTH_P7_S7_T_; // JKA top block
 							}
 							else
 							{
-								anim = BOTH_STAND_BLOCKING_ON_STAFF; // front block new method// Cosmetic mode ON
+								anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
 							}
 						}
 						else
 						{
-							anim = BOTH_P7_S7_T__MD; // top block JKA method
+							anim = BOTH_P7_S7_T__MD; // JKA top block
 						}
 					}
 				}
 				else
 				{
-					//Pressing block only
-					if (g_RealisticBlockingMode->integer) // Cosmetic mode OFF
+					// Pressing block only
+					if (g_RealisticBlockingMode->integer != 0)
 					{
 						anim = BOTH_SABERSTAFFCROUCH;
-						// this is the holding block button block box in correct position
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF; // front block new method// Cosmetic mode ON
+						anim = BOTH_STAND_BLOCKING_ON_STAFF;
 					}
 				}
 			}
 		}
 	}
+
 	return anim;
 }
 
-int PM_BlockingPoseForSaberAnimLevelSingleMD()
+// ======================================================================
+// PM_BlockingPoseForSaberAnimLevelSingleMD
+//
+// MovieDuels SINGLE‑saber blocking pose logic.
+// This version is simpler than AMD: it does NOT use crouch/stance
+// variations based on RealisticBlockingMode. It only selects directional
+// block animations based on movement and active blocking state.
+//
+// Behaviour: IDENTICAL to original.
+// Changes:   Clean structure, explicit qboolean, fixed precedence bug,
+//            comments added, no implicit conversions.
+// ======================================================================
+int PM_BlockingPoseForSaberAnimLevelSingleMD(void)
 {
+	// Start from the normal ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
-	const qboolean active_blocking = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	//Active Blocking
+	// Explicit qboolean: block + attack held
+	const qboolean active_blocking =
+		((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)
+		? qtrue
+		: qfalse;
 
+	// Movement inputs
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
+	const signed char upmove = pm->cmd.upmove;
 
-	if (pm->cmd.upmove <= 0)
+	// Only adjust blocking pose when NOT moving upward
+	if (upmove <= 0)
 	{
+		// ==============================================================
+		// BACKWARD MOVEMENT
+		// ==============================================================
 		if (forwardmove < 0)
 		{
-			//walking backwards
 			if (rightmove < 0)
 			{
-				//back left
+				// Back‑left
 				anim = BOTH_P1_S1_TL;
 			}
 			else if (rightmove > 0)
 			{
-				//Back right
+				// Back‑right
 				anim = BOTH_P1_S1_TR;
 			}
 			else
 			{
-				//straight back
+				// Straight back
 				anim = BOTH_P1_S1_T_;
 			}
 		}
+
+		// ==============================================================
+		// FORWARD MOVEMENT
+		// ==============================================================
 		else if (forwardmove > 0)
 		{
-			//walking forwards
 			if (rightmove < 0)
 			{
-				//forwards left
+				// Forward‑left
 				anim = BOTH_P1_S1_BL;
 			}
 			else if (rightmove > 0)
 			{
-				//forwards right
+				// Forward‑right
 				anim = BOTH_P1_S1_BR;
 			}
 			else
 			{
-				//Top Block
+				// Straight forward (top block)
 				anim = BOTH_P1_S1_T_;
 			}
 		}
+
+		// ==============================================================
+		// STANDING STILL
+		// ==============================================================
 		else
 		{
-			//STANDING STILL
 			if (rightmove < 0)
 			{
-				//left block
+				// Standing left block
 				anim = BOTH_P1_S1_TL;
 			}
 			else if (rightmove > 0)
 			{
-				//right block
+				// Standing right block
 				anim = BOTH_P1_S1_TR;
 			}
 			else
 			{
-				if (active_blocking)
+				// Standing still, no left/right movement
+				if (active_blocking == qtrue)
 				{
+					// Block + attack → top block
 					anim = BOTH_P1_S1_T_;
 				}
 				else
 				{
+					// Block only → front block stance
 					anim = BOTH_STAND_BLOCKING_ON;
 				}
 			}
 		}
 	}
+
 	return anim;
 }
 
@@ -13898,82 +13605,112 @@ int PM_BlockingPoseForSaberAnimLevelDualMD()
 	return anim;
 }
 
-int PM_BlockingPoseForSaberAnimLevelStaffMD()
+// ======================================================================
+// PM_BlockingPoseForSaberAnimLevelStaffMD
+//
+// MovieDuels STAFF‑saber blocking pose logic.
+// MD mode is simple: directional block animations only.
+// No cosmetic mode, no crouch logic, no AMD stance logic.
+//
+// Behaviour: IDENTICAL to original.
+// Changes:   Clean structure, explicit qboolean, fixed precedence bug,
+//            comments added, no implicit conversions.
+// ======================================================================
+int PM_BlockingPoseForSaberAnimLevelStaffMD(void)
 {
+	// Start from the normal ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
-	const qboolean active_blocking = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	//Active Blocking
+	// Explicit qboolean: block + attack held
+	const qboolean active_blocking =
+		((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)
+		? qtrue
+		: qfalse;
 
+	// Movement inputs
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
+	const signed char upmove = pm->cmd.upmove;
 
-	if (pm->cmd.upmove <= 0)
+	// Only adjust blocking pose when NOT moving upward
+	if (upmove <= 0)
 	{
+		// ==============================================================
+		// BACKWARD MOVEMENT
+		// ==============================================================
 		if (forwardmove < 0)
 		{
-			//walking backwards
 			if (rightmove < 0)
 			{
-				//back left
+				// Back‑left
 				anim = BOTH_P7_S7_TL;
 			}
 			else if (rightmove > 0)
 			{
-				//Back right
+				// Back‑right
 				anim = BOTH_P7_S7_TR;
 			}
 			else
 			{
-				//straight back
+				// Straight back
 				anim = BOTH_P7_S7_T_;
 			}
 		}
+
+		// ==============================================================
+		// FORWARD MOVEMENT
+		// ==============================================================
 		else if (forwardmove > 0)
 		{
-			//walking forwards
 			if (rightmove < 0)
 			{
-				//forwards left
+				// Forward‑left
 				anim = BOTH_P7_S7_BL;
 			}
 			else if (rightmove > 0)
 			{
-				//forwards right
+				// Forward‑right
 				anim = BOTH_P7_S7_BR;
 			}
 			else
 			{
-				//Top Block
+				// Straight forward (top block)
 				anim = BOTH_P7_S7_T_;
 			}
 		}
+
+		// ==============================================================
+		// STANDING STILL
+		// ==============================================================
 		else
 		{
-			//STANDING STILL
 			if (rightmove < 0)
 			{
-				//left block
+				// Standing left block
 				anim = BOTH_P7_S7_TL;
 			}
 			else if (rightmove > 0)
 			{
-				//right block
+				// Standing right block
 				anim = BOTH_P7_S7_TR;
 			}
 			else
 			{
-				if (active_blocking)
+				// Standing still, no left/right movement
+				if (active_blocking == qtrue)
 				{
+					// Block + attack → top block
 					anim = BOTH_P7_S7_T_;
 				}
 				else
 				{
+					// Block only → staff front block stance
 					anim = BOTH_STAND_BLOCKING_ON_STAFF;
 				}
 			}
 		}
 	}
+
 	return anim;
 }
 

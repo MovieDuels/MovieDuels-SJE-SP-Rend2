@@ -15054,6 +15054,12 @@ qboolean Manual_NPCSaberblocking(const gentity_t* defender) //Is this guy blocki
 		return qfalse;
 	}
 
+	// No blocking during cinematic camera
+	if (in_camera == qtrue)
+	{
+		return qfalse;
+	}
+
 	if (defender->health <= 1
 		|| BG_InKnockDown(defender->client->ps.legsAnim)
 		|| BG_InKnockDown(defender->client->ps.torsoAnim)
@@ -15102,91 +15108,125 @@ qboolean Manual_NPCSaberblocking(const gentity_t* defender) //Is this guy blocki
 	return qtrue;
 }
 
-qboolean NPC_Can_Do_Blocking_stances_In_SJE_Mode(const gentity_t* defender)
+qboolean NPC_Should_Block(const gentity_t* npc)
 {
+	// Safety
+	if (npc == NULL || npc->client == NULL)
+	{
+		return qfalse;
+	}
+
+	// Players and player‑controlled entities never use NPC block logic
+	if (npc->s.number < MAX_CLIENTS || G_ControlledByPlayer(npc) == qtrue)
+	{
+		return qfalse;
+	}
+
+	// Must be in SJE mode 3+
 	if (g_SerenityJediEngineMode->integer <= 2)
 	{
 		return qfalse;
 	}
 
-	if (!g_RealisticBlockingMode->integer)
+	//// Realistic blocking must be enabled
+	//if (g_RealisticBlockingMode->integer == 0)
+	//{
+	//	return qfalse;
+	//}
+
+	// No blocking during cinematic camera
+	if (in_camera == qtrue)
 	{
 		return qfalse;
 	}
 
-	if (in_camera)
+	// Must be a saber user
+	if (npc->client->ps.weapon != WP_SABER)
 	{
 		return qfalse;
 	}
 
-	if (defender->s.number < MAX_CLIENTS || G_ControlledByPlayer(defender))
+	// Saber must be active and not thrown
+	if (npc->client->ps.SaberActive() == qfalse ||
+		npc->client->ps.saberInFlight == qtrue)
 	{
 		return qfalse;
 	}
 
-	if (defender->NPC && !G_ControlledByPlayer(defender) && defender->client->ps.weapon != WP_SABER)
+	// Cannot block while force‑affected
+	if ((npc->s.eFlags & EF_FORCE_DRAINED) ||
+		(npc->s.eFlags & EF_FORCE_GRIPPED) ||
+		(npc->s.eFlags & EF_FORCE_GRASPED))
 	{
 		return qfalse;
 	}
 
-	if (BG_IsAlreadyinTauntAnim(defender->client->ps.torsoAnim))
+	// Cannot block during taunts
+	if (BG_IsAlreadyinTauntAnim(npc->client->ps.torsoAnim) == qtrue)
 	{
 		return qfalse;
 	}
 
-	if (defender->s.eFlags & EF_FORCE_DRAINED
-		|| defender->s.eFlags & EF_FORCE_GRIPPED
-		|| defender->s.eFlags & EF_FORCE_GRASPED)
+	// Cannot block during non‑blockable saber attacks
+	if (pm_saber_innonblockable_attack(npc->client->ps.torsoAnim) == qtrue)
 	{
 		return qfalse;
 	}
 
-	if (pm_saber_innonblockable_attack(defender->client->ps.torsoAnim))
+	// Guards do not block
+	if (npc->client->NPC_class == CLASS_GUARD)
 	{
 		return qfalse;
 	}
 
-	if (defender->client->NPC_class == CLASS_GUARD)
+	// Cannot block while knocked down, rolling, special jumps, massive bounce, etc.
+	if (npc->health <= 1 ||
+		BG_InKnockDown(npc->client->ps.legsAnim) == qtrue ||
+		BG_InKnockDown(npc->client->ps.torsoAnim) == qtrue ||
+		PM_InRoll(&npc->client->ps) == qtrue ||
+		PM_SuperBreakLoseAnim(npc->client->ps.torsoAnim) == qtrue ||
+		PM_SuperBreakWinAnim(npc->client->ps.torsoAnim) == qtrue ||
+		pm_saber_in_special_attack(npc->client->ps.torsoAnim) == qtrue ||
+		PM_SaberInMassiveBounce(npc->client->ps.torsoAnim) == qtrue ||
+		PM_SaberInBashedAnim(npc->client->ps.torsoAnim) == qtrue ||
+		PM_Saberinstab(npc->client->ps.saber_move) == qtrue ||
+		PM_InSpecialJump(npc->client->ps.torsoAnim) == qtrue ||
+		npc->client->ps.groundEntityNum == ENTITYNUM_NONE)
 	{
 		return qfalse;
 	}
 
-	if (defender->health <= 1
-		|| BG_InKnockDown(defender->client->ps.legsAnim)
-		|| BG_InKnockDown(defender->client->ps.torsoAnim)
-		|| PM_InRoll(&defender->client->ps)
-		|| PM_SuperBreakLoseAnim(defender->client->ps.torsoAnim)
-		|| PM_SuperBreakWinAnim(defender->client->ps.torsoAnim)
-		|| pm_saber_in_special_attack(defender->client->ps.torsoAnim)
-		|| PM_SaberInMassiveBounce(defender->client->ps.torsoAnim)
-		|| PM_SaberInBashedAnim(defender->client->ps.torsoAnim)
-		|| PM_Saberinstab(defender->client->ps.saber_move)
-		|| PM_InSpecialJump(defender->client->ps.torsoAnim)
-		|| defender->client->ps.groundEntityNum == ENTITYNUM_NONE)
+	// Must have an enemy to block
+	if (npc->enemy == NULL)
 	{
 		return qfalse;
 	}
 
-	if (defender->client->ps.weapon != WP_SABER
-		|| defender->client->ps.weapon == WP_NONE
-		|| defender->client->ps.weapon == WP_MELEE) //saber not here
+	// Distance‑based block stance logic
+	const float distSq = DistanceSquared(npc->currentOrigin, npc->enemy->currentOrigin);
+
+	// Tunable thresholds
+	const float BLOCK_ENGAGE_DIST_SQ = 128.0f * 128.0f;   // enter block
+	const float BLOCK_RELEASE_DIST_SQ = 192.0f * 192.0f;   // exit block
+
+	// Current stance flag
+	const qboolean blockActive =
+		((npc->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) != 0 ? qtrue : qfalse);
+
+	// ENTER BLOCK STANCE
+	if (blockActive == qfalse && distSq <= BLOCK_ENGAGE_DIST_SQ)
+	{
+		return qtrue;
+	}
+
+	// EXIT BLOCK STANCE
+	if (blockActive == qtrue && distSq >= BLOCK_RELEASE_DIST_SQ)
 	{
 		return qfalse;
 	}
 
-	if (defender->client->ps.weapon == WP_SABER && !defender->client->ps.SaberActive())
-	{
-		//saber not currently in use or available, attempt to use our hands instead.
-		return qfalse;
-	}
-
-	if (defender->client->ps.weapon == WP_SABER && defender->client->ps.saberInFlight)
-	{
-		//saber not currently in use or available, attempt to use our hands instead.
-		return qfalse;
-	}
-
-	return qtrue;
+	// If already blocking and still within the window → stay blocking
+	return blockActive;
 }
 
 extern qboolean BG_InFlipBack(int anim);
