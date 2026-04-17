@@ -204,11 +204,15 @@ void CG_ImpactMark(const qhandle_t mark_shader, const vec3_t origin, const vec3_
 		{
 			mf->numPoints = MAX_VERTS_ON_POLY;
 		}
-		for (j = 0, v = verts; j < mf->numPoints; j++, v++)
+			for (j = 0, v = verts; j < mf->numPoints; j++, v++)
 		{
 			vec3_t delta;
 
 			VectorCopy(mark_points[mf->firstPoint + j], v->xyz);
+
+				// Nudge the decal slightly off the surface along the surface normal
+				// to reduce z-fighting/flicker when the view changes.
+				VectorMA(v->xyz, 0.125f, dir, v->xyz);
 
 			VectorSubtract(v->xyz, origin, delta);
 			v->st[0] = 0.5f + DotProduct(delta, axis[1]) * tex_coord_scale;

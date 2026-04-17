@@ -1420,7 +1420,7 @@ CG_MachinegunSpinAngle
 constexpr auto SPIN_SPEED = 0.9f;
 constexpr auto COAST_TIME = 1000;
 
-static float CG_MachinegunSpinAngle(centity_t* cent)
+float CG_MachinegunSpinAngle(centity_t* cent)
 {
 	float angle = 0.0f;
 	int   delta = 0;
@@ -1490,6 +1490,7 @@ static float CG_MachinegunSpinAngle(centity_t* cent)
 			cent->pe.barrelTime = cg.time;
 			cent->pe.barrelAngle = AngleNormalize360(angle);
 			cent->pe.barrelSpinning = (firingNow != 0);
+
 
 			// Play spin-up sound for Z6
 			if (firingNow == qtrue &&
