@@ -2449,7 +2449,6 @@ static void CG_DrawDF_SaberStyle_Fatigue(const centity_t* cent)
 	}
 }
 
-
 //draw meter showing sprint fuel when it's not full
 constexpr auto SPFUELBAR_H = 100.0f;
 constexpr auto SPFUELBAR_W = 5.0f;

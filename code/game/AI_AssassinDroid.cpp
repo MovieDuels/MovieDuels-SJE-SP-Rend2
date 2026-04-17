@@ -45,7 +45,7 @@ static bool BubbleShield_IsOn()
 void BubbleShield_TurnOn()
 {
 	if (!BubbleShield_IsOn() && !NPC->client->ps.powerups[PW_STUNNED] && TIMER_Done(NPC, "ShieldsDown"))
-	{ 
+	{
 		NPC->flags |= FL_SHIELDED;
 		NPC->client->ps.powerups[PW_GALAK_SHIELD] = Q3_INFINITE;
 		gi.G2API_SetSurfaceOnOff(&NPC->ghoul2[NPC->playerModel], "force_shield", TURN_ON);
@@ -259,7 +259,6 @@ void bubble_shield_update()
 		BubbleShield_PushRadiusEnts();
 	}
 }
-
 
 //extern cvar_t* g_allowgunnerbash;
 //extern cvar_t* g_SerenityJediEngineMode;

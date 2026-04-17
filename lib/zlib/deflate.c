@@ -597,13 +597,13 @@ uLong sourceLen;
 				do {
 					wraplen++;
 				} while (*str++);
-				str = s->gzhead->comment;
-				if (str != Z_NULL)
-					do {
-						wraplen++;
-					} while (*str++);
-					if (s->gzhead->hcrc)
-						wraplen += 2;
+			str = s->gzhead->comment;
+			if (str != Z_NULL)
+				do {
+					wraplen++;
+				} while (*str++);
+			if (s->gzhead->hcrc)
+				wraplen += 2;
 		}
 		break;
 	default:                                /* for compiler happiness */

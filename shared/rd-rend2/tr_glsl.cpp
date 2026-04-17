@@ -1964,7 +1964,7 @@ static int GLSL_LoadGPUProgramLightAll(
 			/*if (i & LIGHTDEF_USE_GLOW_BUFFER)
 				Q_strcat(extradefines, sizeof(extradefines), "#define USE_GLOW_BUFFER\n");*/
 
-		if(!GLSL_LoadGPUShader(builder, &tr.lightallShader[i], name, attribs, NO_XFB_VARS,
+		if (!GLSL_LoadGPUShader(builder, &tr.lightallShader[i], name, attribs, NO_XFB_VARS,
 			extradefines, *programDesc))
 		{
 			ri.Error(ERR_FATAL, "Could not load lightall shader!");
@@ -2199,7 +2199,6 @@ static int GLSL_LoadGPUProgramTonemap(
 				(float)glConfig.vidHeight,
 				(float)glConfig.vidWidth,
 				(float)glConfig.vidHeight));
-
 	}
 
 	if (!GLSL_LoadGPUShader(builder, &tr.tonemapShader[0], "tonemap", attribs, NO_XFB_VARS,
@@ -2797,7 +2796,6 @@ void GLSL_LoadGPUShaders()
 	numEtcShaders += GLSL_LoadGPUProgramWeather(builder, allocator);
 	if (r_smaa->integer)
 		numEtcShaders += GLSL_LoadGPUProgramSMAA(builder, allocator);
-
 
 	ri.Printf(PRINT_ALL, "loaded %i GLSL shaders (%i gen %i light %i etc) in %5.2f seconds\n",
 		numGenShaders + numLightShaders + numEtcShaders, numGenShaders, numLightShaders,

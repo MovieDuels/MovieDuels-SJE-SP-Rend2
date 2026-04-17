@@ -1254,7 +1254,6 @@ static qboolean G_AddSexToPlayerString(char* string, const qboolean qDoBoth)
 	return qtrue;
 }
 
-
 /*
 =============
 Q3_SetAngles

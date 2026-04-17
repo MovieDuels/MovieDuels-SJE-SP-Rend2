@@ -1037,7 +1037,7 @@ static void CG_General(centity_t* cent)
 		VectorMA(ent.origin, 6.6f, ent.axis[0], beam_org); // forward
 		theFxScheduler.PlayEffect("tripMine/glowBit", beam_org, ent.axis[0]);
 	}
-	
+
 	if ((s1->eFlags & EF_ALT_FIRING) != 0)
 	{
 		// ------------------------------------------------------------
@@ -1063,7 +1063,6 @@ static void CG_General(centity_t* cent)
 
 		cgi_R_AddLightToScene(org, 225, 1.0f, 1.0f, 1.0f);
 	}
-
 
 	//-----------------------------------------------------------
 	if (cent->gent && cent->gent->flags & (FL_DMG_BY_HEAVY_WEAP_ONLY | FL_SHIELDED))
@@ -1336,7 +1335,6 @@ static void CG_Item(centity_t* cent)
 		cgi_R_AddLightToScene(ent.origin, wv * 100, 1.0f, 1.0f, 0.0f);
 	}
 }
-
 
 //============================================================================
 

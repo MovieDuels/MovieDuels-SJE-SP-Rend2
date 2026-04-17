@@ -496,7 +496,6 @@ void CalculateVertexArraysProperties(uint32_t attributes, VertexArraysProperties
 				tess.texCoords[0][3],
 				sizeof(tess.texCoords[0][0]) * NUM_TESS_TEXCOORDS);
 
-
 		if (attributes & ATTR_TEXCOORD4)
 			AddVertexArray(
 				properties,

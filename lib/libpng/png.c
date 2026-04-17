@@ -2163,34 +2163,34 @@ static const struct
 		   PNG_MD5(0xfc663378, 0x37e2886b, 0xfd72e983, 0x8228f1b8), 0, 0,
 		   "2009/08/10 17:28:01", 60988, "sRGB_v4_ICC_preference_displayclass.icc")
 
-	/* ICC sRGB v4 perceptual */
-	PNG_ICC_CHECKSUM(0x209c35d2, 0xbbef7812,
-	   PNG_MD5(0x34562abf, 0x994ccd06, 0x6d2c5721, 0xd0d68c5d), 0, 0,
-	   "2007/07/25 00:05:37", 60960, "sRGB_v4_ICC_preference.icc")
+		 /* ICC sRGB v4 perceptual */
+		 PNG_ICC_CHECKSUM(0x209c35d2, 0xbbef7812,
+			PNG_MD5(0x34562abf, 0x994ccd06, 0x6d2c5721, 0xd0d68c5d), 0, 0,
+			"2007/07/25 00:05:37", 60960, "sRGB_v4_ICC_preference.icc")
 
-	/* The following profiles have no known MD5 checksum. If there is a match
-	 * on the (empty) MD5 the other fields are used to attempt a match and
-	 * a warning is produced.  The first two of these profiles have a 'cprt' tag
-	 * which suggests that they were also made by Hewlett Packard.
-	 */
-	PNG_ICC_CHECKSUM(0xa054d762, 0x5d5129ce,
-	   PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 1, 0,
-	   "2004/07/21 18:57:42", 3024, "sRGB_IEC61966-2-1_noBPC.icc")
+		 /* The following profiles have no known MD5 checksum. If there is a match
+		  * on the (empty) MD5 the other fields are used to attempt a match and
+		  * a warning is produced.  The first two of these profiles have a 'cprt' tag
+		  * which suggests that they were also made by Hewlett Packard.
+		  */
+		 PNG_ICC_CHECKSUM(0xa054d762, 0x5d5129ce,
+			PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 1, 0,
+			"2004/07/21 18:57:42", 3024, "sRGB_IEC61966-2-1_noBPC.icc")
 
-	/* This is a 'mntr' (display) profile with a mediaWhitePointTag that does not
-	 * match the D50 PCS illuminant in the header (it is in fact the D65 values,
-	 * so the white point is recorded as the un-adapted value.)  The profiles
-	 * below only differ in one byte - the intent - and are basically the same as
-	 * the previous profile except for the mediaWhitePointTag error and a missing
-	 * chromaticAdaptationTag.
-	 */
-	PNG_ICC_CHECKSUM(0xf784f3fb, 0x182ea552,
-	   PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 0, 1/*broken*/,
-	   "1998/02/09 06:49:00", 3144, "HP-Microsoft sRGB v2 perceptual")
+		 /* This is a 'mntr' (display) profile with a mediaWhitePointTag that does not
+		  * match the D50 PCS illuminant in the header (it is in fact the D65 values,
+		  * so the white point is recorded as the un-adapted value.)  The profiles
+		  * below only differ in one byte - the intent - and are basically the same as
+		  * the previous profile except for the mediaWhitePointTag error and a missing
+		  * chromaticAdaptationTag.
+		  */
+		 PNG_ICC_CHECKSUM(0xf784f3fb, 0x182ea552,
+			PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 0, 1/*broken*/,
+			"1998/02/09 06:49:00", 3144, "HP-Microsoft sRGB v2 perceptual")
 
-	PNG_ICC_CHECKSUM(0x0398f3fc, 0xf29e526d,
-	   PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 1, 1/*broken*/,
-	   "1998/02/09 06:49:00", 3144, "HP-Microsoft sRGB v2 media-relative")
+		 PNG_ICC_CHECKSUM(0x0398f3fc, 0xf29e526d,
+			PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 1, 1/*broken*/,
+			"1998/02/09 06:49:00", 3144, "HP-Microsoft sRGB v2 media-relative")
 };
 
 static int

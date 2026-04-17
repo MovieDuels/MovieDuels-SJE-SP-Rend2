@@ -325,7 +325,6 @@ qboolean MP3Stream_InitFromFile(
 	return qfalse;
 }
 
-
 // decode one packet of MP3 data only (typical output size is 2304, or 2304*2 for stereo, so input size is less
 //
 // return is decoded byte count, else 0 for finished

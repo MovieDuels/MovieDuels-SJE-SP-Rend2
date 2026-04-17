@@ -35,7 +35,6 @@ color4ub_t	styleColors[MAX_LIGHT_STYLES];
 
 void RB_BinTriangleCounts(void);
 
-
 /*
 ==================
 R_DrawElements
@@ -51,7 +50,6 @@ void R_DrawElementsVBO(int numIndexes, glIndex_t firstIndex, glIndex_t minIndex,
 	GL_DrawIndexed(GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, offset, 1, 0);
 }
 
-
 static void R_DrawMultiElementsVBO(int multiDrawPrimitives, glIndex_t* multiDrawMinIndex, glIndex_t* multiDrawMaxIndex,
 	GLsizei* multiDrawNumIndexes, glIndex_t** multiDrawFirstIndex)
 {
@@ -62,7 +60,6 @@ static void R_DrawMultiElementsVBO(int multiDrawPrimitives, glIndex_t* multiDraw
 		multiDrawPrimitives);
 }
 
-
 /*
 =============================================================
 
@@ -72,7 +69,6 @@ SURFACE SHADERS
 */
 
 shaderCommands_t	tess;
-
 
 /*
 =================
@@ -167,11 +163,8 @@ void RB_BeginSurface(shader_t* shader, int fogNum, int cubemapIndex)
 	}
 }
 
-
-
 extern float EvalWaveForm(const waveForm_t* wf);
 extern float EvalWaveFormClamped(const waveForm_t* wf);
-
 
 static void ComputeTexMods(shaderStage_t* pStage, int bundleNum, float* outMatrix, float* outOffTurb)
 {
@@ -193,7 +186,6 @@ static void ComputeTexMods(shaderStage_t* pStage, int bundleNum, float* outMatri
 	for (tm = 0; tm < bundle->numTexMods; tm++) {
 		switch (bundle->texMods[tm].type)
 		{
-
 		case TMOD_NONE:
 			tm = TR_MAX_TEXMODS;		// break out of for loop
 			break;
@@ -951,7 +943,6 @@ Draws triangle outlines for debugging
 ================
 */
 static void DrawTris(shaderCommands_t* input, const VertexArraysProperties* vertexArrays) {
-
 	Allocator& frameAllocator = *backEndData->perFrameMemory;
 	vertexAttribute_t attribs[ATTR_INDEX_MAX] = {};
 	GL_VertexArraysToAttribs(attribs, ARRAY_LEN(attribs), vertexArrays);
@@ -2025,7 +2016,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 						samplerBindingsWriter.AddStaticImage(tr.screenSsaoImage, TB_SSAOMAP);
 					else if (r_ssao->integer)
 						samplerBindingsWriter.AddStaticImage(tr.whiteImage, TB_SSAOMAP);
-
 				}
 			}
 

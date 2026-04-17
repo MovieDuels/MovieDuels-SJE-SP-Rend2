@@ -12433,7 +12433,6 @@ static void PM_FinishWeaponChange()
 //            no implicit bool→qboolean, safe default initialization.
 // ======================================================================
 
-
 int PM_ReadyPoseForSaberAnimLevelAMD();
 
 static int PM_ReadyPoseForSaberAnimLevelDucked(void)
@@ -12475,7 +12474,6 @@ static int PM_ReadyPoseForSaberAnimLevelDucked(void)
 
 	return anim;
 }
-
 
 static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 {
@@ -14081,7 +14079,7 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 				}
 			}
 		}
-		else 
+		else
 		{
 			//continuing with a kata, increment attack counter
 			pm->ps->saberAttackChainCount++;

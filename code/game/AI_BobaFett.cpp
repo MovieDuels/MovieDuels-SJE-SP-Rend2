@@ -143,8 +143,6 @@ extern cvar_t* g_bobaDebug;
 #endif
 #include <qcommon/q_string.h>
 
-
-
 static void Boba_Printf(const char* format, ...)
 {
 	if (g_bobaDebug->integer == 0)

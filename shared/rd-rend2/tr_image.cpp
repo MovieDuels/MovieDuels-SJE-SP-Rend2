@@ -3366,7 +3366,6 @@ static void R_CreateDefaultImage(void) {
 }
 
 static void R_CreateSMAAImages(void) {
-
 	if (!r_smaa->integer)
 		return;
 

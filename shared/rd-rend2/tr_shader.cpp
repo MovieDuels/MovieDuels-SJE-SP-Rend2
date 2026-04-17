@@ -3255,7 +3255,7 @@ static void CollapseStagesToLightall(shaderStage_t* stage, shaderStage_t* lightm
 	/*if (stage->alphaTestType != ALPHA_TEST_NONE)
 		defs |= LIGHTDEF_USE_ALPHA_TEST;*/
 
-	//ri.Printf(PRINT_ALL, ".\n");
+		//ri.Printf(PRINT_ALL, ".\n");
 
 	stage->glslShaderGroup = tr.lightallShader;
 	stage->glslShaderIndex = defs;

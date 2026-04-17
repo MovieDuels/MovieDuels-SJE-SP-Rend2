@@ -224,7 +224,7 @@ select_ncolors(const j_decompress_ptr cinfo, int Ncolors[])
 			/* calculate new total_colors if Ncolors[j] is incremented */
 			temp = total_colors / Ncolors[j];
 			temp *= Ncolors[j] + 1;	/* done in long arith to avoid oflo */
-			if (temp > (long) max_colors)
+			if (temp > (long)max_colors)
 				break;			/* won't fit, done with this pass */
 			Ncolors[j]++;		/* OK, apply the increment */
 			total_colors = (int)temp;

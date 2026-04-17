@@ -901,11 +901,11 @@ qboolean NPC_CheckPlayerTeamStealth()
 	return qfalse;
 }
 
-extern cvar_t* g_npc_is_smart;
-
-static qboolean NPC_CheckEnemiesInSpotlight()
+static qboolean NPC_CheckEnemiesInSpotlight(void)
 {
-	if (!NPC || !NPC->client || !NPCInfo)
+	const qboolean isYavin1b = (Q_stricmp(level.mapname, "yavin1b") == 0) ? qtrue : qfalse;
+
+	if (NPC == NULL || NPC->client == NULL || NPCInfo == NULL)
 	{
 		return qfalse;
 	}
@@ -913,40 +913,51 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 	// Use static storage to avoid large per-call stack usage
 	static gentity_t* entity_list[MAX_GENTITIES];
 
-	// Limit detection to a fixed radius to prevent map-wide aggro
-	constexpr float DETECTION_RADIUS = 1024.0f; // 1024 units is a reasonable sight/hearing range
-	constexpr float DETECTION_RADIUS_LEVEL_HARD = 2048.0f; // 2048 units is a reasonable sight/hearing range on hard difficulty
+	// Detection radii (normal vs. "smart" / hard mode)
+	constexpr float DETECTION_RADIUS_SMALL = 256.0f;
+	constexpr float DETECTION_RADIUS_NORMAL = 1024.0f;           // Normal sight/hearing range
+	constexpr float DETECTION_RADIUS_FAR = 2048.0f; // Extended range on hard / smart NPCs
 
 	vec3_t mins{}, maxs{};
 
 	for (int i = 0; i < 3; i++)
 	{
-		if (g_npc_is_smart->integer != 1)
-		{// Normal detection radius for non-smart NPCs
-			mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS;
-			maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS;
+		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b)
+		{
+			if (isYavin1b)
+			{// Yavin 1b howlers shouldn't be able to see you from as far away as the smart NPCs, and they shouldn't have extended hearing either
+				mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_SMALL;
+				maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_SMALL;
+			}
+			else
+			{
+				// Normal detection radius for non-smart NPCs or when in camera
+				mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_NORMAL;
+				maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_NORMAL;
+			}
 		}
 		else
 		{
-			mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_LEVEL_HARD;
-			maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_LEVEL_HARD;
+			// Extended detection radius for smart NPCs off-camera
+			mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_FAR;
+			maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_FAR;
 		}
 	}
 
 	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
-	gentity_t* suspect = nullptr;
+	gentity_t* suspect = NULL;
 
 	for (int i = 0; i < num_listed_entities; i++)
 	{
 		gentity_t* enemy = entity_list[i];
 
-		if (!enemy || !enemy->inuse || !enemy->client)
+		if (enemy == NULL || enemy->inuse == qfalse || enemy->client == NULL)
 		{
 			continue;
 		}
 
-		if (!NPC_ValidEnemy(enemy))
+		if (NPC_ValidEnemy(enemy) == qfalse)
 		{
 			continue;
 		}
@@ -956,47 +967,103 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 			continue;
 		}
 
-		if (g_npc_is_smart->integer != 1)
-		{// Normal detection logic for non-smart NPCs
-			// Primary cone check with distance limit
+		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b)
+		{
+			// -----------------------------------------------------------------
+			// NORMAL / NON-SMART DETECTION
+			// -----------------------------------------------------------------
 			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
-
-			if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS)
+			
+			if (isYavin1b)
 			{
-				if (InFOV(enemy->currentOrigin,
-					NPC->client->renderInfo.eyePoint,
-					NPC->client->renderInfo.eyeAngles,
-					NPCInfo->stats.hfov,
-					NPCInfo->stats.vfov))
+				const float radius_sq = DETECTION_RADIUS_SMALL * DETECTION_RADIUS_SMALL;
+
+				// Primary cone check with distance limit
+				if (dist_sq <= radius_sq)
 				{
-					// 16^2 fudge factor
-					if (dist_sq - 256.0f <= DETECTION_RADIUS * DETECTION_RADIUS)
+					if (InFOV(enemy->currentOrigin,
+						NPC->client->renderInfo.eyePoint,
+						NPC->client->renderInfo.eyeAngles,
+						NPCInfo->stats.hfov,
+						NPCInfo->stats.vfov) == qtrue)
 					{
-						if (G_ClearLOS(NPC, enemy)) {
-							G_SetEnemy(NPC, enemy);
-							TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
-							return qtrue;
+						// 16^2 fudge factor
+						if (dist_sq - 256.0f <= radius_sq)
+						{
+							if (G_ClearLOS(NPC, enemy) == qtrue)
+							{
+								G_SetEnemy(NPC, enemy);
+								TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
+								return qtrue;
+							}
+						}
+					}
+				}
+
+				// Wider "suspicion" cone with distance limit
+				if (dist_sq <= radius_sq)
+				{
+					if (InFOV(enemy->currentOrigin,
+						NPC->client->renderInfo.eyePoint,
+						NPC->client->renderInfo.eyeAngles,
+						90.0f,
+						NPCInfo->stats.vfov * 3.0f) == qtrue)
+					{
+						if (G_ClearLOS(NPC, enemy) == qtrue)
+						{
+							if (suspect == NULL ||
+								DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
+								DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+							{
+								suspect = enemy;
+							}
 						}
 					}
 				}
 			}
-
-			// Wider "suspicion" cone with distance limit
-			if (dist_sq <= DETECTION_RADIUS * DETECTION_RADIUS)
+			else
 			{
-				if (InFOV(enemy->currentOrigin,
-					NPC->client->renderInfo.eyePoint,
-					NPC->client->renderInfo.eyeAngles,
-					90.0f,
-					NPCInfo->stats.vfov * 3.0f))
+				const float radius_sq = DETECTION_RADIUS_NORMAL * DETECTION_RADIUS_NORMAL;
+
+				// Primary cone check with distance limit
+				if (dist_sq <= radius_sq)
 				{
-					if (G_ClearLOS(NPC, enemy))
+					if (InFOV(enemy->currentOrigin,
+						NPC->client->renderInfo.eyePoint,
+						NPC->client->renderInfo.eyeAngles,
+						NPCInfo->stats.hfov,
+						NPCInfo->stats.vfov) == qtrue)
 					{
-						if (!suspect ||
-							DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
-							DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+						// 16^2 fudge factor
+						if (dist_sq - 256.0f <= radius_sq)
 						{
-							suspect = enemy;
+							if (G_ClearLOS(NPC, enemy) == qtrue)
+							{
+								G_SetEnemy(NPC, enemy);
+								TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
+								return qtrue;
+							}
+						}
+					}
+				}
+
+				// Wider "suspicion" cone with distance limit
+				if (dist_sq <= radius_sq)
+				{
+					if (InFOV(enemy->currentOrigin,
+						NPC->client->renderInfo.eyePoint,
+						NPC->client->renderInfo.eyeAngles,
+						90.0f,
+						NPCInfo->stats.vfov * 3.0f) == qtrue)
+					{
+						if (G_ClearLOS(NPC, enemy) == qtrue)
+						{
+							if (suspect == NULL ||
+								DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
+								DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
+							{
+								suspect = enemy;
+							}
 						}
 					}
 				}
@@ -1004,21 +1071,26 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 		}
 		else
 		{
-			// Primary cone check with distance limit
+			// -----------------------------------------------------------------
+			// SMART / HARD-MODE DETECTION
+			// -----------------------------------------------------------------
 			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
+			const float radius_sq_hard = DETECTION_RADIUS_FAR * DETECTION_RADIUS_FAR;
 
-			if (dist_sq <= DETECTION_RADIUS_LEVEL_HARD * DETECTION_RADIUS_LEVEL_HARD)
+			// Primary cone check with distance limit
+			if (dist_sq <= radius_sq_hard)
 			{
 				if (InFOV(enemy->currentOrigin,
 					NPC->client->renderInfo.eyePoint,
 					NPC->client->renderInfo.eyeAngles,
 					NPCInfo->stats.hfov,
-					NPCInfo->stats.vfov))
+					NPCInfo->stats.vfov) == qtrue)
 				{
 					// 16^2 fudge factor
-					if (dist_sq - 256.0f <= DETECTION_RADIUS_LEVEL_HARD * DETECTION_RADIUS_LEVEL_HARD)
+					if (dist_sq - 256.0f <= radius_sq_hard)
 					{
-						if (G_ClearLOS(NPC, enemy)) {
+						if (G_ClearLOS(NPC, enemy) == qtrue)
+						{
 							G_SetEnemy(NPC, enemy);
 							TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
 							return qtrue;
@@ -1028,17 +1100,17 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 			}
 
 			// Wider "suspicion" cone with distance limit
-			if (dist_sq <= DETECTION_RADIUS_LEVEL_HARD * DETECTION_RADIUS_LEVEL_HARD)
+			if (dist_sq <= radius_sq_hard)
 			{
 				if (InFOV(enemy->currentOrigin,
 					NPC->client->renderInfo.eyePoint,
 					NPC->client->renderInfo.eyeAngles,
 					90.0f,
-					NPCInfo->stats.vfov * 3.0f))
+					NPCInfo->stats.vfov * 3.0f) == qtrue)
 				{
-					if (G_ClearLOS(NPC, enemy))
+					if (G_ClearLOS(NPC, enemy) == qtrue)
 					{
-						if (!suspect ||
+						if (suspect == NULL ||
 							DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin) <
 							DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin))
 						{
@@ -1050,18 +1122,19 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 		}
 	}
 
-	if (suspect)
+	if (suspect != NULL)
 	{
 		const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, suspect->currentOrigin);
 		const float vis_rng_sq = NPCInfo->stats.visrange * NPCInfo->stats.visrange;
 
 		// Must still have LOS
-		if (G_ClearLOS(NPC, suspect))
-		{// Random chance to notice based on distance, even if they have LOS
+		if (G_ClearLOS(NPC, suspect) == qtrue)
+		{
+			// Random chance to notice based on distance, even with LOS
 			if (Q_flrand(0.0f, vis_rng_sq) > dist_sq)
 			{
 				// First time noticing
-				if (TIMER_Done(NPC, "enemyLastVisible"))
+				if (TIMER_Done(NPC, "enemyLastVisible") == qtrue)
 				{
 					TIMER_Set(NPC, "enemyLastVisible", Q_irand(4500, 8500));
 					ST_Speech(NPC, SPEECH_SIGHT, 0);
@@ -1069,9 +1142,9 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 				}
 				// Escalate to interrogation
 				else if (TIMER_Get(NPC, "enemyLastVisible") <= level.time + 500 &&
-					(NPCInfo->scriptFlags & SCF_LOOK_FOR_ENEMIES))
+					(NPCInfo->scriptFlags & SCF_LOOK_FOR_ENEMIES) != 0)
 				{
-					if (!Q_irand(0, 2))
+					if (Q_irand(0, 2) == 0)
 					{
 						TIMER_Set(NPC, "interrogating", Q_irand(2000, 4000));
 						ST_Speech(NPC, SPEECH_SUSPICIOUS, 0);
@@ -1081,6 +1154,7 @@ static qboolean NPC_CheckEnemiesInSpotlight()
 			}
 		}
 	}
+
 	return qfalse;
 }
 

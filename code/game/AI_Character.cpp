@@ -29,7 +29,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_local.h"
 #include "bg_public.h"
 
-
 extern cvar_t* g_SerenityJediEngineMode;
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 
@@ -42,29 +41,29 @@ qboolean HeIsJedi(const gentity_t* ent)
 
 	switch (ent->client->NPC_class)
 	{
-		case CLASS_SITHLORD:
-		case CLASS_DESANN:
-		case CLASS_VADER:
-		case CLASS_JEDI:
-		case CLASS_KYLE:
-		case CLASS_LUKE:
-		case CLASS_MORGANKATARN:
-		case CLASS_REBORN:
-		case CLASS_BOC:
-		case CLASS_SHADOWTROOPER:
-		case CLASS_TAVION:
-		case CLASS_ALORA:
-		case CLASS_GALEN:
-		case CLASS_YODA:
-		case CLASS_AHSOKA:
-		case CLASS_PROJECTION:
-		case CLASS_JEDIMASTER:
-		case CLASS_GROGU:
-			// Is Jedi...
-			return qtrue;
-		default:
-			// NOT Jedi...
-			break;
+	case CLASS_SITHLORD:
+	case CLASS_DESANN:
+	case CLASS_VADER:
+	case CLASS_JEDI:
+	case CLASS_KYLE:
+	case CLASS_LUKE:
+	case CLASS_MORGANKATARN:
+	case CLASS_REBORN:
+	case CLASS_BOC:
+	case CLASS_SHADOWTROOPER:
+	case CLASS_TAVION:
+	case CLASS_ALORA:
+	case CLASS_GALEN:
+	case CLASS_YODA:
+	case CLASS_AHSOKA:
+	case CLASS_PROJECTION:
+	case CLASS_JEDIMASTER:
+	case CLASS_GROGU:
+		// Is Jedi...
+		return qtrue;
+	default:
+		// NOT Jedi...
+		break;
 	}
 
 	return qfalse;

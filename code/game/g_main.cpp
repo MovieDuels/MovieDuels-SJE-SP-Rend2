@@ -326,6 +326,7 @@ cvar_t* g_debugItems;
 cvar_t* g_fixJOItems;
 
 cvar_t* g_npc_is_smart;
+cvar_t* g_npc_is_smart_range;
 
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
@@ -968,6 +969,7 @@ static void G_InitCvars()
 	g_fixJOItems = gi.cvar("g_fixJOItems", "1", CVAR_ARCHIVE);
 
 	g_npc_is_smart = gi.cvar("g_npc_is_smart", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
+	g_npc_is_smart_range = gi.cvar("g_npc_is_smart_range", "3500", 0);
 }
 
 /*

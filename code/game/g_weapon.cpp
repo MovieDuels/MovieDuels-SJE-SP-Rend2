@@ -929,7 +929,7 @@ static void WP_FireVehicleWeapon(gentity_t* ent, vec3_t start, vec3_t dir, const
 		//FIXME: externalize some of these properties?
 
 		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
-		
+
 		missile->clipmask = MASK_SHOT;
 		//Maybe by checking flags...?
 		if (veh_weapon->bSaberBlockable)

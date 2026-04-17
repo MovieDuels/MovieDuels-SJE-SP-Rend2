@@ -816,7 +816,7 @@ int G2API_InitGhoul2Model(
 		// Only warn if we go beyond the old “expected” limit of 8
 		if (model >= 8)
 		{
-			Com_Printf("G2API_InitGhoul2Model: WARNING - model index %d reached upper expected limit for model '%s'\n",model, fileName);
+			Com_Printf("G2API_InitGhoul2Model: WARNING - model index %d reached upper expected limit for model '%s'\n", model, fileName);
 		}
 
 		CGhoul2Info info;
@@ -832,7 +832,6 @@ int G2API_InitGhoul2Model(
 			return -1;
 		}
 	}
-
 
 	// ------------------------------------------------------------
 	// Initialize the selected slot
@@ -865,7 +864,6 @@ int G2API_InitGhoul2Model(
 
 	return ghoul2[model].mModelindex;
 }
-
 
 qboolean G2API_SetLodBias(CGhoul2Info* ghlInfo, const int lod_bias)
 {
@@ -1245,7 +1243,6 @@ qboolean G2API_SetBoneAnimIndex(
 
 	return ret;
 }
-
 
 qboolean G2API_SetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int startFrame, const int endFrame, const int flags, const float animSpeed, const int acurrent_time, const float set_frame, const int blend_time)
 {
@@ -2640,7 +2637,6 @@ qboolean G2_TestModelPointers(CGhoul2Info* ghlInfo)
 
 	return (qboolean)ghlInfo->mValid;
 }
-
 
 #ifdef G2_PERFORMANCE_ANALYSIS
 #include "qcommon/timing.h"

@@ -3422,7 +3422,6 @@ using animNumber_t = enum //# animNumber_e
 	BOTH_CIN_125,
 	//# Level specific cinematic
 
-
 	//==========================================
 
 	//======================================================

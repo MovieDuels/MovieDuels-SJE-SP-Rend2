@@ -16932,16 +16932,12 @@ void CG_Player(centity_t* cent)
 						&gun, cent->currentState.powerups & (1 << PW_CLOAKED | 1 << PW_BATTLESUIT), cent);
 				}
 
-
-
 				// Ensure spin state is updated for this centity and reuse the value below
 				float worldBarrelSpin = 0.0f;
 				if (cg_SpinningBarrels.integer && cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
 				{
 					worldBarrelSpin = CG_MachinegunSpinAngle(cent);
 				}
-
-
 
 				// Draw rotating barrel entities for world weapons when spinning.
 				// To avoid duplicate barrels, attempt to hide the static barrel surface
@@ -16991,8 +16987,6 @@ void CG_Player(centity_t* cent)
 								break;
 							}
 						}
-
-
 					}
 
 					// If bone rotation failed, fall back to drawing rotating barrel entities

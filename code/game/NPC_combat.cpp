@@ -1776,7 +1776,7 @@ static void ShootThink()
 		}
 	}
 	// Custom rotary cannon handling
-	else if (client->ps.weapon == WP_Z6_ROTARY_CANNON) { 
+	else if (client->ps.weapon == WP_Z6_ROTARY_CANNON) {
 		// If cooling down, do not fire
 		if (level.time < NPCInfo->rotaryCannonCooldownTime)
 		{

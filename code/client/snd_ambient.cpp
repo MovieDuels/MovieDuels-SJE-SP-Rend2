@@ -419,7 +419,6 @@ static void AS_GetSubWaves(ambientSet_t& set)
 	AS_SkipLine();
 }
 
-
 /*
 -------------------------
 AS_GetLoopedWave
@@ -570,7 +569,6 @@ static void AS_GetRadius(ambientSet_t& set)
 	// ------------------------------------------------------------
 	AS_SkipLine();
 }
-
 
 /*
 -------------------------
@@ -818,7 +816,7 @@ AS_ParseHeader
 
 Parses the directory/type information at the beginning of the file.
 Stops when it finds:
-    type ambientSet
+	type ambientSet
 -------------------------
 */
 static void AS_ParseHeader()
@@ -899,7 +897,6 @@ static void AS_ParseHeader()
 		AS_SkipLine();
 	}
 }
-
 
 /*
 -------------------------

@@ -910,7 +910,6 @@ void NPC_BSPatrol()
 		}
 	}
 
-	
 	// Generic sound alerts (safe re-enabled version)
 	if (!NPC->enemy &&
 		!(NPCInfo->scriptFlags & SCF_NO_GROUPS) &&

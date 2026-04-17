@@ -108,7 +108,7 @@ void G_VehicleTrace(trace_t* results, const vec3_t start, const vec3_t tMins, co
 }
 
 void AttachRidersGeneric(Vehicle_t* p_veh)
-{  
+{
 	// Attach rider models to the vehicle for prediction
 	// (client-side only)
 }

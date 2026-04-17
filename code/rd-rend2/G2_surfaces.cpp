@@ -63,7 +63,8 @@ public:
 		, rootSList(initrootSList)
 		, currentModel(initcurrentModel)
 		, boneList(initboneList)
-	{ }
+	{
+	}
 };
 
 class CQuickOverride

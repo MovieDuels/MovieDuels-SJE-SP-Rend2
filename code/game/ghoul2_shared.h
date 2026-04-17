@@ -476,13 +476,15 @@ public:
 		ident(8), //SF_MDX
 		boneCache(0),
 		surfaceData(0)
-	{}
+	{
+	}
 
 	CRenderableSurface(const CRenderableSurface& rs) :
 		ident(rs.ident),
 		boneCache(rs.boneCache),
 		surfaceData(rs.surfaceData)
-	{}
+	{
+	}
 };
 #endif
 
@@ -638,7 +640,6 @@ IGhoul2InfoArray& _TheGhoul2InfoArray();
 IGhoul2InfoArray& TheGameGhoul2InfoArray();
 #endif
 
-
 class CGhoul2Info_v
 {
 	int mItem;
@@ -688,7 +689,7 @@ class CGhoul2Info_v
 		if (!mItem)
 		{
 #ifdef _DEBUG
-				//Com_Printf("^3WARNING: CGhoul2InfoArray::Free called with NULL mItem\n");
+			//Com_Printf("^3WARNING: CGhoul2InfoArray::Free called with NULL mItem\n");
 #endif
 			return;
 		}

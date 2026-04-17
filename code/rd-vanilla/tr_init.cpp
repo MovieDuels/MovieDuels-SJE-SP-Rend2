@@ -2025,7 +2025,7 @@ unsigned int AnyLanguage_ReadCharFromString_JK2(char** text, qboolean* pbIsTrail
 }
 #endif
 
-extern "C" Q_EXPORT refexport_t * QDECL GetRefAPI(const int api_version, const refimport_t * refimp) {
+extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const refimport_t* refimp) {
 	static refexport_t	re;
 
 	ri = *refimp;

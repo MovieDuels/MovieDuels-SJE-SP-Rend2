@@ -121,7 +121,6 @@ void WP_FireClone(gentity_t* ent, const qboolean alt_fire)
 		return;
 	}
 
-
 	vec3_t dir, angs;
 
 	vectoangles(forward_vec, angs);

@@ -1500,7 +1500,6 @@ float CG_MachinegunSpinAngle(centity_t* cent)
 			cent->pe.barrelAngle = AngleNormalize360(angle);
 			cent->pe.barrelSpinning = (firingNow != 0);
 
-
 			// Play spin-up sound for Z6
 			if (firingNow == qtrue &&
 				cg.snap != NULL &&
@@ -1513,7 +1512,6 @@ float CG_MachinegunSpinAngle(centity_t* cent)
 					cgi_S_RegisterSound("sound/weapons/z6/spinny.wav"));
 			}
 		}
-
 	}
 
 	return angle;

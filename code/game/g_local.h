@@ -377,6 +377,8 @@ extern cvar_t* g_removeDoors;
 extern cvar_t* g_ICARUSDebug;
 
 extern cvar_t* g_npcdebug;
+extern cvar_t* g_npc_is_smart;
+extern cvar_t* g_npc_is_smart_range;
 
 extern cvar_t* g_allowBunnyhopping;
 extern gentity_t* player;

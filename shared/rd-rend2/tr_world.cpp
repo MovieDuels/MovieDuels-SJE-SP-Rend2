@@ -862,7 +862,7 @@ void R_MarkLeaves(void)
 R_AddWorldSurfaces
 =============
 */
-void R_AddWorldSurfaces(viewParms_t * viewParms, trRefdef_t * refdef) {
+void R_AddWorldSurfaces(viewParms_t* viewParms, trRefdef_t* refdef) {
 	int planeBits, dlightBits, pshadowBits;
 
 	if (!r_drawworld->integer) {

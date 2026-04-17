@@ -282,7 +282,7 @@ decode_mcu_DC_first(const j_decompress_ptr cinfo, JBLOCKROW* MCU_data)
 			/* Section F.1.4.4.1.2: Establish dc_context conditioning category */
 			if (m < (int)((1L << cinfo->arith_dc_L[tbl]) >> 1))
 				entropy->dc_context[ci] = 0;		   /* zero diff category */
-			else if (m > (int) ((1L << cinfo->arith_dc_U[tbl]) >> 1))
+			else if (m > (int)((1L << cinfo->arith_dc_U[tbl]) >> 1))
 				entropy->dc_context[ci] = 12 + (sign * 4); /* large diff category */
 			else
 				entropy->dc_context[ci] = 4 + (sign * 4);  /* small diff category */
@@ -537,7 +537,7 @@ decode_mcu(const j_decompress_ptr cinfo, JBLOCKROW* MCU_data)
 			/* Section F.1.4.4.1.2: Establish dc_context conditioning category */
 			if (m < (int)((1L << cinfo->arith_dc_L[tbl]) >> 1))
 				entropy->dc_context[ci] = 0;		   /* zero diff category */
-			else if (m > (int) ((1L << cinfo->arith_dc_U[tbl]) >> 1))
+			else if (m > (int)((1L << cinfo->arith_dc_U[tbl]) >> 1))
 				entropy->dc_context[ci] = 12 + (sign * 4); /* large diff category */
 			else
 				entropy->dc_context[ci] = 4 + (sign * 4);  /* small diff category */

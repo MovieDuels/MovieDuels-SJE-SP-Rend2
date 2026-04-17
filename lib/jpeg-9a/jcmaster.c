@@ -264,7 +264,7 @@ initial_setup(const j_compress_ptr cinfo, const boolean transcode_only)
 		ERREXIT(cinfo, JERR_EMPTY_IMAGE);
 
 	/* Make sure image isn't bigger than I can handle */
-	if ((long)cinfo->jpeg_height > (long) JPEG_MAX_DIMENSION ||
+	if ((long)cinfo->jpeg_height > (long)JPEG_MAX_DIMENSION ||
 		(long)cinfo->jpeg_width > (long)JPEG_MAX_DIMENSION)
 		ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, (unsigned int)JPEG_MAX_DIMENSION);
 

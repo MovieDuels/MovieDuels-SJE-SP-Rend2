@@ -445,6 +445,6 @@ using game_export_t = struct
 	int num_entities; // current number, <= MAX_GENTITIES
 };
 
-game_export_t * GetGameApi(game_import_t * import);
+game_export_t* GetGameApi(game_import_t* import);
 
 #endif//#ifndef __G_PUBLIC_H__

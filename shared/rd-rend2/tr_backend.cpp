@@ -1231,7 +1231,7 @@ void RB_AddDrawItem(Pass* pass, uint32_t sortKey, const DrawItem& drawItem)
 	// There will be no pass if we are drawing a 2D object.
 	if (pass)
 	{
-        if (!pass->sortKeys.push_back(sortKey))
+		if (!pass->sortKeys.push_back(sortKey))
 		{
 			assert(!"Ran out of space for pass (allocation failed)");
 			return;
@@ -2176,7 +2176,7 @@ static void RB_RenderSSAO()
 static void RB_RenderDepthOnly(drawSurf_t* drawSurfs, int numDrawSurfs)
 {
 	backEnd.depthFill = qtrue;
-	
+
 	bool needVelocityBuffer =
 		!(backEnd.viewParms.flags & VPF_DEPTHSHADOW) &&
 		tr.depthVelocityFbo != nullptr;

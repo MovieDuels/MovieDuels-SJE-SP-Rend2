@@ -1287,7 +1287,7 @@ void GL_SetDefaultState(void)
 	qglVertexAttrib4f(ATTR_INDEX_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
 
 	// invalidate all vertex step rates
-	// this ensures that attributes that have a set divisor will have a 
+	// this ensures that attributes that have a set divisor will have a
 	// correct divisor set after GL_SetDefaultState is called
 	for (int i = 0; i < ATTR_INDEX_MAX; i++)
 	{
@@ -1302,7 +1302,7 @@ R_PrintLongString
 Workaround for ri.Printf's 1024 characters buffer limit.
 ================
 */
-static void R_PrintLongString(const char* string) 
+static void R_PrintLongString(const char* string)
 {
 	char buffer[1024];
 	const char* p;
@@ -1826,7 +1826,7 @@ static void R_InitBackEndFrameData()
 	GLuint timerQueries[MAX_GPU_TIMERS * MAX_FRAMES];
 	qglGenQueries(MAX_GPU_TIMERS * MAX_FRAMES, timerQueries);
 
-	// For temporal data we need ubo buffers between frames for 
+	// For temporal data we need ubo buffers between frames for
 	// reading last frame data without fear of writing next frames data into them
 	bool reserveTemporalUbo = (r_smaa->integer == 2
 		// || r_smaa->integer == 4
@@ -2319,7 +2319,7 @@ void RE_SetLightStyle(int style, int color)
 void RE_GetBModelVerts(int bmodelIndex, vec3_t* verts, vec3_t normal);
 
 static void stub_RE_AddWeatherZone(vec3_t mins, vec3_t maxs) {} // Intentionally left blank. Rend2 reads the zones manually on bsp load
-static void RE_SetRefractionProperties(float distortionAlpha, float distortionStretch, qboolean distortionPrePost, qboolean distortionNegate) { }
+static void RE_SetRefractionProperties(float distortionAlpha, float distortionStretch, qboolean distortionPrePost, qboolean distortionNegate) {}
 
 static void C_LevelLoadBegin(const char* psMapName, ForceReload_e eForceReload, qboolean bAllowScreenDissolve)
 {
@@ -2397,7 +2397,7 @@ GetRefAPI
 
 @@@@@@@@@@@@@@@@@@@@@
 */
-extern "C" Q_EXPORT refexport_t * QDECL GetRefAPI(const int api_version, const refimport_t * refimp)
+extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const refimport_t* refimp)
 {
 	static refexport_t	re;
 

@@ -1195,7 +1195,7 @@ read_markers(const j_decompress_ptr cinfo)
 			if (!(*((my_marker_ptr)cinfo->marker)->process_APPn[
 				cinfo->unread_marker - (int)M_APP0]) (cinfo))
 				return JPEG_SUSPENDED;
-				break;
+			break;
 
 		case M_COM:
 			if (!(*((my_marker_ptr)cinfo->marker)->process_COM) (cinfo))

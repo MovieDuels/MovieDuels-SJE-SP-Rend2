@@ -1601,7 +1601,6 @@ typedef struct {
 
 	bool		doLAGoggles;
 	bool		doFullbright;
-
 } trRefdef_t;
 
 //=================================================================================

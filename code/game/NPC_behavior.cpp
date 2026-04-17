@@ -271,8 +271,6 @@ void NPC_BSWait()
 	NPC_UpdateAngles(qtrue, qtrue);
 }
 
-
-
 qboolean NPC_CheckInvestigate(const int alert_event_num)
 {
 	gentity_t* owner = level.alertEvents[alert_event_num].owner;

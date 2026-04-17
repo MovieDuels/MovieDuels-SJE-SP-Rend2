@@ -1257,8 +1257,6 @@ static qboolean NPC_FindEnemy(const qboolean checkAlerts)
 	return qfalse;
 }
 
-
-
 /*
 -------------------------
 NPC_CheckEnemyExt
