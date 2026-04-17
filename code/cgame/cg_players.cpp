@@ -16932,6 +16932,98 @@ void CG_Player(centity_t* cent)
 						&gun, cent->currentState.powerups & (1 << PW_CLOAKED | 1 << PW_BATTLESUIT), cent);
 				}
 
+
+
+				// Ensure spin state is updated for this centity and reuse the value below
+				float worldBarrelSpin = 0.0f;
+				if (cg_SpinningBarrels.integer && cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
+				{
+					worldBarrelSpin = CG_MachinegunSpinAngle(cent);
+				}
+
+
+
+				// Draw rotating barrel entities for world weapons when spinning.
+				// To avoid duplicate barrels, attempt to hide the static barrel surface
+				// on the player's weapon ghoul2 model while the barrel is spinning.
+				{
+					weaponData_t* w_data_local = &weaponData[cent->currentState.weapon];
+
+					// If we have a ghoul2 weapon model attached, try to turn off common barrel surfaces.
+					if (cent->gent && cent->gent->ghoul2.size() && cent->gent->weaponModel[0] >= 0
+						&& cent->gent->ghoul2[cent->gent->weaponModel[0]].mModelindex != -1)
+					{
+						const char* surfaces[] = { "barrel", "barrel1", "barrel2", "barrel_1", "rotary_cannon_barrel", "rotary_barrel", "rotary_cannon", "barrel_off" };
+						const int offFlag = G2SURFACEFLAG_OFF;
+
+						for (size_t si = 0; si < sizeof(surfaces) / sizeof(surfaces[0]); si++)
+						{
+							// Turn off while spinning (use worldBarrelSpin to detect spinning
+							// so local predicted state is respected), turn on when not spinning
+							gi.G2API_SetSurfaceOnOff(&cent->gent->ghoul2[cent->gent->weaponModel[0]], surfaces[si],
+								(worldBarrelSpin != 0.0f ? offFlag : 0));
+						}
+						// Also try rotating a barrel bone if present so the static barrel appears to spin
+						if (worldBarrelSpin != 0.0f)
+						{
+							vec3_t boneAngles = { 0.0f, 0.0f, worldBarrelSpin };
+							gi.G2API_SetBoneAngles(&cent->gent->ghoul2[cent->gent->weaponModel[0]], "barrel",
+								boneAngles, BONE_ANGLES_PREMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0);
+						}
+					}
+
+					// Try to rotate a bone on the ghoul2 weapon model (preferred)
+					bool rotatedBone = false;
+					if (cent->gent && cent->gent->ghoul2.size() && cent->gent->weaponModel[0] >= 0
+						&& cent->gent->ghoul2[cent->gent->weaponModel[0]].mModelindex != -1)
+					{
+						vec3_t boneAngles = { 0.0f, 0.0f, worldBarrelSpin };
+
+						// Try common bone names; if one succeeds, we won't draw separate barrel entities.
+						const char* boneNames[] = { "barrel", "base", "rotor", "rotary", "barrel_1" };
+						for (size_t bi = 0; bi < sizeof(boneNames) / sizeof(boneNames[0]); bi++)
+						{
+							if (gi.G2API_SetBoneAnglesOffset(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
+								boneNames[bi], boneAngles, BONE_ANGLES_PREMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z,
+								nullptr, 0, 0, vec3_origin))
+							{
+								rotatedBone = true;
+								break;
+							}
+						}
+
+
+					}
+
+					// If bone rotation failed, fall back to drawing rotating barrel entities
+					if (!rotatedBone)
+					{
+						for (int i = 0; i < w_data_local->numBarrels; i++)
+						{
+							refEntity_t barrel = {};
+							barrel.hModel = weapon->barrelModel[i];
+							barrel.renderfx = gun.renderfx;
+
+							vec3_t barrelAngles{ 0.0f, 0.0f, 0.0f };
+							if (cg_SpinningBarrels.integer && cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
+							{
+								barrelAngles[ROLL] = worldBarrelSpin;
+							}
+							AnglesToAxis(barrelAngles, barrel.axis);
+
+							if (!i)
+							{
+								CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, "tag_barrel", nullptr);
+							}
+							else
+							{
+								CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, va("tag_barrel%d", i + 1), nullptr);
+							}
+							cgi_R_AddRefEntityToScene(&barrel);
+						}
+					}
+				}
+
 				//
 				// add the flash (even if invisible)
 				//

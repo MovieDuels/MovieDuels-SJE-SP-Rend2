@@ -199,6 +199,10 @@ void RE_AddDecalToScene(qhandle_t decalShader, const vec3_t origin, const vec3_t
 
 			VectorCopy(markPoints[mf->firstPoint + j], v->xyz);
 
+			// Nudge the decal poly slightly off the surface along the surface normal
+			// to reduce z-fighting/flicker when the view moves.
+			VectorMA(v->xyz, 0.125f, dir, v->xyz);
+
 			VectorSubtract(v->xyz, origin, delta);
 			v->st[0] = 0.5 + DotProduct(delta, axis[1]) * texCoordScale;
 			v->st[1] = 0.5 + DotProduct(delta, axis[2]) * texCoordScale;
