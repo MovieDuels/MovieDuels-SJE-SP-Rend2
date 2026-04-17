@@ -117,7 +117,6 @@ using lerpFrame_t = struct
 {
 	int oldFrame;
 	int oldFrameTime; // time when ->oldFrame was exactly on
-
 	int frame;
 	int frameTime; // time when ->frame will be exactly on
 
@@ -199,6 +198,9 @@ struct centity_s
 };
 
 using centity_t = centity_s;
+
+// Returns the current machinegun barrel spin angle for a centity (used by view and world weapon rendering)
+float CG_MachinegunSpinAngle(centity_t* cent);
 
 //======================================================================
 
@@ -655,6 +657,7 @@ extern	vmCvar_t		cg_roffval3;
 extern	vmCvar_t		cg_roffval4;
 #endif
 extern vmCvar_t cg_thirdPerson;
+extern vmCvar_t cg_SpinningBarrels;
 extern vmCvar_t cg_thirdPersonRange;
 extern vmCvar_t cg_thirdPersonMaxRange;
 extern vmCvar_t cg_thirdPersonAngle;
