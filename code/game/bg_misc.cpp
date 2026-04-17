@@ -34,10 +34,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "statindex.h"
 #include "teams.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_string.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_string.h>
 
 extern weaponData_t weaponData[WP_NUM_WEAPONS];
 extern ammoData_t ammoData[AMMO_MAX];

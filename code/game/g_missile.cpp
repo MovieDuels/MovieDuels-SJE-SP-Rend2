@@ -42,7 +42,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifdef _DEBUG
 #include <float.h>
 #endif //_DEBUG
-#include <rd-common\mdx_format.h>
+#include <rd-common/mdx_format.h>
 #include "ghoul2_shared.h"
 #include "g_public.h"
 #include "statindex.h"
@@ -53,15 +53,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "teams.h"
 #include "hitlocs.h"
 #include "g_shared.h"
-#include <qcommon\q_color.h>
+#include <qcommon/q_color.h>
 #include <cassert>
 #include "b_public.h"
-#include <cgame\cg_camera.h>
-#include <qcommon\q_string.h>
+#include <cgame/cg_camera.h>
+#include <qcommon/q_string.h>
 #include "g_vehicles.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_math.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_math.h>
 #include "weapons.h"
 #include "bg_public.h"
 

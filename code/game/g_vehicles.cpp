@@ -36,7 +36,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #else
 #include "bg_vehicles.h"
 #endif
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 #include <string.h>
 #include <cmath>
 #include "anims.h"
@@ -49,9 +49,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "surfaceflags.h"
 #include "teams.h"
 #include "weapons.h"
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_string.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_string.h>
 
 #ifdef _JK2MP
 //this is really horrible, but it works! just be sure not to use any locals or anything

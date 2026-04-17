@@ -26,8 +26,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "wp_saber.h"
 #include "w_local.h"
 #include "../cgame/cg_local.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_platform.h>
 
 extern qboolean WP_DoingForcedAnimationForForcePowers(const gentity_t* ent);
 extern int WP_SaberMustDisruptorBlock(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point,

@@ -24,7 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_functions.h"
 #include <cmath>
 #include <cstdlib>
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include "bg_public.h"
 #include "b_public.h"
 #include "ghoul2_shared.h"
@@ -34,9 +34,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "surfaceflags.h"
 #include "teams.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 extern void NPC_BSST_Patrol();
 extern void Boba_FireDecide();

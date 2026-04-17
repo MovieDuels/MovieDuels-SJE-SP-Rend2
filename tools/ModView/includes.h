@@ -4,8 +4,8 @@
 #ifndef INCLUDES_H
 #define INCLUDES_H
 
-#include <gl\gl.h>
-#include <gl\glu.h>
+#include <gl/gl.h>
+#include <gl/glu.h>
 #include <assert.h>
 #include <math.h>
 

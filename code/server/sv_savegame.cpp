@@ -40,22 +40,22 @@ constexpr auto JPEG_IMAGE_QUALITY = 95;
 
 #include "qcommon/ojk_saved_game.h"
 #include "qcommon/ojk_saved_game_helper.h"
-#include <game\g_public.h>
-#include <qcommon\q_shared.h>
-#include <qcommon\qfiles.h>
-#include <qcommon\q_color.h>
+#include <game/g_public.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/qfiles.h>
+#include <qcommon/q_color.h>
 #include <string.h>
-#include <qcommon\q_string.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\qcommon.h>
-#include <qcommon\ojk_saved_game_helper_fwd.h>
+#include <qcommon/q_string.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/qcommon.h>
+#include <qcommon/ojk_saved_game_helper_fwd.h>
 #include <cstdint>
 #include <string>
 #include <corecrt.h>
 #include <ctime>
-#include <client\client.h>
-#include <qcommon\cm_public.h>
-#include <qcommon\ojk_scope_guard.h>
+#include <client/client.h>
+#include <qcommon/cm_public.h>
+#include <qcommon/ojk_scope_guard.h>
 
 static char saveGameComment[iSG_COMMENT_SIZE];
 

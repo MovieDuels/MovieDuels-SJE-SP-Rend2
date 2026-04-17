@@ -69,8 +69,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "bg_public.h"
 #include "g_shared.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
 #include "anims.h"
 
 #ifdef _JK2MP
@@ -113,7 +113,7 @@ extern int PM_AnimLength(const int index, const animNumber_t anim);
 #ifdef _JK2MP
 #include "../namespace_end.h"
 #endif
-#include <qcommon\q_platform.h>
+#include <qcommon/q_platform.h>
 
 #ifndef	_JK2MP
 extern void CG_ChangeWeapon(int num);

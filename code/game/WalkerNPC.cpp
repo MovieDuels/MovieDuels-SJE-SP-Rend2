@@ -65,7 +65,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #else
 #include "bg_vehicles.h"
 #endif
-#include <qcommon\q_platform.h>
+#include <qcommon/q_platform.h>
 #include "anims.h"
 
 #ifdef _JK2MP

@@ -37,8 +37,8 @@ constexpr auto LEFT_ARM_HEALTH = 40;
 constexpr auto RIGHT_ARM_HEALTH = 40;
 
 #include "bg_public.h"
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_math.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_math.h>
 #include <cstdlib>
 #include "ai.h"
 #include "anims.h"
@@ -46,8 +46,8 @@ constexpr auto RIGHT_ARM_HEALTH = 40;
 #include "g_local.h"
 #include "g_shared.h"
 #include "hitlocs.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_platform.h>
 /*
 -------------------------
 NPC_ATST_Precache

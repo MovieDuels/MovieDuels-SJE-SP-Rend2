@@ -54,7 +54,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "weapons.h"
 #include <cstdlib>
 #include <cmath>
-#include <qcommon\q_string.h>
+#include <qcommon/q_string.h>
 #include "g_functions.h"
 #include "b_public.h"
 

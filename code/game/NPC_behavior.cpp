@@ -48,9 +48,9 @@ we need it...
 #include "g_shared.h"
 #include "teams.h"
 #include "weapons.h"
-#include <icarus\IcarusInterface.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <icarus/IcarusInterface.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 extern cvar_t* g_AIsurrender;
 extern qboolean showBBoxes;

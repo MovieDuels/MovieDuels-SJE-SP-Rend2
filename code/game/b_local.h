@@ -30,7 +30,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "ai.h"
 #include "b_public.h"
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 #include <string.h>
 
 #define	AI_TIMERS 0//turn on to see print-outs of AI/nav timing

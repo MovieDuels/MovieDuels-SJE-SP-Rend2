@@ -32,15 +32,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "objectives.h"
 #include "b_local.h"
 #include <cstdio>
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include <string>
 #include "b_public.h"
 #include <cassert>
 #include <string.h>
 #include "g_items.h"
 #include "g_public.h"
-#include <qcommon\q_string.h>
-#include <qcommon\q_color.h>
+#include <qcommon/q_string.h>
+#include <qcommon/q_color.h>
 #include "ghoul2_shared.h"
 #include <cstdlib>
 #include "surfaceflags.h"
@@ -48,9 +48,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_shared.h"
 #include "weapons.h"
 #include "bg_public.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_math.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_math.h>
 #include <cmath>
 #include "teams.h"
 

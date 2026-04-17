@@ -37,9 +37,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_shared.h"
 #include "teams.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 constexpr auto MAX_RADIUS_ENTS = 128;
 constexpr auto DEFAULT_RADIUS = 45;

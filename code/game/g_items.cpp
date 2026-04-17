@@ -1,4 +1,4 @@
-﻿/*
+/*
 ===========================================================================
 Copyright (C) 1999 - 2005, Id Software, Inc.
 Copyright (C) 2000 - 2013, Raven Software, Inc.
@@ -28,7 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../cgame/cg_local.h"
 #include "b_local.h"
 #include "ghoul2_shared.h"
-#include <qcommon\q_color.h>
+#include <qcommon/q_color.h>
 #include <cassert>
 
 extern qboolean missionInfo_Updated;

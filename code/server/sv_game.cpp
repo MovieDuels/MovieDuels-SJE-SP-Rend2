@@ -32,7 +32,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../client/client.h"
 #include "qcommon/ojk_saved_game.h"
 /*#include "..\renderer\tr_local.h"
-#include "..\renderer\tr_WorldEffects.h"*/
+#include "../renderer/tr_WorldEffects.h"*/
 /*
 Ghoul2 Insert Start
 */

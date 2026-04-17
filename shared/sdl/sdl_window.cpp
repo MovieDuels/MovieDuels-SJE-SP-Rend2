@@ -28,19 +28,19 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <VersionHelpers.h>
 #include <SDL_video.h>
-#include <sys\sys_public.h>
+#include <sys/sys_public.h>
 #include <SDL_error.h>
 #include <SDL_rect.h>
 #include <cmath>
-#include <qcommon\q_color.h>
+#include <qcommon/q_color.h>
 #include <SDL_stdinc.h>
-#include <qcommon\q_string.h>
+#include <qcommon/q_string.h>
 #include <search.h>
 #include <SDL_surface.h>
 #include <SDL_pixels.h>
 #include <SDL_version.h>
 #include <begin_code.h>
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 
 enum rserr_t
 {

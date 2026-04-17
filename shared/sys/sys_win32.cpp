@@ -24,13 +24,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <io.h>
 #include <windows.h>
 #include <ShlObj_core.h>
-#include <qcommon\qcommon.h>
-#include <qcommon\q_shared.h>
+#include <qcommon/qcommon.h>
+#include <qcommon/q_shared.h>
 #include <string.h>
-#include <qcommon\q_string.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_string.h>
+#include <qcommon/q_platform.h>
 #include <cstdio>
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 #include <cstdlib>
 #include <malloc.h>
 

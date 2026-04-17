@@ -31,9 +31,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_public.h"
 #include "g_shared.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 extern qboolean PM_FlippingAnim(int anim);
 extern void NPC_BSST_Patrol();

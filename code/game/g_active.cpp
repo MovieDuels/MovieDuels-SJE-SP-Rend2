@@ -1,4 +1,4 @@
-﻿/*
+/*
 ===========================================================================
 Copyright (C) 1999 - 2005, Id Software, Inc.
 Copyright (C) 2000 - 2013, Raven Software, Inc.
@@ -43,12 +43,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "surfaceflags.h"
 #include "teams.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_color.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_string.h>
+#include <qcommon/q_shared.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_color.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_string.h>
 
 constexpr auto SLOWDOWN_DIST = 128.0f;
 constexpr auto MIN_NPC_SPEED = 16.0f;
@@ -2059,7 +2059,7 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 		}
 
 		// -----------------------------------------------------
-		// FORCE SEE → REDUCE BLASTER MISHAP
+		// FORCE SEE ? REDUCE BLASTER MISHAP
 		// -----------------------------------------------------
 		if (ps->forcePowersActive & (1 << FP_SEE))
 			BG_ReduceBlasterMishapLevelAdvanced(ps);
@@ -2491,7 +2491,7 @@ qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t
 	}
 
 	// ============================================================
-	// Cached values (qboolean‑safe)
+	// Cached values (qboolean-safe)
 	// ============================================================
 	const int mode = g_SerenityJediEngineMode->integer;
 
@@ -2505,7 +2505,7 @@ qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t
 	const qboolean kickResistant = (qboolean)jedi_is_kick_resistant(hit_ent);
 
 	// ============================================================
-	// Helper lambdas (C‑style inline blocks)
+	// Helper lambdas (C-style inline blocks)
 	// ============================================================
 #define DRAIN_BLOCKPOINTS(ent, amt) WP_BlockPointsDrain((ent), (amt))
 #define DRAIN_FORCE(ent, amt)       WP_ForcePowerDrain((ent), FP_SABER_DEFENSE, (amt))
@@ -2630,7 +2630,7 @@ qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t
 	}
 
 	// ============================================================
-	// 3. NON‑ABSORB: KICK / SLAP / SWEEP / HILT HIT
+	// 3. NON-ABSORB: KICK / SLAP / SWEEP / HILT HIT
 	// ============================================================
 	// To keep this readable, we collapse repeated patterns:
 #define HANDLE_RESIST_OR_KNOCKDOWN(KNOCK_ANIM_MIN, KNOCK_ANIM_MAX) \
@@ -7397,7 +7397,7 @@ static void CG_BreathPuffsVader(const gentity_t* ent)
 		return;
 	}
 
-	// Hidden entity → no breathing
+	// Hidden entity ? no breathing
 	if (ent->s.eFlags & EF_NODRAW)
 	{
 		return;
@@ -8889,7 +8889,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		client->ps.ManualBlockingFlags &= ~(1 << MBF_MELEEDODGE);
 	}
 
-	// NPC‑only logic (no players, no player‑controlled entities)
+	// NPC-only logic (no players, no player-controlled entities)
 	if (ent->s.clientNum >= MAX_CLIENTS && G_ControlledByPlayer(ent) == qfalse)
 	{
 		// Safety: must have a client

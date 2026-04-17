@@ -37,7 +37,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include "bg_public.h"
 #include "b_public.h"
 #include "ghoul2_shared.h"
@@ -49,12 +49,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "surfaceflags.h"
 #include "teams.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_color.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_string.h>
+#include <qcommon/q_shared.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_color.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_string.h>
 
 constexpr auto TURN_OFF = 0x00000100;
 

@@ -36,10 +36,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../Ravl/CVec.h"
 #include "../cgame/cg_local.h"
 #include "wp_saber.h"
-#include <qcommon\q_shared.h>
+#include <qcommon/q_shared.h>
 #include "bg_public.h"
-#include <qcommon\q_platform.h>
-#include <qcommon\q_math.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_math.h>
 #include "ghoul2_shared.h"
 #include "teams.h"
 #include <cassert>
@@ -141,7 +141,7 @@ extern cvar_t* g_bobaDebug;
 #include <stdio.h>
 #define STDIO_H_INC
 #endif
-#include <qcommon\q_string.h>
+#include <qcommon/q_string.h>
 
 
 

@@ -35,13 +35,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "anims.h"
 #include "b_local.h"
 #include "wp_saber.h"
-#include <qcommon\q_color.h>
+#include <qcommon/q_color.h>
 #include "g_shared.h"
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include "bg_public.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
