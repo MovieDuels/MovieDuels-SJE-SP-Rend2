@@ -8,7 +8,7 @@
 //#include "tr_local.h"
 #include "jpeg_interface.h"
 
-#include "jpeg6\jpeglib.h"
+#include "jpeg6/jpeglib.h"
 
 void LoadJPG( const char *filename, unsigned char **pic, int *width, int *height ) 
 {	

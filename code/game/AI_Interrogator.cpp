@@ -23,15 +23,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "bg_public.h"
 #include "g_shared.h"
-#include <qcommon\q_shared.h>
+#include <qcommon/q_shared.h>
 #include "ghoul2_shared.h"
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 #include <cmath>
 #include <cstdlib>
 #include "ai.h"
 #include "b_public.h"
 #include "g_local.h"
-#include <qcommon\q_platform.h>
+#include <qcommon/q_platform.h>
 
 void Interrogator_Idle();
 void DeathFX(const gentity_t* ent);

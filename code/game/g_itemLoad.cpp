@@ -25,7 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "g_local.h"
 #include "g_items.h"
-#include <cgame\cg_local.h>
+#include <cgame/cg_local.h>
 
 constexpr auto PICKUPSOUND = "sound/weapons/w_pkup.wav";
 

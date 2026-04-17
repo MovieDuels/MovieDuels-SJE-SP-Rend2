@@ -42,7 +42,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include "g_public.h"
 #include "g_shared.h"
-#include <qcommon\q_platform.h>
+#include <qcommon/q_platform.h>
 
 extern int eventClearTime;
 qboolean G_ClearLineOfSight(const vec3_t point1, const vec3_t point2, const int ignore, const int clipmask)

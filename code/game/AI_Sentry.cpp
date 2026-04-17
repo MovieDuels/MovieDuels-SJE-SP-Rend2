@@ -33,10 +33,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_shared.h"
 #include "surfaceflags.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 extern gitem_t* FindItemForAmmo(ammo_t ammo);

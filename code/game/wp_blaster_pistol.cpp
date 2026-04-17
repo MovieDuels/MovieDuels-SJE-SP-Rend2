@@ -24,12 +24,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_local.h"
 #include "wp_saber.h"
 #include "w_local.h"
-#include <qcommon\q_platform.h>
+#include <qcommon/q_platform.h>
 #include "bg_public.h"
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 #include "weapons.h"
 #include "teams.h"
-#include <qcommon\q_shared.h>
+#include <qcommon/q_shared.h>
 #include "surfaceflags.h"
 
 //---------------

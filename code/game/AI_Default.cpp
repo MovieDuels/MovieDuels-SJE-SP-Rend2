@@ -25,7 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_nav.h"
 #include "Q3_Interface.h"
 #include <cmath>
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include "anims.h"
 #include "bg_public.h"
 #include "bstate.h"
@@ -35,9 +35,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_shared.h"
 #include "teams.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 extern int g_crosshairEntNum;
 extern void NPC_CheckEvasion();

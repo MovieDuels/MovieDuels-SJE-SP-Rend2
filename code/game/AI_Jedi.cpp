@@ -1,4 +1,4 @@
-﻿/*
+/*
 ===========================================================================
 Copyright (C) 2000 - 2013, Raven Software, Inc.
 Copyright (C) 2001 - 2013, Activision, Inc.
@@ -31,7 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "bg_public.h"
 #include <qcommon/q_shared.h>
 #include <cmath>
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include "ai.h"
 #include "bstate.h"
 #include "b_public.h"
@@ -44,10 +44,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "surfaceflags.h"
 #include "teams.h"
 #include "weapons.h"
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_color.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_string.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_color.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_string.h>
 
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ///
 ///																																///
@@ -1754,7 +1754,7 @@ static void JediDirectionalDashDodge(gentity_t* NPC, gentity_t* enemy)
 	else if (rightdot < -0.3f) // right dodge
 		ucmd.rightmove = 64;
 	else                // backward dodge
-		ucmd.forwardmove = -64;   // enemy in front → backward dodge ONLY
+		ucmd.forwardmove = -64;   // enemy in front ? backward dodge ONLY
 
 	// -------------------------------------------------
 	// VELOCITY BURST
@@ -2405,7 +2405,7 @@ static void jedi_combat_distance(const int enemy_dist)
 	if (!enemy)
 	{
 		enemyDist = Q3_INFINITE;
-		return;     // ← safest and simplest
+		return;     // ? safest and simplest
 	}
 	else
 	{
@@ -2452,7 +2452,7 @@ static void jedi_combat_distance(const int enemy_dist)
 		);
 
 	// ----------------------------------------------------------------------
-	// 1. If already in a slap/kick animation → check for hit timing
+	// 1. If already in a slap/kick animation ? check for hit timing
 	// ----------------------------------------------------------------------
 	int anim = NPC->client->ps.torsoAnim;
 
@@ -2476,7 +2476,7 @@ static void jedi_combat_distance(const int enemy_dist)
 				smack_dir[2] += 20;
 				VectorNormalize(smack_dir);
 
-				// ✔ Play punch sound ONLY on actual hit
+				// ? Play punch sound ONLY on actual hit
 				G_Sound(NPC->enemy,
 					G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
 
@@ -2498,7 +2498,7 @@ static void jedi_combat_distance(const int enemy_dist)
 	}
 
 	// ----------------------------------------------------------------------
-	// 2. Not in slap anim → decide which melee attack to start
+	// 2. Not in slap anim ? decide which melee attack to start
 	// ----------------------------------------------------------------------
 	if (!in_melee_range)
 	{
@@ -4391,7 +4391,7 @@ static evasionType_t jedi_check_flip_evasions(gentity_t* self, const float right
 			self->client->NPC_class == CLASS_ALORA &&
 			allow_cart_wheels)
 		{
-			// clear → do cartwheel/arial
+			// clear ? do cartwheel/arial
 			NPC_SetAnim(self, parts, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			self->client->ps.weaponTime = self->client->ps.legsAnimTimer;
 
@@ -4792,7 +4792,7 @@ NOTE: always blocking projectiles in this func!
 extern qboolean G_FindClosestPointOnLineSegment(const vec3_t start, const vec3_t end, const vec3_t from, vec3_t result);
 
 // ============================
-// SECTION 1 — Setup & Early Outs
+// SECTION 1 � Setup & Early Outs
 // ============================
 evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitloc, vec3_t phit_dir,
 	const gentity_t* incoming, float dist = 0.0f)
@@ -4956,7 +4956,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 	}
 
 	// ============================
-	// SECTION 2 — Upper‑Tier Evasion Logic (Enhanced Blocking Version)
+	// SECTION 2 � Upper-Tier Evasion Logic (Enhanced Blocking Version)
 	// ============================
 
 	qboolean do_roll = qfalse;
@@ -4966,7 +4966,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 		|| (self->client->NPC_class == CLASS_CALONORD && self->s.weapon != WP_SABER)
 		|| (self->client->NPC_class == CLASS_GROGU && self->s.weapon != WP_SABER)
 		|| (self->client->NPC_class == CLASS_SITHLORD && self->s.weapon != WP_SABER))
-		&& !Q_irand(0, 5))   // was 0–2 → now much rarer
+		&& !Q_irand(0, 5))   // was 0�2 ? now much rarer
 	{
 		do_roll = qtrue;
 	}
@@ -4976,7 +4976,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 		if (incoming || !saber_busy || always_dodge_or_roll)
 		{
 			// ============================
-			// RIGHT‑SIDE ATTACK
+			// RIGHT-SIDE ATTACK
 			// ============================
 			if (rightdot > 12 || (rightdot > 3 && zdiff < 5)
 				|| (!incoming && fabs(hitdir[2]) < 0.25f))
@@ -4990,7 +4990,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 				}
 				else
 				{
-					// Saber is in flight → try dash evasion
+					// Saber is in flight ? try dash evasion
 					if (self->client->ps.saberInFlight)
 					{
 						if (wp_saber_Off_Dash_Evasion(self, hitloc))
@@ -5029,7 +5029,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 			}
 
 			// ============================
-			// LEFT‑SIDE ATTACK
+			// LEFT-SIDE ATTACK
 			// ============================
 			else if (rightdot < -12 || (rightdot < -3 && zdiff < 5)
 				|| (!incoming && fabs(hitdir[2]) < 0.25f))
@@ -5043,7 +5043,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 				}
 				else
 				{
-					// Saber is in flight → try dash evasion
+					// Saber is in flight ? try dash evasion
 					if (self->client->ps.saberInFlight)
 					{
 						if (wp_saber_Off_Dash_Evasion(self, hitloc))
@@ -5093,7 +5093,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 				}
 				else
 				{
-					// Saber is in flight → try dash evasion
+					// Saber is in flight ? try dash evasion
 					if (self->client->ps.saberInFlight)
 					{
 						if (wp_saber_Off_Dash_Evasion(self, hitloc))
@@ -5126,13 +5126,13 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 		}
 	}
 	// ============================
-    // SECTION 3 — Mid‑Tier Evasion Logic (Cinematic Jedi Master)
+    // SECTION 3 � Mid-Tier Evasion Logic (Cinematic Jedi Master)
     // ============================
 
 	else if (zdiff > -22)
 	{
 		// --------------------------------
-		// Slightly low attack → possible duck
+		// Slightly low attack ? possible duck
 		// --------------------------------
 		if (zdiff < -10)
 		{
@@ -5179,7 +5179,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 		if (incoming || !saber_busy || always_dodge_or_roll)
 		{
 			// ============================
-// MID — RIGHT‑SIDE ATTACK
+// MID � RIGHT-SIDE ATTACK
 // ============================
 			if (rightdot > 8 || (rightdot > 3 && zdiff < -11)
 				|| (!incoming && fabs(hitdir[2]) < 0.25f))
@@ -5196,7 +5196,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 						gi.Printf("[BLOCK] Mid Right Parry\n");
 					}
 				}
-				// 2. Saber in flight → dash immediately
+				// 2. Saber in flight ? dash immediately
 				else if (self->client->ps.saberInFlight)
 				{
 					if (wp_saber_Off_Dash_Evasion(self, hitloc))
@@ -5232,7 +5232,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 			}
 
 			// ============================
-			// MID — LEFT‑SIDE ATTACK
+			// MID � LEFT-SIDE ATTACK
 			// ============================
 			else if (rightdot < -8 || (rightdot < -3 && zdiff < -11)
 				|| (!incoming && fabs(hitdir[2]) < 0.25f))
@@ -5249,7 +5249,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 						gi.Printf("[BLOCK] Mid Left Parry\n");
 					}
 				}
-				// 2. Saber in flight → dash immediately
+				// 2. Saber in flight ? dash immediately
 				else if (self->client->ps.saberInFlight)
 				{
 					if (wp_saber_Off_Dash_Evasion(self, hitloc))
@@ -5283,7 +5283,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 			}
 
 			// ============================
-			// MID — FRONT / OVERHEAD ATTACK
+			// MID � FRONT / OVERHEAD ATTACK
 			// ============================
 			else
 			{
@@ -5299,7 +5299,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 						gi.Printf("[BLOCK] Mid Front Parry\n");
 					}
 				}
-				// 2. Saber in flight → dash immediately
+				// 2. Saber in flight ? dash immediately
 				else if (self->client->ps.saberInFlight)
 				{
 					if (wp_saber_Off_Dash_Evasion(self, hitloc))
@@ -5323,7 +5323,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 			}
 		}
 	}// ============================
-     // SECTION 4 — Low / Very‑Low Evasion Logic (Cinematic Jedi Master)
+     // SECTION 4 � Low / Very-Low Evasion Logic (Cinematic Jedi Master)
      // ============================
 
 	else
@@ -5351,11 +5351,11 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 		}
 
 		// --------------------------------
-		// Very low attacks or saber busy → jump or parry
+		// Very low attacks or saber busy ? jump or parry
 		// --------------------------------
 		if (saber_busy || (zdiff < -36 && (zdiff < -44 || !Q_irand(0, 2))))
 		{
-			// If airborne → duck to lift legs
+			// If airborne ? duck to lift legs
 			if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 			{
 				TIMER_Start(self, "duck", Q_irand(500, 1500));
@@ -5554,7 +5554,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 	}
 
 	// ============================
-	// SECTION 5 — Finalization & Post‑Evasion Handling
+	// SECTION 5 � Finalization & Post-Evasion Handling
 	// ============================
 
 	if (evasion_type == EVASION_NONE)
@@ -6933,7 +6933,7 @@ static void Jedi_FaceEnemy(const qboolean do_pitch)
 		TIMER_Done(NPC, "flameTime") &&
 		NPC->s.weapon != WP_NONE &&
 		NPC->s.weapon != WP_DISRUPTOR &&
-		NPC->s.weapon != WP_SABER && // ⭐ added
+		NPC->s.weapon != WP_SABER && // ? added
 		(NPC->s.weapon != WP_ROCKET_LAUNCHER || !(NPCInfo->scriptFlags & SCF_ALT_FIRE)) &&
 		NPC->s.weapon != WP_THERMAL &&
 		NPC->s.weapon != WP_TRIP_MINE &&
@@ -8282,7 +8282,7 @@ static void jedi_combat()
 	}
 	else
 	{
-		// Not blocking this frame → ensure stance flag is clear
+		// Not blocking this frame ? ensure stance flag is clear
 		NPC->client->ps.ManualBlockingFlags &= ~(1 << MBF_NPCBLOCKSTANCE);
 
 		if (enemy_dist < 150.0f && (NPC->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) == 0)
@@ -8471,7 +8471,7 @@ static void jedi_combat()
 	}
 	else
 	{
-		// non‑saber evasion (unchanged)
+		// non-saber evasion (unchanged)
 	}
 
 	jedi_timers_apply();
@@ -8493,7 +8493,7 @@ static void jedi_combat()
 			}
 			else
 			{
-				// we are attacking → stop taunting
+				// we are attacking ? stop taunting
 				TIMER_Set(NPC, "taunting", -level.time);
 			}
 		}
@@ -8520,13 +8520,13 @@ static void jedi_combat()
 	if (VectorCompare(NPC->client->ps.moveDir, vec3_origin) &&
 		npc_move_dir_clear(ucmd.forwardmove, ucmd.rightmove, qtrue) == qfalse)
 	{
-		// uh‑oh, we are going to fall or hit something
+		// uh-oh, we are going to fall or hit something
 		navInfo_t info;
 		NAV_GetLastMove(info);
 
 		if ((info.flags & NIF_MACRO_NAV) == 0)
 		{
-			// micro‑navigation told us to step off a ledge, try using macronav for now
+			// micro-navigation told us to step off a ledge, try using macronav for now
 			NPC_MoveToGoal(qfalse);
 		}
 
@@ -9626,14 +9626,14 @@ static void JediHandleSpacing(gentity_t* self)
 	const qboolean airborne = (qboolean)(self->client->ps.groundEntityNum == ENTITYNUM_NONE);
 
 	// =====================================================
-	// 1. Long‑range: Jump‑in attacks (350+ units)
+	// 1. Long-range: Jump-in attacks (350+ units)
 	// =====================================================
 	if (dist > 350.0f)
 	{
-		// Do NOT allow jump‑ins during cinematic camera
+		// Do NOT allow jump-ins during cinematic camera
 		if (!in_camera)
 		{
-			// Only attempt a jump‑in every 2–4 seconds
+			// Only attempt a jump-in every 2�4 seconds
 			if (level.time >= self->NPC->jumpTime)
 			{
 				// 1 in 20 chance per attempt
@@ -9668,7 +9668,7 @@ static void JediHandleSpacing(gentity_t* self)
 						}
 					}
 
-					// Set next allowed jump‑in time (2–4 seconds)
+					// Set next allowed jump-in time (2�4 seconds)
 					self->NPC->jumpTime = level.time + Q_irand(20000, 40000);
 
 					return;
@@ -9686,7 +9686,7 @@ static void JediHandleSpacing(gentity_t* self)
 	}
 
 	// =====================================================
-	// 2. Mid‑range: Dash‑in lunges (200–350 units)
+	// 2. Mid-range: Dash-in lunges (200�350 units)
 	// =====================================================
 	if (dist > 200.0f)
 	{
@@ -9712,7 +9712,7 @@ static void JediHandleSpacing(gentity_t* self)
 					}
 				}
 
-				// Set next allowed jump‑in time (2–4 seconds)
+				// Set next allowed jump-in time (2�4 seconds)
 				self->NPC->jumpTime = level.time + Q_irand(20000, 40000);
 
 				return;
@@ -9729,7 +9729,7 @@ static void JediHandleSpacing(gentity_t* self)
 	}
 
 	// =====================================================
-	// 3. Close‑range: Circle‑strafe approach (80–200 units)
+	// 3. Close-range: Circle-strafe approach (80�200 units)
 	// =====================================================
 	vec3_t pvel;
 	VectorCopy(self->enemy->client->ps.velocity, pvel);
@@ -9787,7 +9787,7 @@ static void JediHandleSpacing(gentity_t* self)
 	}
 
 	// =====================================================
-	// 5. Ideal range — do nothing
+	// 5. Ideal range � do nothing
 	// =====================================================
 	// Let attack logic take over
 }
@@ -10158,7 +10158,7 @@ static qboolean JediShouldAttack(gentity_t* self)
 		return qfalse;
 	}
 
-	// Enemy must also be on the ground (prevents weird mid‑air combos)
+	// Enemy must also be on the ground (prevents weird mid-air combos)
 	if (self->enemy->client &&
 		self->enemy->client->ps.groundEntityNum == ENTITYNUM_NONE)
 	{
@@ -11294,7 +11294,7 @@ static qboolean jedi_in_special_move()
 
 				if (!rosh->client)
 				{
-					// Rosh exists but has no client – nothing to do here
+					// Rosh exists but has no client � nothing to do here
 					NPC_UpdateAngles(qtrue, qtrue);
 					return qtrue;
 				}
@@ -11571,14 +11571,14 @@ void NPC_CheckEvasion(void)
 	// Predict enemy position 300ms ahead
 	jedi_set_enemy_info(enemy_dest, enemy_dir, &enemy_dist, enemy_movedir, &enemy_movespeed, 300);
 
-	// Saber enemy → use saber evasion
+	// Saber enemy ? use saber evasion
 	if (NPC->enemy->s.weapon == WP_SABER)
 	{
 		Jedi_EvasionSaber(enemy_movedir, enemy_dist, enemy_dir);
 		return;
 	}
 
-	// Non‑saber enemy
+	// Non-saber enemy
 	if (NPC->enemy->client != NULL)
 	{
 		vec3_t shot_dir;
@@ -11644,7 +11644,7 @@ void NPC_CheckEvasion(void)
 
 			if (missile->s.eType == ET_MISSILE)
 			{
-				// Missile incoming → evade
+				// Missile incoming ? evade
 				if (NPC->enemy->s.weapon == WP_SABER)
 				{
 					Jedi_EvasionSaber(enemy_movedir, enemy_dist, enemy_dir);

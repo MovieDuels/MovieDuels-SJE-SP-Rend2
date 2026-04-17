@@ -43,9 +43,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cassert>
 #include <string.h>
-#include <rd-common\mdx_format.h>
+#include <rd-common/mdx_format.h>
 #include "teams.h"
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include "ai.h"
 #include "bg_public.h"
 #include "bstate.h"
@@ -57,11 +57,11 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "statindex.h"
 #include "surfaceflags.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_color.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_string.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_color.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_string.h>
 
 #define JK2_RAGDOLL_GRIPNOHEALTH
 

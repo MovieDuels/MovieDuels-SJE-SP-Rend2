@@ -25,7 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_local.h"
 #include "statindex.h"
 #include "g_shared.h"
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 
 constexpr auto ASSASSIN_SHIELD_SIZE = 75;
 constexpr auto TURN_ON = 0x00000000;

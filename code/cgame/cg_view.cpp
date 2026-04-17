@@ -34,7 +34,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <g_local.h>
 #include "FxSystem.h"
 #include "cg_camera.h"
-#include <rd-common\tr_types.h>
+#include <rd-common/tr_types.h>
 #include <g_functions.h>
 #include <surfaceflags.h>
 #include <anims.h>
@@ -43,14 +43,14 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <teams.h>
 #include <string.h>
-#include <qcommon\q_string.h>
+#include <qcommon/q_string.h>
 #include "cg_local.h"
 #include <ghoul2_shared.h>
 #include <g_shared.h>
 #include <cstdlib>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_shared.h>
 #include <bg_public.h>
 
 #define MASK_CAMERACLIP (MASK_SOLID)

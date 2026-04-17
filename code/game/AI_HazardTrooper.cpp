@@ -53,20 +53,20 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #if !defined(RUFL_HSTRING_INC)
 #include "../Rufl/hstring.h"
 #endif
-#include <Ratl\pool_vs.h>
+#include <Ratl/pool_vs.h>
 #include "bstate.h"
 #include "ai.h"
 #include "surfaceflags.h"
 #include "ghoul2_shared.h"
 #include "anims.h"
-#include <qcommon\q_platform.h>
-#include <qcommon\q_shared.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_shared.h>
 #include "weapons.h"
 #include "b_public.h"
 #include "g_shared.h"
 #include <cassert>
 #include "teams.h"
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 #include "bg_public.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////

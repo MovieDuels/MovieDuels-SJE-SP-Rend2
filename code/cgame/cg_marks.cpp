@@ -24,11 +24,11 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // cg_marks.c -- wall marks
 
 #include <string.h>
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 #include "cg_local.h"
-#include <rd-common\tr_types.h>
+#include <rd-common/tr_types.h>
 
 /*
 ===================================================================

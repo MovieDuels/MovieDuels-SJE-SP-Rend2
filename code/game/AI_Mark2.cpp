@@ -33,10 +33,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "hitlocs.h"
 #include "surfaceflags.h"
 #include "weapons.h"
-#include <qcommon\q_shared.h>
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 constexpr auto AMMO_POD_HEALTH = 1;
 constexpr auto TURN_OFF = 0x00000100;

@@ -28,9 +28,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "ghoul2_shared.h"
 #include "g_local.h"
 #include "g_shared.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 // These define the working combat range for these suckers
 constexpr auto MIN_DISTANCE = 54;

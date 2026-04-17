@@ -287,7 +287,7 @@ void G_StopEffect(const char* name, const int modelIndex, const int bolt_index, 
 extern void cgi_S_StartSound(const vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx);
 #include "../cgame/cg_media.h"	//access to cgs
 #include <cmath>
-#include <icarus\IcarusInterface.h>
+#include <icarus/IcarusInterface.h>
 extern qboolean CG_TryPlayCustomSound(vec3_t origin, int entityNum, soundChannel_t channel, const char* sound_name,
 	int custom_sound_set);
 extern cvar_t* g_timescale;

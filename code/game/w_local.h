@@ -20,7 +20,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 
-#include <qcommon\q_shared.h>
+#include <qcommon/q_shared.h>
 extern vec3_t forward_vec, vright_vec, up;
 extern vec3_t muzzle;
 extern vec3_t muzzle2;

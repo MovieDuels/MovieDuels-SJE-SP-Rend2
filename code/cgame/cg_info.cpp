@@ -30,14 +30,14 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <bg_public.h>
 #include <weapons.h>
 #include <cassert>
-#include <qcommon\q_math.h>
-#include <qcommon\q_color.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_color.h>
 #include <cstdlib>
 #include "cg_local.h"
 #include <g_shared.h>
-#include <qcommon\q_shared.h>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_string.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_string.h>
 
 // For printing objectives
 static constexpr short objectiveStartingYpos = 75; // Y starting position for objective text

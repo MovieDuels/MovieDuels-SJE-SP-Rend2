@@ -26,7 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_navigator.h"
 #include "g_nav.h"
 #include <cmath>
-#include <cgame\cg_camera.h>
+#include <cgame/cg_camera.h>
 #include "anims.h"
 #include "bg_public.h"
 #include "b_public.h"
@@ -36,10 +36,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "hitlocs.h"
 #include "surfaceflags.h"
 #include "teams.h"
-#include <qcommon\q_shared.h>
-#include <rd-common\mdx_format.h>
-#include <qcommon\q_math.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_shared.h>
+#include <rd-common/mdx_format.h>
+#include <qcommon/q_math.h>
+#include <qcommon/q_platform.h>
 
 // These define the working combat range for these suckers
 constexpr auto MIN_DISTANCE = 128;

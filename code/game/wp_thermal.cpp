@@ -30,13 +30,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include "teams.h"
 #include "g_public.h"
-#include <qcommon\q_shared.h>
-#include <qcommon\q_math.h>
+#include <qcommon/q_shared.h>
+#include <qcommon/q_math.h>
 #include "weapons.h"
-#include <qcommon\q_platform.h>
+#include <qcommon/q_platform.h>
 #include "bg_public.h"
 #include "surfaceflags.h"
-#include <qcommon\q_string.h>
+#include <qcommon/q_string.h>
 #include "b_public.h"
 
 //---------------------

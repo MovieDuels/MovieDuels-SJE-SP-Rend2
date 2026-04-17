@@ -37,19 +37,19 @@ constexpr auto CG_SWINGSPEED = 0.3f;
 
 #include "animtable.h"
 #include <cmath>
-#include <qcommon\q_platform.h>
-#include <qcommon\q_shared.h>
+#include <qcommon/q_platform.h>
+#include <qcommon/q_shared.h>
 #include <bg_public.h>
 #include <cctype>
-#include <qcommon\q_string.h>
+#include <qcommon/q_string.h>
 #include <string.h>
 #include <cstdlib>
 #include <teams.h>
 #include <weapons.h>
-#include <rd-common\mdx_format.h>
+#include <rd-common/mdx_format.h>
 #include <surfaceflags.h>
 #include "FxUtil.h"
-#include <rd-common\tr_types.h>
+#include <rd-common/tr_types.h>
 #include <statindex.h>
 
 extern qboolean WP_SaberBladeUseSecondBladeStyle(const saberInfo_t* saber, int blade_num);

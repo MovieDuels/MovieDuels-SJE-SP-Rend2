@@ -31,12 +31,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #if !defined(GHOUL2_SHARED_H_INC)
 #include "../game/ghoul2_shared.h"	//for CGhoul2Info_v
 #endif
-#include <ghoul2\G2.h>
+#include <ghoul2/G2.h>
 
 #if !defined(G2_H_INC)
 #include "../ghoul2/G2.h"
 #endif
-#include <qcommon\q_shared.h>
+#include <qcommon/q_shared.h>
 
 #if !defined(__Q_SHARED_H)
 #include "../qcommon/q_shared.h"
@@ -47,22 +47,22 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "qcommon/ojk_saved_game_helper.h"
 #include <surfaceflags.h>
 #include <bg_public.h>
-#include <qcommon\q_platform.h>
+#include <qcommon/q_platform.h>
 #include "FxPrimitives.h"
 #include <cstdlib>
-#include <qcommon\q_math.h>
+#include <qcommon/q_math.h>
 #include <map>
-#include <gsl\gsl-lite.h>
-#include <qcommon\safe\gsl.h>
+#include <gsl/gsl-lite.h>
+#include <qcommon/safe/gsl.h>
 #include <genericparser2.h>
 #include <string.h>
 #include "cg_local.h"
 #include "FxSystem.h"
-#include <qcommon\q_string.h>
-#include <qcommon\ojk_saved_game_helper_fwd.h>
+#include <qcommon/q_string.h>
+#include <qcommon/ojk_saved_game_helper_fwd.h>
 #include <g_shared.h>
 #include <vector>
-#include <qcommon\sstring.h>
+#include <qcommon/sstring.h>
 #include <list>
 #include "FxUtil.h"
 #include <cassert>
