@@ -1113,7 +1113,16 @@ void CG_RegisterWeapon(const int weapon_num)
 		break;
 
 	case WP_SCEPTER:
-		//
+		// Register scepter effects and sounds so clients play the loop/warmup
+		theFxScheduler.RegisterEffect("scepter/beam_warmup.efx");
+		theFxScheduler.RegisterEffect("scepter/beam.efx");
+		theFxScheduler.RegisterEffect("scepter/slam_warmup.efx");
+		theFxScheduler.RegisterEffect("scepter/slam.efx");
+		theFxScheduler.RegisterEffect("scepter/impact.efx");
+		cgi_S_RegisterSound("sound/weapons/scepter/loop.wav");
+		cgi_S_RegisterSound("sound/weapons/scepter/slam_warmup.wav");
+		cgi_S_RegisterSound("sound/weapons/scepter/beam_warmup.wav");
+		cgi_S_RegisterSound("sound/weapons/scepter/recharge.wav");
 		break;
 
 	case WP_NOGHRI_STICK:
