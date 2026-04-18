@@ -227,7 +227,7 @@ qboolean FP_ForceDrainGrippableEnt(const gentity_t* victim);
 extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingAnim(int anim);
 extern saber_moveName_t PM_BrokenParryForParry(int move);
-extern qboolean BG_SaberInNonIdleDamageMove(const playerState_t* ps);
+extern qboolean PM_SaberInNonIdleDamageMove(const playerState_t* ps);
 qboolean BG_SaberInPartialDamageMove(gentity_t* self);
 extern qboolean PM_KickingAnim(int anim);
 extern qboolean BG_InSlowBounce(const playerState_t* ps);
@@ -2662,8 +2662,7 @@ void wp_saber_clear_damage_for_ent_num(gentity_t* attacker, const int entityNum,
 	}
 }
 
-extern void PM_SaberStartTransAnim(int saberAnimLevel, int anim, float* animSpeed, const gentity_t* gent,
-	int fatigued);
+extern void PM_SaberStartTransAnim(const int saberAnimLevel, const int anim, float* animSpeed, const gentity_t* gent, const int fatigued);
 extern float pm_get_time_scale_mod(const gentity_t* gent);
 
 static int G_GetAttackDamageMD(const gentity_t* self, const int min_dmg, const int max_dmg, const float mult_point)
@@ -3161,7 +3160,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 		return qfalse;
 	}
 
-	if (!(BG_SaberInNonIdleDamageMove(&ent->client->ps) || ent->client->ps.saberInFlight))
+	if (!(PM_SaberInNonIdleDamageMove(&ent->client->ps) || ent->client->ps.saberInFlight))
 		//if not in a damage move like this dont do damage
 	{
 		return qfalse;
@@ -20143,7 +20142,7 @@ void wp_saber_start_missile_block_check_md(gentity_t* self, const usercmd_t* ucm
 			{
 				//active saber blade, treat differently.//allow the blocking of normal saber swings
 				swing_block = qtrue;
-				if (BG_SaberInNonIdleDamageMove(&self->client->ps))
+				if (PM_SaberInNonIdleDamageMove(&self->client->ps))
 				{
 					//attacking
 					swing_block_quad = InvertQuad(saber_moveData[self->client->ps.saber_move].startQuad);
@@ -41658,9 +41657,9 @@ void WP_InitForcePowers(const gentity_t* ent)
 		ent->client->ps.forcePowerMax = FORCE_POWER_MAX;
 	}
 
-	if (!ent->client->ps.BlockPointsMax)
+	if (!ent->client->ps.blockPointsMax)
 	{
-		ent->client->ps.BlockPointsMax = FORCE_POWER_MAX;
+		ent->client->ps.blockPointsMax = FORCE_POWER_MAX;
 	}
 
 	if (!ent->client->ps.forcePowerRegenRate)
@@ -41671,7 +41670,7 @@ void WP_InitForcePowers(const gentity_t* ent)
 	{
 		ent->client->ps.BlockPointRegenRate = 100;
 	}
-	ent->client->ps.blockPoints = ent->client->ps.BlockPointsMax;
+	ent->client->ps.blockPoints = ent->client->ps.blockPointsMax;
 	ent->client->ps.BlockPointsRegenDebounceTime = level.time;
 
 	ent->client->ps.forcePower = ent->client->ps.forcePowerMax;
@@ -41880,7 +41879,7 @@ qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker
 		return qfalse;
 
 	// Cannot parry while transitioning or bouncing
-	if (BG_SaberInNonIdleDamageMove(&blocker->client->ps)
+	if (PM_SaberInNonIdleDamageMove(&blocker->client->ps)
 		|| PM_SaberInBounce(blocker->client->ps.saber_move)
 		|| BG_InSlowBounce(&blocker->client->ps))
 		return qfalse;

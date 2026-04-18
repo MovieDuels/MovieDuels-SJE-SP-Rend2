@@ -220,7 +220,7 @@ extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
 extern qboolean PM_SuperBreakWinAnim(int anim);
 extern qboolean BG_SaberInPartialDamageMove(gentity_t* self);
 extern qboolean BG_SaberInTransitionDamageMove(const playerState_t* ps);
-extern qboolean BG_SaberInNonIdleDamageMove(const playerState_t* ps);
+extern qboolean PM_SaberInNonIdleDamageMove(const playerState_t* ps);
 
 //Basic set of custom sounds that everyone needs
 // (keep numbers in ascending order in order for variant-capping to work)
@@ -6174,7 +6174,7 @@ void CG_AddRefEntityWithPowerups(refEntity_t* ent, int powerups, centity_t* cent
 
 				cgi_R_AddRefEntityToScene(ent);
 			}
-			else if (BG_SaberInNonIdleDamageMove(&cent->gent->client->ps)) //doing damage make red
+			else if (PM_SaberInNonIdleDamageMove(&cent->gent->client->ps)) //doing damage make red
 			{
 				if (BG_SaberInPartialDamageMove(cent->gent)) //turn off damage in the move turn green
 				{
@@ -16965,8 +16965,8 @@ void CG_Player(centity_t* cent)
 			}
 
 			//
-            // add the gun
-            //
+			// add the gun
+			//
 			CG_RegisterWeapon(cent->currentState.weapon);
 			weapon = &cg_weapons[cent->currentState.weapon];
 

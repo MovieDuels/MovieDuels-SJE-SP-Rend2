@@ -185,6 +185,8 @@ extern qboolean Char_Dual_Pistols(const gentity_t* self);
 extern qboolean Calo_Nord(const gentity_t* self);
 extern cvar_t* g_SaberAttackSpeedMD;
 extern cvar_t* g_allowSuperSaberLockBreaks;
+extern qboolean PM_SaberInbackblock(const int move);
+extern qboolean PM_IsInBlockingAnim(const int move);
 
 constexpr auto FLY_NONE = 0;
 constexpr auto FLY_NORMAL = 1;
@@ -13778,55 +13780,28 @@ void PM_SetJumped(const float height, const qboolean force)
 }
 
 //Add Fatigue to a player
-void PM_AddBoltBlockFatigue(playerState_t* ps, const int fatigue)
-{
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		if (ps->blockPoints > fatigue)
-		{
-			ps->blockPoints -= fatigue;
-		}
-		else
-		{
-			//don't have enough so just completely drain BP then.
-			ps->blockPoints = 0;
-		}
-	}
-	else
-	{
-		//For now, all saber attacks cost one FP.
-		if (ps->forcePower > fatigue)
-		{
-			ps->forcePower -= fatigue;
-		}
-		else
-		{
-			//don't have enough so just completely drain FP then.
-			ps->forcePower = 0;
-		}
-
-		if (g_SerenityJediEngineMode->integer)
-		{
-			//check for fatigued state.
-			if (ps->forcePower <= BLOCKPOINTS_FATIGUE)
-			{
-				//Pop the Fatigued flag
-				ps->userInt3 |= 1 << FLAG_FATIGUED;
-			}
-		}
-	}
-}
-
 void PM_AddBlockFatigue(playerState_t* ps, const int fatigue)
 {
+	//For now, all saber attacks cost one BP.
 	if (ps->blockPoints > fatigue)
 	{
 		ps->blockPoints -= fatigue;
 	}
 	else
 	{
-		//don't have enough so just completely drain BP then.
+		//don't have enough so just completely drain FP then.
 		ps->blockPoints = 0;
+	}
+
+	if (ps->blockPoints < BLOCKPOINTS_FATIGUE)
+	{
+		ps->userInt3 |= 1 << FLAG_BLOCKDRAINED;
+	}
+
+	if (ps->blockPoints <= ps->blockPointsMax * FATIGUEDTHRESHHOLD)
+	{
+		//Pop the Fatigued flag
+		ps->userInt3 |= 1 << FLAG_FATIGUED;
 	}
 }
 
@@ -13844,14 +13819,15 @@ void PM_AddFatigue(playerState_t* ps, const int fatigue)
 		ps->forcePower = 0;
 	}
 
-	if (g_SerenityJediEngineMode->integer)
+	if (ps->forcePower < BLOCKPOINTS_FATIGUE)
 	{
-		//check for fatigued state.
-		if (ps->forcePower <= BLOCKPOINTS_FATIGUE)
-		{
-			//Pop the Fatigued flag
-			ps->userInt3 |= 1 << FLAG_FATIGUED;
-		}
+		ps->userInt3 |= 1 << FLAG_BLOCKDRAINED;
+	}
+
+	if (ps->forcePower <= ps->forcePowerMax * FATIGUEDTHRESHHOLD)
+	{
+		//Pop the Fatigued flag
+		ps->userInt3 |= 1 << FLAG_FATIGUED;
 	}
 }
 
@@ -13864,52 +13840,137 @@ static int Fatigue_SaberAttack()
 //Add Fatigue for all the sabermoves and blocks.
 extern qboolean PM_KnockAwayStaffAndDuels(int move);
 
-static void PM_NPCFatigue(playerState_t* ps, const int new_move)
+static void PM_SaberFatigue(playerState_t* ps, const int new_move)
 {
-	if (g_SerenityJediEngineMode->integer == 2)
+	if (g_SerenityJediEngineMode->integer)
 	{
-		if (ps->saber_move != new_move)
+		if (g_SerenityJediEngineMode->integer == 2)
 		{
-			//wasn't playing that attack before
-			if (PM_KickMove(new_move))
-			{
-				//melee move
-				PM_AddBlockFatigue(ps, FATIGUE_MELEE);
-			}
-			else if (PM_KnockAwayStaffAndDuels(new_move))
-			{
-				//simple saber attack
-				PM_AddBlockFatigue(ps, Fatigue_SaberAttack());
-			}
-			else if (PM_SaberInTransition(new_move) && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
-			{
-				//attack fakes cost FP as well
-				if (ps->saberAnimLevel == SS_DUAL)
-				{
-					//dual sabers don't have transition/FP costs.
-				}
-				else
-				{
-					//single sabers
+			if (ps->saber_move != new_move)
+			{//wasn't playing that attack before
+				if (PM_SaberInAttackPure(new_move))
+				{//simple saber attack
 					PM_AddBlockFatigue(ps, Fatigue_SaberAttack());
+				}
+				else if (PM_SaberInTransition(new_move) && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
+				{//attack fakes cost FP as well
+					if (ps->saberAnimLevel == SS_DUAL)
+					{//dual sabers don't have transition/FP costs.
+					}
+					else
+					{//single sabers
+						if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+						{
+							pm->ps->saberFatigueChainCount++;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			if (ps->saber_move != new_move)
+			{//wasn't playing that attack before
+				if (PM_SaberInAttackPure(new_move))
+				{//simple saber attack
+					PM_AddFatigue(ps, Fatigue_SaberAttack());
+				}
+				else if (PM_SaberInTransition(new_move) && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
+				{//attack fakes cost FP as well
+					if (ps->saberAnimLevel == SS_DUAL)
+					{//dual sabers don't have transition/FP costs.
+					}
+					else
+					{//single sabers
+						if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+						{
+							pm->ps->saberFatigueChainCount++;
+						}
+					}
 				}
 			}
 		}
 	}
-	else
+
+	return;
+}
+
+static void PM_NPCFatigue(playerState_t* ps, const int new_move)
+{
+	if (g_SerenityJediEngineMode->integer)
 	{
-		if (ps->saber_move != new_move)
+		if (g_SerenityJediEngineMode->integer == 2)
 		{
-			//wasn't playing that attack before
-			if (PM_KickMove(new_move))
+			if (ps->saber_move != new_move)
 			{
-				//melee move
-				PM_AddFatigue(ps, FATIGUE_MELEE);
+				//wasn't playing that attack before
+				if (PM_KnockAwayStaffAndDuels(new_move))
+				{
+					//simple saber attack
+					PM_AddBlockFatigue(ps, Fatigue_SaberAttack());
+				}
+				else if (PM_KnockawayForParry(new_move))
+				{
+					//simple saber attack
+					PM_AddBlockFatigue(ps, Fatigue_SaberAttack());
+				}
+				else if (PM_SaberInbackblock(new_move))
+				{
+					//simple block
+					PM_AddBlockFatigue(ps, Fatigue_SaberAttack());
+				}
+				else if (PM_IsInBlockingAnim(new_move))
+				{
+					//simple block
+					PM_AddBlockFatigue(ps, Fatigue_SaberAttack());
+				}
+				else if (PM_SaberInTransition(new_move) && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
+				{
+					//attack fakes cost FP as well
+					if (ps->saberAnimLevel == SS_DUAL)
+					{
+						//dual sabers don't have transition/FP costs.
+					}
+					else
+					{
+						if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+						{
+							pm->ps->saberFatigueChainCount++;
+						}
+					}
+				}
 			}
-			else if (PM_KnockAwayStaffAndDuels(new_move))
+		}
+		else
+		{
+			if (ps->saber_move != new_move)
 			{
-				//simple saber attack
-				PM_AddFatigue(ps, Fatigue_SaberAttack());
+				//wasn't playing that attack before
+				if (PM_KickMove(new_move))
+				{
+					//melee move
+					PM_AddFatigue(ps, FATIGUE_MELEE);
+				}
+				else if (PM_KnockAwayStaffAndDuels(new_move))
+				{
+					//simple saber attack
+					PM_AddFatigue(ps, Fatigue_SaberAttack());
+				}
+				else if (PM_SaberInTransition(new_move) && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
+				{
+					//attack fakes cost FP as well
+					if (ps->saberAnimLevel == SS_DUAL)
+					{
+						//dual sabers don't have transition/FP costs.
+					}
+					else
+					{
+						if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
+						{
+							pm->ps->saberFatigueChainCount++;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -14063,13 +14124,13 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 
 			if (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) //player
 			{// Only add fatigue every 2 swings (half as fast)
-				if ((pm->ps->saberAttackChainCount & 1) == 0)  // even number
+				//if ((pm->ps->saberAttackChainCount & 1) == 0)  // even number
+				//{
+				if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
 				{
-					if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
-					{
-						pm->ps->saberFatigueChainCount++;
-					}
+					pm->ps->saberFatigueChainCount++;
 				}
+				//}
 			}
 			else
 			{
@@ -14111,6 +14172,16 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 	else if (pm->ps->saberFatigueChainCount <= MISHAPLEVEL_NONE)
 	{
 		pm->ps->saberFatigueChainCount = MISHAPLEVEL_NONE;
+	}
+
+	/* Only the second block mattered in original code */
+	if (pm->ps->saberFatigueChainCount > MISHAPLEVEL_HUDFLASH)
+	{
+		pm->ps->userInt3 |= (1 << FLAG_ATTACKFATIGUE);
+	}
+	else
+	{
+		pm->ps->userInt3 &= ~(1 << FLAG_ATTACKFATIGUE);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14778,14 +14849,17 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 	if (pm->ps->torsoAnim == anim)
 	{
 		//successfully changed anims
-		//special check for *starting* a saber swing
 		if (pm->gent && pm->ps->SaberLength() > 1)
 		{
 			if (g_SerenityJediEngineMode->integer)
 			{
-				if (pm->ps->clientNum && !PM_ControlledByPlayer())
+				if (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer())
 				{
-					PM_NPCFatigue(pm->ps, new_move); //drain blockpoints low cost
+					PM_SaberFatigue(pm->ps, new_move); //drain blockpoints low cost
+				}
+				else
+				{
+					PM_NPCFatigue(pm->ps, new_move); //drainblockpoints low cost
 				}
 			}
 			//update the attack fake flag
@@ -14801,11 +14875,6 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 				pm->ps->userInt3 &= ~(1 << FLAG_PARRIED);
 				pm->ps->userInt3 &= ~(1 << FLAG_BLOCKING);
 				pm->ps->userInt3 &= ~(1 << FLAG_BLOCKED);
-			}
-
-			if (!PM_SaberInBounce(new_move) && !PM_SaberInReturn(new_move) && !PM_SaberInMassiveBounce(
-				pm->ps->torsoAnim))
-			{
 				//cancel out pre-block flag
 				pm->ps->userInt3 &= ~(1 << FLAG_MBLOCKBOUNCE);
 			}
@@ -23581,8 +23650,8 @@ void PM_SaberPerfectBlockUpdate(const int new_move)
 	}
 }
 
-//saber status utility tools
-static qboolean BG_SaberInFullDamageMove(const playerState_t* ps)
+// saber status utility tools
+static qboolean PM_SaberInFullDamageMove(const playerState_t* ps)
 {
 	//The player is attacking with a saber attack that does full damage
 	if (PM_SaberInAttack(ps->saber_move)
@@ -23598,6 +23667,84 @@ static qboolean BG_SaberInFullDamageMove(const playerState_t* ps)
 			return qtrue;
 		}
 	}
+	return qfalse;
+}
+
+static qboolean BG_SaberInFullDamageMove(const playerState_t* ps)
+{
+	gentity_t* gent = pm->gent;
+
+	if (!gent || !gent->client)
+	{
+		return qfalse;
+	}
+
+	// The player is attacking with a saber attack that does full damage
+	if (PM_SaberInAttack(ps->saber_move) ||
+		PM_SaberInDamageMove(ps->saber_move) ||
+		pm_saber_in_special_attack(ps->torsoAnim) || // idle kill
+		PM_SaberDoDamageAnim(ps->torsoAnim) ||
+		PM_SuperBreakWinAnim(ps->torsoAnim))
+	{
+		float current_frame = 0.0f;
+		float junk2 = 0.0f;
+		int start = 0;
+		int end = 0;
+		int junk = 0;
+
+		// Mirror the saber‑lock usage of G2API_GetBoneAnimIndex
+		if (gi.G2API_GetBoneAnimIndex(
+			&gent->ghoul2[gent->playerModel],
+			gent->lowerLumbarBone,
+			(cg.time ? cg.time : level.time),
+			&current_frame,
+			&start,
+			&end,
+			&junk,
+			&junk2,
+			nullptr))
+		{
+			const float percent_complete =
+				(end != start) ? ((current_frame - start) / (float)(end - start)) : 0.0f;
+
+			// flip attacks: only a window of the move does damage
+			if ((ps->saber_move == LS_A_FLIP_STAB ||
+				ps->saber_move == LS_A_FLIP_SLASH ||
+				ps->saber_move == BOTH_JUMPFLIPSTABDOWN ||
+				ps->saber_move == BOTH_JUMPFLIPSLASHDOWN1) &&
+				(percent_complete >= 0.30f && percent_complete <= 0.75f))
+			{
+				return qtrue;
+			}
+
+			// roll stab: avoid follow‑through
+			if ((ps->saber_move == BOTH_ROLL_STAB ||
+				ps->saber_move == LS_ROLL_STAB) &&
+				(percent_complete >= 0.30f && percent_complete <= 0.95f))
+			{
+				return qtrue;
+			}
+
+			// stabdown: avoid follow‑through
+			if ((ps->saber_move == BOTH_STABDOWN ||
+				ps->saber_move == BOTH_STABDOWN_STAFF ||
+				ps->saber_move == BOTH_STABDOWN_DUAL ||
+				ps->saber_move == LS_STABDOWN ||
+				ps->saber_move == LS_STABDOWN_STAFF ||
+				ps->saber_move == LS_STABDOWN_DUAL) &&
+				(percent_complete >= 0.35f && percent_complete <= 0.95f))
+			{
+				return qtrue;
+			}
+		}
+
+		// In an attack animation and not blocked: full‑damage window
+		if (ps->saberBlocked == BLOCKED_NONE)
+		{
+			return qtrue;
+		}
+	}
+
 	return qfalse;
 }
 
@@ -23619,6 +23766,12 @@ qboolean BG_SaberInNonIdleDamageMove(const playerState_t* ps)
 {
 	//player is in a saber move that does something more than idle saber damage
 	return BG_SaberInFullDamageMove(ps);
+}
+
+qboolean PM_SaberInNonIdleDamageMove(const playerState_t* ps)
+{
+	//player is in a saber move that does something more than idle saber damage
+	return PM_SaberInFullDamageMove(ps);
 }
 
 extern qboolean PM_BounceAnim(int anim);

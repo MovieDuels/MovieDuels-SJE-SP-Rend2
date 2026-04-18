@@ -2092,10 +2092,10 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 					}
 					else if (!(ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)))
 					{
-						if (ps->saberFatigueChainCount > MISHAPLEVEL_HEAVY)
+						if (ps->saberFatigueChainCount > MISHAPLEVEL_HUDFLASH)
 							WP_SaberFatigueRegenerate(2);
 						else
-							WP_SaberFatigueRegenerate(4);
+							WP_SaberFatigueRegenerate(1);
 					}
 				}
 				else if (isNPC)

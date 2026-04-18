@@ -3919,7 +3919,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 					SkipRestOfLine(&p);
 					continue;
 				}
-				npc->client->ps.BlockPointsMax = n;
+				npc->client->ps.blockPointsMax = n;
 				continue;
 			}
 
