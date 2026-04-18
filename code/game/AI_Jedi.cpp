@@ -6080,7 +6080,9 @@ static qboolean jedi_saber_block()
 			{
 				//dodged
 				int dodge_time = NPC->client->ps.torsoAnimTimer;
-				if (NPCInfo->rank > RANK_LT_JG && NPC->client->NPC_class != CLASS_DESANN)
+				if (NPCInfo->rank > RANK_LT_JG && 
+					(NPC->client->NPC_class != CLASS_DESANN &&
+					NPC->client->NPC_class != CLASS_VADER))
 				{
 					//higher-level guys can dodge faster
 					dodge_time -= 200;
@@ -8603,8 +8605,10 @@ void npc_jedi_pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, c
 	{
 		//back off
 		TIMER_Set(self, "parryTime", -1);
-		if (self->client->NPC_class == CLASS_DESANN || !Q_stricmp("Yoda", self->NPC_type) || !Q_stricmp(
-			"md_Yoda", self->NPC_type))
+		if (self->client->NPC_class == CLASS_DESANN ||
+			self->client->NPC_class == CLASS_VADER ||
+			!Q_stricmp("Yoda", self->NPC_type) ||
+			!Q_stricmp("md_Yoda", self->NPC_type))
 		{
 			//less for Desann
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + (3 - g_spskill->integer) * 50;

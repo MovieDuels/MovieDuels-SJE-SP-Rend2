@@ -2969,13 +2969,12 @@ qboolean qbVidRestartOccured = qfalse;
 qboolean gbUseTheseValuesFromLoadSave = qfalse; // MUST default to this
 int gi_cg_forcepowerSelect;
 int gi_cg_inventorySelect;
+extern void CG_ClearAnimEvtCache();
 //===================
 
 static void CG_GameStateReceived()
 {
 	// clear everything
-
-	extern void CG_ClearAnimEvtCache();
 	CG_ClearAnimEvtCache(); // else sound handles wrong after vid_restart
 
 	qbVidRestartOccured = qtrue;

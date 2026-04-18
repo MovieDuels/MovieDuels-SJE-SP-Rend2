@@ -789,15 +789,6 @@ static void CG_SetLerpFrameAnimation(clientInfo_t* ci, lerpFrame_t* lf, int new_
 	lf->animation = anim;
 	lf->animationTime = lf->frameTime + abs(anim->frameLerp);
 }
-
-/*
-===============
-CG_RunLerpFrame
-
-Sets cg.snap, cg.oldFrame, and cg.backlerp
-cg.time should be between oldFrameTime and frameTime after exit
-===============
-*/
 /*
 ==========================
 CG_RunLerpFrame
@@ -810,26 +801,44 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 {
 	qboolean newFrame = qfalse;
 
+	// ---------------------------------------------------------------------
 	// If animation changed or uninitialized, reset lerp state
+	// ---------------------------------------------------------------------
 	if ((new_animation != lf->animationNumber) || (lf->animation == NULL))
 	{
 		CG_SetLerpFrameAnimation(ci, lf, new_animation);
 	}
 
+	// ---------------------------------------------------------------------
+	// SAFETY CHECK: animation pointer must be valid
+	// ---------------------------------------------------------------------
+	if (lf->animation == NULL)
+	{
+		gi.Printf("^1CG_RunLerpFrame: NULL animation for ent %d anim %d\n",
+			entNum, new_animation);
+
+		// Prevent crash: freeze on current frame
+		lf->backlerp = 0.0f;
+		return qfalse;
+	}
+
+	const animation_t* anim = lf->animation;
+
+	// ---------------------------------------------------------------------
 	// Advance frame if we've reached/passed the next frame time
+	// ---------------------------------------------------------------------
 	if (cg.time >= lf->frameTime)
 	{
 		lf->oldFrame = lf->frame;
 		lf->oldFrameTime = lf->frameTime;
 
-		const animation_t* anim = lf->animation;
 		int anim_frame_time = abs(anim->frameLerp);
 
 		// Special case: speed up weapon raise/drop for player entity
 		if (entNum == 0)
 		{
-			if ((lf->animationNumber == TORSO_DROPWEAP1) ||
-				(lf->animationNumber == TORSO_RAISEWEAP1))
+			if (lf->animationNumber == TORSO_DROPWEAP1 ||
+				lf->animationNumber == TORSO_RAISEWEAP1)
 			{
 				anim_frame_time = 50;
 			}
@@ -848,7 +857,9 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 		// Determine frame index within animation
 		int f = (lf->frameTime - lf->animationTime) / anim_frame_time;
 
+		// -----------------------------------------------------------------
 		// Handle end-of-animation behaviour
+		// -----------------------------------------------------------------
 		if (f >= anim->numFrames)
 		{
 			f -= anim->numFrames;
@@ -883,7 +894,9 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 			}
 		}
 
+		// -----------------------------------------------------------------
 		// Apply reversed animations if frameLerp < 0
+		// -----------------------------------------------------------------
 		if (anim->frameLerp < 0)
 		{
 			lf->frame = anim->firstFrame + (anim->numFrames - 1 - f);
@@ -902,7 +915,9 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 		newFrame = qtrue;
 	}
 
+	// ---------------------------------------------------------------------
 	// Clamp future times
+	// ---------------------------------------------------------------------
 	if (lf->frameTime > cg.time + 200)
 	{
 		lf->frameTime = cg.time;
@@ -913,15 +928,17 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 		lf->oldFrameTime = cg.time;
 	}
 
+	// ---------------------------------------------------------------------
 	// Compute backlerp safely
+	// ---------------------------------------------------------------------
 	if (lf->frameTime == lf->oldFrameTime)
 	{
 		lf->backlerp = 0.0f;
 	}
 	else
 	{
-		const float numerator = (float)(cg.time - lf->oldFrameTime);
-		const float denominator = (float)(lf->frameTime - lf->oldFrameTime);
+		const float numerator = static_cast<float>(cg.time - lf->oldFrameTime);
+		const float denominator = static_cast<float>(lf->frameTime - lf->oldFrameTime);
 		lf->backlerp = 1.0f - (numerator / denominator);
 	}
 
@@ -3996,36 +4013,51 @@ void CG_LandingEffect(vec3_t origin, vec3_t normal, const int material)
 }
 
 constexpr auto FOOTSTEP_DISTANCE = 32;
-
-static void player_foot_step(const vec3_t origin,
+static void player_foot_step(
+	const vec3_t origin,
 	const vec3_t trace_dir,
 	const float orientation,
 	const float radius,
-	const centity_t* cent, const footstepType_t foot_step_type)
+	const centity_t* cent,
+	const footstepType_t foot_step_type)
 {
-	vec3_t end;
-	constexpr vec3_t mins = { -7, -7, 0 };
-	constexpr vec3_t maxs = { 7, 7, 2 };
-	trace_t trace;
-	footstep_t sound_type;
-	bool b_mark = false;
-	int effect_id = -1;
-	//float		alpha;
+	// ---------------------------------------------------------------------
+	// Basic safety: we need a valid cent to play sounds on a client channel
+	// ---------------------------------------------------------------------
+	if (cent == NULL)
+	{
+		return;
+	}
 
-	// send a trace down from the player to the ground
+	vec3_t end;
+	constexpr vec3_t mins = { -7.0f, -7.0f, 0.0f };
+	constexpr vec3_t maxs = { 7.0f,  7.0f, 2.0f };
+
+	trace_t    trace{};
+	footstep_t sound_type = FOOTSTEP_STONEWALK; // safe default, overwritten below
+	bool       b_mark = false;
+	int        effect_id = -1;
+
+	// ---------------------------------------------------------------------
+	// Trace from the foot origin downwards along trace_dir
+	// ---------------------------------------------------------------------
 	VectorCopy(origin, end);
-	VectorMA(origin, FOOTSTEP_DISTANCE, trace_dir, end); //was end[2] -= FOOTSTEP_DISTANCE;
+	VectorMA(origin, FOOTSTEP_DISTANCE, trace_dir, end);
 
 	cgi_CM_BoxTrace(&trace, origin, end, mins, maxs, 0, MASK_PLAYERSOLID);
 
-	// no shadow if too high
+	// No ground hit → no footstep
 	if (trace.fraction >= 1.0f)
 	{
 		return;
 	}
 
-	//check for foot-steppable surface flag
-	switch (trace.surfaceFlags & MATERIAL_MASK)
+	// ---------------------------------------------------------------------
+	// Determine material and select sound/effect/mark behaviour
+	// ---------------------------------------------------------------------
+	const int material = (trace.surfaceFlags & MATERIAL_MASK);
+
+	switch (material)
 	{
 	case MATERIAL_MUD:
 		b_mark = true;
@@ -4039,6 +4071,7 @@ static void player_foot_step(const vec3_t origin,
 		}
 		effect_id = cgs.effects.footstepMud;
 		break;
+
 	case MATERIAL_DIRT:
 		b_mark = true;
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
@@ -4051,6 +4084,7 @@ static void player_foot_step(const vec3_t origin,
 		}
 		effect_id = cgs.effects.footstepSand;
 		break;
+
 	case MATERIAL_SAND:
 		b_mark = true;
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
@@ -4063,6 +4097,7 @@ static void player_foot_step(const vec3_t origin,
 		}
 		effect_id = cgs.effects.footstepSand;
 		break;
+
 	case MATERIAL_SNOW:
 		b_mark = true;
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
@@ -4075,6 +4110,7 @@ static void player_foot_step(const vec3_t origin,
 		}
 		effect_id = cgs.effects.footstepSnow;
 		break;
+
 	case MATERIAL_LAVA:
 		b_mark = true;
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
@@ -4087,6 +4123,7 @@ static void player_foot_step(const vec3_t origin,
 		}
 		effect_id = cgs.effects.footstepSand;
 		break;
+
 	case MATERIAL_SHORTGRASS:
 	case MATERIAL_LONGGRASS:
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
@@ -4098,6 +4135,7 @@ static void player_foot_step(const vec3_t origin,
 			sound_type = FOOTSTEP_GRASSWALK;
 		}
 		break;
+
 	case MATERIAL_SOLIDMETAL:
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
 		{
@@ -4108,6 +4146,7 @@ static void player_foot_step(const vec3_t origin,
 			sound_type = FOOTSTEP_METALWALK;
 		}
 		break;
+
 	case MATERIAL_HOLLOWMETAL:
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
 		{
@@ -4118,6 +4157,7 @@ static void player_foot_step(const vec3_t origin,
 			sound_type = FOOTSTEP_PIPEWALK;
 		}
 		break;
+
 	case MATERIAL_GRAVEL:
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
 		{
@@ -4129,6 +4169,7 @@ static void player_foot_step(const vec3_t origin,
 		}
 		effect_id = cgs.effects.footstepGravel;
 		break;
+
 	case MATERIAL_CARPET:
 	case MATERIAL_FABRIC:
 	case MATERIAL_CANVAS:
@@ -4143,6 +4184,7 @@ static void player_foot_step(const vec3_t origin,
 			sound_type = FOOTSTEP_RUGWALK;
 		}
 		break;
+
 	case MATERIAL_SOLIDWOOD:
 	case MATERIAL_HOLLOWWOOD:
 		if (foot_step_type == FOOTSTEP_HEAVY_R || foot_step_type == FOOTSTEP_HEAVY_L)
@@ -4156,7 +4198,6 @@ static void player_foot_step(const vec3_t origin,
 		break;
 
 	default:
-		//fall through
 	case MATERIAL_GLASS:
 	case MATERIAL_WATER:
 	case MATERIAL_FLESH:
@@ -4183,21 +4224,38 @@ static void player_foot_step(const vec3_t origin,
 		break;
 	}
 
+	// ---------------------------------------------------------------------
+	// Play footstep sound (if valid index)
+	// ---------------------------------------------------------------------
 	if (sound_type < FOOTSTEP_TOTAL)
 	{
-		cgi_S_StartSound(nullptr, cent->currentState.clientNum, CHAN_BODY,
-			cgs.media.footsteps[sound_type][Q_irand(0, 3)]);
+		const int randomIndex = Q_irand(0, 3);
+		cgi_S_StartSound(
+			NULL,
+			cent->currentState.clientNum,
+			CHAN_BODY,
+			cgs.media.footsteps[sound_type][randomIndex]);
 	}
 
+	// ---------------------------------------------------------------------
+	// Footstep debug / control via cg_footsteps:
+	// 1 = sounds only
+	// 2 = sounds + effects
+	// 3 = sounds + effects + marks
+	// 4 = always do both effects and marks
+	// ---------------------------------------------------------------------
 	if (cg_footsteps.integer < 4)
 	{
-		//debugging - 4 always does footstep effect
-		if (cg_footsteps.integer < 2) //1 for sounds, 2 for effects, 3 for marks
+		if (cg_footsteps.integer < 2)
 		{
+			// Sounds only
 			return;
 		}
 	}
 
+	// ---------------------------------------------------------------------
+	// Spawn footstep effect (dust, splashes, etc.)
+	// ---------------------------------------------------------------------
 	if (effect_id != -1)
 	{
 		theFxScheduler.PlayEffect(effect_id, trace.endpos, trace.plane.normal);
@@ -4205,12 +4263,17 @@ static void player_foot_step(const vec3_t origin,
 
 	if (cg_footsteps.integer < 4)
 	{
-		//debugging - 4 always does footprint decal
-		if (!b_mark || cg_footsteps.integer < 3) //1 for sounds, 2 for effects, 3 for marks
+		// 4 always does footprint decal
+		if (b_mark == false || cg_footsteps.integer < 3)
 		{
+			// No mark for this material or marks disabled
 			return;
 		}
 	}
+
+	// ---------------------------------------------------------------------
+	// Choose footprint decal shader based on which foot
+	// ---------------------------------------------------------------------
 	qhandle_t footMarkShader;
 	switch (foot_step_type)
 	{
@@ -4229,23 +4292,29 @@ static void player_foot_step(const vec3_t origin,
 		break;
 	}
 
-	// fade the shadow out with height
-	//	alpha = 1.0 - trace.fraction;
-
-	// add the mark as a temporary, so it goes directly to the renderer
-	// without taking a spot in the cg_marks array
-
+	// ---------------------------------------------------------------------
+	// Add footprint mark as a temporary impact mark
+	// ---------------------------------------------------------------------
 	vec3_t proj_normal;
 	VectorCopy(trace.plane.normal, proj_normal);
+
+	// If surface is reasonably flat, project straight up to avoid weird rotations
 	if (proj_normal[2] > 0.5f)
 	{
-		// footsteps will not have the correct orientation for all surfaces, so punt and set the projection to Z
 		proj_normal[0] = 0.0f;
 		proj_normal[1] = 0.0f;
 		proj_normal[2] = 1.0f;
 	}
-	CG_ImpactMark(footMarkShader, trace.endpos, proj_normal,
-		orientation, 1, 1, 1, 1.0f, qfalse, radius, qfalse);
+
+	CG_ImpactMark(
+		footMarkShader,
+		trace.endpos,
+		proj_normal,
+		orientation,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		qfalse,
+		radius,
+		qfalse);
 }
 
 extern vmCvar_t cg_footsteps;
@@ -16678,10 +16747,6 @@ void CG_Player(centity_t* cent)
 		refEntity_t flashlight;
 		int renderfx;
 
-		/*
-		Ghoul2 Insert End
-		*/
-
 		memset(&legs, 0, sizeof legs);
 		memset(&torso, 0, sizeof torso);
 		memset(&head, 0, sizeof head);
@@ -16692,7 +16757,6 @@ void CG_Player(centity_t* cent)
 		// Weapon sounds may need to be stopped, so check now
 		CG_StopWeaponSounds(cent);
 
-		//FIXME: pass in the axis/angles offset between the tag_torso and the tag_head?
 		// get the rotation information
 		CG_PlayerAngles(cent, legs.axis, torso.axis, head.axis);
 		if (cent->gent && cent->gent->client)
@@ -16701,7 +16765,6 @@ void CG_Player(centity_t* cent)
 		}
 
 		// get the animation state (after rotation, to allow feet shuffle)
-		// NB: Also plays keyframed animSounds (Bob- hope you dont mind, I was here late and at about 5:30 Am i needed to do something to keep me awake and i figured you wouldn't mind- you might want to check it, though, to make sure I wasn't smoking crack and missed something important, it is pretty late and I'm getting pretty close to being up for 24 hours here, so i wouldn't doubt if I might have messed something up, but i tested it and it looked right.... noticed in old code base i was doing it wrong too, whic            h explains why I was getting so many damn sounds all the time!  I had to lower the probabilities because it seemed like i was getting way too many sounds, and that was the problem!  Well, should be fixed now I think...)
 		CG_PlayerAnimation(cent, &legs.oldframe, &legs.frame, &legs.backlerp,
 			&torso.oldframe, &torso.frame, &torso.backlerp);
 
@@ -16730,8 +16793,9 @@ void CG_Player(centity_t* cent)
 				if (cent->currentState.number == cg.snap->ps.clientNum)
 				{
 					//I am the player
-					if (cg.zoomMode || !cg_trueguns.integer && cg.snap->ps.weapon != WP_SABER && cg.snap->ps.weapon !=
-						WP_MELEE || cg.snap->ps.weapon == WP_SABER && cg_truesaberonly.integer)
+					if (cg.zoomMode ||
+						(!cg_trueguns.integer && cg.snap->ps.weapon != WP_SABER && cg.snap->ps.weapon != WP_MELEE) ||
+						(cg.snap->ps.weapon == WP_SABER && cg_truesaberonly.integer))
 					{
 						//not using saber or fists
 						renderfx = RF_THIRD_PERSON; // only draw in mirrors
@@ -16741,8 +16805,9 @@ void CG_Player(centity_t* cent)
 			else if (cent->currentState.number == cg.snap->ps.viewEntity)
 			{
 				//I am the view entity
-				if (cg.zoomMode || !cg_trueguns.integer && cg.snap->ps.weapon != WP_SABER && cg.snap->ps.weapon !=
-					WP_MELEE || cg.snap->ps.weapon == WP_SABER && cg_truesaberonly.integer)
+				if (cg.zoomMode ||
+					(!cg_trueguns.integer && cg.snap->ps.weapon != WP_SABER && cg.snap->ps.weapon != WP_MELEE) ||
+					(cg.snap->ps.weapon == WP_SABER && cg_truesaberonly.integer))
 				{
 					//not using saber or fists
 					renderfx = RF_THIRD_PERSON; // only draw in mirrors
@@ -16750,17 +16815,17 @@ void CG_Player(centity_t* cent)
 			}
 		}
 
-		if (cg_shadows.integer == 2 || cg_shadows.integer == 3 && shadow)
+		if (cg_shadows.integer == 2 || (cg_shadows.integer == 3 && shadow))
 		{
 			renderfx |= RF_SHADOW_PLANE;
 		}
 		renderfx |= RF_LIGHTING_ORIGIN; // use the same origin for all
-		if (cent->gent->NPC && cent->gent->NPC->scriptFlags & SCF_MORELIGHT)
+		if (cent->gent->NPC && (cent->gent->NPC->scriptFlags & SCF_MORELIGHT))
 		{
 			renderfx |= RF_MINLIGHT; //bigger than normal min light
 		}
 
-		if (cent->gent->client && cent->gent->flags & FL_MORELIGHPLAYER)
+		if (cent->gent->client && (cent->gent->flags & FL_MORELIGHPLAYER))
 		{
 			renderfx |= RF_MINLIGHT; //bigger than normal min light
 		}
@@ -16776,14 +16841,16 @@ void CG_Player(centity_t* cent)
 			VectorCopy(cent->lerpAngles, cent->gent->client->renderInfo.torsoAngles);
 			VectorCopy(cent->lerpOrigin, cent->gent->client->renderInfo.crotchPoint);
 		}
-		if (cg.snap->ps.viewEntity > 0 && cg.snap->ps.viewEntity < ENTITYNUM_WORLD && cg.snap->ps.viewEntity == cent->
-			currentState.clientNum)
+		if (cg.snap->ps.viewEntity > 0 &&
+			cg.snap->ps.viewEntity < ENTITYNUM_WORLD &&
+			cg.snap->ps.viewEntity == cent->currentState.clientNum)
 		{
 			//player is in an entity camera view, ME
 			VectorCopy(cent->lerpOrigin, cent->gent->client->renderInfo.eyePoint);
 			VectorCopy(cent->lerpAngles, cent->gent->client->renderInfo.eyeAngles);
 			VectorCopy(cent->lerpOrigin, cent->gent->client->renderInfo.headPoint);
 		}
+
 		//
 		// add the legs
 		//
@@ -16792,10 +16859,7 @@ void CG_Player(centity_t* cent)
 
 		VectorCopy(cent->lerpOrigin, legs.origin);
 
-		//Scale applied to a refEnt will apply to any models attached to it...
-		//This seems to copy the scale to every piece attached, kinda cool, but doesn't
-		//allow the body to be scaled up without scaling a bolt on or whatnot...
-		//Only apply scale if it's not 100% scale...
+		// scale
 		if (cent->currentState.modelScale[0] != 0.0f)
 		{
 			VectorScale(legs.axis[0], cent->currentState.modelScale[0], legs.axis[0]);
@@ -16873,13 +16937,14 @@ void CG_Player(centity_t* cent)
 
 				CG_AddRefEntityWithPowerups(&head, cent->currentState.powerups, cent);
 
-				if (cent->gent && cent->gent->NPC && (cent->gent->NPC->confusionTime > cg.time || cent->gent->NPC->
-					charmedTime > cg.time || cent->gent->NPC->controlledTime > cg.time))
+				if (cent->gent && cent->gent->NPC &&
+					(cent->gent->NPC->confusionTime > cg.time ||
+						cent->gent->NPC->charmedTime > cg.time ||
+						cent->gent->NPC->controlledTime > cg.time))
 				{
 					// we are currently confused, so play an effect
 					if (TIMER_Done(cent->gent, "confusionEffectDebounce"))
 					{
-						//ARGH!!!
 						theFxScheduler.PlayEffect(cgs.effects.forceConfusion, head.origin);
 						TIMER_Set(cent->gent, "confusionEffectDebounce", 1000);
 					}
@@ -16887,8 +16952,7 @@ void CG_Player(centity_t* cent)
 
 				if (!calcedMp)
 				{
-					//First person player's eyePoint and eyeAngles should be copies from cg.refdef...
-					//Calc this client's eyepoint
+					// First person player's eyePoint and eyeAngles should be copies from cg.refdef...
 					VectorCopy(head.origin, cent->gent->client->renderInfo.eyePoint);
 					vectoangles(head.axis[0], cent->gent->client->renderInfo.eyeAngles);
 				}
@@ -16906,7 +16970,7 @@ void CG_Player(centity_t* cent)
 			CG_RegisterWeapon(cent->currentState.weapon);
 			weapon = &cg_weapons[cent->currentState.weapon];
 
-			if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
+			if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1)
 			{
 				gun.hModel = weapon->altWeaponWorldModel;
 			}
@@ -16920,101 +16984,107 @@ void CG_Player(centity_t* cent)
 				qboolean drawGun = qtrue;
 
 				VectorCopy(cent->lerpOrigin, gun.lightingOrigin);
-
 				CG_PositionEntityOnTag(&gun, &torso, torso.hModel, "tag_weapon");
 
 				gun.shadowPlane = shadow_plane;
 				gun.renderfx = renderfx;
 
-				if (drawGun)
+				if (drawGun == qtrue)
 				{
 					CG_AddRefEntityWithPowerups(
-						&gun, cent->currentState.powerups & (1 << PW_CLOAKED | 1 << PW_BATTLESUIT), cent);
+						&gun,
+						cent->currentState.powerups & (1 << PW_CLOAKED | 1 << PW_BATTLESUIT),
+						cent);
 				}
 
-				// Ensure spin state is updated for this centity and reuse the value below
+				// Z6 rotary cannon barrel spinning (third-person / world model)
 				float worldBarrelSpin = 0.0f;
+
 				if (cg_SpinningBarrels.integer && cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
 				{
 					worldBarrelSpin = CG_MachinegunSpinAngle(cent);
 				}
+				weaponData_t* w_data_local = &weaponData[cent->currentState.weapon];
 
-				// Draw rotating barrel entities for world weapons when spinning.
-				// To avoid duplicate barrels, attempt to hide the static barrel surface
-				// on the player's weapon ghoul2 model while the barrel is spinning.
+				CG_Printf("DBG: world gun ent=%d weapon=%d worldBarrelSpin=%f gent=%p weaponModel0=%d ghoul2count=%d numBarrels=%d barrelModel0=%d\n",
+					cent->currentState.number,
+					cent->currentState.weapon,
+					worldBarrelSpin,
+					(void*)cent->gent,
+					cent->gent ? cent->gent->weaponModel[0] : -1,
+					cent->gent ? (int)cent->gent->ghoul2.size() : 0,
+					w_data_local->numBarrels,
+					weapon->barrelModel[0]);
+
+				// Try bone rotation on attached ghoul2 weapon model first
+				qboolean rotatedBone = qfalse;
+				if (worldBarrelSpin != 0.0f &&
+					cent->gent &&
+					cent->gent->ghoul2.size() > 0 &&
+					cent->gent->weaponModel[0] >= 0 &&
+					cent->gent->ghoul2[cent->gent->weaponModel[0]].mModelindex != -1)
 				{
-					weaponData_t* w_data_local = &weaponData[cent->currentState.weapon];
+					const char* boneNames[] = { "rotary_cannon_barrel", "rotary_barrel", "rotary", "rotor", "barrel", "base" };
+					const int axisPerms[][3] = { {0,0,1}, {0,1,0}, {1,0,0} }; // Z, Y, X
+					for (size_t bi = 0; bi < (sizeof(boneNames) / sizeof(boneNames[0])) && !rotatedBone; bi++) {
+						for (size_t ap = 0; ap < (sizeof(axisPerms) / sizeof(axisPerms[0])) && !rotatedBone; ap++) {
+							for (int sign = 1; sign >= -1 && !rotatedBone; sign -= 2) {
+								vec3_t boneAngles = { 0.0f, 0.0f, 0.0f };
+								boneAngles[0] = sign * axisPerms[ap][0] * worldBarrelSpin;
+								boneAngles[1] = sign * axisPerms[ap][1] * worldBarrelSpin;
+								boneAngles[2] = sign * axisPerms[ap][2] * worldBarrelSpin;
+								if (gi.G2API_SetBoneAnglesOffset(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
+									boneNames[bi], boneAngles, BONE_ANGLES_PREMULT,
+									POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0, vec3_origin)) {
+									rotatedBone = qtrue;
+									CG_Printf("DBG: SetBoneAnglesOffset OK bone='%s' axisPerm=%d sign=%d ent=%d\n", boneNames[bi], (int)ap, sign, cent->currentState.number);
+									break;
+								}
+								if (gi.G2API_SetBoneAngles(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
+									boneNames[bi], boneAngles, BONE_ANGLES_PREMULT,
+									POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0)) {
+									rotatedBone = qtrue;
+									CG_Printf("DBG: SetBoneAngles OK bone='%s' axisPerm=%d sign=%d ent=%d\n", boneNames[bi], (int)ap, sign, cent->currentState.number);
+									break;
+								}
+							}
+						}
+					}
+				}
 
-					// If we have a ghoul2 weapon model attached, try to turn off common barrel surfaces.
-					if (cent->gent && cent->gent->ghoul2.size() && cent->gent->weaponModel[0] >= 0
-						&& cent->gent->ghoul2[cent->gent->weaponModel[0]].mModelindex != -1)
-					{
-						const char* surfaces[] = { "barrel", "barrel1", "barrel2", "barrel_1", "rotary_cannon_barrel", "rotary_barrel", "rotary_cannon", "barrel_off" };
+				// If bone rotation failed, hide static barrel surface and draw rotating barrel entities
+				if (!rotatedBone) {
+					CG_Printf("DBG: rotatedBone failed for ent=%d, falling back to MD3 barrels\n", cent->currentState.number);
+					if (cent->gent && cent->gent->ghoul2.size() && cent->gent->weaponModel[0] >= 0) {
+						const char* surfaces[] = { "rotary_cannon_barrel", "barrel", "rotary_barrel" };
 						const int offFlag = G2SURFACEFLAG_OFF;
-
-						for (size_t si = 0; si < sizeof(surfaces) / sizeof(surfaces[0]); si++)
-						{
-							// Turn off while spinning (use worldBarrelSpin to detect spinning
-							// so local predicted state is respected), turn on when not spinning
-							gi.G2API_SetSurfaceOnOff(&cent->gent->ghoul2[cent->gent->weaponModel[0]], surfaces[si],
-								(worldBarrelSpin != 0.0f ? offFlag : 0));
-						}
-						// Also try rotating a barrel bone if present so the static barrel appears to spin
-						if (worldBarrelSpin != 0.0f)
-						{
-							vec3_t boneAngles = { 0.0f, 0.0f, worldBarrelSpin };
-							gi.G2API_SetBoneAngles(&cent->gent->ghoul2[cent->gent->weaponModel[0]], "barrel",
-								boneAngles, BONE_ANGLES_PREMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0);
+						for (size_t si = 0; si < (sizeof(surfaces) / sizeof(surfaces[0])); si++) {
+							gi.G2API_SetSurfaceOnOff(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
+								surfaces[si], (worldBarrelSpin != 0.0f ? offFlag : 0));
 						}
 					}
 
-					// Try to rotate a bone on the ghoul2 weapon model (preferred)
-					bool rotatedBone = false;
-					if (cent->gent && cent->gent->ghoul2.size() && cent->gent->weaponModel[0] >= 0
-						&& cent->gent->ghoul2[cent->gent->weaponModel[0]].mModelindex != -1)
-					{
-						vec3_t boneAngles = { 0.0f, 0.0f, worldBarrelSpin };
-
-						// Try common bone names; if one succeeds, we won't draw separate barrel entities.
-						const char* boneNames[] = { "barrel", "base", "rotor", "rotary", "barrel_1" };
-						for (size_t bi = 0; bi < sizeof(boneNames) / sizeof(boneNames[0]); bi++)
-						{
-							if (gi.G2API_SetBoneAnglesOffset(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
-								boneNames[bi], boneAngles, BONE_ANGLES_PREMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z,
-								nullptr, 0, 0, vec3_origin))
-							{
-								rotatedBone = true;
-								break;
-							}
+					for (int i = 0; i < w_data_local->numBarrels; i++) {
+						refEntity_t barrel;
+						memset(&barrel, 0, sizeof(barrel));
+						barrel.hModel = weapon->barrelModel[i];
+						barrel.renderfx = gun.renderfx;
+						if (!barrel.hModel) {
+							CG_Printf("DBG: missing barrelModel[%d] handle=0 for ent=%d\n", i, cent->currentState.number);
+							continue;
 						}
-					}
-
-					// If bone rotation failed, fall back to drawing rotating barrel entities
-					if (!rotatedBone)
-					{
-						for (int i = 0; i < w_data_local->numBarrels; i++)
-						{
-							refEntity_t barrel = {};
-							barrel.hModel = weapon->barrelModel[i];
-							barrel.renderfx = gun.renderfx;
-
-							vec3_t barrelAngles{ 0.0f, 0.0f, 0.0f };
-							if (cg_SpinningBarrels.integer && cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
-							{
-								barrelAngles[ROLL] = worldBarrelSpin;
-							}
-							AnglesToAxis(barrelAngles, barrel.axis);
-
-							if (!i)
-							{
-								CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, "tag_barrel", nullptr);
-							}
-							else
-							{
-								CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, va("tag_barrel%d", i + 1), nullptr);
-							}
-							cgi_R_AddRefEntityToScene(&barrel);
+						vec3_t barrelAngles = { 0,0,0 };
+						if (worldBarrelSpin != 0.0f) {
+							barrelAngles[ROLL] = worldBarrelSpin;
 						}
+						AnglesToAxis(barrelAngles, barrel.axis);
+						if (i == 0) {
+							CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, "tag_barrel", NULL);
+						}
+						else {
+							CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, va("tag_barrel%d", i + 1), NULL);
+						}
+						cgi_R_AddRefEntityToScene(&barrel);
 					}
 				}
 
@@ -17046,22 +17116,24 @@ void CG_Player(centity_t* cent)
 						}
 					}
 
-					if ((cent->currentState.eFlags & EF_FIRING || cent->currentState.eFlags & EF_ALT_FIRING) && effect)
+					if (((cent->currentState.eFlags & EF_FIRING) ||
+						(cent->currentState.eFlags & EF_ALT_FIRING)) &&
+						effect)
 					{
-						vec3_t up = { 0, 0, 1 }, ax[3]{};
+						vec3_t up = { 0, 0, 1 };
+						vec3_t ax[3] = { 0 };
 
 						VectorCopy(flash.axis[0], ax[0]);
 
 						CrossProduct(up, ax[0], ax[1]);
 						CrossProduct(ax[0], ax[1], ax[2]);
 
-						if (cent->gent && cent->gent->NPC || cg.renderingThirdPerson)
+						if ((cent->gent && cent->gent->NPC) || cg.renderingThirdPerson)
 						{
 							theFxScheduler.PlayEffect(effect, flash.origin, ax);
 						}
 						else
 						{
-							// We got an effect and we're firing, so let 'er rip.
 							theFxScheduler.PlayEffect(effect, flash.origin, ax);
 						}
 					}
@@ -17079,20 +17151,20 @@ void CG_Player(centity_t* cent)
 
 						if (effect)
 						{
-							vec3_t up = { 0, 0, 1 }, ax[3]{};
+							vec3_t up = { 0, 0, 1 };
+							vec3_t ax[3] = { 0 };
 
 							VectorCopy(flash.axis[0], ax[0]);
 
 							CrossProduct(up, ax[0], ax[1]);
 							CrossProduct(ax[0], ax[1], ax[2]);
 
-							if (cent->gent && cent->gent->NPC || cg.renderingThirdPerson)
+							if ((cent->gent && cent->gent->NPC) || cg.renderingThirdPerson)
 							{
 								theFxScheduler.PlayEffect(effect, flash.origin, ax);
 							}
 							else
 							{
-								// We got an effect and we're firing, so let 'er rip.
 								theFxScheduler.PlayEffect(effect, flash.origin, ax);
 							}
 						}
@@ -17107,20 +17179,20 @@ void CG_Player(centity_t* cent)
 
 						if (effect)
 						{
-							vec3_t up = { 0, 0, 1 }, ax[3]{};
+							vec3_t up = { 0, 0, 1 };
+							vec3_t ax[3] = { 0 };
 
 							VectorCopy(flash.axis[0], ax[0]);
 
 							CrossProduct(up, ax[0], ax[1]);
 							CrossProduct(ax[0], ax[1], ax[2]);
 
-							if (cent->gent && cent->gent->NPC || cg.renderingThirdPerson)
+							if ((cent->gent && cent->gent->NPC) || cg.renderingThirdPerson)
 							{
 								theFxScheduler.PlayEffect(effect, flash.origin, ax);
 							}
 							else
 							{
-								// We got an effect and we're firing, so let 'er rip.
 								theFxScheduler.PlayEffect(effect, flash.origin, ax);
 							}
 						}
@@ -17130,23 +17202,23 @@ void CG_Player(centity_t* cent)
 
 				if (!calcedMp && !(cent->currentState.eFlags & EF_LOCKED_TO_WEAPON))
 				{
-					int i;
-					// Set the muzzle point
 					orientation_t orientation;
-
-					cgi_R_LerpTag(&orientation, weapon->weaponModel, gun.oldframe, gun.frame, 1.0f - gun.backlerp,
-						"tag_flash");
-
 					VectorCopy(gun.origin, cent->gent->client->renderInfo.muzzlePoint);
-					for (i = 0; i < 3; i++)
+
+					cgi_R_LerpTag(&orientation, weapon->weaponModel,
+						gun.oldframe, gun.frame, 1.0f - gun.backlerp, "tag_flash");
+
+					for (int i = 0; i < 3; i++)
 					{
-						VectorMA(cent->gent->client->renderInfo.muzzlePoint, orientation.origin[i], gun.axis[i],
+						VectorMA(cent->gent->client->renderInfo.muzzlePoint,
+							orientation.origin[i], gun.axis[i],
 							cent->gent->client->renderInfo.muzzlePoint);
 					}
 
 					cent->gent->client->renderInfo.mPCalcTime = cg.time;
 				}
 			}
+
 		}
 		else
 		{

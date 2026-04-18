@@ -285,7 +285,7 @@ const char* CStringEdPackage::ConvertCRLiterals_Read(const char* psString)
 	while ((iLoc = str.find("\\n")) != -1)
 	{
 		str[iLoc] = '\n';
-		str.erase(iLoc + 1, 1);
+		str.erase(static_cast<std::basic_string<char, std::char_traits<char>, std::allocator<char>>::size_type>(iLoc) + 1, 1);
 	}
 
 	return str.c_str();
@@ -747,7 +747,7 @@ void CStringEdPackage::AddEntry(const char* psLocalReference)
 	m_strCurrentEntryRef_ParseOnly = psLocalReference;
 }
 
-const char* Leetify(const char* psString)
+static const char* Leetify(const char* psString)
 {
 	static std::string str;
 	str = psString;
@@ -904,7 +904,7 @@ static const char* SE_GetFoundFile(std::string& strResult)
 //
 // return is either NULL for good else error message to display...
 //
-const char* SE_Load(const char* psFileName, SE_BOOL bLoadDebug = SE_TRUE, SE_BOOL bFailIsCritical = SE_TRUE)
+static const char* SE_Load(const char* psFileName, SE_BOOL bLoadDebug = SE_TRUE, SE_BOOL bFailIsCritical = SE_TRUE)
 {
 	////////////////////////////////////////////////////
 	//

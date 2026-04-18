@@ -282,8 +282,8 @@ void CG_RegisterWeapon(const int weapon_num)
 	}
 	else if (weapon_num == WP_Z6_ROTARY_CANNON)
 	{
-		//only weapon with more than 1 barrel..
-		cgi_R_RegisterModel("models/weapons2/z6_rotary/rotary_cannon_barrel.md3");
+		// ensure the Z6 barrel model is stored so world/third‑person falls back correctly
+		weaponInfo->barrelModel[0] = cgi_R_RegisterModel("models/weapons2/z6_rotary/rotary_cannon_barrel.md3");
 	}
 	else
 	{
@@ -1502,8 +1502,8 @@ float CG_MachinegunSpinAngle(centity_t* cent)
 
 			// Play spin-up sound for Z6
 			if (firingNow == qtrue &&
-				cg.snap != NULL &&
-				cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON)
+				(cent->currentState.weapon == WP_Z6_ROTARY_CANNON ||
+					(cg.snap != NULL && cg.snap->ps.weapon == WP_Z6_ROTARY_CANNON)))
 			{
 				cgi_S_StartSound(
 					NULL,

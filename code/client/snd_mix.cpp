@@ -31,7 +31,7 @@ portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE];
 int* snd_p, snd_linear_count, snd_vol;
 short* snd_out;
 
-void S_WriteLinearBlastStereo16()
+static void S_WriteLinearBlastStereo16()
 {
 	for (int i = 0; i < snd_linear_count; i += 2)
 	{
@@ -53,31 +53,55 @@ void S_WriteLinearBlastStereo16()
 	}
 }
 
-void S_TransferStereo16(unsigned long* pbuf, const int endtime)
+static void S_TransferStereo16(unsigned long* pbuf, const int endtime)
 {
+	// snd_p points into paintbuffer (global)
 	snd_p = reinterpret_cast<int*>(paintbuffer);
+
 	int ls_paintedtime = s_paintedtime;
 
 	while (ls_paintedtime < endtime)
 	{
-		// handle recirculating buffer issues
-		const int lpos = ls_paintedtime & ((dma.samples >> 1) - 1);
+		// ------------------------------------------------------------
+		// Compute circular buffer position safely
+		// Using unsigned prevents MSVC C6297 overflow warnings.
+		// Behaviour is identical to original bitmask wrap.
+		// ------------------------------------------------------------
+		const unsigned int halfSamples = static_cast<unsigned int>(dma.samples >> 1);
+		const unsigned int mask = halfSamples - 1U;
 
+		const int lpos = static_cast<int>(
+			static_cast<unsigned int>(ls_paintedtime) & mask);
+
+		// Output pointer into DMA buffer
 		snd_out = reinterpret_cast<short*>(pbuf) + (lpos << 1);
 
-		snd_linear_count = (dma.samples >> 1) - lpos;
-		if (ls_paintedtime + snd_linear_count > endtime)
-			snd_linear_count = endtime - ls_paintedtime;
+		// ------------------------------------------------------------
+		// Determine how many samples we can write linearly
+		// ------------------------------------------------------------
+		snd_linear_count = static_cast<int>(halfSamples) - lpos;
 
+		if (ls_paintedtime + snd_linear_count > endtime)
+		{
+			snd_linear_count = endtime - ls_paintedtime;
+		}
+
+		// Stereo = 2 channels
 		snd_linear_count <<= 1;
 
-		// write a linear blast of samples
+		// ------------------------------------------------------------
+		// Write samples into DMA buffer
+		// ------------------------------------------------------------
 		S_WriteLinearBlastStereo16();
 
+		// Advance paintbuffer pointer
 		snd_p += snd_linear_count;
+
+		// Advance painted time (divide by 2 because stereo)
 		ls_paintedtime += (snd_linear_count >> 1);
 	}
 }
+
 
 /*
 ===================
@@ -85,7 +109,7 @@ S_TransferPaintBuffer
 
 ===================
 */
-void S_TransferPaintBuffer(const int endtime)
+static void S_TransferPaintBuffer(const int endtime)
 {
 	const auto pbuf = reinterpret_cast<unsigned long*>(dma.buffer);
 
@@ -168,7 +192,7 @@ static void S_PaintChannelFrom16(const channel_t* ch, const sfx_t* sfx, const in
 	}
 }
 
-void S_PaintChannelFromMP3(channel_t* ch, const sfx_t* sc, int count, const int sampleOffset, const int bufferOffset)
+static void S_PaintChannelFromMP3(channel_t* ch, const sfx_t* sc, int count, const int sampleOffset, const int bufferOffset)
 {
 	int data;
 	static short tempMP3Buffer[PAINTBUFFER_SIZE];
@@ -214,7 +238,7 @@ void S_PaintChannelFromMP3(channel_t* ch, const sfx_t* sc, int count, const int 
 
 // subroutinised to save code dup (called twice)	-ste
 //
-void ChannelPaint(channel_t* ch, const sfx_t* sc, const int count, const int sampleOffset, const int bufferOffset)
+static void ChannelPaint(channel_t* ch, const sfx_t* sc, const int count, const int sampleOffset, const int bufferOffset)
 {
 	switch (sc->eSoundCompressionMethod)
 	{
@@ -262,7 +286,7 @@ void S_PaintChannels(const int endtime)
 			{
 				//Com_DPrintf ("background sound underrun\n");
 			}
-			memset(paintbuffer, 0, (end - s_paintedtime) * sizeof(portable_samplepair_t));
+			memset(paintbuffer, 0, (static_cast<unsigned long long>(end) - s_paintedtime) * sizeof(portable_samplepair_t));
 		}
 		else
 		{

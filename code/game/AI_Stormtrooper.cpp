@@ -925,7 +925,7 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b)
 		{
 			if (isYavin1b)
-			{// Yavin 1b howlers shouldn't be able to see you from as far away as the smart NPCs, and they shouldn't have extended hearing either
+			{// Yavin 1b monsters shouldn't be able to see you from as far away as the smart NPCs, and they shouldn't have extended hearing either
 				mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_SMALL;
 				maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_SMALL;
 			}

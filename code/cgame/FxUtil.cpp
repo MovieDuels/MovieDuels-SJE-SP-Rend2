@@ -34,6 +34,7 @@ struct SEffectList
 };
 
 constexpr auto PI = 3.14159f;
+extern void FX_CopeWithAnyLoadedSaveGames();
 
 SEffectList effectList[MAX_EFFECTS];
 SEffectList* nextValidEffect;
@@ -121,7 +122,6 @@ int FX_Init()
 
 	// ( nothing to see here, go away )
 	//
-	extern void FX_CopeWithAnyLoadedSaveGames();
 	FX_CopeWithAnyLoadedSaveGames();
 
 	return true;

@@ -426,6 +426,8 @@ The cgame and game must also be forced to restart because
 handles will be invalid
 =================
 */
+
+extern void S_ReloadAllUsedSounds();
 void CL_Snd_Restart_f()
 {
 	S_Shutdown();
@@ -438,8 +440,6 @@ void CL_Snd_Restart_f()
 	s_soundMuted = qfalse; // we can play again
 
 	S_RestartMusic();
-
-	extern void S_ReloadAllUsedSounds();
 	S_ReloadAllUsedSounds();
 
 	extern void AS_ParseSets();
