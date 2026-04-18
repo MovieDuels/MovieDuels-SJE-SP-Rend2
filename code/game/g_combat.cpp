@@ -9136,14 +9136,18 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 				|| attacker && attacker->s.number < MAX_CLIENTS && attacker_team == TEAM_FREE) //evil player attacked
 			{
 				//on opposite team
-				if (targ->client && targ->health > 0 && attacker && (attacker->client && mod != MOD_FORCE_LIGHTNING) &&
-					(attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker) && attacker->client && mod !=
-						MOD_MELEE))
+				if (targ->client &&
+					targ->health > 0 &&
+					attacker &&
+					attacker->client &&
+					mod != MOD_FORCE_LIGHTNING &&
+					g_spskill->integer <= 1 &&
+					(attacker->s.number < MAX_CLIENTS ||
+						G_ControlledByPlayer(attacker)) &&
+					mod != MOD_MELEE)
 				{
-					//targ is creature and attacker is creature
 					if (take > targ->health)
 					{
-						//damage is greater than target's health, only give BP/FP reward for damage used to kill victim
 						AddFatigueHurtBonusMax(attacker, targ, mod);
 					}
 					else
@@ -9151,6 +9155,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 						AddFatigueHurtBonus(attacker, targ, mod);
 					}
 				}
+
 
 				targ->health = targ->health - take;
 
@@ -9222,14 +9227,18 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 
 				if (take_damage)
 				{
-					if (targ->client && targ->health > 0 && attacker && (attacker->client && mod != MOD_FORCE_LIGHTNING)
-						&& (attacker->s.number < MAX_CLIENTS || G_ControlledByPlayer(attacker) && attacker->client &&
-							mod != MOD_MELEE))
+					if (targ->client &&
+						targ->health > 0 &&
+						attacker &&
+						attacker->client &&
+						mod != MOD_FORCE_LIGHTNING &&
+						g_spskill->integer <= 1 &&
+						(attacker->s.number < MAX_CLIENTS ||
+							G_ControlledByPlayer(attacker)) &&
+						mod != MOD_MELEE)
 					{
-						//targ is creature and attacker is creature
 						if (take > targ->health)
 						{
-							//damage is greater than target's health, only give BP/FP reward for damage used to kill victim
 							AddFatigueHurtBonusMax(attacker, targ, mod);
 						}
 						else
@@ -9237,6 +9246,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 							AddFatigueHurtBonus(attacker, targ, mod);
 						}
 					}
+
 
 					targ->health = targ->health - take;
 

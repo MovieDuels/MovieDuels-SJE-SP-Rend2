@@ -16965,8 +16965,8 @@ void CG_Player(centity_t* cent)
 			}
 
 			//
-			// add the gun
-			//
+            // add the gun
+            //
 			CG_RegisterWeapon(cent->currentState.weapon);
 			weapon = &cg_weapons[cent->currentState.weapon];
 
@@ -16997,111 +16997,64 @@ void CG_Player(centity_t* cent)
 						cent);
 				}
 
-				// Z6 rotary cannon barrel spinning (third-person / world model)
-				float worldBarrelSpin = 0.0f;
-
-				if (cg_SpinningBarrels.integer && cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
+				// Z6 rotary cannon barrel spinning (third-person, MD3 overlay)
+				if (cent->currentState.weapon == WP_Z6_ROTARY_CANNON &&
+					cg_SpinningBarrels.integer)
 				{
-					worldBarrelSpin = CG_MachinegunSpinAngle(cent);
-				}
-				weaponData_t* w_data_local = &weaponData[cent->currentState.weapon];
+					const weaponData_t* w_data_local = &weaponData[cent->currentState.weapon];
 
-				CG_Printf("DBG: world gun ent=%d weapon=%d worldBarrelSpin=%f gent=%p weaponModel0=%d ghoul2count=%d numBarrels=%d barrelModel0=%d\n",
-					cent->currentState.number,
-					cent->currentState.weapon,
-					worldBarrelSpin,
-					(void*)cent->gent,
-					cent->gent ? cent->gent->weaponModel[0] : -1,
-					cent->gent ? (int)cent->gent->ghoul2.size() : 0,
-					w_data_local->numBarrels,
-					weapon->barrelModel[0]);
+					if (w_data_local->numBarrels > 0)
+					{
+						float spin = CG_MachinegunSpinAngle(cent);
 
-				// Try bone rotation on attached ghoul2 weapon model first
-				qboolean rotatedBone = qfalse;
-				if (worldBarrelSpin != 0.0f &&
-					cent->gent &&
-					cent->gent->ghoul2.size() > 0 &&
-					cent->gent->weaponModel[0] >= 0 &&
-					cent->gent->ghoul2[cent->gent->weaponModel[0]].mModelindex != -1)
-				{
-					const char* boneNames[] = { "rotary_cannon_barrel", "rotary_barrel", "rotary", "rotor", "barrel", "base" };
-					const int axisPerms[][3] = { {0,0,1}, {0,1,0}, {1,0,0} }; // Z, Y, X
-					for (size_t bi = 0; bi < (sizeof(boneNames) / sizeof(boneNames[0])) && !rotatedBone; bi++) {
-						for (size_t ap = 0; ap < (sizeof(axisPerms) / sizeof(axisPerms[0])) && !rotatedBone; ap++) {
-							for (int sign = 1; sign >= -1 && !rotatedBone; sign -= 2) {
-								vec3_t boneAngles = { 0.0f, 0.0f, 0.0f };
-								boneAngles[0] = sign * axisPerms[ap][0] * worldBarrelSpin;
-								boneAngles[1] = sign * axisPerms[ap][1] * worldBarrelSpin;
-								boneAngles[2] = sign * axisPerms[ap][2] * worldBarrelSpin;
-								if (gi.G2API_SetBoneAnglesOffset(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
-									boneNames[bi], boneAngles, BONE_ANGLES_PREMULT,
-									POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0, vec3_origin)) {
-									rotatedBone = qtrue;
-									CG_Printf("DBG: SetBoneAnglesOffset OK bone='%s' axisPerm=%d sign=%d ent=%d\n", boneNames[bi], (int)ap, sign, cent->currentState.number);
-									break;
-								}
-								if (gi.G2API_SetBoneAngles(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
-									boneNames[bi], boneAngles, BONE_ANGLES_PREMULT,
-									POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0)) {
-									rotatedBone = qtrue;
-									CG_Printf("DBG: SetBoneAngles OK bone='%s' axisPerm=%d sign=%d ent=%d\n", boneNames[bi], (int)ap, sign, cent->currentState.number);
-									break;
-								}
+						for (int i = 0; i < w_data_local->numBarrels; i++)
+						{
+							refEntity_t barrel;
+							memset(&barrel, 0, sizeof barrel);
+
+							barrel.hModel = weapon->barrelModel[i];
+							barrel.renderfx = gun.renderfx;
+
+							if (!barrel.hModel)
+							{
+								continue;
 							}
-						}
-					}
-				}
 
-				// If bone rotation failed, hide static barrel surface and draw rotating barrel entities
-				if (!rotatedBone) {
-					CG_Printf("DBG: rotatedBone failed for ent=%d, falling back to MD3 barrels\n", cent->currentState.number);
-					if (cent->gent && cent->gent->ghoul2.size() && cent->gent->weaponModel[0] >= 0) {
-						const char* surfaces[] = { "rotary_cannon_barrel", "barrel", "rotary_barrel" };
-						const int offFlag = G2SURFACEFLAG_OFF;
-						for (size_t si = 0; si < (sizeof(surfaces) / sizeof(surfaces[0])); si++) {
-							gi.G2API_SetSurfaceOnOff(&cent->gent->ghoul2[cent->gent->weaponModel[0]],
-								surfaces[si], (worldBarrelSpin != 0.0f ? offFlag : 0));
-						}
-					}
+							vec3_t barrelAngles = { 0.0f, 0.0f, 0.0f };
+							barrelAngles[ROLL] = spin;
+							AnglesToAxis(barrelAngles, barrel.axis);
 
-					for (int i = 0; i < w_data_local->numBarrels; i++) {
-						refEntity_t barrel;
-						memset(&barrel, 0, sizeof(barrel));
-						barrel.hModel = weapon->barrelModel[i];
-						barrel.renderfx = gun.renderfx;
-						if (!barrel.hModel) {
-							CG_Printf("DBG: missing barrelModel[%d] handle=0 for ent=%d\n", i, cent->currentState.number);
-							continue;
+							if (i == 0)
+							{
+								CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, "tag_barrel", NULL);
+							}
+							else
+							{
+								CG_PositionRotatedEntityOnTag(
+									&barrel,
+									&gun,
+									gun.hModel,
+									va("tag_barrel%d", i + 1),
+									NULL);
+							}
+
+							cgi_R_AddRefEntityToScene(&barrel);
 						}
-						vec3_t barrelAngles = { 0,0,0 };
-						if (worldBarrelSpin != 0.0f) {
-							barrelAngles[ROLL] = worldBarrelSpin;
-						}
-						AnglesToAxis(barrelAngles, barrel.axis);
-						if (i == 0) {
-							CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, "tag_barrel", NULL);
-						}
-						else {
-							CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, va("tag_barrel%d", i + 1), NULL);
-						}
-						cgi_R_AddRefEntityToScene(&barrel);
 					}
 				}
 
 				//
 				// add the flash (even if invisible)
 				//
-
-				// impulse flash
-				if (cent->muzzleFlashTime > 0 && w_data && !(cent->currentState.eFlags & EF_LOCKED_TO_WEAPON))
+				if (cent->muzzleFlashTime > 0 &&
+					w_data &&
+					!(cent->currentState.eFlags & EF_LOCKED_TO_WEAPON))
 				{
 					int effect = 0;
-
 					cent->muzzleFlashTime = 0;
 
 					CG_PositionEntityOnTag(&flash, &gun, gun.hModel, "tag_flash");
 
-					// Try and get a default muzzle so we have one to fall back on
 					if (w_data->mMuzzleEffectID)
 					{
 						effect = w_data->mMuzzleEffectID;
@@ -17109,66 +17062,42 @@ void CG_Player(centity_t* cent)
 
 					if (cent->currentState.eFlags & EF_ALT_FIRING)
 					{
-						// We're alt-firing, so see if we need to override with a custom alt-fire effect
 						if (w_data->mAltMuzzleEffectID)
 						{
 							effect = w_data->mAltMuzzleEffectID;
 						}
 					}
 
-					if (((cent->currentState.eFlags & EF_FIRING) ||
-						(cent->currentState.eFlags & EF_ALT_FIRING)) &&
+					if ((cent->currentState.eFlags & EF_FIRING ||
+						cent->currentState.eFlags & EF_ALT_FIRING) &&
 						effect)
 					{
 						vec3_t up = { 0, 0, 1 };
 						vec3_t ax[3] = { 0 };
 
 						VectorCopy(flash.axis[0], ax[0]);
-
 						CrossProduct(up, ax[0], ax[1]);
 						CrossProduct(ax[0], ax[1], ax[2]);
 
-						if ((cent->gent && cent->gent->NPC) || cg.renderingThirdPerson)
-						{
-							theFxScheduler.PlayEffect(effect, flash.origin, ax);
-						}
-						else
-						{
-							theFxScheduler.PlayEffect(effect, flash.origin, ax);
-						}
+						theFxScheduler.PlayEffect(effect, flash.origin, ax);
 					}
 				}
 
-				if (!in_camera && cent->muzzleOverheatTime > 0 && w_data)
+				//
+				// muzzle overheat
+				//
+				if (!in_camera &&
+					cent->muzzleOverheatTime > 0 &&
+					w_data)
 				{
 					int effect = 0;
+
 					if (!cg.renderingThirdPerson && cg_trueguns.integer)
 					{
 						if (w_data->mTrueOverloadMuzzleEffectID)
 						{
 							effect = w_data->mTrueOverloadMuzzleEffectID;
 						}
-
-						if (effect)
-						{
-							vec3_t up = { 0, 0, 1 };
-							vec3_t ax[3] = { 0 };
-
-							VectorCopy(flash.axis[0], ax[0]);
-
-							CrossProduct(up, ax[0], ax[1]);
-							CrossProduct(ax[0], ax[1], ax[2]);
-
-							if ((cent->gent && cent->gent->NPC) || cg.renderingThirdPerson)
-							{
-								theFxScheduler.PlayEffect(effect, flash.origin, ax);
-							}
-							else
-							{
-								theFxScheduler.PlayEffect(effect, flash.origin, ax);
-							}
-						}
-						cent->muzzleOverheatTime = 0;
 					}
 					else
 					{
@@ -17176,49 +17105,50 @@ void CG_Player(centity_t* cent)
 						{
 							effect = w_data->mOverloadMuzzleEffectID;
 						}
-
-						if (effect)
-						{
-							vec3_t up = { 0, 0, 1 };
-							vec3_t ax[3] = { 0 };
-
-							VectorCopy(flash.axis[0], ax[0]);
-
-							CrossProduct(up, ax[0], ax[1]);
-							CrossProduct(ax[0], ax[1], ax[2]);
-
-							if ((cent->gent && cent->gent->NPC) || cg.renderingThirdPerson)
-							{
-								theFxScheduler.PlayEffect(effect, flash.origin, ax);
-							}
-							else
-							{
-								theFxScheduler.PlayEffect(effect, flash.origin, ax);
-							}
-						}
-						cent->muzzleOverheatTime = 0;
 					}
+
+					if (effect)
+					{
+						vec3_t up = { 0, 0, 1 };
+						vec3_t ax[3] = { 0 };
+
+						VectorCopy(flash.axis[0], ax[0]);
+						CrossProduct(up, ax[0], ax[1]);
+						CrossProduct(ax[0], ax[1], ax[2]);
+
+						theFxScheduler.PlayEffect(effect, flash.origin, ax);
+					}
+
+					cent->muzzleOverheatTime = 0;
 				}
 
-				if (!calcedMp && !(cent->currentState.eFlags & EF_LOCKED_TO_WEAPON))
+				//
+				// muzzle point for gameplay
+				//
+				if (!calcedMp &&
+					!(cent->currentState.eFlags & EF_LOCKED_TO_WEAPON))
 				{
 					orientation_t orientation;
 					VectorCopy(gun.origin, cent->gent->client->renderInfo.muzzlePoint);
 
-					cgi_R_LerpTag(&orientation, weapon->weaponModel,
-						gun.oldframe, gun.frame, 1.0f - gun.backlerp, "tag_flash");
+					cgi_R_LerpTag(&orientation,
+						weapon->weaponModel,
+						gun.oldframe,
+						gun.frame,
+						1.0f - gun.backlerp,
+						"tag_flash");
 
 					for (int i = 0; i < 3; i++)
 					{
 						VectorMA(cent->gent->client->renderInfo.muzzlePoint,
-							orientation.origin[i], gun.axis[i],
+							orientation.origin[i],
+							gun.axis[i],
 							cent->gent->client->renderInfo.muzzlePoint);
 					}
 
 					cent->gent->client->renderInfo.mPCalcTime = cg.time;
 				}
 			}
-
 		}
 		else
 		{
