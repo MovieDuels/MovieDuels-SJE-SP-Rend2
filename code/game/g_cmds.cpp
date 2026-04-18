@@ -76,6 +76,9 @@ extern void ForceDeadlySight(gentity_t* self);
 extern void ForceBlast(gentity_t* self);
 extern void ForceProjection(gentity_t* self);
 
+// Pazaak client command handler (pzk ...)
+#include "g_pazaak.h"
+
 /*
 ==================
 CheatsOk
@@ -3056,6 +3059,10 @@ void ClientCommand(const int clientNum)
 	else if (Q_stricmp(cmd, "victory") == 0)
 	{
 		G_Victory(ent);
+	}
+	else if (Q_stricmp(cmd, "pzk") == 0)
+	{
+		G_Pazaak_ProcessClientCommand(ent);
 	}
 	else if (Q_stricmp(cmd, "NPCdrive") == 0)
 	{

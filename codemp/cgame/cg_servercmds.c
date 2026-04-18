@@ -1583,7 +1583,8 @@ static serverCommand_t	commands[] = {
 	{ "spc",				CG_SiegeProfileMenu_f },
 	{ "sxd",				CG_ParseSiegeExtendedData },
 	{ "tchat",				CG_Chat_f },
-	{ "tinfo",				CG_ParseTeamInfo },
+	{ "tinfo",			CG_ParseTeamInfo },
+	{ "pzk",			CG_Pazaak_ServerCmd_f },
 };
 
 static const size_t numCommands = ARRAY_LEN(commands);

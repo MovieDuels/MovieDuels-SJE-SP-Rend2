@@ -38,6 +38,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "qcommon/ojk_saved_game_helper.h"
 #include <rd-common/mdx_format.h>
 
+#include "g_pazaak.h"
+
 extern void WP_SaberLoadParms();
 extern qboolean G_PlayerSpawned();
 
@@ -2259,6 +2261,9 @@ void G_RunFrame(const int level_time)
 	level.previousTime = level.time;
 	level.time = level_time;
 	g_entities[0].nearAllies = ENTITYNUM_NONE;
+
+	// advance Pazaak state machine
+	G_Pazaak_RunFrame(level_time);
 
 	//ResetTeamCounters();
 	NAV::DecayDangerSenses();

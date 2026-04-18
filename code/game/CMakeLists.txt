@@ -103,6 +103,7 @@ set(SPGameGameFiles
 	"${SPDir}/game/g_utils.cpp"
 	"${SPDir}/game/g_weapon.cpp"
 	"${SPDir}/game/g_weaponLoad.cpp"
+	"${SPDir}/game/g_pazaak.cpp"
 	"${SPDir}/game/genericparser2.cpp"
 	"${SPDir}/game/NPC.cpp"
 	"${SPDir}/game/NPC_behavior.cpp"
