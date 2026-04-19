@@ -360,7 +360,8 @@ using persEnum_t = enum
 	// scoreboard - number of player shots that hit an enemy
 	PERS_ENEMIES_KILLED,
 	// scoreboard - number of enemies player killed
-	PERS_TEAMMATES_KILLED // scoreboard - number of teammates killed
+	PERS_TEAMMATES_KILLED, // scoreboard - number of teammates killed
+	PERS_CREDITS // player currency for betting
 };
 
 // entityState_t->eFlags
