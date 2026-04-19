@@ -9161,33 +9161,6 @@ void sab_beh_saber_should_be_disarmed_attacker(gentity_t* attacker, const int sa
 	}
 }
 
-void sab_beh_add_balance(const gentity_t* self, int amount)
-{
-	if (!WalkCheck(self))
-	{
-		//running or moving very fast, can't balance as well
-		if (amount > 0)
-		{
-			amount *= 2;
-		}
-		else
-		{
-			amount = amount * .5f;
-		}
-	}
-
-	self->client->ps.saberFatigueChainCount += amount;
-
-	if (self->client->ps.saberFatigueChainCount < MISHAPLEVEL_NONE)
-	{
-		self->client->ps.saberFatigueChainCount = MISHAPLEVEL_NONE;
-	}
-	else if (self->client->ps.saberFatigueChainCount >= MISHAPLEVEL_OVERLOAD)
-	{
-		self->client->ps.saberFatigueChainCount = MISHAPLEVEL_MAX;
-	}
-}
-
 static void wp_saber_damage_trace_amd(gentity_t* ent, int saber_num, int blade_num)
 {
 	vec3_t mp1;
@@ -11597,12 +11570,12 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saber_num, int blade_num)
 								{
 									//Low points = bad blocks
 									SabBeh_SaberShouldBeDisarmedBlocker(hit_owner, saber_num);
-									wp_block_points_regenerate_over_ride(hit_owner, BLOCKPOINTS_TEN);
+									WP_ForcePowerRegenerate(hit_owner, BLOCKPOINTS_TEN);
 								}
 								else
 								{
 									g_fatigue_bp_knockaway(hit_owner);
-									PM_AddBlockFatigue(&hit_owner->client->ps, BLOCKPOINTS_TEN);
+									PM_AddFatigue(&hit_owner->client->ps, BLOCKPOINTS_TEN);
 								}
 
 								if (d_blockinfo->integer || g_DebugSaberCombat->integer)
@@ -41603,11 +41576,10 @@ void WP_BlockPointsUpdate(const gentity_t* self)
 		}
 	}
 	else
-	{
+	{ //npcs don't have the block button, so just check if they're not doing anything that would prevent regen
 		//when not using the block, regenerate at 10 points per second
 		if (!PM_InKnockDown(&self->client->ps)
 			&& self->client->ps.groundEntityNum != ENTITYNUM_NONE
-			&& WalkCheck(self)
 			&& !PM_SaberInAttack(self->client->ps.saber_move)
 			&& !pm_saber_in_special_attack(self->client->ps.torsoAnim)
 			&& !PM_SpinningSaberAnim(self->client->ps.torsoAnim)
@@ -41617,9 +41589,10 @@ void WP_BlockPointsUpdate(const gentity_t* self)
 		{
 			if (self->client->ps.BlockPointsRegenDebounceTime < level.time)
 			{
-				WP_BlockPointsRegenerate(self, self->client->ps.BlockPointRegenAmount);
+				WP_BlockPointsRegenerate(self,1 /*self->client->ps.BlockPointRegenAmount*/);
 
 				self->client->ps.BlockPointsRegenDebounceTime = level.time + self->client->ps.BlockPointRegenRate;
+				
 				if (self->client->ps.forceRageRecoveryTime >= level.time)
 				{
 					//regen half as fast
@@ -41850,19 +41823,22 @@ qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker
 	vec3_t hit_pos;
 	vec3_t hit_flat = { 0 };
 
-	// MP uses 0.0f tolerance
+	// Slight tolerance so attacks slightly off-center can still be blocked
 	const qboolean in_front_of_me =
 		InFront(attacker->client->ps.origin,
 			blocker->client->ps.origin,
 			blocker->client->ps.viewangles,
-			0.0f);
+			0.3f);
+
+	const qboolean blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;	//Normal Blocking
+	const qboolean active_blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;	//Active Blocking
 
 	// ------------------------------------------------------------
 	// Manual block requirement (players only)
 	// ------------------------------------------------------------
 	if (blocker->s.number < MAX_CLIENTS || G_ControlledByPlayer(blocker))
 	{
-		if (!(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)))
+		if (!(blocking || active_blocking))
 			return qfalse;
 	}
 
@@ -41910,16 +41886,16 @@ qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker
 	// Flatten hit into blocker's local plane
 	hit_flat[0] = 0;
 	hit_flat[1] = DotProduct(p_right, hit_pos);
-
-	// MP uses fixed -10 vertical offset
-	hit_flat[2] = hit_pos[2] - 10;
-
+	hit_flat[2] = hit_pos[2] - (attacker->client->ps.viewheight * 0.25f);
 	VectorNormalize(hit_flat);
 
 	// Player's intended parry direction
 	parrier_move[0] = 0;
 	parrier_move[1] = blocker->client->pers.cmd.rightmove;
 	parrier_move[2] = -blocker->client->pers.cmd.forwardmove;
+
+	if (VectorLength(parrier_move) < 0.1f)
+		return qfalse; // no directional input → no parry
 
 	VectorNormalize(parrier_move);
 

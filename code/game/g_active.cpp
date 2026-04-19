@@ -1986,6 +1986,7 @@ Actions that happen once a second
 extern void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps);
 extern void WP_SaberFatigueRegenerate(int override_amt);
 extern void WP_BlasterFatigueRegenerate(int override_amt);
+extern void WP_BlockPointsRegenerate(const gentity_t* self, int override_amt);
 
 static void ClientTimerActions(gentity_t* ent, const int msec)
 {
@@ -2144,7 +2145,8 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 					!PM_SaberInBrokenParry(ps->saber_move) &&
 					ps->saberBlockingTime < level.time)
 				{
-					ps->blockPoints++;
+					WP_BlockPointsRegenerate(ent, 1 /*self->client->ps.BlockPointRegenAmount*/);
+					//ps->blockPoints++;
 				}
 			}
 

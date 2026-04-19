@@ -13907,7 +13907,7 @@ static void PM_NPCFatigue(playerState_t* ps, const int new_move)
 				if (PM_KnockAwayStaffAndDuels(new_move))
 				{
 					//simple saber attack
-					PM_AddBlockFatigue(ps, Fatigue_SaberAttack());
+					PM_AddBlockFatigue(ps, FATIGUE_AUTOSABERDEFENSE);
 				}
 				else if (PM_KnockawayForParry(new_move))
 				{
@@ -13954,7 +13954,7 @@ static void PM_NPCFatigue(playerState_t* ps, const int new_move)
 				else if (PM_KnockAwayStaffAndDuels(new_move))
 				{
 					//simple saber attack
-					PM_AddFatigue(ps, Fatigue_SaberAttack());
+					PM_AddFatigue(ps, FATIGUE_AUTOSABERDEFENSE);
 				}
 				else if (PM_SaberInTransition(new_move) && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
 				{
@@ -13971,43 +13971,6 @@ static void PM_NPCFatigue(playerState_t* ps, const int new_move)
 						}
 					}
 				}
-			}
-		}
-	}
-}
-
-static void PM_BlockFatigue(playerState_t* ps, const int new_move)
-{
-	if (g_SerenityJediEngineMode->integer == 2)
-	{
-		if (ps->saber_move != new_move)
-		{
-			if (PM_KickMove(new_move))
-			{
-				//melee move
-				PM_AddBlockFatigue(ps, FATIGUE_MELEE);
-			}
-			else if (PM_KnockAwayStaffAndDuels(new_move))
-			{
-				//simple saber attack
-				PM_AddBlockFatigue(ps, FATIGUE_AUTOSABERDEFENSE);
-			}
-		}
-	}
-	else
-	{
-		if (ps->saber_move != new_move)
-		{
-			//wasn't playing that attack before
-			if (PM_KickMove(new_move))
-			{
-				//melee move
-				PM_AddFatigue(ps, FATIGUE_MELEE);
-			}
-			else if (PM_KnockAwayStaffAndDuels(new_move))
-			{
-				//simple saber attack
-				PM_AddFatigue(ps, FATIGUE_AUTOSABERDEFENSE);
 			}
 		}
 	}

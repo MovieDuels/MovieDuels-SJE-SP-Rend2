@@ -190,34 +190,54 @@ void npc_check_speak(gentity_t* speaker_npc)
 	}
 }
 
+//======================================================================
+// g_do_m_block_response
+//
+// Trigger a random vocal reaction on a successful manual block,
+// typically for bot attackers that just got perfect‑blocked.
+//======================================================================
 void g_do_m_block_response(const gentity_t* speaker_npc_self)
 {
-	const int voice_event = Q_irand(0, 5);
-
-	if (g_Advancedaitalk->integer < 1)
+	// Safety: must have a valid speaking entity with a client
+	if (speaker_npc_self == NULL || speaker_npc_self->client == NULL)
 	{
-		return; // no
+		Com_Printf("g_do_m_block_response: invalid speaker entity\n");
+		return;
 	}
+
+	// Randomly choose one of six voice categories
+	const int voice_event = Q_irand(0, 5);
 
 	switch (voice_event)
 	{
 	case 0:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_GLOAT1, EV_GLOAT3), 10000);
+		// Gloat lines
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_GLOAT1, EV_GLOAT3), 2000);
 		break;
+
 	case 1:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_JCHASE1, EV_JCHASE3), 10000);
+		// Chase / pursuit lines
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_JCHASE1, EV_JCHASE3), 2000);
 		break;
+
 	case 2:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_COMBAT1, EV_COMBAT3), 10000);
+		// Generic combat barks
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_COMBAT1, EV_COMBAT3), 2000);
 		break;
+
 	case 3:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
+		// Anger / frustration lines
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_ANGER1, EV_ANGER3), 2000);
 		break;
+
 	case 4:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_TAUNT1, EV_TAUNT3), 10000);
+		// Taunt lines
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_TAUNT1, EV_TAUNT3), 2000);
 		break;
+
 	default:
-		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_PUSHED1, EV_PUSHED3), 10000);
+		// Pushed / reaction lines
+		G_AddVoiceEvent(speaker_npc_self, Q_irand(EV_PUSHED1, EV_PUSHED3), 2000);
 		break;
 	}
 }
