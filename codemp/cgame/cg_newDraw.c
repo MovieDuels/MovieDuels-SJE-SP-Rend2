@@ -23,7 +23,17 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "cg_local.h"
 #include "ui/ui_shared.h"
-#include "ui/jamp/menudef.h"
+#if defined(__has_include)
+#  if __has_include("ui/jamp/menudef.h")
+#    include "ui/jamp/menudef.h"
+#  else
+#    include "ui/menudef.h"
+#  endif
+#else
+#  include "ui/menudef.h"
+#endif
+// Pazaak ownerdraws and prototypes
+#include "cg_pazaak.h"
 
 extern displayContextDef_t cgDC;
 
