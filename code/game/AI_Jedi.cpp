@@ -140,7 +140,6 @@ extern qboolean is_anim_requires_responce(const gentity_t* self);
 extern qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t push_dir);
 extern qboolean BG_InKnockDown(int anim);
 extern void ForceGrasp(gentity_t* ent);
-extern qboolean BG_SaberInNonIdleDamageMove(const playerState_t* ps);
 extern qboolean SaberAttacking(const gentity_t* self);
 extern cvar_t* com_outcast;
 extern qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc);
@@ -6080,9 +6079,9 @@ static qboolean jedi_saber_block()
 			{
 				//dodged
 				int dodge_time = NPC->client->ps.torsoAnimTimer;
-				if (NPCInfo->rank > RANK_LT_JG && 
+				if (NPCInfo->rank > RANK_LT_JG &&
 					(NPC->client->NPC_class != CLASS_DESANN &&
-					NPC->client->NPC_class != CLASS_VADER))
+						NPC->client->NPC_class != CLASS_VADER))
 				{
 					//higher-level guys can dodge faster
 					dodge_time -= 200;

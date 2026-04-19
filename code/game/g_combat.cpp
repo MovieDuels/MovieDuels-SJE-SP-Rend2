@@ -62,7 +62,7 @@ extern qboolean rosh_twin_present();
 extern void G_CheckCharmed(gentity_t* self);
 extern qboolean Wampa_CheckDropVictim(gentity_t* self, qboolean exclude_me);
 extern qboolean rocket_trooper_player(const gentity_t* self);
-
+extern qboolean BG_SaberInNonIdleDamageMove(const playerState_t* ps);
 extern int G_ShipSurfaceForSurfName(const char* surfaceName);
 extern qboolean G_FlyVehicleDestroySurface(gentity_t* veh, int surface);
 extern void G_VehicleSetDamageLocFlags(gentity_t* veh, int impactDir, int deathPoint);
@@ -134,9 +134,9 @@ extern qboolean PM_LockedAnim(int anim);
 extern qboolean PM_KnockDownAnim(int anim);
 extern void G_SpeechEvent(const gentity_t* self, int event);
 extern qboolean rosh_being_healed(const gentity_t* self);
-void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, int means_of_death);
-void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, int mod);
-void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, int mod);
+void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, const int means_of_death);
+void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, const int mod);
+void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, const int mod);
 
 static int G_CheckForLedge(const gentity_t* self, vec3_t fall_check_dir, float check_dist);
 static void G_TrackWeaponUsage(const gentity_t* self, const gentity_t* inflictor, int add, int mod);
@@ -9147,15 +9147,20 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 					mod != MOD_MELEE)
 				{
 					if (take > targ->health)
-					{
-						AddFatigueHurtBonusMax(attacker, targ, mod);
+					{//damage is greated than target's health, only give experience for damage used to kill victim
+						if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
+						{
+							AddFatigueHurtBonusMax(attacker, targ, mod);
+						}
 					}
 					else
 					{
-						AddFatigueHurtBonus(attacker, targ, mod);
+						if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
+						{
+							AddFatigueHurtBonus(attacker, targ, mod);
+						}
 					}
 				}
-
 
 				targ->health = targ->health - take;
 
@@ -9238,15 +9243,20 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 						mod != MOD_MELEE)
 					{
 						if (take > targ->health)
-						{
-							AddFatigueHurtBonusMax(attacker, targ, mod);
+						{//damage is greated than target's health, only give experience for damage used to kill victim
+							if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
+							{
+								AddFatigueHurtBonusMax(attacker, targ, mod);
+							}
 						}
 						else
 						{
-							AddFatigueHurtBonus(attacker, targ, mod);
+							if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
+							{
+								AddFatigueHurtBonus(attacker, targ, mod);
+							}
 						}
 					}
-
 
 					targ->health = targ->health - take;
 
@@ -9639,9 +9649,7 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 }
 
 //Combat Reward Code
-void AddFatigueKillBonus(const gentity_t* attacker,
-	const gentity_t* victim,
-	const int means_of_death)
+void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, const int means_of_death)
 {
 	// Validate attacker and victim
 	if (attacker == NULL ||
@@ -9720,9 +9728,7 @@ void AddFatigueKillBonus(const gentity_t* attacker,
 	}
 }
 
-void AddFatigueHurtBonus(const gentity_t* attacker,
-	const gentity_t* victim,
-	const int mod)
+void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, const int mod)
 {
 	// Validate attacker and victim first
 	if (attacker == NULL ||
@@ -9810,9 +9816,7 @@ void AddFatigueHurtBonus(const gentity_t* attacker,
 	}
 }
 
-void AddFatigueHurtBonusMax(const gentity_t* attacker,
-	const gentity_t* victim,
-	const int mod)
+void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, const int mod)
 {
 	// Validate attacker and victim first
 	if (attacker == NULL ||

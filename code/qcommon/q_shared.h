@@ -2062,7 +2062,7 @@ public:
 	int forcePowerDebounce[NUM_FORCE_POWERS]; //for effects that must have an interval
 	int forcePower;
 	int forcePowerMax;
-	int BlockPointsMax;
+	int blockPointsMax;
 	int forcePowerRegenDebounceTime;
 	int BlockPointsRegenDebounceTime;
 
@@ -2351,7 +2351,7 @@ public:
 		saved_game.write<int32_t>(forcePowerDebounce);
 		saved_game.write<int32_t>(forcePower);
 		saved_game.write<int32_t>(forcePowerMax);
-		saved_game.write<int32_t>(BlockPointsMax);
+		saved_game.write<int32_t>(blockPointsMax);
 		saved_game.write<int32_t>(forcePowerRegenDebounceTime);
 		saved_game.write<int32_t>(BlockPointsRegenDebounceTime);
 
@@ -2631,7 +2631,7 @@ public:
 		saved_game.read<int32_t>(forcePowerDebounce);
 		saved_game.read<int32_t>(forcePower);
 		saved_game.read<int32_t>(forcePowerMax);
-		saved_game.read<int32_t>(BlockPointsMax);
+		saved_game.read<int32_t>(blockPointsMax);
 		saved_game.read<int32_t>(forcePowerRegenDebounceTime);
 		saved_game.read<int32_t>(BlockPointsRegenDebounceTime);
 
