@@ -61,12 +61,12 @@ extern qboolean PM_SaberInAttack(int move);
 extern qboolean PM_SaberInStart(int move);
 extern qboolean pm_saber_in_special_attack(int anim);
 extern qboolean PM_SpinningSaberAnim(int anim);
-extern qboolean PM_SpinningAnim(int anim);
+extern qboolean PM_SpinningAnim(const int anim);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
-extern qboolean PM_CrouchAnim(int anim);
-extern qboolean PM_FlippingAnim(int anim);
-extern qboolean PM_RollingAnim(int anim);
-extern qboolean PM_InCartwheel(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
+extern qboolean PM_FlippingAnim(const int anim);
+extern qboolean PM_RollingAnim(const int anim);
+extern qboolean PM_InCartwheel(const int anim);
 
 #include "g_pazaak.h"
 

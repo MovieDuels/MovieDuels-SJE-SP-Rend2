@@ -62,7 +62,6 @@ extern qboolean rosh_twin_present();
 extern void G_CheckCharmed(gentity_t* self);
 extern qboolean Wampa_CheckDropVictim(gentity_t* self, qboolean exclude_me);
 extern qboolean rocket_trooper_player(const gentity_t* self);
-extern qboolean BG_SaberInNonIdleDamageMove(const playerState_t* ps);
 extern int G_ShipSurfaceForSurfName(const char* surfaceName);
 extern qboolean G_FlyVehicleDestroySurface(gentity_t* veh, int surface);
 extern void G_VehicleSetDamageLocFlags(gentity_t* veh, int impactDir, int deathPoint);
@@ -115,16 +114,16 @@ extern qboolean PM_InOnGroundAnim(playerState_t* ps);
 extern void G_ATSTCheckPain(gentity_t* self, gentity_t* other, const vec3_t point, int damage, int mod, int hit_loc);
 extern qboolean jedi_waiting_ambush(const gentity_t* self);
 extern qboolean G_ClearViewEntity(gentity_t* ent);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_InRoll(const playerState_t* ps);
-extern qboolean PM_SpinningAnim(int anim);
-extern qboolean PM_RunningAnim(int anim);
+extern qboolean PM_SpinningAnim(const int anim);
+extern qboolean PM_RunningAnim(const int anim);
 extern int PM_PowerLevelForSaberAnim(const playerState_t* ps, int saber_num = 0);
-extern qboolean pm_saber_in_special_attack(int anim);
-extern qboolean PM_SpinningSaberAnim(int anim);
-extern qboolean PM_FlippingAnim(int anim);
-extern qboolean PM_InSpecialJump(int anim);
+extern qboolean pm_saber_in_special_attack(const int anim);
+extern qboolean PM_SpinningSaberAnim(const int anim);
+extern qboolean PM_FlippingAnim(const int anim);
+extern qboolean PM_InSpecialJump(const int anim);
 extern qboolean PM_RollingAnim(int anim);
 extern qboolean PM_InAnimForSaberMove(int anim, int saber_move);
 extern qboolean PM_SaberInStart(int move);
@@ -133,7 +132,7 @@ extern int PM_AnimLength(const int index, const animNumber_t anim);
 extern qboolean PM_LockedAnim(int anim);
 extern qboolean PM_KnockDownAnim(int anim);
 extern void G_SpeechEvent(const gentity_t* self, int event);
-extern qboolean rosh_being_healed(const gentity_t* self);
+extern qboolean Rosh_BeingHealed(const gentity_t* self);
 void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, const int mod);
 void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, const int mod);
 void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, const int mod);
@@ -6100,7 +6099,7 @@ void G_Slapdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, flo
 		//stuck doing something else
 		return;
 	}
-	if (rosh_being_healed(self))
+	if (Rosh_BeingHealed(self))
 	{
 		return;
 	}
@@ -6313,7 +6312,7 @@ void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 		//stuck doing something else
 		return;
 	}
-	if (rosh_being_healed(self))
+	if (Rosh_BeingHealed(self))
 	{
 		return;
 	}
@@ -6527,7 +6526,7 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 		//stuck doing something else
 		return;
 	}
-	if (rosh_being_healed(self))
+	if (Rosh_BeingHealed(self))
 	{
 		return;
 	}
@@ -6732,7 +6731,7 @@ void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 		//stuck doing something else
 		return;
 	}
-	if (rosh_being_healed(self))
+	if (Rosh_BeingHealed(self))
 	{
 		return;
 	}
@@ -9026,7 +9025,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		(targ->flags & FL_UNDYING ||
 			dflags & DAMAGE_NO_KILL ||
 			targ->client &&
-			targ->client->ps.forcePowersActive & 1 << FP_RAGE &
+			targ->client->ps.forcePowersActive & 1 << FP_RAGE &&
 			!(dflags & DAMAGE_NO_PROTECTION) &&
 			!(dflags & DAMAGE_DIE_ON_IMPACT)));
 
@@ -9147,17 +9146,11 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 				{
 					if (take > targ->health)
 					{//damage is greated than target's health, so he gonna die ...Probably.
-						if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
-						{
-							AddFatigueHurtBonusMax(attacker, targ, mod);
-						}
+						AddFatigueHurtBonusMax(attacker, targ, mod);
 					}
 					else
 					{
-						if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
-						{
-							AddFatigueHurtBonus(attacker, targ, mod);
-						}
+						AddFatigueHurtBonus(attacker, targ, mod);
 					}
 				}
 
@@ -9242,17 +9235,11 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 					{
 						if (take > targ->health)
 						{//damage is greated than target's health, so he gonna die ...Probably.
-							if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
-							{
-								AddFatigueHurtBonusMax(attacker, targ, mod);
-							}
+							AddFatigueHurtBonusMax(attacker, targ, mod);
 						}
 						else
 						{
-							if (BG_SaberInNonIdleDamageMove(&attacker->client->ps))
-							{
-								AddFatigueHurtBonus(attacker, targ, mod);
-							}
+							AddFatigueHurtBonus(attacker, targ, mod);
 						}
 					}
 

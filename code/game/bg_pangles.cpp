@@ -79,7 +79,7 @@ extern void PM_AddFatigue(playerState_t* ps, int fatigue);
 extern qboolean PM_InLedgeMove(int anim);
 extern qboolean PM_SaberInMassiveBounce(int move);
 extern qboolean PM_SaberInBashedAnim(int anim);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean	PM_CrouchAnim(const int anim);
 
 extern qboolean cg_usingInFrontOf;
 extern qboolean player_locked;

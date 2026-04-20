@@ -101,7 +101,7 @@ extern qboolean PM_SaberStanceAnim(int anim);
 extern qboolean PM_SaberDrawPutawayAnim(int anim);
 extern void PM_SetJumped(float height, qboolean force);
 extern qboolean PM_InGetUpNoRoll(const playerState_t* ps);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean G_TryingKataAttack(const usercmd_t* cmd);
 extern qboolean G_TryingCartwheel(const gentity_t* self, const usercmd_t* cmd);
 extern qboolean G_TryingJumpAttack(const gentity_t* self, const usercmd_t* cmd);

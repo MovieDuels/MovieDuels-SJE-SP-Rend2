@@ -109,7 +109,6 @@ extern vmCvar_t cg_SerenityJediEngineMode;
 extern qboolean pm_saber_innonblockable_attack(int anim);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void CheckCameraLocation(vec3_t oldeye_origin);
-extern qboolean PM_CrouchAnim(int anim);
 extern void CG_CubeOutline(vec3_t mins, vec3_t maxs, int time, unsigned int color);
 extern vmCvar_t cg_com_kotor;
 

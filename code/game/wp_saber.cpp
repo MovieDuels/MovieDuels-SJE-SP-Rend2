@@ -158,20 +158,20 @@ extern qboolean PM_SpinningSaberAnim(int anim);
 extern saber_moveName_t PM_SaberBounceForAttack(int move);
 extern saber_moveName_t PM_BrokenParryForAttack(int move);
 extern saber_moveName_t PM_KnockawayForParry(int move);
-extern qboolean PM_FlippingAnim(int anim);
-extern qboolean PM_RollingAnim(int anim);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_FlippingAnim(const int anim);
+extern qboolean PM_RollingAnim(const int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean PM_SaberInIdle(int move);
 extern qboolean PM_SaberInReflect(int move);
-extern qboolean PM_InSpecialJump(int anim);
+extern qboolean PM_InSpecialJump(const int anim);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
-extern qboolean BG_InKnockDown(int anim);
-extern qboolean PM_ForceUsingSaberAnim(int anim);
-extern qboolean PM_SuperBreakLoseAnim(int anim);
-extern qboolean PM_SuperBreakWinAnim(int anim);
-extern qboolean PM_SaberLockBreakAnim(int anim);
+extern qboolean BG_InKnockDown(const int anim);
+extern qboolean PM_ForceUsingSaberAnim(const int anim);
+extern qboolean PM_SuperBreakLoseAnim(const int anim);
+extern qboolean PM_SuperBreakWinAnim(const int anim);
+extern qboolean PM_SaberLockBreakAnim(const int anim);
 extern qboolean PM_InOnGroundAnim(playerState_t* ps);
-extern qboolean PM_KnockDownAnim(int anim);
+extern qboolean PM_KnockDownAnim(const int anim);
 extern qboolean PM_SaberInKata(saber_moveName_t saber_move);
 extern qboolean PM_SaberInBackAttack(saber_moveName_t saber_move);
 extern qboolean PM_SaberInOverHeadSlash(saber_moveName_t saber_move);
@@ -207,7 +207,7 @@ extern int PM_AnimLength(const int index, const animNumber_t anim);
 extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern void G_KnockOffVehicle(gentity_t* pRider, const gentity_t* self, qboolean bPull);
 extern qboolean PM_LockedAnim(int anim);
-extern qboolean rosh_being_healed(const gentity_t* self);
+extern qboolean Rosh_BeingHealed(const gentity_t* self);
 extern qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, qboolean interrupt_okay);
 int WP_AbsorbConversion(const gentity_t* attacked, int atd_abs_level, int at_power, int at_power_level,
 	int at_force_spent);
@@ -6457,7 +6457,7 @@ qboolean WP_SaberParry(gentity_t* victim, gentity_t* attacker, const int saber_n
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -6529,7 +6529,7 @@ qboolean WP_SaberBlockedBounceBlock(gentity_t* victim, gentity_t* attacker, cons
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -6595,7 +6595,7 @@ qboolean WP_SaberNPCParry(gentity_t* victim, gentity_t* attacker, const int sabe
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -6661,7 +6661,7 @@ qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, const int saber_
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -6727,7 +6727,7 @@ qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, const int sab
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -6793,7 +6793,7 @@ qboolean WP_SaberNPCFatiguedParry(gentity_t* victim, gentity_t* attacker, const 
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -6859,7 +6859,7 @@ qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, const i
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -6925,7 +6925,7 @@ qboolean WP_SaberFatiguedParry(gentity_t* victim, gentity_t* attacker, const int
 	{
 		return qfalse;
 	}
-	if (rosh_being_healed(victim))
+	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
 	}
@@ -19309,7 +19309,7 @@ void wp_saber_start_missile_block_check(gentity_t* self, const usercmd_t* ucmd)
 		return;
 	}
 
-	if (rosh_being_healed(self))
+	if (Rosh_BeingHealed(self))
 	{
 		return;
 	}
@@ -19884,7 +19884,7 @@ void wp_saber_start_missile_block_check_md(gentity_t* self, const usercmd_t* ucm
 		return;
 	}
 
-	if (rosh_being_healed(self))
+	if (Rosh_BeingHealed(self))
 	{
 		return;
 	}
@@ -21626,7 +21626,7 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 		//stuck doing something else
 		return;
 	}
-	if (rosh_being_healed(self))
+	if (Rosh_BeingHealed(self))
 	{
 		return;
 	}
@@ -22909,7 +22909,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 					}
 				}
 
-				if (rosh_being_healed(push_target[x]))
+				if (Rosh_BeingHealed(push_target[x]))
 				{
 					continue;
 				}
@@ -24365,7 +24365,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 					}
 				}
 
-				if (rosh_being_healed(push_target[x]))
+				if (Rosh_BeingHealed(push_target[x]))
 				{
 					continue;
 				}
@@ -26173,7 +26173,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 						}
 					}
 
-					if (rosh_being_healed(push_target[x]))
+					if (Rosh_BeingHealed(push_target[x]))
 					{
 						continue;
 					}
@@ -27286,7 +27286,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 						}
 					}
 
-					if (rosh_being_healed(push_target[x]))
+					if (Rosh_BeingHealed(push_target[x]))
 					{
 						continue;
 					}
@@ -28596,7 +28596,7 @@ static void ForceRepulseThrow(gentity_t* self, int charge_time)
 				}
 			}
 
-			if (rosh_being_healed(push_target[x]))
+			if (Rosh_BeingHealed(push_target[x]))
 			{
 				continue;
 			}
@@ -41589,7 +41589,7 @@ void WP_BlockPointsUpdate(const gentity_t* self)
 		{
 			if (self->client->ps.BlockPointsRegenDebounceTime < level.time)
 			{
-				WP_BlockPointsRegenerate(self, 1 /*self->client->ps.BlockPointRegenAmount*/);
+				WP_BlockPointsRegenerate(self, self->client->ps.BlockPointRegenAmount);
 
 				self->client->ps.BlockPointsRegenDebounceTime = level.time + self->client->ps.BlockPointRegenRate;
 

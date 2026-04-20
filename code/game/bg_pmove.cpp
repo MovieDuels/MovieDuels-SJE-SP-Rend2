@@ -3376,8 +3376,6 @@ PM_WalkMove
 
 ===================
 */
-qboolean PM_CrouchAnim(int anim);
-
 static void PM_WalkMove()
 {
 	int i;
@@ -23633,84 +23631,6 @@ static qboolean PM_SaberInFullDamageMove(const playerState_t* ps)
 	return qfalse;
 }
 
-static qboolean BG_SaberInFullDamageMove(const playerState_t* ps)
-{
-	gentity_t* gent = pm->gent;
-
-	if (!gent || !gent->client)
-	{
-		return qfalse;
-	}
-
-	// The player is attacking with a saber attack that does full damage
-	if (PM_SaberInAttack(ps->saber_move) ||
-		PM_SaberInDamageMove(ps->saber_move) ||
-		pm_saber_in_special_attack(ps->torsoAnim) || // idle kill
-		PM_SaberDoDamageAnim(ps->torsoAnim) ||
-		PM_SuperBreakWinAnim(ps->torsoAnim))
-	{
-		float current_frame = 0.0f;
-		float junk2 = 0.0f;
-		int start = 0;
-		int end = 0;
-		int junk = 0;
-
-		// Mirror the saber‑lock usage of G2API_GetBoneAnimIndex
-		if (gi.G2API_GetBoneAnimIndex(
-			&gent->ghoul2[gent->playerModel],
-			gent->lowerLumbarBone,
-			(cg.time ? cg.time : level.time),
-			&current_frame,
-			&start,
-			&end,
-			&junk,
-			&junk2,
-			nullptr))
-		{
-			const float percent_complete =
-				(end != start) ? ((current_frame - start) / (float)(end - start)) : 0.0f;
-
-			// flip attacks: only a window of the move does damage
-			if ((ps->saber_move == LS_A_FLIP_STAB ||
-				ps->saber_move == LS_A_FLIP_SLASH ||
-				ps->saber_move == BOTH_JUMPFLIPSTABDOWN ||
-				ps->saber_move == BOTH_JUMPFLIPSLASHDOWN1) &&
-				(percent_complete >= 0.30f && percent_complete <= 0.75f))
-			{
-				return qtrue;
-			}
-
-			// roll stab: avoid follow‑through
-			if ((ps->saber_move == BOTH_ROLL_STAB ||
-				ps->saber_move == LS_ROLL_STAB) &&
-				(percent_complete >= 0.30f && percent_complete <= 0.95f))
-			{
-				return qtrue;
-			}
-
-			// stabdown: avoid follow‑through
-			if ((ps->saber_move == BOTH_STABDOWN ||
-				ps->saber_move == BOTH_STABDOWN_STAFF ||
-				ps->saber_move == BOTH_STABDOWN_DUAL ||
-				ps->saber_move == LS_STABDOWN ||
-				ps->saber_move == LS_STABDOWN_STAFF ||
-				ps->saber_move == LS_STABDOWN_DUAL) &&
-				(percent_complete >= 0.35f && percent_complete <= 0.95f))
-			{
-				return qtrue;
-			}
-		}
-
-		// In an attack animation and not blocked: full‑damage window
-		if (ps->saberBlocked == BLOCKED_NONE)
-		{
-			return qtrue;
-		}
-	}
-
-	return qfalse;
-}
-
 qboolean BG_SaberInTransitionDamageMove(const playerState_t* ps)
 {
 	//player is in a saber move where it does transitional damage
@@ -23723,12 +23643,6 @@ qboolean BG_SaberInTransitionDamageMove(const playerState_t* ps)
 		}
 	}
 	return qfalse;
-}
-
-qboolean BG_SaberInNonIdleDamageMove(const playerState_t* ps)
-{
-	//player is in a saber move that does something more than idle saber damage
-	return BG_SaberInFullDamageMove(ps);
 }
 
 qboolean PM_SaberInNonIdleDamageMove(const playerState_t* ps)

@@ -80,6 +80,9 @@ extern void g_do_m_block_response(const gentity_t* speaker_npc_self);
 extern qboolean PM_SaberInKata(saber_moveName_t saber_move);
 extern qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker, vec3_t hit_loc);
 extern qboolean WalkCheck(const gentity_t* self);
+extern qboolean Rosh_BeingHealed(const gentity_t* self);
+extern qboolean G_InCinematicSaberAnim(const gentity_t* self);
+extern qboolean PM_SuperBreakLoseAnim(int anim);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1081,6 +1084,23 @@ qboolean sab_beh_attack_vs_block(gentity_t* attacker, gentity_t* blocker, const 
 
 qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const int saber_num, const int blade_num, vec3_t hit_loc)
 {
+	// Early exits
+	if (!blocker || !blocker->client || !attacker) {
+		return qfalse;
+	}
+
+	if (Rosh_BeingHealed(blocker)) {
+		return qfalse;
+	}
+
+	if (G_InCinematicSaberAnim(blocker)) {
+		return qfalse;
+	}
+
+	if (PM_SuperBreakLoseAnim(blocker->client->ps.torsoAnim) ||
+		PM_SuperBreakWinAnim(blocker->client->ps.torsoAnim)) {
+		return qfalse;
+	}
 	//-(Im the blocker)
 	const qboolean accurate_parry = g_accurate_blocking(blocker, attacker, hit_loc); // Perfect Normal Blocking
 	const qboolean blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;	//Normal Blocking

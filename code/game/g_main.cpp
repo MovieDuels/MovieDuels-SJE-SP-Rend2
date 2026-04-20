@@ -55,8 +55,8 @@ extern void Pilot_Reset();
 extern void Pilot_Update();
 
 extern void G_ASPreCacheFree();
-extern qboolean PM_RestAnim(int anim);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_RestAnim(const int anim);
+extern qboolean PM_CrouchAnim(const	int anim);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void Boba_FlyStop(gentity_t* self);
 extern void Jetpack_Off(const gentity_t* ent);

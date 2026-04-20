@@ -179,14 +179,14 @@ static void IN_UseGivenForce()
 	}
 }
 
-void IN_MLookDown()
+static void IN_MLookDown()
 {
 	in_mlooking = qtrue;
 }
 
 void IN_CenterView();
 
-void IN_MLookUp()
+static void IN_MLookUp()
 {
 	in_mlooking = qfalse;
 	if (!cl_freelook->integer)
@@ -195,7 +195,7 @@ void IN_MLookUp()
 	}
 }
 
-void IN_KeyDown(kbutton_t* b)
+static void IN_KeyDown(kbutton_t* b)
 {
 	int k;
 
@@ -241,7 +241,7 @@ void IN_KeyDown(kbutton_t* b)
 	b->wasPressed = qtrue;
 }
 
-void IN_KeyUp(kbutton_t* b)
+static void IN_KeyUp(kbutton_t* b)
 {
 	int k;
 
@@ -339,74 +339,73 @@ float CL_KeyState(kbutton_t* key)
 	return val;
 }
 
-void IN_UpDown() { IN_KeyDown(&in_up); }
-void IN_UpUp() { IN_KeyUp(&in_up); }
-void IN_DownDown() { IN_KeyDown(&in_down); }
-void IN_DownUp() { IN_KeyUp(&in_down); }
-void IN_LeftDown() { IN_KeyDown(&in_left); }
-void IN_LeftUp() { IN_KeyUp(&in_left); }
-void IN_RightDown() { IN_KeyDown(&in_right); }
-void IN_RightUp() { IN_KeyUp(&in_right); }
-void IN_ForwardDown() { IN_KeyDown(&in_forward); }
-void IN_ForwardUp() { IN_KeyUp(&in_forward); }
-void IN_BackDown() { IN_KeyDown(&in_back); }
-void IN_BackUp() { IN_KeyUp(&in_back); }
-void IN_LookupDown() { IN_KeyDown(&in_lookup); }
-void IN_LookupUp() { IN_KeyUp(&in_lookup); }
-void IN_LookdownDown() { IN_KeyDown(&in_lookdown); }
-void IN_LookdownUp() { IN_KeyUp(&in_lookdown); }
-void IN_MoveleftDown() { IN_KeyDown(&in_moveleft); }
-void IN_MoveleftUp() { IN_KeyUp(&in_moveleft); }
-void IN_MoverightDown() { IN_KeyDown(&in_moveright); }
-void IN_MoverightUp() { IN_KeyUp(&in_moveright); }
+static void IN_UpDown() { IN_KeyDown(&in_up); }
+static void IN_UpUp() { IN_KeyUp(&in_up); }
+static void IN_DownDown() { IN_KeyDown(&in_down); }
+static void IN_DownUp() { IN_KeyUp(&in_down); }
+static void IN_LeftDown() { IN_KeyDown(&in_left); }
+static void IN_LeftUp() { IN_KeyUp(&in_left); }
+static void IN_RightDown() { IN_KeyDown(&in_right); }
+static void IN_RightUp() { IN_KeyUp(&in_right); }
+static void IN_ForwardDown() { IN_KeyDown(&in_forward); }
+static void IN_ForwardUp() { IN_KeyUp(&in_forward); }
+static void IN_BackDown() { IN_KeyDown(&in_back); }
+static void IN_BackUp() { IN_KeyUp(&in_back); }
+static void IN_LookupDown() { IN_KeyDown(&in_lookup); }
+static void IN_LookupUp() { IN_KeyUp(&in_lookup); }
+static void IN_LookdownDown() { IN_KeyDown(&in_lookdown); }
+static void IN_LookdownUp() { IN_KeyUp(&in_lookdown); }
+static void IN_MoveleftDown() { IN_KeyDown(&in_moveleft); }
+static void IN_MoveleftUp() { IN_KeyUp(&in_moveleft); }
+static void IN_MoverightDown() { IN_KeyDown(&in_moveright); }
+static void IN_MoverightUp() { IN_KeyUp(&in_moveright); }		
+static void IN_SpeedDown() { IN_KeyDown(&in_speed); }
+static void IN_SpeedUp() { IN_KeyUp(&in_speed); }
+static void IN_StrafeDown() { IN_KeyDown(&in_strafe); }
+static void IN_StrafeUp() { IN_KeyUp(&in_strafe); }
 
-void IN_SpeedDown() { IN_KeyDown(&in_speed); }
-void IN_SpeedUp() { IN_KeyUp(&in_speed); }
-void IN_StrafeDown() { IN_KeyDown(&in_strafe); }
-void IN_StrafeUp() { IN_KeyUp(&in_strafe); }
-
-void IN_Button0Down() { IN_KeyDown(&in_buttons[0]); }
-void IN_Button0Up() { IN_KeyUp(&in_buttons[0]); }
-void IN_Button1Down() { IN_KeyDown(&in_buttons[1]); }
-void IN_Button1Up() { IN_KeyUp(&in_buttons[1]); }
-void IN_Button2Down() { IN_KeyDown(&in_buttons[2]); }
-void IN_Button2Up() { IN_KeyUp(&in_buttons[2]); }
-void IN_Button3Down() { IN_KeyDown(&in_buttons[3]); }
-void IN_Button3Up() { IN_KeyUp(&in_buttons[3]); }
-void IN_Button4Down() { IN_KeyDown(&in_buttons[4]); }
-void IN_Button4Up() { IN_KeyUp(&in_buttons[4]); }
-void IN_Button5Down() { IN_KeyDown(&in_buttons[5]); }
-void IN_Button5Up() { IN_KeyUp(&in_buttons[5]); }
-void IN_Button6Down() { IN_KeyDown(&in_buttons[6]); }
-void IN_Button6Up() { IN_KeyUp(&in_buttons[6]); }
-void IN_Button7Down() { IN_KeyDown(&in_buttons[7]); }
-void IN_Button7Up() { IN_KeyUp(&in_buttons[7]); }
-void IN_Button8Down() { IN_KeyDown(&in_buttons[8]); }
-void IN_Button8Up() { IN_KeyUp(&in_buttons[8]); }
-void IN_Button9Down() { IN_KeyDown(&in_buttons[9]); }
-void IN_Button9Up() { IN_KeyUp(&in_buttons[9]); }
-void IN_Button10Down() { IN_KeyDown(&in_buttons[10]); }
-void IN_Button10Up() { IN_KeyUp(&in_buttons[10]); }
-void IN_Button11Down() { IN_KeyDown(&in_buttons[11]); }
-void IN_Button11Up() { IN_KeyUp(&in_buttons[11]); }
-void IN_Button12Down() { IN_KeyDown(&in_buttons[12]); }
-void IN_Button12Up() { IN_KeyUp(&in_buttons[12]); }
-void IN_Button13Down() { IN_KeyDown(&in_buttons[13]); }
-void IN_Button13Up() { IN_KeyUp(&in_buttons[13]); }
-void IN_Button14Down() { IN_KeyDown(&in_buttons[14]); }
-void IN_Button14Up() { IN_KeyUp(&in_buttons[14]); }
-void IN_Button15Down() { IN_KeyDown(&in_buttons[15]); }
-void IN_Button15Up() { IN_KeyUp(&in_buttons[15]); }
-void IN_Button16Down() { IN_KeyDown(&in_buttons[16]); }
-void IN_Button16Up() { IN_KeyUp(&in_buttons[16]); }
-void IN_Button17Down() { IN_KeyDown(&in_buttons[17]); }
-void IN_Button17Up() { IN_KeyUp(&in_buttons[17]); }
-void IN_Button18Down() { IN_KeyDown(&in_buttons[18]); }
-void IN_Button18Up() { IN_KeyUp(&in_buttons[18]); }
-void IN_Button19Down() { IN_KeyDown(&in_buttons[19]); }
-void IN_Button19Up() { IN_KeyUp(&in_buttons[19]); }
-void IN_Button20Down() { IN_KeyDown(&in_buttons[20]); }
-void IN_Button20Up() { IN_KeyUp(&in_buttons[20]); }
+static void IN_Button0Down() { IN_KeyDown(&in_buttons[0]); }
+static void IN_Button0Up() { IN_KeyUp(&in_buttons[0]); }
+static void IN_Button1Down() { IN_KeyDown(&in_buttons[1]); }
+static void IN_Button1Up() { IN_KeyUp(&in_buttons[1]); }
+static void IN_Button2Down() { IN_KeyDown(&in_buttons[2]); }
+static void IN_Button2Up() { IN_KeyUp(&in_buttons[2]); }
+static void IN_Button3Down() { IN_KeyDown(&in_buttons[3]); }
+static void IN_Button3Up() { IN_KeyUp(&in_buttons[3]); }
+static void IN_Button4Down() { IN_KeyDown(&in_buttons[4]); }
+static void IN_Button4Up() { IN_KeyUp(&in_buttons[4]); }
+static void IN_Button5Down() { IN_KeyDown(&in_buttons[5]); }
+static void IN_Button5Up() { IN_KeyUp(&in_buttons[5]); }
+static void IN_Button6Down() { IN_KeyDown(&in_buttons[6]); }
+static void IN_Button6Up() { IN_KeyUp(&in_buttons[6]); }
+static void IN_Button7Down() { IN_KeyDown(&in_buttons[7]); }
+static void IN_Button7Up() { IN_KeyUp(&in_buttons[7]); }
+static void IN_Button8Down() { IN_KeyDown(&in_buttons[8]); }
+static void IN_Button8Up() { IN_KeyUp(&in_buttons[8]); }
+static void IN_Button9Down() { IN_KeyDown(&in_buttons[9]); }
+static void IN_Button9Up() { IN_KeyUp(&in_buttons[9]); }
+static void IN_Button10Down() { IN_KeyDown(&in_buttons[10]); }
+static void IN_Button10Up() { IN_KeyUp(&in_buttons[10]); }
+static void IN_Button11Down() { IN_KeyDown(&in_buttons[11]); }
+static void IN_Button11Up() { IN_KeyUp(&in_buttons[11]); }
+static void IN_Button12Down() { IN_KeyDown(&in_buttons[12]); }
+static void IN_Button12Up() { IN_KeyUp(&in_buttons[12]); }
+static void IN_Button13Down() { IN_KeyDown(&in_buttons[13]); }
+static void IN_Button13Up() { IN_KeyUp(&in_buttons[13]); }
+static void IN_Button14Down() { IN_KeyDown(&in_buttons[14]); }
+static void IN_Button14Up() { IN_KeyUp(&in_buttons[14]); }
+static void IN_Button15Down() { IN_KeyDown(&in_buttons[15]); }
+static void IN_Button15Up() { IN_KeyUp(&in_buttons[15]); }
+static void IN_Button16Down() { IN_KeyDown(&in_buttons[16]); }
+static void IN_Button16Up() { IN_KeyUp(&in_buttons[16]); }
+static void IN_Button17Down() { IN_KeyDown(&in_buttons[17]); }
+static void IN_Button17Up() { IN_KeyUp(&in_buttons[17]); }
+static void IN_Button18Down() { IN_KeyDown(&in_buttons[18]); }
+static void IN_Button18Up() { IN_KeyUp(&in_buttons[18]); }
+static void IN_Button19Down() { IN_KeyDown(&in_buttons[19]); }
+static void IN_Button19Up() { IN_KeyUp(&in_buttons[19]); }
+static void IN_Button20Down() { IN_KeyDown(&in_buttons[20]); }
+static void IN_Button20Up() { IN_KeyUp(&in_buttons[20]); }
 
 void IN_CenterView()
 {
@@ -433,7 +432,7 @@ CL_AdjustAngles
 Moves the local angle positions
 ================
 */
-void CL_AdjustAngles()
+static void CL_AdjustAngles()
 {
 	float speed;
 
@@ -479,7 +478,7 @@ CL_KeyMove
 Sets the usercmd_t based on key states
 ================
 */
-void CL_KeyMove(usercmd_t* cmd)
+static void CL_KeyMove(usercmd_t* cmd)
 {
 	int movespeed;
 
@@ -681,7 +680,7 @@ static void CL_JoystickMove(usercmd_t* cmd)
 CL_MouseMove
 =================
 */
-void CL_MouseMove(usercmd_t* cmd)
+static void CL_MouseMove(usercmd_t* cmd)
 {
 	float mx, my;
 	const float speed = static_cast<float>(frame_msec);
@@ -770,7 +769,7 @@ void CL_MouseMove(usercmd_t* cmd)
 CL_CmdButtons
 ==============
 */
-void CL_CmdButtons(usercmd_t* cmd)
+static void CL_CmdButtons(usercmd_t* cmd)
 {
 	//
 	// figure button bits
@@ -805,7 +804,7 @@ void CL_CmdButtons(usercmd_t* cmd)
 CL_FinishMove
 ==============
 */
-void CL_FinishMove(usercmd_t* cmd)
+static void CL_FinishMove(usercmd_t* cmd)
 {
 	// copy the state that the cgame is currently sending
 	cmd->weapon = cl.cgameUserCmdValue;
@@ -838,7 +837,7 @@ CL_CreateCmd
 vec3_t cl_overriddenAngles = { 0, 0, 0 };
 qboolean cl_overrideAngles = qfalse;
 
-usercmd_t CL_CreateCmd()
+static usercmd_t CL_CreateCmd()
 {
 	usercmd_t cmd;
 	vec3_t oldAngles;
@@ -902,7 +901,7 @@ CL_CreateNewCommands
 Create a new usercmd_t structure for this frame
 =================
 */
-void CL_CreateNewCommands()
+static void CL_CreateNewCommands()
 {
 	// no need to create usercmds until we have a gamestate
 	//	if ( cls.state < CA_PRIMED )
@@ -939,7 +938,7 @@ delivered in the next packet, but saving a header and
 getting more delta compression will reduce total bandwidth.
 =================
 */
-qboolean CL_ReadyToSendPacket()
+static qboolean CL_ReadyToSendPacket()
 {
 	// don't send anything if playing back a demo
 	//	if ( cls.state == CA_CINEMATIC )
@@ -984,7 +983,7 @@ During normal gameplay, a client packet will contain something like:
 void CL_WritePacket()
 {
 	msg_t buf;
-	byte data[MAX_MSGLEN];
+	static byte data[MAX_MSGLEN];
 	int i;
 	usercmd_t nullcmd;
 

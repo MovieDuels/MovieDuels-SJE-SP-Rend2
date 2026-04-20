@@ -97,7 +97,7 @@ extern qboolean PM_InGetUp(const playerState_t* ps);
 extern qboolean PM_InRoll(const playerState_t* ps);
 extern void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd);
 extern qboolean PM_InAttackRoll(int anim);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean PM_FlippingAnim(int anim);
 extern qboolean PM_InCartwheel(int anim);
 extern qboolean In_LedgeIdle(int anim);
@@ -2302,6 +2302,7 @@ extern void WP_SaberUpdateOldBladeData(gentity_t* ent);
 extern qboolean PM_ReloadAnim(int anim);
 extern qboolean PM_WeponRestAnim(int anim);
 void cancel_firing(gentity_t* ent);
+extern qboolean PM_PainAnim(int anim);
 
 static void ClientEvents(gentity_t* ent, const int old_event_sequence)
 {
@@ -2339,6 +2340,10 @@ static void ClientEvents(gentity_t* ent, const int old_event_sequence)
 			{
 				cancel_firing(ent);
 			}
+			else if (PM_PainAnim(ent->client->ps.torsoAnim))
+			{
+				cancel_firing(ent);
+			}
 			else
 			{
 				FireWeapon(ent, qfalse);
@@ -2354,6 +2359,10 @@ static void ClientEvents(gentity_t* ent, const int old_event_sequence)
 #endif
 
 			if (ent->reloadTime > 0)
+			{
+				cancel_firing(ent);
+			}
+			else if (PM_PainAnim(ent->client->ps.torsoAnim))
 			{
 				cancel_firing(ent);
 			}

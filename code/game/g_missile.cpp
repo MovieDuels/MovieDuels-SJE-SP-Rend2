@@ -107,6 +107,8 @@ extern qboolean FighterIsLanded(const Vehicle_t* p_veh, playerState_t* parent_ps
 extern void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength);
 extern qboolean WalkCheck(const gentity_t* self);
 extern int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit_locs);
+extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_InKnockDown(const playerState_t* ps);
 constexpr auto MISSILE_PRESTEP_TIME = 50;
 //-------------------------------------------------------------------------
 static void G_MissileBounceEffect(const gentity_t* ent, vec3_t org, vec3_t dir, const qboolean hit_world)
@@ -2120,6 +2122,8 @@ static qboolean G_IsBobaDeflect(const gentity_t* ent, const gentity_t* other)
 
 extern qboolean W_AccuracyLoggableWeapon(int weapon, qboolean alt_fire, int mod);
 extern qboolean BG_InDeathAnim(int anim);
+extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
+extern qboolean PM_CrouchAnim(const int anim);
 
 void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3_t normal, const int hit_loc)
 {
@@ -2175,10 +2179,24 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				beskar == qfalse &&
 				boba_fett == qfalse &&
 				other->health > 0 &&
+				!PM_PainAnim(other->client->ps.torsoAnim) &&
 				!BG_InDeathAnim(other->client->ps.torsoAnim) &&
+				!PM_InKnockDown(&other->client->ps) &&
 				!WP_DoingForcedAnimationForForcePowers(other))
 			{
-				NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN1, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				if (PM_CrouchAnim(other->client->ps.legsAnim))
+				{
+					vec3_t dir;
+					VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
+					VectorNormalize(dir);
+
+					G_Knockdown(other, ent, dir, 50, qtrue);
+				}
+				else
+				{
+					NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					other->client->ps.torsoAnimTimer = 400;
+				}
 			}
 
 			// DEMP2 special behaviour
@@ -2390,7 +2408,12 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		}
 	}
 
-	if (beskar || boba_fett)
+	if ((beskar || boba_fett) &&
+		other->health > 0 &&
+		!PM_PainAnim(other->client->ps.torsoAnim) &&
+		!BG_InDeathAnim(other->client->ps.torsoAnim) &&
+		!PM_InKnockDown(&other->client->ps) &&
+		!WP_DoingForcedAnimationForForcePowers(other))
 	{
 		bounce = qfalse;
 		// Check to see if there is a bounce count
@@ -2405,7 +2428,19 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		}
 
 		G_BounceMissile(ent, trace);
-		NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN1, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (PM_CrouchAnim(other->client->ps.legsAnim))
+		{
+			vec3_t dir;
+			VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
+			VectorNormalize(dir);
+
+			G_Knockdown(other, ent, dir, 50, qtrue);
+		}
+		else
+		{
+			NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			other->client->ps.torsoAnimTimer = 400;
+		}
 
 		if (ent->owner)
 		{
@@ -2875,7 +2910,12 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 		}
 	}
 
-	if (beskar || boba_fett)
+	if ((beskar || boba_fett) &&
+		other->health > 0 &&
+		!PM_PainAnim(other->client->ps.torsoAnim) &&
+		!BG_InDeathAnim(other->client->ps.torsoAnim) &&
+		!PM_InKnockDown(&other->client->ps) &&
+		!WP_DoingForcedAnimationForForcePowers(other))
 	{
 		bounce = qfalse;
 		// Check to see if there is a bounce count
@@ -2890,7 +2930,19 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 		}
 
 		G_BounceMissile(ent, trace);
-		NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN1, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (PM_CrouchAnim(other->client->ps.legsAnim))
+		{
+			vec3_t dir;
+			VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
+			VectorNormalize(dir);
+
+			G_Knockdown(other, ent, dir, 50, qtrue);
+		}
+		else
+		{
+			NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			other->client->ps.torsoAnimTimer = 400;
+		}
 
 		if (ent->owner)
 		{

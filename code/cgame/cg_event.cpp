@@ -37,6 +37,7 @@ extern qboolean PM_ReloadAnim(int anim);
 extern qboolean PM_WeponRestAnim(int anim);
 extern void CG_StrikeBolt(const centity_t* cent, vec3_t origin);
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
+extern qboolean PM_PainAnim(int anim);
 
 //==========================================================================
 
@@ -668,6 +669,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		{
 			cancel_firing(cg_entities[0].gent);
 		}
+		else if (PM_PainAnim(cg_entities[0].gent->client->ps.torsoAnim))
+		{
+			cancel_firing(cg_entities[0].gent);
+		}
 		else
 		{
 			CG_FireWeapon(cent, qfalse);
@@ -678,6 +683,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		DEBUGNAME("EV_ALT_FIRE");
 
 		if (g_entities[0].client->reloadTime > 0)
+		{
+			cancel_firing(cg_entities[0].gent);
+		}
+		else if (PM_PainAnim(cg_entities[0].gent->client->ps.torsoAnim))
 		{
 			cancel_firing(cg_entities[0].gent);
 		}

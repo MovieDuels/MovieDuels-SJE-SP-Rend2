@@ -1833,7 +1833,7 @@ static void G_TauntSound(const gentity_t* ent, const int taunt)
 	}
 }
 
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean Block_Button_Held(const gentity_t* defender);
 extern qboolean IsHoldingReloadableGun(const gentity_t* ent);
 extern void WP_ReloadGun(gentity_t* ent);

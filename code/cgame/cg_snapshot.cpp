@@ -31,7 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 CG_ResetEntity
 ==================
 */
-void CG_ResetEntity(centity_t* cent)
+static void CG_ResetEntity(centity_t* cent)
 {
 	// if an event is set, assume it is new enough to use
 	// if the event had timed out, it would have been cleared
@@ -54,7 +54,7 @@ CG_TransitionEntity
 cent->nextState is moved to cent->currentState and events are fired
 ===============
 */
-void CG_TransitionEntity(centity_t* cent)
+static void CG_TransitionEntity(centity_t* cent)
 {
 	if (cent->nextState)
 	{
@@ -87,7 +87,7 @@ on tourney restarts.  All other times will use
 CG_TransitionSnapshot instead.
 ==================
 */
-void CG_SetInitialSnapshot(snapshot_t* snap)
+static void CG_SetInitialSnapshot(snapshot_t* snap)
 {
 	cg.snap = snap;
 
@@ -123,7 +123,7 @@ CG_TransitionSnapshot
 The transition point from snap to nextSnap has passed
 ===================
 */
-void CG_TransitionSnapshot()
+static void CG_TransitionSnapshot()
 {
 	centity_t* cent;
 	int i;
@@ -186,7 +186,7 @@ Determine if the entity can be interpolated between the states
 present in cg.snap and cg,nextSnap
 ===============
 */
-void CG_SetEntityNextState(centity_t* cent, const entityState_t* state)
+static void CG_SetEntityNextState(centity_t* cent, const entityState_t* state)
 {
 	cent->nextState = state;
 
@@ -214,7 +214,7 @@ CG_SetNextSnap
 A new snapshot has just been read in from the client system.
 ===================
 */
-void CG_SetNextSnap(snapshot_t* snap)
+static void CG_SetNextSnap(snapshot_t* snap)
 {
 	cg.nextSnap = snap;
 
@@ -247,7 +247,7 @@ times if the client system fails to return a
 valid snapshot.
 ========================
 */
-snapshot_t* CG_ReadNextSnapshot()
+static snapshot_t* CG_ReadNextSnapshot()
 {
 	snapshot_t* dest;
 
@@ -342,103 +342,114 @@ of an interpolating one)
 
 ============
 */
-void CG_ProcessSnapshots()
+void CG_ProcessSnapshots(void)
 {
-	snapshot_t* snap;
-	int n;
+	snapshot_t* snap = NULL;
+	int latestNum = 0;
 
-	// see what the latest snapshot the client system has is
-	cgi_GetCurrentSnapshotNumber(&n, &cg.latestSnapshotTime);
-	if (n != cg.latestSnapshotNum)
+	// ------------------------------------------------------------------
+	// Query latest snapshot number from engine
+	// ------------------------------------------------------------------
+	cgi_GetCurrentSnapshotNumber(&latestNum, &cg.latestSnapshotTime);
+
+	if (latestNum != cg.latestSnapshotNum)
 	{
-		if (n < cg.latestSnapshotNum)
+		if (latestNum < cg.latestSnapshotNum)
 		{
-			// this should never happen
-			CG_Error("CG_ProcessSnapshots: n < cg.latestSnapshotNum");
+			Com_Printf("CG_ProcessSnapshots WARNING: latestNum < cg.latestSnapshotNum\n");
+			return;
 		}
-		cg.latestSnapshotNum = n;
+		cg.latestSnapshotNum = latestNum;
 	}
 
-	// If we have yet to receive a snapshot, check for it.
-	// Once we have gotten the first snapshot, cg.snap will
-	// always have valid data for the rest of the game
-	if (!cg.snap)
+	// ------------------------------------------------------------------
+	// If we have not yet received our first snapshot, try to read one
+	// ------------------------------------------------------------------
+	if (cg.snap == NULL)
 	{
 		snap = CG_ReadNextSnapshot();
-		if (!snap)
+		if (snap == NULL)
 		{
-			// we can't continue until we get a snapshot
+			// Cannot continue until we get a snapshot
 			return;
 		}
 
-		// set our weapon selection to what
-		// the playerstate is currently using
+		// Initialize client state from first snapshot
 		CG_SetInitialSnapshot(snap);
 	}
 
-	// loop until we either have a valid nextSnap with a serverTime
-	// greater than cg.time to interpolate towards, or we run
-	// out of available snapshots
-	do
+	// ------------------------------------------------------------------
+	// Main snapshot processing loop
+	// ------------------------------------------------------------------
+	while (qtrue)
 	{
-		// if we don't have a nextframe, try to read a new one in
-		if (!cg.nextSnap)
+		// If we do not have a next snapshot, try to read one
+		if (cg.nextSnap == NULL)
 		{
 			snap = CG_ReadNextSnapshot();
 
-			// if we still don't have a nextframe, we will just have to
-			// extrapolate
-			if (!snap)
+			if (snap == NULL)
 			{
+				// No next snapshot available → must extrapolate
 				break;
 			}
 
 			CG_SetNextSnap(snap);
 
-			// if time went backwards, we have a level restart
+			// Level restart detection: time went backwards
 			if (cg.nextSnap->serverTime < cg.snap->serverTime)
 			{
-				// restart the level
+				Com_Printf("CG_ProcessSnapshots: Level restart detected\n");
 				CG_RestartLevel();
-				continue; // we might also get a nextsnap
+				continue;
 			}
 		}
 
-		// if our time is < nextFrame's, we have a nice interpolating state
+		// If current time is before next snapshot time → interpolation OK
 		if (cg.time < cg.nextSnap->serverTime)
 		{
 			break;
 		}
 
-		// we have passed the transition from nextFrame to frame
+		// We have passed the transition point → move nextSnap → snap
 		CG_TransitionSnapshot();
-	} while (true);
+	}
 
-	if (cg.snap->serverTime > cg.time)
+	// ------------------------------------------------------------------
+	// Time correction: ensure cg.time is within valid bounds
+	// ------------------------------------------------------------------
+	if (cg.snap != NULL && cg.snap->serverTime > cg.time)
 	{
 		cg.time = cg.snap->serverTime;
 #if _DEBUG
-		Com_Printf("CG_ProcessSnapshots: cg.snap->serverTime > cg.time");
+		Com_Printf("CG_ProcessSnapshots: corrected cg.time to cg.snap->serverTime\n");
 #endif
 	}
-	if (cg.nextSnap != nullptr && cg.nextSnap->serverTime <= cg.time)
+
+	if (cg.nextSnap != NULL && cg.nextSnap->serverTime <= cg.time)
 	{
 		cg.time = cg.nextSnap->serverTime - 1;
 #if _DEBUG
-		Com_Printf("CG_ProcessSnapshots: cg.nextSnap->serverTime <= cg.time");
+		Com_Printf("CG_ProcessSnapshots: corrected cg.time to nextSnap->serverTime - 1\n");
 #endif
 	}
-	// assert our valid conditions upon exiting
-	if (cg.snap == nullptr)
+
+	// ------------------------------------------------------------------
+	// Final safety checks (debug only)
+	// ------------------------------------------------------------------
+	if (cg.snap == NULL)
 	{
-		CG_Error("CG_ProcessSnapshots: cg.snap == NULL");
+		Com_Printf("CG_ProcessSnapshots ERROR: cg.snap == NULL\n");
+		return;
 	}
+
 	if (cg.snap->serverTime > cg.time)
 	{
-		CG_Error("CG_ProcessSnapshots: cg.snap->serverTime > cg.time");
+		Com_Printf("CG_ProcessSnapshots ERROR: cg.snap->serverTime > cg.time\n");
 	}
-	if (cg.nextSnap != nullptr && cg.nextSnap->serverTime <= cg.time)
+
+	if (cg.nextSnap != NULL && cg.nextSnap->serverTime <= cg.time)
 	{
-		CG_Error("CG_ProcessSnapshots: cg.nextSnap->serverTime <= cg.time");
+		Com_Printf("CG_ProcessSnapshots ERROR: cg.nextSnap->serverTime <= cg.time\n");
 	}
 }

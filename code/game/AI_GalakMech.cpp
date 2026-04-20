@@ -49,7 +49,7 @@ extern qboolean WP_LobFire(const gentity_t* self, vec3_t start, vec3_t target, v
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
 extern void G_SoundAtSpot(vec3_t org, int sound_index, qboolean broadcast);
 extern void G_SoundOnEnt(const gentity_t* ent, soundChannel_t channel, const char* sound_path);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean NAV_HitNavGoal(vec3_t point, vec3_t mins, vec3_t maxs, vec3_t dest, int radius, qboolean flying);
 extern void NAV_GetLastMove(navInfo_t& info);
 extern qboolean NPC_IsGunner(const gentity_t* self);

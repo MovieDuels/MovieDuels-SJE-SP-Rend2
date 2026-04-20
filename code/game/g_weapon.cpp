@@ -1502,14 +1502,15 @@ static void G_AddBlasterAttackChainCount(const gentity_t* ent, int amount)
 }
 
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
-extern qboolean PM_ReloadAnim(int anim);
-extern qboolean PM_WeponRestAnim(int anim);
-extern qboolean PM_CrouchAnim(int anim);
-extern qboolean PM_RunningAnim(int anim);
-extern qboolean PM_WalkingAnim(int anim);
+extern qboolean PM_ReloadAnim(const int anim);
+extern qboolean PM_WeponRestAnim(const int anim);
+extern qboolean PM_CrouchAnim(const int anim);
+extern qboolean PM_RunningAnim(const int anim);
+extern qboolean PM_WalkingAnim(const int anim);
 extern int fire_deley_time();
 extern void CG_ChangeWeapon(int num);
 extern qboolean IsHoldingReloadableGun(const gentity_t* ent);
+extern qboolean PM_PainAnim(int anim);
 
 //---------------------------------------------------------
 void FireWeapon(gentity_t* ent, const qboolean alt_fire)
@@ -1521,8 +1522,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 	// track shots taken for accuracy tracking.
 	ent->client->ps.persistant[PERS_ACCURACY_SHOTS]++;
 
-	if (PM_ReloadAnim(ent->client->ps.torsoAnim) ||
-		PM_WeponRestAnim(ent->client->ps.torsoAnim))
+	if (PM_ReloadAnim(ent->client->ps.torsoAnim) ||	PM_WeponRestAnim(ent->client->ps.torsoAnim) || PM_PainAnim(ent->client->ps.torsoAnim))
 	{
 		return;
 	}

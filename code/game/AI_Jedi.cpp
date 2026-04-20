@@ -152,10 +152,11 @@ extern cvar_t* g_saberNewControlScheme;
 extern cvar_t* g_npcSpecialAttackFreq;
 extern int parryDebounce[];
 extern cvar_t* g_AllowMawKick;
+void NPC_CheckEvasion(void);
 
 //Locals
 qboolean jedi_waiting_ambush(const gentity_t* self);
-qboolean rosh_being_healed(const gentity_t* self);
+qboolean Rosh_BeingHealed(const gentity_t* self);
 qboolean jedi_forbidden_kicker(const gentity_t* self);
 
 static qboolean enemy_in_striking_range = qfalse;
@@ -2190,7 +2191,7 @@ static qboolean kyle_can_do_grab()
 	return qfalse;
 }
 
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 static qboolean shoot;
 static float enemyDist;
 constexpr auto MELEE_DIST_SQUARED = 6400;
@@ -7777,7 +7778,7 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 		else if (NPC->client->NPC_class == CLASS_SHADOWTROOPER)
 		{
 			//shadowtrooper
-			chance = 5;
+			chance = 10;
 		}
 		else if (NPC->client->NPC_class == CLASS_REBORN && NPCInfo->rank == RANK_LT_JG)
 		{
@@ -7868,14 +7869,20 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 				if (DotProduct(right, dir2enemy) > 0)
 				{
 					//he's to my right, strafe left
-					ucmd.rightmove = -127;
-					VectorClear(NPC->client->ps.moveDir);
+					if (npc_move_dir_clear(ucmd.forwardmove, -127, qfalse))
+					{
+						ucmd.rightmove = -127;
+						VectorClear(NPC->client->ps.moveDir);
+					}
 				}
 				else
 				{
 					//he's to my left, strafe right
-					ucmd.rightmove = 127;
-					VectorClear(NPC->client->ps.moveDir);
+					if (npc_move_dir_clear(ucmd.forwardmove, 127, qfalse))
+					{
+						ucmd.rightmove = 127;
+						VectorClear(NPC->client->ps.moveDir);
+					}
 				}
 			}
 		}
@@ -8520,7 +8527,19 @@ static void jedi_combat()
 	}
 	else
 	{
-		// non-saber evasion (unchanged)
+		if (!in_camera)
+		{
+			NPC_CheckEvasion();
+		}
+
+		if (!npc_is_dark_jedi(NPC))
+		{
+			G_AddVoiceEvent(NPC, Q_irand(EV_DEFLECT1, EV_DEFLECT3), 2000);
+		}
+		else
+		{
+			G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 10000);
+		}
 	}
 
 	jedi_timers_apply();
@@ -8539,6 +8558,15 @@ static void jedi_combat()
 			{
 				// we're not attacking, decide what else to do
 				jedi_combat_idle(enemy_dist);
+
+				if (!npc_is_dark_jedi(NPC))
+				{
+					G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+				}
+				else
+				{
+					G_AddVoiceEvent(NPC, Q_irand(EV_TAUNT1, EV_TAUNT3), 10000);
+				}
 			}
 			else
 			{
@@ -10335,7 +10363,7 @@ static qboolean JediShouldAttack(gentity_t* self)
 	return qtrue;
 }
 
-static void jedi_attack(void)
+static void Jedi_Attack(void)
 {
 	const int curmove = NPC->client->ps.saber_move;
 
@@ -11060,7 +11088,7 @@ static void jedi_attack(void)
 	}
 }
 
-qboolean rosh_being_healed(const gentity_t* self)
+qboolean Rosh_BeingHealed(const gentity_t* self)
 {
 	if (self
 		&& self->NPC
@@ -11860,7 +11888,18 @@ void npc_bs_jedi_default()
 			NPC->s.loopSound = G_SoundIndex("sound/movers/objects/green_beam_lp2.wav");
 		}
 
-		jedi_attack();
+		if (NPC->enemy->s.weapon != WP_SABER)
+		{//force users
+			// Normal non-saber enemy
+			if (!in_camera)
+			{
+				NPC_CheckEvasion();
+			}
+		}
+		else
+		{
+			Jedi_Attack();
+		}
 
 		npc_check_speak(NPC);
 

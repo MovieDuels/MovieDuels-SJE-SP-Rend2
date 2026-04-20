@@ -5546,6 +5546,7 @@ Caused by an EV_FIRE_WEAPON event
 ================
 */
 extern qboolean PM_RunningAnim(int anim);
+extern qboolean PM_PainAnim(int anim);
 
 void CG_FireWeapon(centity_t* cent, const qboolean alt_fire)
 {
@@ -5561,7 +5562,7 @@ void CG_FireWeapon(centity_t* cent, const qboolean alt_fire)
 		return;
 	}
 
-	if (PM_ReloadAnim(cent->currentState.torsoAnim) || PM_WeponRestAnim(cent->currentState.torsoAnim))
+	if (PM_ReloadAnim(cent->currentState.torsoAnim) || PM_WeponRestAnim(cent->currentState.torsoAnim) || PM_PainAnim(cent->currentState.torsoAnim))
 	{
 		return;
 	}

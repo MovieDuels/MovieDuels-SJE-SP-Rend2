@@ -107,7 +107,7 @@ void WP_FireCloneMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qboolea
 }
 
 extern qboolean WalkCheck(const gentity_t* self);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingAnim(int anim);

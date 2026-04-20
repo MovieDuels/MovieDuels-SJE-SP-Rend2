@@ -139,7 +139,7 @@ static void WP_RepeaterAltFire(gentity_t* ent)
 }
 
 extern qboolean WalkCheck(const gentity_t* self);
-extern qboolean PM_CrouchAnim(int anim);
+extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingAnim(int anim);
