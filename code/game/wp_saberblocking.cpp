@@ -1203,10 +1203,19 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							//since it was parried, take away any damage done
 							wp_saber_clear_damage_for_ent_num(attacker, blocker->s.number, saber_num, blade_num);
 
-							wp_block_points_regenerate_over_ride(blocker, BLOCKPOINTS_FIFTEEN); //BP Reward blocker
-							PM_AddBlockFatigue(&attacker->client->ps, BLOCKPOINTS_TEN); //BP Punish Attacker
+							wp_block_points_regenerate_over_ride(blocker, BLOCKPOINTS_FIFTEEN);//SAC Reward blocker
 							sab_beh_add_balance(blocker, -MPCOST_MBLOCKED); //SAC Reward blocker
-							sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker
+
+							if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
+							{
+								PM_AddBlockFatigue(&attacker->client->ps, BLOCKPOINTS_FATIGUE); //BP Punish Attacker
+								sab_beh_add_balance(attacker, BLOCKPOINTS_TEN); //SAC Punish attacker
+							}
+							else
+							{
+								PM_AddBlockFatigue(&attacker->client->ps, BLOCKPOINTS_TEN); //BP Punish Attacker
+								sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker
+							}
 						}
 						else
 						{
@@ -1226,7 +1235,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 
 							if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
 							{
-								PM_AddBlockFatigue(&attacker->client->ps, BLOCKPOINTS_THREE);
+								sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker
 							}
 
 							PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_FIVE);
@@ -1272,7 +1281,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						}
 						else
 						{
-							PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
+							PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_FIVE);
 						}
 
 						if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
@@ -1294,7 +1303,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
 							G_ControlledByPlayer(blocker))
 						{
-							gi.Printf(S_COLOR_CYAN"Blocker Holding block button only (spamming block) cost 10\n");
+							gi.Printf(S_COLOR_CYAN"Blocker Holding block button only (spamming block) cost 5\n");
 						}
 
 						//just so blocker knows that he has parried the attacker
@@ -1344,6 +1353,11 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
 							{
 								g_do_m_block_response(blocker);
+								PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
+							}
+							else
+							{
+								PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_THREE);
 							}
 
 							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->NPC && !
@@ -1351,16 +1365,6 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							{
 								gi.Printf(S_COLOR_CYAN"NPC good Parry\n");
 							}
-
-							if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
-							{
-								WP_BlockPointsRegenerate(blocker, BLOCKPOINTS_TEN);
-							}
-							else
-							{
-								PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_THREE);
-							}
-
 						}
 
 						G_Sound(blocker, G_SoundIndex(va("sound/weapons/saber/saber_goodparry%d.mp3", Q_irand(1, 3))));
@@ -1560,10 +1564,19 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							//since it was parried, take away any damage done
 							wp_saber_clear_damage_for_ent_num(attacker, blocker->s.number, saber_num, blade_num);
 
-							WP_ForcePowerRegenerate(blocker, BLOCKPOINTS_FIFTEEN); //FP Reward blocker
-							PM_AddFatigue(&attacker->client->ps, BLOCKPOINTS_TEN); //BP Punish Attacker
+							WP_ForcePowerRegenerate(blocker, BLOCKPOINTS_FIFTEEN); //FP Reward blocker								
 							sab_beh_add_balance(blocker, -MPCOST_MBLOCKED); //SAC Reward blocker
-							sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker
+
+							if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
+							{
+								PM_AddFatigue(&attacker->client->ps, BLOCKPOINTS_FATIGUE); //BP Punish Attacker
+								sab_beh_add_balance(attacker, BLOCKPOINTS_TEN); //SAC Punish attacker
+							}
+							else
+							{
+								PM_AddFatigue(&attacker->client->ps, BLOCKPOINTS_TEN); //BP Punish Attacker
+								sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker
+							}
 						}
 						else
 						{
@@ -1583,10 +1596,17 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 
 							if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
 							{
-								PM_AddFatigue(&attacker->client->ps, BLOCKPOINTS_THREE);
+								sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker
 							}
 
-							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIVE);
+							if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
+							{
+								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
+							}
+							else
+							{
+								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIVE);
+							}
 
 							if (blocker->s.number < MAX_CLIENTS || G_ControlledByPlayer(blocker))
 							{
@@ -1614,7 +1634,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);
 						}
 						else if (attacker->client->ps.saberAnimLevel == SS_DESANN ||
-							attacker->client->ps.saberAnimLevel	== SS_STRONG)
+							attacker->client->ps.saberAnimLevel == SS_STRONG)
 						{
 							WP_SaberFatiguedParry(blocker, attacker, saber_num, blade_num, hit_loc);
 						}
@@ -1625,11 +1645,11 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 
 						if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
 						{
-							//
+							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
 						}
 						else
 						{
-							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
+							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIVE);
 						}
 
 						if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
@@ -1651,7 +1671,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
 							G_ControlledByPlayer(blocker))
 						{
-							gi.Printf(S_COLOR_CYAN"Blocker Holding block button only (spamming block) cost 10\n");
+							gi.Printf(S_COLOR_CYAN"Blocker Holding block button only (spamming block) cost 5\n");
 						}
 
 						//just so blocker knows that he has parried the attacker
@@ -1682,7 +1702,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 									Com_Printf(S_COLOR_CYAN "NPC Fatigued Parry\n");
 								}
 
-								PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_FAIL);
+								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
 							}
 							else
 							{
@@ -1694,7 +1714,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 									gi.Printf(S_COLOR_CYAN"NPC normal Parry\n");
 								}
 
-								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_THREE);
+								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIVE);
 							}
 						}
 						else
@@ -1704,21 +1724,17 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
 							{
 								g_do_m_block_response(blocker);
+								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIFTEEN);
+							}
+							else
+							{
+								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIVE);
 							}
 
 							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->NPC && !
 								G_ControlledByPlayer(blocker)))
 							{
 								gi.Printf(S_COLOR_CYAN"NPC good Parry\n");
-							}
-
-							if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
-							{
-								WP_ForcePowerRegenerate(blocker, BLOCKPOINTS_TEN);
-							}
-							else
-							{
-								PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_THREE);
 							}
 						}
 
@@ -1734,14 +1750,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 					{
 						sab_beh_add_mishap_blocker(blocker, saber_num);
 
-						if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
-						{
-							//
-						}
-						else
-						{
-							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
-						}
+						PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
 						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
 							G_ControlledByPlayer(blocker))
 						{
@@ -1797,7 +1806,15 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 					else
 					{
 						g_fatigue_bp_knockaway(blocker);
-						PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
+
+						if (blocker->NPC && !G_ControlledByPlayer(blocker)) //NPC only
+						{
+							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIFTEEN);
+						}
+						else 
+						{
+							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
+						}
 					}
 					if (d_blockinfo->integer || g_DebugSaberCombat->integer)
 					{

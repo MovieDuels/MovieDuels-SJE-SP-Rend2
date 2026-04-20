@@ -41589,10 +41589,10 @@ void WP_BlockPointsUpdate(const gentity_t* self)
 		{
 			if (self->client->ps.BlockPointsRegenDebounceTime < level.time)
 			{
-				WP_BlockPointsRegenerate(self,1 /*self->client->ps.BlockPointRegenAmount*/);
+				WP_BlockPointsRegenerate(self, 1 /*self->client->ps.BlockPointRegenAmount*/);
 
 				self->client->ps.BlockPointsRegenDebounceTime = level.time + self->client->ps.BlockPointRegenRate;
-				
+
 				if (self->client->ps.forceRageRecoveryTime >= level.time)
 				{
 					//regen half as fast

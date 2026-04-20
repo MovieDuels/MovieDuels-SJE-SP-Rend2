@@ -81,7 +81,7 @@ constexpr auto MPCOST_MBLOCKED = 5;
 constexpr auto MPCOST_PARRIED_ATTACKFAKE = 2;
 constexpr auto MPCOST_PARRYING = -2;
 constexpr auto MPCOST_PARRYING_ATTACKFAKE = -4;
-constexpr auto FPCOST_PARRYING_PURE = -10;	
+constexpr auto FPCOST_PARRYING_PURE = -10;
 
 extern void Boba_FireWristMissile(gentity_t* self, int whichMissile);
 extern void Boba_EndWristMissile(const gentity_t* self, int which_missile);

@@ -198,6 +198,9 @@ extern int IsPressingDashButton(const gentity_t* self);
 extern cvar_t* g_SaberPerfectBlockingTimerEasy;
 extern cvar_t* g_SaberPerfectBlockingTimerNormal;
 extern cvar_t* g_SaberPerfectBlockingTimerHard;
+extern void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps);
+extern void WP_SaberFatigueRegenerate(int override_amt);
+extern void WP_BlasterFatigueRegenerate(int override_amt);
 
 extern bool in_camera;
 extern qboolean player_locked;
@@ -1983,21 +1986,10 @@ ClientTimerActions
 Actions that happen once a second
 ==================
 */
-extern void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps);
-extern void WP_SaberFatigueRegenerate(int override_amt);
-extern void WP_BlasterFatigueRegenerate(int override_amt);
-extern void WP_BlockPointsRegenerate(const gentity_t* self, int override_amt);
-
 static void ClientTimerActions(gentity_t* ent, const int msec)
 {
 	gclient_t* client = ent->client;
-	playerState_t* ps = &client->ps;
-
 	client->timeResidual += msec;
-
-	const qboolean isPlayer = (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) ? qtrue : qfalse;
-	const qboolean isNPC = (!isPlayer) ? qtrue : qfalse;
-	const qboolean sjm = g_SerenityJediEngineMode->integer ? qtrue : qfalse;
 
 	while (client->timeResidual >= 1000)
 	{
@@ -2007,41 +1999,53 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 		// WEAPON USAGE STATS
 		// -----------------------------------------------------
 		if (ent->s.weapon != WP_NONE)
+		{
 			client->sess.missionStats.weaponUsed[ent->s.weapon]++;
+		}
 
 		// -----------------------------------------------------
 		// ARMOR / FORCE REGEN (SJE mode only)
 		// -----------------------------------------------------
-		if (sjm && isPlayer)
+		if (g_SerenityJediEngineMode->integer &&
+			(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
 		{
-			if (client->NPC_class != CLASS_GALAKMECH &&
-				ps->forcePowerLevel[FP_PROTECT] > FORCE_LEVEL_2 &&
-				ps->forceRageRecoveryTime < level.time &&
-				!(ps->forcePowersActive & (1 << FP_RAGE)))
+			if (client->NPC_class != CLASS_GALAKMECH
+				&& client->ps.forcePowerLevel[FP_PROTECT] > FORCE_LEVEL_2
+				&& client->ps.forceRageRecoveryTime < level.time
+				&& !(client->ps.forcePowersActive & 1 << FP_RAGE))
 			{
-				if (ps->stats[STAT_ARMOR] < ps->stats[STAT_MAX_HEALTH])
-					ps->stats[STAT_ARMOR]++;
+				if (client->ps.stats[STAT_ARMOR] < client->ps.stats[STAT_MAX_HEALTH])
+				{
+					client->ps.stats[STAT_ARMOR]++;
+				}
 			}
-
-			if (ps->stats[STAT_ARMOR] > ps->stats[STAT_MAX_HEALTH])
-				ps->stats[STAT_ARMOR]--;
-
-			if (ps->forcePower > ps->forcePowerMax)
-				ps->forcePower--;
+			// count down armor when over max
+			if (client->ps.stats[STAT_ARMOR] > client->ps.stats[STAT_MAX_HEALTH])
+			{
+				client->ps.stats[STAT_ARMOR]--;
+			}
+			// count down force when over max
+			if (client->ps.forcePower > client->ps.forcePowerMax)
+			{
+				client->ps.forcePower--;
+			}
 		}
 
 		// -----------------------------------------------------
 		// OVERCHARGED HEALTH DECAY
 		// -----------------------------------------------------
 		if (ent->flags & FL_OVERCHARGED_HEALTH)
-		{
-			if (ps->stats[STAT_HEALTH] > ps->stats[STAT_MAX_HEALTH])
+		{// if you have overcharged health, it needs to gradually go down back to max health, instead of just snapping down
+			//need to gradually reduce health back to max
+			if (client->ps.stats[STAT_HEALTH] > client->ps.stats[STAT_MAX_HEALTH])
 			{
+				//decrement it
 				ent->health--;
-				ps->stats[STAT_HEALTH] = ent->health;
+				client->ps.stats[STAT_HEALTH] = ent->health;
 			}
 			else
 			{
+				//done
 				ent->flags &= ~FL_OVERCHARGED_HEALTH;
 			}
 		}
@@ -2049,127 +2053,177 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 		// -----------------------------------------------------
 		// BLASTER FATIGUE REGEN
 		// -----------------------------------------------------
-		if (!(ps->pm_flags & (PMF_ATTACK_HELD | PMF_ALT_ATTACK_HELD)) &&
-			ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_MIN &&
-			ps->weaponTime < 1)
-		{
-			if (ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_FULL)
-				WP_BlasterFatigueRegenerate(4);
-			else
-				WP_BlasterFatigueRegenerate(1);
+		if (!(client->ps.pm_flags & PMF_ATTACK_HELD) &&
+			!(client->ps.pm_flags & PMF_ALT_ATTACK_HELD))
+		{// only regenerate blaster fatigue if not holding down attack or alt attack,
+			//otherwise you can just hold down fire and never have to worry about blaster fatigue
+			if (client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_MIN && client->ps.weaponTime < 1)
+			{
+				if (client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_FULL)
+				{
+					WP_BlasterFatigueRegenerate(4);
+				}
+				else
+				{
+					WP_BlasterFatigueRegenerate(1);
+				}
+			}
 		}
 
 		// -----------------------------------------------------
-		// FORCE SEE ? REDUCE BLASTER MISHAP
+		// FORCE SEE REDUCE BLASTER MISHAP
 		// -----------------------------------------------------
-		if (ps->forcePowersActive & (1 << FP_SEE))
-			BG_ReduceBlasterMishapLevelAdvanced(ps);
+		if (client->ps.forcePowersActive & 1 << FP_SEE)
+		{// if you have SEE, your blaster mishap level goes down faster
+			BG_ReduceBlasterMishapLevelAdvanced(&client->ps);
+		}
 
 		// -----------------------------------------------------
 		// SABER FATIGUE REGEN (SJE mode only)
 		// -----------------------------------------------------
-		if (sjm)
-		{
-			const qboolean canRegen =
-				(ps->saberFatigueChainCount > MISHAPLEVEL_NONE &&
-					!BG_InSlowBounce(ps) &&
-					!PM_SaberInBrokenParry(ps->saber_move) &&
-					!PM_SaberInAttackPure(ps->saber_move) &&
-					!PM_SaberInAttack(ps->saber_move) &&
-					!PM_SaberInTransitionAny(ps->saber_move) &&
-					!PM_InKnockDown(ps) &&
-					ps->saberLockTime < level.time &&
-					ps->saberBlockingTime < level.time &&
-					ps->groundEntityNum != ENTITYNUM_NONE)
-				? qtrue : qfalse;
-
-			if (canRegen)
-			{
-				if (isPlayer)
+		if (g_SerenityJediEngineMode->integer)
+		{// only regenerate saber fatigue if not holding down attack, otherwise you can just hold down attack and never have to worry about saber fatigue
+			if (client->ps.saberFatigueChainCount > MISHAPLEVEL_NONE
+				&& (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) // player
+				&& !BG_InSlowBounce(&client->ps)
+				&& !PM_SaberInBrokenParry(client->ps.saber_move)
+				&& !PM_SaberInAttackPure(client->ps.saber_move)
+				&& !PM_SaberInAttack(client->ps.saber_move)
+				&& !PM_SaberInTransitionAny(client->ps.saber_move)
+				&& !PM_InKnockDown(&client->ps)
+				&& client->ps.saberLockTime < level.time
+				&& client->ps.saberBlockingTime < level.time
+				&& client->ps.groundEntityNum != ENTITYNUM_NONE)
+			{// player, not doing any saber moves, not in the air, not in a knockdown, not saber locked, not recently blocked
+				if (ent->flags & FL_STAMINA_MODE)
 				{
-					if (ent->flags & FL_STAMINA_MODE)
+					client->ps.saberFatigueChainCount = MISHAPLEVEL_MIN;
+				}
+				else
+				{
+					if (!(client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK))
 					{
-						ps->saberFatigueChainCount = MISHAPLEVEL_MIN;
-					}
-					else if (!(ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)))
-					{
-						if (ps->saberFatigueChainCount > MISHAPLEVEL_HUDFLASH)
+						if (client->ps.saberFatigueChainCount > MISHAPLEVEL_HUDFLASH)
+						{
 							WP_SaberFatigueRegenerate(2);
+						}
 						else
+						{
 							WP_SaberFatigueRegenerate(1);
+						}
 					}
 				}
-				else if (isNPC)
+			}
+			else if (client->ps.saberFatigueChainCount > MISHAPLEVEL_NONE &&
+				(ent->s.clientNum >= MAX_CLIENTS && G_ControlledByPlayer(ent) == qfalse) &&
+				BG_InSlowBounce(&client->ps) == qfalse &&
+				PM_SaberInBrokenParry(client->ps.saber_move) == qfalse &&
+				PM_SaberInAttackPure(client->ps.saber_move) == qfalse &&
+				PM_SaberInAttack(client->ps.saber_move) == qfalse &&
+				PM_SaberInTransitionAny(client->ps.saber_move) == qfalse &&
+				PM_InKnockDown(&client->ps) == qfalse &&
+				client->ps.saberLockTime < level.time &&
+				client->ps.saberBlockingTime < level.time &&
+				client->ps.groundEntityNum != ENTITYNUM_NONE)
+			{// npc, not doing any saber moves, not in the air, not in a knockdown, not saber locked, not recently blocked
+				// Stamina mode: instantly reset to minimum mishap level
+				if (ent->flags & FL_STAMINA_MODE)
 				{
-					if (ent->flags & FL_STAMINA_MODE)
-						ps->saberFatigueChainCount = MISHAPLEVEL_MIN;
-					else
+					client->ps.saberFatigueChainCount = MISHAPLEVEL_MIN;
+				}
+				else
+				{
+					// Half-speed regeneration:
+					// Regenerate 1 point every 2 frames instead of every frame.
+					if ((level.time & 1) == 0)  // even frame → regen
+					{
 						WP_SaberFatigueRegenerate(1);
+					}
 				}
 			}
 
 			// -----------------------------------------------------
 			// AUTO HEALTH REGEN (SJE mode)
 			// -----------------------------------------------------
-			if (g_autoHealthRegen->integer == 1 &&
-				ps->forcePowerLevel[FP_HEAL] > FORCE_LEVEL_2 &&
-				!PM_InAmputateMove(ps->legsAnim) &&
-				!PM_InDrainPainMove(ps->torsoAnim) &&
-				!client->poisonTime &&
-				!client->stunTime &&
-				!client->AmputateTime &&
-				!(ps->forcePowersActive & (1 << FP_RAGE)) &&
-				ps->forceRageRecoveryTime < level.time &&
-				!PM_SaberInAttack(ps->saber_move) &&
-				!(ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) &&
-				client->NPC_class != CLASS_PROJECTION)
-			{
-				if (ent->health < ps->stats[STAT_MAX_HEALTH])
+			if (g_autoHealthRegen->integer == 1
+				&& (!PM_InAmputateMove(client->ps.legsAnim)
+					&& !PM_InDrainPainMove(client->ps.torsoAnim)
+					&& !client->poisonTime
+					&& !client->stunTime
+					&& !client->AmputateTime
+					&& !(client->ps.forcePowersActive & 1 << FP_RAGE))
+				&& client->ps.forceRageRecoveryTime < level.time
+				&& !PM_SaberInAttack(client->ps.saber_move)
+				&& client->ps.forcePowerLevel[FP_HEAL] > FORCE_LEVEL_2
+				&& !(client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK)
+				&& client->NPC_class != CLASS_PROJECTION)
+			{// if you have the heal force power at level 3, and you're not doing an attack move,
+				// and you're not in the middle of a knockdown or something, and you're not currently poisoned or stunned or amputating,
+				// and you're not raging, and your rage recovery time has passed, then
+				// you heal 1 hp every 1 second.
+				if (ent->health < client->ps.stats[STAT_MAX_HEALTH])
+				{
 					ent->health++;
+				}
 			}
 
 			// -----------------------------------------------------
 			// NPC BLOCK POINT REGEN (SJE mode 2)
 			// -----------------------------------------------------
-			if (isNPC &&
-				sjm == 2 &&
-				ps->blockPoints < BLOCK_POINTS_MAX)
-			{
+			if (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent) //this is for NPC,s
+				&& g_SerenityJediEngineMode->integer == 2 &&
+				client->ps.blockPoints < BLOCK_POINTS_MAX)
+			{// only regenerate block points if not holding down block, otherwise you can just hold down block and never have to worry about block points
 				if (ent->flags & FL_BLOCKPOINTMODE)
 				{
-					ps->blockPoints = BLOCK_POINTS_MAX;
+					client->ps.blockPoints = BLOCK_POINTS_MAX;
 				}
-				else if (!PM_SaberInMassiveBounce(ps->torsoAnim) &&
-					!BG_InSlowBounce(ps) &&
-					!PM_InKnockDown(ps) &&
-					!PM_SaberInBrokenParry(ps->saber_move) &&
-					ps->saberBlockingTime < level.time)
+				else
 				{
-					WP_BlockPointsRegenerate(ent, 1 /*self->client->ps.BlockPointRegenAmount*/);
-					//ps->blockPoints++;
+					if (!PM_SaberInMassiveBounce(client->ps.torsoAnim)
+						&& !BG_InSlowBounce(&client->ps)
+						&& !PM_InKnockDown(&client->ps)
+						&& !PM_SaberInBrokenParry(client->ps.saber_move)
+						&& client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
+					{
+						// Half-speed regeneration:
+						// Regenerate 1 point every 2 frames instead of every frame.
+						if ((level.time & 1) == 0)  // even frame → regen
+						{
+							client->ps.blockPoints++;
+						}
+					}
 				}
 			}
 
 			// -----------------------------------------------------
 			// NPC FORCE REGEN (SJE mode 1)
 			// -----------------------------------------------------
-			if (isNPC &&
-				sjm == 1 &&
-				ps->forcePower < ps->forcePowerMax &&
-				ps->weapon == WP_SABER &&
-				ps->SaberActive())
-			{
+			if (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent) //this is for NPC,s
+				&& g_SerenityJediEngineMode->integer == 1
+				&& client->ps.forcePower < client->ps.forcePowerMax
+				&& client->ps.weapon == WP_SABER
+				&& client->ps.SaberActive())
+			{// only regenerate force if not holding down block, otherwise you can just hold down block and never have to worry about force
 				if (ent->flags & FL_FORCEMODE)
 				{
-					ps->forcePower = BLOCK_POINTS_MAX;
+					client->ps.forcePower = BLOCK_POINTS_MAX;
 				}
-				else if (!PM_SaberInMassiveBounce(ps->torsoAnim) &&
-					!BG_InSlowBounce(ps) &&
-					!PM_InKnockDown(ps) &&
-					!PM_SaberInBrokenParry(ps->saber_move) &&
-					ps->saberBlockingTime < level.time)
+				else
 				{
-					ps->forcePower++;
+					if (!PM_SaberInMassiveBounce(client->ps.torsoAnim)
+						&& !BG_InSlowBounce(&client->ps)
+						&& !PM_InKnockDown(&client->ps)
+						&& !PM_SaberInBrokenParry(client->ps.saber_move)
+						&& client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
+					{
+						// Half-speed regeneration:
+						// Regenerate 1 point every 2 frames instead of every frame.
+						if ((level.time & 1) == 0)  // even frame → regen
+						{
+							client->ps.forcePower++;
+						}
+					}
 				}
 			}
 		}
@@ -6842,99 +6896,105 @@ static void DoCallout(gentity_t* caller, gentity_t* our_friend)
 	caller->calloutTime = level.time + 5000;
 }
 
-/*
-==============
-ClientAlterSpeed
-
-This function is called ONLY from ClientThinkReal, and is responsible for setting client ps.speed
-==============
-*/
+//======================================================================
+// ClientAlterSpeed
+//
+// Adjusts client movement speed based on:
+// - NPC vs player control
+// - Vehicle state
+// - Health, held clients
+// - Sprinting / weapon sprinting
+// - Saber style, saber moves, and animations
+// - Forced movement overrides
+//======================================================================
 static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean controlled_by_player)
 {
 	gclient_t* client = ent->client;
 	const Vehicle_t* p_veh = nullptr;
 
+	// Vehicle pointer for later checks
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
 	{
 		p_veh = ent->m_pVehicle;
 	}
 
-	// set speed
-	// This may be wrong: If we're an npc and we are in a vehicle???
-	if (ent->NPC != nullptr && ent->client && ent->s.m_iVehicleNum != 0/*&& ent->client->NPC_class == CLASS_VEHICLE*/)
+	// NPC in a vehicle: use NPC movement system
+	if (ent->NPC != nullptr &&
+		ent->client &&
+		ent->s.m_iVehicleNum != 0)
 	{
-		//we don't actually scale the ucmd, we use actual speeds
-		//FIXME: swoop should keep turning (and moving forward?) for a little bit?
+		// We don't scale the ucmd, we use actual speeds
 		if (ent->NPC->combatMove == qfalse)
 		{
 			if (!(ucmd->buttons & BUTTON_USE))
 			{
-				//Not leaning
-				const auto flying = static_cast<qboolean>(ucmd->upmove && ent->client->moveType == MT_FLYSWIM);
-				const auto climbing = static_cast<qboolean>(ucmd->upmove && ent->watertype & CONTENTS_LADDER);
+				// Not leaning
+				const qboolean flying =
+					(ucmd->upmove && ent->client->moveType == MT_FLYSWIM) ? qtrue : qfalse;
+				const qboolean climbing =
+					(ucmd->upmove && (ent->watertype & CONTENTS_LADDER)) ? qtrue : qfalse;
 
 				client->ps.friction = 6;
 
-				if (ucmd->forwardmove || ucmd->rightmove || flying)
+				if (ucmd->forwardmove || ucmd->rightmove || flying == qtrue)
 				{
-					//if ( ent->NPC->behaviorState != BS_FORMATION )
+					// Formation NPCs set desiredSpeed themselves; others use walk/run
+					if (ucmd->buttons & BUTTON_WALKING)
 					{
-						//In - Formation NPCs set thier desiredSpeed themselves
-						if (ucmd->buttons & BUTTON_WALKING)
-						{
-							ent->NPC->desiredSpeed = NPC_GetWalkSpeed(ent); //ent->NPC->stats.walkSpeed;
-						}
-						else //running
-						{
-							ent->NPC->desiredSpeed = NPC_GetRunSpeed(ent); //ent->NPC->stats.runSpeed;
-						}
+						ent->NPC->desiredSpeed = NPC_GetWalkSpeed(ent);
+					}
+					else
+					{
+						ent->NPC->desiredSpeed = NPC_GetRunSpeed(ent);
+					}
 
-						if (ent->NPC->currentSpeed >= 80 && !controlled_by_player)
+					if (ent->NPC->currentSpeed >= 80 && controlled_by_player == qfalse)
+					{
+						// At higher speeds, slow down near goal
+						if (ent->NPC->distToGoal < SLOWDOWN_DIST &&
+							!(ent->NPC->aiFlags & NPCAI_NO_SLOWDOWN))
 						{
-							//At higher speeds, need to slow down close to stuff
-							//Slow down as you approach your goal
-							if (ent->NPC->distToGoal < SLOWDOWN_DIST && !(ent->NPC->aiFlags & NPCAI_NO_SLOWDOWN)) //128
+							if (ent->NPC->desiredSpeed > MIN_NPC_SPEED)
 							{
-								if (ent->NPC->desiredSpeed > MIN_NPC_SPEED)
-								{
-									const float slowdown_speed = static_cast<float>(ent->NPC->desiredSpeed) * ent->NPC->
-										distToGoal / SLOWDOWN_DIST;
+								const float slowdown_speed =
+									static_cast<float>(ent->NPC->desiredSpeed) *
+									ent->NPC->distToGoal / SLOWDOWN_DIST;
 
-									ent->NPC->desiredSpeed = ceil(slowdown_speed);
-									if (ent->NPC->desiredSpeed < MIN_NPC_SPEED)
-									{
-										//don't slow down too much
-										ent->NPC->desiredSpeed = MIN_NPC_SPEED;
-									}
+								ent->NPC->desiredSpeed = static_cast<int>(ceilf(slowdown_speed));
+								if (ent->NPC->desiredSpeed < MIN_NPC_SPEED)
+								{
+									ent->NPC->desiredSpeed = MIN_NPC_SPEED;
 								}
 							}
 						}
 					}
 				}
-				else if (climbing)
+				else if (climbing == qtrue)
 				{
 					ent->NPC->desiredSpeed = ent->NPC->stats.walkSpeed;
 				}
 				else
 				{
-					//We want to stop
+					// We want to stop
 					ent->NPC->desiredSpeed = 0;
 				}
 
 				NPC_Accelerate(ent, qfalse, qfalse);
 
-				if (ent->NPC->currentSpeed <= 24 && ent->NPC->desiredSpeed < ent->NPC->currentSpeed)
+				if (ent->NPC->currentSpeed <= 24 &&
+					ent->NPC->desiredSpeed < ent->NPC->currentSpeed)
 				{
-					//No-one walks this slow
-					client->ps.speed = ent->NPC->currentSpeed = 0; //Full stop
+					// No-one walks this slow: full stop
+					client->ps.speed = 0;
+					ent->NPC->currentSpeed = 0;
 					ucmd->forwardmove = 0;
 					ucmd->rightmove = 0;
 				}
 				else
 				{
+					// Walk vs run flag based on current speed
 					if (ent->NPC->currentSpeed <= ent->NPC->stats.walkSpeed)
 					{
-						//Play the walkanim
 						ucmd->buttons |= BUTTON_WALKING;
 					}
 					else
@@ -6942,53 +7002,50 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 						ucmd->buttons &= ~BUTTON_WALKING;
 					}
 
+					// Keep moving a bit until fully stopped
 					if (ent->NPC->currentSpeed > 0)
 					{
-						//We should be moving
-						if (climbing || flying)
+						if (climbing == qtrue || flying == qtrue)
 						{
 							if (!ucmd->upmove)
 							{
-								//We need to force them to take a couple more steps until stopped
-								ucmd->upmove = ent->NPC->last_ucmd.upmove; //was last_upmove;
+								ucmd->upmove = ent->NPC->last_ucmd.upmove;
 							}
 						}
 						else if (!ucmd->forwardmove && !ucmd->rightmove)
 						{
-							//We need to force them to take a couple more steps until stopped
-							ucmd->forwardmove = ent->NPC->last_ucmd.forwardmove; //was last_forwardmove;
-							ucmd->rightmove = ent->NPC->last_ucmd.rightmove; //was last_rightmove;
+							ucmd->forwardmove = ent->NPC->last_ucmd.forwardmove;
+							ucmd->rightmove = ent->NPC->last_ucmd.rightmove;
 						}
 					}
 
 					client->ps.speed = ent->NPC->currentSpeed;
-					if (player && player->client && player->client->ps.viewEntity == ent->s.number)
+
+					// Slow down on turns to avoid orbiting
 					{
-					}
-					else
-					{
-						//Slow down on turns - don't orbit!!!
 						float turndelta;
-						// if the NPC is locked into a Yaw, we want to check the lockedDesiredYaw...otherwise the NPC can't walk backwards, because it always thinks it trying to turn according to desiredYaw
+
 						if (client->renderInfo.renderFlags & RF_LOCKEDANGLE)
-							// yeah I know the RF_ flag is a pretty ugly hack...
 						{
-							turndelta = (180 - fabs(AngleDelta(ent->currentAngles[YAW], ent->NPC->lockedDesiredYaw))) /
-								180;
+							turndelta =
+								(180.0f - fabsf(AngleDelta(ent->currentAngles[YAW],
+									ent->NPC->lockedDesiredYaw))) / 180.0f;
 						}
 						else
 						{
-							turndelta = (180 - fabs(AngleDelta(ent->currentAngles[YAW], ent->NPC->desiredYaw))) / 180;
+							turndelta =
+								(180.0f - fabsf(AngleDelta(ent->currentAngles[YAW],
+									ent->NPC->desiredYaw))) / 180.0f;
 						}
 
 						if (turndelta < 0.75f)
 						{
 							client->ps.speed = 0;
 						}
-						else if (ent->NPC->distToGoal < 100 && turndelta < 1.0)
+						else if (ent->NPC->distToGoal < 100 && turndelta < 1.0f)
 						{
-							//Turn is greater than 45 degrees or closer than 100 to goal
-							client->ps.speed = floor(static_cast<float>(client->ps.speed) * turndelta);
+							client->ps.speed =
+								static_cast<int>(floorf(static_cast<float>(client->ps.speed) * turndelta));
 						}
 					}
 				}
@@ -6996,35 +7053,44 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		}
 		else
 		{
-			ent->NPC->desiredSpeed = ucmd->buttons & BUTTON_WALKING ? NPC_GetWalkSpeed(ent) : NPC_GetRunSpeed(ent);
+			// Combat move: direct walk/run speed
+			ent->NPC->desiredSpeed =
+				(ucmd->buttons & BUTTON_WALKING) ? NPC_GetWalkSpeed(ent) : NPC_GetRunSpeed(ent);
 
 			client->ps.speed = ent->NPC->desiredSpeed;
 		}
 	}
 	else
 	{
-		//Client sets ucmds and such for speed alterations
+		// Non-NPC or not in vehicle: base speed from g_speed
 		client->ps.speed = g_speed->value;
 
+		// Held clients move slower
 		if (client->ps.heldClient < ENTITYNUM_WORLD)
 		{
 			client->ps.speed *= 0.3f;
 		}
-		else if ((client->ps.stats[STAT_HEALTH] <= 25 && client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
-			(client->ps.stats[STAT_HEALTH] <= (client->ps.stats[STAT_MAX_HEALTH] / 3) && client->ps.stats[STAT_MAX_HEALTH] < 100))
+		// Low health slowdowns
+		else if ((client->ps.stats[STAT_HEALTH] <= 25 &&
+			client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
+			(client->ps.stats[STAT_HEALTH] <=
+				(client->ps.stats[STAT_MAX_HEALTH] / 3) &&
+				client->ps.stats[STAT_MAX_HEALTH] < 100))
 		{
-			//move slower when low on health
 			client->ps.speed *= 0.85f;
 		}
-		else if ((client->ps.stats[STAT_HEALTH] <= 40 && client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
-			(client->ps.stats[STAT_HEALTH] <= (client->ps.stats[STAT_MAX_HEALTH] / 2) && client->ps.stats[STAT_MAX_HEALTH] < 100))
+		else if ((client->ps.stats[STAT_HEALTH] <= 40 &&
+			client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
+			(client->ps.stats[STAT_HEALTH] <=
+				(client->ps.stats[STAT_MAX_HEALTH] / 2) &&
+				client->ps.stats[STAT_MAX_HEALTH] < 100))
 		{
-			//move slower when low on health
 			client->ps.speed *= 0.90f;
 		}
+		// Sprinting (unarmed / saber / weapon sprint)
 		else if (BG_SprintAnim(client->ps.legsAnim))
 		{
-			if (ent->client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING)
+			if (ent->client->ps.PlayerEffectFlags & (1 << PEF_SPRINTING))
 			{
 				if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
 				{
@@ -7045,7 +7111,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		}
 		else if (BG_SaberSprintAnim(client->ps.legsAnim))
 		{
-			if (ent->client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING)
+			if (ent->client->ps.PlayerEffectFlags & (1 << PEF_SPRINTING))
 			{
 				if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
 				{
@@ -7066,7 +7132,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		}
 		else if (BG_WeaponSprintAnim(client->ps.legsAnim))
 		{
-			if (ent->client->ps.PlayerEffectFlags & 1 << PEF_WEAPONSPRINTING)
+			if (ent->client->ps.PlayerEffectFlags & (1 << PEF_WEAPONSPRINTING))
 			{
 				if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
 				{
@@ -7085,6 +7151,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 				}
 			}
 		}
+		// Certain weapons slow you down
 		else if (client->ps.weapon == WP_BRYAR_PISTOL ||
 			client->ps.weapon == WP_THERMAL ||
 			client->ps.weapon == WP_DET_PACK ||
@@ -7092,9 +7159,9 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		{
 			client->ps.speed *= 0.85f;
 		}
+		// Saber attack backwards: slower based on style
 		else if (PM_SaberInAttack(client->ps.saber_move) && ucmd->forwardmove < 0)
 		{
-			//if running backwards while attacking, don't run as fast.
 			switch (client->ps.saberAnimLevel)
 			{
 			case SS_FAST:
@@ -7108,18 +7175,20 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			case SS_STRONG:
 				client->ps.speed *= 0.55f;
 				break;
-			default:;
+			default:
+				break;
 			}
 			if (g_saberMoveSpeed->value != 1.0f)
 			{
 				client->ps.speed *= g_saberMoveSpeed->value;
 			}
 		}
+		// Leaping saber anim: no speed mod
 		else if (PM_LeapingSaberAnim(client->ps.legsAnim))
 		{
-			//no mod on speed when leaping
-			//FIXME: maybe jump?
+			// no change
 		}
+		// Spinning saber anim: slower
 		else if (PM_SpinningSaberAnim(client->ps.legsAnim))
 		{
 			client->ps.speed *= 0.5f;
@@ -7128,10 +7197,10 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 				client->ps.speed *= g_saberMoveSpeed->value;
 			}
 		}
-		else if (client->ps.weapon == WP_SABER && ucmd->buttons & BUTTON_ATTACK)
+		// Saber attack while running: style-based slowdown
+		else if (client->ps.weapon == WP_SABER &&
+			(ucmd->buttons & BUTTON_ATTACK))
 		{
-			//if attacking with saber while running, drop your speed
-			//FIXME: should be weaponTime?  Or in certain anims?
 			switch (client->ps.saberAnimLevel)
 			{
 			case SS_TAVION:
@@ -7146,17 +7215,19 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			case SS_STRONG:
 				client->ps.speed *= 0.70f;
 				break;
-			default:;
+			default:
+				break;
 			}
 			if (g_saberMoveSpeed->value != 1.0f)
 			{
 				client->ps.speed *= g_saberMoveSpeed->value;
 			}
 		}
-		else if (client->ps.weapon == WP_SABER && client->ps.saberAnimLevel == FORCE_LEVEL_3 &&
+		// Level 3 saber transitions: slow down even in transitions
+		else if (client->ps.weapon == WP_SABER &&
+			client->ps.saberAnimLevel == FORCE_LEVEL_3 &&
 			PM_SaberInTransition(client->ps.saber_move))
 		{
-			//Now, we want to even slow down in transitions for level 3 (since it has chains and stuff)
 			if (ucmd->forwardmove < 0)
 			{
 				client->ps.speed *= 0.4f;
@@ -7167,16 +7238,19 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			}
 		}
 	}
-	if ((client->NPC_class == CLASS_ATST || client->NPC_class == CLASS_DROIDEKA) && (client->ps.legsAnim == BOTH_RUN1START || client->ps.legsAnim == BOTH_RUN1STOP))
+
+	// ATST / Droideka start/stop ramp-up hack
+	if ((client->NPC_class == CLASS_ATST || client->NPC_class == CLASS_DROIDEKA) &&
+		(client->ps.legsAnim == BOTH_RUN1START ||
+			client->ps.legsAnim == BOTH_RUN1STOP))
 	{
-		//HACK: when starting to move as atst, ramp up speed
 		if (client->ps.legsAnimTimer > 100)
 		{
 			client->ps.speed = 0;
 		}
 	}
 
-	//Apply forced movement
+	// Apply forced movement (scripted / special cases)
 	if (client->forced_forwardmove)
 	{
 		ucmd->forwardmove = client->forced_forwardmove;
@@ -7188,7 +7262,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			}
 			else
 			{
-				client->ps.speed = g_speed->value; //default is 320
+				client->ps.speed = g_speed->value;
 			}
 		}
 	}
@@ -7204,38 +7278,44 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			}
 			else
 			{
-				client->ps.speed = g_speed->value; //default is 320
+				client->ps.speed = g_speed->value;
 			}
 		}
 	}
 
+	// Non-vehicle extra modifiers
 	if (!p_veh)
 	{
-		if (ucmd->forwardmove < 0 && !(ucmd->buttons & BUTTON_WALKING) && client->ps.groundEntityNum != ENTITYNUM_NONE)
+		// Running backwards is slower than forwards
+		if (ucmd->forwardmove < 0 &&
+			!(ucmd->buttons & BUTTON_WALKING) &&
+			client->ps.groundEntityNum != ENTITYNUM_NONE)
 		{
-			//running backwards is slower than running forwards
-			client->ps.speed *= 0.75;
+			client->ps.speed *= 0.75f;
 		}
 
+		// Rage recovery slows you
 		if (client->ps.forceRageRecoveryTime > level.time)
 		{
-			client->ps.speed *= 0.75;
+			client->ps.speed *= 0.75f;
 		}
 
+		// Saber-specific move speed scales
 		if (client->ps.weapon == WP_SABER)
 		{
 			if (client->ps.saber[0].moveSpeedScale != 1.0f)
 			{
 				client->ps.speed *= client->ps.saber[0].moveSpeedScale;
 			}
-			if (client->ps.dualSabers
-				&& client->ps.saber[1].moveSpeedScale != 1.0f)
+			if (client->ps.dualSabers &&
+				client->ps.saber[1].moveSpeedScale != 1.0f)
 			{
 				client->ps.speed *= client->ps.saber[1].moveSpeedScale;
 			}
 		}
 	}
 }
+
 
 extern qboolean ForceDrain2(gentity_t* ent);
 extern void ForceGrip(gentity_t* ent);
