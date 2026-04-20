@@ -5,8 +5,8 @@
 #include "cg_media.h"
 #include "cg_pazaak.h"
 #if defined(__has_include)
-#  if __has_include("ui/menudef.h")// MOVIEDUELS has a different path for this header
-#    include "ui/menudef.h"
+#  if __has_include("ui/jamp/menudef.h")
+#    include "ui/jamp/menudef.h"
 #  else
 #    include "ui/menudef.h"
 #  endif
