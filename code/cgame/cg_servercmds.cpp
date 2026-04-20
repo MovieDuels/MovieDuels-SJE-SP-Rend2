@@ -27,6 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "cg_media.h"
 #include "FxScheduler.h"
+#include "cg_pazaak.h"
 
 /*
 ================
@@ -242,6 +243,7 @@ static serverCommand_t commands[] = {
 	{"cts", CG_CaptionTextStop},
 	{"lt", CG_LCARSText_f},
 	{"print", CG_Print_f},
+	{"pzk", CG_Pazaak_ServerCmd_f},
 	{"st", CG_ScrollText_f},
 };
 
