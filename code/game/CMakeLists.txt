@@ -212,6 +212,7 @@ set(SPGameCGameFiles
 	"${SPDir}/cgame/cg_predict.cpp"
 	"${SPDir}/cgame/cg_scoreboard.cpp"
 	"${SPDir}/cgame/cg_servercmds.cpp"
+	"${SPDir}/cgame/cg_pazaak.cpp"
 	"${SPDir}/cgame/cg_snapshot.cpp"
 	"${SPDir}/cgame/cg_syscalls.cpp"
 	"${SPDir}/cgame/cg_text.cpp"
