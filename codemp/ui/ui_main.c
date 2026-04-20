@@ -1400,9 +1400,7 @@ void UI_LoadMenus(const char* menuFile, qboolean reset) {
 	pc_token_t token;
 	//	int start = trap->Milliseconds();
 
-	if (!trap->PC_LoadGlobalDefines("ui/jamp/menudef.h")) {
-		trap->PC_LoadGlobalDefines("ui/menudef.h");
-	}
+	trap->PC_LoadGlobalDefines("ui/menudef.h");
 
 	int handle = trap->PC_LoadSource(menuFile);
 	if (!handle) {
