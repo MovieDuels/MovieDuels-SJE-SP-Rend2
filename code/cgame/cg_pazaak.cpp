@@ -4,15 +4,7 @@
 #include "cg_local.h"
 #include "cg_media.h"
 #include "cg_pazaak.h"
-#if defined(__has_include)
-#  if __has_include("ui/jamp/menudef.h")
-#    include "ui/jamp/menudef.h"
-#  else
-#    include "ui/menudef.h"
-#  endif
-#else
-#  include "ui/menudef.h"
-#endif
+#include "ui/menudef.h"
 
 static int pzk_field[2][9];
 static int pzk_points[2];

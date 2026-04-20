@@ -23,16 +23,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "cg_local.h"
 #include "ui/ui_shared.h"
-#include "cg_pazaak.h"
-#if defined(__has_include)
-#  if __has_include("ui/jamp/menudef.h")
-#    include "ui/jamp/menudef.h"
-#  else
-#    include "ui/menudef.h"
-#  endif
-#else
-#  include "ui/menudef.h"
-#endif
+#include "ui/menudef.h"
 
 extern displayContextDef_t cgDC;
 
@@ -550,11 +541,7 @@ void CG_DrawMedal(int ownerDraw, rectDef_t* rect, float scale, vec4_t color, qha
 
 //
 void CG_OwnerDraw(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int font) {
-	// handle Pazaak ownerdraws first
-	if (ownerDraw >= UI_JKG_PAZAAK_BASE && ownerDraw <= (UI_JKG_PAZAAK_BASE + 16)) {
-		CG_Pazaak_OwnerDraw(ownerDraw, x, y, w, h, color, shader, scale);
-		return;
-	}
+	// other ownerdraw handling
 	//Ignore all this, at least for now. May put some stat stuff back in menu files later.
 #if 0
 	rectDef_t rect;
