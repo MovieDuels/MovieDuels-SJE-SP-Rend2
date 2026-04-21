@@ -13627,24 +13627,41 @@ static qboolean WP_SaberLaunch(gentity_t* self, gentity_t* saber, const qboolean
 
 	if (g_SerenityJediEngineMode->integer == 2)
 	{
-		if (self->client->ps.saberAnimLevel == SS_STAFF)
+		if (g_overpoweredsaberthrow->integer == 1)// this is normal saberthrow jka style, where the saber spins on the Y axis as it flies.
 		{
-			saber->s.apos.trDelta[1] = 800;
+			switch (self->client->ps.forcePowerLevel[FP_SABERTHROW])
+			{// this is the old style, where the saber spins on the X axis as it flies.
+			default:
+			case FORCE_LEVEL_1:
+				saber->s.apos.trDelta[1] = 600;
+				break;
+			case FORCE_LEVEL_2:
+				saber->s.apos.trDelta[1] = 800;
+				break;
+			case FORCE_LEVEL_3:
+				saber->s.apos.trDelta[1] = 1200;
+				break;
+			}
 		}
 		else
-		{
-			if (g_overpoweredsaberthrow->integer == 1)
+		{// this is the new style, where the saber spins on the Z axis as it flies.
+			switch (self->client->ps.forcePowerLevel[FP_SABERTHROW])
 			{
-				saber->s.apos.trDelta[1] = 800;
-			}
-			else
-			{
+			default:
+			case FORCE_LEVEL_1:
 				saber->s.apos.trDelta[0] = 600;
+				break;
+			case FORCE_LEVEL_2:
+				saber->s.apos.trDelta[0] = 800;
+				break;
+			case FORCE_LEVEL_3:
+				saber->s.apos.trDelta[0] = 1200;
+				break;
 			}
 		}
 	}
 	else
-	{
+	{// this is the old style, where the saber spins on the X axis as it flies.
 		switch (self->client->ps.forcePowerLevel[FP_SABERTHROW])
 		{
 		default:

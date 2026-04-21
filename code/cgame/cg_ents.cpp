@@ -817,38 +817,18 @@ static void CG_General(centity_t* cent)
 						}
 						else
 						{
-							if (cg_SerenityJediEngineMode.integer == 2)
-							{
-								if (cent->gent->owner->client->ps.saber[0].type == SABER_SINGLE
-									|| cent->gent->owner->client->ps.saber[0].type == SABER_SINGLE_CLASSIC
-									|| cent->gent->owner->client->ps.saber[0].type == SABER_THIN
-									|| cent->gent->owner->client->ps.saber[0].type == SABER_SFX
-									|| cent->gent->owner->client->ps.saber[0].type == SABER_CUSTOMSFX
-									|| cent->gent->owner->client->ps.saber[0].type == SABER_GRIE
-									|| cent->gent->owner->client->ps.saber[0].type == SABER_UNSTABLE)
-								{
-									spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin2.wav");
-								}
-								else
-								{
-									spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin1.wav");
-								}
-							}
-							else
-							{
-								switch (cent->gent->owner->client->ps.forcePowerLevel[FP_SABERTHROW])
-								{
-								case FORCE_LEVEL_1:
-									spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin3.wav");
-									break;
-								case FORCE_LEVEL_2:
-									spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin2.wav");
-									break;
-								default:
-								case FORCE_LEVEL_3:
-									spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin1.wav");
-									break;
-								}
+							switch (cent->gent->owner->client->ps.forcePowerLevel[FP_SABERTHROW])
+							{//set the saber spin sound based on saber throw level
+							case FORCE_LEVEL_1:
+								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin3.wav");
+								break;
+							case FORCE_LEVEL_2:
+								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin2.wav");
+								break;
+							default:
+							case FORCE_LEVEL_3:
+								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin1.wav");
+								break;
 							}
 						}
 						cgi_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin,
@@ -912,38 +892,18 @@ static void CG_General(centity_t* cent)
 					}
 					else
 					{
-						if (cg_SerenityJediEngineMode.integer == 2)
+						switch (cent->gent->owner->client->ps.forcePowerLevel[FP_SABERTHROW])
 						{
-							if (cent->gent->owner->client->ps.saber[0].type == SABER_SINGLE
-								|| cent->gent->owner->client->ps.saber[0].type == SABER_SINGLE_CLASSIC
-								|| cent->gent->owner->client->ps.saber[0].type == SABER_THIN
-								|| cent->gent->owner->client->ps.saber[0].type == SABER_SFX
-								|| cent->gent->owner->client->ps.saber[0].type == SABER_CUSTOMSFX
-								|| cent->gent->owner->client->ps.saber[0].type == SABER_GRIE
-								|| cent->gent->owner->client->ps.saber[0].type == SABER_UNSTABLE)
-							{
-								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin2.wav");
-							}
-							else
-							{
-								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin1.wav");
-							}
-						}
-						else
-						{
-							switch (cent->gent->owner->client->ps.forcePowerLevel[FP_SABERTHROW])
-							{
-							case FORCE_LEVEL_1:
-								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin3.wav");
-								break;
-							case FORCE_LEVEL_2:
-								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin2.wav");
-								break;
-							default:
-							case FORCE_LEVEL_3:
-								spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin1.wav");
-								break;
-							}
+						case FORCE_LEVEL_1:
+							spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin3.wav");
+							break;
+						case FORCE_LEVEL_2:
+							spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin2.wav");
+							break;
+						default:
+						case FORCE_LEVEL_3:
+							spin_sound = cgi_S_RegisterSound("sound/weapons/saber/saberspin1.wav");
+							break;
 						}
 					}
 					cgi_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin,

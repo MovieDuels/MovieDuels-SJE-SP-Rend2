@@ -2184,18 +2184,21 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				!PM_InKnockDown(&other->client->ps) &&
 				!WP_DoingForcedAnimationForForcePowers(other))
 			{
-				if (PM_CrouchAnim(other->client->ps.legsAnim))
-				{
-					vec3_t dir;
-					VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
-					VectorNormalize(dir);
+				if (Q_irand(0, 3))
+				{// 75% chance to play pain anim
+					if (PM_CrouchAnim(other->client->ps.legsAnim))
+					{
+						vec3_t dir;
+						VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
+						VectorNormalize(dir);
 
-					G_Knockdown(other, ent, dir, 50, qtrue);
-				}
-				else
-				{
-					NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					other->client->ps.torsoAnimTimer = 400;
+						G_Knockdown(other, ent, dir, 50, qtrue);
+					}
+					else
+					{
+						NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						other->client->ps.torsoAnimTimer = 400;
+					}
 				}
 			}
 
@@ -2428,18 +2431,22 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		}
 
 		G_BounceMissile(ent, trace);
-		if (PM_CrouchAnim(other->client->ps.legsAnim))
-		{
-			vec3_t dir;
-			VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
-			VectorNormalize(dir);
 
-			G_Knockdown(other, ent, dir, 50, qtrue);
-		}
-		else
-		{
-			NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-			other->client->ps.torsoAnimTimer = 400;
+		if (Q_irand(0, 3))
+		{// 75% chance to play pain anim
+			if (PM_CrouchAnim(other->client->ps.legsAnim))
+			{
+				vec3_t dir;
+				VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
+				VectorNormalize(dir);
+
+				G_Knockdown(other, ent, dir, 50, qtrue);
+			}
+			else
+			{
+				NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				other->client->ps.torsoAnimTimer = 400;
+			}
 		}
 
 		if (ent->owner)
@@ -2930,18 +2937,22 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 		}
 
 		G_BounceMissile(ent, trace);
-		if (PM_CrouchAnim(other->client->ps.legsAnim))
-		{
-			vec3_t dir;
-			VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
-			VectorNormalize(dir);
 
-			G_Knockdown(other, ent, dir, 50, qtrue);
-		}
-		else
-		{
-			NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-			other->client->ps.torsoAnimTimer = 400;
+		if (Q_irand(0, 3))
+		{// 75% chance to play pain anim
+			if (PM_CrouchAnim(other->client->ps.legsAnim))
+			{
+				vec3_t dir;
+				VectorSubtract(ent->currentOrigin, other->currentOrigin, dir);
+				VectorNormalize(dir);
+
+				G_Knockdown(other, ent, dir, 50, qtrue);
+			}
+			else
+			{
+				NPC_SetAnim(other, SETANIM_TORSO, Q_irand(BOTH_PAIN2, BOTH_PAIN3), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				other->client->ps.torsoAnimTimer = 400;
+			}
 		}
 
 		if (ent->owner)
