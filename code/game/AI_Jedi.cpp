@@ -11895,6 +11895,8 @@ void npc_bs_jedi_default()
 			{
 				NPC_CheckEvasion();
 			}
+
+			Jedi_Attack();
 		}
 		else
 		{

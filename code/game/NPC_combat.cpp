@@ -1829,7 +1829,14 @@ void WeaponThink()
 	}
 
 	playerState_t* ps = &NPC->client->ps;
-	ucmd.buttons &= ~BUTTON_ATTACK;
+	// ------------------------------------------------------------
+	// FIX: Only clear BUTTON_ATTACK for non-saber weapons.
+	// Saber NPCs rely on BUTTON_ATTACK being preserved.
+	// ------------------------------------------------------------
+	if (client->ps.weapon != WP_SABER)
+	{
+		ucmd.buttons &= ~BUTTON_ATTACK;
+	}
 
 	// Weapon state checks
 	if (ps->weaponstate == WEAPON_RAISING ||
@@ -1885,6 +1892,16 @@ void WeaponThink()
 			!ps->powerups[PW_GALAK_SHIELD])
 		{
 			BubbleShield_TurnOn();
+		}
+
+		if (NPC->client->ps.powerups[PW_GALAK_SHIELD] == 0)
+		{
+			BubbleShield_TurnOn();
+		}
+
+		if (NPC->client->ps.powerups[PW_STUNNED] != 0)
+		{
+			return;
 		}
 	}
 
