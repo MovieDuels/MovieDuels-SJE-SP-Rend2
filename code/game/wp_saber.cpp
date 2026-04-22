@@ -13639,7 +13639,7 @@ static qboolean WP_SaberLaunch(gentity_t* self, gentity_t* saber, const qboolean
 				saber->s.apos.trDelta[1] = 800;
 				break;
 			case FORCE_LEVEL_3:
-				saber->s.apos.trDelta[1] = 1200;
+				saber->s.apos.trDelta[1] = 1000;
 				break;
 			}
 		}
@@ -13655,7 +13655,7 @@ static qboolean WP_SaberLaunch(gentity_t* self, gentity_t* saber, const qboolean
 				saber->s.apos.trDelta[0] = 800;
 				break;
 			case FORCE_LEVEL_3:
-				saber->s.apos.trDelta[0] = 1200;
+				saber->s.apos.trDelta[0] = 1000;
 				break;
 			}
 		}
