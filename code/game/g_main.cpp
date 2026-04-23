@@ -344,7 +344,7 @@ extern int killPlayerTimer;
 
 static void G_DynamicMusicUpdate()
 {
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	vec3_t mins{}, maxs{};
 	vec3_t center;
 	int danger = 0;
@@ -617,41 +617,14 @@ static void G_DynamicMusicUpdate()
 			//not ready to switch yet
 			return;
 		}
-		//at least 1 second (for beats)
-		//level.dmDebounceTime = level.time + 1000;//FIXME: define beat time?
-		/*
-		if ( danger || dangerNear )
-		{//danger
-			//stay on whatever we were on, action or exploration
-			if ( !danger )
-			{//minimum
-				danger = 1;
-			}
-			if ( danger > 3 )
-			{
-				level.dmDebounceTime = level.time + 5000;
-			}
-			else
-			{
-				level.dmDebounceTime = level.time + 2000 + 1000*danger;
-			}
-		}
-		else
-		*/
+
+		if (level.dmState != DM_EXPLORE)
 		{
-			//still nothing dangerous going on
-			if (level.dmState != DM_EXPLORE)
-			{
-				//just went to explore, hold it for a couple seconds at least
-				//level.dmDebounceTime = level.time + 2000;
-				gi.SetConfigstring(CS_DYNAMIC_MUSIC_STATE, "explore");
-			}
-			level.dmState = DM_EXPLORE;
-			//FIXME: look for interest points and play "mysterious" music instead of exploration?
-			//FIXME: suspicious and distraction sounds should play some cue or change music in a subtle way?
-			//play exploration
+			//just went to explore, hold it for a couple seconds at least
+			//level.dmDebounceTime = level.time + 2000;
+			gi.SetConfigstring(CS_DYNAMIC_MUSIC_STATE, "explore");
 		}
-		//FIXME: when do we go to silence?
+		level.dmState = DM_EXPLORE;
 	}
 }
 

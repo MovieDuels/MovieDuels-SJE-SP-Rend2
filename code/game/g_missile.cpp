@@ -87,7 +87,6 @@ extern qboolean PM_SaberInReturn(int move);
 extern int WP_SaberMustBoltBlockJKAMode(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point, int rSaberNum, int rBladeNum);
 extern int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, qboolean check_b_box_block, vec3_t point, int rSaberNum, int rBladeNum);
 extern float VectorBlockDistance(vec3_t v1, vec3_t v2);
-extern void PM_AddBoltBlockFatigue(playerState_t* ps, int fatigue);
 extern void PM_VelocityForSaberMove(const playerState_t* ps, vec3_t throw_dir);
 extern qboolean WP_SaberLose(gentity_t* self, vec3_t throw_dir);
 extern qboolean WP_BoltBlockVictimFatigued(gentity_t* victim);

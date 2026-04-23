@@ -2225,6 +2225,7 @@ public:
 	//this without a lot of hassle?)
 	int			hackingBaseTime;
 	int         saberstuckinwalltimer;
+	int         saberDisarmProtectTime;
 
 #endif // !JK2_MODE
 
@@ -2504,6 +2505,7 @@ public:
 		saved_game.write<int32_t>(hackingTime);
 		saved_game.write<int32_t>(hackingBaseTime);
 		saved_game.write<int32_t>(saberstuckinwalltimer);
+		saved_game.write<int32_t>(saberDisarmProtectTime);
 
 #endif // !JK2_MODE
 	}
@@ -2784,6 +2786,7 @@ public:
 		saved_game.read<int32_t>(hackingTime);
 		saved_game.read<int32_t>(hackingBaseTime);
 		saved_game.read<int32_t>(saberstuckinwalltimer);
+		saved_game.read<int32_t>(saberDisarmProtectTime);
 
 #endif // !JK2_MODE
 	}

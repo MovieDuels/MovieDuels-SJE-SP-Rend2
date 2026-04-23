@@ -255,7 +255,6 @@ extern void G_StartStasisEffect_FORCE_LEVEL_1(const gentity_t* ent, int me_flags
 	float time_scale = 0.0f, int spin_time = 0);
 void WP_BlockPointsRegenerate(const gentity_t* self, int override_amt);
 void WP_ForcePowerRegenerate(const gentity_t* self, int override_amt);
-extern void PM_AddBoltBlockFatigue(playerState_t* ps, int fatigue);
 extern qboolean PM_Saberinstab(int move);
 extern void PM_AddBlockFatigue(playerState_t* ps, int fatigue);
 extern cvar_t* g_SaberPerfectBlockingTimerEasy;
@@ -7017,10 +7016,12 @@ qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
 		return qfalse;
 	}
 
-	if (victim->s.weapon == WP_SABER && victim->client->ps.SaberActive() && victim->client->ps.blockPoints <=
-		BLOCKPOINTS_TEN
-		|| victim->s.weapon == WP_SABER && victim->client->ps.SaberActive() && victim->client->ps.forcePower <=
-		BLOCKPOINTS_TEN)
+	if (victim->s.weapon == WP_SABER &&
+		victim->client->ps.SaberActive() &&
+		victim->client->ps.blockPoints <= BLOCKPOINTS_TEN ||
+		victim->s.weapon == WP_SABER &&
+		victim->client->ps.SaberActive() &&
+		victim->client->ps.forcePower <= BLOCKPOINTS_TEN)
 	{
 		//knock their asses down!!
 		G_Stagger(victim);
@@ -13395,8 +13396,6 @@ static void WP_RunSaber(gentity_t* self, gentity_t* saber)
 
 	gi.linkentity(saber);
 
-	//touch push triggers?
-
 	if (tr.fraction != 1)
 	{
 		WP_SaberImpact(self, saber, &tr);
@@ -13814,48 +13813,106 @@ static void WP_SaberKnockedOutOfHand(const gentity_t* self, gentity_t* saber)
 
 qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 {
-	if (!self || !self->client || self->client->ps.saberEntityNum <= 0)
+	// ------------------------------------------------------------
+	// VALIDATION
+	// ------------------------------------------------------------
+	if (!self || !self->client)
 	{
-		//WTF?!!  We lost it already?
+		return qfalse;
+	}
+
+	const int saberEntNum = self->client->ps.saberEntityNum;
+
+	if (saberEntNum <= 0 || saberEntNum >= MAX_GENTITIES)
+	{
 		return qfalse;
 	}
 
 	if (self->client->NPC_class == CLASS_SABER_DROID)
 	{
-		//saber droids can't drop their saber
 		return qfalse;
 	}
 
-	gentity_t* dropped = &g_entities[self->client->ps.saberEntityNum];
+	gentity_t* dropped = &g_entities[saberEntNum];
+
+	if (!dropped || !dropped->inuse)
+	{
+		return qfalse;
+	}
+
+	// ------------------------------------------------------------
+	// DIFFICULTY‑BASED DISARM PROTECTION TIMER
+	// ------------------------------------------------------------
+	int protect_ms = 6000; // Hard default
+
+	if (g_spskill->integer == 0)
+	{
+		protect_ms = 10000; // Easy
+	}
+	else if (g_spskill->integer == 1)
+	{
+		protect_ms = 8000; // Normal
+	}
+
+	// ------------------------------------------------------------
+	// 1. TIMER EXPIRED → START NEW TIMER
+	// ------------------------------------------------------------
+	if (self->client->ps.saberDisarmProtectTime < level.time)
+	{
+		self->client->ps.saberDisarmProtectTime = level.time + protect_ms;
+
+#if _DEBUG
+		gi.Printf(S_COLOR_GREEN "[SABER DISARM] Timer started: expires at %i (now %i)\n",self->client->ps.saberDisarmProtectTime, level.time);
+#endif
+	}
+
+	// ------------------------------------------------------------
+	// 2. TIMER ACTIVE → PREVENT DISARM
+	// ------------------------------------------------------------
+	if (self->client->ps.saberDisarmProtectTime > level.time)
+	{
+#if _DEBUG
+		gi.Printf(S_COLOR_YELLOW "[SABER DISARM] Timer active (%i > %i) — disarm prevented, saber kept in hand\n",self->client->ps.saberDisarmProtectTime, level.time);
+#endif
+
+		self->client->usercmd.buttons &= ~BUTTON_ATTACK;
+		return qtrue;
+	}
+
+	// ------------------------------------------------------------
+	// 3. TIMER EXPIRED → NORMAL DISARM LOGIC
+	// ------------------------------------------------------------
+#if _DEBUG
+	gi.Printf(S_COLOR_CYAN "[SABER DISARM] Timer expired — disarm allowed\n");
+#endif
+
+	// Reset timer so next disarm starts a new window
+	self->client->ps.saberDisarmProtectTime = 0;
 
 	if (!self->client->ps.saberInFlight)
 	{
-		//not already in air
-		//throw it
 		if (!WP_SaberLaunch(self, dropped, qfalse))
 		{
-			//couldn't throw it
 			return qfalse;
 		}
 	}
 
 	if (self->client->ps.saber[0].Active())
 	{
-		//on
-		//drop it instantly
 		WP_SaberKnockedOutOfHand(self, dropped);
+
+#if _DEBUG
+		gi.Printf(S_COLOR_CYAN "[SABER DISARM] Saber knocked out of hand\n");
+#endif
 	}
-	//optionally give it some thrown velocity
+
 	if (throw_dir && !VectorCompare(throw_dir, vec3_origin))
 	{
 		VectorCopy(throw_dir, dropped->s.pos.trDelta);
 	}
-	//don't pull it back on the next frame
-	/*if (self->NPC)
-	{
-		self->NPC->last_ucmd.buttons &= ~BUTTON_ATTACK;
-	}*/
-	ucmd.buttons &= ~BUTTON_ATTACK;
+
+	self->client->usercmd.buttons &= ~BUTTON_ATTACK;
+
 	return qtrue;
 }
 
@@ -13999,6 +14056,30 @@ void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_s
 					else
 					{
 						WP_ForcePowerRegenerate(self, BLOCKPOINTS_TWENTYFIVE);
+					}
+				}
+			}
+			else
+			{
+				if (g_SerenityJediEngineMode->integer)
+				{
+					if (self->client->ps.saberFatigueChainCount >= MISHAPLEVEL_HUDFLASH)
+					{
+						self->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
+					}
+					if (g_SerenityJediEngineMode->integer == 2)
+					{
+						if (self->client->ps.blockPoints < BLOCKPOINTS_TWENTYFIVE)
+						{
+							WP_BlockPointsRegenerate(self, BLOCKPOINTS_TWENTYFIVE);
+						}
+					}
+					else
+					{
+						if (self->client->ps.forcePower < BLOCKPOINTS_TWENTYFIVE)
+						{
+							WP_ForcePowerRegenerate(self, BLOCKPOINTS_TWENTYFIVE);
+						}
 					}
 				}
 			}
@@ -14853,8 +14934,8 @@ qboolean manual_saberblocking(const gentity_t* defender) //Is this guy blocking 
 		|| PM_SaberInKnockaway(defender->client->ps.saber_move)
 		|| PM_SaberInBrokenParry(defender->client->ps.saber_move)
 		|| defender->client->ps.groundEntityNum == ENTITYNUM_NONE
-		|| g_SerenityJediEngineMode->integer == 2 && defender->client->ps.blockPoints < BLOCKPOINTS_FIVE
-		|| defender->client->ps.forcePower < BLOCKPOINTS_FIVE)
+		|| g_SerenityJediEngineMode->integer == 2 && defender->client->ps.blockPoints < BLOCK_POINTS_MIN
+		|| defender->client->ps.forcePower < BLOCK_POINTS_MIN)
 	{
 		return qfalse;
 	}
@@ -32712,11 +32793,12 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 					(traceEnt->NPC ||
 						traceEnt->s.number < MAX_CLIENTS ||
 						G_ControlledByPlayer(traceEnt)) &&
-					traceEnt->s.weapon != WP_EMPLACED_GUN &&
-					!PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saber_move))
+					traceEnt->s.weapon != WP_EMPLACED_GUN)
 				{
-					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) && traceEnt->client->ps.stats[STAT_HEALTH] > 1
-						|| is_class_guard)
+					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
+						PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saber_move) &&
+						traceEnt->client->ps.stats[STAT_HEALTH] > 1 ||
+						is_class_guard)
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}
@@ -33543,9 +33625,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						gentity_t* tent = G_TempEntity(traceEnt->currentOrigin, EV_STUNNED);
 						tent->owner = traceEnt;
 					}
-
-					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) &&
-						(traceEnt->client->ps.stats[STAT_HEALTH] > 1 || is_class_guard))
+					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
+						PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saber_move) &&
+						traceEnt->client->ps.stats[STAT_HEALTH] > 1 ||
+						is_class_guard)
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}
@@ -34280,8 +34363,10 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 						tent->owner = traceEnt;
 					}
 
-					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) && (traceEnt->client->ps.stats[STAT_HEALTH] > 1
-						|| is_class_guard))
+					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
+						PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saber_move) &&
+						traceEnt->client->ps.stats[STAT_HEALTH] > 1 ||
+						is_class_guard)
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}

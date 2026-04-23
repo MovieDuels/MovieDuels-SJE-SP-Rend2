@@ -3066,9 +3066,9 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 	index = ent - g_entities;
 	client = ent->client;
 
-	if (e_saved_game_just_loaded == eFULL && g_qbLoadTransition == qfalse) //qbFromSavedGame)
+	if (e_saved_game_just_loaded == eFULL && g_qbLoadTransition == qfalse) //qbFromSavedGame
 	{
-		//loading up a full save game
+		// loading up a full save game
 		ent->client->pers.teamState.state = TEAM_ACTIVE;
 
 		// increment the spawncount so the client will detect the respawn
@@ -3078,7 +3078,8 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->airOutTime = level.time + 12000;
 
 		// initialize credits if not set (default starting currency)
-		if (client->ps.persistant[PERS_CREDITS] == 0) {
+		if (client->ps.persistant[PERS_CREDITS] == 0)
+		{
 			client->ps.persistant[PERS_CREDITS] = 1000; // default starting credits
 		}
 
@@ -3087,7 +3088,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			ent->client->pers.cmd_angles[i] = 0.0f;
 		}
 
-		SetClientViewAngle(ent, ent->client->ps.viewangles); //spawn_angles );
+		SetClientViewAngle(ent, ent->client->ps.viewangles); //spawn_angles
 
 		gi.linkentity(ent);
 
@@ -3115,24 +3116,37 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			G_InitPlayerFromCvars(ent);
 		}
 
-		//setup sabers
+		// setup sabers
 		G_ReloadSaberData(ent);
-		//force power levels should already be set
+
+		/* -----------------------------------------------------------------
+		 * Reset communicating / gesture / special state flags on any save load
+		 * ----------------------------------------------------------------- */
+		client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
+		client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
+		client->ps.communicatingflags &= ~(1 << SURRENDERING);
+		client->ps.communicatingflags &= ~(1 << RESPECTING);
+		client->ps.communicatingflags &= ~(1 << GESTURING);
+		client->ps.communicatingflags &= ~(1 << DASHING);
+		client->ps.communicatingflags &= ~(1 << DESTRUCTING);
+		client->ps.communicatingflags &= ~(1 << PROJECTING);
+		client->ps.communicatingflags &= ~(1 << KICKING);
+		// force power levels should already be set
 	}
 	else
 	{
 		gentity_t* spawn_point;
-		int persistant[MAX_PERSISTANT]{};
+		int persistant[MAX_PERSISTANT] = { 0 };
 		clientSession_t savedSess;
 		clientPersistant_t saved;
 		vec3_t spawn_angles;
 		vec3_t spawn_origin;
+
 		// find a spawn point
 		// do it before setting health back up, so farthest
 		// ranging doesn't count this client
 		// don't spawn near existing origin if possible
-		spawn_point = SelectSpawnPoint(ent->client->ps.origin,
-			spawn_origin, spawn_angles);
+		spawn_point = SelectSpawnPoint(ent->client->ps.origin, spawn_origin, spawn_angles);
 
 		ent->client->pers.teamState.state = TEAM_ACTIVE;
 
@@ -3143,7 +3157,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		{
 			persistant[i] = client->ps.persistant[i];
 		}
-		//Preserve clientInfo
+		// Preserve clientInfo
 		memcpy(&saved_ci, &client->clientInfo, sizeof(clientInfo_t));
 
 		memset(client, 0, sizeof * client);
@@ -3164,7 +3178,8 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->airOutTime = level.time + 12000;
 
 		// initialize credits if not set (default starting currency)
-		if (client->ps.persistant[PERS_CREDITS] == 0) {
+		if (client->ps.persistant[PERS_CREDITS] == 0)
+		{
 			client->ps.persistant[PERS_CREDITS] = 1000; // default starting credits
 		}
 
@@ -3212,8 +3227,8 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->ps.clientNum = index;
 
 		// give default weapons
-		//these are precached in g_items, ClearRegisteredItems()
-		if (com_outcast->integer == 0) //playing academy
+		// these are precached in g_items, ClearRegisteredItems()
+		if (com_outcast->integer == 0) // playing academy
 		{
 			for (char& weapon : client->ps.weapons)
 			{
@@ -3233,7 +3248,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				client->ps.inventory[INV_BACTA_CANISTER] = 1;
 			}
 		}
-		else if (com_outcast->integer == 1) //playing outcast
+		else if (com_outcast->integer == 1) // playing outcast
 		{
 			client->ps.weapons[WP_MELEE] = 1;
 			client->ps.weapon = WP_BRYAR_PISTOL;
@@ -3289,7 +3304,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		else
 		{
 			// give the saber because most test maps will not have the STUN BATON flag set
-			client->ps.weapons[WP_SABER] = 1; //this is precached in SP_info_player_deathmatch
+			client->ps.weapons[WP_SABER] = 1; // this is precached in SP_info_player_deathmatch
 			client->ps.weapon = WP_SABER;
 		}
 		// force the base weapon up
@@ -3299,23 +3314,23 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		{
 			if (playerUsableWeapons[i] && client->ps.weapons[i])
 			{
-				//if starting with this weapon, gimme max ammo for it
+				// if starting with this weapon, gimme max ammo for it
 				client->ps.ammo[weaponData[i].ammoIndex] = ammoData[weaponData[i].ammoIndex].max;
 			}
 		}
 
 		if (e_saved_game_just_loaded == eNO)
 		{
-			//FIXME: get player's info from NPCs.cfg
+			// FIXME: get player's info from NPCs.cfg
 			client->ps.dualSabers = qfalse;
-			WP_SaberParseParms(g_saber->string, &client->ps.saber[0]); //get saber info
+			WP_SaberParseParms(g_saber->string, &client->ps.saber[0]); // get saber info
 
 			client->ps.saberStylesKnown |= 1 << gi.Cvar_VariableIntegerValue("g_fighting_style");
-			WP_InitForcePowers(ent); //Initialize force powers
+			WP_InitForcePowers(ent); // Initialize force powers
 		}
 		else
 		{
-			//autoload, will be taken care of below
+			// autoload, will be taken care of below
 		}
 
 		ent->health = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH];
@@ -3356,38 +3371,49 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->ps.torsoAnim = BOTH_STAND2;
 		client->ps.legsAnim = BOTH_STAND2;
 
-		//clear IK grabbing stuff
+		// clear IK grabbing stuff
 		client->ps.heldClient = client->ps.heldByClient = ENTITYNUM_NONE;
-		client->ps.saberLockEnemy = ENTITYNUM_NONE; //duh, don't think i'm locking with myself
+		client->ps.saberLockEnemy = ENTITYNUM_NONE; // duh, don't think i'm locking with myself
 
 		// restore some player data
-		//
 		Player_RestoreFromPrevLevel(ent);
 
-		//FIXME: put this BEFORE the Player_RestoreFromPrevLevel check above?
+		// FIXME: put this BEFORE the Player_RestoreFromPrevLevel check above?
 		if (e_saved_game_just_loaded == eNO)
 		{
-			//fresh start
+			// fresh start
 			if (!(spawn_point->spawnflags & 1)) // not KEEP_PREV
 			{
-				//then restore health and armor
-				ent->health = client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_HEALTH] = client->ps.stats[
-					STAT_MAX_HEALTH];
+				// then restore health and armor
+				ent->health = client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH];
 				ent->client->ps.forcePower = ent->client->ps.forcePowerMax;
 				ent->client->ps.cloakFuel = 100;
 				ent->client->ps.blockPoints = 100;
 				ent->client->ps.jetpackFuel = 100;
 				ent->client->ps.sprintFuel = 100;
 				ent->client->ps.BarrierFuel = 100;
-
 				ent->reloadTime = 0;
 				ent->client->ps.muzzleOverheatTime = 0;
+				ent->client->Dash_Count = 0;
+
+				/* -----------------------------------------------------------------
+				 * Reset communicating / gesture / special state flags on any save load
+				 * ----------------------------------------------------------------- */
+				client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
+				client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
+				client->ps.communicatingflags &= ~(1 << SURRENDERING);
+				client->ps.communicatingflags &= ~(1 << RESPECTING);
+				client->ps.communicatingflags &= ~(1 << GESTURING);
+				client->ps.communicatingflags &= ~(1 << DASHING);
+				client->ps.communicatingflags &= ~(1 << DESTRUCTING);
+				client->ps.communicatingflags &= ~(1 << PROJECTING);
+				client->ps.communicatingflags &= ~(1 << KICKING);
 			}
 			G_InitPlayerFromCvars(ent);
 		}
 		else
 		{
-			//autoload
+			// autoload
 			if (ent->NPC_type && Q_stricmp(ent->NPC_type, "player"))
 			{
 				// FIXME: game doesn't like it when you pass ent->NPC_type into this func. Insert all kinds of noises here --eez
@@ -3402,11 +3428,23 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				G_SetSkin(ent);
 			}
 			G_ReloadSaberData(ent);
-			//force power levels should already be set
+			/* -----------------------------------------------------------------
+			 * Reset communicating / gesture / special state flags on any save load
+			 * ----------------------------------------------------------------- */
+			client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
+			client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
+			client->ps.communicatingflags &= ~(1 << SURRENDERING);
+			client->ps.communicatingflags &= ~(1 << RESPECTING);
+			client->ps.communicatingflags &= ~(1 << GESTURING);
+			client->ps.communicatingflags &= ~(1 << DASHING);
+			client->ps.communicatingflags &= ~(1 << DESTRUCTING);
+			client->ps.communicatingflags &= ~(1 << PROJECTING);
+			client->ps.communicatingflags &= ~(1 << KICKING);
 		}
 
-		//NEVER start a map with either of your sabers or blades on...
+		// NEVER start a map with either of your sabers or blades on...
 		ent->client->ps.SaberDeactivate();
+
 		// run a client frame to drop exactly to the floor,
 		// initialize animations and other things
 		client->ps.commandTime = level.time - 100;
@@ -3424,7 +3462,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		// clear entity state values
 		PlayerStateToEntityState(&client->ps, &ent->s);
 
-		//ICARUS include
+		// ICARUS include
 		Quake3Game()->FreeEntity(ent);
 		Quake3Game()->InitEntity(ent);
 
@@ -3432,9 +3470,9 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		IIcarusInterface::GetIcarus()->DeleteIcarusID(ent->m_iIcarusID);
 		ent->m_iIcarusID = IIcarusInterface::GetIcarus()->GetIcarusID(ent->s.number);
 
-		if (spawn_point->spawnflags & 64) //NOWEAPON
+		if (spawn_point->spawnflags & 64) // NOWEAPON
 		{
-			//player starts with absolutely no weapons
+			// player starts with absolutely no weapons
 			for (char& weapon : ent->client->ps.weapons)
 			{
 				weapon = 0;
@@ -3448,13 +3486,13 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 
 		if (ent->client->ps.weapons[WP_SABER])
 		{
-			//set up so has lightsaber
+			// set up so has lightsaber
 			WP_SaberInitBladeData(ent);
 			if ((ent->weaponModel[0] <= 0 || (ent->weaponModel[1] <= 0 && ent->client->ps.dualSabers))
-				//one or both of the saber models is not initialized
-				&& ent->client->ps.weapon == WP_SABER) //current weapon is saber
+				// one or both of the saber models is not initialized
+				&& ent->client->ps.weapon == WP_SABER) // current weapon is saber
 			{
-				//add the proper models
+				// add the proper models
 				WP_SaberAddG2SaberModels(ent);
 				G_RemoveHolsterModels(ent);
 			}
@@ -3467,7 +3505,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			}
 			else if (ent->client->ps.weapon == WP_DROIDEKA)
 			{
-				if (com_kotor->integer == 1) //playing kotor
+				if (com_kotor->integer == 1) // playing kotor
 				{
 					G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 					G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handLBolt, 1);
@@ -3488,7 +3526,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			}
 			else
 			{
-				if (com_kotor->integer == 1) //playing kotor
+				if (com_kotor->integer == 1) // playing kotor
 				{
 					G_CreateG2AttachedWeaponModel(ent, weaponData[ent->client->ps.weapon].altweaponMdl, ent->handRBolt, 0);
 				}
@@ -3504,43 +3542,61 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 					}
 				}
 			}
-			//holster sabers
+			// holster sabers
 			WP_SaberAddHolsteredG2SaberModels(ent);
 		}
 
 		{
 			// fire the targets of the spawn point
 			G_UseTargets(spawn_point, ent);
-			//Designers needed them to fire off target2's as well... this is kind of messy
+			// Designers needed them to fire off target2's as well... this is kind of messy
 			G_UseTargets2(spawn_point, ent, spawn_point->target2);
 		}
 	}
 
-	client->pers.enterTime = level.time; //needed mainly to stop the weapon switch to WP_NONE that happens on loads
+	client->pers.enterTime = level.time; // needed mainly to stop the weapon switch to WP_NONE that happens on loads
 	ent->max_health = client->ps.stats[STAT_MAX_HEALTH];
 
 	if (e_saved_game_just_loaded == eNO)
 	{
-		//on map transitions, Ghoul2 frame gets reset to zero, restart our anim
+		// on map transitions, Ghoul2 frame gets reset to zero, restart our anim
 		NPC_SetAnim(ent, SETANIM_LEGS, ent->client->ps.legsAnim, SETANIM_FLAG_NORMAL | SETANIM_FLAG_RESTART);
 		NPC_SetAnim(ent, SETANIM_TORSO, ent->client->ps.torsoAnim, SETANIM_FLAG_NORMAL | SETANIM_FLAG_RESTART);
 	}
 
 	if (ent->s.number == 0)
 	{
-		//player
+		// player
 		G_CheckPlayerDarkSide();
 	}
 
 	if (ent->client->ps.weapons[WP_SABER]
 		&& !ent->client->ps.saberStylesKnown)
 	{
-		//um, if you have a saber, you need at least 1 style to use it with...
+		// um, if you have a saber, you need at least 1 style to use it with...
 		ent->client->ps.saberStylesKnown |= 1 << SS_MEDIUM;
 	}
 
 	Player_CheckBurn(ent);
 	Player_CheckFreeze(ent);
+
+	/* -----------------------------------------------------------------
+	 * Reset communicating / gesture / special state flags on any save load
+	 * (both full saves and autoloads), so the player never resumes in a
+	 * stuck saberlock / gesture / dash / special state.
+	 * ----------------------------------------------------------------- */
+	if (e_saved_game_just_loaded != eNO)
+	{
+		client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
+		client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
+		client->ps.communicatingflags &= ~(1 << SURRENDERING);
+		client->ps.communicatingflags &= ~(1 << RESPECTING);
+		client->ps.communicatingflags &= ~(1 << GESTURING);
+		client->ps.communicatingflags &= ~(1 << DASHING);
+		client->ps.communicatingflags &= ~(1 << DESTRUCTING);
+		client->ps.communicatingflags &= ~(1 << PROJECTING);
+		client->ps.communicatingflags &= ~(1 << KICKING);
+	}
 
 	return beam_in_effect;
 }
