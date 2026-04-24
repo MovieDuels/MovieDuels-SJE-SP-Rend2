@@ -3136,6 +3136,14 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->ps.dashstartTime = 0;
 		client->ps.dashlaststartTime = 0;
 		client->Dash_Count = 0;
+
+		// Clear speed/force-power timers that may have been saved as absolute times
+		// so the player can use Force Speed/Dash immediately after loading
+		client->ps.forcePowerDebounce[FP_SPEED] = 0;
+		client->ps.forcePowerDuration[FP_SPEED] = 0;
+		client->ps.forceAllowDeactivateTime = 0;
+		client->ps.forceSpeedRecoveryTime = 0;
+		client->ps.forcePowersActive &= ~(1 << FP_SPEED);
 		// force power levels should already be set
 	}
 	else
