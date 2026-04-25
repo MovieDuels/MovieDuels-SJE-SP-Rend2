@@ -265,7 +265,7 @@ static constexpr charMD_t charMD[] = {
 	{ "Imperial Trooper",				"[Soldier - Sniper]",					"",				"md_sithtrooper_tor_disruptor",	"sithtrooper_tor",		"model_default",				"menu_wp_disruptor_kotor",	"",						"",				"",			0,		0,		ERA_SITH_EMPIRE,	TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/sithtrooper_tor/misc/taunt2.mp3",		"",		1.0f,	"@MD_CHAR_DESC_IMPERIAL_TROOPER_KOTOR",		 qtrue },
 	{ "Jorak Uln",						"[KOTOR]",								"",				"md_jorak",						"sith_officer",			"model_jorak",					"dual_5",					"",						"red",			"",			7,		128,	ERA_SITH_EMPIRE,	BOTH_STAND_BLOCKING_ON_STAFF,		BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/jorak/misc/taunt4.mp3",				"",		1.0f,	"@MD_CHAR_DESC_JORAK_ULN",					qfalse },
 	{ "Lord Scourge",					"[KOTOR]",								"",				"md_scourge",					"scourge",				"model_default",				"nihilus",					"",						"red",			"",			1,		30,		ERA_SITH_EMPIRE,	BOTH_SABERSLOW_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_LORD_SCOURGE",				qfalse },
-	{ "Mandalore The Ultimate",			"[KOTOR]",								"",				"md_mandalore_ultimate",		"md_mandalore_ultimate",	"model_default",				"menu_wp_blaster_kotor",	"",						"",				"",			0,		0,		ERA_SITH_EMPIRE,	TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_MANDALORE_ULTIMATE",			qfalse },
+	{ "Mandalore The Ultimate",			"[KOTOR]",								"",				"md_mandalore_ultimate",		"mandalore_ultimate",	"model_default",				"menu_wp_blaster_kotor",	"",						"",				"",			0,		0,		ERA_SITH_EMPIRE,	TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"",													"",		1.0f,	"@MD_CHAR_DESC_MANDALORE_ULTIMATE",			qfalse },
 	{ "Neo-Crusader",					"[Blue]",								"",				"md_neocrusader",				"neocrusader",			"model_default",				"menu_wp_blaster_kotor",	"",						"",				"",			0,		0,		ERA_SITH_EMPIRE,	TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/sithtrooper2/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_NEO_CRUSADER",				qfalse },
 	{ "Neo-Crusader",					"[Gold]",								"",				"md_neocrusader_gold",			"neocrusader",			"model_gold",					"menu_wp_blaster_kotor",	"",						"",				"",			0,		0,		ERA_SITH_EMPIRE,	TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/sithtrooper2/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_NEO_CRUSADER",				 qtrue },
 	{ "Neo-Crusader",					"[Red]",								"",				"md_neocrusader_red",			"neocrusader",			"model_red",					"menu_wp_blaster_kotor",	"",						"",				"",			0,		0,		ERA_SITH_EMPIRE,	TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/sithtrooper2/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_NEO_CRUSADER",				 qtrue },
@@ -5385,7 +5385,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 23/04/2026 ---------------------\n");// build date
+	Com_Printf("--------------------- Build Date 26/04/2026 ---------------------\n");// build date
 	Com_Printf("---------------------------Build 12------------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");

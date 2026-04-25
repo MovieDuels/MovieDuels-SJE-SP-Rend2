@@ -101,7 +101,7 @@ const char* darkside_gunners[] = {
 	"md_sbd_am", "md_tus2_tc", "battledroid", "md_sithtrooper", "md_hondo", "swamptrooper", "md_embo", "md_phasma",
 	"md_tarkin", "saboteur", "md_bossk", "md_hux", "md_fennec", "md_greedo", "md_krennic", "md_thrawn", "weequay",
 	"stormtrooper", "md_deathtrooper", "md_shoretrooper", "md_darktrooper", "md_gideon", "stormie_tfa", "impworker",
-	"md_mother_talzin", "md_cadbane", "md_durge", "md_jango", "boba_fett_esb", "md_mando_maul3", "md_mandalore_ultimate",
+	"md_mother_talzin", "md_cadbane", "md_durge", "md_jango", "boba_fett_esb", "md_mando_maul3", "mandalore_ultimate",
 	"md_neocrusader_red", "md_hk47"
 };
 

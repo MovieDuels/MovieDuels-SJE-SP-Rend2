@@ -3131,11 +3131,6 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->ps.communicatingflags &= ~(1 << DESTRUCTING);
 		client->ps.communicatingflags &= ~(1 << PROJECTING);
 		client->ps.communicatingflags &= ~(1 << KICKING);
-
-		// Reset dash timers/count on load so cooldowns don't block post-load dashing
-		client->ps.dashstartTime = 0;
-		client->ps.dashlaststartTime = 0;
-		client->Dash_Count = 0;
 		// force power levels should already be set
 	}
 	else

@@ -32795,10 +32795,11 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 						G_ControlledByPlayer(traceEnt)) &&
 					traceEnt->s.weapon != WP_EMPLACED_GUN)
 				{
-					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
-						PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saber_move) &&
-						traceEnt->client->ps.stats[STAT_HEALTH] > 1 ||
-						is_class_guard)
+					if ((PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
+						PM_SaberInKata(static_cast<saber_moveName_t>(self->client->ps.saber_move)) ||
+						PM_InKataAnim(self->client->ps.torsoAnim) ||
+						(is_class_guard == qtrue)) &&
+						traceEnt->health > 1)
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}
@@ -33625,10 +33626,11 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						gentity_t* tent = G_TempEntity(traceEnt->currentOrigin, EV_STUNNED);
 						tent->owner = traceEnt;
 					}
-					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
-						PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saber_move) &&
-						traceEnt->client->ps.stats[STAT_HEALTH] > 1 ||
-						is_class_guard)
+					if ((PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
+						PM_SaberInKata(static_cast<saber_moveName_t>(self->client->ps.saber_move)) ||
+						PM_InKataAnim(self->client->ps.torsoAnim) ||
+						(is_class_guard == qtrue)) &&
+						traceEnt->health > 1)
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}
@@ -34329,7 +34331,7 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 				}
 			}
 
-			if (dmg && !lightning_blocked || is_class_guard) //md
+			if ((dmg && !lightning_blocked) || is_class_guard) // md
 			{
 				if (jedi_win_po(traceEnt))
 				{
@@ -34363,22 +34365,24 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 						tent->owner = traceEnt;
 					}
 
-					if (PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
-						PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saber_move) &&
-						traceEnt->client->ps.stats[STAT_HEALTH] > 1 ||
-						is_class_guard)
+					if ((PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
+						PM_SaberInKata(static_cast<saber_moveName_t>(traceEnt->client->ps.saber_move)) ||
+						PM_InKataAnim(traceEnt->client->ps.torsoAnim) ||
+						is_class_guard) &&
+						traceEnt->health > 1)
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}
-					else if (!PM_RunningAnim(traceEnt->client->ps.legsAnim) && !PM_InKnockDown(&traceEnt->client->ps)
-						&& traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE && traceEnt->client->ps.stats[
-							STAT_HEALTH] > 1)
+					else if (!PM_RunningAnim(traceEnt->client->ps.legsAnim) &&
+						!PM_InKnockDown(&traceEnt->client->ps) &&
+						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE &&
+						traceEnt->health > 1)
 					{
-						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
+						if (traceEnt->health < 75)
 						{
 							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_COWER1, SETANIM_AFLAG_PACE);
 						}
-						else if (traceEnt->client->ps.stats[STAT_HEALTH] < 50)
+						else if (traceEnt->health < 50)
 						{
 							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_SONICPAIN_HOLD, SETANIM_AFLAG_PACE);
 						}
@@ -34387,13 +34391,12 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
 						}
 					}
-					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE && traceEnt->client->ps.stats[
-						STAT_HEALTH] > 1)
+					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE &&
+						traceEnt->client->ps.stats[STAT_HEALTH] > 1)
 					{
-						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
+						if (traceEnt->health < 75)
 						{
-							NPC_SetAnim(traceEnt, SETANIM_BOTH, Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT),
-								SETANIM_AFLAG_PACE);
+							NPC_SetAnim(traceEnt, SETANIM_BOTH, Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT), SETANIM_AFLAG_PACE);
 						}
 						else
 						{
