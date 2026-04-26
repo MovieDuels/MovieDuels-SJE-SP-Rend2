@@ -595,7 +595,6 @@ static void ClientCleanName(const char* in, char* out, const int out_size)
 // -----------------------------------------------------------------------------
 static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
 {
-
 	// Clear communicating / gesture / special flags
 	client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
 	client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
@@ -606,7 +605,6 @@ static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
 	client->ps.communicatingflags &= ~(1 << DESTRUCTING);
 	client->ps.communicatingflags &= ~(1 << PROJECTING);
 	client->ps.communicatingflags &= ~(1 << KICKING);
-
 	// Reset speed timers
 	client->ps.forcePowerDebounce[FP_SPEED] = 0;
 	client->ps.forcePowerDuration[FP_SPEED] = 0;
@@ -719,6 +717,9 @@ char* ClientConnect(const int clientNum, const qboolean first_time, const SavedG
 			client->enemyTeam = TEAM_ENEMY;
 			client->friendlyfaction = FACTION_LIGHT;
 			client->enemyfaction = FACTION_DARK;
+
+			// Reset communicating / dash / speed-related state on full save-load
+			Client_ResetCommunicatingDashAndSpeedState(client);
 		}
 	}
 
@@ -728,6 +729,9 @@ char* ClientConnect(const int clientNum, const qboolean first_time, const SavedG
 	{
 		// get and distribute relevent paramters
 		client_userinfo_changed(clientNum);
+
+		// Reset communicating / dash / speed-related state on full save-load
+		Client_ResetCommunicatingDashAndSpeedState(client);
 	}
 	else
 	{
@@ -741,15 +745,15 @@ char* ClientConnect(const int clientNum, const qboolean first_time, const SavedG
 		// get and distribute relevent paramters
 		client_userinfo_changed(clientNum);
 
+		// Reset communicating / dash / speed-related state on full save-load
+		Client_ResetCommunicatingDashAndSpeedState(client);
+
 		// don't do the "xxx connected" messages if they were caried over from previous level
 		if (first_time)
 		{
 			gi.SendServerCommand(-1, "print \"%s connected\n\"", client->pers.netname);
 		}
 	}
-
-	// Reset communicating / dash / speed-related state on full save-load
-	Client_ResetCommunicatingDashAndSpeedState(client);
 
 	return nullptr;
 }
@@ -772,7 +776,12 @@ void ClientBegin(const int clientNum, const usercmd_t* cmd, const SavedGameJustL
 	{
 		client->pers.connected = CON_CONNECTED;
 		ent->client = client;
+		// Clear any persisted dash flag before spawning so saved userInt3 can't
+		// re-enable dashing immediately after a load.
 		ClientSpawn(ent, e_saved_game_just_loaded);
+
+		// Reset communicating / dash / speed-related state on full save-load
+		Client_ResetCommunicatingDashAndSpeedState(client);
 	}
 	else
 	{
@@ -803,10 +812,10 @@ void ClientBegin(const int clientNum, const usercmd_t* cmd, const SavedGameJustL
 		}
 		client->ps.inventory[INV_GOODIE_KEY] = 0;
 		client->ps.inventory[INV_SECURITY_KEY] = 0;
-	}
 
-	// Reset communicating / dash / speed-related state on full save-load
-	Client_ResetCommunicatingDashAndSpeedState(client);
+		// Reset communicating / dash / speed-related state on full save-load
+		Client_ResetCommunicatingDashAndSpeedState(client);
+	}
 }
 
 /*
@@ -3428,11 +3437,11 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				ent->client->ps.BarrierFuel = 100;
 				ent->reloadTime = 0;
 				ent->client->ps.muzzleOverheatTime = 0;
-
-				// On fresh start without KEEP_PREV, also reset dash / speed / communicating state
-				Client_ResetCommunicatingDashAndSpeedState(client);
 			}
 			G_InitPlayerFromCvars(ent);
+
+			// Reset communicating / dash / speed-related state on full save-load
+			Client_ResetCommunicatingDashAndSpeedState(client);
 		}
 		else
 		{
@@ -3451,6 +3460,9 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				G_SetSkin(ent);
 			}
 			G_ReloadSaberData(ent);
+
+			// On fresh start without KEEP_PREV, also reset dash / speed / communicating state
+			Client_ResetCommunicatingDashAndSpeedState(client);
 		}
 
 		// NEVER start a map with either of your sabers or blades on...
@@ -3590,12 +3602,6 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 
 	Player_CheckBurn(ent);
 	Player_CheckFreeze(ent);
-
-	// On any save-load (full or auto), ensure we are not stuck in a special state.
-	if (e_saved_game_just_loaded != eNO)
-	{
-		Client_ResetCommunicatingDashAndSpeedState(client);
-	}
 
 	return beam_in_effect;
 }

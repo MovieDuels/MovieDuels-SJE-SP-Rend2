@@ -29377,8 +29377,7 @@ void ForceSpeed(gentity_t* self, const int duration)
 		return;
 	}
 	if (self->client->ps.saberLockTime > level.time)
-	{
-		//FIXME: can this be a way to break out?
+	{//can't use it during a saber lock, sorry
 		return;
 	}
 
@@ -29412,7 +29411,7 @@ int IsPressingDashButton(const gentity_t* self)
 		&& !self->client->hookhasbeenfired
 		&& (!(self->client->buttons & BUTTON_KICK))
 		&& (!(self->client->buttons & BUTTON_USE))
-		&& self->client->buttons & BUTTON_DASH)
+		&& (self->client->buttons & BUTTON_DASH))
 	{
 		return qtrue;
 	}
@@ -29543,15 +29542,13 @@ static void ForceSpeedDash(gentity_t* self)
 		return;
 	}
 
-	// If force speed is active but allowed to deactivate, stop it
 	if ((self->client->ps.forceAllowDeactivateTime < level.time) &&
 		(self->client->ps.forcePowersActive & (1 << FP_SPEED)))
-	{
+	{// stop using it
 		WP_ForcePowerStop(self, FP_SPEED);
 		return;
 	}
 
-	// If force speed is active and running, hop instead of dash
 	if (self->client->ps.forcePowersActive & (1 << FP_SPEED))
 	{
 		if (PM_RunningAnim(self->client->ps.legsAnim) == qtrue)
@@ -29570,23 +29567,21 @@ static void ForceSpeedDash(gentity_t* self)
 	{
 		return;
 	}
-	
-	if ((self->client->ps.communicatingflags & (1 << DASHING)) == 0)
-	{
-		if (IsPressingDashButton(self) == qfalse)
-		{
-			return;
-		}
+	// Note that the above check , so you can still hold the button during a saber lock
+	// and have the dash start immediately after the lock ends, which is nice.
+	if (!(self->client->ps.communicatingflags & 1 << DASHING))
+	{// not actually dashing, so don't start the anim or sound
+		return;
 	}
-sh stuff
-	
-	if ((self->client->ps.communicatingflags & (1 << DASHING)) == 0)
-	{
+
+	// this is causing problems with the dash anim and sound not playing after loading a save, so I moved it down
+	if (!IsPressingDashButton(self))
+	{// not actually pressing the button, so don't start the anim or sound
 		return;
 	}
 
 	if (self->client->ps.groundEntityNum != ENTITYNUM_NONE)
-	{
+	{// animate and give the speed boost
 		vec3_t dir;
 
 		AngleVectors(self->client->ps.viewangles, dir, nullptr, nullptr);
@@ -34382,9 +34377,9 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 					}
 
 					if ((PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
-						PM_SaberInKata(static_cast<saber_moveName_t>(traceEnt->client->ps.saber_move)) ||
-						PM_InKataAnim(traceEnt->client->ps.torsoAnim) ||
-						is_class_guard) &&
+						PM_SaberInKata(static_cast<saber_moveName_t>(self->client->ps.saber_move)) ||
+						PM_InKataAnim(self->client->ps.torsoAnim) ||
+						(is_class_guard == qtrue)) &&
 						traceEnt->health > 1)
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
@@ -41439,9 +41434,7 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 		ForceProjection(self);
 	}
 
-	if ((self->client->ps.communicatingflags & (1 << DASHING)) ||
-		(IsPressingDashButton(self) == qtrue) ||
-		(ucmd->buttons & BUTTON_DASH))
+	if ((IsPressingDashButton(self) == qtrue))
 	{
 		ForceSpeedDash(self);
 	}
@@ -42435,7 +42428,7 @@ qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc)
 	}
 
 	// Mark dashing
-	self->client->ps.userInt3 |= (1 << FLAG_DASHING);
+	self->client->ps.communicatingflags |= (1 << DASHING);
 
 	return qtrue;
 }
