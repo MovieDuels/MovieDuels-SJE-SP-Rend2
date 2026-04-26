@@ -479,9 +479,9 @@ void PlayerStateToEntityState(playerState_t* ps, entityState_t* s)
 	s->DodgeStartTime = ps->DodgeStartTime; //Blocking 2
 	s->DodgeLastStartTime = ps->DodgeLastStartTime; //Blocking 3
 
-	s->RESPECTINGtime = ps->RESPECTINGtime;
-	s->RESPECTINGstartTime = ps->RESPECTINGstartTime;
-	s->RESPECTINGlaststartTime = ps->RESPECTINGlaststartTime;
+	s->respectingtime = ps->respectingtime;
+	s->respectingstarttime = ps->respectingstarttime;
+	s->respectinglaststarttime = ps->respectinglaststarttime;
 
 	s->gesturingtime = ps->gesturingtime;
 	s->gesturingstartTime = ps->gesturingstartTime;
@@ -493,6 +493,7 @@ void PlayerStateToEntityState(playerState_t* ps, entityState_t* s)
 
 	s->dashstartTime = ps->dashstartTime;
 	s->dashlaststartTime = ps->dashlaststartTime;
+	s->Dash_Count = ps->Dash_Count;
 
 	s->destructtimeplayer = ps->destructtimeplayer;
 	s->destructstartTime = ps->destructstartTime;

@@ -707,9 +707,9 @@ Ghoul2 Insert Start
 { NETF(userVec2[1]), 1 },
 { NETF(userVec2[2]), 1 },
 
-{ NETF(RESPECTINGtime), 32 },
-{ NETF(RESPECTINGstartTime), 32 },
-{ NETF(RESPECTINGlaststartTime), 32 },
+{ NETF(respectingtime), 32 },
+{ NETF(respectingstarttime), 32 },
+{ NETF(respectinglaststarttime), 32 },
 
 { NETF(gesturingtime), 32 },
 { NETF(gesturingstartTime), 32 },
@@ -721,6 +721,7 @@ Ghoul2 Insert Start
 
 { NETF(dashstartTime), 32 },
 { NETF(dashlaststartTime), 32 },
+{ NETF(Dash_Count), 32 },
 
 { NETF(destructtimeplayer), 32 },
 { NETF(destructstartTime), 32 },
@@ -1232,9 +1233,9 @@ static const netField_t playerStateFields[] =
 	{PSF(userVec2[1]), 1},
 	{PSF(userVec2[2]), 1},
 
-	{PSF(RESPECTINGtime), 32},
-	{PSF(RESPECTINGstartTime), 32},
-	{PSF(RESPECTINGlaststartTime), 32},
+	{PSF(respectingtime), 32},
+	{PSF(respectingstarttime), 32},
+	{PSF(respectinglaststarttime), 32},
 
 	{PSF(gesturingtime), 32},
 	{PSF(gesturingstartTime), 32},
@@ -1246,6 +1247,7 @@ static const netField_t playerStateFields[] =
 
 	{PSF(dashstartTime), 32},
 	{PSF(dashlaststartTime), 32},
+	{PSF(Dash_Count), 32},
 
 	{PSF(destructtimeplayer), 32},
 	{PSF(destructstartTime), 32},

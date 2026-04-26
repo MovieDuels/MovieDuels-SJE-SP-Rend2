@@ -1742,7 +1742,7 @@ public:
 		saberInfo_t& dst) const;
 }; // saberInfoRetail_t
 
-#define MAX_SABERS 2	// if this ever changes then update the table "static const save_field_t savefields_gClient[]"!!!!!!!!!!!!
+constexpr auto MAX_SABERS = 2;	// if this ever changes then update the table "static const save_field_t savefields_gClient[]"!!!!!!!!!!!!
 
 // playerState_t is the information needed by both the client and server
 // to predict player motion and actions
@@ -2171,9 +2171,9 @@ public:
 	vec3_t userVec1;
 	vec3_t userVec2;
 
-	int RESPECTINGtime;
-	int RESPECTINGstartTime;
-	int RESPECTINGlaststartTime;
+	int respectingtime;
+	int respectingstarttime;
+	int respectinglaststarttime;
 
 	int gesturingtime;
 	int gesturingstartTime;
@@ -2185,6 +2185,7 @@ public:
 
 	int dashstartTime;
 	int dashlaststartTime;
+	int Dash_Count;
 
 	int destructtimeplayer;
 	int destructstartTime;
@@ -2456,9 +2457,9 @@ public:
 		saved_game.write<int32_t>(userVec1);
 		saved_game.write<int32_t>(userVec2);
 
-		saved_game.write<int32_t>(RESPECTINGtime);
-		saved_game.write<int32_t>(RESPECTINGstartTime);
-		saved_game.write<int32_t>(RESPECTINGlaststartTime);
+		saved_game.write<int32_t>(respectingtime);
+		saved_game.write<int32_t>(respectingstarttime);
+		saved_game.write<int32_t>(respectinglaststarttime);
 
 		saved_game.write<int32_t>(gesturingtime);
 		saved_game.write<int32_t>(gesturingstartTime);
@@ -2470,6 +2471,7 @@ public:
 
 		saved_game.write<int32_t>(dashstartTime);
 		saved_game.write<int32_t>(dashlaststartTime);
+		saved_game.write<int32_t>(Dash_Count);
 
 		saved_game.write<int32_t>(destructtimeplayer);
 		saved_game.write<int32_t>(destructstartTime);
@@ -2737,9 +2739,9 @@ public:
 		saved_game.read<int32_t>(userVec1);
 		saved_game.read<int32_t>(userVec2);
 
-		saved_game.read<int32_t>(RESPECTINGtime);
-		saved_game.read<int32_t>(RESPECTINGstartTime);
-		saved_game.read<int32_t>(RESPECTINGlaststartTime);
+		saved_game.read<int32_t>(respectingtime);
+		saved_game.read<int32_t>(respectingstarttime);
+		saved_game.read<int32_t>(respectinglaststarttime);
 
 		saved_game.read<int32_t>(gesturingtime);
 		saved_game.read<int32_t>(gesturingstartTime);
@@ -2751,6 +2753,7 @@ public:
 
 		saved_game.read<int32_t>(dashstartTime);
 		saved_game.read<int32_t>(dashlaststartTime);
+		saved_game.read<int32_t>(Dash_Count);
 
 		saved_game.read<int32_t>(destructtimeplayer);
 		saved_game.read<int32_t>(destructstartTime);
@@ -2899,7 +2902,7 @@ using usercmd_t = struct usercmd_s
 //===================================================================
 
 // if entityState->solid == SOLID_BMODEL, modelindex is an inline model number
-#define	SOLID_BMODEL	0xffffff
+constexpr auto SOLID_BMODEL = 0xffffff;
 
 using trType_t = enum
 {
@@ -3064,9 +3067,9 @@ using entityState_t = struct entityState_s
 	int DodgeStartTime; //Dodging 1
 	int DodgeLastStartTime; //Dodging 2
 
-	int RESPECTINGtime;
-	int RESPECTINGstartTime;
-	int RESPECTINGlaststartTime;
+	int respectingtime;
+	int respectingstarttime;
+	int respectinglaststarttime;
 
 	int gesturingtime;
 	int gesturingstartTime;
@@ -3078,6 +3081,7 @@ using entityState_t = struct entityState_s
 
 	int dashstartTime;
 	int dashlaststartTime;
+	int Dash_Count;
 
 	int destructtimeplayer;
 	int destructstartTime;
@@ -3188,9 +3192,9 @@ using entityState_t = struct entityState_s
 		saved_game.write<int32_t>(userVec1);
 		saved_game.write<int32_t>(userVec2);
 
-		saved_game.write<int32_t>(RESPECTINGtime);
-		saved_game.write<int32_t>(RESPECTINGstartTime);
-		saved_game.write<int32_t>(RESPECTINGlaststartTime);
+		saved_game.write<int32_t>(respectingtime);
+		saved_game.write<int32_t>(respectingstarttime);
+		saved_game.write<int32_t>(respectinglaststarttime);
 
 		saved_game.write<int32_t>(gesturingtime);
 		saved_game.write<int32_t>(gesturingstartTime);
@@ -3202,6 +3206,7 @@ using entityState_t = struct entityState_s
 
 		saved_game.write<int32_t>(dashstartTime);
 		saved_game.write<int32_t>(dashlaststartTime);
+		saved_game.write<int32_t>(Dash_Count);
 
 		saved_game.write<int32_t>(destructtimeplayer);
 		saved_game.write<int32_t>(destructstartTime);
@@ -3310,9 +3315,9 @@ using entityState_t = struct entityState_s
 		saved_game.read<int32_t>(userVec1);
 		saved_game.read<int32_t>(userVec2);
 
-		saved_game.read<int32_t>(RESPECTINGtime);
-		saved_game.read<int32_t>(RESPECTINGstartTime);
-		saved_game.read<int32_t>(RESPECTINGlaststartTime);
+		saved_game.read<int32_t>(respectingtime);
+		saved_game.read<int32_t>(respectingstarttime);
+		saved_game.read<int32_t>(respectinglaststarttime);
 
 		saved_game.read<int32_t>(gesturingtime);
 		saved_game.read<int32_t>(gesturingstartTime);
@@ -3324,6 +3329,7 @@ using entityState_t = struct entityState_s
 
 		saved_game.read<int32_t>(dashstartTime);
 		saved_game.read<int32_t>(dashlaststartTime);
+		saved_game.read<int32_t>(Dash_Count);
 
 		saved_game.read<int32_t>(destructtimeplayer);
 		saved_game.read<int32_t>(destructstartTime);

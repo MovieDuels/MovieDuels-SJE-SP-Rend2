@@ -1205,7 +1205,6 @@ void WriteLevel(const qboolean qbAutosave)
 		iDONE);
 }
 
-
 extern void CG_ReadTheEvilCGHackStuff();
 void ReadLevel(const qboolean qbAutosave, const qboolean qb_load_transition)
 {

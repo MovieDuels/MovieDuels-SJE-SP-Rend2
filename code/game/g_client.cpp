@@ -590,6 +590,40 @@ static void ClientCleanName(const char* in, char* out, const int out_size)
 		Q_strncpyz(out, "Padawan", out_size);
 }
 
+// -----------------------------------------------------------------------------
+// reset communicating / dash / speed-related state after save-load
+// -----------------------------------------------------------------------------
+static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
+{
+
+	// Clear communicating / gesture / special flags
+	client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
+	client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
+	client->ps.communicatingflags &= ~(1 << SURRENDERING);
+	client->ps.communicatingflags &= ~(1 << RESPECTING);
+	client->ps.communicatingflags &= ~(1 << GESTURING);
+	client->ps.communicatingflags &= ~(1 << DASHING);
+	client->ps.communicatingflags &= ~(1 << DESTRUCTING);
+	client->ps.communicatingflags &= ~(1 << PROJECTING);
+	client->ps.communicatingflags &= ~(1 << KICKING);
+
+	// Reset speed timers
+	client->ps.forcePowerDebounce[FP_SPEED] = 0;
+	client->ps.forcePowerDuration[FP_SPEED] = 0;
+	client->ps.forceAllowDeactivateTime = 0;
+	client->ps.forceSpeedRecoveryTime = 0;
+	client->ps.forcePowersActive &= ~(1 << FP_SPEED);
+
+	// Reset dash timers/count so cooldowns don't block post-load dashing
+	client->ps.dashstartTime = 0;
+	client->ps.dashlaststartTime = 0;
+	client->ps.Dash_Count = 0;
+	client->ps.pm_flags &= ~PMF_DASH_HELD;
+	client->pers.lastCommand.buttons &= ~BUTTON_DASH;
+	client->latched_buttons &= ~BUTTON_DASH;
+	client->buttons &= ~BUTTON_DASH;
+}
+
 /*
 ===========
 client_userinfo_changed
@@ -660,8 +694,7 @@ to the server machine, but qfalse on map changes and tournement
 restarts.
 ============
 */
-char* ClientConnect(const int clientNum, const qboolean first_time,
-	const SavedGameJustLoaded_e e_saved_game_just_loaded)
+char* ClientConnect(const int clientNum, const qboolean first_time, const SavedGameJustLoaded_e e_saved_game_just_loaded)
 {
 	gentity_t* ent = &g_entities[clientNum];
 	char userinfo[MAX_INFO_STRING] = { 0 };
@@ -714,6 +747,9 @@ char* ClientConnect(const int clientNum, const qboolean first_time,
 			gi.SendServerCommand(-1, "print \"%s connected\n\"", client->pers.netname);
 		}
 	}
+
+	// Reset communicating / dash / speed-related state on full save-load
+	Client_ResetCommunicatingDashAndSpeedState(client);
 
 	return nullptr;
 }
@@ -768,6 +804,9 @@ void ClientBegin(const int clientNum, const usercmd_t* cmd, const SavedGameJustL
 		client->ps.inventory[INV_GOODIE_KEY] = 0;
 		client->ps.inventory[INV_SECURITY_KEY] = 0;
 	}
+
+	// Reset communicating / dash / speed-related state on full save-load
+	Client_ResetCommunicatingDashAndSpeedState(client);
 }
 
 /*
@@ -1922,7 +1961,7 @@ qboolean g_set_g2_player_model_info(gentity_t* ent, const char* model_name, cons
 					BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0);
 			}
 		}
-		else if (ent->client->NPC_class == CLASS_RANCOR)
+		else if (ent->client && ent->client->NPC_class == CLASS_RANCOR)
 		{
 			Eorientations o_up, o_rt, o_fwd;
 			//regular bones we need
@@ -3063,10 +3102,10 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 	qboolean beam_in_effect = qfalse;
 	extern qboolean g_qbLoadTransition;
 
-	index = ent - g_entities;
+	index = static_cast<int>(ent - g_entities);
 	client = ent->client;
 
-	if (e_saved_game_just_loaded == eFULL && g_qbLoadTransition == qfalse) //qbFromSavedGame
+	if (e_saved_game_just_loaded == eFULL && g_qbLoadTransition == qfalse) // qbFromSavedGame
 	{
 		// loading up a full save game
 		ent->client->pers.teamState.state = TEAM_ACTIVE;
@@ -3088,7 +3127,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			ent->client->pers.cmd_angles[i] = 0.0f;
 		}
 
-		SetClientViewAngle(ent, ent->client->ps.viewangles); //spawn_angles
+		SetClientViewAngle(ent, ent->client->ps.viewangles); // spawn_angles
 
 		gi.linkentity(ent);
 
@@ -3104,7 +3143,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		{
 			// FIXME: game doesn't like it when you pass ent->NPC_type into this func. Insert all kinds of noises here --eez
 			char bleh[MAX_SPAWN_VARS_CHARS];
-			Q_strncpyz(bleh, ent->NPC_type, sizeof bleh);
+			Q_strncpyz(bleh, ent->NPC_type, sizeof(bleh));
 
 			G_ChangePlayerModel(ent, bleh);
 		}
@@ -3119,24 +3158,8 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		// setup sabers
 		G_ReloadSaberData(ent);
 
-		/* -----------------------------------------------------------------
-		 * Reset communicating / gesture / special state flags on any save load
-		 * ----------------------------------------------------------------- */
-		client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
-		client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
-		client->ps.communicatingflags &= ~(1 << SURRENDERING);
-		client->ps.communicatingflags &= ~(1 << RESPECTING);
-		client->ps.communicatingflags &= ~(1 << GESTURING);
-		client->ps.communicatingflags &= ~(1 << DASHING);
-		client->ps.communicatingflags &= ~(1 << DESTRUCTING);
-		client->ps.communicatingflags &= ~(1 << PROJECTING);
-		client->ps.communicatingflags &= ~(1 << KICKING);
-
-		// Reset dash timers/count on load so cooldowns don't block post-load dashing
-		client->ps.dashstartTime = 0;
-		client->ps.dashlaststartTime = 0;
-		client->Dash_Count = 0;
-		// force power levels should already be set
+		// On full save-load, ensure dash / speed / communicating state is clean
+		Client_ResetCommunicatingDashAndSpeedState(client);
 	}
 	else
 	{
@@ -3165,7 +3188,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		// Preserve clientInfo
 		memcpy(&saved_ci, &client->clientInfo, sizeof(clientInfo_t));
 
-		memset(client, 0, sizeof * client);
+		memset(client, 0, sizeof(*client));
 
 		memcpy(&client->clientInfo, &saved_ci, sizeof(clientInfo_t));
 
@@ -3201,8 +3224,8 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		{
 			ent->NPC_type = static_cast<char*>("player");
 		}
-		ent->classname = "player";
-		ent->targetname = ent->script_targetname = "player";
+		ent->classname = const_cast<char*>("player");
+		ent->targetname = ent->script_targetname = const_cast<char*>("player");
 		if (ent->client->NPC_class == CLASS_NONE)
 		{
 			ent->client->NPC_class = CLASS_PLAYER;
@@ -3301,7 +3324,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		}
 
 		// give EITHER the saber or the stun baton..never both
-		if (spawn_point->spawnflags & 32) // STUN_BATON
+		if ((spawn_point->spawnflags & 32) != 0) // STUN_BATON
 		{
 			client->ps.weapons[WP_STUN_BATON] = 1;
 			client->ps.weapon = WP_STUN_BATON;
@@ -3338,7 +3361,10 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			// autoload, will be taken care of below
 		}
 
-		ent->health = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH];
+		ent->health = client->ps.stats[STAT_MAX_HEALTH];
+		client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH];
+		client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_MAX_HEALTH];
+
 		ent->client->dismemberProbHead = 90;
 		ent->client->dismemberProbArms = 95;
 		ent->client->dismemberProbHands = 20;
@@ -3377,7 +3403,8 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		client->ps.legsAnim = BOTH_STAND2;
 
 		// clear IK grabbing stuff
-		client->ps.heldClient = client->ps.heldByClient = ENTITYNUM_NONE;
+		client->ps.heldClient = ENTITYNUM_NONE;
+		client->ps.heldByClient = ENTITYNUM_NONE;
 		client->ps.saberLockEnemy = ENTITYNUM_NONE; // duh, don't think i'm locking with myself
 
 		// restore some player data
@@ -3387,10 +3414,12 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		if (e_saved_game_just_loaded == eNO)
 		{
 			// fresh start
-			if (!(spawn_point->spawnflags & 1)) // not KEEP_PREV
+			if ((spawn_point->spawnflags & 1) == 0) // not KEEP_PREV
 			{
 				// then restore health and armor
-				ent->health = client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH];
+				ent->health = client->ps.stats[STAT_MAX_HEALTH];
+				client->ps.stats[STAT_ARMOR] = client->ps.stats[STAT_MAX_HEALTH];
+				client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH];
 				ent->client->ps.forcePower = ent->client->ps.forcePowerMax;
 				ent->client->ps.cloakFuel = 100;
 				ent->client->ps.blockPoints = 100;
@@ -3399,20 +3428,9 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				ent->client->ps.BarrierFuel = 100;
 				ent->reloadTime = 0;
 				ent->client->ps.muzzleOverheatTime = 0;
-				ent->client->Dash_Count = 0;
 
-				/* -----------------------------------------------------------------
-				 * Reset communicating / gesture / special state flags on any save load
-				 * ----------------------------------------------------------------- */
-				client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
-				client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
-				client->ps.communicatingflags &= ~(1 << SURRENDERING);
-				client->ps.communicatingflags &= ~(1 << RESPECTING);
-				client->ps.communicatingflags &= ~(1 << GESTURING);
-				client->ps.communicatingflags &= ~(1 << DASHING);
-				client->ps.communicatingflags &= ~(1 << DESTRUCTING);
-				client->ps.communicatingflags &= ~(1 << PROJECTING);
-				client->ps.communicatingflags &= ~(1 << KICKING);
+				// On fresh start without KEEP_PREV, also reset dash / speed / communicating state
+				Client_ResetCommunicatingDashAndSpeedState(client);
 			}
 			G_InitPlayerFromCvars(ent);
 		}
@@ -3423,7 +3441,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			{
 				// FIXME: game doesn't like it when you pass ent->NPC_type into this func. Insert all kinds of noises here --eez
 				char bleh[MAX_SPAWN_VARS_CHARS];
-				Q_strncpyz(bleh, ent->NPC_type, sizeof bleh);
+				Q_strncpyz(bleh, ent->NPC_type, sizeof(bleh));
 
 				G_ChangePlayerModel(ent, bleh);
 			}
@@ -3433,18 +3451,6 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				G_SetSkin(ent);
 			}
 			G_ReloadSaberData(ent);
-			/* -----------------------------------------------------------------
-			 * Reset communicating / gesture / special state flags on any save load
-			 * ----------------------------------------------------------------- */
-			client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
-			client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
-			client->ps.communicatingflags &= ~(1 << SURRENDERING);
-			client->ps.communicatingflags &= ~(1 << RESPECTING);
-			client->ps.communicatingflags &= ~(1 << GESTURING);
-			client->ps.communicatingflags &= ~(1 << DASHING);
-			client->ps.communicatingflags &= ~(1 << DESTRUCTING);
-			client->ps.communicatingflags &= ~(1 << PROJECTING);
-			client->ps.communicatingflags &= ~(1 << KICKING);
 		}
 
 		// NEVER start a map with either of your sabers or blades on...
@@ -3459,7 +3465,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		ucmd.weapon = client->ps.weapon;
 		// client think calls Pmove which sets the client->ps.weapon to ucmd.weapon, so ...
 		ent->client->ps.groundEntityNum = ENTITYNUM_NONE;
-		ClientThink(ent - g_entities, &ucmd);
+		ClientThink(static_cast<int>(ent - g_entities), &ucmd);
 
 		// run the presend to set anything else
 		ClientEndFrame(ent);
@@ -3475,7 +3481,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		IIcarusInterface::GetIcarus()->DeleteIcarusID(ent->m_iIcarusID);
 		ent->m_iIcarusID = IIcarusInterface::GetIcarus()->GetIcarusID(ent->s.number);
 
-		if (spawn_point->spawnflags & 64) // NOWEAPON
+		if ((spawn_point->spawnflags & 64) != 0) // NOWEAPON
 		{
 			// player starts with absolutely no weapons
 			for (char& weapon : ent->client->ps.weapons)
@@ -3585,22 +3591,10 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 	Player_CheckBurn(ent);
 	Player_CheckFreeze(ent);
 
-	/* -----------------------------------------------------------------
-	 * Reset communicating / gesture / special state flags on any save load
-	 * (both full saves and autoloads), so the player never resumes in a
-	 * stuck saberlock / gesture / dash / special state.
-	 * ----------------------------------------------------------------- */
+	// On any save-load (full or auto), ensure we are not stuck in a special state.
 	if (e_saved_game_just_loaded != eNO)
 	{
-		client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
-		client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
-		client->ps.communicatingflags &= ~(1 << SURRENDERING);
-		client->ps.communicatingflags &= ~(1 << RESPECTING);
-		client->ps.communicatingflags &= ~(1 << GESTURING);
-		client->ps.communicatingflags &= ~(1 << DASHING);
-		client->ps.communicatingflags &= ~(1 << DESTRUCTING);
-		client->ps.communicatingflags &= ~(1 << PROJECTING);
-		client->ps.communicatingflags &= ~(1 << KICKING);
+		Client_ResetCommunicatingDashAndSpeedState(client);
 	}
 
 	return beam_in_effect;

@@ -13862,7 +13862,7 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 		self->client->ps.saberDisarmProtectTime = level.time + protect_ms;
 
 #if _DEBUG
-		gi.Printf(S_COLOR_GREEN "[SABER DISARM] Timer started: expires at %i (now %i)\n",self->client->ps.saberDisarmProtectTime, level.time);
+		gi.Printf(S_COLOR_GREEN "[SABER DISARM] Timer started: expires at %i (now %i)\n", self->client->ps.saberDisarmProtectTime, level.time);
 #endif
 	}
 
@@ -13872,7 +13872,7 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	if (self->client->ps.saberDisarmProtectTime > level.time)
 	{
 #if _DEBUG
-		gi.Printf(S_COLOR_YELLOW "[SABER DISARM] Timer active (%i > %i) — disarm prevented, saber kept in hand\n",self->client->ps.saberDisarmProtectTime, level.time);
+		gi.Printf(S_COLOR_YELLOW "[SABER DISARM] Timer active (%i > %i) — disarm prevented, saber kept in hand\n", self->client->ps.saberDisarmProtectTime, level.time);
 #endif
 
 		self->client->usercmd.buttons &= ~BUTTON_ATTACK;
@@ -15688,7 +15688,7 @@ int IsPressingKickButton(const gentity_t* self)
 {
 	if (!(self->client->buttons & BUTTON_DASH)
 		&& self->client->NPC_class != CLASS_DROIDEKA
-		&& (self->client->buttons & BUTTON_KICK && self->client->ps.pm_flags & PMF_KICK_HELD))
+		&& (self->client->buttons & BUTTON_KICK))
 	{
 		return qtrue;
 	}
@@ -29403,7 +29403,6 @@ void ForceSpeed(gentity_t* self, const int duration)
 }
 
 //Dash stuff
-
 int IsPressingDashButton(const gentity_t* self)
 {
 	if (PM_RunningAnim(self->client->ps.legsAnim)
@@ -29422,8 +29421,9 @@ int IsPressingDashButton(const gentity_t* self)
 
 int IsPressingDestructButton(const gentity_t* self)
 {
-	if (self->client->ps.forcePowerDebounce[FP_DESTRUCTION] > level.time || self->client->ps.forcePowersActive & 1 <<
-		FP_DESTRUCTION || self->s.powerups & 1 << PW_FORCE_PROJECTILE)
+	if (self->client->ps.forcePowerDebounce[FP_DESTRUCTION] > level.time ||
+		self->client->ps.forcePowersActive & 1 << FP_DESTRUCTION ||
+		self->s.powerups & 1 << PW_FORCE_PROJECTILE)
 	{
 		return qtrue;
 	}
@@ -29478,53 +29478,62 @@ extern qboolean PM_InSlopeAnim(int anim);
 
 static void ForceSpeedDash(gentity_t* self)
 {
+	// Must be alive
 	if (self->health <= 0)
 	{
 		return;
 	}
 
+	// Must be on the ground
 	if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 	{
-		//can't dash in mid-air
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	// Cannot dash during ledge moves
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
 
-	if (PM_SaberInAttack(self->client->ps.saber_move))
+	// Cannot dash during saber attacks
+	if (PM_SaberInAttack(self->client->ps.saber_move) == qtrue)
 	{
 		return;
 	}
 
-	if (PM_KickMove(self->client->ps.saber_move))
+	// Cannot dash during kicks
+	if (PM_KickMove(self->client->ps.saber_move) == qtrue)
 	{
 		return;
 	}
 
-	if (PM_InSlopeAnim(self->client->ps.legsAnim))
+	// Cannot dash during slope animations
+	if (PM_InSlopeAnim(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
 
+	// Speed debounce (saved absolute time can block dash after load)
 	if (self->client->ps.forcePowerDebounce[FP_SPEED] > level.time)
 	{
-		//stops it while using it and also after using it, up to 3 second delay
 		return;
 	}
 
+	// Speed recovery (same issue)
 	if (self->client->ps.forceSpeedRecoveryTime >= level.time)
 	{
 		return;
 	}
 
-	if (BG_InKnockDown(self->client->ps.legsAnim) || PM_InKnockDown(&self->client->ps))
+	// Cannot dash while knocked down
+	if (BG_InKnockDown(self->client->ps.legsAnim) == qtrue ||
+		PM_InKnockDown(&self->client->ps) == qtrue)
 	{
 		return;
 	}
 
+	// Class restrictions
 	if (self->client->NPC_class == CLASS_DROIDEKA ||
 		self->client->NPC_class == CLASS_VEHICLE ||
 		self->client->NPC_class == CLASS_SBD ||
@@ -29534,15 +29543,18 @@ static void ForceSpeedDash(gentity_t* self)
 		return;
 	}
 
-	if (self->client->ps.forceAllowDeactivateTime < level.time && self->client->ps.forcePowersActive & 1 << FP_SPEED)
+	// If force speed is active but allowed to deactivate, stop it
+	if ((self->client->ps.forceAllowDeactivateTime < level.time) &&
+		(self->client->ps.forcePowersActive & (1 << FP_SPEED)))
 	{
 		WP_ForcePowerStop(self, FP_SPEED);
 		return;
 	}
 
-	if (self->client->ps.forcePowersActive & 1 << FP_SPEED) //If using speed at same time just in case
+	// If force speed is active and running, hop instead of dash
+	if (self->client->ps.forcePowersActive & (1 << FP_SPEED))
 	{
-		if (PM_RunningAnim(self->client->ps.legsAnim))
+		if (PM_RunningAnim(self->client->ps.legsAnim) == qtrue)
 		{
 			ForceHopAnim(self);
 			WP_ForcePowerStop(self, FP_SPEED);
@@ -29553,18 +29565,22 @@ static void ForceSpeedDash(gentity_t* self)
 		}
 	}
 
+	// Cannot dash during saberlock
 	if (self->client->ps.saberLockTime > level.time)
 	{
 		return;
 	}
-
-	if (!IsPressingDashButton(self))
+	
+	if ((self->client->ps.communicatingflags & (1 << DASHING)) == 0)
 	{
-		//it's already turned on.  turn it off.
-		return;
+		if (IsPressingDashButton(self) == qfalse)
+		{
+			return;
+		}
 	}
-
-	if (!(self->client->ps.communicatingflags & 1 << DASHING))
+sh stuff
+	
+	if ((self->client->ps.communicatingflags & (1 << DASHING)) == 0)
 	{
 		return;
 	}
@@ -41424,7 +41440,8 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 	}
 
 	if ((self->client->ps.communicatingflags & (1 << DASHING)) ||
-		IsPressingDashButton(self))
+		(IsPressingDashButton(self) == qtrue) ||
+		(ucmd->buttons & BUTTON_DASH))
 	{
 		ForceSpeedDash(self);
 	}

@@ -148,7 +148,7 @@ to the clients -- only the fields that differ from the
 baseline will be transmitted
 ================
 */
-void SV_CreateBaseline()
+static void SV_CreateBaseline()
 {
 	for (int entnum = 0; entnum < ge->num_entities; entnum++)
 	{
@@ -177,7 +177,7 @@ SV_Startup
 Called when a game is about to begin
 ===============
 */
-void SV_Startup()
+static void SV_Startup()
 {
 	if (svs.initialized)
 	{

@@ -7325,7 +7325,6 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 	}
 }
 
-
 extern qboolean ForceDrain2(gentity_t* ent);
 extern void ForceGrip(gentity_t* ent);
 extern void ForceLightning(gentity_t* ent);
@@ -8765,144 +8764,136 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	}
 
 	// Activate the Blocking flags
-	if (g_SerenityJediEngineMode->integer
-		&& !ent->NPC &&
-		(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
-		client->ps.weapon == WP_SABER &&
-		/*client->ps.SaberActive() &&*/
-		!PM_SaberInMassiveBounce(client->ps.torsoAnim) &&
-		!PM_SaberInBashedAnim(client->ps.torsoAnim) &&
-		!PM_Saberinstab(client->ps.saber_move))
+	if ((g_SerenityJediEngineMode->integer != 0) &&
+		(ent->NPC == NULL) &&
+		((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue)) &&
+		(client->ps.weapon == WP_SABER) &&
+		(PM_SaberInMassiveBounce(client->ps.torsoAnim) == qfalse) &&
+		(PM_SaberInBashedAnim(client->ps.torsoAnim) == qfalse) &&
+		(PM_Saberinstab(client->ps.saber_move) == qfalse))
 	{
-		if (manual_running_and_saberblocking(ent))
+		// Running + blocking
+		if (manual_running_and_saberblocking(ent) == qtrue)
 		{
-			if (!(client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK))
+			if ((client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) == 0)
 			{
-				client->ps.ManualBlockingFlags |= 1 << HOLDINGBLOCK;
-				client->ps.userInt3 |= 1 << FLAG_BLOCKING;
-				client->ps.ManualBlockingTime = level.time; //Blocking time 1 on
+				client->ps.ManualBlockingFlags |= (1 << HOLDINGBLOCK);
+				client->ps.userInt3 |= (1 << FLAG_BLOCKING);
+				client->ps.ManualBlockingTime = level.time;
 			}
 		}
-		else if (manual_saberblocking(ent))
+		// Standing blocking
+		else if (manual_saberblocking(ent) == qtrue)
 		{
-			if (!(client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK))
+			if ((client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) == 0)
 			{
-				client->ps.ManualBlockingFlags |= 1 << HOLDINGBLOCK;
-				client->ps.userInt3 |= 1 << FLAG_BLOCKING;
-				client->ps.ManualBlockingTime = level.time; //Blocking time 1 on
+				client->ps.ManualBlockingFlags |= (1 << HOLDINGBLOCK);
+				client->ps.userInt3 |= (1 << FLAG_BLOCKING);
+				client->ps.ManualBlockingTime = level.time;
 
-				if (client->ps.weapon == WP_SABER && !client->ps.SaberActive() && client->NPC_class != CLASS_YODA && !manual_running_and_saberblocking(ent)) // not yoda he can block lightning with a saber off in his hand
+				if ((client->ps.weapon == WP_SABER) &&
+					(client->ps.SaberActive() == qfalse) &&
+					(client->NPC_class != CLASS_YODA) &&
+					(manual_running_and_saberblocking(ent) == qfalse))
 				{
 					client->ps.SaberActivate();
 				}
 			}
 
-			if (client->usercmd.buttons & BUTTON_WALKING && g_SerenityJediEngineMode->integer == 2)
+			// Walking block (SJE mode 2)
+			if ((client->usercmd.buttons & BUTTON_WALKING) &&
+				(g_SerenityJediEngineMode->integer == 2))
 			{
-				if (!(client->ps.ManualBlockingFlags & 1 << MBF_BLOCKWALKING) && (ucmd->forwardmove || ucmd->rightmove))
+				if (((client->ps.ManualBlockingFlags & (1 << MBF_BLOCKWALKING)) == 0) &&
+					((ucmd->forwardmove != 0) || (ucmd->rightmove != 0)))
 				{
-					client->ps.ManualBlockingFlags |= 1 << MBF_BLOCKWALKING;
+					client->ps.ManualBlockingFlags |= (1 << MBF_BLOCKWALKING);
 				}
 				client->usercmd.buttons &= ~BUTTON_WALKING;
 			}
 
+			// Attack + block (perfect block window)
 			if (client->usercmd.buttons & BUTTON_ATTACK)
 			{
-				if (!(client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK))
+				if ((client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) == 0)
 				{
-					client->ps.ManualBlockingFlags |= 1 << HOLDINGBLOCKANDATTACK;
+					client->ps.ManualBlockingFlags |= (1 << HOLDINGBLOCKANDATTACK);
 					client->ps.Manual_m_blockingTime = level.time;
 				}
 				client->usercmd.buttons &= ~BUTTON_ATTACK;
 
-				if (client->ps.ManualblockStartTime <= 0) //fresh start
+				// Perfect block timing
+				if (client->ps.ManualblockStartTime <= 0)
 				{
-					// They just pressed block. Mark the time...
 					client->ps.ManualblockStartTime = level.time;
 
-					if (!(client->ps.ManualBlockingFlags & 1 << PERFECTBLOCKING))
+					if ((client->ps.ManualBlockingFlags & (1 << PERFECTBLOCKING)) == 0)
 					{
-						client->ps.ManualBlockingFlags |= 1 << PERFECTBLOCKING; // activate the function
+						client->ps.ManualBlockingFlags |= (1 << PERFECTBLOCKING);
 					}
-					if (d_combatinfo->integer || g_DebugSaberCombat->integer)
+
+					if ((d_combatinfo->integer != 0) || (g_DebugSaberCombat->integer != 0))
 					{
-						Com_Printf(S_COLOR_ORANGE"MBlock was pressed, MBlocking is activated at time % i.\n",
+						Com_Printf(S_COLOR_ORANGE "MBlock pressed, activated at time %i.\n",
 							client->ps.ManualblockStartTime);
 					}
 				}
 				else
 				{
-					if (g_spskill->integer == 0) //easy blocking
+					int pb_timer = 0;
+
+					if (g_spskill->integer == 0)
 					{
-						if (client->ps.ManualBlockingFlags & 1 << PERFECTBLOCKING && level.time - client->ps.
-							ManualblockStartTime >= g_SaberPerfectBlockingTimerEasy->integer)
-						{
-							// Been holding block for too long....Turn off
-							client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
-							if (d_combatinfo->integer)
-							{
-								Com_Printf(S_COLOR_ORANGE"MBlocking has Deactivated because you hit the timer limit\n");
-							}
-						}
+						pb_timer = g_SaberPerfectBlockingTimerEasy->integer;
 					}
-					else if (g_spskill->integer == 1) //medium blocking
+					else if (g_spskill->integer == 1)
 					{
-						if (client->ps.ManualBlockingFlags & 1 << PERFECTBLOCKING && level.time - client->ps.
-							ManualblockStartTime >= g_SaberPerfectBlockingTimerNormal->integer)
-						{
-							// Been holding block for too long....Turn off
-							client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
-							if (d_combatinfo->integer)
-							{
-								Com_Printf(S_COLOR_ORANGE"MBlocking has Deactivated because you hit the timer limit\n");
-							}
-						}
+						pb_timer = g_SaberPerfectBlockingTimerNormal->integer;
 					}
 					else
 					{
-						if (client->ps.ManualBlockingFlags & 1 << PERFECTBLOCKING && level.time - client->ps.
-							ManualblockStartTime >= g_SaberPerfectBlockingTimerHard->integer)
+						pb_timer = g_SaberPerfectBlockingTimerHard->integer;
+					}
+
+					if (((client->ps.ManualBlockingFlags & (1 << PERFECTBLOCKING)) != 0) &&
+						(level.time - client->ps.ManualblockStartTime >= pb_timer))
+					{
+						client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
+
+						if (d_combatinfo->integer != 0)
 						{
-							// Been holding block for too long....Turn off
-							client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
-							if (d_combatinfo->integer)
-							{
-								Com_Printf(S_COLOR_ORANGE"MBlocking has Deactivated because you hit the timer limit\n");
-							}
+							Com_Printf(S_COLOR_ORANGE "MBlocking deactivated (timer limit).\n");
 						}
 					}
 				}
 
+				// Accurate missile block
 				if (client->ps.pm_flags & PMF_ACCURATE_MISSILE_BLOCK_HELD)
 				{
-					// started function
-					if (client->ps.BoltblockStartTime <= 0) //fresh start
+					if (client->ps.BoltblockStartTime <= 0)
 					{
-						// They just pressed block. Mark the time...
-						client->ps.BoltblockStartTime = level.time; //start the timer
+						client->ps.BoltblockStartTime = level.time;
 
-						if (!(client->ps.ManualBlockingFlags & 1 << MBF_ACCURATEMISSILEBLOCKING))
+						if ((client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) == 0)
 						{
-							client->ps.ManualBlockingFlags |= 1 << MBF_ACCURATEMISSILEBLOCKING; // activate the function
+							client->ps.ManualBlockingFlags |= (1 << MBF_ACCURATEMISSILEBLOCKING);
 						}
 					}
-					else if (client->ps.ManualBlockingFlags & 1 << MBF_ACCURATEMISSILEBLOCKING && level.time - client->
-						ps.BoltblockStartTime >= 3000)
+					else if (((client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) != 0) &&
+						(level.time - client->ps.BoltblockStartTime >= 3000))
 					{
-						// Been holding block for too long....let go.
 						client->ps.ManualBlockingFlags &= ~(1 << MBF_ACCURATEMISSILEBLOCKING);
 					}
 				}
 				else
 				{
-					// not doing it so reset
 					client->ps.BoltblockStartTime = 0;
 					client->ps.ManualBlockingFlags &= ~(1 << MBF_ACCURATEMISSILEBLOCKING);
 				}
 			}
 			else
 			{
-				// No longer pressed, but we still need to make sure they are not spamming.
+				// Attack released → reset perfect block state
 				client->ps.ManualblockStartTime = 0;
 				client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCKANDATTACK);
 				client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
@@ -8910,25 +8901,21 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 				client->IsBlockingLightning = qfalse;
 			}
 		}
+		// No blocking at all
 		else
 		{
 			client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCK);
 			client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCKANDATTACK);
 			client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
 			client->ps.ManualBlockingFlags &= ~(1 << MBF_ACCURATEMISSILEBLOCKING);
+			client->ps.ManualBlockingFlags &= ~(1 << MBF_BLOCKWALKING);
+
 			client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
-			client->ps.ManualBlockingTime = 0; //Blocking time 1 on
+
+			client->ps.ManualBlockingTime = 0;
 			client->ps.Manual_m_blockingTime = 0;
 			client->IsBlockingLightning = qfalse;
-			client->ps.ManualBlockingFlags &= ~(1 << MBF_BLOCKWALKING);
 		}
-	}
-
-	if (client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK && !client->ps.SaberActive())
-	{
-		client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCK);
-		client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCKANDATTACK);
-		client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
 	}
 
 	if (client->ps.ManualBlockingFlags & 1 << MBF_MISSILESTASIS)  // this is no long used but im leaving in incase i want to use it later.
@@ -9070,245 +9057,228 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	}
 
 	// Activate the timing flags
-	if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
+	if ((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
 	{
-		if (IsRESPECTING(ent))
+		if ((client->ps.dashstartTime > level.time) ||
+			(client->ps.dashlaststartTime > level.time))
 		{
-			client->ps.RESPECTINGtime = level.time;
+			client->ps.dashstartTime = 0;
+			client->ps.dashlaststartTime = 0;
+			client->ps.Dash_Count = 0;
+			client->ps.communicatingflags &= ~(1 << DASHING);
+		}
 
-			if (client->ps.RESPECTINGstartTime <= 0 && level.time - client->ps.RESPECTINGlaststartTime >= 8000)
+		// RESPECTING
+		if (IsRESPECTING(ent) == qtrue)
+		{
+			client->ps.respectingtime = level.time;
+
+			if ((client->ps.respectingstarttime <= 0) &&
+				(level.time - client->ps.respectinglaststarttime >= 8000))
 			{
-				// They just pressed respect. Mark the time... 8000 wait between allowed RESPECTING.
-				client->ps.RESPECTINGstartTime = level.time;
-				client->ps.RESPECTINGlaststartTime = level.time;
+				client->ps.respectingstarttime = level.time;
+				client->ps.respectinglaststarttime = level.time;
 
-				if (!(client->ps.communicatingflags & 1 << RESPECTING))
+				if ((client->ps.communicatingflags & (1 << RESPECTING)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << RESPECTING;
+					client->ps.communicatingflags |= (1 << RESPECTING);
 				}
 			}
-			else
+			else if (level.time - client->ps.respectingstarttime >= 3000)
 			{
-				if (level.time - client->ps.RESPECTINGstartTime >= 3000)
-				{
-					// When respect was pressed, wait 3000 before letting go of respect.
-					client->ps.RESPECTINGstartTime = 0;
-					client->ps.communicatingflags &= ~(1 << RESPECTING);
-				}
+				client->ps.respectingstarttime = 0;
+				client->ps.communicatingflags &= ~(1 << RESPECTING);
 			}
 		}
-		else if (is_anim_requires_responce(ent))
+		// GESTURING
+		else if (is_anim_requires_responce(ent) == qtrue)
 		{
 			client->ps.gesturingtime = level.time;
 
-			if (client->ps.gesturingstartTime <= 0 && level.time - client->ps.gesturinglaststartTime >= 8000)
+			if ((client->ps.gesturingstartTime <= 0) &&
+				(level.time - client->ps.gesturinglaststartTime >= 8000))
 			{
-				// They just pressed respect. Mark the time... 8000 wait between allowed RESPECTING.
 				client->ps.gesturingstartTime = level.time;
 				client->ps.gesturinglaststartTime = level.time;
 
-				if (!(client->ps.communicatingflags & 1 << GESTURING))
+				if ((client->ps.communicatingflags & (1 << GESTURING)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << GESTURING;
+					client->ps.communicatingflags |= (1 << GESTURING);
 				}
 			}
-			else
+			else if (level.time - client->ps.gesturingstartTime >= 3000)
 			{
-				if (level.time - client->ps.gesturingstartTime >= 3000)
-				{
-					// When respect was pressed, wait 3000 before letting go of respect.
-					client->ps.gesturingstartTime = 0;
-					client->ps.communicatingflags &= ~(1 << GESTURING);
-				}
+				client->ps.gesturingstartTime = 0;
+				client->ps.communicatingflags &= ~(1 << GESTURING);
 			}
 		}
-		else if (IsSurrenderingAnimRequiresResponce(ent))
+		// SURRENDERING
+		else if (IsSurrenderingAnimRequiresResponce(ent) == qtrue)
 		{
 			client->ps.surrendertimeplayer = level.time;
 
-			if (client->ps.surrenderstartTime <= 0 && level.time - client->ps.surrenderlaststartTime >= 8000)
+			if ((client->ps.surrenderstartTime <= 0) &&
+				(level.time - client->ps.surrenderlaststartTime >= 8000))
 			{
-				// They just pressed surrender. Mark the time... 8000 wait between allowed surrender.
 				client->ps.surrenderstartTime = level.time;
 				client->ps.surrenderlaststartTime = level.time;
 
-				if (!(client->ps.communicatingflags & 1 << SURRENDERING))
+				if ((client->ps.communicatingflags & (1 << SURRENDERING)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << SURRENDERING;
+					client->ps.communicatingflags |= (1 << SURRENDERING);
 				}
 			}
-			else
+			else if (level.time - client->ps.surrenderstartTime >= 3000)
 			{
-				if (level.time - client->ps.surrenderstartTime >= 3000)
-				{
-					// When respect was pressed, wait 3000 before letting go of respect.
-					client->ps.surrenderstartTime = 0;
-					client->ps.communicatingflags &= ~(1 << SURRENDERING);
-				}
+				client->ps.surrenderstartTime = 0;
+				client->ps.communicatingflags &= ~(1 << SURRENDERING);
 			}
 		}
-		else if (IsPressingDashButton(ent))
+		// DASHING
+		else if ((IsPressingDashButton(ent) == qtrue))
 		{
-			if (client->Dash_Count <= 2)
+			if (client->ps.Dash_Count < 2)
 			{
-				if (client->ps.dashstartTime <= 0 && level.time - client->ps.dashlaststartTime >= 100)
+				if ((client->ps.dashstartTime <= 0) &&
+					(level.time - client->ps.dashlaststartTime >= 100))
 				{
-					// They just pressed dash. Mark the time... 3000 wait between allowed dash.
 					client->ps.dashstartTime = level.time;
 					client->ps.dashlaststartTime = level.time;
-					client->Dash_Count++;
+					client->ps.Dash_Count++;
 
-					if (!(client->ps.communicatingflags & 1 << DASHING))
+					if ((client->ps.communicatingflags & (1 << DASHING)) == 0)
 					{
-						client->ps.communicatingflags |= 1 << DASHING;
+						client->ps.communicatingflags |= (1 << DASHING);
 					}
 				}
-				else
+				else if (level.time - client->ps.dashlaststartTime >= 10)
 				{
-					if (level.time - client->ps.dashlaststartTime >= 10)
-					{
-						// When dash was pressed, wait 3000 before letting go of dash.
-						client->ps.dashstartTime = 0;
-						client->ps.communicatingflags &= ~(1 << DASHING);
-					}
+					client->ps.dashstartTime = 0;
+					client->ps.communicatingflags &= ~(1 << DASHING);
 				}
 			}
 			else
 			{
-				if (client->ps.dashstartTime <= 0 && level.time - client->ps.dashlaststartTime >= 2500)
+				if ((client->ps.dashstartTime <= 0) &&
+					(level.time - client->ps.dashlaststartTime >= 2500))
 				{
-					// They just pressed dash. Mark the time... 8000 wait between allowed dash.
 					client->ps.dashstartTime = level.time;
 					client->ps.dashlaststartTime = level.time;
 
-					if (!(client->ps.communicatingflags & 1 << DASHING))
+					if ((client->ps.communicatingflags & (1 << DASHING)) == 0)
 					{
-						client->ps.communicatingflags |= 1 << DASHING;
+						client->ps.communicatingflags |= (1 << DASHING);
 					}
 				}
-				else
+				else if (level.time - client->ps.dashlaststartTime >= 2500)
 				{
-					if (level.time - client->ps.dashlaststartTime >= 2500)
-					{
-						// When dash was pressed, wait 3000 before letting go of dash.
-						client->ps.dashstartTime = 0;
-						client->Dash_Count = 0;
-						client->ps.communicatingflags &= ~(1 << DASHING);
-					}
+					client->ps.dashstartTime = 0;
+					client->ps.Dash_Count = 0;
+					client->ps.communicatingflags &= ~(1 << DASHING);
 				}
 			}
 		}
-		else if (IsPressingDestructButton(ent))
+		// DESTRUCTING
+		else if (IsPressingDestructButton(ent) == qtrue)
 		{
 			client->ps.destructtimeplayer = level.time;
 
-			if (client->ps.destructstartTime <= 0 && level.time - client->ps.destructlaststartTime >= 4000)
+			if ((client->ps.destructstartTime <= 0) &&
+				(level.time - client->ps.destructlaststartTime >= 4000))
 			{
-				// They just pressed dash. Mark the time... 8000 wait between allowed dash.
 				client->ps.destructstartTime = level.time;
 				client->ps.destructlaststartTime = level.time;
 
-				if (!(client->ps.communicatingflags & 1 << DESTRUCTING))
+				if ((client->ps.communicatingflags & (1 << DESTRUCTING)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << DESTRUCTING;
+					client->ps.communicatingflags |= (1 << DESTRUCTING);
 				}
 			}
-			else
+			else if (level.time - client->ps.destructstartTime >= 3500)
 			{
-				if (level.time - client->ps.destructstartTime >= 3500)
-				{
-					// When respect was pressed, wait 3000 before letting go of respect.
-					client->ps.destructstartTime = 0;
-					client->ps.communicatingflags &= ~(1 << DESTRUCTING);
-				}
+				client->ps.destructstartTime = 0;
+				client->ps.communicatingflags &= ~(1 << DESTRUCTING);
 			}
 		}
-		else if (client->Isprojecting)
+		// PROJECTING
+		else if (client->Isprojecting == qtrue)
 		{
 			client->ps.projecttimeplayer = level.time;
 
-			if (client->ps.projectstartTime <= 0 && level.time - client->ps.projectlaststartTime >= 8000)
+			if ((client->ps.projectstartTime <= 0) &&
+				(level.time - client->ps.projectlaststartTime >= 8000))
 			{
-				// They just pressed dash. Mark the time... 8000 wait between allowed dash.
 				client->ps.projectstartTime = level.time;
 				client->ps.projectlaststartTime = level.time;
 
-				if (!(client->ps.communicatingflags & 1 << PROJECTING))
+				if ((client->ps.communicatingflags & (1 << PROJECTING)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << PROJECTING;
+					client->ps.communicatingflags |= (1 << PROJECTING);
 				}
 			}
-			else
+			else if (level.time - client->ps.projectstartTime >= 3500)
 			{
-				if (level.time - client->ps.projectstartTime >= 3500)
-				{
-					// When respect was pressed, wait 3000 before letting go of respect.
-					client->ps.projectstartTime = 0;
-					client->ps.communicatingflags &= ~(1 << PROJECTING);
-				}
+				client->ps.projectstartTime = 0;
+				client->ps.communicatingflags &= ~(1 << PROJECTING);
 			}
 		}
-		else if (client->ps.weapon == WP_STUN_BATON && client->usercmd.buttons & BUTTON_ALT_ATTACK &&
-			g_SerenityJediEngineMode->integer == 2)
+		// STUNNING (grapple)
+		else if ((client->ps.weapon == WP_STUN_BATON) &&
+			(client->usercmd.buttons & BUTTON_ALT_ATTACK) &&
+			(g_SerenityJediEngineMode->integer == 2))
 		{
 			client->ps.grappletimeplayer = level.time;
 
-			if (client->ps.grapplestartTime <= 0 && level.time - client->ps.grapplelaststartTime >= 3000)
+			if ((client->ps.grapplestartTime <= 0) &&
+				(level.time - client->ps.grapplelaststartTime >= 3000))
 			{
-				// They just pressed grapple. Mark the time... 3000 wait between allowed grapple.
 				client->ps.grapplestartTime = level.time;
 				client->ps.grapplelaststartTime = level.time;
 
-				if (!(client->ps.communicatingflags & 1 << STUNNING))
+				if ((client->ps.communicatingflags & (1 << STUNNING)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << STUNNING;
+					client->ps.communicatingflags |= (1 << STUNNING);
 				}
 			}
-			else
+			else if (level.time - client->ps.grapplestartTime >= 3000)
 			{
-				if (level.time - client->ps.grapplestartTime >= 3000)
-				{
-					// When grapple was pressed, wait 1500 before letting go of grapple.
-					client->ps.grapplestartTime = 0;
-					client->ps.communicatingflags &= ~(1 << STUNNING);
-				}
+				client->ps.grapplestartTime = 0;
+				client->ps.communicatingflags &= ~(1 << STUNNING);
 			}
 		}
-		else if (IsPressingKickButton(ent))
+		// KICKING
+		else if (IsPressingKickButton(ent) == qtrue)
 		{
-			if (client->ps.kickstartTime <= 0 && level.time - client->ps.kicklaststartTime >= 1500)
+			if ((client->ps.kickstartTime <= 0) &&
+				(level.time - client->ps.kicklaststartTime >= 1500))
 			{
-				// They just pressed kick. Mark the time... 5000 wait between allowed kicks.
 				client->ps.kickstartTime = level.time;
 				client->ps.kicklaststartTime = level.time;
 
-				if (!(client->ps.communicatingflags & 1 << KICKING))
+				if ((client->ps.communicatingflags & (1 << KICKING)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << KICKING;
+					client->ps.communicatingflags |= (1 << KICKING);
 				}
 			}
-			else
+			else if (level.time - client->ps.kicklaststartTime >= 500)
 			{
-				if (level.time - client->ps.kicklaststartTime >= 500)
-				{
-					// When kick was pressed, wait 3000 before letting go.
-					client->ps.kickstartTime = 0;
-					client->ps.communicatingflags &= ~(1 << KICKING);
-				}
+				client->ps.kickstartTime = 0;
+				client->ps.communicatingflags &= ~(1 << KICKING);
 			}
 		}
+		// SABERLOCK
 		else if (client->ps.saberLockTime > level.time)
 		{
-			if (!(client->ps.communicatingflags & 1 << CF_SABERLOCKING))
+			if ((client->ps.communicatingflags & (1 << CF_SABERLOCKING)) == 0)
 			{
-				client->ps.communicatingflags |= 1 << CF_SABERLOCKING;
+				client->ps.communicatingflags |= (1 << CF_SABERLOCKING);
 			}
 
-			if (ucmd->rightmove > 0 || ucmd->forwardmove > 0)
+			if ((ucmd->rightmove > 0) || (ucmd->forwardmove > 0))
 			{
-				if (!(client->ps.communicatingflags & 1 << CF_SABERLOCK_ADVANCE))
+				if ((client->ps.communicatingflags & (1 << CF_SABERLOCK_ADVANCE)) == 0)
 				{
-					client->ps.communicatingflags |= 1 << CF_SABERLOCK_ADVANCE;
+					client->ps.communicatingflags |= (1 << CF_SABERLOCK_ADVANCE);
 				}
 			}
 			else
@@ -9318,9 +9288,6 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 		else
 		{
-			client->ps.RESPECTINGtime = 0;
-			client->ps.gesturingtime = 0;
-			client->ps.surrendertimeplayer = 0;
 			client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
 			client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
 			client->ps.communicatingflags &= ~(1 << SURRENDERING);
@@ -9330,8 +9297,9 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			client->ps.communicatingflags &= ~(1 << DESTRUCTING);
 			client->ps.communicatingflags &= ~(1 << PROJECTING);
 			client->ps.communicatingflags &= ~(1 << KICKING);
-			if (client->ps.weapon != WP_STUN_BATON ||
-				(client->ps.communicatingflags |= client->ps.grapplestartTime >= 3000))
+
+			if ((client->ps.weapon != WP_STUN_BATON) ||
+				(client->ps.grapplestartTime >= 3000))
 			{
 				client->ps.communicatingflags &= ~(1 << STUNNING);
 			}
