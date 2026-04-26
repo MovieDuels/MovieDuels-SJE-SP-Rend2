@@ -29483,6 +29483,11 @@ static void ForceSpeedDash(gentity_t* self)
 		return;
 	}
 
+	if (self->watertype == CONTENTS_WATER)
+	{
+		return;
+	}
+
 	// Must be on the ground
 	if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 	{
@@ -41435,7 +41440,7 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 	}
 
 	if ((IsPressingDashButton(self) == qtrue))
-	{
+	{// Dash is also a power with its own button,so just check if the button is being held and call the function if it is.
 		ForceSpeedDash(self);
 	}
 

@@ -3388,6 +3388,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		ent->client->ps.BarrierFuel = 100;
 
 		ent->reloadTime = 0;
+		ent->client->ps.muzzleOverheatTime = 0;
 
 		VectorCopy(spawn_origin, client->ps.origin);
 		VectorCopy(spawn_origin, ent->currentOrigin);

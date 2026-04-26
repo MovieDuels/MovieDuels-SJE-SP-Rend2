@@ -23445,7 +23445,7 @@ void Pmove(pmove_t* pmove)
 		pm->ps->pm_flags &= ~PMF_USE_HELD;
 	}
 
-	if (pm->cmd.buttons & BUTTON_DASH && !(pm->cmd.buttons & BUTTON_KICK))
+	if (pm->cmd.buttons & BUTTON_DASH)
 	{
 		pm->ps->pm_flags |= PMF_DASH_HELD;
 	}
@@ -23463,7 +23463,7 @@ void Pmove(pmove_t* pmove)
 		pm->ps->pm_flags &= ~PMF_BLOCK_HELD;
 	}
 
-	if (pm->cmd.buttons & BUTTON_KICK && !(pm->cmd.buttons & BUTTON_DASH))
+	if (pm->cmd.buttons & BUTTON_KICK)
 	{
 		pm->ps->pm_flags |= PMF_KICK_HELD;
 	}
