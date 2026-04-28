@@ -301,73 +301,111 @@ void WP_FireBattleDroidMissile(gentity_t* ent, vec3_t start, vec3_t dir, const q
 void WP_FireBattleDroid(gentity_t* ent, const qboolean alt_fire)
 //---------------------------------------------------------
 {
-	vec3_t dir, angs;
+	// Validate caller.
+	if (ent == NULL)
+	{
+		return;
+	}
 
+	vec3_t dir;
+	vec3_t angs;
+
+	// Convert forward vector to angles.
 	vectoangles(forward_vec, angs);
 
-	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+	// ---------------------------------------------------------------------
+	// AIM / SPREAD LOGIC
+	// ---------------------------------------------------------------------
+	if (ent->client != NULL && ent->client->NPC_class == CLASS_VEHICLE)
 	{
-		//no inherent aim screw up
+		// Vehicles: no inherent aim screw up.
 	}
-	else if (NPC_IsNotHavingEnoughForceSight(ent))
-	{//force sight 2+ gives perfect aim
-		if (alt_fire)
+	else if (NPC_IsNotHavingEnoughForceSight(ent) == qtrue && ent->client != NULL)
+	{
+		// Force Sight < 2 → apply spread.
+
+		const qboolean is_player_or_controlled =
+			((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
+			? qtrue
+			: qfalse;
+
+		// -------------------------
+		// ALT‑FIRE SPREAD
+		// -------------------------
+		if (alt_fire == qtrue)
 		{
-			if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
+			if (is_player_or_controlled == qtrue)
 			{
-				if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-				{ // running or very fatigued
+				if (PM_RunningAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+				{
+					// Running or very fatigued.
 					angs[PITCH] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
 					angs[YAW] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
 				}
-				else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVY)
-				{//walking or fatigued a bit
+				else if (PM_WalkingAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVY)
+				{
+					// Walking or moderately fatigued.
 					angs[PITCH] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
 					angs[YAW] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
 				}
 				else
-				{// just standing
+				{
+					// Standing still.
 					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 					angs[YAW] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 				}
 			}
 			else
-			{// add some slop to the alt-fire direction for NPC,s
+			{
+				// NPC alt‑fire spread.
 				angs[PITCH] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 				angs[YAW] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 			}
 		}
+
+		// -------------------------
+		// PRIMARY‑FIRE SPREAD
+		// -------------------------
 		else
 		{
-			if (ent->client && ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
+			if (is_player_or_controlled == qtrue)
 			{
-				if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-				{ // running or very fatigued
+				if (PM_RunningAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+				{
+					// Running or very fatigued.
 					angs[PITCH] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
 					angs[YAW] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
 				}
-				else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
-				{//walking or fatigued a bit
+				else if (PM_WalkingAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
+				{
+					// Walking or somewhat fatigued.
 					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
 					angs[YAW] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
 				}
 				else
-				{// just standing
+				{
+					// Standing still.
 					angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BLASTER_MAIN_SPREAD;
 					angs[YAW] += Q_flrand(-0.5f, 0.5f) * BLASTER_MAIN_SPREAD;
 				}
 			}
 			else
-			{// add some slop to the fire direction for NPC,s
+			{
+				// NPC primary‑fire spread.
 				angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
 				angs[YAW] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
 			}
 		}
 	}
 
-	AngleVectors(angs, dir, nullptr, nullptr);
+	// Convert modified angles back to a direction vector.
+	AngleVectors(angs, dir, NULL, NULL);
 
-	// FIXME: if temp_org does not have clear trace to inside the bbox, don't shoot!
+	// Fire the actual projectile.
 	WP_FireBattleDroidMissile(ent, muzzle, dir, alt_fire);
 }
 

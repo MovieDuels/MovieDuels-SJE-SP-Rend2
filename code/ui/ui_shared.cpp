@@ -3363,10 +3363,10 @@ qboolean ItemParse_model_g2anim_go(itemDef_t* item, const char* animName)
 
 	while (i < MAX_ANIMATIONS)
 	{
-		if (!Q_stricmp(animName, anim_table[i].name))
+		if (!Q_stricmp(animName, animTable[i].name))
 		{
 			//found it
-			modelPtr->g2anim = anim_table[i].id;
+			modelPtr->g2anim = animTable[i].id;
 			return qtrue;
 		}
 		i++;
@@ -7275,7 +7275,7 @@ static void Item_Model_Paint(itemDef_t* item)
 			{
 			case BOTH_FORCEWALLREBOUND_FORWARD:
 			case BOTH_FORCEJUMP1:
-				ItemParse_model_g2anim_go(item, anim_table[BOTH_FORCEINAIR1].name);
+				ItemParse_model_g2anim_go(item, animTable[BOTH_FORCEINAIR1].name);
 				uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", model_ptr->g2anim, qtrue);
 				if (!uiInfo.moveAnimTime)
 				{
@@ -7284,35 +7284,35 @@ static void Item_Model_Paint(itemDef_t* item)
 				uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				break;
 			case BOTH_FORCEINAIR1:
-				ItemParse_model_g2anim_go(item, anim_table[BOTH_FORCELAND1].name);
+				ItemParse_model_g2anim_go(item, animTable[BOTH_FORCELAND1].name);
 				uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", model_ptr->g2anim, qtrue);
 				uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				break;
 			case BOTH_FORCEWALLRUNFLIP_START:
-				ItemParse_model_g2anim_go(item, anim_table[BOTH_FORCEWALLRUNFLIP_END].name);
+				ItemParse_model_g2anim_go(item, animTable[BOTH_FORCEWALLRUNFLIP_END].name);
 				uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", model_ptr->g2anim, qtrue);
 				uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				break;
 			case BOTH_FORCELONGLEAP_START:
-				ItemParse_model_g2anim_go(item, anim_table[BOTH_FORCELONGLEAP_LAND].name);
+				ItemParse_model_g2anim_go(item, animTable[BOTH_FORCELONGLEAP_LAND].name);
 				uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", model_ptr->g2anim, qtrue);
 				uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				break;
 			case BOTH_KNOCKDOWN3: //on front - into force getup
 				DC->startLocalSound(uiInfo.uiDC.Assets.datapadmoveJumpSound, CHAN_LOCAL);
-				ItemParse_model_g2anim_go(item, anim_table[BOTH_FORCE_GETUP_F1].name);
+				ItemParse_model_g2anim_go(item, animTable[BOTH_FORCE_GETUP_F1].name);
 				uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", model_ptr->g2anim, qtrue);
 				uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				break;
 			case BOTH_KNOCKDOWN2: //on back - kick forward getup
 				DC->startLocalSound(uiInfo.uiDC.Assets.datapadmoveJumpSound, CHAN_LOCAL);
-				ItemParse_model_g2anim_go(item, anim_table[BOTH_GETUP_BROLL_F].name);
+				ItemParse_model_g2anim_go(item, animTable[BOTH_GETUP_BROLL_F].name);
 				uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", model_ptr->g2anim, qtrue);
 				uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				break;
 			case BOTH_KNOCKDOWN1: //on back - roll-away
 				DC->startLocalSound(uiInfo.uiDC.Assets.datapadmoveRollSound, CHAN_LOCAL);
-				ItemParse_model_g2anim_go(item, anim_table[BOTH_GETUP_BROLL_R].name);
+				ItemParse_model_g2anim_go(item, animTable[BOTH_GETUP_BROLL_R].name);
 				uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", model_ptr->g2anim, qtrue);
 				uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				break;

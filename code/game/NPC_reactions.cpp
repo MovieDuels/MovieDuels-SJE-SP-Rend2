@@ -1689,13 +1689,15 @@ void NPC_Use(gentity_t* self, gentity_t* other, gentity_t* activator)
 		{
 			NPC_UseResponse(self, other, qtrue);
 		}
-		else if (!self->enemy && !(self->NPC->scriptFlags & SCF_NO_RESPONSE)
-			&& activator->s.number == 0
-			&& !gi.VoiceVolume[self->s.number])
+		else if (!self->enemy &&
+			!(self->NPC->scriptFlags & SCF_NO_RESPONSE) &&
+			activator && activator->s.number == 0 &&
+			!gi.VoiceVolume[self->s.number])
 		{
-			//I don't have an enemy and I'm not talking and I was used by the player
+			// I don't have an enemy and I'm not talking and I was used by the player
 			NPC_UseResponse(self, other, qfalse);
 		}
+
 
 		if (self->NPC->behaviorState == BS_FOLLOW_LEADER || self->NPC->behaviorState == BS_FOLLOW_OVERRIDE || self->client->NPC_class == CLASS_GROGU)
 		{

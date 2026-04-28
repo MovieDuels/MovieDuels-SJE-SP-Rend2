@@ -3043,7 +3043,7 @@ static void CG_G2PlayerAngles(centity_t* cent, vec3_t legs[], vec3_t angles)
 			CG_G2ClientSpineAngles(cent, view_angles, angles, thoracic_angles, ul_angles, ll_angles);
 		}
 
-		vec3_t trailing_legs_angles;
+		vec3_t trailing_legs_angles = { 0.0f, 0.0f, 0.0f };
 		if (cent->gent->client && cent->gent->client->NPC_class == CLASS_ATST)
 		{
 			CG_ATSTLegsYaw(cent, trailing_legs_angles);
@@ -3267,7 +3267,7 @@ static void CG_G2PlayerAngles(centity_t* cent, vec3_t legs[], vec3_t angles)
 
 			VectorCopy(view_angles, look_angles);
 
-			vec3_t trailing_legs_angles;
+			vec3_t trailing_legs_angles = { 0.0f, 0.0f, 0.0f };
 			if (cent->gent && cent->gent->client && cent->gent->client->NPC_class == CLASS_ATST)
 			{
 				CG_ATSTLegsYaw(cent, trailing_legs_angles);

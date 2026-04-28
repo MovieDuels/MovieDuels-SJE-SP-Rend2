@@ -71,7 +71,7 @@ void Con_ToggleConsole_f()
 Con_ToggleMenu_f
 ===================
 */
-void Con_ToggleMenu_f()
+static void Con_ToggleMenu_f()
 {
 	CL_KeyEvent(A_ESCAPE, qtrue, Sys_Milliseconds());
 	CL_KeyEvent(A_ESCAPE, qfalse, Sys_Milliseconds());
@@ -99,7 +99,7 @@ Con_Dump_f
 Save the console contents out to a file
 ================
 */
-void Con_Dump_f()
+static void Con_Dump_f()
 {
 	int l, x;
 	short* line;
@@ -196,77 +196,98 @@ Con_CheckResize
 If the line width has changed, reformat the buffer.
 ================
 */
-void Con_CheckResize()
+void Con_CheckResize(void)
 {
-	int i;
+	int i = 0;
 
-	//width = (SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
+	// Compute new console width based on current video resolution
 	int width = (cls.glconfig.vidWidth / SMALLCHAR_WIDTH) - 2;
 
+	// No change → nothing to do
 	if (width == con.linewidth)
-		return;
-
-	if (width < 1) // video hasn't been initialized yet
 	{
-		con.xadjust = 1;
-		con.yadjust = 1;
+		return;
+	}
+
+	// Video not initialized yet or extremely small resolution
+	if (width < 1)
+	{
+		con.xadjust = 1.0f;
+		con.yadjust = 1.0f;
 		width = DEFAULT_CONSOLE_WIDTH;
 		con.linewidth = width;
 		con.totallines = CON_TEXTSIZE / con.linewidth;
+
+		// Fill console with blank white text
 		for (i = 0; i < CON_TEXTSIZE; i++)
 		{
 			con.text[i] = (ColorIndex(COLOR_WHITE) << 8) | ' ';
 		}
+
+		con.current = con.totallines - 1;
+		con.display = con.current;
+		return;
 	}
-	else
+
+	// --- SAFE STATIC BUFFER (replaces huge stack array) ---
+	static short tbuf[CON_TEXTSIZE];
+
+	// Adjust text centering for widescreen
+	con.xadjust = 640.0f / cls.glconfig.vidWidth;
+	con.yadjust = 480.0f / cls.glconfig.vidHeight;
+
+	const int oldwidth = con.linewidth;
+	const int oldtotallines = con.totallines;
+
+	con.linewidth = width;
+	con.totallines = CON_TEXTSIZE / con.linewidth;
+
+	int numlines = oldtotallines;
+	if (con.totallines < numlines)
 	{
-		short tbuf[CON_TEXTSIZE];
-		// on wide screens, we will center the text
-		con.xadjust = 640.0f / cls.glconfig.vidWidth;
-		con.yadjust = 480.0f / cls.glconfig.vidHeight;
-
-		const int oldwidth = con.linewidth;
-		con.linewidth = width;
-		const int oldtotallines = con.totallines;
-		con.totallines = CON_TEXTSIZE / con.linewidth;
-		int numlines = oldtotallines;
-
-		if (con.totallines < numlines)
-			numlines = con.totallines;
-
-		int numchars = oldwidth;
-
-		if (con.linewidth < numchars)
-			numchars = con.linewidth;
-
-		memcpy(tbuf, con.text, CON_TEXTSIZE * sizeof(short));
-		for (i = 0; i < CON_TEXTSIZE; i++)
-
-			con.text[i] = (ColorIndex(COLOR_WHITE) << 8) | ' ';
-
-		for (i = 0; i < numlines; i++)
-		{
-			for (int j = 0; j < numchars; j++)
-			{
-				con.text[(con.totallines - 1 - i) * con.linewidth + j] =
-					tbuf[((con.current - i + oldtotallines) %
-						oldtotallines) * oldwidth + j];
-			}
-		}
-
-		Con_ClearNotify();
+		numlines = con.totallines;
 	}
 
+	int numchars = oldwidth;
+	if (con.linewidth < numchars)
+	{
+		numchars = con.linewidth;
+	}
+
+	// Copy old console text into static buffer
+	memcpy(tbuf, con.text, sizeof(tbuf));
+
+	// Clear console text
+	for (i = 0; i < CON_TEXTSIZE; i++)
+	{
+		con.text[i] = (ColorIndex(COLOR_WHITE) << 8) | ' ';
+	}
+
+	// Rebuild console text with new width
+	for (i = 0; i < numlines; i++)
+	{
+		for (int j = 0; j < numchars; j++)
+		{
+			con.text[(con.totallines - 1 - i) * con.linewidth + j] =
+				tbuf[((con.current - i + oldtotallines) % oldtotallines) * oldwidth + j];
+		}
+	}
+
+	// Clear notify lines
+	Con_ClearNotify();
+
+	// Reset scroll positions
 	con.current = con.totallines - 1;
 	con.display = con.current;
 }
+
 
 /*
 ==================
 Cmd_CompleteTxtName
 ==================
 */
-void Cmd_CompleteTxtName(char* args, const int argNum)
+static void Cmd_CompleteTxtName(char* args, const int argNum)
 {
 	if (argNum == 2)
 		Field_CompleteFilename("", "txt", qfalse, qtrue);
@@ -307,7 +328,7 @@ void Con_Init()
 Con_Linefeed
 ===============
 */
-void Con_Linefeed()
+static void Con_Linefeed()
 {
 	// mark time for transparent overlay
 	if (con.current >= 0)
@@ -332,27 +353,26 @@ If no console is visible, the text will appear at the top of the game window
 */
 void CL_ConsolePrint(char* txt)
 {
-	int c, l;
+	int c = 0;
+	int l = 0;
 
-	// for some demos we don't want to ever show anything on the console
-	if (cl_noprint && cl_noprint->integer)
+	// For some demos we don't want console output unless debug is enabled
+	if (cl_noprint && cl_noprint->integer != 0)
 	{
-		if (con_DebugSaberCombat->integer)
-		{
-			// Always print when debug is on
-		}
-		else
+		if (con_DebugSaberCombat->integer == 0)
 		{
 			return;
 		}
 	}
 
-	if (!con.initialized)
+	// Initialize console if needed
+	if (con.initialized == qfalse)
 	{
-		con.color[0] =
-			con.color[1] =
-			con.color[2] =
-			con.color[3] = 1.0f;
+		con.color[0] = 1.0f;
+		con.color[1] = 1.0f;
+		con.color[2] = 1.0f;
+		con.color[3] = 1.0f;
+
 		con.linewidth = -1;
 		Con_CheckResize();
 		con.initialized = qtrue;
@@ -362,14 +382,15 @@ void CL_ConsolePrint(char* txt)
 
 	while ((c = static_cast<unsigned char>(*txt)) != 0)
 	{
-		if (Q_IsColorString((unsigned char*)txt))
+		// Handle ^1 ^2 ^3 color codes
+		if (Q_IsColorString((unsigned char*)txt) == qtrue)
 		{
 			color = ColorIndex(*(txt + 1));
 			txt += 2;
 			continue;
 		}
 
-		// count word length
+		// Count word length for wrapping
 		for (l = 0; l < con.linewidth; l++)
 		{
 			if (txt[l] <= ' ')
@@ -378,7 +399,7 @@ void CL_ConsolePrint(char* txt)
 			}
 		}
 
-		// word wrap
+		// Word wrap
 		if (l != con.linewidth && (con.x + l >= con.linewidth))
 		{
 			Con_Linefeed();
@@ -391,27 +412,63 @@ void CL_ConsolePrint(char* txt)
 		case '\n':
 			Con_Linefeed();
 			break;
+
 		case '\r':
 			con.x = 0;
 			break;
-		default: // display character and advance
-			const int y = con.current % con.totallines;
-			con.text[y * con.linewidth + con.x] = (color << 8) | c;
-			con.x++;
+
+		default:
+		{
+			// Compute safe row index
+			int y = con.current % con.totallines;
+			if (y < 0)
+			{
+				y = 0;
+			}
+
+			// Compute safe column index
+			if (con.x < 0)
+			{
+				con.x = 0;
+			}
 			if (con.x >= con.linewidth)
 			{
 				Con_Linefeed();
 				con.x = 0;
 			}
-			break;
+
+			// Compute final index safely
+			const int idx = (y * con.linewidth) + con.x;
+
+			// Bounds check to avoid MSVC warning C6386
+			if (idx >= 0 && idx < CON_TEXTSIZE)
+			{
+				con.text[idx] = (color << 8) | c;
+			}
+			else
+			{
+				Com_Printf("CL_ConsolePrint: WARNING — index %i out of bounds\n", idx);
+			}
+
+			con.x++;
+
+			if (con.x >= con.linewidth)
+			{
+				Con_Linefeed();
+				con.x = 0;
+			}
+		}
+		break;
 		}
 	}
 
-	// mark time for transparent overlay
-
+	// Mark time for transparent overlay
 	if (con.current >= 0)
+	{
 		con.times[con.current % NUM_CON_TIMES] = cls.realtime;
+	}
 }
+
 
 /*
 ==============================================================================
@@ -428,7 +485,7 @@ Con_DrawInput
 Draw the editline after a ] prompt
 ================
 */
-void Con_DrawInput()
+static void Con_DrawInput()
 {
 	if (cls.state != CA_DISCONNECTED && !(Key_GetCatcher() & KEYCATCH_CONSOLE))
 	{
@@ -532,7 +589,7 @@ Con_DrawSolidConsole
 Draws the console with the solid background
 ================
 */
-void Con_DrawSolidConsole(const float frac)
+static void Con_DrawSolidConsole(const float frac)
 {
 	int x;
 

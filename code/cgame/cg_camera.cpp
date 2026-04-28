@@ -140,41 +140,52 @@ void CGCam_Enable()
 -------------------------
 CGCam_Disable
 -------------------------
-*/
-
-void CGCam_Disable()
+*/void CGCam_Disable(void)
 {
-	in_camera = false;
+	// Leaving camera mode
+	in_camera = qfalse;
 
+	// Fade out black bars
 	client_camera.bar_alpha = 1.0f;
 	client_camera.bar_time = cg.time;
-
 	client_camera.bar_alpha_source = 1.0f;
 	client_camera.bar_alpha_dest = 0.0f;
 
-	client_camera.bar_height_source = static_cast<float>(480) / 10;
+	client_camera.bar_height_source = 480.0f / 10.0f;
 	client_camera.bar_height_dest = 0.0f;
 
 	client_camera.info_state |= CAMERA_BAR_FADING;
 
-	if (g_entities[0].client)
+	// Safety: ensure entity 0 exists and has a client
+	gentity_t* player = &g_entities[0];
+
+	if (player == NULL)
 	{
-		g_entities[0].contents = CONTENTS_BODY; //MASK_PLAYERSOLID;
+		Com_Printf("CGCam_Disable: ERROR — g_entities[0] is NULL\n");
+		return;
 	}
 
+	if (player->client == NULL)
+	{
+		Com_Printf("CGCam_Disable: ERROR — player->client is NULL\n");
+		return;
+	}
+
+	// Restore player collision
+	player->contents = CONTENTS_BODY;
+
+	// Notify server that camera is disabled
 	gi.SendServerCommand(0, "cts");
 
-	//if ( cg_skippingcin.integer )
-	{
-		//We're skipping the cinematic and it's over now
-		gi.cvar_set("timescale", "1");
-		gi.cvar_set("skippingCinematic", "0");
-	}
+	// Reset cinematic skip state
+	gi.cvar_set("timescale", "1");
+	gi.cvar_set("skippingCinematic", "0");
 
-	//we just came out of camera, so update cg.refdef.vieworg out of the camera's origin so the snapshot will know our new ori
-	VectorCopy(g_entities[0].currentOrigin, cg.refdef.vieworg);
-	VectorCopy(g_entities[0].client->ps.viewangles, cg.refdefViewAngles);
+	// Update view origin and angles so the next snapshot is correct
+	VectorCopy(player->currentOrigin, cg.refdef.vieworg);
+	VectorCopy(player->client->ps.viewangles, cg.refdefViewAngles);
 }
+
 
 /*
 -------------------------
@@ -326,7 +337,7 @@ CGCam_SetRoll
 -------------------------
 */
 
-void CGCam_SetRoll(const float roll)
+static void CGCam_SetRoll(const float roll)
 {
 	client_camera.angles[2] = roll;
 }
@@ -387,7 +398,7 @@ void CGCam_Zoom(const float FOV, const float duration)
 	client_camera.FOV_duration = duration;
 }
 
-void CGCam_Zoom2(const float FOV, const float FOV2, const float duration)
+static void CGCam_Zoom2(const float FOV, const float FOV2, const float duration)
 {
 	if (!duration)
 	{
@@ -403,7 +414,7 @@ void CGCam_Zoom2(const float FOV, const float FOV2, const float duration)
 	client_camera.FOV_duration = duration;
 }
 
-void CGCam_ZoomAccel(const float initial_fov, const float fov_velocity, const float fov_accel, const float duration)
+static void CGCam_ZoomAccel(const float initial_fov, const float fov_velocity, const float fov_accel, const float duration)
 {
 	if (!duration)
 	{
@@ -425,7 +436,7 @@ CGCam_Fade
 -------------------------
 */
 
-void CGCam_SetFade(vec4_t dest)
+static void CGCam_SetFade(vec4_t dest)
 {
 	//Instant completion
 	client_camera.info_state &= ~CAMERA_FADING;
@@ -623,7 +634,7 @@ void CGCam_Distance(const float distance, const float init_lerp)
 
 //========================================================================================
 
-void CGCam_FollowUpdate()
+static void CGCam_FollowUpdate()
 {
 	vec3_t center, dir, camera_angles, vec; //No more than 16 subjects in a cameraGroup
 	int i;
@@ -776,7 +787,7 @@ void CGCam_FollowUpdate()
 	VectorCopy(camera_angles, client_camera.angles);
 }
 
-void CGCam_TrackEntUpdate()
+static void CGCam_TrackEntUpdate()
 {
 	//FIXME: only do every 100 ms
 	gentity_t* track_ent = nullptr;
@@ -846,7 +857,7 @@ void CGCam_TrackEntUpdate()
 	client_camera.nextTrackEntUpdateTime = cg.time + 100;
 }
 
-void CGCam_TrackUpdate()
+static void CGCam_TrackUpdate()
 {
 	vec3_t goal_vec, cur_vec, track_pos;
 
@@ -974,7 +985,7 @@ CGCam_UpdateBarFade
 -------------------------
 */
 
-void CGCam_UpdateBarFade()
+static void CGCam_UpdateBarFade()
 {
 	if (client_camera.bar_time + BAR_DURATION < cg.time)
 	{
@@ -1421,7 +1432,7 @@ void CGCam_UpdateSmooth(vec3_t origin)
 	}
 }
 
-void CGCam_NotetrackProcessFov(const char* addl_arg)
+static void CGCam_NotetrackProcessFov(const char* addl_arg)
 {
 	int a = 0;
 
@@ -1461,7 +1472,7 @@ void CGCam_NotetrackProcessFov(const char* addl_arg)
 	}
 }
 
-void CGCam_NotetrackProcessFovZoom(const char* addl_arg)
+static void CGCam_NotetrackProcessFovZoom(const char* addl_arg)
 {
 	int a = 0;
 	float begin_fov;
@@ -1562,7 +1573,7 @@ void CGCam_NotetrackProcessFovZoom(const char* addl_arg)
 	}
 }
 
-void CGCam_NotetrackProcessFovAccel(const char* addl_arg)
+static void CGCam_NotetrackProcessFovAccel(const char* addl_arg)
 {
 	int a = 0;
 	float begin_fov;

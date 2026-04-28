@@ -42,7 +42,7 @@ USER INTERFACE MAIN
 
 #include "../game/bg_public.h"
 #include "../game/anims.h"
-extern stringID_table_t anim_table[MAX_ANIMATIONS + 1];
+extern stringID_table_t animTable[MAX_ANIMATIONS + 1];
 
 #include "../qcommon/stringed_ingame.h"
 #include "../qcommon/stv_version.h"
@@ -2879,7 +2879,7 @@ static qboolean UI_RunMenuScript(const char** args)
 			{
 				const auto item = Menu_FindItemByName(menu, "character");
 				if (item) {
-					ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].plyAnimation].name);
+					ItemParse_model_g2anim_go(item, animTable[charMD[uiVariantIndex].plyAnimation].name);
 					uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 				}
 			}
@@ -4422,7 +4422,7 @@ static qboolean UI_ParseAnimationFile(const char* af_filename)
 			break; /* EOF */
 		}
 
-		const int animNum = GetIDForString(anim_table, token);
+		const int animNum = GetIDForString(animTable, token);
 		if (animNum == -1)
 		{
 #ifdef _DEBUG
@@ -4736,21 +4736,20 @@ static void UI_FreeAllSpecies()
 PlayerModel_BuildList
 =================
 */
+// Build the list of player species/models from models/players
 static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 {
 	static constexpr size_t DIR_LIST_SIZE = 16384;
 
-	// Allocate directory list on heap only
+	// Allocate directory list on heap (avoid large stack usage)
 	char* dirlist = static_cast<char*>(malloc(DIR_LIST_SIZE));
-	if (!dirlist)
+	if (dirlist == nullptr)
 	{
-		Com_Printf(S_COLOR_RED "ERROR: Failed to allocate %zu bytes for player model directory list.\n",
+		Com_Printf(S_COLOR_RED "ERROR: UI_BuildPlayerModel_List: Failed to allocate %zu bytes for player model directory list.\n",
 			DIR_LIST_SIZE);
 		return;
 	}
 
-	size_t dirListSize = DIR_LIST_SIZE;
-	int dirlen = 0;
 	const int building = Cvar_VariableIntegerValue("com_buildscript");
 
 	// Reset species info
@@ -4761,15 +4760,16 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 	uiInfo.playerSpecies = static_cast<playerSpeciesInfo_t*>(
 		malloc(uiInfo.playerSpeciesMax * sizeof(playerSpeciesInfo_t)));
 
-	if (!uiInfo.playerSpecies)
+	if (uiInfo.playerSpecies == nullptr)
 	{
 		free(dirlist);
-		Com_Printf(S_COLOR_RED "ERROR: Failed to allocate initial playerSpecies array.\n");
+		Com_Printf(S_COLOR_RED "ERROR: UI_BuildPlayerModel_List: Failed to allocate initial playerSpecies array.\n");
 		return;
 	}
 
 	// Get list of player model directories
-	const int numdirs = ui.FS_GetFileList("models/players", "/", dirlist, dirListSize);
+	int dirlen = 0;
+	const int numdirs = ui.FS_GetFileList("models/players", "/", dirlist, static_cast<int>(DIR_LIST_SIZE));
 	char* dirptr = dirlist;
 
 	for (int i = 0; i < numdirs; i++, dirptr += dirlen + 1)
@@ -4777,8 +4777,8 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 		int f = 0;
 		char fpath[MAX_QPATH];
 
-		dirlen = strlen(dirptr);
-		if (dirlen == 0)
+		dirlen = static_cast<int>(strlen(dirptr));
+		if (dirlen <= 0)
 		{
 			continue;
 		}
@@ -4788,6 +4788,10 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 		{
 			dirptr[dirlen - 1] = '\0';
 			dirlen--;
+			if (dirlen <= 0)
+			{
+				continue;
+			}
 		}
 
 		// Skip "." and ".."
@@ -4798,201 +4802,228 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 
 		// Look for PlayerChoice.txt
 		Com_sprintf(fpath, sizeof(fpath), "models/players/%s/PlayerChoice.txt", dirptr);
-		int filelen = ui.FS_FOpenFile(fpath, &f, FS_READ);
+		const int filelenChoice = ui.FS_FOpenFile(fpath, &f, FS_READ);
 
-		if (f)
+		if (f == 0 || filelenChoice <= 0)
 		{
-			std::vector<char> buffer(filelen + 1);
-			ui.FS_Read(buffer.data(), filelen, f);
-			ui.FS_FCloseFile(f);
-
-			buffer[filelen] = '\0';
-
-			// Expand species array if needed
-			if (uiInfo.playerSpeciesCount >= uiInfo.playerSpeciesMax)
+			if (f != 0)
 			{
-				uiInfo.playerSpeciesMax *= 2;
+				ui.FS_FCloseFile(f);
+			}
+			continue;
+		}
 
-				void* newPtr = realloc(uiInfo.playerSpecies,
-					uiInfo.playerSpeciesMax * sizeof(playerSpeciesInfo_t));
+		// Read PlayerChoice.txt into buffer
+		std::vector<char> buffer(static_cast<size_t>(filelenChoice) + 1u);
+		ui.FS_Read(buffer.data(), filelenChoice, f);
+		ui.FS_FCloseFile(f);
 
-				if (!newPtr)
-				{
-					free(dirlist);
-					Com_Printf(S_COLOR_RED "ERROR: realloc failed for playerSpecies.\n");
-					return;
-				}
+		buffer[static_cast<size_t>(filelenChoice)] = '\0';
 
-				uiInfo.playerSpecies = static_cast<playerSpeciesInfo_t*>(newPtr);
+		// Expand species array if needed
+		if (uiInfo.playerSpeciesCount >= uiInfo.playerSpeciesMax)
+		{
+			uiInfo.playerSpeciesMax *= 2;
+
+			void* newPtr = realloc(uiInfo.playerSpecies,
+				uiInfo.playerSpeciesMax * sizeof(playerSpeciesInfo_t));
+
+			if (newPtr == nullptr)
+			{
+				free(dirlist);
+				Com_Printf(S_COLOR_RED "ERROR: UI_BuildPlayerModel_List: realloc failed for playerSpecies.\n");
+				return;
 			}
 
-			playerSpeciesInfo_t* species =
-				&uiInfo.playerSpecies[uiInfo.playerSpeciesCount];
+			uiInfo.playerSpecies = static_cast<playerSpeciesInfo_t*>(newPtr);
+		}
 
-			memset(species, 0, sizeof(playerSpeciesInfo_t));
-			Q_strncpyz(species->Name, dirptr, MAX_QPATH);
+		// Initialize new species entry
+		playerSpeciesInfo_t* species = &uiInfo.playerSpecies[uiInfo.playerSpeciesCount];
+		memset(species, 0, sizeof(playerSpeciesInfo_t));
+		Q_strncpyz(species->Name, dirptr, MAX_QPATH);
 
-			if (!UI_ParseColorData(buffer.data(), *species))
+		if (UI_ParseColorData(buffer.data(), *species) == qfalse)
+		{
+			ui.Printf("UI_BuildPlayerModel_List: Errors parsing '%s'\n", fpath);
+		}
+
+		// Initial skin array sizes
+		species->SkinHeadMax = 8;
+		species->SkinTorsoMax = 8;
+		species->SkinLegMax = 8;
+
+		species->SkinHead = static_cast<skinName_t*>(malloc(species->SkinHeadMax * sizeof(skinName_t)));
+		species->SkinTorso = static_cast<skinName_t*>(malloc(species->SkinTorsoMax * sizeof(skinName_t)));
+		species->SkinLeg = static_cast<skinName_t*>(malloc(species->SkinLegMax * sizeof(skinName_t)));
+
+		if (species->SkinHead == nullptr || species->SkinTorso == nullptr || species->SkinLeg == nullptr)
+		{
+			UI_FreeSpecies(species);
+			continue;
+		}
+
+		int iSkinParts = 0;
+
+		// Scan .skin files for this model
+		char filelist[2048];
+		const int numfiles = ui.FS_GetFileList(
+			va("models/players/%s", dirptr),
+			".skin",
+			filelist,
+			sizeof(filelist));
+
+		char* fileptr = filelist;
+
+		for (int j = 0; j < numfiles; j++)
+		{
+			// Always compute filelen BEFORE advancing fileptr
+			const int filelen = static_cast<int>(strlen(fileptr));
+			if (filelen <= 0)
 			{
-				ui.Printf("UI_BuildPlayerModel_List: Errors parsing '%s'\n", fpath);
-			}
-
-			// Initial skin array sizes
-			species->SkinHeadMax = 8;
-			species->SkinTorsoMax = 8;
-			species->SkinLegMax = 8;
-
-			species->SkinHead = static_cast<skinName_t*>(malloc(species->SkinHeadMax * sizeof(skinName_t)));
-			species->SkinTorso = static_cast<skinName_t*>(malloc(species->SkinTorsoMax * sizeof(skinName_t)));
-			species->SkinLeg = static_cast<skinName_t*>(malloc(species->SkinLegMax * sizeof(skinName_t)));
-
-			if (!species->SkinHead || !species->SkinTorso || !species->SkinLeg)
-			{
-				UI_FreeSpecies(species);
+				fileptr++;
 				continue;
 			}
 
-			int iSkinParts = 0;
+			char skinname[64];
+			COM_StripExtension(fileptr, skinname, sizeof(skinname));
 
-			// Scan .skin files
-			char filelist[2048];
-			const int numfiles = ui.FS_GetFileList(
-				va("models/players/%s", dirptr),
-				".skin",
-				filelist,
-				sizeof(filelist));
+			// Advance pointer safely to next entry
+			fileptr += filelen + 1;
 
-			char* fileptr = filelist;
-
-			for (int j = 0; j < numfiles; j++, fileptr += filelen + 1)
+			if (building != 0)
 			{
-				char skinname[64];
-
-				if (building)
+				ui.FS_FOpenFile(va("models/players/%s/%s", dirptr, skinname), &f, FS_READ);
+				if (f != 0)
 				{
-					ui.FS_FOpenFile(va("models/players/%s/%s", dirptr, fileptr), &f, FS_READ);
-					if (f) ui.FS_FCloseFile(f);
-
-					ui.FS_FOpenFile(va("models/players/%s/sounds.cfg", dirptr), &f, FS_READ);
-					if (f) ui.FS_FCloseFile(f);
-
-					ui.FS_FOpenFile(va("models/players/%s/animevents.cfg", dirptr), &f, FS_READ);
-					if (f) ui.FS_FCloseFile(f);
+					ui.FS_FCloseFile(f);
 				}
 
-				filelen = strlen(fileptr);
-				COM_StripExtension(fileptr, skinname, sizeof(skinname));
-
-				if (IsImageFile(dirptr, skinname, (building != 0) ? qtrue : qfalse))
+				ui.FS_FOpenFile(va("models/players/%s/sounds.cfg", dirptr), &f, FS_READ);
+				if (f != 0)
 				{
-					// -----------------------------
-					// HEAD SKINS (SAFE INDEXING)
-					// -----------------------------
-					if (Q_stricmpn(skinname, "head_", 5) == 0)
-					{
-						if (species->SkinHeadCount >= species->SkinHeadMax)
-						{
-							species->SkinHeadMax *= 2;
+					ui.FS_FCloseFile(f);
+				}
 
-							void* newPtr = realloc(species->SkinHead,
-								species->SkinHeadMax * sizeof(skinName_t));
-
-							if (!newPtr)
-							{
-								UI_FreeSpecies(species);
-								continue;
-							}
-
-							species->SkinHead = static_cast<skinName_t*>(newPtr);
-						}
-
-						const int idx = species->SkinHeadCount;
-						Q_strncpyz(species->SkinHead[idx].name, skinname, SKIN_LENGTH);
-						species->SkinHeadCount = idx + 1;
-
-						iSkinParts |= 1 << 0;
-					}
-
-					// -----------------------------
-					// TORSO SKINS (SAFE INDEXING)
-					// -----------------------------
-					else if (Q_stricmpn(skinname, "torso_", 6) == 0)
-					{
-						if (species->SkinTorsoCount >= species->SkinTorsoMax)
-						{
-							species->SkinTorsoMax *= 2;
-
-							void* newPtr = realloc(species->SkinTorso,
-								species->SkinTorsoMax * sizeof(skinName_t));
-
-							if (!newPtr)
-							{
-								UI_FreeSpecies(species);
-								continue;
-							}
-
-							species->SkinTorso = static_cast<skinName_t*>(newPtr);
-						}
-
-						const int idx = species->SkinTorsoCount;
-						Q_strncpyz(species->SkinTorso[idx].name, skinname, SKIN_LENGTH);
-						species->SkinTorsoCount = idx + 1;
-
-						iSkinParts |= 1 << 1;
-					}
-
-					// -----------------------------
-					// LEG SKINS (SAFE INDEXING)
-					// -----------------------------
-					else if (Q_stricmpn(skinname, "lower_", 6) == 0)
-					{
-						if (species->SkinLegCount >= species->SkinLegMax)
-						{
-							species->SkinLegMax *= 2;
-
-							void* newPtr = realloc(species->SkinLeg,
-								species->SkinLegMax * sizeof(skinName_t));
-
-							if (!newPtr)
-							{
-								UI_FreeSpecies(species);
-								continue;
-							}
-
-							species->SkinLeg = static_cast<skinName_t*>(newPtr);
-						}
-
-						const int idx = species->SkinLegCount;
-						Q_strncpyz(species->SkinLeg[idx].name, skinname, SKIN_LENGTH);
-						species->SkinLegCount = idx + 1;
-
-						iSkinParts |= 1 << 2;
-					}
+				ui.FS_FOpenFile(va("models/players/%s/animevents.cfg", dirptr), &f, FS_READ);
+				if (f != 0)
+				{
+					ui.FS_FCloseFile(f);
 				}
 			}
 
-			// Must have head + torso + legs
-			if (iSkinParts != 7)
+			if (IsImageFile(dirptr, skinname, (building != 0) ? qtrue : qfalse) == qfalse)
 			{
-				UI_FreeSpecies(species);
 				continue;
 			}
 
-			uiInfo.playerSpeciesCount++;
-
-			// Optional precache
-			if (ui_com_rend2.integer == 0)
+			// -----------------------------
+			// HEAD SKINS
+			// -----------------------------
+			if (Q_stricmpn(skinname, "head_", 5) == 0)
 			{
-				if (!inGameLoad && ui_PrecacheModels.integer)
+				if (species->SkinHeadCount >= species->SkinHeadMax)
 				{
-					CGhoul2Info_v ghoul2;
-					Com_sprintf(fpath, sizeof(fpath), "models/players/%s/model.glm", dirptr);
+					species->SkinHeadMax *= 2;
 
-					const int g2Model = DC->g2_InitGhoul2Model(ghoul2, fpath, 0, 0, 0, 0, 0);
-					if (g2Model >= 0)
+					void* newPtr = realloc(species->SkinHead,
+						species->SkinHeadMax * sizeof(skinName_t));
+
+					if (newPtr == nullptr)
 					{
-						DC->g2_RemoveGhoul2Model(ghoul2, 0);
+						UI_FreeSpecies(species);
+						species->SkinHead = nullptr;
+						species->SkinTorso = nullptr;
+						species->SkinLeg = nullptr;
+						break;
 					}
+
+					species->SkinHead = static_cast<skinName_t*>(newPtr);
+				}
+
+				Q_strncpyz(species->SkinHead[species->SkinHeadCount].name, skinname, SKIN_LENGTH);
+				species->SkinHeadCount++;
+				iSkinParts |= (1 << 0);
+			}
+			// -----------------------------
+			// TORSO SKINS
+			// -----------------------------
+			else if (Q_stricmpn(skinname, "torso_", 6) == 0)
+			{
+				if (species->SkinTorsoCount >= species->SkinTorsoMax)
+				{
+					species->SkinTorsoMax *= 2;
+
+					void* newPtr = realloc(species->SkinTorso,
+						species->SkinTorsoMax * sizeof(skinName_t));
+
+					if (newPtr == nullptr)
+					{
+						UI_FreeSpecies(species);
+						species->SkinHead = nullptr;
+						species->SkinTorso = nullptr;
+						species->SkinLeg = nullptr;
+						break;
+					}
+
+					species->SkinTorso = static_cast<skinName_t*>(newPtr);
+				}
+
+				Q_strncpyz(species->SkinTorso[species->SkinTorsoCount].name, skinname, SKIN_LENGTH);
+				species->SkinTorsoCount++;
+				iSkinParts |= (1 << 1);
+			}
+			// -----------------------------
+			// LEG SKINS
+			// -----------------------------
+			else if (Q_stricmpn(skinname, "lower_", 6) == 0)
+			{
+				if (species->SkinLegCount >= species->SkinLegMax)
+				{
+					species->SkinLegMax *= 2;
+
+					void* newPtr = realloc(species->SkinLeg,
+						species->SkinLegMax * sizeof(skinName_t));
+
+					if (newPtr == nullptr)
+					{
+						UI_FreeSpecies(species);
+						species->SkinHead = nullptr;
+						species->SkinTorso = nullptr;
+						species->SkinLeg = nullptr;
+						break;
+					}
+
+					species->SkinLeg = static_cast<skinName_t*>(newPtr);
+				}
+
+				Q_strncpyz(species->SkinLeg[species->SkinLegCount].name, skinname, SKIN_LENGTH);
+				species->SkinLegCount++;
+				iSkinParts |= (1 << 2);
+			}
+		}
+
+		// Must have head + torso + legs (bits 0,1,2 set → 7)
+		if (iSkinParts != 7)
+		{
+			UI_FreeSpecies(species);
+			continue;
+		}
+
+		uiInfo.playerSpeciesCount++;
+
+		// Optional precache (skip for rend2)
+		if (ui_com_rend2.integer == 0)
+		{
+			if (inGameLoad == qfalse && ui_PrecacheModels.integer != 0)
+			{
+				CGhoul2Info_v ghoul2;
+				Com_sprintf(fpath, sizeof(fpath), "models/players/%s/model.glm", dirptr);
+
+				const int g2Model = DC->g2_InitGhoul2Model(ghoul2, fpath, 0, 0, 0, 0, 0);
+				if (g2Model >= 0)
+				{
+					DC->g2_RemoveGhoul2Model(ghoul2, 0);
 				}
 			}
 		}
@@ -5385,8 +5416,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 26/04/2026 ---------------------\n");// build date
-	Com_Printf("---------------------------Build 13------------------------------\n");
+	Com_Printf("--------------------- Build Date 27/04/2026 ---------------------\n");// build date
+	Com_Printf("---------------------------Build 14------------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -9444,12 +9475,6 @@ static void UI_UpdateCharacterSkin()
 		}
 #endif
 #endif
-		// Play the Select Animation
-	   //uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
-	   //ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
-	   //const modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
-	   //if (modelPtr->g2anim)
-	   //	uiInfo.moveAnimTime = DC->g2hilev_SetAnim(&item->ghoul2[0], "model_root", modelPtr->g2anim, qtrue);
 	}
 #endif
 }
@@ -9489,9 +9514,9 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 		{
 			mdSelected = uiVariantIndex;
 #ifdef NEW_FEEDER_V5
-			uiInfo.movesBaseAnim = anim_table[charMD[uiVariantIndex].selectAnimation].name;
+			uiInfo.movesBaseAnim = animTable[charMD[uiVariantIndex].selectAnimation].name;
 #endif
-			ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
+			ItemParse_model_g2anim_go(item, animTable[charMD[uiVariantIndex].selectAnimation].name);
 			uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 		}
 		else
@@ -9501,7 +9526,7 @@ static void UI_UpdateCharacter(const qboolean changedModel)
 #else
 	if (!strcmp(menu->window.name, "ingamecharacter"))
 	{
-		ItemParse_model_g2anim_go(item, anim_table[charMD[uiVariantIndex].selectAnimation].name);
+		ItemParse_model_g2anim_go(item, animTable[charMD[uiVariantIndex].selectAnimation].name);
 		uiInfo.moveAnimTime += uiInfo.uiDC.realTime;
 	}
 	else

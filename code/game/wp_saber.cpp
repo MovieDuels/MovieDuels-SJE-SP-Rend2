@@ -5659,7 +5659,7 @@ constexpr auto LOCK_IDEAL_DIST_JKA = 46.0f;
 extern void PM_SetAnimFrame(gentity_t* gent, int frame, qboolean torso, qboolean legs);
 extern qboolean ValidAnimFileIndex(int index);
 
-int G_SaberLockAnim(const int attacker_saber_style, const int defender_saber_style, const int top_or_side,
+static int G_SaberLockAnim(const int attacker_saber_style, const int defender_saber_style, const int top_or_side,
 	const int lock_or_break_or_super_break,
 	const int win_or_lose)
 {
@@ -5840,7 +5840,7 @@ qboolean G_CheckIncrementLockAnim(int anim, const int win_or_lose)
 		break;
 	default:
 #ifndef FINAL_BUILD
-		Com_Printf(S_COLOR_RED"ERROR: unknown Saber Lock Anim: %s!!!\n", anim_table[anim].name);
+		Com_Printf(S_COLOR_RED"ERROR: unknown Saber Lock Anim: %s!!!\n", animTable[anim].name);
 #endif
 		break;
 	}
@@ -6123,7 +6123,7 @@ qboolean WP_SabersCheckLock2(gentity_t* attacker, gentity_t* defender, sabersLoc
 #ifndef FINAL_BUILD
 			if (d_saberCombat->integer)
 			{
-				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", attacker->NPC_type, anim_table[att_anim].name, anim->numFrames - advance);
+				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", attacker->NPC_type, animTable[att_anim].name, anim->numFrames - advance);
 			}
 #endif
 		}
@@ -6139,7 +6139,7 @@ qboolean WP_SabersCheckLock2(gentity_t* attacker, gentity_t* defender, sabersLoc
 #ifndef FINAL_BUILD
 			if (d_saberCombat->integer)
 			{
-				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", defender->NPC_type, anim_table[def_anim].name, advance);
+				Com_Printf("%s starting saber lock, anim = %s, %d frames to go!\n", defender->NPC_type, animTable[def_anim].name, advance);
 			}
 #endif
 		}
@@ -8413,7 +8413,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saber_num, int blade_num)
 #ifndef FINAL_BUILD
 							if (d_saberCombat->integer)
 							{
-								gi.Printf(S_COLOR_RED"%s knockaway %s's attack, new move = %s, anim = %s\n", hit_owner->NPC_type, ent->NPC_type, saber_moveData[ent->client->ps.saberBounceMove].name, anim_table[saber_moveData[ent->client->ps.saberBounceMove].animToUse].name);
+								gi.Printf(S_COLOR_RED"%s knockaway %s's attack, new move = %s, anim = %s\n", hit_owner->NPC_type, ent->NPC_type, saber_moveData[ent->client->ps.saberBounceMove].name, animTable[saber_moveData[ent->client->ps.saberBounceMove].animToUse].name);
 							}
 #endif
 						}
@@ -22844,11 +22844,11 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 	{
 		int e;
 		int i;
-		vec3_t v{};
-		gentity_t* ent;
-		vec3_t maxs{};
-		vec3_t mins{};
-		gentity_t* entity_list[MAX_GENTITIES];
+		static vec3_t v{};
+		static gentity_t* ent;
+		static vec3_t maxs{};
+		static vec3_t mins{};
+		static gentity_t* entity_list[MAX_GENTITIES];
 		float dist;
 		for (i = 0; i < 3; i++)
 		{
@@ -22860,9 +22860,9 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 
 		for (e = 0; e < num_listed_entities; e++)
 		{
-			vec3_t dir;
+			static vec3_t dir{};
 			float dot1;
-			vec3_t ent_org;
+			static vec3_t ent_org{};
 			ent = entity_list[e];
 
 			if (!WP_ForceThrowable(ent, forward_ent, self, pull, cone, radius, forward))
@@ -24300,10 +24300,10 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 	{
 		int e;
 		int i;
-		vec3_t v{};
-		vec3_t maxs{};
-		vec3_t mins{};
-		gentity_t* entity_list[MAX_GENTITIES];
+		static vec3_t v{};
+		static vec3_t maxs{};
+		static vec3_t mins{};
+		static gentity_t* entity_list[MAX_GENTITIES];
 		gentity_t* ent;
 		float dist;
 		for (i = 0; i < 3; i++)
@@ -24317,8 +24317,8 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 		for (e = 0; e < num_listed_entities; e++)
 		{
 			float dot1;
-			vec3_t dir;
-			vec3_t ent_org;
+			static vec3_t dir{};
+			static vec3_t ent_org{};
 			ent = entity_list[e];
 
 			if (!WP_ForceThrowable(ent, forward_ent, self, pull, cone, radius, forward))
@@ -28586,7 +28586,7 @@ static void ForceRepulseThrow(gentity_t* self, int charge_time)
 		vec3_t v{};
 		vec3_t maxs{};
 		vec3_t mins{};
-		gentity_t* entity_list[MAX_GENTITIES];
+		static gentity_t* entity_list[MAX_GENTITIES];
 		gentity_t* ent;
 		float dist;
 		for (i = 0; i < 3; i++)
@@ -35428,9 +35428,9 @@ static void ForceShootDrain(gentity_t* self)
 		if (self->client->ps.forcePowerLevel[FP_DRAIN] > FORCE_LEVEL_2)
 		{
 			// Arc drain
-			vec3_t center, mins, maxs, v;
+			vec3_t center, mins{}, maxs{}, v;
 			constexpr float radius = MAX_DRAIN_DISTANCE;
-			gentity_t* entity_list[MAX_GENTITIES];
+			static gentity_t* entity_list[MAX_GENTITIES];
 
 			VectorCopy(self->client->ps.origin, center);
 			for (int i = 0; i < 3; i++)
@@ -37062,7 +37062,7 @@ void ForceStasis(gentity_t* self)
 
 		vec3_t center, mins{}, maxs{}, v{};
 		const float reach = radius;
-		gentity_t* entity_list[MAX_GENTITIES];
+		static gentity_t* entity_list[MAX_GENTITIES];
 		int i;
 
 		VectorCopy(self->currentOrigin, center);
@@ -41015,7 +41015,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 		{
 			vec3_t forward, mins{}, maxs{};
 			int e, num_listed_entities;
-			gentity_t* entity_list[MAX_GENTITIES];
+			static gentity_t* entity_list[MAX_GENTITIES];
 			gentity_t* check = nullptr;
 			trace_t tr;
 

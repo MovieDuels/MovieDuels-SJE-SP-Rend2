@@ -551,7 +551,7 @@ G_RadiusList - given an origin and a radius, return all entities that are in use
 */
 int G_RadiusList(vec3_t origin, float radius, const gentity_t* ignore, const qboolean take_damage, gentity_t* ent_list[MAX_GENTITIES])
 {
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	vec3_t mins{}, maxs{};
 	vec3_t v{};
 	int i;
@@ -1358,49 +1358,76 @@ of ent.  Ent should be unlinked before calling this!
 */
 void G_KillBox(gentity_t* ent)
 {
-	gentity_t* touch[MAX_GENTITIES];
-	vec3_t mins, maxs;
+	// Validate caller
+	if (ent == nullptr || ent->client == nullptr)
+	{
+		return;
+	}
 
+	// Reduce stack usage: move large array to static storage
+	static gentity_t* touch[MAX_GENTITIES];
+
+	vec3_t mins;
+	vec3_t maxs;
+
+	// Compute bounding box around the entity
 	VectorAdd(ent->client->ps.origin, ent->mins, mins);
 	VectorAdd(ent->client->ps.origin, ent->maxs, maxs);
+
+	// Collect entities inside the box
 	const int num = gi.EntitiesInBox(mins, maxs, touch, MAX_GENTITIES);
 
 	for (int i = 0; i < num; i++)
 	{
 		gentity_t* hit = touch[i];
-		if (!hit->client)
+
+		// Must be a client
+		if (hit == nullptr || hit->client == nullptr)
 		{
 			continue;
 		}
+
+		// Don't kill ourselves
 		if (hit == ent)
 		{
 			continue;
 		}
-		if (ent->s.number && hit->client->ps.stats[STAT_HEALTH] <= 0)
+
+		// NPCs: ignore corpses
+		if (ent->s.number != 0 && hit->client->ps.stats[STAT_HEALTH] <= 0)
 		{
-			//NPC
 			continue;
 		}
-		if (ent->s.number)
+
+		// NPC vs Player collision rules
+		if (ent->s.number != 0)
 		{
-			//NPC
-			if (!(hit->contents & CONTENTS_BODY))
+			// NPC: only kill things with CONTENTS_BODY
+			if ((hit->contents & CONTENTS_BODY) == 0)
 			{
 				continue;
 			}
 		}
 		else
 		{
-			//player
-			if (!(hit->contents & ent->contents))
+			// Player: must share contents mask
+			if ((hit->contents & ent->contents) == 0)
 			{
 				continue;
 			}
 		}
 
-		// nail it
-		G_Damage(hit, ent, ent, nullptr, nullptr,
-			100000, DAMAGE_NO_PROTECTION, MOD_UNKNOWN);
+		// Kill the entity
+		G_Damage(
+			hit,
+			ent,
+			ent,
+			nullptr,
+			nullptr,
+			100000,
+			DAMAGE_NO_PROTECTION,
+			MOD_UNKNOWN
+		);
 	}
 }
 
@@ -1890,56 +1917,76 @@ static qboolean G_IsTriggerUsable(const gentity_t* self, const gentity_t* other)
 }
 
 static qboolean CanUseInfrontOfPartOfLevel(const gentity_t* ent) //originally from VV
+//-----------------------------------------------------
 {
-	gentity_t* touch[MAX_GENTITIES];
-	vec3_t mins, maxs;
-	constexpr vec3_t range = { 40, 40, 52 };
-
-	if (!ent->client)
+	// Validate caller
+	if (ent == nullptr || ent->client == nullptr)
 	{
 		return qfalse;
 	}
 
+	// Reduce stack usage: move large array to static storage
+	static gentity_t* touch[MAX_GENTITIES];
+
+	vec3_t mins;
+	vec3_t maxs;
+	constexpr vec3_t range = { 40, 40, 52 };
+
+	// ---------------------------------------------------------------------
+	// Build search box around the entity
+	// ---------------------------------------------------------------------
 	VectorSubtract(ent->client->ps.origin, range, mins);
 	VectorAdd(ent->client->ps.origin, range, maxs);
 
 	const int num = gi.EntitiesInBox(mins, maxs, touch, MAX_GENTITIES);
 
-	// can't use ent->absmin, because that has a one unit pad
+	// Recompute mins/maxs using entity bounds (absmin has padding)
 	VectorAdd(ent->client->ps.origin, ent->mins, mins);
 	VectorAdd(ent->client->ps.origin, ent->maxs, maxs);
 
+	// ---------------------------------------------------------------------
+	// Scan for usable triggers
+	// ---------------------------------------------------------------------
 	for (int i = 0; i < num; i++)
 	{
 		const gentity_t* hit = touch[i];
 
+		// Skip if neither entity has a touch function
 		if (hit->e_TouchFunc == touchF_NULL && ent->e_TouchFunc == touchF_NULL)
 		{
 			continue;
 		}
-		if (!(hit->contents & CONTENTS_TRIGGER))
+
+		// Must be a trigger
+		if ((hit->contents & CONTENTS_TRIGGER) == 0)
 		{
 			continue;
 		}
 
-		if (!gi.EntityContact(mins, maxs, hit))
+		// Must physically contact
+		if (gi.EntityContact(mins, maxs, hit) == qfalse)
 		{
 			continue;
 		}
 
+		// Check trigger type
 		if (hit->e_TouchFunc != touchF_NULL)
 		{
 			switch (hit->e_TouchFunc)
 			{
 			case touchF_Touch_Multi:
-				if (G_IsTriggerUsable(hit, ent))
+				if (G_IsTriggerUsable(hit, ent) == qtrue)
 				{
 					return qtrue;
 				}
-			default:;
+				break;
+
+			default:
+				break;
 			}
 		}
 	}
+
 	return qfalse;
 }
 

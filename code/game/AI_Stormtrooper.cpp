@@ -924,7 +924,7 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 	{
 		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b)
 		{
-			if (isYavin1b)
+			if (isYavin1b || in_camera)
 			{// Yavin 1b monsters shouldn't be able to see you from as far away as the smart NPCs, and they shouldn't have extended hearing either
 				mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_SMALL;
 				maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_SMALL;
@@ -974,7 +974,7 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 			// -----------------------------------------------------------------
 			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
 			
-			if (isYavin1b)
+			if (isYavin1b || in_camera)
 			{
 				const float radius_sq = DETECTION_RADIUS_SMALL * DETECTION_RADIUS_SMALL;
 
@@ -2235,7 +2235,7 @@ FIXME: work in pairs?
 static void ST_Commander(void)
 {
 	// Basic safety: no NPC, no info, or no group → nothing to do
-	if (!NPC || !NPCInfo || !NPCInfo->group)
+	if (NPC == nullptr || NPCInfo == nullptr || NPCInfo->group == nullptr)
 	{
 		return;
 	}
@@ -2256,7 +2256,7 @@ static void ST_Commander(void)
 	group->processed = qtrue;
 
 	// Require a valid enemy with a client
-	if (!group->enemy || !group->enemy->inuse || !group->enemy->client)
+	if (group->enemy == nullptr || group->enemy->inuse == qfalse || group->enemy->client == nullptr)
 	{
 		return;
 	}
@@ -2279,7 +2279,7 @@ static void ST_Commander(void)
 			}
 
 			member = &g_entities[entNum];
-			if (!member->inuse || !member->NPC)
+			if (member->inuse == qfalse || member->NPC == nullptr)
 			{
 				continue;
 			}
@@ -2291,7 +2291,7 @@ static void ST_Commander(void)
 				continue;
 			}
 
-			if (!(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
+			if ((NPCInfo->scriptFlags & SCF_CHASE_ENEMIES) == 0)
 			{
 				continue;
 			}
@@ -2331,7 +2331,7 @@ static void ST_Commander(void)
 	if (group->lastSeenEnemyTime > level.time - 32000 &&
 		group->lastSeenEnemyTime < level.time - 30000)
 	{
-		if (group->commander && !Q_irand(0, 1))
+		if (group->commander != nullptr && Q_irand(0, 1) == 0)
 		{
 			ST_Speech(group->commander, SPEECH_ESCAPING, 0.0f);
 		}
@@ -2359,7 +2359,7 @@ static void ST_Commander(void)
 	int cur_member_num;
 	int last_member_num;
 
-	if (d_asynchronousGroupAI->integer)
+	if (d_asynchronousGroupAI->integer != 0)
 	{
 		group->activeMemberNum++;
 		if (group->activeMemberNum >= group->numGroup)
@@ -2389,25 +2389,30 @@ static void ST_Commander(void)
 		}
 
 		member = &g_entities[entNum];
-		if (!member->inuse || !member->NPC)
+		if (member->inuse == qfalse || member->NPC == nullptr)
 		{
 			continue;
 		}
 
-		if (!member->enemy)
+		if (member->enemy == nullptr)
 		{
 			continue;
 		}
 
 		SetNPCGlobals(member);
 
-		if (!NPC || !NPCInfo)
+		if (NPC == nullptr || NPCInfo == nullptr)
+		{
+			continue;
+		}
+
+		if (NPC->client == nullptr)
 		{
 			continue;
 		}
 
 		// Skip if currently fleeing
-		if (!TIMER_Done(NPC, "flee"))
+		if (TIMER_Done(NPC, "flee") == qfalse)
 		{
 			continue;
 		}
@@ -2420,7 +2425,7 @@ static void ST_Commander(void)
 
 		// If unarmed and moving to pick up an item, don't override that
 		if (NPC->s.weapon == WP_NONE &&
-			NPCInfo->goalEntity &&
+			NPCInfo->goalEntity != nullptr &&
 			NPCInfo->goalEntity == NPCInfo->tempGoal &&
 			NPCInfo->goalEntity->s.eType == ET_ITEM)
 		{
@@ -2428,11 +2433,11 @@ static void ST_Commander(void)
 		}
 
 		// Danger check (if no officer or low rank)
-		if (!group->commander ||
-			!group->commander->NPC ||
+		if (group->commander == nullptr ||
+			group->commander->NPC == nullptr ||
 			group->commander->NPC->rank < RANK_ENSIGN)
 		{
-			if (NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)))
+			if (NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)) == qtrue)
 			{
 				ST_Speech(NPC, SPEECH_COVER, 0);
 				continue;
@@ -2440,7 +2445,7 @@ static void ST_Commander(void)
 		}
 
 		// If not allowed to chase enemies, skip tactical logic
-		if (!(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
+		if ((NPCInfo->scriptFlags & SCF_CHASE_ENEMIES) == 0)
 		{
 			continue;
 		}
@@ -2451,13 +2456,13 @@ static void ST_Commander(void)
 			// Unarmed: try to flee/hide if appropriate
 			if (NPC->client->ps.weapon == WP_NONE)
 			{
-				if (!NPCInfo->goalEntity ||
-					!NPCInfo->goalEntity->enemy ||
+				if (NPCInfo->goalEntity == nullptr ||
+					NPCInfo->goalEntity->enemy == nullptr ||
 					NPCInfo->goalEntity->enemy->s.eType != ET_ITEM)
 				{
-					if (TIMER_Done(NPC, "hideTime") ||
+					if (TIMER_Done(NPC, "hideTime") == qtrue ||
 						(DistanceSquared(group->enemy->currentOrigin, NPC->currentOrigin) < 65536.0f &&
-							NPC_ClearLOS(NPC->enemy)))
+							NPC_ClearLOS(NPC->enemy) == qtrue))
 					{
 						NPC_StartFlee(NPC->enemy,
 							NPC->enemy->currentOrigin,
@@ -2470,10 +2475,10 @@ static void ST_Commander(void)
 			}
 
 			// Armed: consider roaming or cover based on visibility and health
-			if (TIMER_Done(NPC, "roamTime") &&
-				TIMER_Done(NPC, "hideTime") &&
+			if (TIMER_Done(NPC, "roamTime") == qtrue &&
+				TIMER_Done(NPC, "hideTime") == qtrue &&
 				NPC->health > 10 &&
-				!gi.inPVS(group->enemy->currentOrigin, NPC->currentOrigin))
+				gi.inPVS(group->enemy->currentOrigin, NPC->currentOrigin) == qfalse)
 			{
 				cp_flags |= CP_CLEAR | CP_COVER;
 			}
@@ -2486,8 +2491,8 @@ static void ST_Commander(void)
 					if (DistanceSquared(group->enemy->currentOrigin, NPC->currentOrigin) < 65536.0f)
 					{
 						cp_flags |= CP_AVOID_ENEMY | CP_COVER | CP_AVOID | CP_RETREAT;
-						if (!group->commander ||
-							!group->commander->NPC ||
+						if (group->commander == nullptr ||
+							group->commander->NPC == nullptr ||
 							group->commander->NPC->rank < RANK_ENSIGN)
 						{
 							squad_state = SQUAD_RETREAT;
@@ -2504,8 +2509,8 @@ static void ST_Commander(void)
 
 				if (NPC->health <= 10)
 				{
-					if (!group->commander ||
-						!group->commander->NPC ||
+					if (group->commander == nullptr ||
+						group->commander->NPC == nullptr ||
 						group->commander->NPC->rank < RANK_ENSIGN)
 					{
 						cp_flags |= CP_FLEE | CP_AVOID | CP_RETREAT;
@@ -2516,7 +2521,7 @@ static void ST_Commander(void)
 			else
 			{
 				// Not under fire: adjust based on weapon and distance
-				if (gi.inPVS(NPC->currentOrigin, group->enemy->currentOrigin))
+				if (gi.inPVS(NPC->currentOrigin, group->enemy->currentOrigin) != 0)
 				{
 					if (NPC->client->ps.weapon == WP_ROCKET_LAUNCHER &&
 						DistanceSquared(group->enemy->currentOrigin, NPC->currentOrigin) < MIN_ROCKET_DIST_SQUARED &&
@@ -2534,7 +2539,7 @@ static void ST_Commander(void)
 							{
 								if (DistanceSquared(group->enemy->currentOrigin, NPC->currentOrigin) < 65536.0f)
 								{
-									if (TIMER_Done(NPC, "hideTime") &&
+									if (TIMER_Done(NPC, "hideTime") == qtrue &&
 										NPCInfo->squadState != SQUAD_TRANSITION)
 									{
 										cp_flags |= CP_AVOID_ENEMY | CP_CLEAR | CP_AVOID;
@@ -2553,7 +2558,7 @@ static void ST_Commander(void)
 		}
 
 		// If no enemy‑driven CP flags yet, run tactical / morale logic
-		if (!cp_flags)
+		if (cp_flags == 0)
 		{
 			if (runner == qtrue && NPCInfo->combatPoint != -1)
 			{
@@ -2562,7 +2567,7 @@ static void ST_Commander(void)
 					NPCInfo->squadState != SQUAD_TRANSITION &&
 					NPCInfo->squadState != SQUAD_RETREAT)
 				{
-					if (TIMER_Done(NPC, "verifyCP") &&
+					if (TIMER_Done(NPC, "verifyCP") == qtrue &&
 						DistanceSquared(NPC->currentOrigin,
 							level.combatPoints[NPCInfo->combatPoint].origin) > (64.0f * 64.0f))
 					{
@@ -2601,7 +2606,7 @@ static void ST_Commander(void)
 						NPCInfo->squadState != SQUAD_TRANSITION &&
 						NPCInfo->squadState != SQUAD_RETREAT)
 					{
-						if (TIMER_Done(NPC, "verifyCP"))
+						if (TIMER_Done(NPC, "verifyCP") == qtrue)
 						{
 							if (DistanceSquared(NPC->currentOrigin,
 								level.combatPoints[NPCInfo->combatPoint].origin) > (64.0f * 64.0f))
@@ -2628,7 +2633,7 @@ static void ST_Commander(void)
 				else if (enemy_protected == qtrue)
 				{
 					// Enemy protected: occasionally approach
-					if (TIMER_Done(NPC, "roamTime") && !Q_irand(0, group->numGroup))
+					if (TIMER_Done(NPC, "roamTime") == qtrue && Q_irand(0, group->numGroup) == 0)
 					{
 						cp_flags |= ST_ApproachEnemy(NPC);
 						AI_GroupUpdateSquadstates(group, NPC, SQUAD_SCOUT);
@@ -2641,14 +2646,14 @@ static void ST_Commander(void)
 					{
 						cp_flags |= ST_GetCPFlags();
 					}
-					else if (TIMER_Done(NPC, "roamTime"))
+					else if (TIMER_Done(NPC, "roamTime") == qtrue)
 					{
 						const int morale_delta = group->morale - group->numGroup;
 
 						if (i == 0)
 						{
 							// First member: more aggressive / leading behavior
-							if (morale_delta > 0 && !Q_irand(0, 4))
+							if (morale_delta > 0 && Q_irand(0, 4) == 0)
 							{
 								cp_flags |= CP_CLEAR | CP_COVER | CP_FLANK | CP_APPROACH_ENEMY;
 							}
@@ -2685,7 +2690,7 @@ static void ST_Commander(void)
 						else
 						{
 							// Middle members: mix of behavior based on morale
-							if (morale_delta < 0 || !Q_irand(0, 4))
+							if (morale_delta < 0 || Q_irand(0, 4) == 0)
 							{
 								cp_flags |= ST_GetCPFlags();
 							}
@@ -2698,21 +2703,21 @@ static void ST_Commander(void)
 					}
 
 					// Idle behavior: look / duck occasionally
-					if (!cp_flags)
+					if (cp_flags == 0)
 					{
 						if (NPC->attackDebounceTime < level.time - 2000)
 						{
 							ST_Speech(NPC, SPEECH_LOOK, 0.9f);
 						}
 
-						if (TIMER_Done(NPC, "duck"))
+						if (TIMER_Done(NPC, "duck") == qtrue)
 						{
-							if (TIMER_Done(NPC, "stand"))
+							if (TIMER_Done(NPC, "stand") == qtrue)
 							{
 								if (NPCInfo->combatPoint == -1 ||
 									(level.combatPoints[NPCInfo->combatPoint].flags & CPF_DUCK))
 								{
-									if (!Q_irand(0, 3))
+									if (Q_irand(0, 3) == 0)
 									{
 										TIMER_Set(NPC, "duck", Q_irand(1000, 3000));
 									}
@@ -2725,19 +2730,20 @@ static void ST_Commander(void)
 		}
 
 		// If enemy is lost but still in same region, track directly instead of using CP
-		if (enemy_lost == qtrue && NPC->enemy && NAV::InSameRegion(NPC, NPC->enemy->currentOrigin))
+		if (enemy_lost == qtrue && NPC->enemy != nullptr &&
+			NAV::InSameRegion(NPC, NPC->enemy->currentOrigin) == qtrue)
 		{
 			ST_TrackEnemy(NPC, NPC->enemy->currentOrigin);
 			continue;
 		}
 
-		if (!NPC->enemy)
+		if (NPC->enemy == nullptr)
 		{
 			continue;
 		}
 
 		// Grenade proximity check (thermal detonators)
-		if (TIMER_Done(NPC, "checkGrenadeTooCloseDebouncer"))
+		if (TIMER_Done(NPC, "checkGrenadeTooCloseDebouncer") == qtrue)
 		{
 			TIMER_Set(NPC, "checkGrenadeTooCloseDebouncer", Q_irand(300, 600));
 
@@ -2760,7 +2766,7 @@ static void ST_Commander(void)
 			{
 				ent = entity_list[e];
 
-				if (!ent || !ent->inuse)
+				if (ent == nullptr || ent->inuse == qfalse)
 				{
 					continue;
 				}
@@ -2777,7 +2783,7 @@ static void ST_Commander(void)
 					ent->s.weapon == WP_THERMAL)
 				{
 					if (ent->has_bounced &&
-						(!ent->owner || !OnSameTeam(ent->owner, NPC)))
+						(ent->owner == nullptr || OnSameTeam(ent->owner, NPC) == qfalse))
 					{
 						ST_Speech(NPC, SPEECH_COVER, 0);
 						NPC_StartFlee(NPC->enemy,
@@ -2799,10 +2805,10 @@ static void ST_Commander(void)
 		}
 
 		// Enemy visibility check: if we lose LOS, try to move to a clearer / covered point
-		if (TIMER_Done(NPC, "checkEnemyVisDebouncer"))
+		if (TIMER_Done(NPC, "checkEnemyVisDebouncer") == qtrue)
 		{
 			TIMER_Set(NPC, "checkEnemyVisDebouncer", Q_irand(3000, 7000));
-			if (!NPC_ClearLOS(NPC->enemy))
+			if (NPC_ClearLOS(NPC->enemy) == qfalse)
 			{
 				cp_flags |= CP_CLEAR | CP_COVER;
 			}
@@ -2812,7 +2818,7 @@ static void ST_Commander(void)
 		if (NPC->client->NPC_class != CLASS_ASSASSIN_DROID &&
 			NPC->client->NPC_class != CLASS_DROIDEKA)
 		{
-			if (TIMER_Done(NPC, "checkEnemyTooCloseDebouncer"))
+			if (TIMER_Done(NPC, "checkEnemyTooCloseDebouncer") == qtrue)
 			{
 				TIMER_Set(NPC, "checkEnemyTooCloseDebouncer", Q_irand(1000, 6000));
 
@@ -2836,7 +2842,7 @@ static void ST_Commander(void)
 					break;
 
 				case WP_CONCUSSION:
-					if (!(NPCInfo->scriptFlags & SCF_ALT_FIRE))
+					if ((NPCInfo->scriptFlags & SCF_ALT_FIRE) == 0)
 					{
 						dist_threshold = 65536.0f;
 					}
@@ -2860,7 +2866,7 @@ static void ST_Commander(void)
 		cp_flags &= ~CP_NEAREST;
 
 		// Assign combat points if we have any flags
-		if (cp_flags)
+		if (cp_flags != 0)
 		{
 			// Adjust avoidance and flags based on enemy saber usage
 			if (group->enemy->client->ps.weapon == WP_SABER &&
@@ -2999,7 +3005,7 @@ static void ST_Commander(void)
 						NPC_ST_StoreMovementSpeech(SPEECH_OUTFLANK, -1);
 					}
 				}
-				else if ((cp_flags & CP_COVER) && !(cp_flags & CP_CLEAR))
+				else if ((cp_flags & CP_COVER) && (cp_flags & CP_CLEAR) == 0)
 				{
 					NPC_ST_StoreMovementSpeech(SPEECH_COVER, -1);
 				}
@@ -3013,7 +3019,7 @@ static void ST_Commander(void)
 					{
 						float dot = 1.0f;
 
-						if (!Q_irand(0, 3))
+						if (Q_irand(0, 3) == 0)
 						{
 							vec3_t e_dir2_me;
 							vec3_t e_dir2_cp;
@@ -3032,7 +3038,7 @@ static void ST_Commander(void)
 						{
 							NPC_ST_StoreMovementSpeech(SPEECH_OUTFLANK, -1);
 						}
-						else if (!Q_irand(0, 10))
+						else if (Q_irand(0, 10) == 0)
 						{
 							NPC_ST_StoreMovementSpeech(SPEECH_YELL, 0.2f);
 						}
@@ -3044,9 +3050,9 @@ static void ST_Commander(void)
 							NPC_ST_StoreMovementSpeech(SPEECH_CHASE, 0.4f);
 						}
 					}
-					else if (!Q_irand(0, 20))
+					else if (Q_irand(0, 20) == 0)
 					{
-						if (Q_irand(0, 1))
+						if (Q_irand(0, 1) != 0)
 						{
 							NPC_ST_StoreMovementSpeech(SPEECH_OUTFLANK, -1);
 						}
@@ -3245,9 +3251,9 @@ static void Melee_GrabEnemy()
 	TIMER_Set(NPC, "grabEnemyDebounce", NPC->client->ps.torsoAnimTimer + Q_irand(4000, 20000));
 }
 
-void NPC_BSST_Attack()
+void NPC_BSST_Attack(void)
 {
-	if (!NPC || !NPCInfo)
+	if (NPC == nullptr || NPCInfo == nullptr)
 	{
 		return;
 	}
@@ -3257,13 +3263,13 @@ void NPC_BSST_Attack()
 	{
 		NPC_UpdateAngles(qtrue, qtrue);
 
-		if (NPC->client &&
+		if (NPC->client != nullptr &&
 			NPC->client->ps.torsoAnim == BOTH_KYLE_GRAB)
 		{
 			// see if we grabbed enemy
 			if (NPC->client->ps.torsoAnimTimer <= 200)
 			{
-				if (Melee_CanDoGrab() &&
+				if (Melee_CanDoGrab() == qtrue &&
 					NPC_EnemyRangeFromBolt(0) <= 88.0f)
 				{
 					// grab him!
@@ -3285,9 +3291,10 @@ void NPC_BSST_Attack()
 		return;
 	}
 
-	if (!in_camera &&
-		TIMER_Done(NPC, "flee") &&
-		NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)))
+	// Danger / flee check
+	if (in_camera == qfalse &&
+		TIMER_Done(NPC, "flee") == qtrue &&
+		NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)) == qtrue)
 	{
 		ST_Speech(NPC, SPEECH_COVER, 0);
 		NPC_CheckEvasion();
@@ -3296,7 +3303,7 @@ void NPC_BSST_Attack()
 	// If we don't have an enemy, just idle
 	if (NPC_CheckEnemyExt() == qfalse)
 	{
-		if (NPC->client && NPC->client->playerTeam == TEAM_PLAYER)
+		if (NPC->client != nullptr && NPC->client->playerTeam == TEAM_PLAYER)
 		{
 			NPC_BSPatrol();
 		}
@@ -3308,13 +3315,13 @@ void NPC_BSST_Attack()
 	}
 
 	// Periodically drop enemy if we can't see them anymore
-	if (TIMER_Done(NPC, "sje_check_enemy"))
+	if (TIMER_Done(NPC, "sje_check_enemy") == qtrue)
 	{
 		TIMER_Set(NPC, "sje_check_enemy", Q_irand(5000, 10000));
 
-		if (NPC->enemy && NPC->health > 0 && !NPC_ClearLOS(NPC->enemy))
+		if (NPC->enemy != nullptr && NPC->health > 0 && NPC_ClearLOS(NPC->enemy) == qfalse)
 		{
-			if (NPC->client)
+			if (NPC->client != nullptr)
 			{
 				NPC->enemy = nullptr;
 
@@ -3329,16 +3336,16 @@ void NPC_BSST_Attack()
 				return;
 			}
 
-			if (NPC->client)
+			if (NPC->client != nullptr)
 			{
 				// guardians have a different way to find enemies. He tries to find the quest player and his allies
 				for (int sje_it = 0; sje_it < level.maxclients; sje_it++)
 				{
 					gentity_t* allied_player = &g_entities[sje_it];
 
-					if (allied_player &&
-						allied_player->client &&
-						NPC_ClearLOS(allied_player))
+					if (allied_player != nullptr &&
+						allied_player->client != nullptr &&
+						NPC_ClearLOS(allied_player) == qtrue)
 					{
 						NPC->enemy = allied_player;
 					}
@@ -3348,7 +3355,7 @@ void NPC_BSST_Attack()
 	}
 
 	// Get our group info
-	if (TIMER_Done(NPC, "interrogating"))
+	if (TIMER_Done(NPC, "interrogating") == qtrue)
 	{
 		AI_GetGroup(NPC);
 	}
@@ -3357,10 +3364,10 @@ void NPC_BSST_Attack()
 		ST_Speech(NPC, SPEECH_YELL, 0);
 	}
 
-	if (NPCInfo->group)
+	if (NPCInfo->group != nullptr)
 	{
 		// I belong to a squad of guys - we should *always* have a group
-		if (!NPCInfo->group->processed)
+		if (NPCInfo->group->processed == qfalse)
 		{
 #if AI_TIMERS
 			int startTime = GetTime(0);
@@ -3383,8 +3390,8 @@ void NPC_BSST_Attack()
 #endif
 		}
 	}
-	else if (TIMER_Done(NPC, "flee") &&
-		NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)))
+	else if (TIMER_Done(NPC, "flee") == qtrue &&
+		NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)) == qtrue)
 	{
 		// not already fleeing, and going to run
 		ST_Speech(NPC, SPEECH_COVER, 0);
@@ -3392,20 +3399,20 @@ void NPC_BSST_Attack()
 		return;
 	}
 
-	if (!NPC->enemy)
+	if (NPC->enemy == nullptr)
 	{
 		// somehow we lost our enemy
 		NPC_BSST_Patrol();
 		return;
 	}
-	if (!NPC->enemy->inuse || !NPC->enemy->client)
+	if (NPC->enemy->inuse == qfalse || NPC->enemy->client == nullptr)
 	{
 		G_ClearEnemy(NPC);
 		NPC_BSST_Patrol();
 		return;
 	}
 
-	if (NPCInfo->goalEntity && NPCInfo->goalEntity != NPC->enemy)
+	if (NPCInfo->goalEntity != nullptr && NPCInfo->goalEntity != NPC->enemy)
 	{
 		NPCInfo->goalEntity = UpdateGoal();
 	}
@@ -3418,7 +3425,8 @@ void NPC_BSST_Attack()
 	shoot = qfalse;
 	hitAlly = qfalse;
 	VectorClear(impactPos);
-	if (!NPC->enemy || !NPC->enemy->inuse || !NPC->enemy->client)
+
+	if (NPC->enemy == nullptr || NPC->enemy->inuse == qfalse || NPC->enemy->client == nullptr)
 	{
 		G_ClearEnemy(NPC);
 		NPC_BSST_Patrol();
@@ -3431,7 +3439,7 @@ void NPC_BSST_Attack()
 	VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, enemy_dir);
 	VectorNormalize(enemy_dir);
 
-	if (NPC->client)
+	if (NPC->client != nullptr)
 	{
 		AngleVectors(NPC->client->ps.viewangles, shoot_dir, nullptr, nullptr);
 	}
@@ -3447,40 +3455,43 @@ void NPC_BSST_Attack()
 		enemyInFOV = qtrue;
 	}
 
-	// Weapon distance handling
-	if (enemyDist < MIN_ROCKET_DIST_SQUARED)
+	// Weapon distance handling (only valid if we have a client)
+	if (NPC->client != nullptr)
 	{
-		// enemy within 128
-		if ((NPC->client->ps.weapon == WP_FLECHETTE || NPC->client->ps.weapon == WP_REPEATER) &&
-			(NPCInfo->scriptFlags & SCF_ALT_FIRE))
+		if (enemyDist < MIN_ROCKET_DIST_SQUARED)
 		{
-			// shooting an explosive, but enemy too close, switch to primary fire
-			NPCInfo->scriptFlags &= ~SCF_ALT_FIRE;
-		}
-	}
-	else if (enemyDist > 65536.0f)
-	{
-		if (NPC->client->ps.weapon == WP_DISRUPTOR)
-		{
-			// sniping...
-			if (!(NPCInfo->scriptFlags & SCF_ALT_FIRE))
+			// enemy within 128
+			if ((NPC->client->ps.weapon == WP_FLECHETTE || NPC->client->ps.weapon == WP_REPEATER) &&
+				(NPCInfo->scriptFlags & SCF_ALT_FIRE))
 			{
-				NPCInfo->scriptFlags |= SCF_ALT_FIRE;
-				NPC_ChangeWeapon(NPC->client->ps.weapon);
-				NPC_UpdateAngles(qtrue, qtrue);
-				return;
+				// shooting an explosive, but enemy too close, switch to primary fire
+				NPCInfo->scriptFlags &= ~SCF_ALT_FIRE;
+			}
+		}
+		else if (enemyDist > 65536.0f)
+		{
+			if (NPC->client->ps.weapon == WP_DISRUPTOR)
+			{
+				// sniping...
+				if ((NPCInfo->scriptFlags & SCF_ALT_FIRE) == 0)
+				{
+					NPCInfo->scriptFlags |= SCF_ALT_FIRE;
+					NPC_ChangeWeapon(NPC->client->ps.weapon);
+					NPC_UpdateAngles(qtrue, qtrue);
+					return;
+				}
 			}
 		}
 	}
 
 	// Can we see our target?
-	if (NPC_ClearLOS(NPC->enemy))
+	if (NPC_ClearLOS(NPC->enemy) == qtrue)
 	{
 		AI_GroupUpdateEnemyLastSeen(NPCInfo->group, NPC->enemy->currentOrigin);
 		NPCInfo->enemyLastSeenTime = level.time;
 		enemy_los = qtrue;
 
-		if (!NPC->client || NPC->client->ps.weapon == WP_NONE)
+		if (NPC->client == nullptr || NPC->client->ps.weapon == WP_NONE)
 		{
 			enemy_cs = qfalse;
 			NPC_AimAdjust(-1);
@@ -3491,20 +3502,20 @@ void NPC_BSST_Attack()
 			if (enemyDist < MIN_ROCKET_DIST_SQUARED &&
 				level.time - NPC->lastMoveTime < 5000 &&
 				(NPC->client->ps.weapon == WP_ROCKET_LAUNCHER ||
-					(NPC->client->ps.weapon == WP_CONCUSSION && !(NPCInfo->scriptFlags & SCF_ALT_FIRE)) ||
+					(NPC->client->ps.weapon == WP_CONCUSSION && (NPCInfo->scriptFlags & SCF_ALT_FIRE) == 0) ||
 					(NPC->client->ps.weapon == WP_FLECHETTE && (NPCInfo->scriptFlags & SCF_ALT_FIRE))))
 			{
 				enemy_cs = qfalse;
 				hitAlly = qtrue; // us!
 			}
-			else if (enemyInFOV)
+			else if (enemyInFOV == qtrue)
 			{
 				const int hit = NPC_ShotEntity(NPC->enemy, impactPos);
 				const gentity_t* hit_ent = (hit >= 0 && hit < ENTITYNUM_WORLD) ? &g_entities[hit] : nullptr;
 
 				if (hit == NPC->enemy->s.number ||
-					(hit_ent && hit_ent->client && hit_ent->client->playerTeam == NPC->client->enemyTeam) ||
-					(hit_ent && hit_ent->takedamage &&
+					(hit_ent != nullptr && hit_ent->client != nullptr && hit_ent->client->playerTeam == NPC->client->enemyTeam) ||
+					(hit_ent != nullptr && hit_ent->takedamage &&
 						((hit_ent->svFlags & SVF_GLASS_BRUSH) || hit_ent->health < 40 ||
 							NPC->s.weapon == WP_EMPLACED_GUN)))
 				{
@@ -3519,7 +3530,7 @@ void NPC_BSST_Attack()
 					NPC_AimAdjust(2);
 					ST_ResolveBlockedShot(hit);
 
-					if (hit_ent && hit_ent->client &&
+					if (hit_ent != nullptr && hit_ent->client != nullptr &&
 						hit_ent->client->playerTeam == NPC->client->playerTeam)
 					{
 						// would hit an ally, don't fire
@@ -3540,18 +3551,18 @@ void NPC_BSST_Attack()
 		NPC_AimAdjust(-1);
 	}
 
-	if (!NPC->client || NPC->client->ps.weapon == WP_NONE)
+	if (NPC->client == nullptr || NPC->client->ps.weapon == WP_NONE)
 	{
 		face_enemy = qfalse;
 		shoot = qfalse;
 	}
 	else
 	{
-		if (enemy_los)
+		if (enemy_los == qtrue)
 		{
 			face_enemy = qtrue;
 		}
-		if (enemy_cs)
+		if (enemy_cs == qtrue)
 		{
 			shoot = qtrue;
 		}
@@ -3563,12 +3574,12 @@ void NPC_BSST_Attack()
 	// See if we should override shooting decision with any special considerations
 	ST_CheckFireState();
 
-	if (face_enemy)
+	if (face_enemy == qtrue)
 	{
 		NPC_FaceEnemy(qtrue);
 	}
 
-	if (!(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
+	if ((NPCInfo->scriptFlags & SCF_CHASE_ENEMIES) == 0)
 	{
 		// not supposed to chase my enemies
 		if (NPCInfo->goalEntity == NPC->enemy)
@@ -3576,12 +3587,12 @@ void NPC_BSST_Attack()
 			do_move = qfalse;
 		}
 	}
-	else if (NPC->NPC && (NPC->NPC->scriptFlags & SCF_NO_GROUPS))
+	else if (NPC->NPC != nullptr && (NPC->NPC->scriptFlags & SCF_NO_GROUPS))
 	{
-		NPCInfo->goalEntity = enemy_los ? nullptr : NPC->enemy;
+		NPCInfo->goalEntity = (enemy_los == qtrue) ? nullptr : NPC->enemy;
 	}
 
-	if (NPC->client && NPC->client->fireDelay && NPC->s.weapon == WP_ROCKET_LAUNCHER)
+	if (NPC->client != nullptr && NPC->client->fireDelay && NPC->s.weapon == WP_ROCKET_LAUNCHER)
 	{
 		do_move = qfalse;
 	}
@@ -3589,45 +3600,52 @@ void NPC_BSST_Attack()
 	if (!ucmd.rightmove)
 	{
 		// only if not already strafing
-		if (!TIMER_Done(NPC, "strafeLeft"))
+		if (TIMER_Done(NPC, "strafeLeft") == qfalse)
 		{
 			ucmd.rightmove = -127;
-			VectorClear(NPC->client->ps.moveDir);
+			if (NPC->client != nullptr)
+			{
+				VectorClear(NPC->client->ps.moveDir);
+			}
 			do_move = qfalse;
 		}
-		else if (!TIMER_Done(NPC, "strafeRight"))
+		else if (TIMER_Done(NPC, "strafeRight") == qfalse)
 		{
 			ucmd.rightmove = 127;
-			VectorClear(NPC->client->ps.moveDir);
+			if (NPC->client != nullptr)
+			{
+				VectorClear(NPC->client->ps.moveDir);
+			}
 			do_move = qfalse;
 		}
 	}
 
-	if (NPC->client &&
+	if (NPC->client != nullptr &&
 		NPC->client->ps.legsAnim == BOTH_GUARD_LOOKAROUND1)
 	{
 		do_move = qfalse;
 	}
 
-	if (do_move)
+	if (do_move == qtrue)
 	{
-		if (NPCInfo->goalEntity)
+		if (NPCInfo->goalEntity != nullptr)
 		{
 			do_move = ST_Move();
 
-			if ((NPC->client->NPC_class != CLASS_ROCKETTROOPER ||
+			if ((NPC->client == nullptr ||
+				NPC->client->NPC_class != CLASS_ROCKETTROOPER ||
 				NPC->s.weapon != WP_ROCKET_LAUNCHER ||
 				enemyDist < MIN_ROCKET_DIST_SQUARED) &&
 				ucmd.forwardmove <= -32)
 			{
 				// moving backwards at least 45 degrees
-				if (NPCInfo->goalEntity &&
+				if (NPCInfo->goalEntity != nullptr &&
 					DistanceSquared(NPCInfo->goalEntity->currentOrigin, NPC->currentOrigin) >
 					MIN_TURN_AROUND_DIST_SQ)
 				{
-					if (TIMER_Done(NPC, "runBackwardsDebounce"))
+					if (TIMER_Done(NPC, "runBackwardsDebounce") == qtrue)
 					{
-						if (!TIMER_Exists(NPC, "runningBackwards"))
+						if (TIMER_Exists(NPC, "runningBackwards") == qfalse)
 						{
 							TIMER_Set(NPC, "runningBackwards", Q_irand(500, 1000));
 						}
@@ -3645,10 +3663,10 @@ void NPC_BSST_Attack()
 		}
 	}
 
-	if (!do_move)
+	if (do_move == qfalse)
 	{
 		// Safety: NPC->client may be NULL for some entity types
-		if (NPC->client != NULL)
+		if (NPC->client != nullptr)
 		{
 			if (NPC->client->NPC_class != CLASS_ASSASSIN_DROID &&
 				NPC->client->NPC_class != CLASS_DROIDEKA)
@@ -3666,24 +3684,25 @@ void NPC_BSST_Attack()
 	}
 
 	// SLAP (generic gunner bash)
-	if (!Q_irand(0, 3) &&
+	if (NPC->client != nullptr &&
+		Q_irand(0, 3) == 0 &&
 		g_SerenityJediEngineMode->integer > 0 &&
 		g_allowgunnerbash->integer > 0 &&
 		char_can_gun_bash(NPC) &&
 		NPC->client->NPC_class != CLASS_SBD &&
-		!PM_InKnockDown(&NPC->client->ps))
+		PM_InKnockDown(&NPC->client->ps) == qfalse)
 	{
 		if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 ||
 			NPC->client->ps.torsoAnim == BOTH_A7_HILT)
 		{
 			shoot = qfalse;
 
-			if (TIMER_Done(NPC, "smackTime") &&
+			if (TIMER_Done(NPC, "smackTime") == qtrue &&
 				!NPCInfo->blockedDebounceTime)
 			{
 				if (enemyDist < MELEE_DIST_SQUARED &&
 					!NPC->client->ps.weaponTime &&
-					!PM_InKnockDown(&NPC->client->ps) &&
+					PM_InKnockDown(&NPC->client->ps) == qfalse &&
 					InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
 						NPC->client->ps.viewangles, 0.3f))
 				{
@@ -3706,11 +3725,11 @@ void NPC_BSST_Attack()
 		{
 			if (enemyDist < MELEE_DIST_SQUARED &&
 				!NPC->client->ps.weaponTime &&
-				!PM_InKnockDown(&NPC->client->ps) &&
+				PM_InKnockDown(&NPC->client->ps) == qfalse &&
 				InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
 					NPC->client->ps.viewangles, 0.3f))
 			{
-				if (TIMER_Done(NPC, "slapattackDelay"))
+				if (TIMER_Done(NPC, "slapattackDelay") == qtrue)
 				{
 					int swing_anim;
 
@@ -3746,22 +3765,23 @@ void NPC_BSST_Attack()
 	}
 
 	// SBD slap
-	if (g_SerenityJediEngineMode->integer > 0 &&
+	if (NPC->client != nullptr &&
+		g_SerenityJediEngineMode->integer > 0 &&
 		g_allowgunnerbash->integer > 0 &&
 		NPC->client->NPC_class == CLASS_SBD &&
-		!PM_InKnockDown(&NPC->client->ps))
+		PM_InKnockDown(&NPC->client->ps) == qfalse)
 	{
 		if (NPC->client->ps.torsoAnim == BOTH_SLAP_R ||
 			NPC->client->ps.torsoAnim == BOTH_SLAP_L)
 		{
 			shoot = qfalse;
 
-			if (TIMER_Done(NPC, "smackTime") &&
+			if (TIMER_Done(NPC, "smackTime") == qtrue &&
 				!NPCInfo->blockedDebounceTime)
 			{
 				if (enemyDist < MELEE_DIST_SQUARED &&
 					!NPC->client->ps.weaponTime &&
-					!PM_InKnockDown(&NPC->client->ps) &&
+					PM_InKnockDown(&NPC->client->ps) == qfalse &&
 					InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
 						NPC->client->ps.viewangles, 0.3f))
 				{
@@ -3784,11 +3804,11 @@ void NPC_BSST_Attack()
 		{
 			if (enemyDist < MELEE_DIST_SQUARED &&
 				!NPC->client->ps.weaponTime &&
-				!PM_InKnockDown(&NPC->client->ps) &&
+				PM_InKnockDown(&NPC->client->ps) == qfalse &&
 				InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
 					NPC->client->ps.viewangles, 0.3f))
 			{
-				if (TIMER_Done(NPC, "slapattackDelay"))
+				if (TIMER_Done(NPC, "slapattackDelay") == qtrue)
 				{
 					int swing_anim;
 
@@ -3823,22 +3843,24 @@ void NPC_BSST_Attack()
 		}
 	}
 
-	// Reborn gunners vs saber users
-	if (NPC->client->NPC_class == CLASS_REBORN &&
+	// Reborn gunners vs saber users (NULL-safe)
+	if (NPC->client != nullptr &&
+		NPC->enemy != nullptr &&
+		NPC->client->NPC_class == CLASS_REBORN &&
 		NPCInfo->rank >= RANK_LT_COMM &&
 		NPC->enemy->s.weapon == WP_SABER)
 	{
 		npc_evasion_saber();
 	}
 
-	if (do_move && !TIMER_Done(NPC, "runBackwardsDebounce"))
+	if (do_move == qtrue && TIMER_Done(NPC, "runBackwardsDebounce") == qfalse)
 	{
 		face_enemy = qfalse;
 	}
 
-	if (!face_enemy)
+	if (face_enemy == qfalse)
 	{
-		if (!do_move && NPC->client)
+		if (do_move == qfalse && NPC->client != nullptr)
 		{
 			VectorCopy(NPC->client->ps.viewangles, NPCInfo->lastPathAngles);
 		}
@@ -3847,7 +3869,7 @@ void NPC_BSST_Attack()
 		NPCInfo->desiredPitch = 0.0f;
 		NPC_UpdateAngles(qtrue, qtrue);
 
-		if (do_move)
+		if (do_move == qtrue)
 		{
 			shoot = qfalse;
 		}
@@ -3858,7 +3880,7 @@ void NPC_BSST_Attack()
 		shoot = qfalse;
 	}
 
-	if (NPC->enemy && NPC->enemy->enemy)
+	if (NPC->enemy != nullptr && NPC->enemy->enemy != nullptr)
 	{
 		if (NPC->enemy->s.weapon == WP_SABER &&
 			NPC->enemy->enemy->s.weapon == WP_SABER)
@@ -3868,7 +3890,7 @@ void NPC_BSST_Attack()
 		}
 	}
 
-	if (NPC->client->fireDelay)
+	if (NPC->client != nullptr && NPC->client->fireDelay)
 	{
 		if (NPC->client->NPC_class == CLASS_SABOTEUR)
 		{
@@ -3876,9 +3898,9 @@ void NPC_BSST_Attack()
 		}
 
 		if (NPC->s.weapon == WP_ROCKET_LAUNCHER ||
-			(NPC->s.weapon == WP_CONCUSSION && !(NPCInfo->scriptFlags & SCF_ALT_FIRE)))
+			(NPC->s.weapon == WP_CONCUSSION && (NPCInfo->scriptFlags & SCF_ALT_FIRE) == 0))
 		{
-			if (!enemy_los || !enemy_cs)
+			if (enemy_los == qfalse || enemy_cs == qfalse)
 			{
 				NPC->client->fireDelay = 0;
 			}
@@ -3888,16 +3910,16 @@ void NPC_BSST_Attack()
 			}
 		}
 	}
-	else if (shoot)
+	else if (shoot == qtrue)
 	{
-		if (NPC->client->NPC_class == CLASS_SABOTEUR)
+		if (NPC->client != nullptr && NPC->client->NPC_class == CLASS_SABOTEUR)
 		{
 			Saboteur_Decloak(NPC);
 		}
 
-		if (TIMER_Done(NPC, "attackDelay"))
+		if (TIMER_Done(NPC, "attackDelay") == qtrue)
 		{
-			if (!(NPCInfo->scriptFlags & SCF_FIRE_WEAPON))
+			if ((NPCInfo->scriptFlags & SCF_FIRE_WEAPON) == 0)
 			{
 				WeaponThink();
 			}
@@ -3905,9 +3927,9 @@ void NPC_BSST_Attack()
 			if (NPC->s.weapon == WP_ROCKET_LAUNCHER)
 			{
 				if ((ucmd.buttons & BUTTON_ATTACK) &&
-					!do_move &&
+					do_move == qfalse &&
 					g_spskill->integer > 1 &&
-					!Q_irand(0, 3))
+					Q_irand(0, 3) == 0)
 				{
 					ucmd.buttons &= ~BUTTON_ATTACK;
 					ucmd.buttons |= BUTTON_ALT_ATTACK;
@@ -3919,13 +3941,17 @@ void NPC_BSST_Attack()
 			{
 				ucmd.buttons &= ~BUTTON_ATTACK;
 				ucmd.buttons |= BUTTON_ALT_ATTACK;
-				NPC->client->fireDelay = Q_irand(1500, 2000);
+				if (NPC->client != nullptr)
+				{
+					NPC->client->fireDelay = Q_irand(1500, 2000);
+				}
 			}
 		}
 	}
 	else
 	{
 		if (NPC->attackDebounceTime < level.time &&
+			NPC->client != nullptr &&
 			NPC->client->NPC_class == CLASS_SABOTEUR)
 		{
 			Saboteur_Cloak(NPC);

@@ -4566,7 +4566,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	{
 		gi.Printf(S_COLOR_YELLOW "combatant %s died, killer anim = %s\n",
 			self->targetname,
-			anim_table[attacker->client->ps.torsoAnim].name);
+			animTable[attacker->client->ps.torsoAnim].name);
 	}
 #endif
 

@@ -286,7 +286,7 @@ qboolean G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** o
 	int i;
 	vec3_t mins{}, maxs{};
 	vec3_t pusherMins, pusherMaxs, totalMins{}, totalMaxs{};
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 
 	*obstacle = nullptr;
 

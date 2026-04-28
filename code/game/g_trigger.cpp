@@ -707,6 +707,11 @@ constexpr auto PUSH_CONVEYOR = 32;
 
 void trigger_push_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 {
+	if (self == nullptr || other == nullptr)
+	{
+		return;
+	}
+
 	if (self->svFlags & SVF_INACTIVE)
 	{
 		//set by target_deactivate
@@ -718,8 +723,8 @@ void trigger_push_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 		if (self->spawnflags & 2048) // MULTIPLE - allow multiple entities to touch this trigger in one frame
 		{
 			if (self->painDebounceTime && level.time > self->painDebounceTime)
-				// if we haven't reached the next frame continue to let ents touch the trigger
 			{
+				// if we haven't reached the next frame continue to let ents touch the trigger
 				return;
 			}
 		}
@@ -730,7 +735,7 @@ void trigger_push_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 	}
 
 	// if the player has already activated this trigger this frame
-	if (other && !other->s.number && self->aimDebounceTime == level.time)
+	if (!other->s.number && self->aimDebounceTime == level.time)
 	{
 		return;
 	}
@@ -764,7 +769,7 @@ void trigger_push_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 		}
 	}
 
-	if (!(other->client))
+	if (other->client == nullptr)
 	{
 		if (other->s.pos.trType != TR_STATIONARY &&
 			other->s.pos.trType != TR_LINEAR_STOP &&
@@ -818,7 +823,7 @@ void trigger_push_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 	{
 		self->painDebounceTime = level.time;
 	}
-	if (other && !other->s.number)
+	if (!other->s.number)
 	{
 		// mark that the player has activated this trigger this frame
 		self->aimDebounceTime = level.time;
@@ -1236,6 +1241,11 @@ void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 	int dflags;
 	int actual_dmg = self->damage;
 
+	if (self == nullptr || other == nullptr)
+	{
+		return;
+	}
+
 	if (self->svFlags & SVF_INACTIVE)
 	{
 		//set by target_deactivate
@@ -1252,8 +1262,8 @@ void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 		if (self->spawnflags & 2048) // MULTIPLE - allow multiple entities to touch this trigger in one frame
 		{
 			if (self->painDebounceTime && level.time > self->painDebounceTime)
-				// if we haven't reached the next frame continue to let ents touch the trigger
 			{
+				// if we haven't reached the next frame continue to let ents touch the trigger
 				return;
 			}
 		}
@@ -1264,7 +1274,7 @@ void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 	}
 
 	// if the player has already activated this trigger this frame
-	if (other && !other->s.number && self->aimDebounceTime == level.time)
+	if (!other->s.number && self->aimDebounceTime == level.time)
 	{
 		return;
 	}
@@ -1328,7 +1338,7 @@ void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 
 	if (actual_dmg)
 	{
-		if (self->spawnflags & 64 && other->client) //electrical damage
+		if ((self->spawnflags & 64) && other->client) //electrical damage
 		{
 			// zap effect
 			other->s.powerups |= 1 << PW_SHOCKED;
@@ -1341,7 +1351,7 @@ void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 		if (self->spawnflags & 32)
 		{
 			//falling death
-			if (other->client->NPC_class == (CLASS_BOBAFETT | CLASS_MANDALORIAN | CLASS_JANGO | CLASS_JANGODUAL | CLASS_ROCKETTROOPER))
+			if (other->client && (other->client->NPC_class == (CLASS_BOBAFETT | CLASS_MANDALORIAN | CLASS_JANGO | CLASS_JANGODUAL | CLASS_ROCKETTROOPER)))
 			{
 				//boba never falls to his death!
 				JET_FlyStart(other);
@@ -1382,11 +1392,11 @@ void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 		{
 			G_Damage(other, self, self, nullptr, nullptr, actual_dmg, dflags, MOD_TRIGGER_HURT);
 		}
-		if (other && !other->s.number)
+		if (!other->s.number)
 		{
 			self->aimDebounceTime = level.time;
 		}
-		if (self->spawnflags & 64 && other->client && other->health <= 0) //electrical damage
+		if ((self->spawnflags & 64) && other->client && other->health <= 0) //electrical damage
 		{
 			//just killed them, make the effect last longer since dead clients don't touch triggers
 			other->client->ps.powerups[PW_SHOCKED] = level.time + 10000;
@@ -1552,7 +1562,7 @@ void shipboundary_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 
 void shipboundary_think(gentity_t* ent)
 {
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 	int i = 0;
 
 	ent->nextthink = level.time + 100;

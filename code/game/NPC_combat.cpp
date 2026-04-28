@@ -611,6 +611,13 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 		return;
 	}
 
+	// NPC with no client: just store enemy and bail (prevents NULL deref)
+	if (!self->client)
+	{
+		self->enemy = enemy;
+		return;
+	}
+
 	// Can't pick up enemies if confused
 	if (self->NPC->confusionTime > level.time)
 	{
@@ -618,15 +625,15 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 	}
 
 #ifdef _DEBUG
-	if (self->s.number)
+	if (self->s.number && enemy == self)
 	{
-		assert(enemy != self);
+		gi.Printf("G_SetEnemy: entity %d tried to set itself as enemy\n", self->s.number);
+		return;
 	}
 #endif
 
 	// Prevent friendly targeting unless charmed or special cases
-	if (self->client &&
-		enemy->client &&
+	if (enemy->client &&
 		enemy->client->playerTeam == self->client->playerTeam)
 	{
 		// Probably a script; ignore if charmed
@@ -650,8 +657,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 	}
 
 	// Jedi aggression setup when getting a new enemy
-	if (self->client &&
-		self->client->ps.weapon == WP_SABER)
+	if (self->client->ps.weapon == WP_SABER)
 	{
 		NPC_Jedi_RateNewEnemy(self, enemy);
 	}
@@ -660,7 +666,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 	if (!self->enemy)
 	{
 		// TEMP HACK: turn on our saber
-		if (self->health > 0 && self->client)
+		if (self->health > 0)
 		{
 			self->client->ps.SaberActivate();
 		}
@@ -670,15 +676,14 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 		self->enemy = enemy;
 
 		// Saboteur: cloak and delay decloak
-		if (self->client && self->client->NPC_class == CLASS_SABOTEUR)
+		if (self->client->NPC_class == CLASS_SABOTEUR)
 		{
 			Saboteur_Cloak(self);
 			TIMER_Set(self, "decloakwait", 3000);
 		}
 
 		// Special case – player hunted by own people (JKA version)
-		if (self->client &&
-			self->client->playerTeam == TEAM_PLAYER &&
+		if (self->client->playerTeam == TEAM_PLAYER &&
 			enemy->s.number == 0 &&
 			enemy->client &&
 			enemy->client->ps.weapon != WP_TURRET &&
@@ -692,15 +697,13 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 		// Anger script or voice events
 		if (!G_ActivateBehavior(self, BSET_ANGER))
 		{
-			if (self->client &&
-				self->client->NPC_class == CLASS_KYLE &&
+			if (self->client->NPC_class == CLASS_KYLE &&
 				self->client->leader == player &&
 				!TIMER_Done(self, "kyleAngerSoundDebounce"))
 			{
 				// Don't yell more than once every few seconds
 			}
-			else if (self->client &&
-				enemy->client &&
+			else if (enemy->client &&
 				self->client->playerTeam != enemy->client->playerTeam)
 			{
 				if (self->forcePushTime < level.time) // not currently being pushed
@@ -751,8 +754,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 
 				if (event)
 				{
-					if (self->client &&
-						self->client->NPC_class == CLASS_KYLE &&
+					if (self->client->NPC_class == CLASS_KYLE &&
 						self->client->leader == player)
 					{
 						TIMER_Set(self, "kyleAngerSoundDebounce", Q_irand(4000, 8000));
@@ -763,23 +765,22 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 		}
 
 		// Initial aim error when first getting mad with ranged weapons
-		if (self->client &&
-			(self->s.weapon == WP_BLASTER ||
-				self->s.weapon == WP_REPEATER ||
-				self->s.weapon == WP_THERMAL ||
-				self->s.weapon == WP_BLASTER_PISTOL ||
-				self->s.weapon == WP_DUAL_PISTOL ||
-				self->s.weapon == WP_DUAL_CLONEPISTOL ||
-				self->s.weapon == WP_DROIDEKA ||
-				self->s.weapon == WP_BOWCASTER ||
-				self->s.weapon == WP_BATTLEDROID ||
-				self->s.weapon == WP_CLONECARBINE ||
-				self->s.weapon == WP_REBELBLASTER ||
-				self->s.weapon == WP_CLONERIFLE ||
-				self->s.weapon == WP_CLONECOMMANDO ||
-				self->s.weapon == WP_Z6_ROTARY_CANNON ||
-				self->s.weapon == WP_REBELRIFLE ||
-				self->s.weapon == WP_BOBA))
+		if (self->s.weapon == WP_BLASTER ||
+			self->s.weapon == WP_REPEATER ||
+			self->s.weapon == WP_THERMAL ||
+			self->s.weapon == WP_BLASTER_PISTOL ||
+			self->s.weapon == WP_DUAL_PISTOL ||
+			self->s.weapon == WP_DUAL_CLONEPISTOL ||
+			self->s.weapon == WP_DROIDEKA ||
+			self->s.weapon == WP_BOWCASTER ||
+			self->s.weapon == WP_BATTLEDROID ||
+			self->s.weapon == WP_CLONECARBINE ||
+			self->s.weapon == WP_REBELBLASTER ||
+			self->s.weapon == WP_CLONERIFLE ||
+			self->s.weapon == WP_CLONECOMMANDO ||
+			self->s.weapon == WP_Z6_ROTARY_CANNON ||
+			self->s.weapon == WP_REBELRIFLE ||
+			self->s.weapon == WP_BOBA)
 		{
 			if (self->client->playerTeam == TEAM_PLAYER)
 			{
@@ -811,15 +812,17 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 		}
 
 		// Alert anyone else in the area (except special holodeck enemies)
-		if (Q_stricmp("desperado", self->NPC_type) != 0 &&
-			Q_stricmp("paladin", self->NPC_type) != 0)
+		if (Q_stricmp("STCommander", self->NPC_type) != 0 &&
+			Q_stricmp("ImpCommander", self->NPC_type) != 0)
 		{
-			if (!(self->client->ps.eFlags & EF_FORCE_GRIPPED) &&
+			if (self->client &&                      
+				!(self->client->ps.eFlags & EF_FORCE_GRIPPED) &&
 				!(self->client->ps.eFlags & EF_FORCE_GRASPED))
 			{
 				G_AngerAlert(self);
 			}
 		}
+
 
 		// Saber allies may hold back; others get an attack delay
 		if (!G_CheckSaberAllyAttackDelay(self, enemy))
@@ -828,8 +831,7 @@ void G_SetEnemy(gentity_t* self, gentity_t* enemy)
 		}
 
 		// Imperial holster hack: auto‑draw a blaster‑type weapon
-		if (self->client &&
-			self->client->ps.weapon == WP_NONE &&
+		if (self->client->ps.weapon == WP_NONE &&
 			!Q_stricmpn(self->NPC_type, "imp", 3) &&
 			!(self->NPC->scriptFlags & SCF_FORCED_MARCH))
 		{

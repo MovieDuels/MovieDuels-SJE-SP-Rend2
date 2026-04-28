@@ -77,7 +77,7 @@ extern sfxHandle_t	trap_S_RegisterSound(const char* sample);		// returns buzz if
 #include "../namespace_end.h"
 #endif
 
-extern stringID_table_t anim_table[MAX_ANIMATIONS + 1];
+extern stringID_table_t animTable[MAX_ANIMATIONS + 1];
 
 // These buffers are filled in with the same contents and then just read from in
 // a few places. We only need one copy on Xbox.
@@ -265,7 +265,7 @@ static qboolean BG_ParseVehWeaponParm(vehWeaponInfo_t* vehWeapon, const char* pa
 		break;
 	case VF_ANIM:
 	{
-		const int anim = GetIDForString(anim_table, value);
+		const int anim = GetIDForString(animTable, value);
 		*reinterpret_cast<int*>(b + vehWeaponField->ofs) = anim;
 	}
 	break;
@@ -905,7 +905,7 @@ static qboolean BG_ParseVehicleParm(vehicleInfo_t* vehicle, const char* parmName
 		break;
 	case VF_ANIM:
 	{
-		const int anim = GetIDForString(anim_table, value);
+		const int anim = GetIDForString(animTable, value);
 		*reinterpret_cast<int*>(b + vehField->ofs) = anim;
 	}
 	break;

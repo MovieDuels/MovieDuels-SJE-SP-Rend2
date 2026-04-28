@@ -70,14 +70,14 @@ void WP_FireBryarPistol(gentity_t* ent, const qboolean alt_fire)
 	{
 		// Vehicles: no inherent aim screw up.
 	}
-	else if (NPC_IsNotHavingEnoughForceSight(ent))
+	else if (NPC_IsNotHavingEnoughForceSight(ent) == qtrue && ent->client != NULL)
 	{
 		// Force Sight 2+ gives perfect aim; below that we add spread.
 		vec3_t angs;
 		vectoangles(forward_vec, angs);
 
 		const qboolean is_player_or_controlled =
-			(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent) == qtrue)
+			((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
 			? qtrue
 			: qfalse;
 
@@ -262,14 +262,14 @@ void WP_FireBryarPistolDuals(gentity_t* ent, const qboolean alt_fire, const qboo
 	{
 		// Vehicles: no inherent aim screw up.
 	}
-	else if (NPC_IsNotHavingEnoughForceSight(ent))
+	else if (NPC_IsNotHavingEnoughForceSight(ent) == qtrue && ent->client != NULL)
 	{
 		// Force Sight 2+ gives perfect aim; below that we add spread.
 		vec3_t angs;
 		vectoangles(forward_vec, angs);
 
 		const qboolean is_player_or_controlled =
-			(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent) == qtrue)
+			((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
 			? qtrue
 			: qfalse;
 
@@ -360,7 +360,7 @@ void WP_FireBryarPistolDuals(gentity_t* ent, const qboolean alt_fire, const qboo
 	// Weapon identity: Bryar vs Blaster Pistol / Jawa.
 	if (ent->s.weapon == WP_BRYAR_PISTOL || ent->s.weapon == WP_JAWA)
 	{
-		//*SIGH*... I hate our weapon system...
+		// *SIGH*... I hate our weapon system...
 		missile->s.weapon = ent->s.weapon;
 	}
 	else
@@ -815,88 +815,130 @@ void WP_FireReyPistolDuals(gentity_t* ent, const qboolean alt_fire, const qboole
 void WP_FireClonePistol(gentity_t* ent, const qboolean alt_fire)
 //---------------------------------------------------------
 {
-	vec3_t start;
-	int damage = !alt_fire ? weaponData[WP_CLONEPISTOL].damage : weaponData[WP_CLONEPISTOL].altDamage;
-
-	VectorCopy(muzzle, start);
-	WP_TraceSetStart(ent, start);
-	//make sure our start point isn't on the other side of a wall
-
-	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+	// Validate caller.
+	if (ent == NULL)
 	{
-		//no inherent aim screw up
+		return;
 	}
-	else if (NPC_IsNotHavingEnoughForceSight(ent))
-	{//force sight 2+ gives perfect aim
-		vec3_t angs;
 
+	// Starting point of the shot.
+	vec3_t start;
+	VectorCopy(muzzle, start);
+
+	// Base damage (primary vs alt).
+	int damage = (alt_fire == qfalse)
+		? weaponData[WP_CLONEPISTOL].damage
+		: weaponData[WP_CLONEPISTOL].altDamage;
+
+	// Make sure our start point isn't on the other side of a wall.
+	WP_TraceSetStart(ent, start);
+
+	// ---------------------------------------------------------------------
+	// AIM / SPREAD LOGIC
+	// ---------------------------------------------------------------------
+	if (ent->client != NULL && ent->client->NPC_class == CLASS_VEHICLE)
+	{
+		// Vehicles: no inherent aim screw up.
+	}
+	else if (NPC_IsNotHavingEnoughForceSight(ent) == qtrue && ent->client != NULL)
+	{
+		// Force Sight 2+ gives perfect aim; below that we add spread.
+		vec3_t angs;
 		vectoangles(forward_vec, angs);
 
-		if (alt_fire)
+		const qboolean is_player_or_controlled =
+			((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
+			? qtrue
+			: qfalse;
+
+		if (alt_fire == qtrue)
 		{
-			if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
+			if (is_player_or_controlled == qtrue)
 			{
-				if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-				{ // running or very fatigued
+				// Player / controlled entity alt-fire spread.
+				if (PM_RunningAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+				{
+					// Running or very fatigued.
 					angs[PITCH] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
 					angs[YAW] += Q_flrand(-1.5f, 1.5f) * RUNNING_SPREAD;
 				}
-				else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVY)
-				{//walking or fatigued a bit
+				else if (PM_WalkingAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HEAVY)
+				{
+					// Walking or somewhat fatigued.
 					angs[PITCH] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
 					angs[YAW] += Q_flrand(-1.2f, 1.2f) * WALKING_SPREAD;
 				}
 				else
-				{// just standing
+				{
+					// Standing still.
 					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 					angs[YAW] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 				}
 			}
 			else
-			{// add some slop to the alt-fire direction for NPC,s
+			{
+				// NPC alt-fire spread.
 				angs[PITCH] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 				angs[YAW] += Q_flrand(-1.0f, 1.0f) * BLASTER_ALT_SPREAD;
 			}
 		}
 		else
 		{
-			if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
+			if (is_player_or_controlled == qtrue)
 			{
-				if (PM_RunningAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
-				{ // running or very fatigued
+				// Player / controlled entity primary-fire spread.
+				if (PM_RunningAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_FULL)
+				{
+					// Running or very fatigued.
 					angs[PITCH] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
 					angs[YAW] += Q_flrand(-1.2f, 1.2f) * RUNNING_SPREAD;
 				}
-				else if (PM_WalkingAnim(ent->client->ps.legsAnim) || ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
-				{//walking or fatigued a bit
+				else if (PM_WalkingAnim(ent->client->ps.legsAnim) ||
+					ent->client->ps.BlasterAttackChainCount >= BLASTERMISHAPLEVEL_HALF)
+				{
+					// Walking or somewhat fatigued.
 					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
 					angs[YAW] += Q_flrand(-1.0f, 1.0f) * WALKING_SPREAD;
 				}
 				else
-				{// just standing
+				{
+					// Standing still.
 					angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BLASTER_MAIN_SPREAD;
 					angs[YAW] += Q_flrand(-0.5f, 0.5f) * BLASTER_MAIN_SPREAD;
 				}
 			}
 			else
-			{// add some slop to the fire direction for NPC,s
+			{
+				// NPC primary-fire spread.
 				angs[PITCH] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
 				angs[YAW] += Q_flrand(-0.5f, 0.5f) * BLASTER_NPC_SPREAD;
 			}
 		}
 
-		AngleVectors(angs, forward_vec, nullptr, nullptr);
+		AngleVectors(angs, forward_vec, NULL, NULL);
 	}
 
+	// Provide target hinting for homing / assist logic.
 	WP_MissileTargetHint(ent, start, forward_vec);
 
+	// ---------------------------------------------------------------------
+	// MISSILE CREATION
+	// ---------------------------------------------------------------------
 	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	if (missile == NULL)
+	{
+		return;
+	}
 
 	missile->classname = "clone_proj";
-	if (ent->s.weapon == WP_BLASTER_PISTOL
-		|| ent->s.weapon == WP_JAWA)
+
+	// Weapon identity: Clone pistol vs Blaster Pistol / Jawa.
+	if (ent->s.weapon == WP_BLASTER_PISTOL || ent->s.weapon == WP_JAWA)
 	{
-		//*SIGH*... I hate our weapon system...
+		// *SIGH*... I hate our weapon system...
 		missile->s.weapon = ent->s.weapon;
 	}
 	else
@@ -904,7 +946,10 @@ void WP_FireClonePistol(gentity_t* ent, const qboolean alt_fire)
 		missile->s.weapon = WP_CLONEPISTOL;
 	}
 
-	if (alt_fire)
+	// ---------------------------------------------------------------------
+	// ALT-FIRE CHARGE LOGIC
+	// ---------------------------------------------------------------------
+	if (alt_fire == qtrue && ent->client != NULL)
 	{
 		int count = (level.time - ent->client->ps.weaponChargeTime) / BRYAR_CHARGE_UNIT;
 
@@ -918,13 +963,18 @@ void WP_FireClonePistol(gentity_t* ent, const qboolean alt_fire)
 		}
 
 		damage *= count;
-		missile->count = count; // this will get used in the projectile rendering code to make a beefier effect
+
+		// Used in projectile rendering to make a beefier effect.
+		missile->count = count;
 	}
 
+	// ---------------------------------------------------------------------
+	// DAMAGE / DEATH SETUP
+	// ---------------------------------------------------------------------
 	missile->damage = damage;
 	missile->dflags = DAMAGE_DEATH_KNOCKBACK;
 
-	if (alt_fire)
+	if (alt_fire == qtrue)
 	{
 		missile->methodOfDeath = MOD_CLONEPISTOL_ALT;
 	}
@@ -933,15 +983,14 @@ void WP_FireClonePistol(gentity_t* ent, const qboolean alt_fire)
 		missile->methodOfDeath = MOD_CLONEPISTOL;
 	}
 
+	// Collision and bounce behaviour.
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
-
-	// we don't want it to bounce forever
 	missile->bounceCount = 8;
 
+	// Dual pistols: toggle muzzle point between the two pistols each time he fires.
 	if (ent->weaponModel[1] > 0)
 	{
-		//dual pistols, toggle the muzzle point back and forth between the two pistols each time he fires
-		ent->count = ent->count ? 0 : 1;
+		ent->count = (ent->count != 0) ? 0 : 1;
 	}
 }
 
@@ -1525,14 +1574,14 @@ void WP_FireJawaPistol(gentity_t* ent, const qboolean alt_fire)
 	{
 		// Vehicles: no inherent aim screw up.
 	}
-	else if (NPC_IsNotHavingEnoughForceSight(ent))
+	else if (NPC_IsNotHavingEnoughForceSight(ent) == qtrue && ent->client != NULL)
 	{
 		// Force Sight < 2 → apply spread.
 		vec3_t angs;
 		vectoangles(forward_vec, angs);
 
 		const qboolean is_player_or_controlled =
-			(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent) == qtrue)
+			((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
 			? qtrue
 			: qfalse;
 
@@ -1588,7 +1637,7 @@ void WP_FireJawaPistol(gentity_t* ent, const qboolean alt_fire)
 						ent->client->NPC_class == CLASS_WOOKIE ||
 						ent->client->NPC_class == CLASS_BATTLEDROID))
 				{
-					float npc_spread = BLASTER_NPC_SPREAD + (1 - ent->NPC->currentAim) * 0.25f;
+					const float npc_spread = BLASTER_NPC_SPREAD + (1.0f - ent->NPC->currentAim) * 0.25f;
 
 					angs[PITCH] += Q_flrand(-1.0f, 1.0f) * npc_spread;
 					angs[YAW] += Q_flrand(-1.0f, 1.0f) * npc_spread;

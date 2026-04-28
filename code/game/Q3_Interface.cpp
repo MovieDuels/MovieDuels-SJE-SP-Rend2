@@ -900,7 +900,7 @@ static char* Q3_GetAnimLower(const gentity_t* ent)
 
 	const int anim = ent->client->ps.legsAnim;
 
-	return const_cast<char*>(GetStringForID(anim_table, anim));
+	return const_cast<char*>(GetStringForID(animTable, anim));
 }
 
 /*
@@ -919,7 +919,7 @@ static char* Q3_GetAnimUpper(const gentity_t* ent)
 
 	const int anim = ent->client->ps.torsoAnim;
 
-	return const_cast<char*>(GetStringForID(anim_table, anim));
+	return const_cast<char*>(GetStringForID(animTable, anim));
 }
 
 /*
@@ -2231,7 +2231,7 @@ Sets the upper animation of an entity
 */
 qboolean Q3_SetAnimUpper(const int entID, const char* anim_name)
 {
-	const int animID = GetIDForString(anim_table, anim_name);
+	const int animID = GetIDForString(animTable, anim_name);
 
 	if (animID == -1)
 	{
@@ -2260,7 +2260,7 @@ qboolean Q3_SetAnimLower(const int entID, const char* anim_name)
 {
 	//FIXME: Setting duck anim does not actually duck!
 
-	const int animID = GetIDForString(anim_table, anim_name);
+	const int animID = GetIDForString(animTable, anim_name);
 
 	if (animID == -1)
 	{
@@ -10124,16 +10124,16 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 
 		//////////
 	case SET_ANIM_LOWER_FORCED:
-		ent->client->ps.forceLowerAnim = GetIDForString(anim_table, data);
+		ent->client->ps.forceLowerAnim = GetIDForString(animTable, data);
 		return; //Don't call it back
 
 	case SET_ANIM_UPPER_FORCED:
-		ent->client->ps.forceUpperAnim = GetIDForString(anim_table, data);
+		ent->client->ps.forceUpperAnim = GetIDForString(animTable, data);
 		return; //Don't call it back
 
 	case SET_ANIM_BOTH_FORCED:
-		ent->client->ps.forceUpperAnim = GetIDForString(anim_table, data);
-		ent->client->ps.forceLowerAnim = GetIDForString(anim_table, data);
+		ent->client->ps.forceUpperAnim = GetIDForString(animTable, data);
+		ent->client->ps.forceLowerAnim = GetIDForString(animTable, data);
 		return; //Don't call it back
 
 	case SET_ANIM_HOLDTIME_LOWER_FORCED:

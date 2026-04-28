@@ -526,240 +526,177 @@ static void CalcMuzzlePoint2(const gentity_t* const ent, vec3_t muzzle_point, co
 void CalcMuzzlePoint(gentity_t* const ent, vec3_t forward_vec, vec3_t muzzle_point, const float lead_in)
 //---------------------------------------------------------
 {
+	// Validate caller.
+	if (ent == NULL)
+	{
+		return;
+	}
+
+	// If no client, fall back to origin-based muzzle.
+	const qboolean has_client = (ent->client != NULL) ? qtrue : qfalse;
+
 	vec3_t org;
 	mdxaBone_t bolt_matrix;
 
-	if (!lead_in) //&& ent->s.number != 0
+	// Cached muzzle point reuse (only valid if entity has a client).
+	if (lead_in == 0.0f && has_client == qtrue)
 	{
-		//Not players or melee
-		if (ent->client)
+		if (ent->client->renderInfo.mPCalcTime >= level.time - (FRAMETIME * 2))
 		{
-			if (ent->client->renderInfo.mPCalcTime >= level.time - FRAMETIME * 2)
-			{
-				//Our muzz point was calced no more than 2 frames ago
-				VectorCopy(ent->client->renderInfo.muzzlePoint, muzzle_point);
-				return;
-			}
+			VectorCopy(ent->client->renderInfo.muzzlePoint, muzzle_point);
+			return;
 		}
 	}
 
+	// Default muzzle start = entity origin.
 	VectorCopy(ent->currentOrigin, muzzle_point);
 
+	// ---------------------------------------------------------------------
+	// WEAPON‑SPECIFIC MUZZLE OFFSETS
+	// ---------------------------------------------------------------------
 	switch (ent->s.weapon)
 	{
+		// ---------------------------------------------------------------------
+		// PISTOLS / SMALL ARMS
+		// ---------------------------------------------------------------------
 	case WP_BRYAR_PISTOL:
 	case WP_BLASTER_PISTOL:
 	case WP_SBD_BLASTER:
 	case WP_JAWA:
 	case WP_JANGO:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 16;
-		VectorMA(muzzle_point, 28, forward_vec, muzzle_point);
-		VectorMA(muzzle_point, 6, vright_vec, muzzle_point);
+	case WP_CLONEPISTOL:
+	case WP_REY:
+		if (has_client == qtrue)
+		{
+			ViewHeightFix(ent);
+			muzzle_point[2] += ent->client->ps.viewheight;
+			muzzle_point[2] -= 16;
+			VectorMA(muzzle_point, 28, forward_vec, muzzle_point);
+			VectorMA(muzzle_point, 6, vright_vec, muzzle_point);
+		}
 		break;
 
+		// ---------------------------------------------------------------------
+		// ROCKET / HEAVY
+		// ---------------------------------------------------------------------
 	case WP_ROCKET_LAUNCHER:
 	case WP_CONCUSSION:
 	case WP_THERMAL:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 2;
+		if (has_client == qtrue)
+		{
+			ViewHeightFix(ent);
+			muzzle_point[2] += ent->client->ps.viewheight;
+			muzzle_point[2] -= 2;
+		}
 		break;
 
+		// ---------------------------------------------------------------------
+		// RIFLES / BLASTERS (shared logic)
+		// ---------------------------------------------------------------------
 	case WP_BLASTER:
 	case WP_THEFIRSTORDER:
 	case WP_CLONECARBINE:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
 	case WP_BATTLEDROID:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
 	case WP_REBELBLASTER:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
 	case WP_CLONERIFLE:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
 	case WP_CLONECOMMANDO:
 	case WP_WRIST_BLASTER:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
 	case WP_Z6_ROTARY_CANNON:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
 	case WP_REBELRIFLE:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
-	case WP_REY:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 16;
-		VectorMA(muzzle_point, 28, forward_vec, muzzle_point);
-		VectorMA(muzzle_point, 6, vright_vec, muzzle_point);
-		break;
-
 	case WP_DUAL_PISTOL:
 	case WP_DUAL_CLONEPISTOL:
 	case WP_DROIDEKA:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
 	case WP_BOBA:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 1;
-		if (ent->s.number == 0)
-			VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
-		// player, don't set this any lower otherwise the projectile will impact immediately when your back is to a wall
-		else
-			VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
-		// NPC, don't set too far forwardVec otherwise the projectile can go through doors
-
-		VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
-		break;
-
-	case WP_CLONEPISTOL:
-		ViewHeightFix(ent);
-		muzzle_point[2] += ent->client->ps.viewheight; //By eyes
-		muzzle_point[2] -= 16;
-		VectorMA(muzzle_point, 28, forward_vec, muzzle_point);
-		VectorMA(muzzle_point, 6, vright_vec, muzzle_point);
-		break;
-
-	case WP_SABER:
-		if (ent->NPC != nullptr &&
-			(ent->client->ps.torsoAnim == TORSO_WEAPONREADY2 ||
-				ent->client->ps.torsoAnim == BOTH_ATTACK2)) //Sniper pose
+		if (has_client == qtrue)
 		{
 			ViewHeightFix(ent);
-			muzzle[2] += ent->client->ps.viewheight; //By eyes
+			muzzle_point[2] += ent->client->ps.viewheight;
+			muzzle_point[2] -= 1;
+
+			// Player vs NPC forward offset.
+			if (ent->s.number == 0)
+			{
+				VectorMA(muzzle_point, 12, forward_vec, muzzle_point);
+			}
+			else
+			{
+				VectorMA(muzzle_point, 2, forward_vec, muzzle_point);
+			}
+
+			VectorMA(muzzle_point, 1, vright_vec, muzzle_point);
 		}
-		else
-		{
-			muzzle_point[2] += 16;
-		}
-		VectorMA(muzzle_point, 8, forward_vec, muzzle_point);
-		VectorMA(muzzle_point, 16, vright_vec, muzzle_point);
 		break;
 
+		// ---------------------------------------------------------------------
+		// SABER (sniper pose special case)
+		// ---------------------------------------------------------------------
+	case WP_SABER:
+		if (has_client == qtrue)
+		{
+			if (ent->NPC != NULL &&
+				(ent->client->ps.torsoAnim == TORSO_WEAPONREADY2 ||
+					ent->client->ps.torsoAnim == BOTH_ATTACK2))
+			{
+				ViewHeightFix(ent);
+				muzzle_point[2] += ent->client->ps.viewheight;
+			}
+			else
+			{
+				muzzle_point[2] += 16;
+			}
+
+			VectorMA(muzzle_point, 8, forward_vec, muzzle_point);
+			VectorMA(muzzle_point, 16, vright_vec, muzzle_point);
+		}
+		break;
+
+		// ---------------------------------------------------------------------
+		// BOT LASER
+		// ---------------------------------------------------------------------
 	case WP_BOT_LASER:
-		muzzle_point[2] -= 16; //
+		muzzle_point[2] -= 16;
 		break;
-	case WP_ATST_MAIN:
 
-		if (ent->count > 0)
-		{
-			ent->count = 0;
-			gi.G2API_GetBoltMatrix(ent->ghoul2, ent->playerModel,
-				ent->handLBolt,
-				&bolt_matrix, ent->s.angles, ent->s.origin, cg.time ? cg.time : level.time,
-				nullptr, ent->s.modelScale);
-		}
-		else
-		{
-			ent->count = 1;
-			gi.G2API_GetBoltMatrix(ent->ghoul2, ent->playerModel,
-				ent->handRBolt,
-				&bolt_matrix, ent->s.angles, ent->s.origin, cg.time ? cg.time : level.time,
-				nullptr, ent->s.modelScale);
-		}
+		// ---------------------------------------------------------------------
+		// AT‑ST MAIN CANNON (Ghoul2 bolt)
+		// ---------------------------------------------------------------------
+	case WP_ATST_MAIN:
+	{
+		const int bolt = (ent->count > 0) ? ent->handLBolt : ent->handRBolt;
+		ent->count = (ent->count == 0) ? 1 : 0;
+
+		gi.G2API_GetBoltMatrix(
+			ent->ghoul2,
+			ent->playerModel,
+			bolt,
+			&bolt_matrix,
+			ent->s.angles,
+			ent->s.origin,
+			(cg.time ? cg.time : level.time),
+			NULL,
+			ent->s.modelScale
+		);
 
 		gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, org);
-
 		VectorCopy(org, muzzle_point);
+	}
+	break;
 
+	default:
 		break;
-	default:;
 	}
 
+	// ---------------------------------------------------------------------
+	// LEAN OFFSET (final adjustment)
+	// ---------------------------------------------------------------------
 	AddLeanOfs(ent, muzzle_point);
+
+	// Cache muzzle point for next frame (only if client exists).
+	if (has_client == qtrue)
+	{
+		VectorCopy(muzzle_point, ent->client->renderInfo.muzzlePoint);
+		ent->client->renderInfo.mPCalcTime = level.time;
+	}
 }
 
 // Muzzle point table...
@@ -1519,10 +1456,15 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 	float alert = 256;
 	const Vehicle_t* p_veh = nullptr;
 
+	if (ent == nullptr || ent->client == nullptr)
+	{
+		return;
+	}
+
 	// track shots taken for accuracy tracking.
 	ent->client->ps.persistant[PERS_ACCURACY_SHOTS]++;
 
-	if (PM_ReloadAnim(ent->client->ps.torsoAnim) ||	PM_WeponRestAnim(ent->client->ps.torsoAnim) || PM_PainAnim(ent->client->ps.torsoAnim))
+	if (PM_ReloadAnim(ent->client->ps.torsoAnim) || PM_WeponRestAnim(ent->client->ps.torsoAnim) || PM_PainAnim(ent->client->ps.torsoAnim))
 	{
 		return;
 	}
@@ -1554,10 +1496,6 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		{
 			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_DEKA, SETANIM_AFLAG_BLOCKPACE);
 		}
-		/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
-		{
-			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RELOAD_FAIL_MINIGUN, SETANIM_AFLAG_BLOCKPACE);
-		}*/
 		else
 		{
 			NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
@@ -1570,14 +1508,14 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 	}
 
 	// If this is a vehicle, fire it's weapon and we're done.
-	if (ent && ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+	if (ent->client->NPC_class == CLASS_VEHICLE)
 	{
 		FireVehicleWeapon(ent, alt_fire);
 		return;
 	}
 
 	// set aiming directions
-	if (ent && ent->client && ent->s.weapon == WP_DISRUPTOR && alt_fire)
+	if (ent->s.weapon == WP_DISRUPTOR && alt_fire)
 	{
 		if (ent->NPC)
 		{
@@ -1585,7 +1523,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			AngleVectors(ent->lastAngles, forward_vec, vright_vec, up);
 		}
 	}
-	else if (ent && (ent->s.weapon == WP_ATST_SIDE || ent->s.weapon == WP_ATST_MAIN))
+	else if (ent->s.weapon == WP_ATST_SIDE || ent->s.weapon == WP_ATST_MAIN)
 	{
 		vec3_t muzzle1;
 
@@ -1667,7 +1605,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			AngleVectors(angle_to_enemy1, forward_vec, vright_vec, up);
 		}
 	}
-	else if (ent && ent->client && ent->s.weapon == WP_BOT_LASER && ent->enemy)
+	else if (ent->s.weapon == WP_BOT_LASER && ent->enemy)
 	{
 		vec3_t delta1, enemy_org1, muzzle1;
 		vec3_t angle_to_enemy1;
@@ -1731,8 +1669,8 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 					VectorSubtract(ent->enemy->currentOrigin, ent->currentOrigin, to_enemy);
 					VectorNormalize(to_enemy);
 					if (DotProduct(to_enemy, forward_vec) > 0.75f &&
-						(ent->s.number == 0 && !Q_irand(0, 2) || // the player has a 1 in 3 chance
-							ent->s.number != 0 && !Q_irand(0, 5))) // other guys have a 1 in 6 chance
+						((ent->s.number == 0 && !Q_irand(0, 2)) || // the player has a 1 in 3 chance
+							(ent->s.number != 0 && !Q_irand(0, 5)))) // other guys have a 1 in 6 chance
 					{
 						VectorCopy(to_enemy, forward_vec);
 					}
@@ -1754,7 +1692,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 	ent->alt_fire = alt_fire;
 	if (!p_veh)
 	{
-		if (ent->NPC && ent->NPC->scriptFlags & SCF_FIRE_WEAPON_NO_ANIM)
+		if (ent->NPC && (ent->NPC->scriptFlags & SCF_FIRE_WEAPON_NO_ANIM))
 		{
 			VectorCopy(ent->client->renderInfo.muzzlePoint, muzzle);
 			VectorCopy(ent->client->renderInfo.muzzleDir, forward_vec);
@@ -1831,7 +1769,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 						}
 						else
 						{
-							G_AddBlasterAttackChainCount(ent, Q_irand(BLASTERMISHAPLEVEL_MIN, BLASTERMISHAPLEVEL_TWO)); // 1 was not enough
+							G_AddBlasterAttackChainCount(ent, Q_irand(BLASTERMISHAPLEVEL_MIN, BLASTERMISHAPLEVEL_TWO));
 						}
 
 						ent->client->BoltsFired = 0;
@@ -1844,8 +1782,6 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 	// fire the specific weapon
 	switch (ent->s.weapon)
 	{
-		// Player weapons
-		//-----------------
 	case WP_SABER:
 		return;
 
@@ -1884,7 +1820,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		break;
 
 	case WP_DISRUPTOR:
-		alert = 50; // if you want it to alert enemies, remove this
+		alert = 50;
 		WP_FireDisruptor(ent, alt_fire);
 		break;
 
@@ -1917,12 +1853,12 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		break;
 
 	case WP_TRIP_MINE:
-		alert = 0; // if you want it to alert enemies, remove this
+		alert = 0;
 		WP_PlaceLaserTrap(ent, alt_fire);
 		break;
 
 	case WP_DET_PACK:
-		alert = 0; // if you want it to alert enemies, remove this
+		alert = 0;
 		WP_FireDetPack(ent, alt_fire);
 		break;
 
@@ -1931,12 +1867,11 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		break;
 
 	case WP_EMPLACED_GUN:
-		// doesn't care about whether it's alt-fire or not.  We can do an alt-fire if needed
 		WP_EmplacedFire(ent);
 		break;
 
 	case WP_MELEE:
-		alert = 0; // if you want it to alert enemies, remove this
+		alert = 0;
 		if (!alt_fire)
 		{
 			WP_Melee(ent);
@@ -1948,8 +1883,6 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		break;
 
 	case WP_ATST_SIDE:
-
-		// TEMP
 		if (alt_fire)
 		{
 			WP_ATSTSideAltFire(ent);
@@ -1961,12 +1894,10 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		break;
 
 	case WP_TIE_FIGHTER:
-		// TEMP
 		WP_EmplacedFire(ent);
 		break;
 
 	case WP_RAPID_FIRE_CONC:
-		// TEMP
 		if (alt_fire)
 		{
 			WP_FireRepeater(ent, alt_fire);
@@ -1982,7 +1913,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		break;
 
 	case WP_JAWA:
-		WP_FireJawaPistol(ent, qfalse); // never an alt-fire?
+		WP_FireJawaPistol(ent, qfalse);
 		break;
 
 	case WP_SCEPTER:
@@ -2075,6 +2006,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			WP_FireJangoPistol(ent, alt_fire, qfalse);
 		}
 		break;
+
 	case WP_DUAL_PISTOL:
 		if (!cg_trueguns.integer && !cg.renderingThirdPerson)
 		{
@@ -2090,6 +2022,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			WP_FireJangoDualPistol(ent, alt_fire);
 		}
 		break;
+
 	case WP_DUAL_CLONEPISTOL:
 		if (!cg_trueguns.integer && !cg.renderingThirdPerson)
 		{
@@ -2109,7 +2042,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 	case WP_DROIDEKA:
 		if (!cg_trueguns.integer && !cg.renderingThirdPerson)
 		{
-			WP_FireDroidekaFPPistolDuals(ent, alt_fire, qtrue); // in first person // should never happen with deka
+			WP_FireDroidekaFPPistolDuals(ent, alt_fire, qtrue);
 		}
 		else
 		{
@@ -2146,9 +2079,11 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			WP_FireClonePistol(ent, alt_fire);
 		}
 		break;
+
 	case WP_SBD_BLASTER:
 		WP_FireSBDPistol(ent, alt_fire);
 		break;
+
 	case WP_WRIST_BLASTER:
 		WP_FireWristPistol(ent, alt_fire);
 		break;
@@ -2160,7 +2095,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 
 	if (!ent->s.number)
 	{
-		if (ent->s.weapon == WP_FLECHETTE || ent->s.weapon == WP_BOWCASTER && !alt_fire)
+		if (ent->s.weapon == WP_FLECHETTE || (ent->s.weapon == WP_BOWCASTER && !alt_fire))
 		{
 			//these can fire multiple shots, count them individually within the firing functions
 		}
@@ -2169,10 +2104,9 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			ent->client->sess.missionStats.shotsFired++;
 		}
 	}
-	// We should probably just use this as a default behavior, in special cases, just set alert to false.
 	if (ent->s.number == 0 && alert > 0)
 	{
-		if (ent->client->ps.groundEntityNum == ENTITYNUM_WORLD //FIXME: check for sand contents type?
+		if (ent->client->ps.groundEntityNum == ENTITYNUM_WORLD
 			&& ent->s.weapon != WP_STUN_BATON
 			&& ent->s.weapon != WP_MELEE
 			&& ent->s.weapon != WP_TUSKEN_STAFF
@@ -2180,12 +2114,10 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			&& ent->s.weapon != WP_TRIP_MINE
 			&& ent->s.weapon != WP_DET_PACK)
 		{
-			//the vibration of the shot carries through your feet into the ground
 			AddSoundEvent(ent, muzzle, alert, AEL_DISCOVERED, qfalse, qtrue);
 		}
 		else
 		{
-			//an in-air alert
 			AddSoundEvent(ent, muzzle, alert, AEL_DISCOVERED);
 		}
 		AddSightEvent(ent, muzzle, alert * 2, AEL_DISCOVERED, 20);

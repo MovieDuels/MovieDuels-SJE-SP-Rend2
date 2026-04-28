@@ -493,7 +493,7 @@ static void Workshop_List_Anims_f(gentity_t* ent)
 		{
 			gi.Printf("\n");
 		}
-		gi.Printf("%-.32s\t", anim_table[i].name);
+		gi.Printf("%-.32s\t", animTable[i].name);
 	}
 	gi.Printf("\n");
 	gi.Printf("%i animations listed.\n", MAX_ANIMATIONS);

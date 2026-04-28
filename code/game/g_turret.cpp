@@ -510,18 +510,36 @@ extern qboolean G_ControlledByPlayer(const gentity_t* self);
 static qboolean turret_find_enemies(gentity_t* self)
 //-----------------------------------------------------
 {
-	// HACK for t2_wedge!!!
-	if (self->spawnflags & SPF_TURRETG2_TURBO)
+	// Validate caller
+	if (self == nullptr)
+	{
 		return qfalse;
+	}
+
+	// HACK for t2_wedge!!!
+	if ((self->spawnflags & SPF_TURRETG2_TURBO) != 0)
+	{
+		return qfalse;
+	}
+
+	// ---------------------------------------------------------------------
+	// Reduce stack usage: move large locals to static storage
+	// ---------------------------------------------------------------------
+	static gentity_t* entity_list[MAX_GENTITIES];
+	static vec3_t org;
+	static vec3_t org2;
+	static vec3_t enemy_dir;
+	static trace_t tr;
 
 	qboolean found = qfalse;
 	float best_dist = self->radius * self->radius;
-	vec3_t org, org2;
-	gentity_t* entity_list[MAX_GENTITIES], * bestTarget = nullptr;
+	gentity_t* bestTarget = nullptr;
 
-	if (self->aimDebounceTime > level.time) // time since we've been shut off
+	// ---------------------------------------------------------------------
+	// Ping sound when turret wakes up
+	// ---------------------------------------------------------------------
+	if (self->aimDebounceTime > level.time)
 	{
-		// We were active and alert, i.e. had an enemy in the last 3 secs
 		if (self->painDebounceTime < level.time)
 		{
 			G_Sound(self, G_SoundIndex("sound/chars/turret/ping.wav"));
@@ -529,8 +547,12 @@ static qboolean turret_find_enemies(gentity_t* self)
 		}
 	}
 
+	// ---------------------------------------------------------------------
+	// Adjust origin for vertical offset
+	// ---------------------------------------------------------------------
 	VectorCopy(self->currentOrigin, org2);
-	if (self->spawnflags & 2)
+
+	if ((self->spawnflags & 2) != 0)
 	{
 		org2[2] += 20;
 	}
@@ -539,34 +561,48 @@ static qboolean turret_find_enemies(gentity_t* self)
 		org2[2] -= 20;
 	}
 
+	// ---------------------------------------------------------------------
+	// Collect nearby entities
+	// ---------------------------------------------------------------------
 	const int count = G_RadiusList(org2, self->radius, self, qtrue, entity_list);
 
 	for (int i = 0; i < count; i++)
 	{
 		gentity_t* target = entity_list[i];
 
-		if (!target->client)
-		{
-			// only attack clients
-			continue;
-		}
-		if (target == self || !target->takedamage || target->health <= 0 || target->flags & FL_NOTARGET)
+		// Must be a client
+		if (target->client == nullptr)
 		{
 			continue;
 		}
+
+		// Must be alive, damageable, and not flagged as no-target
+		if (target == self ||
+			target->takedamage == qfalse ||
+			target->health <= 0 ||
+			(target->flags & FL_NOTARGET) != 0)
+		{
+			continue;
+		}
+
+		// Team filtering
 		if (target->client->playerTeam == self->noDamageTeam)
 		{
-			// A bot we don't want to shoot
 			continue;
 		}
-		if (!gi.inPVS(org2, target->currentOrigin))
+
+		// Must be in PVS
+		if (gi.inPVS(org2, target->currentOrigin) == qfalse)
 		{
 			continue;
 		}
 
+		// -----------------------------------------------------------------
+		// Aim at target's eye point
+		// -----------------------------------------------------------------
 		VectorCopy(target->client->renderInfo.eyePoint, org);
 
-		if (self->spawnflags & 2)
+		if ((self->spawnflags & 2) != 0)
 		{
 			org[2] -= 15;
 		}
@@ -575,24 +611,28 @@ static qboolean turret_find_enemies(gentity_t* self)
 			org[2] += 5;
 		}
 
-		trace_t tr;
-		gi.trace(&tr, org2, nullptr, nullptr, org, self->s.number, MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+		// -----------------------------------------------------------------
+		// Line of sight check
+		// -----------------------------------------------------------------
+		gi.trace(&tr, org2, nullptr, nullptr, org, self->s.number,
+			MASK_SHOT, static_cast<EG2_Collision>(0), 0);
 
-		if (!tr.allsolid && !tr.startsolid && (tr.fraction == 1.0 || tr.entityNum == target->s.number))
+		if (tr.allsolid == qfalse &&
+			tr.startsolid == qfalse &&
+			(tr.fraction == 1.0f || tr.entityNum == target->s.number))
 		{
-			vec3_t enemy_dir;
-			// Only acquire if have a clear shot, Is it in range and closer than our best?
+			// -----------------------------------------------------------------
+			// Distance check
+			// -----------------------------------------------------------------
 			VectorSubtract(target->currentOrigin, self->currentOrigin, enemy_dir);
 			const float enemy_dist = VectorLengthSquared(enemy_dir);
 
-			if (enemy_dist < best_dist) // all things equal, keep current
+			if (enemy_dist < best_dist)
 			{
+				// Startup sound if turret was idle
 				if (self->attackDebounceTime < level.time)
 				{
-					// We haven't fired or acquired an enemy in the last 2 seconds-start-up sound
 					G_Sound(self, G_SoundIndex("sound/chars/turret/startup.wav"));
-
-					// Wind up turrets for a bit
 					self->attackDebounceTime = level.time + 1400;
 				}
 
@@ -603,15 +643,20 @@ static qboolean turret_find_enemies(gentity_t* self)
 		}
 	}
 
-	if (found)
+	// ---------------------------------------------------------------------
+	// Acquire target
+	// ---------------------------------------------------------------------
+	if (found == qtrue)
 	{
-		if (!self->enemy)
+		if (self->enemy == nullptr)
 		{
-			//just aquired one
+			// First acquisition
 			AddSoundEvent(bestTarget, self->currentOrigin, 256, AEL_DISCOVERED);
 			AddSightEvent(bestTarget, self->currentOrigin, 512, AEL_DISCOVERED, 20);
 		}
+
 		G_SetEnemy(self, bestTarget);
+
 		if (VALIDSTRING(self->target2))
 		{
 			G_UseTargets2(self, self, self->target2);
@@ -1454,7 +1499,7 @@ static qboolean pas_find_enemies(gentity_t* self)
 	qboolean found = qfalse;
 	float best_dist = self->radius * self->radius;
 	vec3_t org, org2;
-	gentity_t* entity_list[MAX_GENTITIES];
+	static gentity_t* entity_list[MAX_GENTITIES];
 
 	if (self->aimDebounceTime > level.time) // time since we've been shut off
 	{

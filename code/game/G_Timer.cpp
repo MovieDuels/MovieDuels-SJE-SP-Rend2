@@ -25,14 +25,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../Rufl/hstring.h"
 #include "qcommon/ojk_saved_game_helper.h"
 
-constexpr auto MAX_GTIMERS = 16384;
-
-using gtimer_t = struct gtimer_s
+constexpr auto MAX_GTIMERS = 16384;using gtimer_t = struct gtimer_s
 {
-	hstring id; // Use handle strings, so that things work after loading
-	int time;
-	gtimer_s* next; // In either free list or current list
+	hstring     id{};
+	int         time{};
+	gtimer_s* next{ nullptr };   
 };
+
 
 gtimer_t g_timerPool[MAX_GTIMERS];
 gtimer_t* g_timers[MAX_GENTITIES];
