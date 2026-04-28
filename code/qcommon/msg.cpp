@@ -75,17 +75,28 @@ void* MSG_GetSpace(msg_t* buf, const int length)
 
 	if (buf->cursize + length > buf->maxsize)
 	{
-		if (!buf->allowoverflow)
-		{
-			Com_Error(ERR_FATAL, "MSG_GetSpace: overflow without allowoverflow set");
-		}
+		// If a single requested write is larger than the whole buffer, it's
+		// unrecoverable and should remain fatal.
 		if (length > buf->maxsize)
 		{
 			Com_Error(ERR_FATAL, "MSG_GetSpace: %i is > full buffer size", length);
 		}
-		Com_Printf("MSG_GetSpace: overflow\n");
-		MSG_Clear(buf);
-		buf->overflowed = qtrue;
+
+		// Otherwise, don't crash the entire process if allowoverflow wasn't
+		// set by the caller. Convert the fatal error into a warning and mark
+		// the buffer as overflowed so callers can handle it gracefully.
+		if (!buf->allowoverflow)
+		{
+			Com_Printf("MSG_GetSpace: overflow without allowoverflow set, clearing\n");
+			MSG_Clear(buf);
+			buf->overflowed = qtrue;
+		}
+		else
+		{
+			Com_Printf("MSG_GetSpace: overflow\n");
+			MSG_Clear(buf);
+			buf->overflowed = qtrue;
+		}
 	}
 
 	void* data = buf->data + buf->cursize;
