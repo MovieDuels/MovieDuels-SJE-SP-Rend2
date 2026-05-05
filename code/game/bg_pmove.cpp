@@ -1401,9 +1401,8 @@ static qboolean PM_CheckJump()
 					&& pm->ps->legsAnimTimer > 0)
 				{
 					//in the air
-					//FIXME: need an actual set time so it doesn't matter when the attack happens
-					//FIXME: make sure we don't jump further than force jump 3 allows
-					vec3_t j_fwd_angs, j_fwd_vec;
+					static vec3_t j_fwd_angs;
+					static vec3_t j_fwd_vec;
 					VectorSet(j_fwd_angs, 0, pm->ps->viewangles[YAW], 0);
 					AngleVectors(j_fwd_angs, j_fwd_vec, nullptr, nullptr);
 					float old_z_vel = pm->ps->velocity[2];
@@ -1465,7 +1464,8 @@ static qboolean PM_CheckJump()
 				&& pm->gent)
 			{
 				//start a force long-jump!
-				vec3_t j_fwd_angs, j_fwd_vec;
+				static vec3_t j_fwd_angs;
+				static vec3_t j_fwd_vec;
 				//BOTH_FORCELONGLEAP_ATTACK if holding attack, too?
 				PM_SetAnim(pm, SETANIM_BOTH, BOTH_FORCELONGLEAP_START, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				VectorSet(j_fwd_angs, 0, pm->ps->viewangles[YAW], 0);
@@ -1523,9 +1523,6 @@ static qboolean PM_CheckJump()
 					//still below maximum jump height
 				{
 					//can still go up
-					//FIXME: after a certain amount of time of held jump, play force jump sound and flip if a dir is being held
-					//FIXME: if hit a wall... should we cut velocity or allow them to slide up it?
-					//FIXME: constantly drain force power at a rate by which the usage for maximum height would use up the full cost of force jump
 					if (cur_height > forceJumpHeight[0])
 					{
 						//passed normal jump height  *2?
@@ -1570,11 +1567,8 @@ static qboolean PM_CheckJump()
 								&& BG_AllowThirdPersonSpecialMove(pm->ps) //third person only
 								&& !cg.zoomMode //not zoomed in
 								&& !(pm->ps->saber[0].saberFlags & SFL_NO_FLIPS) //okay to do flips with this saber
-								&& (!pm->ps->dualSabers || !(pm->ps->saber[1].saberFlags & SFL_NO_FLIPS))
-								//okay to do flips with this saber
-								)
+								&& (!pm->ps->dualSabers || !(pm->ps->saber[1].saberFlags & SFL_NO_FLIPS)))
 							{
-								//FIXME: this could end up playing twice if the jump is very long...
 								int anim = BOTH_FORCEINAIR1;
 								int parts = SETANIM_BOTH;
 
@@ -15216,7 +15210,7 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 		return LS_NONE;
 	}
 
-	if ((g_SerenityJediEngineMode->integer != 0 || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0)) &&
+	if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0) &&
 		G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue) &&
 		!pm->ps->forcePowersActive &&
 		!in_camera &&
@@ -23337,9 +23331,10 @@ void Pmove(pmove_t* pmove)
 	if (!VectorCompare(pm->ps->origin, pml.previous_origin))
 	{
 		PM_GroundTrace();
+
 		if (Flying == FLY_HOVER)
 		{
-			//never stick to the ground
+			// never stick to the ground
 			PM_HoverTrace();
 		}
 	}

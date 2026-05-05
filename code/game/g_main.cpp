@@ -943,7 +943,7 @@ static void G_InitCvars()
 	g_debugItems = gi.cvar("g_debugItems", "0", CVAR_CHEAT);
 	g_fixJOItems = gi.cvar("g_fixJOItems", "1", CVAR_ARCHIVE);
 
-	g_npc_is_smart = gi.cvar("g_npc_is_smart", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
+	g_npc_is_smart = gi.cvar("g_npc_is_smart", "1", CVAR_ARCHIVE | CVAR_SAVEGAME); //if 1, NPCs will try to use cover and do other smart things
 	g_npc_is_smart_range = gi.cvar("g_npc_is_smart_range", "3500", CVAR_ARCHIVE);
 }
 

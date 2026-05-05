@@ -3281,9 +3281,15 @@ static void jedi_combat_distance(const int enemy_dist)
 					chance_scale = 5;
 				}
 				if (chance_scale
-					&& (enemy_dist > Q_irand(100, 200) || NPCInfo->scriptFlags & SCF_DONT_FIRE || !Q_stricmp("Yoda", NPC->NPC_type) && !Q_irand(0, 3))
+					&& (enemy_dist > Q_irand(100, 200)
+						|| (NPCInfo->scriptFlags & SCF_DONT_FIRE)
+						|| (!Q_stricmp("Yoda", NPC->NPC_type) && !Q_irand(0, 3)))
 					&& enemy_dist < 500
-					&& (Q_irand(0, chance_scale * 10) < 5 || NPC->enemy->client && NPC->enemy->client->ps.weapon != WP_SABER && !Q_irand(0, chance_scale)))
+					&& ((Q_irand(0, chance_scale * 10) < 5)
+						|| (NPC->enemy
+							&& NPC->enemy->client
+							&& NPC->enemy->client->ps.weapon != WP_SABER
+							&& !Q_irand(0, chance_scale))))
 				{
 					//else, randomly try some kind of attack every now and then
 					if ((NPCInfo->rank == RANK_ENSIGN //old reborn crap
@@ -6810,7 +6816,7 @@ gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, c
 			continue;
 		if (gi.inPVS(check->currentOrigin, self->currentOrigin) == qfalse)
 		{
-			if ((g_SerenityJediEngineMode->integer != 0) || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 			{
 				const float range = (g_npc_is_smart_range != NULL)
 					? static_cast<float>(g_npc_is_smart_range->integer)
@@ -7864,7 +7870,7 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 		}
 	}
 
-	if (g_SerenityJediEngineMode->integer != 0 || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+	if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 	{// smart npc,s can try to attack right out of a parry or knockaway
 		if ((PM_SaberInParry(NPC->client->ps.saber_move) ||
 			PM_SaberInKnockaway(NPC->client->ps.saber_move))
@@ -8843,7 +8849,7 @@ static void jedi_combat()
 
 					return;
 				}
-				if (NPC->s.weapon == WP_SABER && (g_SerenityJediEngineMode->integer != 0 || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0)))
+				if (NPC->s.weapon == WP_SABER && (g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 				{
 					if (NPCInfo->aiFlags & NPCAI_BLOCKED)
 					{//been blocked for a little while, try something else
@@ -9334,7 +9340,7 @@ static qboolean jedi_check_ambush_player(void)
 		if (gi.inPVS(player->currentOrigin, NPC->currentOrigin) == qfalse)
 		{
 			// Allow "suspicious" fallback if configured
-			if (g_SerenityJediEngineMode->integer != 0 || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 			{
 				const float range = (g_npc_is_smart_range != NULL)
 					? (float)g_npc_is_smart_range->integer
@@ -9501,7 +9507,7 @@ static void jedi_patrol(void)
 			//
 			if (gi.inPVS(NPC->currentOrigin, enemy->currentOrigin) == qfalse)
 			{
-				if (g_SerenityJediEngineMode->integer != 0 || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+				if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 				{
 					const float range = (g_npc_is_smart_range != NULL)
 						? (float)g_npc_is_smart_range->integer
@@ -9749,7 +9755,7 @@ void npc_bs_jedi_follow_leader()
 		}
 	}
 
-	if ((g_SerenityJediEngineMode->integer != 0 || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0)) && NPCInfo->goalEntity)
+	if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0) && NPCInfo->goalEntity)
 	{
 		trace_t trace;
 

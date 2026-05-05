@@ -34413,7 +34413,8 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
 						}
 					}
-					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE &&
+					else if (traceEnt->client && 
+						traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE &&
 						traceEnt->client->ps.stats[STAT_HEALTH] > 1)
 					{
 						if (traceEnt->health < 75)
