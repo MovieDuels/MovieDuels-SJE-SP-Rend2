@@ -32820,10 +32820,10 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}
-					else if (traceEnt->client && 
+					else if (traceEnt->client &&
 						!PM_RunningAnim(traceEnt->client->ps.legsAnim) &&
 						!PM_InKnockDown(&traceEnt->client->ps) &&
-						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE && 
+						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE &&
 						traceEnt->client->ps.stats[STAT_HEALTH] > 1)
 					{
 						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
@@ -33654,7 +33654,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 					{
 						G_KnockOver(traceEnt, self, dir, 25, qtrue);
 					}
-					else if (traceEnt->client && 
+					else if (traceEnt->client &&
 						!PM_RunningAnim(traceEnt->client->ps.legsAnim) &&
 						!PM_InKnockDown(&traceEnt->client->ps) &&
 						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE &&

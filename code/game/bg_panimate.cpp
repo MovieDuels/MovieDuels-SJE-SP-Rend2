@@ -5047,11 +5047,11 @@ saber_moveName_t PM_SaberAttackForMovement(const int forwardmove, const int righ
 			return newmove;
 		}
 		else if (PM_SaberInKnockaway(curmove))
-		{//bounces should go to their default attack if you don't specify a direction but are attacking
-			bool npc = (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer());
-
-			if (npc && Q_irand(0, 1))// 50% chance
+		{
+			//bounces should go to their default attack if you don't specify a direction but are attacking
+			if (pm->ps->clientNum && !PM_ControlledByPlayer() && Q_irand(0, 3))
 			{
+				//use NPC random
 				newmove = PM_NPCSaberAttackFromQuad(saber_moveData[curmove].endQuad);
 			}
 			else

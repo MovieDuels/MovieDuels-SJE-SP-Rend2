@@ -917,7 +917,7 @@ static void G_InitCvars()
 	com_kotor = gi.cvar("com_kotor", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
 	g_attackskill = gi.cvar("g_attackskill", "3", CVAR_ARCHIVE);
-	
+
 	g_npcSpecialAttackFreq = gi.cvar("g_npcSpecialAttackFreq", "1.0", CVAR_ARCHIVE);
 
 	g_saberLockCinematicCamera = gi.cvar("g_saberLockCinematicCamera", "0", CVAR_ARCHIVE);

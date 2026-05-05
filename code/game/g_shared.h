@@ -1547,10 +1547,6 @@ struct gentity_s
 
 	//int				animFileIndex; //index locally (game/cgame) to anim data for this skel
 
-	int npc_roll_time;
-	qboolean npc_roll_start;
-	int npc_roll_direction;
-
 	int reloadTime; //Every 0.2 seconds reload a bullet
 	int reloadCooldown;
 	int weaponfiredelaytime;
@@ -1559,6 +1555,10 @@ struct gentity_s
 	int saberPowerTime;
 	qboolean saberPower;
 	int Dash_Count;
+	int next_kick_time;
+	int npc_roll_time;
+	qboolean npc_roll_start;
+	int npc_roll_direction;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -1780,6 +1780,10 @@ struct gentity_s
 		saved_game.write<int32_t>(saberPowerTime);
 		saved_game.write<int32_t>(saberPower);
 		saved_game.write<int32_t>(Dash_Count);
+		saved_game.write<int32_t>(next_kick_time);
+		saved_game.write<int32_t>(npc_roll_time);
+		saved_game.write<int32_t>(npc_roll_start);
+		saved_game.write<int32_t>(npc_roll_direction);
 	}
 
 	void sg_import(
@@ -2002,6 +2006,10 @@ struct gentity_s
 		saved_game.read<int32_t>(saberPowerTime);
 		saved_game.read<int32_t>(saberPower);
 		saved_game.read<int32_t>(Dash_Count);
+		saved_game.read<int32_t>(next_kick_time);
+		saved_game.read<int32_t>(npc_roll_time);
+		saved_game.read<int32_t>(npc_roll_start);
+		saved_game.read<int32_t>(npc_roll_direction);
 	}
 };
 #endif //#ifdef GAME_INCLUDE

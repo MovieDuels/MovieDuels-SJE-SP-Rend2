@@ -894,7 +894,6 @@ Will allocate a new sfx if it isn't found
 	return sfx;
 }
 
-
 /*
 =================
 S_DefaultSound
@@ -5068,7 +5067,6 @@ static qboolean S_UpdateBackgroundTrack_Actual(
 
 	return qfalse;
 }
-
 
 // used to be just for dynamic, but now even non-dynamic music has to know whether it should be silent or not...
 //

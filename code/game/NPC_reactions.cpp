@@ -1698,7 +1698,6 @@ void NPC_Use(gentity_t* self, gentity_t* other, gentity_t* activator)
 			NPC_UseResponse(self, other, qfalse);
 		}
 
-
 		if (self->NPC->behaviorState == BS_FOLLOW_LEADER || self->NPC->behaviorState == BS_FOLLOW_OVERRIDE || self->client->NPC_class == CLASS_GROGU)
 		{
 			// Store the backup info we need.
