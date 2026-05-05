@@ -459,7 +459,7 @@ void cStrings::Clear(void)
 
 	if (Reference)
 	{
-		delete Reference;
+		delete[] Reference;
 		Reference = nullptr;
 	}
 }
@@ -481,7 +481,7 @@ void cStrings::SetReference(char* newReference)
 {
 	if (Reference)
 	{
-		delete Reference;
+		delete[] Reference;
 		Reference = nullptr;
 	}
 
@@ -587,7 +587,7 @@ void cStringsSingle::Clear(void)
 
 	if (Text)
 	{
-		delete Text;
+		delete[] Text;
 		Text = nullptr;
 	}
 }
@@ -599,7 +599,7 @@ void cStringsSingle::SetText(const char* newText)
 
 	if (Text)
 	{
-		delete Text;
+		delete[] Text;
 		Text = nullptr;
 	}
 
@@ -614,7 +614,7 @@ void cStringsSingle::SetText(const char* newText)
 	if (sp_show_strip->value)
 	{
 		const char sDebugString[] = "SP:";
-		Dest = Text = new char[length + strlen(sDebugString)];
+		Dest = Text = new char[length + strlen(sDebugString) + 1];
 		strcpy(Dest, sDebugString);
 		Dest += strlen(Dest);
 	}

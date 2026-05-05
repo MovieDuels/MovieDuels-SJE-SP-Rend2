@@ -1761,6 +1761,7 @@ void S_ClearSoundBuffer()
 	{
 		return;
 	}
+// FIX: Enable overflow protection to prevent stuttering
 #if 0	//this causes scripts to freak when the sounds get cut...
 	// clear all the sounds so they don't
 	// start back up after the load finishes
@@ -2842,6 +2843,7 @@ static void S_GetSoundtime()
 
 	s_soundtime = buffers * fullsamples + samplepos / dma.channels;
 
+// FIX: Enable overflow protection to prevent stuttering
 #if 0
 	// check to make sure that we haven't overshot
 	if (s_paintedtime < s_soundtime)
@@ -3136,7 +3138,11 @@ void S_Update_()
 		S_ScanChannelStarts();
 
 		// mix ahead of current position
-		unsigned endtime = static_cast<int>(s_soundtime + s_mixahead->value * dma.speed);
+		// FIX: Increased safety margin to reduce stuttering under heavy CPU load
+		const int mixahead_safety_ms = 15;
+		const int mixahead_samples = static_cast<int>(s_mixahead->value * dma.speed) + 
+			(mixahead_safety_ms * dma.speed / 1000);
+		unsigned endtime = static_cast<int>(s_soundtime + mixahead_samples);
 
 		// mix to an even submission block size
 		endtime = (endtime + dma.submission_chunk - 1)
@@ -5706,6 +5712,7 @@ static bool LoadEALFile(char* szEALFilename)
 	EMPOINT EMPoint;
 	long lNumInst, lNumInstA, lNumInstB;
 	bool bLoaded = false;
+	bool bEnvTableAllocated = false;
 
 	if ((!s_lpEAXManager) || (!s_bEAX))
 		return false;
@@ -5714,6 +5721,13 @@ static bool LoadEALFile(char* szEALFilename)
 		return false;
 
 	s_EnvironmentID = 0xFFFFFFFF;
+
+	// Free any previous env table allocation before loading new file
+	if (s_lpEnvTable)
+	{
+		Z_Free(s_lpEnvTable);
+		s_lpEnvTable = nullptr;
+	}
 
 	// Assume there is no aperture information in the .eal file
 	s_lpEnvTable = nullptr;
@@ -5805,6 +5819,7 @@ static bool LoadEALFile(char* szEALFilename)
 										{
 											s_lpEnvTable = static_cast<LPENVTABLE>(Z_Malloc(
 												s_lNumEnvironments * sizeof(ENVTABLE), TAG_NEWDEL, qtrue));
+											bEnvTableAllocated = true;
 										}
 									}
 									else
@@ -6014,12 +6029,22 @@ static bool LoadEALFile(char* szEALFilename)
 				i++;
 			}
 		}
+		bool bReturnStatus;
+		if (s_lpEnvTable != nullptr)
+		{
+			bReturnStatus = true;
+		}
+		else if (bEnvTableAllocated)
+		{
+			bReturnStatus = false;
+		}
 		else
 		{
+			bReturnStatus = true;
 			Com_DPrintf(S_COLOR_YELLOW "EAX legacy behaviour invoked (one reverb)\n");
 		}
 
-		return true;
+		return bReturnStatus;
 	}
 
 	Com_DPrintf(S_COLOR_YELLOW "Failed to load %s\n", szEALFilename);

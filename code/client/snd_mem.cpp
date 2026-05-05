@@ -209,6 +209,13 @@ static void ResampleSfx(sfx_t* sfx, const int i_in_rate, const int i_in_width, b
 	const int i_out_count = static_cast<int>(sfx->iSoundLengthInSamples / f_step_scale);
 	sfx->iSoundLengthInSamples = i_out_count;
 
+	// FIX: Free existing pSoundData before reallocating to prevent memory leak
+	if (sfx->pSoundData)
+	{
+		Z_Free(sfx->pSoundData);
+		sfx->pSoundData = nullptr;
+	}
+
 	sfx->pSoundData = reinterpret_cast<short*>(SND_malloc(sfx->iSoundLengthInSamples * 2, sfx));
 
 	sfx->fVolRange = 0;
@@ -906,13 +913,16 @@ static qboolean S_LoadSound_Actual(sfx_t* sfx)
 							alGenBuffers(1, &buffer);
 							if (alGetError() == AL_NO_ERROR)
 							{
-								// Copy audio data to AL Buffer
 								alBufferData(buffer, AL_FORMAT_MONO16, sfx->pSoundData, sfx->iSoundLengthInSamples * 2, 22050);
 								if (alGetError() == AL_NO_ERROR)
 								{
 									sfx->Buffer = buffer;
 									Z_Free(sfx->pSoundData);
 									sfx->pSoundData = nullptr;
+								}
+								else
+								{
+									alDeleteBuffers(1, &buffer);
 								}
 							}
 						}

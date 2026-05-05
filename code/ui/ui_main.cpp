@@ -4753,6 +4753,8 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 	const int building = Cvar_VariableIntegerValue("com_buildscript");
 
 	// Reset species info
+	free(uiInfo.playerSpecies);
+	uiInfo.playerSpecies = nullptr;
 	uiInfo.playerSpeciesCount = 0;
 	uiInfo.playerSpeciesIndex = 0;
 	uiInfo.playerSpeciesMax = 8;

@@ -192,6 +192,12 @@ void CModelCacheManager::DumpNonPure(void)
 			if (it->pDiskImage)
 				Z_Free(it->pDiskImage);
 
+			auto assetIt = FindAsset(it->path);
+			if (assetIt != assets.end())
+			{
+				assets.erase(assetIt);
+			}
+
 			it = files.erase(it);
 		}
 		else
@@ -257,6 +263,12 @@ qboolean CModelCacheManager::LevelLoadEnd(qboolean deleteUnusedByLevel)
 			{
 				Z_Free(it->pDiskImage);
 				bAtLeastOneModelFreed = qtrue;	// FIXME: is this correct? shouldn't it be in the next lower scope?
+			}
+
+			auto assetIt = FindAsset(it->path);
+			if (assetIt != assets.end())
+			{
+				assets.erase(assetIt);
 			}
 
 			it = files.erase(it);

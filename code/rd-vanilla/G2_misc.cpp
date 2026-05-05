@@ -127,6 +127,11 @@ void ResetGoreTag()
 	CurrentTagUpper += GORE_TAG_UPPER;
 }
 
+void ClearGoreTagsTemp()
+{
+	GoreTagsTemp.clear();
+}
+
 GoreTextureCoordinates* FindGoreRecord(const int tag)
 {
 	std::map<int, GoreTextureCoordinates>::iterator i = GoreRecords.find(tag);

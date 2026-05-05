@@ -183,7 +183,11 @@ static void S_PaintChannelFrom16(const channel_t* ch, const sfx_t* sfx, const in
 
 	portable_samplepair_t* pSamplesDest = &paintbuffer[bufferOffset];
 
-	for (int i = 0; i < count; i++)
+	// FIX: Calculate safe iteration count to prevent stutter from bad sample offsets
+	const int remaining = sfx->iSoundLengthInSamples - sampleOffset;
+	const int safeCount = (remaining > 0) ? (count < remaining ? count : remaining) : 0;
+
+	for (int i = 0; i < safeCount; i++)
 	{
 		const int iData = sfx->pSoundData[sampleOffset++];
 
@@ -332,20 +336,20 @@ void S_PaintChannels(const int endtime)
 			//
 			do
 			{
-				if (ch->loopSound)
-				{
-					sampleOffset = ltime % sc->iSoundLengthInSamples;
-				}
-				else
-				{
-					sampleOffset = ltime - ch->startSample;
-				}
+			if (ch->loopSound)
+			{
+				sampleOffset = ltime % sc->iSoundLengthInSamples;
+			}
+			else
+			{
+				sampleOffset = ltime - ch->startSample;
+			}
 
-				int count = end - ltime;
-				if (sampleOffset + count > sc->iSoundLengthInSamples)
-				{
-					count = sc->iSoundLengthInSamples - sampleOffset;
-				}
+			int count = end - ltime;
+			if (sampleOffset + count > sc->iSoundLengthInSamples)
+			{
+				count = sc->iSoundLengthInSamples - sampleOffset;
+			}
 
 				if (count > 0)
 				{

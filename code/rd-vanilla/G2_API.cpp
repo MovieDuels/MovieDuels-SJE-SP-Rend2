@@ -2322,6 +2322,7 @@ void G2API_LoadSaveCodeDestructGhoul2Info(CGhoul2Info_v& ghoul2)
 
 #ifdef _G2_GORE
 void ResetGoreTag(); // put here to reduce coupling
+void ClearGoreTagsTemp(); // clear only GoreTagsTemp without resetting counters
 
 void G2API_ClearSkinGore(CGhoul2Info_v& ghoul2)
 {
@@ -2375,6 +2376,7 @@ void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
 		// now walk each model and compute new texture coordinates
 		G2_TraceModels(ghoul2, trans_hit_location, trans_ray_direction, nullptr, gore.entNum, G2_NOCOLLIDE, lod, 1.0f, gore.SSize, gore.TSize, gore.theta, gore.shader, &gore, qtrue);
 	}
+	ClearGoreTagsTemp();
 }
 #else
 void G2API_ClearSkinGore(CGhoul2Info_v& ghoul2)

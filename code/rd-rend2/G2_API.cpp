@@ -2430,6 +2430,7 @@ static int G2API_Ghoul2Size(const CGhoul2Info_v& ghoul2)
 //#ifdef _SOF2
 #ifdef _G2_GORE
 void ResetGoreTag(); // put here to reduce coupling
+void ClearGoreTagsTemp(); // clear only GoreTagsTemp without resetting counters
 
 //way of seeing how many marks are on a model currently -rww
 static int G2API_GetNumGoreMarks(CGhoul2Info_v& ghoul2, int modelIndex)
@@ -2502,6 +2503,7 @@ void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
 		// now walk each model and compute new texture coordinates
 		G2_TraceModels(ghoul2, transHitLocation, transRayDirection, 0, gore.entNum, G2_NOCOLLIDE, lod, 1.0f, gore.SSize, gore.TSize, gore.theta, gore.shader, &gore, qtrue);
 	}
+	ClearGoreTagsTemp();
 }
 #else
 

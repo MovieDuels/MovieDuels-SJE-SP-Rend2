@@ -277,10 +277,6 @@ qboolean MP3Stream_InitFromFile(
 			((iMP3UnPackedSize / 2) / (44100 / dma.speed)) /
 			(bStereoDesired ? 2 : 1);
 
-		// Allocate and copy raw MP3 data
-		sfx->pSoundData = reinterpret_cast<short*>(SND_malloc(iSrcDatalen, sfx));
-		memcpy(sfx->pSoundData, pbSrcData, iSrcDatalen);
-
 		// ------------------------------------------------------------
 		// FIX FOR C6262:
 		// Allocate MP3STREAM on the heap instead of stack.
@@ -299,14 +295,21 @@ qboolean MP3Stream_InitFromFile(
 			2 * 8,
 			bStereoDesired);
 
-		pTempStream->pbSourceData = reinterpret_cast<byte*>(sfx->pSoundData);
-
 		if (psError)
 		{
 			Com_Printf(va(S_COLOR_YELLOW"File \"%s\": %s\n", psSrcDataFilename, psError));
 			Z_Free(pTempStream);
 			return qfalse;
 		}
+
+		// ------------------------------------------------------------
+		// Allocate and copy raw MP3 data AFTER decoder init succeeds
+		// FIX: Prevent memory leak on failure by allocating here (after psError check)
+		// ------------------------------------------------------------
+		sfx->pSoundData = reinterpret_cast<short*>(SND_malloc(iSrcDatalen, sfx));
+		memcpy(sfx->pSoundData, pbSrcData, iSrcDatalen);
+
+		pTempStream->pbSourceData = reinterpret_cast<byte*>(sfx->pSoundData);
 
 		// ------------------------------------------------------------
 		// Copy initialized stream into sfx->pMP3StreamHeader
