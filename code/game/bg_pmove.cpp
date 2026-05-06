@@ -15139,10 +15139,11 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 	saber_moveName_t auto_move = LS_NONE;
 
 	if (pm->gent &&
-		pm->gent->NPC &&
-		pm->gent->client &&
-		(pm->gent->client->NPC_class == CLASS_TAVION ||
-			pm->gent->client->NPC_class == CLASS_ALORA))
+		(pm->gent->NPC &&
+			pm->gent->NPC->rank != RANK_ENSIGN &&
+			pm->gent->NPC->rank != RANK_CIVILIAN ||
+			pm->gent->client &&
+			(pm->gent->client->NPC_class == CLASS_TAVION || pm->gent->client->NPC_class == CLASS_ALORA)))
 	{
 		auto_move = PM_AttackForEnemyPos(qtrue, qtrue);
 	}
@@ -15216,7 +15217,7 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 		return LS_NONE;
 	}
 
-	if ((g_SerenityJediEngineMode->integer != 0 || (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0)) &&
+	if ((g_SerenityJediEngineMode->integer > 1 && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0)) &&
 		G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue) &&
 		!pm->ps->forcePowersActive &&
 		!in_camera &&
@@ -20201,9 +20202,7 @@ static void PM_WeaponLightsaber()
 			}
 			if (curmove >= LS_PARRY_UP && curmove <= LS_REFLECT_LL)
 			{//from a parry or reflection, can go directly into an attack
-				bool npc = (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer());
-
-				if (npc)
+				if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
 				{
 					newmove = PM_NPCSaberAttackFromBlock(saber_moveData[curmove].endQuad);//from a parry or reflection, can go directly into an attack
 				}
