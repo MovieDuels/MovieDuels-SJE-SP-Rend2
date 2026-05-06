@@ -185,3 +185,4 @@ pip-log.txt
 ## CLion
 #############
 .idea
+.opencode

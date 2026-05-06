@@ -1762,7 +1762,7 @@ void S_ClearSoundBuffer()
 		return;
 	}
 // FIX: Enable overflow protection to prevent stuttering
-#if 0	//this causes scripts to freak when the sounds get cut...
+#if 1	//this causes scripts to freak when the sounds get cut...
 	// clear all the sounds so they don't
 	// start back up after the load finishes
 	memset(s_channels, 0, sizeof(s_channels));
@@ -2844,7 +2844,7 @@ static void S_GetSoundtime()
 	s_soundtime = buffers * fullsamples + samplepos / dma.channels;
 
 // FIX: Enable overflow protection to prevent stuttering
-#if 0
+#if 1
 	// check to make sure that we haven't overshot
 	if (s_paintedtime < s_soundtime)
 	{
