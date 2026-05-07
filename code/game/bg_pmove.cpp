@@ -15217,7 +15217,7 @@ saber_moveName_t PM_NPCSaberAttackFromQuad(const int quad)
 		return LS_NONE;
 	}
 
-	if ((g_SerenityJediEngineMode->integer > 1 && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0)) &&
+	if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0) &&
 		G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue) &&
 		!pm->ps->forcePowersActive &&
 		!in_camera &&

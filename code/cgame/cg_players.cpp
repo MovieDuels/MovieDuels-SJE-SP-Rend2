@@ -14096,7 +14096,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		}
 		else
 		{
-			if (cent->gent->client->ps.saber[saber_num].type == SABER_UNSTABLE	||
+			if (cent->gent->client->ps.saber[saber_num].type == SABER_UNSTABLE ||
 				cent->gent->client->ps.saber[saber_num].type == SABER_STAFF_UNSTABLE ||
 				cent->gent->client->ps.saber[saber_num].type == SABER_ELECTROSTAFF)
 			{
@@ -15177,8 +15177,7 @@ void CG_Player(centity_t* cent)
 		//---------------
 		Vehicle_t* p_veh;
 
-		if (cent->currentState.eFlags & EF_LOCKED_TO_WEAPON && cent->gent && cent->gent->health > 0 && cent->gent->
-			owner)
+		if (cent->currentState.eFlags & EF_LOCKED_TO_WEAPON && cent->gent && cent->gent->health > 0 && cent->gent->owner)
 		{
 			centity_t* chair = &cg_entities[cent->gent->owner->s.number];
 			if (chair && chair->gent)
@@ -15254,11 +15253,6 @@ void CG_Player(centity_t* cent)
 
 				VectorCopy(ent.origin, ent.oldorigin);
 				VectorCopy(ent.origin, ent.lightingOrigin);
-
-				// FIXME:  Mike claims that hacking the eyepoint will make them shoot at me.......so,
-				//	we move up from the seat bolt and store off that point.
-				//			VectorMA( ent.origin, -20, chair->gent->pos3, cent->gent->client->renderInfo.eyePoint );
-				//			VectorMA( cent->gent->client->renderInfo.eyePoint, 40, chair->gent->pos4, cent->gent->client->renderInfo.eyePoint );
 			}
 		}
 		else if ((p_veh = G_IsRidingVehicle(cent->gent)) != nullptr)
@@ -15290,9 +15284,9 @@ void CG_Player(centity_t* cent)
 			//bah, keep our pitch!
 			cent->lerpAngles[PITCH] = sav_pitch;
 		}
-		else if ((cent->gent->client->ps.eFlags & EF_HELD_BY_RANCOR || cent->gent->client->ps.eFlags &
-			EF_HELD_BY_WAMPA)
-			&& cent->gent && cent->gent->activator)
+		else if ((cent->gent->client->ps.eFlags & EF_HELD_BY_RANCOR ||
+			cent->gent->client->ps.eFlags & EF_HELD_BY_WAMPA) &&
+			cent->gent && cent->gent->activator)
 		{
 			centity_t* monster = &cg_entities[cent->gent->activator->s.number];
 			if (monster && monster->gent && monster->gent->inuse && monster->gent->health > 0)
@@ -15407,15 +15401,6 @@ void CG_Player(centity_t* cent)
 			CG_G2PlayerAngles(cent, ent.axis, temp_angles);
 			//Deal with facial expressions
 			CG_G2PlayerHeadAnims(cent);
-
-			/*
-			if ( cent->gent->client->ps.eFlags & EF_FORCE_DRAINED
-				&& !VectorCompare( cent->gent->client->ps.forceDrainOrg, vec3_origin ) )
-			{//HACKHACKHACK!!!! being drained
-				VectorCopy( cent->gent->client->ps.forceDrainOrg, ent.origin);
-			}
-			else
-			*/
 			{
 				VectorCopy(cent->lerpOrigin, ent.origin);
 			}
@@ -15433,26 +15418,6 @@ void CG_Player(centity_t* cent)
 			cent->gent->client->ps.legsYaw = temp_angles[YAW];
 		}
 		ScaleModelAxis(&ent);
-		/*extern vmCvar_t	cg_thirdPersonAlpha;
-
-		if ((cent->gent->s.number == 0 || G_ControlledByPlayer(cent->gent)))
-		{
-			float alpha = 1.0f;
-			if ((cg.overrides.active & CG_OVERRIDE_3RD_PERSON_APH))
-			{
-				alpha = cg.overrides.thirdPersonAlpha;
-			}
-			else
-			{
-				alpha = cg_thirdPersonAlpha.value;
-			}
-
-			if (alpha < 1.0f)
-			{
-				ent.renderfx |= RF_ALPHA_FADE;
-				ent.shaderRGBA[3] = (unsigned char)(alpha * 255.0f);
-			}
-		}*/
 
 		if (cg_debugHealthBars.integer)
 		{
@@ -16967,8 +16932,8 @@ void CG_Player(centity_t* cent)
 			}
 
 			//
-			// add the gun
-			//
+// add the gun
+//
 			CG_RegisterWeapon(cent->currentState.weapon);
 			weapon = &cg_weapons[cent->currentState.weapon];
 
@@ -16985,6 +16950,7 @@ void CG_Player(centity_t* cent)
 			{
 				qboolean drawGun = qtrue;
 
+				// position gun on torso tag
 				VectorCopy(cent->lerpOrigin, gun.lightingOrigin);
 				CG_PositionEntityOnTag(&gun, &torso, torso.hModel, "tag_weapon");
 
@@ -16995,54 +16961,47 @@ void CG_Player(centity_t* cent)
 				{
 					CG_AddRefEntityWithPowerups(
 						&gun,
-						cent->currentState.powerups & (1 << PW_CLOAKED | 1 << PW_BATTLESUIT),
+						cent->currentState.powerups & ((1 << PW_CLOAKED) | (1 << PW_BATTLESUIT)),
 						cent);
 				}
 
 				// Z6 rotary cannon barrel spinning (third-person, MD3 overlay)
-				if (cent->currentState.weapon == WP_Z6_ROTARY_CANNON &&
-					cg_SpinningBarrels.integer)
+				for (int i = 0; i < w_data->numBarrels; i++)
 				{
-					const weaponData_t* w_data_local = &weaponData[cent->currentState.weapon];
+					refEntity_t barrel = {};
+					vec3_t angles = { 0.0f, 0.0f, 0.0f };
 
-					if (w_data_local->numBarrels > 0)
+					memset(&barrel, 0, sizeof(barrel));
+
+					barrel.hModel = weapon->barrelModel[i];
+					barrel.renderfx = gun.renderfx;
+
+					angles[YAW] = 0;
+					angles[PITCH] = 0;
+
+
+					// roll comes from machinegun spin function
+					if (cg_SpinningBarrels.integer && cent->currentState.weapon == WP_Z6_ROTARY_CANNON)
 					{
-						float spin = CG_MachinegunSpinAngle(cent);
-
-						for (int i = 0; i < w_data_local->numBarrels; i++)
-						{
-							refEntity_t barrel;
-							memset(&barrel, 0, sizeof barrel);
-
-							barrel.hModel = weapon->barrelModel[i];
-							barrel.renderfx = gun.renderfx;
-
-							if (!barrel.hModel)
-							{
-								continue;
-							}
-
-							vec3_t barrelAngles = { 0.0f, 0.0f, 0.0f };
-							barrelAngles[ROLL] = spin;
-							AnglesToAxis(barrelAngles, barrel.axis);
-
-							if (i == 0)
-							{
-								CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, "tag_barrel", NULL);
-							}
-							else
-							{
-								CG_PositionRotatedEntityOnTag(
-									&barrel,
-									&gun,
-									gun.hModel,
-									va("tag_barrel%d", i + 1),
-									NULL);
-							}
-
-							cgi_R_AddRefEntityToScene(&barrel);
-						}
+						angles[ROLL] = CG_MachinegunSpinAngle(cent);
 					}
+					else
+					{
+						angles[ROLL] = 0;
+					}
+					AnglesToAxis(angles, barrel.axis);
+
+					// attach barrel(s) to gun model tags
+					if (!i)
+					{
+						CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, "tag_barrel", nullptr);
+					}
+					else
+					{
+						CG_PositionRotatedEntityOnTag(&barrel, &gun, gun.hModel, va("tag_barrel%d", i + 1), nullptr);
+					}
+
+					cgi_R_AddRefEntityToScene(&barrel);
 				}
 
 				//
@@ -17074,8 +17033,10 @@ void CG_Player(centity_t* cent)
 						cent->currentState.eFlags & EF_ALT_FIRING) &&
 						effect)
 					{
-						vec3_t up = { 0, 0, 1 };
-						vec3_t ax[3] = { 0 };
+						vec3_t up = { 0.0f, 0.0f, 1.0f };
+						vec3_t ax[3];
+
+						memset(ax, 0, sizeof(ax));
 
 						VectorCopy(flash.axis[0], ax[0]);
 						CrossProduct(up, ax[0], ax[1]);
@@ -17111,8 +17072,10 @@ void CG_Player(centity_t* cent)
 
 					if (effect)
 					{
-						vec3_t up = { 0, 0, 1 };
-						vec3_t ax[3] = { 0 };
+						vec3_t up = { 0.0f, 0.0f, 1.0f };
+						vec3_t ax[3];
+
+						memset(ax, 0, sizeof(ax));
 
 						VectorCopy(flash.axis[0], ax[0]);
 						CrossProduct(up, ax[0], ax[1]);
@@ -17127,7 +17090,7 @@ void CG_Player(centity_t* cent)
 				//
 				// muzzle point for gameplay
 				//
-				if (!calcedMp &&
+				if (calcedMp == qfalse &&
 					!(cent->currentState.eFlags & EF_LOCKED_TO_WEAPON))
 				{
 					orientation_t orientation;

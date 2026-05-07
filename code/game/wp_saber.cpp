@@ -13861,9 +13861,10 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	{
 		self->client->ps.saberDisarmProtectTime = level.time + protect_ms;
 
-#if _DEBUG
-		gi.Printf(S_COLOR_GREEN "[SABER DISARM] Timer started: expires at %i (now %i)\n", self->client->ps.saberDisarmProtectTime, level.time);
-#endif
+		if (d_JediAI->integer || g_DebugSaberCombat->integer)
+		{
+			gi.Printf(S_COLOR_GREEN "[SABER DISARM] Timer started: expires at %i (now %i)\n", self->client->ps.saberDisarmProtectTime, level.time);
+		}
 	}
 
 	// ------------------------------------------------------------
@@ -13871,9 +13872,10 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	// ------------------------------------------------------------
 	if (self->client->ps.saberDisarmProtectTime > level.time)
 	{
-#if _DEBUG
-		gi.Printf(S_COLOR_YELLOW "[SABER DISARM] Timer active (%i > %i) — disarm prevented, saber kept in hand\n", self->client->ps.saberDisarmProtectTime, level.time);
-#endif
+		if (d_JediAI->integer || g_DebugSaberCombat->integer)
+		{
+			gi.Printf(S_COLOR_YELLOW "[SABER DISARM] Timer active (%i > %i) — disarm prevented, saber kept in hand\n", self->client->ps.saberDisarmProtectTime, level.time);
+		}
 
 		self->client->usercmd.buttons &= ~BUTTON_ATTACK;
 		return qtrue;
@@ -13882,9 +13884,11 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	// ------------------------------------------------------------
 	// 3. TIMER EXPIRED → NORMAL DISARM LOGIC
 	// ------------------------------------------------------------
-#if _DEBUG
-	gi.Printf(S_COLOR_CYAN "[SABER DISARM] Timer expired — disarm allowed\n");
-#endif
+
+	if (d_JediAI->integer || g_DebugSaberCombat->integer)
+	{
+		gi.Printf(S_COLOR_CYAN "[SABER DISARM] Timer expired — disarm allowed\n");
+	}
 
 	// Reset timer so next disarm starts a new window
 	self->client->ps.saberDisarmProtectTime = 0;
@@ -13901,9 +13905,10 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	{
 		WP_SaberKnockedOutOfHand(self, dropped);
 
-#if _DEBUG
-		gi.Printf(S_COLOR_CYAN "[SABER DISARM] Saber knocked out of hand\n");
-#endif
+		if (d_JediAI->integer || g_DebugSaberCombat->integer)
+		{
+			gi.Printf(S_COLOR_CYAN "[SABER DISARM] Saber knocked out of hand\n");
+		}
 	}
 
 	if (throw_dir && !VectorCompare(throw_dir, vec3_origin))

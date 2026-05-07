@@ -647,7 +647,6 @@ void CG_RegisterWeapon(const int weapon_num)
 		cgi_R_RegisterShader("gfx/effects/forcePush");
 		cgi_R_RegisterShader("gfx/effects/saberFlare");
 
-
 		cgs.media.redSaberGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/red_glow");
 		cgs.media.redSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers/red_line");
 		cgs.media.orangeSaberGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/orange_glow");
@@ -2017,31 +2016,11 @@ void CG_AddViewWeapon(playerState_t* ps)
 
 			if (!i)
 			{
-				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
-				{
-					if (ps->weapon != WP_DISRUPTOR)
-					{
-						CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, "tag_barrel", nullptr);
-					}
-				}
-				else
-				{
-					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, "tag_barrel", nullptr);
-				}
+				CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, "tag_barrel", nullptr);
 			}
 			else
 			{
-				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
-				{
-					if (ps->weapon != WP_DISRUPTOR)
-					{
-						CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->altHandsModel, va("tag_barrel%d", i + 1), nullptr);
-					}
-				}
-				else
-				{
-					CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, va("tag_barrel%d", i + 1), nullptr);
-				}
+				CG_PositionRotatedEntityOnTag(&barrel, &hand, weapon->handsModel, va("tag_barrel%d", i + 1), nullptr);
 			}
 			cgi_R_AddRefEntityToScene(&barrel);
 		}
@@ -2537,6 +2516,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 				angles[ROLL] = 0;
 			}
 			AnglesToAxis(angles, barrel.axis);
+
 			if (!i)
 			{
 				if (cg_com_kotor.integer == 1 || cent->gent->client->charKOTORWeapons == 1) //playing kotor
