@@ -14454,7 +14454,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 							VectorSet(rgb1, 255.0f, 255.0f, 255.0f);
 							break;
 						case SABER_WHITE:
-							VectorSet(rgb1, 1.0f, 1.0f, 1.0f);
+							VectorSet(rgb1, 255.0f, 255.0f, 255.0f);
 							break;
 						default: //SABER_RGB
 							VectorSet(rgb1, client->ps.saber[saber_num].blade[blade_num].color & 0xff,
