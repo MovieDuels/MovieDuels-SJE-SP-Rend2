@@ -2158,53 +2158,70 @@ static void UI_DoSaber(vec3_t origin, vec3_t dir, const float length, const floa
 		radiusmult = 1.0;
 	}
 
-	const float radius_range = radius * 0.075f;
-	float radius_start = radius - radius_range;
+	float effectradius = (radius * 1.6f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersGlowSize.value;
 
-	saber.radius = (radius_start + Q_flrand(-1.0f, 1.0f) * radius_range) * radiusmult;
+	float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSize.value;
 
-	VectorCopy(origin, saber.origin);
-	VectorCopy(dir, saber.axis[0]);
-	saber.reType = RT_SABER_GLOW;
-	saber.customShader = glow;
-	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
-
-	if (color >= SABER_RGB)
+	// Main glow
 	{
-		if (which_saber == 0)
+		constexpr float effectalpha = 0.8f;
+
+		if (length - effectradius / 2.0f > 0.0f)
 		{
-			saber.shaderRGBA[0] = ui_rgb_saber_red.integer;
-			saber.shaderRGBA[1] = ui_rgb_saber_green.integer;
-			saber.shaderRGBA[2] = ui_rgb_saber_blue.integer;
-		}
-		else
-		{
-			saber.shaderRGBA[0] = ui_rgb_saber2_red.integer;
-			saber.shaderRGBA[1] = ui_rgb_saber2_green.integer;
-			saber.shaderRGBA[2] = ui_rgb_saber2_blue.integer;
+			saber.radius = effectradius;
+			saber.saberLength = length - saber.radius / 2.0f;
+			VectorCopy(origin, saber.origin);
+			VectorCopy(dir, saber.axis[0]);
+			saber.reType = RT_SABER_GLOW;
+			saber.customShader = glow;
+			saber.shaderRGBA[0] = 0xff * effectalpha;
+			saber.shaderRGBA[1] = 0xff * effectalpha;
+			saber.shaderRGBA[2] = 0xff * effectalpha;
+			saber.shaderRGBA[3] = 0xff * effectalpha;
+
+			if (color >= SABER_RGB)
+			{
+				if (which_saber == 0)
+				{
+					saber.shaderRGBA[0] = ui_rgb_saber_red.integer * effectalpha;
+					saber.shaderRGBA[1] = ui_rgb_saber_green.integer * effectalpha;
+					saber.shaderRGBA[2] = ui_rgb_saber_blue.integer * effectalpha;
+				}
+				else
+				{
+					saber.shaderRGBA[0] = ui_rgb_saber2_red.integer * effectalpha;
+					saber.shaderRGBA[1] = ui_rgb_saber2_green.integer * effectalpha;
+					saber.shaderRGBA[2] = ui_rgb_saber2_blue.integer * effectalpha;
+				}
+			}
+
+			DC->addRefEntityToScene(&saber);
 		}
 	}
 
-	DC->addRefEntityToScene(&saber);
-
-	// Do the hot core
+	// Hot core
 	VectorMA(origin, length, dir, saber.origin);
-	VectorMA(origin, -1, dir, saber.oldorigin);
+	VectorMA(origin, -1.0f, dir, saber.oldorigin);
+
 	saber.customShader = blade;
 	saber.reType = RT_LINE;
-	radius_start = radius / 3.0f;
-	saber.radius = (radius_start + Q_flrand(-1.0f, 1.0f) * radius_range) * radiusmult;
+	saber.radius = coreradius;
+	saber.shaderTexCoord[0] = saber.shaderTexCoord[1] = 1.0f;
+	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
 
 	DC->addRefEntityToScene(&saber);
 
 	if (color != SABER_RGB)
+	{
 		return;
+	}
 
 	saber.customShader = rgbSaberCoreShader;
 	saber.reType = RT_LINE;
+	saber.radius = coreradius;
 	saber.shaderTexCoord[0] = saber.shaderTexCoord[1] = 1.0f;
 	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
-	saber.radius = (radius_start + Q_flrand(-1.0f, 1.0f) * radius_range) * radiusmult;
+
 	DC->addRefEntityToScene(&saber);
 }
 
@@ -2446,7 +2463,7 @@ static void UI_DoCWSaber(vec3_t origin, vec3_t dir, const float length, const fl
 
 	float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeCW.value;
 
-	effectradius *= 0.5f;
+	effectradius *= 0.6f;
 	coreradius *= 0.85f;
 
 	// Main glow
@@ -2604,7 +2621,7 @@ static void UI_DoMaulSaber(vec3_t origin, vec3_t dir, const float length, const 
 
 	float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeMaul.value;
 
-	effectradius *= 0.5f;
+	effectradius *= 0.6f;
 	coreradius *= 0.85f;
 
 	// Main glow
