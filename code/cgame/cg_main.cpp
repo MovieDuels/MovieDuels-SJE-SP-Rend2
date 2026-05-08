@@ -446,9 +446,12 @@ vmCvar_t cg_SFXSabersGlowSizeTFA;
 vmCvar_t cg_SFXSabersCoreSizeTFA;
 vmCvar_t cg_SFXSabersGlowSizeUSB;
 vmCvar_t cg_SFXSabersCoreSizeUSB;
-//
 vmCvar_t cg_SFXSabersGlowSizeRebels;
 vmCvar_t cg_SFXSabersCoreSizeRebels;
+vmCvar_t cg_SFXSabersGlowSizeCW;
+vmCvar_t cg_SFXSabersCoreSizeCW;
+vmCvar_t cg_SFXSabersGlowSizeMaul;
+vmCvar_t cg_SFXSabersCoreSizeMaul;
 
 vmCvar_t cg_SerenityJediEngineMode;
 vmCvar_t cg_SerenityJediEngineHudMode;
@@ -664,10 +667,12 @@ static cvarTable_t cvarTable[] = {
 	{&cg_SFXSabersCoreSizeTFA, "cg_SFXSabersCoreSizeTFA", "1.0", CVAR_ARCHIVE},
 	{&cg_SFXSabersGlowSizeUSB, "cg_SFXSabersGlowSizeUSB", "1.0", CVAR_ARCHIVE},
 	{&cg_SFXSabersCoreSizeUSB, "cg_SFXSabersCoreSizeUSB", "1.0", CVAR_ARCHIVE},
-	//
-
 	{&cg_SFXSabersGlowSizeRebels, "cg_SFXSabersGlowSizeRebels", "0.6", CVAR_ARCHIVE},
 	{&cg_SFXSabersCoreSizeRebels, "cg_SFXSabersCoreSizeRebels", "0.6", CVAR_ARCHIVE},
+	{&cg_SFXSabersGlowSizeCW, "cg_SFXSabersGlowSizeCW", "1.0", CVAR_ARCHIVE },
+	{&cg_SFXSabersCoreSizeCW, "cg_SFXSabersCoreSizeCW", "1.0", CVAR_ARCHIVE },
+	{&cg_SFXSabersGlowSizeMaul, "cg_SFXSabersGlowSizeMaul", "1.0", CVAR_ARCHIVE },
+	{&cg_SFXSabersCoreSizeMaul, "cg_SFXSabersCoreSizeMaul", "1.0", CVAR_ARCHIVE },
 
 	{&cg_ignitionSpeed, "cg_ignitionSpeed", "1", CVAR_ARCHIVE},
 	{&cg_ignitionSpeedstaff, "cg_ignitionSpeedstaff", "1", CVAR_ARCHIVE},
