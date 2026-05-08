@@ -7819,66 +7819,76 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 		return qfalse;
 	}
 
+	// Require a valid enemy for the whole routine
+	if (!NPC->enemy)
+	{
+		return qfalse;
+	}
+
 	if (jedi_cultist_destroyer(NPC))
 	{
-		//destroyer
+		// destroyer
 		if (enemy_dist <= 32)
 		{
-			//go boom!
+			// go boom!
 			NPC->flags |= FL_GODMODE;
 			NPC->takedamage = qfalse;
 
 			NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_FORCE_RAGE, SETANIM_FLAG_HOLD | SETANIM_FLAG_OVERRIDE);
-			NPC->client->ps.forcePowersActive |= 1 << FP_RAGE;
+			NPC->client->ps.forcePowersActive |= (1 << FP_RAGE);
 			NPC->painDebounceTime = NPC->useDebounceTime = level.time + NPC->client->ps.torsoAnimTimer;
 			return qtrue;
 		}
 		return qfalse;
 	}
-	if (NPC->enemy->client
-		&& NPC->enemy->s.weapon == WP_SABER
-		&& NPC->enemy->client->ps.saberLockTime > level.time
-		&& NPC->client->ps.saberLockTime < level.time)
+
+	if (NPC->enemy->client &&
+		NPC->enemy->s.weapon == WP_SABER &&
+		NPC->enemy->client->ps.saberLockTime > level.time &&
+		NPC->client->ps.saberLockTime < level.time)
 	{
-		//enemy is in a saberLock and we are not
+		// enemy is in a saberLock and we are not
 		return qfalse;
 	}
 
 	if (NPC->client->ps.saberEventFlags & SEF_LOCK_WON)
 	{
-		//we won a saber lock, press the advantage with an attack!
+		// we won a saber lock, press the advantage with an attack!
 		int chance;
 		if (NPCInfo->aiFlags & NPCAI_BOSS_CHARACTER)
 		{
-			//desann and luke
+			// desann and luke
 			chance = 20;
 		}
-		else if (NPC->client->NPC_class == CLASS_TAVION
-			|| NPC->client->NPC_class == CLASS_ALORA)
+		else if (NPC->client->NPC_class == CLASS_TAVION ||
+			NPC->client->NPC_class == CLASS_ALORA)
 		{
-			//tavion
+			// tavion
 			chance = 10;
 		}
 		else if (NPC->client->NPC_class == CLASS_SHADOWTROOPER)
 		{
-			//shadowtrooper
+			// shadowtrooper
 			chance = 10;
 		}
 		else if (NPC->client->NPC_class == CLASS_REBORN && NPCInfo->rank == RANK_LT_JG)
 		{
-			//fencer
+			// fencer
 			chance = 5;
 		}
 		else
 		{
 			chance = NPCInfo->rank;
 		}
+
 		if (Q_irand(0, 30) < chance)
 		{
-			//based on skill with some randomness
-			NPC->client->ps.saberEventFlags &= ~SEF_LOCK_WON; //clear this now that we are using the opportunity
+			// based on skill with some randomness
+			NPC->client->ps.saberEventFlags &= ~SEF_LOCK_WON; // clear this now that we are using the opportunity
 			TIMER_Set(NPC, "noRetreat", Q_irand(500, 2000));
-			NPC->client->ps.weaponTime = NPCInfo->shotTime = NPC->attackDebounceTime = 0;
+			NPC->client->ps.weaponTime = 0;
+			NPCInfo->shotTime = 0;
+			NPC->attackDebounceTime = 0;
 			NPC->client->ps.saberBlocked = BLOCKED_NONE;
 			WeaponThink();
 			return qtrue;
@@ -7893,39 +7903,51 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 			NPC->client->NPC_class == CLASS_SHADOWTROOPER ||
 			NPC->client->NPC_class == CLASS_PROJECTION ||
 			NPC->client->NPC_class == CLASS_BOC ||
-			NPC->client->NPC_class == CLASS_REBORN && NPCInfo->rank == RANK_LT_JG ||
-			NPC->client->NPC_class == CLASS_JEDI && NPCInfo->rank == RANK_COMMANDER)
+			(NPC->client->NPC_class == CLASS_REBORN && NPCInfo->rank == RANK_LT_JG) ||
+			(NPC->client->NPC_class == CLASS_JEDI && NPCInfo->rank == RANK_COMMANDER))
 		{
-			//tavion, fencers, jedi trainer are all good at following up a parry with an attack
-			if ((PM_SaberInParry(NPC->client->ps.saber_move)
-				|| PM_SaberInKnockaway(NPC->client->ps.saber_move))
-				&& NPC->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
+			// tavion, fencers, jedi trainer are all good at following up a parry with an attack
+			if ((PM_SaberInParry(NPC->client->ps.saber_move) ||
+				PM_SaberInKnockaway(NPC->client->ps.saber_move)) &&
+				NPC->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
 			{
-				//try to attack straight from a parry
-				NPC->client->ps.weaponTime = NPCInfo->shotTime = NPC->attackDebounceTime = 0;
+				// try to attack straight from a parry
+				NPC->client->ps.weaponTime = 0;
+				NPCInfo->shotTime = 0;
+				NPC->attackDebounceTime = 0;
 				NPC->client->ps.saberBlocked = BLOCKED_NONE;
-				jedi_adjust_saberAnimLevel(NPC, SS_FAST); //try to follow-up with a quick attack
+				jedi_adjust_saberAnimLevel(NPC, SS_FAST); // try to follow-up with a quick attack
 				WeaponThink();
 				return qtrue;
 			}
 		}
 	}
 
-	if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
-	{// smart npc,s can try to attack right out of a parry or knockaway
+	if (g_SerenityJediEngineMode->integer > 1 &&
+		g_spskill->integer > 1 &&
+		g_npc_is_smart &&
+		g_npc_is_smart->integer != 0 &&
+		NPC->enemy &&
+		NPC->enemy->client &&
+		NPC->enemy->client->ps.blockPoints > BLOCKPOINTS_HALF)
+	{
+		// smart NPCs can try to attack right out of a parry or knockaway if their enemy has high blockpoints
 		if ((PM_SaberInParry(NPC->client->ps.saber_move) ||
-			PM_SaberInKnockaway(NPC->client->ps.saber_move))
-			&& NPC->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
-		{//try to attack straight from a parry
-			NPC->client->ps.weaponTime = NPCInfo->shotTime = NPC->attackDebounceTime = 0;
+			PM_SaberInKnockaway(NPC->client->ps.saber_move)) &&
+			NPC->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
+		{
+			// try to attack straight from a parry
+			NPC->client->ps.weaponTime = 0;
+			NPCInfo->shotTime = 0;
+			NPC->attackDebounceTime = 0;
 			NPC->client->ps.saberBlocked = BLOCKED_NONE;
-			jedi_adjust_saberAnimLevel(NPC, SS_FAST);//try to follow-up with a quick attack
+			jedi_adjust_saberAnimLevel(NPC, SS_MEDIUM); // cinematic, harder hit to chew through block points
 			WeaponThink();
 			return qtrue;
 		}
 	}
 
-	//try to hit them if we can
+	// try to hit them if we can
 	if (!enemy_in_striking_range)
 	{
 		return qfalse;
@@ -7938,28 +7960,32 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 
 	if (NPCInfo->scriptFlags & SCF_DONT_FIRE)
 	{
-		//not allowed to attack
+		// not allowed to attack
 		return qfalse;
 	}
 
-	if (!(ucmd.buttons & BUTTON_ATTACK)
-		&& !(ucmd.buttons & BUTTON_ALT_ATTACK)
-		&& !(ucmd.buttons & BUTTON_FORCE_FOCUS))
+	if (!(ucmd.buttons & BUTTON_ATTACK) &&
+		!(ucmd.buttons & BUTTON_ALT_ATTACK) &&
+		!(ucmd.buttons & BUTTON_FORCE_FOCUS))
 	{
-		if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
-		{// smart npc,s not already attacking
+		if (g_SerenityJediEngineMode->integer > 1 &&
+			g_spskill->integer > 1 &&
+			g_npc_is_smart &&
+			g_npc_is_smart->integer != 0)
+		{
+			// smart NPCs not already attacking
 			if (CanShoot(NPC->enemy, NPC))
 			{
 				if (NPC->s.weapon == WP_SABER)
 				{
-					//Try to attack
+					// Try to attack
 					Jedi_FaceEnemy(qtrue);
 
 					if (!PM_SaberInAttack(NPC->client->ps.saber_move) && !jedi_saber_busy(NPC))
 					{
-						if (NPC->health <= 30
-							|| NPC->client->ps.forcePower < BLOCKPOINTS_THIRTY
-							|| NPC->client->ps.blockPoints < BLOCKPOINTS_THIRTY)
+						if (NPC->health <= 30 ||
+							NPC->client->ps.forcePower < BLOCKPOINTS_THIRTY ||
+							NPC->client->ps.blockPoints < BLOCKPOINTS_THIRTY)
 						{
 							// Back away while attacking...
 							const int rand = irand(0, 100);
@@ -7999,8 +8025,8 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 
 							WeaponThink();
 
-							if (rand > 90
-								&& NPC->client->ps.blockPoints < BLOCKPOINTS_HALF)
+							if (rand > 90 &&
+								NPC->client->ps.blockPoints < BLOCKPOINTS_HALF)
 							{
 								// Do a lunge, etc occasionally...
 								NPC->client->pers.cmd.upmove = -127;
@@ -8010,17 +8036,17 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 					}
 					else
 					{
-						//Try to attack
+						// Try to attack
 						WeaponThink();
 					}
 				}
 				else
 				{
-					//Try to attack
-					if (NPC->health <= 30
-						|| NPC->client->ps.forcePower < BLOCKPOINTS_THIRTY
-						|| NPC->client->ps.blockPoints < BLOCKPOINTS_THIRTY
-						|| NPC->client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_HEAVYER)
+					// Try to attack
+					if (NPC->health <= 30 ||
+						NPC->client->ps.forcePower < BLOCKPOINTS_THIRTY ||
+						NPC->client->ps.blockPoints < BLOCKPOINTS_THIRTY ||
+						NPC->client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_HEAVYER)
 					{
 						// Back away while attacking...
 						const int rand = irand(0, 100);
@@ -8053,27 +8079,27 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 		}
 		else
 		{
-			//Try to attack
+			// Try to attack
 			WeaponThink();
 		}
 	}
 
 	if (ucmd.buttons & BUTTON_ATTACK && !NPC_Jumping())
 	{
-		//attacking
+		// attacking
 		if (!ucmd.rightmove)
 		{
-			//not already strafing
+			// not already strafing
 			if (!Q_irand(0, 3))
 			{
-				//25% chance of doing this
+				// 25% chance of doing this
 				vec3_t right, dir2enemy;
 
 				AngleVectors(NPC->currentAngles, nullptr, right, nullptr);
 				VectorSubtract(NPC->enemy->currentOrigin, NPC->currentAngles, dir2enemy);
 				if (DotProduct(right, dir2enemy) > 0)
 				{
-					//he's to my right, strafe left
+					// he's to my right, strafe left
 					if (npc_move_dir_clear(ucmd.forwardmove, -127, qfalse))
 					{
 						ucmd.rightmove = -127;
@@ -8082,7 +8108,7 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 				}
 				else
 				{
-					//he's to my left, strafe right
+					// he's to my left, strafe right
 					if (npc_move_dir_clear(ucmd.forwardmove, 127, qfalse))
 					{
 						ucmd.rightmove = 127;

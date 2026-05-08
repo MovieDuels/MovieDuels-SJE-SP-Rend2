@@ -109,6 +109,7 @@ extern int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec
 extern qboolean PM_PainAnim(int anim);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 constexpr auto MISSILE_PRESTEP_TIME = 50;
+extern qboolean PM_InKataAnim(int anim);
 //-------------------------------------------------------------------------
 static void G_MissileBounceEffect(const gentity_t* ent, vec3_t org, vec3_t dir, const qboolean hit_world)
 {
@@ -2180,6 +2181,8 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				other->health > 0 &&
 				!PM_PainAnim(other->client->ps.torsoAnim) &&
 				!BG_InDeathAnim(other->client->ps.torsoAnim) &&
+				!PM_InKataAnim(other->client->ps.legsAnim) && 
+				!PM_InKataAnim(other->client->ps.torsoAnim) &&
 				!PM_InKnockDown(&other->client->ps) &&
 				!WP_DoingForcedAnimationForForcePowers(other))
 			{
@@ -2414,6 +2417,8 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		other->health > 0 &&
 		!PM_PainAnim(other->client->ps.torsoAnim) &&
 		!BG_InDeathAnim(other->client->ps.torsoAnim) &&
+		!PM_InKataAnim(other->client->ps.legsAnim) &&
+		!PM_InKataAnim(other->client->ps.torsoAnim) &&
 		!PM_InKnockDown(&other->client->ps) &&
 		!WP_DoingForcedAnimationForForcePowers(other))
 	{
@@ -2920,6 +2925,8 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 		other->health > 0 &&
 		!PM_PainAnim(other->client->ps.torsoAnim) &&
 		!BG_InDeathAnim(other->client->ps.torsoAnim) &&
+		!PM_InKataAnim(other->client->ps.legsAnim) &&
+		!PM_InKataAnim(other->client->ps.torsoAnim) &&
 		!PM_InKnockDown(&other->client->ps) &&
 		!WP_DoingForcedAnimationForForcePowers(other))
 	{
