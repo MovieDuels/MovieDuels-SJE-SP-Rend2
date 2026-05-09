@@ -876,7 +876,7 @@ static void UI_DoSFXSaber(vec3_t blade_muz, vec3_t blade_dir, const float length
 	}
 }
 
-static void UI_DoEp1Saber(vec3_t blade_muz, vec3_t blade_dir, const float length_max, const float radius,const saber_colors_t color, const int which_saber)
+static void UI_DoEp1Saber(vec3_t blade_muz, vec3_t blade_dir, const float length_max, const float radius, const saber_colors_t color, const int which_saber)
 {
 	vec3_t mid, rgb = { 1, 1, 1 };
 	float radiusmult;
@@ -1591,7 +1591,7 @@ static void UI_DoRotJSaber(vec3_t blade_muz, vec3_t blade_dir, const float lengt
 	}
 }
 
-static void UI_DoTFASaber(vec3_t blade_muz, vec3_t blade_dir, const float length_max, const float radius,const saber_colors_t color, const int which_saber)
+static void UI_DoTFASaber(vec3_t blade_muz, vec3_t blade_dir, const float length_max, const float radius, const saber_colors_t color, const int which_saber)
 {
 	vec3_t mid;
 	float radiusmult;
@@ -1878,7 +1878,7 @@ static void UI_DoUnstableSaber(vec3_t blade_muz, vec3_t blade_dir, const float l
 	{
 		constexpr float angle_scale = 1.0f;
 		const float effectradius = (radius * 1.6f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersGlowSizeUSB.value;
-		const float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeUSB.	value;
+		const float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeUSB.value;
 
 		if (blade_len - effectradius * angle_scale / 2 > 0)
 		{
@@ -2892,7 +2892,7 @@ static saberType_t TranslateSaberType(const char* name)
 	return SABER_SINGLE;
 }
 
-static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int saber_model, const saberType_t saber_type,vec3_t origin, const float cur_yaw, const int blade_num)
+static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int saber_model, const saberType_t saber_type, vec3_t origin, const float cur_yaw, const int blade_num)
 {
 	char blade_color_string[MAX_QPATH];
 	vec3_t angles = { 0 };
@@ -3147,7 +3147,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 	if (ui_SFXSabers.integer < 1)
 	{
 		// Draw the Raven blade.
-		if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+		if (saber_type == SABER_UNSTABLE ||
+			saber_type == SABER_STAFF_UNSTABLE ||
+			saber_type == SABER_ELECTROSTAFF)
 		{
 			UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 		}
@@ -3161,7 +3163,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 		switch (ui_SFXSabers.integer)
 		{
 		case 1:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3171,7 +3175,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 2:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3181,7 +3187,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 3:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3191,7 +3199,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 4:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3201,7 +3211,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 5:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3211,7 +3223,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 6:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3221,7 +3235,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 7:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3231,7 +3247,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 8:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3241,7 +3259,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 9:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3251,7 +3271,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 10:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
@@ -3261,7 +3283,9 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case 11:
-			if (saber_type == SABER_UNSTABLE || saber_type == SABER_STAFF_UNSTABLE)
+			if (saber_type == SABER_UNSTABLE ||
+				saber_type == SABER_STAFF_UNSTABLE ||
+				saber_type == SABER_ELECTROSTAFF)
 			{
 				UI_DoSaberUnstable(blade_origin, axis[0], blade_length, blade_radius, blade_color, which_saber);
 			}
