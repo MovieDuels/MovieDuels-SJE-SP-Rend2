@@ -2470,14 +2470,20 @@ static void UI_DoCWSaber(vec3_t origin, vec3_t dir, const float length, const fl
 	{
 		constexpr float effectalpha = 0.8f;
 
-		if (length - effectradius / 2.0f > 0.0f)
+		const float glowLength = length - effectradius * 0.5f;
+
+		if (glowLength > 0.0f)
 		{
 			saber.radius = effectradius;
-			saber.saberLength = length - saber.radius / 2.0f;
-			VectorCopy(origin, saber.origin);
+			saber.saberLength = glowLength;
+
+			// Move glow slightly so its closer to the core
+			VectorMA(origin, effectradius * 0.25f, dir, saber.origin);
 			VectorCopy(dir, saber.axis[0]);
+
 			saber.reType = RT_SABER_GLOW;
 			saber.customShader = glow;
+
 			saber.shaderRGBA[0] = 0xff * effectalpha;
 			saber.shaderRGBA[1] = 0xff * effectalpha;
 			saber.shaderRGBA[2] = 0xff * effectalpha;
@@ -2628,14 +2634,20 @@ static void UI_DoMaulSaber(vec3_t origin, vec3_t dir, const float length, const 
 	{
 		constexpr float effectalpha = 0.8f;
 
-		if (length - effectradius / 2.0f > 0.0f)
+		const float glowLength = length - effectradius * 0.5f;
+
+		if (glowLength > 0.0f)
 		{
 			saber.radius = effectradius;
-			saber.saberLength = length - saber.radius / 2.0f;
-			VectorCopy(origin, saber.origin);
+			saber.saberLength = glowLength;
+
+			// Move glow slightly so its closer to the core
+			VectorMA(origin, effectradius * 0.25f, dir, saber.origin);
 			VectorCopy(dir, saber.axis[0]);
+
 			saber.reType = RT_SABER_GLOW;
 			saber.customShader = glow;
+
 			saber.shaderRGBA[0] = 0xff * effectalpha;
 			saber.shaderRGBA[1] = 0xff * effectalpha;
 			saber.shaderRGBA[2] = 0xff * effectalpha;

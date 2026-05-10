@@ -13260,11 +13260,16 @@ static void CG_DoCWSaber(vec3_t origin, vec3_t dir, float length, float length_m
 	}
 
 	// Main glow
-	VectorCopy(origin, saber.origin);
+	const float glowLength = length - effectradius * 0.5f;
+
+	// Move glow slightly so its closer to the core
+	VectorMA(origin, effectradius * 0.25f, dir, saber.origin);
 	VectorCopy(dir, saber.axis[0]);
+
 	saber.reType = RT_SABER_GLOW;
 	saber.customShader = glow;
 	saber.radius = effectradius;
+	saber.saberLength = glowLength;
 	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
 	saber.renderfx = rfx;
 
@@ -13506,11 +13511,16 @@ static void CG_DoMaulSaber(vec3_t origin, vec3_t dir, float length, float length
 	}
 
 	// Main glow
-	VectorCopy(origin, saber.origin);
+	const float glowLength = length - effectradius * 0.5f;
+
+	// Move glow slightly so its closer to the core
+	VectorMA(origin, effectradius * 0.25f, dir, saber.origin);
 	VectorCopy(dir, saber.axis[0]);
+
 	saber.reType = RT_SABER_GLOW;
 	saber.customShader = glow;
 	saber.radius = effectradius;
+	saber.saberLength = glowLength;
 	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
 	saber.renderfx = rfx;
 
