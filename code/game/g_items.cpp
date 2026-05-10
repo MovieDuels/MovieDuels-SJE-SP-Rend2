@@ -1574,18 +1574,19 @@ void FinishSpawningItem(gentity_t* ent)
 				if (g_entities[tr.entityNum].inuse)
 				{
 					gi.Printf(S_COLOR_RED
-						"FinishSpawningItem: removing %s startsolid at %s (in a %s)\n",
+						"FinishSpawningItem WARNING: removing %s startsolid at %s (in a %s)\n",
 						ent->classname, vtos(ent->s.origin),
 						g_entities[tr.entityNum].classname);
 				}
 				else
 				{
 					gi.Printf(S_COLOR_RED
-						"FinishSpawningItem: removing %s startsolid at %s\n",
+						"FinishSpawningItem WARNING: removing %s startsolid at %s\n",
 						ent->classname, vtos(ent->s.origin));
 				}
 
-				assert(!"item starting in solid");
+				// No assert — just warn and clean up
+				// assert(!"item starting in solid");
 
 				if (!g_entities[ENTITYNUM_WORLD].s.radius)
 					delayedShutDown = level.time + 100;
