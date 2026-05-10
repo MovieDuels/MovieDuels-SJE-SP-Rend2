@@ -1815,7 +1815,7 @@ extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float thres
 extern void WP_DeactivateSaber(const gentity_t* self, qboolean clear_length = qfalse);
 extern qboolean PM_SaberInAttack(int move);
 extern qboolean PM_SaberInStart(int move);
-extern qboolean pm_saber_in_special_attack(int anim);
+extern qboolean PM_SaberInSpecialAttack(int anim);
 extern qboolean PM_SpinningSaberAnim(int anim);
 extern qboolean PM_SpinningAnim(int anim);
 

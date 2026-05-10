@@ -2698,10 +2698,10 @@ static void Cmd_SaberDrop_f(gentity_t* ent, const int saber_num)
 		return;
 	}
 
-	if (ent->client->ps.saber_move != LS_READY
-		&& ent->client->ps.saber_move != LS_PUTAWAY
-		&& ent->client->ps.saber_move != LS_DRAW
-		&& ent->client->ps.saber_move != LS_NONE)
+	if (ent->client->ps.saberMove != LS_READY
+		&& ent->client->ps.saberMove != LS_PUTAWAY
+		&& ent->client->ps.saberMove != LS_DRAW
+		&& ent->client->ps.saberMove != LS_NONE)
 	{
 		return;
 	}

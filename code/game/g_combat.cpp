@@ -120,12 +120,12 @@ extern qboolean PM_InRoll(const playerState_t* ps);
 extern qboolean PM_SpinningAnim(const int anim);
 extern qboolean PM_RunningAnim(const int anim);
 extern int PM_PowerLevelForSaberAnim(const playerState_t* ps, int saber_num = 0);
-extern qboolean pm_saber_in_special_attack(const int anim);
+extern qboolean PM_SaberInSpecialAttack(const int anim);
 extern qboolean PM_SpinningSaberAnim(const int anim);
 extern qboolean PM_FlippingAnim(const int anim);
 extern qboolean PM_InSpecialJump(const int anim);
 extern qboolean PM_RollingAnim(int anim);
-extern qboolean PM_InAnimForSaberMove(int anim, int saber_move);
+extern qboolean PM_InAnimForSaberMove(int anim, int saberMove);
 extern qboolean PM_SaberInStart(int move);
 extern qboolean PM_SaberInReturn(int move);
 extern int PM_AnimLength(const int index, const animNumber_t anim);
@@ -5745,10 +5745,10 @@ qboolean G_CheckForStrongAttackMomentum(const gentity_t* self)
 	if (PM_PowerLevelForSaberAnim(&self->client->ps) > FORCE_LEVEL_2)
 	{
 		//strong attacks can't be interrupted
-		if (PM_InAnimForSaberMove(self->client->ps.torsoAnim, self->client->ps.saber_move))
+		if (PM_InAnimForSaberMove(self->client->ps.torsoAnim, self->client->ps.saberMove))
 		{
-			//our saber_move was not already interupted by some other anim (like pain)
-			if (PM_SaberInStart(self->client->ps.saber_move))
+			//our saberMove was not already interupted by some other anim (like pain)
+			if (PM_SaberInStart(self->client->ps.saberMove))
 			{
 				const float animLength = PM_AnimLength(self->client->clientInfo.animFileIndex,
 					static_cast<animNumber_t>(self->client->ps.torsoAnim));
@@ -5758,7 +5758,7 @@ qboolean G_CheckForStrongAttackMomentum(const gentity_t* self)
 					return qtrue;
 				}
 			}
-			else if (PM_SaberInReturn(self->client->ps.saber_move))
+			else if (PM_SaberInReturn(self->client->ps.saberMove))
 			{
 				if (self->client->ps.torsoAnimTimer > 750)
 				{
@@ -5841,7 +5841,7 @@ void PlayerPain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 			{
 				//FIXME: only strong-level saber attacks should make me play pain anim?
 				if (!G_CheckForStrongAttackMomentum(self) && !PM_SpinningSaberAnim(self->client->ps.legsAnim)
-					&& !pm_saber_in_special_attack(self->client->ps.torsoAnim)
+					&& !PM_SaberInSpecialAttack(self->client->ps.torsoAnim)
 					&& !PM_InKnockDown(&self->client->ps))
 				{
 					//strong attacks and spins cannot be interrupted by pain, no pain when in knockdown
@@ -5867,7 +5867,7 @@ void PlayerPain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 						//temp HACK: these are the only 2 pain anims that look good when holding a saber
 						NPC_SetAnim(self, parts, PM_PickAnim(self, BOTH_PAIN2, BOTH_PAIN3),
 							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						self->client->ps.saber_move = LS_READY; //don't finish whatever saber move you may have been in
+						self->client->ps.saberMove = LS_READY; //don't finish whatever saber move you may have been in
 						//WTF - insn't working
 						if (self->health < 10 && d_slowmodeath->integer > 5)
 						{

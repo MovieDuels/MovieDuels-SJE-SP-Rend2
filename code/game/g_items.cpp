@@ -497,7 +497,7 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 			}
 			else
 			{
-				self->client->ps.saber_move = LS_READY;
+				self->client->ps.saberMove = LS_READY;
 			}
 			foundIt = qtrue;
 		}

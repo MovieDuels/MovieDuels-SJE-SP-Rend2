@@ -75,7 +75,7 @@ extern qboolean PM_SaberInReflect(int move);
 extern qboolean PM_SaberInIdle(int move);
 extern qboolean PM_SaberInAttack(int move);
 extern qboolean PM_SaberInTransitionAny(int move);
-extern qboolean pm_saber_in_special_attack(int anim);
+extern qboolean PM_SaberInSpecialAttack(int anim);
 extern qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, qboolean missileBlock);
 extern qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, qboolean missileBlock);
 extern qboolean WP_SaberBlockNonRandom(gentity_t* self, vec3_t hitloc, qboolean missileBlock);
@@ -270,14 +270,14 @@ static void G_ApplySaberMoveWildness(const gentity_t* owner, vec3_t bounce_dir, 
 		return;
 	}
 
-	if (!PM_SaberInParry(owner->client->ps.saber_move)
-		&& !PM_SaberInReflect(owner->client->ps.saber_move)
-		&& !PM_SaberInIdle(owner->client->ps.saber_move))
+	if (!PM_SaberInParry(owner->client->ps.saberMove)
+		&& !PM_SaberInReflect(owner->client->ps.saberMove)
+		&& !PM_SaberInIdle(owner->client->ps.saberMove))
 	{
 		// A bit more wild when not in parry/reflect/idle
-		if (PM_SaberInAttack(owner->client->ps.saber_move)
-			|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-			|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+		if (PM_SaberInAttack(owner->client->ps.saberMove)
+			|| PM_SaberInTransitionAny(owner->client->ps.saberMove)
+			|| PM_SaberInSpecialAttack(owner->client->ps.torsoAnim))
 		{
 			// Moderately more wild
 			G_AddRandomSlop(bounce_dir, moderateAmount);
@@ -577,14 +577,14 @@ void G_ReflectMissileAuto(gentity_t* ent, gentity_t* missile, vec3_t forward)
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
+			if (!PM_SaberInParry(owner->client->ps.saberMove)
+				&& !PM_SaberInReflect(owner->client->ps.saberMove)
+				&& !PM_SaberInIdle(owner->client->ps.saberMove))
 			{
 				// A bit more wild when not in parry/reflect/idle
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				if (PM_SaberInAttack(owner->client->ps.saberMove)
+					|| PM_SaberInTransitionAny(owner->client->ps.saberMove)
+					|| PM_SaberInSpecialAttack(owner->client->ps.torsoAnim))
 				{
 					// Moderately more wild
 					for (int i = 0; i < 3; i++)
@@ -655,14 +655,14 @@ void G_ReflectMissileAuto(gentity_t* ent, gentity_t* missile, vec3_t forward)
 				}
 			}
 
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
+			if (!PM_SaberInParry(owner->client->ps.saberMove)
+				&& !PM_SaberInReflect(owner->client->ps.saberMove)
+				&& !PM_SaberInIdle(owner->client->ps.saberMove))
 			{
 				// A bit more wild when not in parry/reflect/idle
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				if (PM_SaberInAttack(owner->client->ps.saberMove)
+					|| PM_SaberInTransitionAny(owner->client->ps.saberMove)
+					|| PM_SaberInSpecialAttack(owner->client->ps.torsoAnim))
 				{
 					// Really wild
 					for (int i = 0; i < 3; i++)
@@ -797,14 +797,14 @@ void G_ReflectMissileNPC(gentity_t* ent, gentity_t* missile, vec3_t forward)
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
+			if (!PM_SaberInParry(owner->client->ps.saberMove)
+				&& !PM_SaberInReflect(owner->client->ps.saberMove)
+				&& !PM_SaberInIdle(owner->client->ps.saberMove))
 			{
 				// A bit more wild when not in parry/reflect/idle
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				if (PM_SaberInAttack(owner->client->ps.saberMove)
+					|| PM_SaberInTransitionAny(owner->client->ps.saberMove)
+					|| PM_SaberInSpecialAttack(owner->client->ps.torsoAnim))
 				{
 					// Moderately more wild
 					for (int i = 0; i < 3; i++)
@@ -875,14 +875,14 @@ void G_ReflectMissileNPC(gentity_t* ent, gentity_t* missile, vec3_t forward)
 				}
 			}
 
-			if (!PM_SaberInParry(owner->client->ps.saber_move)
-				&& !PM_SaberInReflect(owner->client->ps.saber_move)
-				&& !PM_SaberInIdle(owner->client->ps.saber_move))
+			if (!PM_SaberInParry(owner->client->ps.saberMove)
+				&& !PM_SaberInReflect(owner->client->ps.saberMove)
+				&& !PM_SaberInIdle(owner->client->ps.saberMove))
 			{
 				// A bit more wild when not in parry/reflect/idle
-				if (PM_SaberInAttack(owner->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(owner->client->ps.saber_move)
-					|| pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				if (PM_SaberInAttack(owner->client->ps.saberMove)
+					|| PM_SaberInTransitionAny(owner->client->ps.saberMove)
+					|| PM_SaberInSpecialAttack(owner->client->ps.torsoAnim))
 				{
 					// Really wild
 					for (int i = 0; i < 3; i++)
@@ -1121,13 +1121,13 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move)
-				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
-				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saberMove)
+				&& !PM_SaberInReflect(blocker->client->ps.saberMove)
+				&& !PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim)
+				if (PM_SaberInAttack(blocker->client->ps.saberMove)
+					|| PM_SaberInTransitionAny(blocker->client->ps.saberMove)
+					|| PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim)
 					|| blocker->client->ps.forcePower < BLOCKPOINTS_KNOCKAWAY)
 				{
 					for (i = 0; i < 3; i++)
@@ -1206,13 +1206,13 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move)
-				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
-				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saberMove)
+				&& !PM_SaberInReflect(blocker->client->ps.saberMove)
+				&& !PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+				if (PM_SaberInAttack(blocker->client->ps.saberMove)
+					|| PM_SaberInTransitionAny(blocker->client->ps.saberMove)
+					|| PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim))
 				{
 					for (i = 0; i < 3; i++)
 					{
@@ -1343,13 +1343,13 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 				}
 			}
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move)
-				&& !PM_SaberInReflect(blocker->client->ps.saber_move)
-				&& !PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saberMove)
+				&& !PM_SaberInReflect(blocker->client->ps.saberMove)
+				&& !PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
-				if (PM_SaberInAttack(blocker->client->ps.saber_move)
-					|| PM_SaberInTransitionAny(blocker->client->ps.saber_move)
-					|| pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+				if (PM_SaberInAttack(blocker->client->ps.saberMove)
+					|| PM_SaberInTransitionAny(blocker->client->ps.saberMove)
+					|| PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim))
 				{
 					for (i = 0; i < 3; i++)
 					{
@@ -1728,13 +1728,13 @@ void G_ReflectMissile_JKA(gentity_t* ent, gentity_t* missile, vec3_t forward)
 			VectorNormalize(bounce_dir);
 
 			// Wildness based on saber state
-			if (!PM_SaberInParry(owner->client->ps.saber_move) &&
-				!PM_SaberInReflect(owner->client->ps.saber_move) &&
-				!PM_SaberInIdle(owner->client->ps.saber_move))
+			if (!PM_SaberInParry(owner->client->ps.saberMove) &&
+				!PM_SaberInReflect(owner->client->ps.saberMove) &&
+				!PM_SaberInIdle(owner->client->ps.saberMove))
 			{
-				const float amt = (PM_SaberInAttack(owner->client->ps.saber_move) ||
-					PM_SaberInTransitionAny(owner->client->ps.saber_move) ||
-					pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				const float amt = (PM_SaberInAttack(owner->client->ps.saberMove) ||
+					PM_SaberInTransitionAny(owner->client->ps.saberMove) ||
+					PM_SaberInSpecialAttack(owner->client->ps.torsoAnim))
 					? 0.2f
 					: 0.1f;
 
@@ -1794,13 +1794,13 @@ void G_ReflectMissile_JKA(gentity_t* ent, gentity_t* missile, vec3_t forward)
 				}
 			}
 
-			if (!PM_SaberInParry(owner->client->ps.saber_move) &&
-				!PM_SaberInReflect(owner->client->ps.saber_move) &&
-				!PM_SaberInIdle(owner->client->ps.saber_move))
+			if (!PM_SaberInParry(owner->client->ps.saberMove) &&
+				!PM_SaberInReflect(owner->client->ps.saberMove) &&
+				!PM_SaberInIdle(owner->client->ps.saberMove))
 			{
-				const float amt = (PM_SaberInAttack(owner->client->ps.saber_move) ||
-					PM_SaberInTransitionAny(owner->client->ps.saber_move) ||
-					pm_saber_in_special_attack(owner->client->ps.torsoAnim))
+				const float amt = (PM_SaberInAttack(owner->client->ps.saberMove) ||
+					PM_SaberInTransitionAny(owner->client->ps.saberMove) ||
+					PM_SaberInSpecialAttack(owner->client->ps.torsoAnim))
 					? 0.3f
 					: 0.1f;
 
@@ -2709,7 +2709,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		&& !WP_DoingForcedAnimationForForcePowers(other))
 	{
 		//play projectile block animation
-		if (other->client && !PM_SaberInAttack(other->client->ps.saber_move)
+		if (other->client && !PM_SaberInAttack(other->client->ps.saberMove)
 			|| other->client && (pm->cmd.buttons & BUTTON_USE_FORCE
 				|| pm->cmd.buttons & BUTTON_FORCEGRIP
 				|| pm->cmd.buttons & BUTTON_DASH
@@ -2785,7 +2785,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 				VectorSubtract(ent->currentOrigin, other->currentOrigin, diff);
 				VectorNormalize(diff);
 
-				if (other->owner->client && !PM_SaberInAttack(other->owner->client->ps.saber_move)
+				if (other->owner->client && !PM_SaberInAttack(other->owner->client->ps.saberMove)
 					|| other->owner->client && (pm->cmd.buttons & BUTTON_USE_FORCE
 						|| pm->cmd.buttons & BUTTON_FORCEGRIP
 						|| pm->cmd.buttons & BUTTON_DASH
@@ -3061,7 +3061,7 @@ static void G_MissileImpactJKA(gentity_t* ent, trace_t* trace, const int hit_loc
 		&& !WP_DoingForcedAnimationForForcePowers(other))
 	{
 		//play projectile block animation
-		if (other->client && !PM_SaberInAttack(other->client->ps.saber_move)
+		if (other->client && !PM_SaberInAttack(other->client->ps.saberMove)
 			|| other->client && (pm->cmd.buttons & BUTTON_USE_FORCE
 				|| pm->cmd.buttons & BUTTON_FORCEGRIP
 				|| pm->cmd.buttons & BUTTON_DASH
@@ -4036,12 +4036,12 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(bounce_dir);
 
 			// Wildness based on saber state
-			if (!PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
 				float amt =
-					(PM_SaberInAttack(blocker->client->ps.saber_move) ||
-						PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
-						pm_saber_in_special_attack(blocker->client->ps.torsoAnim) ||
+					(PM_SaberInAttack(blocker->client->ps.saberMove) ||
+						PM_SaberInTransitionAny(blocker->client->ps.saberMove) ||
+						PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim) ||
 						G_GetBlockPoints(blocker) < BLOCKPOINTS_KNOCKAWAY)
 					? 0.3f
 					: 0.1f;
@@ -4109,14 +4109,14 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(bounce_dir);
 
 			// Wildness
-			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
-				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
-				!PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saberMove) &&
+				!PM_SaberInReflect(blocker->client->ps.saberMove) &&
+				!PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
 				float amt =
-					(PM_SaberInAttack(blocker->client->ps.saber_move) ||
-						PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
-						pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+					(PM_SaberInAttack(blocker->client->ps.saberMove) ||
+						PM_SaberInTransitionAny(blocker->client->ps.saberMove) ||
+						PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim))
 					? 0.2f
 					: 0.1f;
 
@@ -4219,14 +4219,14 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 				G_AddWildness(bounce_dir, 0.4f);
 			}
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
-				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
-				!PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saberMove) &&
+				!PM_SaberInReflect(blocker->client->ps.saberMove) &&
+				!PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
 				float amt =
-					(PM_SaberInAttack(blocker->client->ps.saber_move) ||
-						PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
-						pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+					(PM_SaberInAttack(blocker->client->ps.saberMove) ||
+						PM_SaberInTransitionAny(blocker->client->ps.saberMove) ||
+						PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim))
 					? 0.3f
 					: 0.4f;
 
@@ -4485,11 +4485,11 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(bounce_dir);
 
 			// Add wildness based on saber state and forcePower
-			if (!PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
-				if (PM_SaberInAttack(blocker->client->ps.saber_move) ||
-					PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
-					pm_saber_in_special_attack(blocker->client->ps.torsoAnim) ||
+				if (PM_SaberInAttack(blocker->client->ps.saberMove) ||
+					PM_SaberInTransitionAny(blocker->client->ps.saberMove) ||
+					PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim) ||
 					blocker->client->ps.forcePower < BLOCKPOINTS_KNOCKAWAY)
 				{
 					for (i = 0; i < 3; i++)
@@ -4584,13 +4584,13 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			VectorSubtract(bullseye, missile->currentOrigin, bounce_dir);
 			VectorNormalize(bounce_dir);
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
-				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
-				!PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saberMove) &&
+				!PM_SaberInReflect(blocker->client->ps.saberMove) &&
+				!PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
-				if (PM_SaberInAttack(blocker->client->ps.saber_move) ||
-					PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
-					pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+				if (PM_SaberInAttack(blocker->client->ps.saberMove) ||
+					PM_SaberInTransitionAny(blocker->client->ps.saberMove) ||
+					PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim))
 				{
 					for (i = 0; i < 3; i++)
 					{
@@ -4740,13 +4740,13 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 				}
 			}
 
-			if (!PM_SaberInParry(blocker->client->ps.saber_move) &&
-				!PM_SaberInReflect(blocker->client->ps.saber_move) &&
-				!PM_SaberInIdle(blocker->client->ps.saber_move))
+			if (!PM_SaberInParry(blocker->client->ps.saberMove) &&
+				!PM_SaberInReflect(blocker->client->ps.saberMove) &&
+				!PM_SaberInIdle(blocker->client->ps.saberMove))
 			{
-				if (PM_SaberInAttack(blocker->client->ps.saber_move) ||
-					PM_SaberInTransitionAny(blocker->client->ps.saber_move) ||
-					pm_saber_in_special_attack(blocker->client->ps.torsoAnim))
+				if (PM_SaberInAttack(blocker->client->ps.saberMove) ||
+					PM_SaberInTransitionAny(blocker->client->ps.saberMove) ||
+					PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim))
 				{
 					for (i = 0; i < 3; i++)
 					{

@@ -529,7 +529,7 @@ void PM_VelocityForSaberMove(const playerState_t* ps, vec3_t throw_dir)
 
 	AngleVectors(ps->viewangles, v_forward, v_right, v_up);
 
-	switch (saber_moveData[ps->saber_move].startQuad)
+	switch (saber_moveData[ps->saberMove].startQuad)
 	{
 	case Q_BR:
 		VectorScale(v_right, 1, start_q);
@@ -561,7 +561,7 @@ void PM_VelocityForSaberMove(const playerState_t* ps, vec3_t throw_dir)
 		break;
 	default:;
 	}
-	switch (saber_moveData[ps->saber_move].endQuad)
+	switch (saber_moveData[ps->saberMove].endQuad)
 	{
 	case Q_BR:
 		VectorScale(v_right, 1, end_q);
@@ -1245,7 +1245,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saber_num)
 	return FORCE_LEVEL_0;
 }
 
-qboolean PM_InAnimForSaberMove(int anim, const int saber_move)
+qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 {
 	switch (anim)
 	{
@@ -1331,7 +1331,7 @@ qboolean PM_InAnimForSaberMove(int anim, const int saber_move)
 	}
 	if (PM_SaberDrawPutawayAnim(anim))
 	{
-		if (saber_move == LS_DRAW || saber_move == LS_PUTAWAY)
+		if (saberMove == LS_DRAW || saberMove == LS_PUTAWAY)
 		{
 			return qtrue;
 		}
@@ -1339,7 +1339,7 @@ qboolean PM_InAnimForSaberMove(int anim, const int saber_move)
 	}
 	if (PM_SaberStanceAnim(anim))
 	{
-		if (saber_move == LS_READY)
+		if (saberMove == LS_READY)
 		{
 			return qtrue;
 		}
@@ -1354,38 +1354,38 @@ qboolean PM_InAnimForSaberMove(int anim, const int saber_move)
 	//drop the anim to the first level and start the checks there
 	anim -= (anim_level - FORCE_LEVEL_1) * SABER_ANIM_GROUP_SIZE;
 	//check level 1
-	if (anim == saber_moveData[saber_move].animToUse)
+	if (anim == saber_moveData[saberMove].animToUse)
 	{
 		return qtrue;
 	}
 	//check level 2
 	anim += SABER_ANIM_GROUP_SIZE;
-	if (anim == saber_moveData[saber_move].animToUse)
+	if (anim == saber_moveData[saberMove].animToUse)
 	{
 		return qtrue;
 	}
 	//check level 3
 	anim += SABER_ANIM_GROUP_SIZE;
-	if (anim == saber_moveData[saber_move].animToUse)
+	if (anim == saber_moveData[saberMove].animToUse)
 	{
 		return qtrue;
 	}
 	//check level 4
 	anim += SABER_ANIM_GROUP_SIZE;
-	if (anim == saber_moveData[saber_move].animToUse)
+	if (anim == saber_moveData[saberMove].animToUse)
 	{
 		return qtrue;
 	}
 	//check level 5
 	anim += SABER_ANIM_GROUP_SIZE;
-	if (anim == saber_moveData[saber_move].animToUse)
+	if (anim == saber_moveData[saberMove].animToUse)
 	{
 		return qtrue;
 	}
 	if (anim >= BOTH_P1_S1_T_ && anim <= BOTH_H1_S1_BR)
 	{
 		//parries, knockaways and broken parries
-		return static_cast<qboolean>(anim == saber_moveData[saber_move].animToUse);
+		return static_cast<qboolean>(anim == saber_moveData[saberMove].animToUse);
 	}
 	return qfalse;
 }
@@ -1563,7 +1563,7 @@ qboolean PM_SaberReturnAnim(const int anim)
 	return qfalse;
 }
 
-qboolean pm_saber_in_special_attack(const int anim)
+qboolean PM_SaberInSpecialAttack(const int anim)
 {
 	switch (anim)
 	{
@@ -2777,7 +2777,7 @@ static saber_moveName_t PM_PickBackStab()
 	}
 	if (pm->gent->client->ps.saberAnimLevel == SS_DESANN || pm->gent->client->ps.saberAnimLevel == SS_STRONG)
 	{
-		if (pm->ps->saber_move == LS_READY || !Q_irand(0, 3))
+		if (pm->ps->saberMove == LS_READY || !Q_irand(0, 3))
 		{
 			return LS_A_BACKSTAB;
 		}
@@ -3778,8 +3778,8 @@ static qboolean PM_CheckJumpForwardAttackMove()
 			|| pm->ps->saberAnimLevel == SS_STAFF)
 		{
 			//dual and staff
-			if (!PM_SaberInTransitionAny(pm->ps->saber_move) //not going to/from/between an attack anim
-				&& !PM_SaberInAttack(pm->ps->saber_move) //not in attack anim
+			if (!PM_SaberInTransitionAny(pm->ps->saberMove) //not going to/from/between an attack anim
+				&& !PM_SaberInAttack(pm->ps->saberMove) //not in attack anim
 				&& pm->ps->weaponTime <= 0 //not busy
 				&& pm->cmd.buttons & BUTTON_ATTACK) //want to attack
 			{
@@ -4203,8 +4203,8 @@ qboolean PM_CheckBackflipAttackMove()
 			&& (pm->cmd.upmove > 0 || pm->ps->pm_flags & PMF_JUMPING)) //jumping
 		{
 			//jumping backwards and using staff
-			if (!PM_SaberInTransitionAny(pm->ps->saber_move) //not going to/from/between an attack anim
-				&& !PM_SaberInAttack(pm->ps->saber_move) //not in attack anim
+			if (!PM_SaberInTransitionAny(pm->ps->saberMove) //not going to/from/between an attack anim
+				&& !PM_SaberInAttack(pm->ps->saberMove) //not in attack anim
 				&& pm->ps->weaponTime <= 0 //not busy
 				&& pm->cmd.buttons & BUTTON_ATTACK) //want to attack
 			{
@@ -4274,7 +4274,7 @@ static saber_moveName_t PM_CheckDualSpinProtect()
 	}
 	//do normal checks
 	const qboolean isPlayer = (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
-	if (pm->ps->saber_move == LS_READY //ready
+	if (pm->ps->saberMove == LS_READY //ready
 		&& pm->ps->saberAnimLevel == SS_DUAL //using dual saber style
 		&& pm->ps->saber[0].Active() && pm->ps->saber[1].Active() //both sabers on
 		&& G_TryingKataAttack(&pm->cmd)
@@ -4330,7 +4330,7 @@ static saber_moveName_t PM_CheckStaffKata()
 	}
 	//do normal checks
 	const qboolean isPlayer = (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
-	if (pm->ps->saber_move == LS_READY //ready
+	if (pm->ps->saberMove == LS_READY //ready
 		//&& (pm->ps->clientNum < MAX_CLIENTS||PM_ControlledByPlayer())//PLAYER ONLY...?
 		//&& pm->ps->viewangles[0] > 30 //looking down
 		&& pm->ps->saberAnimLevel == SS_STAFF //using dual saber style
@@ -4383,7 +4383,7 @@ saber_moveName_t PM_CheckPullAttack()
 	}
 
 	const qboolean isPlayer = (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
-	if ((pm->ps->saber_move == LS_READY || PM_SaberInReturn(pm->ps->saber_move) || PM_SaberInReflect(pm->ps->saber_move))
+	if ((pm->ps->saberMove == LS_READY || PM_SaberInReturn(pm->ps->saberMove) || PM_SaberInReflect(pm->ps->saberMove))
 		//ready
 		&& pm->ps->saberAnimLevel >= SS_FAST //single saber styles - FIXME: Tavion?
 		&& pm->ps->saberAnimLevel <= SS_STRONG //single saber styles - FIXME: Tavion?
@@ -5809,11 +5809,11 @@ void PM_SaberStartTransAnim(const int saberAnimLevel,
 
 				if (isBounce)
 				{
-					*animSpeed *= 0.6f;
+					*animSpeed *= 0.65f;
 				}
 				else if (isReturn)
 				{
-					*animSpeed *= 0.8f;
+					*animSpeed *= 0.85f;
 				}
 			}
 
@@ -5828,7 +5828,7 @@ void PM_SaberStartTransAnim(const int saberAnimLevel,
 
 				if (isBounce || isReturn)
 				{
-					*animSpeed *= 0.6f;
+					*animSpeed *= 0.65f;
 				}
 			}
 
@@ -5872,7 +5872,7 @@ void PM_SaberStartTransAnim(const int saberAnimLevel,
 
 				if (isMassive)
 				{
-					*animSpeed *= 0.5f;
+					*animSpeed *= 0.55f;
 				}
 			}
 
@@ -5925,7 +5925,7 @@ void PM_SaberStartTransAnim(const int saberAnimLevel,
 					*animSpeed *= 1.1f;
 					break;
 				case SS_MEDIUM:
-					*animSpeed *= 1.0f;
+					*animSpeed *= saberanimscale;
 					break;
 				case SS_STRONG:
 				case SS_DESANN:
@@ -6921,9 +6921,9 @@ static void PM_TorsoAnimLightsaber()
 		{
 			//saber is on
 			// Select the proper idle Lightsaber attack move from the chart.
-			if (pm->ps->saber_move > LS_READY && pm->ps->saber_move < LS_MOVE_MAX)
+			if (pm->ps->saberMove > LS_READY && pm->ps->saberMove < LS_MOVE_MAX)
 			{
-				PM_SetSaberMove(saber_moveData[pm->ps->saber_move].chain_idle);
+				PM_SetSaberMove(saber_moveData[pm->ps->saberMove].chain_idle);
 			}
 			else
 			{
@@ -6990,325 +6990,325 @@ static void PM_TorsoAnimLightsaber()
 		else if (pm->ps->legsAnim == BOTH_RUN1)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_BAZOOKA)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BAZOOKA, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_BLASTER)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BLASTER, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_DOUBLE_PISTOL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_GRENADE)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_GRENADE, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_HEAVY)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN)
 		{
 			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_RUN2)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_RUN_STAFF)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_RUN_DUAL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_BAZOOKA)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BAZOOKA, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_BLASTER)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BLASTER, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_DOUBLE_PISTOL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_GRENADE)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_GRENADE, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_HEAVY)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN)
 		{
 			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JOG_PISTOL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK1)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_BAZOOKA)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BAZOOKA, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_BLASTER)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BLASTER, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_DOUBLE_PISTOL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_GRENADE)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_GRENADE, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_HEAVY)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN)
 		{
 			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_PISTOL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK1_STICK)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_STICK, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_MENUIDLE1)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_MENUIDLE1, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_DUELS)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_DUELS, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_STAFF)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_DUELS)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_DUELS, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BACK, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_LEFT, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_FORWARD, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BACK, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_RIGHT, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_LEFT, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SABERDUALCROUCH)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERDUALCROUCH, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSTAFFCROUCH, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK2)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_STAFF)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_AMD)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_AMD, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_DUAL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_DUAL_AMD)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_AMD, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_CROUCH1IDLE && pm->ps->clientNum != 0)
 		{
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_JUMP1)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else
 		{
-			if (pm->ps->saber_move > LS_READY && pm->ps->saber_move < LS_MOVE_MAX)
+			if (pm->ps->saberMove > LS_READY && pm->ps->saberMove < LS_MOVE_MAX)
 			{
-				PM_SetSaberMove(saber_moveData[pm->ps->saber_move].chain_idle);
+				PM_SetSaberMove(saber_moveData[pm->ps->saberMove].chain_idle);
 			}
 			else
 			{
@@ -7356,12 +7356,12 @@ static void PM_TorsoAnimLightsaber()
 		else if (pm->ps->legsAnim == BOTH_GUARD_LOOKAROUND1)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_GUARD_LOOKAROUND1, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_GUARD_IDLE1)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_GUARD_IDLE1, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND1IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1
@@ -7400,22 +7400,22 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND2TO4)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND2TO4, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND4TO2)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND4TO2, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND4)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND4, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else
 		{
@@ -7423,7 +7423,7 @@ static void PM_TorsoAnimLightsaber()
 
 			if (pm->ps->saberInFlight)
 			{
-				if (PM_SaberInBrokenParry(pm->ps->saber_move) ||
+				if (PM_SaberInBrokenParry(pm->ps->saberMove) ||
 					pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
 					PM_DodgeAnim(pm->ps->torsoAnim))
 				{
@@ -7465,9 +7465,9 @@ static void PM_TorsoAnimLightsaber()
 					}
 				}
 
-				if (pm->ps->saber_move > LS_READY && pm->ps->saber_move < LS_MOVE_MAX)
+				if (pm->ps->saberMove > LS_READY && pm->ps->saberMove < LS_MOVE_MAX)
 				{
-					PM_SetSaberMove(saber_moveData[pm->ps->saber_move].chain_idle);
+					PM_SetSaberMove(saber_moveData[pm->ps->saberMove].chain_idle);
 				}
 				else
 				{
@@ -7702,7 +7702,7 @@ void PM_TorsoAnimation()
 
 			saber_in_air = qtrue;
 
-			if (PM_SaberInBrokenParry(pm->ps->saber_move) || pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
+			if (PM_SaberInBrokenParry(pm->ps->saberMove) || pm->ps->saberBlocked == BLOCKED_PARRY_BROKEN ||
 				PM_DodgeAnim(pm->ps->torsoAnim))
 			{
 				//we're stuck in a broken parry
@@ -7784,7 +7784,7 @@ void PM_TorsoAnimation()
 			}
 		}
 
-		if (pm->ps->weaponTime <= 0 && (pm->ps->saber_move == LS_READY || pm->ps->SaberLength() == 0) && !saber_in_air)
+		if (pm->ps->weaponTime <= 0 && (pm->ps->saberMove == LS_READY || pm->ps->SaberLength() == 0) && !saber_in_air)
 		{
 			TorsoAgainstWindTest(pm->gent);
 		}
@@ -7849,8 +7849,8 @@ void PM_TorsoAnimation()
 		pm->ps->weaponstate == WEAPON_READY ||
 		pm->ps->weaponstate == WEAPON_CHARGING ||
 		pm->ps->weaponstate == WEAPON_CHARGING_ALT
-		&& !PM_SaberInBounce(pm->ps->saber_move)
-		&& !PM_SaberInReturn(pm->ps->saber_move)
+		&& !PM_SaberInBounce(pm->ps->saberMove)
+		&& !PM_SaberInReturn(pm->ps->saberMove)
 		&& !PM_SaberInMassiveBounce(pm->ps->torsoAnim))
 	{
 		if (pm->ps->weapon == WP_SABER && pm->ps->SaberLength() && (pm->ps->SaberActive() || !g_noIgniteTwirl->integer))
@@ -8144,8 +8144,8 @@ void PM_TorsoAnimation()
 				&& (pm->gent->s.number < MAX_CLIENTS || G_ControlledByPlayer(pm->gent))
 				&& pm->ps->weaponstate != WEAPON_CHARGING
 				&& pm->ps->weaponstate != WEAPON_CHARGING_ALT
-				&& !PM_SaberInBounce(pm->ps->saber_move)
-				&& !PM_SaberInReturn(pm->ps->saber_move)
+				&& !PM_SaberInBounce(pm->ps->saberMove)
+				&& !PM_SaberInReturn(pm->ps->saberMove)
 				&& !PM_SaberInMassiveBounce(pm->ps->torsoAnim))
 			{
 				//PLayer- temp hack for weapon frame
@@ -8184,9 +8184,9 @@ void PM_TorsoAnimation()
 				{
 					// ********************************************************
 				case WP_SABER:
-					if (pm->ps->saber_move > LS_NONE && pm->ps->saber_move < LS_MOVE_MAX)
+					if (pm->ps->saberMove > LS_NONE && pm->ps->saberMove < LS_MOVE_MAX)
 					{
-						PM_SetSaberMove(saber_moveData[pm->ps->saber_move].chain_idle);
+						PM_SetSaberMove(saber_moveData[pm->ps->saberMove].chain_idle);
 					}
 					break;
 					// ********************************************************
@@ -8801,7 +8801,7 @@ void PM_TorsoAnimation()
 			|| pm->ps->legsAnim == BOTH_STANCE_READY_MINIGUN_IDLE)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
-			pm->ps->saber_move = LS_READY;
+			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND2TO4)
 		{
@@ -10524,11 +10524,11 @@ qboolean PM_LungRollAnim(const int anim)
 qboolean PM_GoingToAttackDown(const playerState_t* ps)
 {
 	if (PM_StabDownAnim(ps->torsoAnim) //stabbing downward
-		|| ps->saber_move == LS_A_LUNGE //lunge
-		|| ps->saber_move == LS_A_JUMP_T__B_ //death from above
-		|| ps->saber_move == LS_A_T2B //attacking top to bottom
-		|| ps->saber_move == LS_S_T2B //starting at attack downward
-		|| PM_SaberInTransition(ps->saber_move) && saber_moveData[ps->saber_move].endQuad == Q_T)
+		|| ps->saberMove == LS_A_LUNGE //lunge
+		|| ps->saberMove == LS_A_JUMP_T__B_ //death from above
+		|| ps->saberMove == LS_A_T2B //attacking top to bottom
+		|| ps->saberMove == LS_S_T2B //starting at attack downward
+		|| PM_SaberInTransition(ps->saberMove) && saber_moveData[ps->saberMove].endQuad == Q_T)
 		//transitioning to a top to bottom attack
 	{
 		return qtrue;
@@ -10998,9 +10998,9 @@ qboolean PM_KnockDownAnimExtended(const int anim)
 	return qfalse;
 }
 
-qboolean PM_SaberInKata(const saber_moveName_t saber_move)
+qboolean PM_SaberInKata(const saber_moveName_t saberMove)
 {
-	switch (saber_move)
+	switch (saberMove)
 	{
 	case LS_A1_SPECIAL:
 	case LS_A2_SPECIAL:
@@ -11014,9 +11014,9 @@ qboolean PM_SaberInKata(const saber_moveName_t saber_move)
 	return qfalse;
 }
 
-qboolean PM_SaberInBackAttack(const saber_moveName_t saber_move)
+qboolean PM_SaberInBackAttack(const saber_moveName_t saberMove)
 {
-	switch (saber_move)
+	switch (saberMove)
 	{
 	case LS_A_BACK:
 	case LS_A_BACK_CR:
@@ -11028,9 +11028,9 @@ qboolean PM_SaberInBackAttack(const saber_moveName_t saber_move)
 	return qfalse;
 }
 
-qboolean PM_SaberInOverHeadSlash(const saber_moveName_t saber_move)
+qboolean PM_SaberInOverHeadSlash(const saber_moveName_t saberMove)
 {
-	switch (saber_move)
+	switch (saberMove)
 	{
 	case LS_A_FLIP_STAB:
 	case LS_A_FLIP_SLASH:
@@ -11041,9 +11041,9 @@ qboolean PM_SaberInOverHeadSlash(const saber_moveName_t saber_move)
 	return qfalse;
 }
 
-qboolean PM_SaberInRollStab(const saber_moveName_t saber_move)
+qboolean PM_SaberInRollStab(const saber_moveName_t saberMove)
 {
-	switch (saber_move)
+	switch (saberMove)
 	{
 	case LS_ROLL_STAB:
 		return qtrue;
@@ -11053,9 +11053,9 @@ qboolean PM_SaberInRollStab(const saber_moveName_t saber_move)
 	return qfalse;
 }
 
-qboolean PM_SaberInLungeStab(const saber_moveName_t saber_move)
+qboolean PM_SaberInLungeStab(const saber_moveName_t saberMove)
 {
-	switch (saber_move)
+	switch (saberMove)
 	{
 	case LS_A_LUNGE:
 		return qtrue;
@@ -11291,28 +11291,28 @@ qboolean SaberAttacking(const gentity_t* self)
 		return qfalse;
 	}
 
-	if (PM_SaberInParry(self->client->ps.saber_move))
+	if (PM_SaberInParry(self->client->ps.saberMove))
 	{
 		return qfalse;
 	}
-	if (PM_SaberInBrokenParry(self->client->ps.saber_move))
+	if (PM_SaberInBrokenParry(self->client->ps.saberMove))
 	{
 		return qfalse;
 	}
-	if (PM_SaberInDeflect(self->client->ps.saber_move))
+	if (PM_SaberInDeflect(self->client->ps.saberMove))
 	{
 		return qfalse;
 	}
-	if (PM_SaberInBounce(self->client->ps.saber_move))
+	if (PM_SaberInBounce(self->client->ps.saberMove))
 	{
 		return qfalse;
 	}
-	if (PM_SaberInKnockaway(self->client->ps.saber_move))
+	if (PM_SaberInKnockaway(self->client->ps.saberMove))
 	{
 		return qfalse;
 	}
 
-	if (PM_SaberInAttack(self->client->ps.saber_move))
+	if (PM_SaberInAttack(self->client->ps.saberMove))
 	{
 		if (self->client->ps.weaponstate == WEAPON_FIRING && self->client->ps.saberBlocked == BLOCKED_ATK_BOUNCE)
 		{
@@ -11321,7 +11321,7 @@ qboolean SaberAttacking(const gentity_t* self)
 		}
 	}
 
-	if (PM_SaberInSpecial(self->client->ps.saber_move))
+	if (PM_SaberInSpecial(self->client->ps.saberMove))
 	{
 		return qtrue;
 	}

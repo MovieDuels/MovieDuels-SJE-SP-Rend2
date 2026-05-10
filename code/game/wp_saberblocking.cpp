@@ -77,7 +77,7 @@ extern qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, int sa
 extern qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, int saber_num, int blade_num, vec3_t hit_loc);
 extern cvar_t* g_saberAutoBlocking;
 extern void g_do_m_block_response(const gentity_t* speaker_npc_self);
-extern qboolean PM_SaberInKata(saber_moveName_t saber_move);
+extern qboolean PM_SaberInKata(saber_moveName_t saberMove);
 extern qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker, vec3_t hit_loc);
 extern qboolean WalkCheck(const gentity_t* self);
 extern qboolean Rosh_BeingHealed(const gentity_t* self);
@@ -173,14 +173,14 @@ void g_fatigue_bp_knockaway(gentity_t* blocker)
 
 	if (PM_SaberInMassiveBounce(blocker->client->ps.torsoAnim))
 	{
-		blocker->client->ps.saber_move = LS_NONE;
+		blocker->client->ps.saberMove = LS_NONE;
 		blocker->client->ps.saberBlocked = BLOCKED_NONE;
 		blocker->client->ps.weaponTime = blocker->client->ps.torsoAnimTimer;
 		blocker->client->MassiveBounceAnimTime = blocker->client->ps.torsoAnimTimer + level.time;
 	}
 	else
 	{
-		blocker->client->ps.saber_move = LS_READY;
+		blocker->client->ps.saberMove = LS_READY;
 	}
 }
 
@@ -392,14 +392,14 @@ static void g_bounce_attacker(gentity_t* atk)
 
 	if (PM_SaberInMassiveBounce(atk->client->ps.torsoAnim))
 	{
-		atk->client->ps.saber_move = LS_NONE;
+		atk->client->ps.saberMove = LS_NONE;
 		atk->client->ps.saberBlocked = BLOCKED_NONE;
 		atk->client->ps.weaponTime = atk->client->ps.torsoAnimTimer;
 		atk->client->MassiveBounceAnimTime = atk->client->ps.torsoAnimTimer + level.time;
 	}
 	else
 	{
-		atk->client->ps.saber_move = LS_READY;
+		atk->client->ps.saberMove = LS_READY;
 	}
 }
 
@@ -851,7 +851,7 @@ static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker
 	//
 	// CASE 4: Attacker in kata
 	//
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(attacker->client->ps.saber_move)))
+	if (PM_SaberInKata(static_cast<saber_moveName_t>(attacker->client->ps.saberMove)))
 	{
 		sab_beh_add_balance(attacker, MPCOST_PARRIED);
 		sab_beh_add_balance(blocker, -MPCOST_PARRIED);
@@ -873,7 +873,7 @@ static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker
 	//
 	// CASE 5: Blocker in kata
 	//
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(blocker->client->ps.saber_move)))
+	if (PM_SaberInKata(static_cast<saber_moveName_t>(blocker->client->ps.saberMove)))
 	{
 		sab_beh_add_balance(attacker, -MPCOST_PARRIED);
 		sab_beh_add_balance(blocker, MPCOST_PARRIED);

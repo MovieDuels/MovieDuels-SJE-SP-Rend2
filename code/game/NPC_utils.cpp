@@ -58,7 +58,7 @@ extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
 extern qboolean PM_SaberInAttack(int move);
 extern qboolean PM_SaberInStart(int move);
-extern qboolean pm_saber_in_special_attack(int anim);
+extern qboolean PM_SaberInSpecialAttack(int anim);
 extern qboolean PM_SpinningSaberAnim(int anim);
 extern void ViewHeightFix(const gentity_t* ent);
 extern void AddLeanOfs(const gentity_t* ent, vec3_t point);
