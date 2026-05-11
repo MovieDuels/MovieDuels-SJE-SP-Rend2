@@ -212,7 +212,7 @@ static void CG_PlayerFootsteps(const centity_t* cent, footstepType_t foot_step_t
 static void CG_PlayerAnimEvents(int anim_file_index, qboolean torso, int old_frame, int frame, int entNum);
 extern void BG_G2SetBoneAngles(const centity_t* cent, int bone_index, const vec3_t angles, int flags,
 	Eorientations up, Eorientations left, Eorientations forward, qhandle_t* model_list);
-extern qboolean pm_saber_in_special_attack(int anim);
+extern qboolean PM_SaberInSpecialAttack(int anim);
 extern qboolean PM_SaberInAttack(int move);
 extern qboolean PM_SaberInTransitionAny(int move);
 extern int PM_GetTurnAnim(const gentity_t* gent, int anim);
@@ -14189,9 +14189,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		{
 			//do no effects when idle
 			if (!cent->gent->client->ps.saberInFlight
-				&& !PM_SaberInAttack(cent->gent->client->ps.saber_move)
-				&& !PM_SaberInTransitionAny(cent->gent->client->ps.saber_move)
-				&& !pm_saber_in_special_attack(cent->gent->client->ps.torsoAnim))
+				&& !PM_SaberInAttack(cent->gent->client->ps.saberMove)
+				&& !PM_SaberInTransitionAny(cent->gent->client->ps.saberMove)
+				&& !PM_SaberInSpecialAttack(cent->gent->client->ps.torsoAnim))
 			{
 				//idle, do no marks
 				no_marks = qtrue;
@@ -14200,8 +14200,8 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		if (cg_saberEntMarks.integer)
 		{
 			if (cent->gent->client->ps.saberInFlight
-				|| PM_SaberInAttack(cent->gent->client->ps.saber_move)
-				|| pm_saber_in_special_attack(cent->gent->client->ps.torsoAnim))
+				|| PM_SaberInAttack(cent->gent->client->ps.saberMove)
+				|| PM_SaberInSpecialAttack(cent->gent->client->ps.torsoAnim))
 			{
 				trace_mask |= CONTENTS_BODY | CONTENTS_CORPSE;
 			}
@@ -14318,8 +14318,8 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 									{
 										cent->gent->client->ps.saberHitWallSoundDebounceTime = cg.time;
 
-										if (PM_SaberInAttack(cent->gent->client->ps.saber_move) ||
-											pm_saber_in_special_attack(cent->gent->client->ps.torsoAnim))
+										if (PM_SaberInAttack(cent->gent->client->ps.saberMove) ||
+											PM_SaberInSpecialAttack(cent->gent->client->ps.torsoAnim))
 										{
 											cgi_S_StartSound(
 												cent->lerpOrigin,
@@ -14719,7 +14719,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 			float dirlen1 = VectorLength(dir1);
 			const float dirlen2 = VectorLength(dir2);
 
-			if (saber_moveData[client->ps.saber_move].trailLength == 0)
+			if (saber_moveData[client->ps.saberMove].trailLength == 0)
 			{
 				dirlen0 *= 0.5f;
 				dirlen1 *= 0.3f;

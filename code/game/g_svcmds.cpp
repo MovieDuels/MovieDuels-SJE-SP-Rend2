@@ -646,7 +646,7 @@ static void Svcmd_SaberAttackCycle_f()
 
 		if (!self->client->ps.saberInFlight)
 		{
-			if (g_SerenityJediEngineMode->integer == 2 && g_RealisticBlockingMode->integer && !PM_SaberInAttack(self->client->ps.saber_move) && self->client->ps.saberLockTime < level.time)
+			if (g_SerenityJediEngineMode->integer == 2 && g_RealisticBlockingMode->integer && !PM_SaberInAttack(self->client->ps.saberMove) && self->client->ps.saberLockTime < level.time)
 			{
 				if (!(self->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK)) // lets do a movement when changing styles // need better anims for this
 				{

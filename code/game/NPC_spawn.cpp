@@ -942,7 +942,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		if (ent->client->NPC_class == CLASS_SHADOWTROOPER
 			&& Q_stricmpn("shadowtrooper", ent->NPC_type, 13) == 0)
 		{
-			if (!PM_SaberInAttack(ent->client->ps.saber_move))
+			if (!PM_SaberInAttack(ent->client->ps.saberMove))
 			{
 				jedi_cloak(ent);
 			}

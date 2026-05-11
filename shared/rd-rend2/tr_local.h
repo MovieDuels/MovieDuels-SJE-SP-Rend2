@@ -2980,7 +2980,7 @@ void R_AddPolygonSurfaces(const trRefdef_t* refdef);
 
 void R_DecomposeSort(uint32_t sort, int* entityNum, shader_t** shader, int* cubemap, int* postRender);
 uint32_t R_CreateSortKey(int entityNum, int sortedShaderIndex, int cubemapIndex, int postRender);
-void R_AddDrawSurf(surfaceType_t* surface, int entityNum, shader_t* shader, int fogIndex, int dlightMap, int postRender, int cubemap);
+void R_AddDrawSurf(surfaceType_t* surface, int entityNum, const shader_t* shader, int fogIndex, const int dlightMap, int postRender, int cubemap);
 bool R_IsPostRenderEntity(const trRefEntity_t* refEntity);
 
 void R_CalcMikkTSpaceBSPSurface(int numSurfaces, packedVertex_t* vertices, glIndex_t* indices);
@@ -3420,9 +3420,7 @@ void R_InitNextFrame(void);
 
 void RE_ClearScene(void);
 void RE_AddRefEntityToScene(const refEntity_t* ent);
-#ifndef REND2_SP
 void RE_AddMiniRefEntityToScene(const miniRefEntity_t* miniRefEnt);
-#endif
 void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num = 1);
 void RE_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b);
 void RE_AddAdditiveLightToScene(const vec3_t org, float intensity, float r, float g, float b);

@@ -51,7 +51,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "weapons.h"
 
 extern void CG_SetClientViewAngles(vec3_t angles, qboolean override_view_ent);
-extern qboolean PM_InAnimForSaberMove(int anim, int saber_move);
+extern qboolean PM_InAnimForSaberMove(int anim, int saberMove);
 extern qboolean PM_InForceGetUp(const playerState_t* ps);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_InReboundJump(int anim);
@@ -780,11 +780,11 @@ qboolean PM_AdjustAnglesForBackAttack(gentity_t* ent, usercmd_t* ucmd)
 	{
 		return qfalse;
 	}
-	if ((ent->client->ps.saber_move == LS_A_BACK || ent->client->ps.saber_move == LS_A_BACK_CR || ent->client->ps.
-		saber_move == LS_A_BACKSTAB)
-		&& PM_InAnimForSaberMove(ent->client->ps.torsoAnim, ent->client->ps.saber_move))
+	if ((ent->client->ps.saberMove == LS_A_BACK || ent->client->ps.saberMove == LS_A_BACK_CR || ent->client->ps.
+		saberMove == LS_A_BACKSTAB)
+		&& PM_InAnimForSaberMove(ent->client->ps.torsoAnim, ent->client->ps.saberMove))
 	{
-		if (ent->client->ps.saber_move != LS_A_BACKSTAB || !ent->enemy || ent->s.number >= MAX_CLIENTS && !
+		if (ent->client->ps.saberMove != LS_A_BACKSTAB || !ent->enemy || ent->s.number >= MAX_CLIENTS && !
 			G_ControlledByPlayer(ent))
 		{
 			if (ent->client->ps.viewEntity <= 0 || ent->client->ps.viewEntity >= ENTITYNUM_WORLD)
@@ -2020,7 +2020,7 @@ void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, 
 		&& gent->s.weapon == WP_SABER
 		&& pm->ps->SaberActive()
 		&& !gent->client->ps.saberInFlight
-		&& !PM_KickMove(pm->ps->saber_move)
+		&& !PM_KickMove(pm->ps->saberMove)
 		&& cmd->forwardmove >= 0
 		&& !PM_WalkingOrRunningAnim(pm->ps->legsAnim)
 		&& !PM_WalkingOrRunningAnim(pm->ps->torsoAnim)

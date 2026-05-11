@@ -210,8 +210,6 @@ void RE_AddRefEntityToScene(const refEntity_t* ent) {
 
 	r_numentities++;
 }
-
-#ifndef REND2_SP
 /*
 =====================
 RE_AddMiniRefEntityToScene
@@ -219,7 +217,8 @@ RE_AddMiniRefEntityToScene
 1:1 with how vanilla does it --eez
 =====================
 */
-void RE_AddMiniRefEntityToScene(const miniRefEntity_t* miniRefEnt) {
+void RE_AddMiniRefEntityToScene(const miniRefEntity_t* miniRefEnt)
+{
 	refEntity_t entity;
 	if (!tr.registered)
 		return;
@@ -229,7 +228,6 @@ void RE_AddMiniRefEntityToScene(const miniRefEntity_t* miniRefEnt) {
 	memcpy(&entity, miniRefEnt, sizeof(*miniRefEnt));
 	RE_AddRefEntityToScene(&entity);
 }
-#endif
 
 /*
 =====================

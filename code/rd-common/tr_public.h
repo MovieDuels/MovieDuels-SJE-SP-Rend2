@@ -177,6 +177,7 @@ using refexport_t = struct
 	// Nothing is drawn until R_RenderScene is called.
 	void (*ClearScene)();
 	void (*AddRefEntityToScene)(const refEntity_t* re);
+	void (*AddMiniRefEntityToScene)(const miniRefEntity_t* re);
 	void (*AddPolyToScene)(qhandle_t hShader, int numVerts, const polyVert_t* verts, int numPolys);
 	void (*AddLightToScene)(const vec3_t org, float intensity, float r, float g, float b);
 	void (*RenderScene)(const refdef_t* fd);

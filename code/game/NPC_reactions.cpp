@@ -59,7 +59,7 @@ extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float thres
 extern void WP_DeactivateSaber(const gentity_t* self, qboolean clear_length = qfalse);
 extern qboolean PM_SaberInAttack(int move);
 extern qboolean PM_SaberInStart(int move);
-extern qboolean pm_saber_in_special_attack(int anim);
+extern qboolean PM_SaberInSpecialAttack(int anim);
 extern qboolean PM_SpinningSaberAnim(int anim);
 extern qboolean PM_SpinningAnim(const int anim);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
@@ -363,7 +363,7 @@ static void NPC_ChoosePainAnimation(gentity_t* self, const gentity_t* other, con
 			//not being force-gripped or force-drained
 			if (G_CheckForStrongAttackMomentum(self)
 				|| PM_SpinningAnim(self->client->ps.legsAnim)
-				|| pm_saber_in_special_attack(self->client->ps.torsoAnim)
+				|| PM_SaberInSpecialAttack(self->client->ps.torsoAnim)
 				|| PM_InKnockDown(&self->client->ps)
 				|| PM_RollingAnim(self->client->ps.legsAnim)
 				|| PM_FlippingAnim(self->client->ps.legsAnim) && !PM_InCartwheel(self->client->ps.legsAnim))
@@ -404,7 +404,7 @@ static void NPC_ChoosePainAnimation(gentity_t* self, const gentity_t* other, con
 			{
 				self->client->ps.saberAnimLevel = SS_STAFF;
 			}
-			self->client->ps.saber_move = LS_READY; //don't finish whatever saber move you may have been in
+			self->client->ps.saberMove = LS_READY; //don't finish whatever saber move you may have been in
 			int parts = SETANIM_BOTH;
 			if (PM_CrouchAnim(self->client->ps.legsAnim) || PM_InCartwheel(self->client->ps.legsAnim))
 			{

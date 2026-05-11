@@ -2437,7 +2437,7 @@ extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const re
 	re.ClearScene = RE_ClearScene;
 	//re.ClearDecals = RE_ClearDecals;
 	re.AddRefEntityToScene = RE_AddRefEntityToScene;
-	//re.AddMiniRefEntityToScene = RE_AddMiniRefEntityToScene;
+	re.AddMiniRefEntityToScene = RE_AddMiniRefEntityToScene;
 	re.AddPolyToScene = RE_AddPolyToScene;
 	re.AddLightToScene = RE_AddLightToScene;
 	//re.AddDecalToScene = RE_AddDecalToScene;
