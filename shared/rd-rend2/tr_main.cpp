@@ -1814,11 +1814,11 @@ uint32_t R_CreateSortKey(int entityNum, int sortedShaderIndex, int cubemapIndex,
 R_AddDrawSurf
 =================
 */
-void R_AddDrawSurf(surfaceType_t* surface, int entityNum, shader_t* shader, int fogIndex, int dlightMap, int postRender, int cubemap)
+void R_AddDrawSurf(surfaceType_t* surface, int entityNum, const shader_t* shader, int fogIndex, const int dlightMap, int postRender, int cubemap)
 {
 	int index;
 	drawSurf_t* surf;
-	shader_t* drawShader = (shader->remappedShader) ? shader->remappedShader : shader;
+	const shader_t* drawShader = (shader->remappedShader) ? shader->remappedShader : shader;
 
 	if (tr.refdef.rdflags & RDF_NOFOG)
 	{

@@ -1124,6 +1124,7 @@ R_AddDrawSurf
 void R_AddDrawSurf(surfaceType_t* surface, const shader_t* shader, int fogIndex, const int dlightMap)
 {
 	int			index;
+	const shader_t* drawShader = (shader->remappedShader) ? shader->remappedShader : shader;
 
 	// instead of checking for overflow, we just mask the index
 	// so it wraps around

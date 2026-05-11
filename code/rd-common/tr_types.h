@@ -129,6 +129,37 @@ using refEntityType_t = enum
 	RT_MAX_REF_ENTITY_TYPE
 };
 
+using miniRefEntity_t = struct
+{
+	refEntityType_t		reType;
+	int					renderfx;
+
+	qhandle_t			hModel;				// opaque type outside refresh
+
+	// most recent data
+	matrix3_t			axis;			// rotation vectors
+	qboolean			nonNormalizedAxes;	// axis are not normalized, i.e. they have scale
+	vec3_t				origin;				// also used as MODEL_BEAM's "from"
+
+	// previous data for frame interpolation
+	vec3_t				oldorigin;			// also used as MODEL_BEAM's "to"
+
+	// texturing
+	qhandle_t			customShader;		// use one image for the entire thing
+
+	// misc
+	byte				shaderRGBA[4];		// colors used by rgbgen entity shaders
+	vec2_t				shaderTexCoord;		// texture coordinates used by tcMod entity modifiers
+
+	// extra sprite information
+	float				radius;
+	float				rotation;			// size 2 for RT_CYLINDER or number of verts in RT_ELECTRICITY
+
+	// misc
+	float		shaderTime;			// subtracted from refdef time to control effect start times
+	int			frame;				// also used as MODEL_BEAM's diameter
+};
+
 using refEntity_t = struct
 {
 	refEntityType_t reType;
