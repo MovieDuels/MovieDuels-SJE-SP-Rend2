@@ -5057,6 +5057,107 @@ qboolean G_InScriptedCinematicSaberAnim(const gentity_t* self)
 	return qfalse;
 }
 
+qboolean G_DrawSaberTrailForAnimation(const gentity_t* self)
+{
+	// These animations will do saber trail (for JKA, CW and Maul cg_sfxsabers)
+	switch (self->client->ps.torsoAnim)
+	{
+		// One Hand Backsaber Style / staff replacement for starkiller
+		case BOTH_BOLT_BLOCK_BACKHAND_BOTTOM_LEFT:
+		case BOTH_BOLT_BLOCK_BACKHAND_BOTTOM_RIGHT:
+		case BOTH_BOLT_BLOCK_BACKHAND_MIDDLE_LEFT:
+		case BOTH_BOLT_BLOCK_BACKHAND_MIDDLE_RIGHT:
+		case BOTH_BOLT_BLOCK_BACKHAND_TOP_LEFT:
+		case BOTH_BOLT_BLOCK_BACKHAND_TOP_MIDDLE:
+		case BOTH_BOLT_BLOCK_BACKHAND_TOP_RIGHT:
+
+		// Dual Lightsaber Style
+		case BOTH_BOLT_BLOCK_DUAL_BOTTOM_LEFT:
+		case BOTH_BOLT_BLOCK_DUAL_BOTTOM_RIGHT:
+		case BOTH_BOLT_BLOCK_DUAL_MIDDLE_LEFT:
+		case BOTH_BOLT_BLOCK_DUAL_MIDDLE_RIGHT:
+		case BOTH_BOLT_BLOCK_DUAL_TOP_LEFT:
+		case BOTH_BOLT_BLOCK_DUAL_TOP_MIDDLE:
+		case BOTH_BOLT_BLOCK_DUAL_TOP_RIGHT:
+
+		// Staff Saber Style
+		case BOTH_BOLT_BLOCK_STAFF_BOTTOM_LEFT:
+		case BOTH_BOLT_BLOCK_STAFF_BOTTOM_RIGHT:
+		case BOTH_BOLT_BLOCK_STAFF_MIDDLE_LEFT:
+		case BOTH_BOLT_BLOCK_STAFF_MIDDLE_RIGHT:
+		case BOTH_BOLT_BLOCK_STAFF_TOP_LEFT:
+		case BOTH_BOLT_BLOCK_STAFF_TOP_MIDDLE:
+		case BOTH_BOLT_BLOCK_STAFF_TOP_RIGHT:
+
+		// One Saber and one Hand Style
+		case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT:
+		case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT:
+		case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT:
+		case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT:
+		case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT:
+		case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE:
+		case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT:
+
+		// One Saber and two Hands Style
+		case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_LEFT:
+		case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_RIGHT:
+		case BOTH_BOLT_BLOCK_TWO_HAND_MIDDLE_LEFT:
+		case BOTH_BOLT_BLOCK_TWO_HAND_MIDDLE_RIGHT:
+		case BOTH_BOLT_BLOCK_TWO_HAND_TOP_LEFT:
+		case BOTH_BOLT_BLOCK_TWO_HAND_TOP_MIDDLE:
+		case BOTH_BOLT_BLOCK_TWO_HAND_TOP_RIGHT:
+
+		//Saber parry broken
+		case BOTH_H1_S1_T_:
+		case BOTH_H1_S1_TR:
+		case BOTH_H1_S1_TL:
+		case BOTH_H1_S1_BL:
+		case BOTH_H1_S1_B_:
+		case BOTH_H1_S1_BR:
+		//Dual Saber parry broken
+		case BOTH_H6_S6_T_:
+		case BOTH_H6_S6_TR:
+		case BOTH_H6_S6_TL:
+		case BOTH_H6_S6_BL:
+		case BOTH_H6_S6_B_:
+		case BOTH_H6_S6_BR:
+		//SaberStaff parry broken
+		case BOTH_H7_S7_T_:
+		case BOTH_H7_S7_TR:
+		case BOTH_H7_S7_TL:
+		case BOTH_H7_S7_BL:
+		case BOTH_H7_S7_B_:
+		case BOTH_H7_S7_BR:
+
+		// Taunts
+		case BOTH_ENGAGETAUNT:
+		case BOTH_DUAL_TAUNT:
+		case BOTH_STAFF_TAUNT:
+		case BOTH_ALORA_TAUNT:
+		case BOTH_ALORA_TAUNT_MD2:
+		case BOTH_VADERTAUNT:
+		case BOTH_GESTURE1:
+		case BOTH_GESTURE2:
+		case BOTH_GESTURE3:
+		case BOTH_SHOWOFF_FAST:
+		case BOTH_SHOWOFF_MEDIUM:
+		case BOTH_SHOWOFF_STRONG:
+		case BOTH_SHOWOFF_DUAL:
+		case BOTH_SHOWOFF_STAFF:
+		case BOTH_VICTORY_FAST:
+		case BOTH_VICTORY_MEDIUM:
+		case BOTH_VICTORY_STRONG:
+		case BOTH_VICTORY_DUAL:
+		case BOTH_VICTORY_STAFF:
+			return qtrue;
+
+		default:
+			return qfalse;
+	}
+
+	return qfalse;
+}
+
 constexpr auto SABER_COLLISION_BLOCKING_DIST = 10; // was 2/4/8/16
 constexpr auto SABER_COLLISION_DIST_MD = 8;  // was 2/4/8/16
 constexpr auto SABER_RADIUS_DAMAGE_DIST = 2;
@@ -20662,6 +20763,17 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 			self->client->ps.saber[1].ActivateTrail(150);
 		}
 	}
+	else if (G_DrawSaberTrailForAnimation(self))
+	{
+		if (self->client->ps.saber[0].Active())
+		{
+			self->client->ps.saber[0].ActivateTrail(300);
+		}
+		if (self->client->ps.saber[1].Active())
+		{
+			self->client->ps.saber[1].ActivateTrail(300);
+		}
+	}
 
 	//is our saber in flight?
 	if (!self->client->ps.saberInFlight)
@@ -20955,6 +21067,17 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 		if (self->client->ps.saber[1].Active())
 		{
 			self->client->ps.saber[1].ActivateTrail(150);
+		}
+	}
+	else if (G_DrawSaberTrailForAnimation(self))
+	{
+		if (self->client->ps.saber[0].Active())
+		{
+			self->client->ps.saber[0].ActivateTrail(300);
+		}
+		if (self->client->ps.saber[1].Active())
+		{
+			self->client->ps.saber[1].ActivateTrail(300);
 		}
 	}
 

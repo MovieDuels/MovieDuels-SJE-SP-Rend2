@@ -11600,7 +11600,8 @@ static void CG_DoSaber(vec3_t origin, vec3_t dir, float length, float length_max
 	if (do_light)
 	{
 		CG_RGBForSaberColor(color, rgb);
-		cgi_R_AddLightToScene(mid, length * 1.4f + Q_flrand(0.0f, 1.0f) * 3.0f, rgb[0], rgb[1], rgb[2]);
+		VectorScale(rgb, 0.66f, rgb);
+		cgi_R_AddLightToScene(mid, length * 2.0f + Q_flrand(0.0f, 1.0f) * 10.0f, rgb[0], rgb[1], rgb[2]);
 	}
 
 	memset(&saber, 0, sizeof(refEntity_t));
@@ -13206,7 +13207,8 @@ static void CG_DoCWSaber(vec3_t origin, vec3_t dir, float length, float length_m
 	if (do_light)
 	{
 		CG_RGBForSaberColor(color, rgb);
-		cgi_R_AddLightToScene(mid, length * 1.4f + Q_flrand(0.0f, 1.0f) * 3.0f, rgb[0], rgb[1], rgb[2]);
+		VectorScale(rgb, 0.66f, rgb);
+		cgi_R_AddLightToScene(mid, length * 2.0f + Q_flrand(0.0f, 1.0f) * 10.0f, rgb[0], rgb[1], rgb[2]);
 	}
 
 	memset(&saber, 0, sizeof(refEntity_t));
@@ -13251,7 +13253,7 @@ static void CG_DoCWSaber(vec3_t origin, vec3_t dir, float length, float length_m
 	ignite_radius -= length;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.6f;
+	effectradius *= 0.4f;
 	coreradius *= 0.85f;
 
 	if (ignite_radius < 0.0f)
@@ -13457,7 +13459,8 @@ static void CG_DoMaulSaber(vec3_t origin, vec3_t dir, float length, float length
 	if (do_light)
 	{
 		CG_RGBForSaberColor(color, rgb);
-		cgi_R_AddLightToScene(mid, length * 1.4f + Q_flrand(0.0f, 1.0f) * 3.0f, rgb[0], rgb[1], rgb[2]);
+		VectorScale(rgb, 0.66f, rgb);
+		cgi_R_AddLightToScene(mid, length * 2.0f + Q_flrand(0.0f, 1.0f) * 10.0f, rgb[0], rgb[1], rgb[2]);
 	}
 
 	memset(&saber, 0, sizeof(refEntity_t));
@@ -13502,7 +13505,7 @@ static void CG_DoMaulSaber(vec3_t origin, vec3_t dir, float length, float length
 	ignite_radius -= length;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.6f;
+	effectradius *= 0.4f;
 	coreradius *= 0.85f;
 
 	if (ignite_radius < 0.0f)
@@ -14444,18 +14447,6 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		{
 			//okay to draw the trail
 			saberTrail_t* saber_trail = &client->ps.saber[saber_num].blade[blade_num].trail;
-
-			if (cent->currentState.userInt3 & 1 << FLAG_ATTACKFAKE)
-			{
-				//attack faking, have a longer saber trail
-				saber_trail->duration *= 2;
-			}
-
-			if (cent->currentState.userInt3 & 1 << FLAG_FATIGUED)
-			{
-				//fatigued players have slightly shorter saber trails since they're moving slower.
-				saber_trail->duration *= .5;
-			}
 
 			// if we happen to be timescaled or running in a high framerate situation, we don't want to flood
 			//	the system with very small trail slices...but perhaps doing it by distance would yield better results?
