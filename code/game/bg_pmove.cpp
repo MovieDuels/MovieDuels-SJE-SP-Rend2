@@ -14811,7 +14811,7 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 	{
 		//successfully changed anims
 		if (pm->gent && pm->ps->SaberLength() > 1)
-		{
+		{// saber is on.
 			if (g_SerenityJediEngineMode->integer)
 			{
 				if (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer())
@@ -14836,7 +14836,7 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 				pm->ps->userInt3 &= ~(1 << FLAG_PARRIED);
 				pm->ps->userInt3 &= ~(1 << FLAG_BLOCKING);
 				pm->ps->userInt3 &= ~(1 << FLAG_BLOCKED);
-				//cancel out pre-block flag
+				//cancel out Mblock flag
 				pm->ps->userInt3 &= ~(1 << FLAG_MBLOCKBOUNCE);
 			}
 
@@ -14846,8 +14846,7 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 			}
 
 			if (!PM_SaberInParry(new_move))
-			{
-				//cancel out pre-block flag
+			{//cancel out pre-block flag
 				pm->ps->userInt3 &= ~(1 << FLAG_PREBLOCK);
 			}
 			if (PM_SaberInAttack(new_move) || PM_SaberInSpecialAttack(anim))
@@ -14897,8 +14896,12 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 				}
 			}
 			else if (PM_SaberInStart(new_move))
-			{
-				//don't damage on the first few frames of a start anim because it may pop from one position to some drastically different one, killing the enemy without hitting them.
+			{//don't damage on the first few frames of a start anim because it may pop from one position to some drastically different one, killing the enemy without hitting them.
+				int damageDelay = 150;
+				if (pm->ps->torsoAnimTimer < damageDelay)
+				{
+					damageDelay = pm->ps->torsoAnimTimer;
+				}
 				if (pm->ps->saberAnimLevel == SS_STRONG)
 				{
 					WP_SaberSwingSound(pm->gent, 0, SWING_FAST);
@@ -14989,9 +14992,9 @@ void PM_SetSaberMove(saber_moveName_t new_move)
 				pm->ps->saberBlocked = BLOCKED_NONE;
 			}
 		}
-		else if (pm->ps->saberBlocked <= BLOCKED_ATK_BOUNCE ||	
+		else if (pm->ps->saberBlocked <= BLOCKED_ATK_BOUNCE ||
 			!pm->ps->SaberActive() ||
-			(new_move < LS_PARRY_UR ||	new_move > LS_REFLECT_LL))
+			(new_move < LS_PARRY_UR || new_move > LS_REFLECT_LL))
 		{
 			//NPCs only clear blocked if not blocking?
 			pm->ps->saberBlocked = BLOCKED_NONE;
