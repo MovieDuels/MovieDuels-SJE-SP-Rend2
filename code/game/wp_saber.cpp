@@ -23469,7 +23469,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 							if (push_target[x]->client->NPC_class == CLASS_GUARD || jedi_jedi_master_low(push_target[x]))
 							{
 								//do a knockdown hes a twat
-								knockback *= 3; //superpush
+								knockback = 200; //superpush
 							}
 							if (self->s.weapon == WP_MELEE ||
 								self->s.weapon == WP_NONE ||
@@ -23477,11 +23477,11 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 								!self->client->ps.SaberActive() &&
 								!PM_InKnockDown(&self->client->ps))
 							{
-								knockback *= 2; //superpush
+								knockback = 225; //superpush
 							}
 							else
 							{
-								knockback *= 1.5; //superpush
+								knockback = 175; //superpush
 							}
 						}
 					}
@@ -24971,7 +24971,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 							if (push_target[x]->client->NPC_class == CLASS_GUARD || jedi_jedi_master_low(push_target[x]))
 							{
 								//do a knockdown hes a twat
-								knockback *= 3; //superpush
+								knockback = 200; //superpush
 							}
 							if (self->s.weapon == WP_MELEE ||
 								self->s.weapon == WP_NONE ||
@@ -24979,11 +24979,11 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 								!self->client->ps.SaberActive() &&
 								!PM_InKnockDown(&self->client->ps))
 							{
-								knockback *= 4; //superpush
+								knockback = 225; //superpush
 							}
 							else
 							{
-								knockback *= 2; //superpush
+								knockback = 175; //superpush
 							}
 						}
 					}
@@ -26834,7 +26834,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 								if (push_target[x]->client->NPC_class == CLASS_GUARD || jedi_jedi_master_low(push_target[x]))
 								{
 									//do a knockdown hes a twat
-									knockback *= 3; //superpush
+									knockback = 200; //superpush
 								}
 								if (self->s.weapon == WP_MELEE ||
 									self->s.weapon == WP_NONE ||
@@ -26842,11 +26842,11 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 									!self->client->ps.SaberActive() &&
 									!PM_InKnockDown(&self->client->ps))
 								{
-									knockback *= 4; //superpush
+									knockback = 225; //superpush
 								}
 								else
 								{
-									knockback *= 2; //superpush
+									knockback = 175; //superpush
 								}
 							}
 						}
@@ -27918,7 +27918,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 								if (push_target[x]->client->NPC_class == CLASS_GUARD || jedi_jedi_master_low(push_target[x]))
 								{
 									//do a knockdown hes a twat
-									knockback *= 3; //superpush
+									knockback = 200; //superpush
 								}
 								if (self->s.weapon == WP_MELEE ||
 									self->s.weapon == WP_NONE ||
@@ -27926,11 +27926,11 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 									!self->client->ps.SaberActive() &&
 									!PM_InKnockDown(&self->client->ps))
 								{
-									knockback *= 4; //superpush
+									knockback = 225; //superpush
 								}
 								else
 								{
-									knockback *= 2; //superpush
+									knockback = 175; //superpush
 								}
 							}
 						}
