@@ -5128,6 +5128,19 @@ static qboolean G_DrawSaberTrailForAnimation(const gentity_t* self)
 	case BOTH_H7_S7_BL:
 	case BOTH_H7_S7_B_:
 	case BOTH_H7_S7_BR:
+		//Saber  perfect block
+	case BOTH_K1_S1_TR_MD:
+	case BOTH_K1_S1_TL_MD:
+		//Saberstaff  perfect block
+	case BOTH_B7_TR___:
+	case BOTH_B7_TL___:
+		//SaberDual  perfect block
+	case BOTH_B6_TR___:
+	case BOTH_B6_TL___:
+		//Saber/Dual/staff back block
+	case BOTH_P1_S1_B1_:
+	case BOTH_P6_S1_B1_:
+	case BOTH_P7_S1_B1_:
 
 		// Taunts
 	case BOTH_ENGAGETAUNT:
