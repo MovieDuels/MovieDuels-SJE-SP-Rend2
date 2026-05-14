@@ -24,7 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_functions.h"
 #include "b_local.h"
 
-extern int g_find_configstring_index(const char* name, int start, int max, qboolean create);
+extern int G_FindConfigstringIndex(const char* name, int start, int max, qboolean create);
 
 constexpr auto FX_ENT_RADIUS = 32;
 
@@ -287,27 +287,27 @@ void SP_CreateSnow(gentity_t* ent)
 	//-------------------------
 	if (ent->spawnflags & 1)
 	{
-		g_find_configstring_index("lightsnow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("lightsnow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else if (ent->spawnflags & 2)
 	{
-		g_find_configstring_index("snow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("snow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else if (ent->spawnflags & 4)
 	{
-		g_find_configstring_index("heavysnow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("heavysnow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else
 	{
-		g_find_configstring_index("snow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
-		g_find_configstring_index("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("snow", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// MISTY FOG
 	//===========
 	if (ent->spawnflags & 8)
 	{
-		g_find_configstring_index("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 }
 
@@ -323,27 +323,27 @@ void SP_CreateLava(gentity_t* ent)
 	//-------------------------
 	if (ent->spawnflags & 1)
 	{
-		g_find_configstring_index("lightlava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("lightlava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else if (ent->spawnflags & 2)
 	{
-		g_find_configstring_index("lava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("lava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else if (ent->spawnflags & 4)
 	{
-		g_find_configstring_index("heavylava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("heavylava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else
 	{
-		g_find_configstring_index("lava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
-		g_find_configstring_index("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("lava", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// MISTY FOG
 	//===========
 	if (ent->spawnflags & 8)
 	{
-		g_find_configstring_index("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 }
 
@@ -370,7 +370,7 @@ void SP_CreateWind(gentity_t* ent)
 	//-------------
 	if (ent->spawnflags & 1)
 	{
-		g_find_configstring_index("wind", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("wind", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// Constant Wind
@@ -384,35 +384,35 @@ void SP_CreateWind(gentity_t* ent)
 		VectorScale(wind_dir, ent->speed, wind_dir);
 
 		sprintf(temp, "constantwind ( %f %f %f )", wind_dir[0], wind_dir[1], wind_dir[2]);
-		g_find_configstring_index(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// Gusting Wind
 	//--------------
 	if (ent->spawnflags & 4)
 	{
-		g_find_configstring_index("gustingwind", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("gustingwind", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// Swirling Wind
 	//---------------
 	if (ent->spawnflags & 8)
 	{
-		g_find_configstring_index("swirlingwind", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("swirlingwind", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// MISTY FOG
 	//===========
 	if (ent->spawnflags & 32)
 	{
-		g_find_configstring_index("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// MISTY FOG
 	//===========
 	if (ent->spawnflags & 64)
 	{
-		g_find_configstring_index("light_fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("light_fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 }
 
@@ -443,7 +443,7 @@ void SP_CreateWindZone(gentity_t* ent)
 		ent->maxs[0], ent->maxs[1], ent->maxs[2],
 		wind_dir[0], wind_dir[1], wind_dir[2]
 	);
-	g_find_configstring_index(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+	G_FindConfigstringIndex(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 }
 
 /*QUAKED fx_rain (1 0 0) (-16 -16 -16) (16 16 16) LIGHT MEDIUM HEAVY ACID OUTSIDE_SHAKE MISTY_FOG
@@ -570,19 +570,19 @@ void SP_CreateRain(gentity_t* ent)
 	//-------------------------
 	if (ent->spawnflags & 1)
 	{
-		g_find_configstring_index("lightrain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("lightrain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else if (ent->spawnflags & 2)
 	{
-		g_find_configstring_index("rain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("rain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 	else if (ent->spawnflags & 4)
 	{
-		g_find_configstring_index("heavyrain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("heavyrain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 
 		// Automatically Get Heavy Fog
 		//-----------------------------
-		g_find_configstring_index("heavyrainfog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("heavyrainfog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 
 		// Automatically Get Lightning & Thunder
 		//---------------------------------------
@@ -591,21 +591,26 @@ void SP_CreateRain(gentity_t* ent)
 	else if (ent->spawnflags & 8)
 	{
 		G_EffectIndex("world/acid_fizz");
-		g_find_configstring_index("acidrain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("acidrain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+	}
+	else
+	{
+		G_FindConfigstringIndex("lightrain", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("wind", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// OUTSIDE SHAKE
 	//===============
 	if (ent->spawnflags & 16)
 	{
-		g_find_configstring_index("outsideShake", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("outsideShake", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// MISTY FOG
 	//===========
 	if (ent->spawnflags & 32)
 	{
-		g_find_configstring_index("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex("fog", CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 
 	// LIGHTNING
@@ -728,7 +733,7 @@ void SP_CreatePuffSystem(gentity_t* ent)
 	{
 		sprintf(temp, "puff%i init %i", i_puff_system, static_cast<int>(ent->count * r_weather_scale->value));
 
-		g_find_configstring_index(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 
 		// Should return here??? It didn't originally...
 	}
@@ -758,7 +763,7 @@ void SP_CreatePuffSystem(gentity_t* ent)
 
 		// Send the command.
 		Com_sprintf(temp, 128, "puff%i %s %s", i_puff_system, key, value);
-		g_find_configstring_index(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+		G_FindConfigstringIndex(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 	}
 }
 

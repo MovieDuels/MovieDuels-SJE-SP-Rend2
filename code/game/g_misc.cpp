@@ -3211,7 +3211,7 @@ void SP_misc_atst_drivable(gentity_t* ent)
 	ent->e_DieFunc = dieF_misc_atst_die;
 }
 
-extern int g_find_configstring_index(const char* name, int start, int max, qboolean create);
+extern int G_FindConfigstringIndex(const char* name, int start, int max, qboolean create);
 
 /*QUAKED misc_weather_zone (0 .5 .8) ?
 Determines a region to check for weather contents - (optional, used to reduce load times)
@@ -3226,7 +3226,7 @@ void SP_misc_weather_zone(gentity_t* ent)
 		ent->mins[0], ent->mins[1], ent->mins[2],
 		ent->maxs[0], ent->maxs[1], ent->maxs[2]);
 
-	g_find_configstring_index(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
+	G_FindConfigstringIndex(temp, CS_WORLD_FX, MAX_WORLD_FX, qtrue);
 
 	//	gi.WE_AddWeatherZone(ent->mins, ent->maxs);
 	G_FreeEntity(ent);

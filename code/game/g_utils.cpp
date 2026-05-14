@@ -73,7 +73,7 @@ G_FindConfigstringIndex
 */
 extern void ForceTelepathy(gentity_t* self);
 
-int g_find_configstring_index(const char* name, const int start, const int max, const qboolean create)
+int G_FindConfigstringIndex(const char* name, const int start, const int max, const qboolean create)
 {
 	int i;
 
@@ -118,7 +118,7 @@ Ghoul2 Insert Start
 
 int G_SkinIndex(const char* name)
 {
-	return g_find_configstring_index(name, CS_CHARSKINS, MAX_CHARSKINS, qtrue);
+	return G_FindConfigstringIndex(name, CS_CHARSKINS, MAX_CHARSKINS, qtrue);
 }
 
 /*
@@ -127,7 +127,7 @@ Ghoul2 Insert End
 
 int G_ModelIndex(const char* name)
 {
-	return g_find_configstring_index(name, CS_MODELS, MAX_MODELS, qtrue);
+	return G_FindConfigstringIndex(name, CS_MODELS, MAX_MODELS, qtrue);
 }
 
 int G_SoundIndex(const char* name)
@@ -136,7 +136,7 @@ int G_SoundIndex(const char* name)
 	char stripped[MAX_QPATH];
 	COM_StripExtension(name, stripped, sizeof stripped);
 
-	return g_find_configstring_index(stripped, CS_SOUNDS, MAX_SOUNDS, qtrue);
+	return G_FindConfigstringIndex(stripped, CS_SOUNDS, MAX_SOUNDS, qtrue);
 }
 
 int G_EffectIndex(const char* name)
@@ -146,18 +146,18 @@ int G_EffectIndex(const char* name)
 	// We just don't want extensions on the things we are registering
 	COM_StripExtension(name, temp, sizeof temp);
 
-	return g_find_configstring_index(temp, CS_EFFECTS, MAX_FX, qtrue);
+	return G_FindConfigstringIndex(temp, CS_EFFECTS, MAX_FX, qtrue);
 }
 
 int G_BSPIndex(const char* name)
 {
-	return g_find_configstring_index(name, CS_BSP_MODELS, MAX_SUB_BSP, qtrue);
+	return G_FindConfigstringIndex(name, CS_BSP_MODELS, MAX_SUB_BSP, qtrue);
 }
 
 int G_IconIndex(const char* name)
 {
 	assert(name && name[0]);
-	return g_find_configstring_index(name, CS_ICONS, MAX_ICONS, qtrue);
+	return G_FindConfigstringIndex(name, CS_ICONS, MAX_ICONS, qtrue);
 }
 
 constexpr auto FX_ENT_RADIUS = 32;
