@@ -31,7 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "snd_local.h"
 #endif
 
-using id3v1_1 = struct
+using id3v1_1 = struct id3v1_1_s
 {
 	char id[3];
 	char title[30]; // <file basename>

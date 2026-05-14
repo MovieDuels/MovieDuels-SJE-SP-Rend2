@@ -24,7 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define __ANIMS_H__
 // playerAnimations
 
-using animNumber_t = enum //# animNumber_e
+using animNumber_t = enum animNumber_e //# animNumber_e
 {
 	//=================================================
 	//HEAD ANIMS

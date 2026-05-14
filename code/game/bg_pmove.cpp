@@ -12685,7 +12685,7 @@ int PM_ReadyPoseForSaberAnimLevel(void)
 // Changes:   Cleaned structure, explicit qtrue/qfalse, no implicit bool,
 //            comments added, no asserts, clean compile.
 // ======================================================================
-static int PM_ReadyPoseForSaberAnimLevelAMD(void)
+int PM_ReadyPoseForSaberAnimLevelAMD(void)
 {
 	int anim = BOTH_STAND2; // default fallback
 
@@ -12755,7 +12755,7 @@ static int PM_ReadyPoseForSaberAnimLevelAMD(void)
 // Changes:   Clean structure, explicit qtrue/qfalse, fixed precedence bugs,
 //            comments added, no implicit bool→qboolean, safe defaults.
 // ======================================================================
-static int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
+int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 {
 	// Start with the normal ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();

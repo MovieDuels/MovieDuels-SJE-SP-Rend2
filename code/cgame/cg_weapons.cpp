@@ -457,12 +457,12 @@ void CG_RegisterWeapon(const int weapon_num)
 	// give ourselves the functions if we can
 	if (weaponData[weapon_num].func)
 	{
-		weaponInfo->missileTrailFunc = static_cast<void(*)(centity_s*, const weaponInfo_s*)>(weaponData[weapon_num].
+		weaponInfo->missileTrailFunc = reinterpret_cast<void(*)(centity_s*, const weaponInfo_s*)>(weaponData[weapon_num].
 			func);
 	}
 	if (weaponData[weapon_num].altfunc)
 	{
-		weaponInfo->alt_missileTrailFunc = static_cast<void(*)(centity_s*, const weaponInfo_s*)>(weaponData[weapon_num].
+		weaponInfo->alt_missileTrailFunc = reinterpret_cast<void(*)(centity_s*, const weaponInfo_s*)>(weaponData[weapon_num].
 			altfunc);
 	}
 

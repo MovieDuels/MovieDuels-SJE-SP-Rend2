@@ -31,7 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "../qcommon/q_shared.h"
 
-using weapon_t = enum //# weapon_e
+using weapon_t = enum weapon_e //# weapon_e
 {
 	WP_NONE,
 
@@ -132,7 +132,7 @@ using weapon_t = enum //# weapon_e
 extern qboolean playerUsableWeapons[WP_NUM_WEAPONS];
 
 // AMMO_NONE must be first and AMMO_MAX must be last, cause weapon load validates based off of these vals
-using ammo_t = enum //# ammo_e
+using ammo_t = enum ammo_e //# ammo_e
 {
 	AMMO_NONE,
 	AMMO_FORCE,

@@ -43,7 +43,7 @@ mods 11/15/95 for Layer I
 	   native mpeg rate. dec8.c adds oupuut conversion features.
 
 -------------------------------------
-int audio_decode_init(MPEG_HEAD *h, int framebytes_arg,
+int audio_decode_init(const MPEG_HEAD *h, int framebytes_arg,
 		 int reduction_code, int transform_code, int convert_code,
 		 int freq_limit)
 

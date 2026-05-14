@@ -26,7 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifndef CM_POLYLIB_H
 #define CM_POLYLIB_H
 
-using winding_t = struct
+using winding_t = struct winding_s
 {
 	int numpoints;
 	vec3_t p[4]; // variable sized

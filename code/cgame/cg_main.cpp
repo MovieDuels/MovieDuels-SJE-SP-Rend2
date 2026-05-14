@@ -487,9 +487,6 @@ vmCvar_t cg_gunMomentumInterval;
 vmCvar_t cg_setVaderBreath;
 vmCvar_t cg_setVaderBreathdamaged;
 vmCvar_t cg_com_outcast;
-vmCvar_t g_update7firststartup;
-
-vmCvar_t g_totgfirststartup;
 
 vmCvar_t cg_drawwidescreenmode;
 
@@ -709,9 +706,6 @@ static cvarTable_t cvarTable[] = {
 	{&cg_setVaderBreath, "cg_setVaderBreath", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 	{&cg_setVaderBreathdamaged, "cg_setVaderBreathdamaged", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 	{&cg_com_outcast, "com_outcast", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
-	{&g_update7firststartup, "g_update7firststartup", "1", 0},
-
-	{&g_totgfirststartup, "g_totgfirststartup", "1", 0},
 
 	{&cg_drawwidescreenmode, "cg_drawwidescreenmode", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 

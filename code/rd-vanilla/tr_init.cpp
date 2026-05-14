@@ -506,9 +506,9 @@ static void GLimp_InitExtensions()
 	{
 		if (r_ext_multitexture->integer)
 		{
-			qglMultiTexCoord2fARB = static_cast<PFNGLMULTITEXCOORD2FARBPROC>(ri.GL_GetProcAddress("glMultiTexCoord2fARB"));
-			qglActiveTextureARB = static_cast<PFNGLACTIVETEXTUREARBPROC>(ri.GL_GetProcAddress("glActiveTextureARB"));
-			qglClientActiveTextureARB = static_cast<PFNGLCLIENTACTIVETEXTUREARBPROC>(ri.GL_GetProcAddress("glClientActiveTextureARB"));
+			qglMultiTexCoord2fARB = reinterpret_cast<PFNGLMULTITEXCOORD2FARBPROC>(ri.GL_GetProcAddress("glMultiTexCoord2fARB"));
+			qglActiveTextureARB = reinterpret_cast<PFNGLACTIVETEXTUREARBPROC>(ri.GL_GetProcAddress("glActiveTextureARB"));
+			qglClientActiveTextureARB = reinterpret_cast<PFNGLCLIENTACTIVETEXTUREARBPROC>(ri.GL_GetProcAddress("glClientActiveTextureARB"));
 
 			if (qglActiveTextureARB)
 			{
@@ -545,8 +545,8 @@ static void GLimp_InitExtensions()
 		if (r_ext_compiled_vertex_array->integer)
 		{
 			Com_Printf("...using GL_EXT_compiled_vertex_array\n");
-			qglLockArraysEXT = static_cast<PFNGLLOCKARRAYSEXTPROC>(ri.GL_GetProcAddress("glLockArraysEXT"));
-			qglUnlockArraysEXT = static_cast<PFNGLUNLOCKARRAYSEXTPROC>(ri.GL_GetProcAddress("glUnlockArraysEXT"));
+			qglLockArraysEXT = reinterpret_cast<PFNGLLOCKARRAYSEXTPROC>(ri.GL_GetProcAddress("glLockArraysEXT"));
+			qglUnlockArraysEXT = reinterpret_cast<PFNGLUNLOCKARRAYSEXTPROC>(ri.GL_GetProcAddress("glUnlockArraysEXT"));
 			if (!qglLockArraysEXT || !qglUnlockArraysEXT) {
 				Com_Error(ERR_FATAL, "bad getprocaddress");
 			}
@@ -573,19 +573,19 @@ static void GLimp_InitExtensions()
 			// NOTE: VV guys will _definetly_ not be able to use regcoms. Pixel Shaders are just as good though :-)
 			// NOTE: Also, this is an nVidia specific extension (of course), so fragment shaders would serve the same purpose
 			// if we needed some kind of fragment/pixel manipulation support.
-			qglCombinerParameterfvNV = static_cast<PFNGLCOMBINERPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glCombinerParameterfvNV"));
-			qglCombinerParameterivNV = static_cast<PFNGLCOMBINERPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glCombinerParameterivNV"));
-			qglCombinerParameterfNV = static_cast<PFNGLCOMBINERPARAMETERFNVPROC>(ri.GL_GetProcAddress("glCombinerParameterfNV"));
-			qglCombinerParameteriNV = static_cast<PFNGLCOMBINERPARAMETERINVPROC>(ri.GL_GetProcAddress("glCombinerParameteriNV"));
-			qglCombinerInputNV = static_cast<PFNGLCOMBINERINPUTNVPROC>(ri.GL_GetProcAddress("glCombinerInputNV"));
-			qglCombinerOutputNV = static_cast<PFNGLCOMBINEROUTPUTNVPROC>(ri.GL_GetProcAddress("glCombinerOutputNV"));
-			qglFinalCombinerInputNV = static_cast<PFNGLFINALCOMBINERINPUTNVPROC>(ri.GL_GetProcAddress("glFinalCombinerInputNV"));
-			qglGetCombinerInputParameterfvNV = static_cast<PFNGLGETCOMBINERINPUTPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glGetCombinerInputParameterfvNV"));
-			qglGetCombinerInputParameterivNV = static_cast<PFNGLGETCOMBINERINPUTPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glGetCombinerInputParameterivNV"));
-			qglGetCombinerOutputParameterfvNV = static_cast<PFNGLGETCOMBINEROUTPUTPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glGetCombinerOutputParameterfvNV"));
-			qglGetCombinerOutputParameterivNV = static_cast<PFNGLGETCOMBINEROUTPUTPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glGetCombinerOutputParameterivNV"));
-			qglGetFinalCombinerInputParameterfvNV = static_cast<PFNGLGETFINALCOMBINERINPUTPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glGetFinalCombinerInputParameterfvNV"));
-			qglGetFinalCombinerInputParameterivNV = static_cast<PFNGLGETFINALCOMBINERINPUTPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glGetFinalCombinerInputParameterivNV"));
+			qglCombinerParameterfvNV = reinterpret_cast<PFNGLCOMBINERPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glCombinerParameterfvNV"));
+			qglCombinerParameterivNV = reinterpret_cast<PFNGLCOMBINERPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glCombinerParameterivNV"));
+			qglCombinerParameterfNV = reinterpret_cast<PFNGLCOMBINERPARAMETERFNVPROC>(ri.GL_GetProcAddress("glCombinerParameterfNV"));
+			qglCombinerParameteriNV = reinterpret_cast<PFNGLCOMBINERPARAMETERINVPROC>(ri.GL_GetProcAddress("glCombinerParameteriNV"));
+			qglCombinerInputNV = reinterpret_cast<PFNGLCOMBINERINPUTNVPROC>(ri.GL_GetProcAddress("glCombinerInputNV"));
+			qglCombinerOutputNV = reinterpret_cast<PFNGLCOMBINEROUTPUTNVPROC>(ri.GL_GetProcAddress("glCombinerOutputNV"));
+			qglFinalCombinerInputNV = reinterpret_cast<PFNGLFINALCOMBINERINPUTNVPROC>(ri.GL_GetProcAddress("glFinalCombinerInputNV"));
+			qglGetCombinerInputParameterfvNV = reinterpret_cast<PFNGLGETCOMBINERINPUTPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glGetCombinerInputParameterfvNV"));
+			qglGetCombinerInputParameterivNV = reinterpret_cast<PFNGLGETCOMBINERINPUTPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glGetCombinerInputParameterivNV"));
+			qglGetCombinerOutputParameterfvNV = reinterpret_cast<PFNGLGETCOMBINEROUTPUTPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glGetCombinerOutputParameterfvNV"));
+			qglGetCombinerOutputParameterivNV = reinterpret_cast<PFNGLGETCOMBINEROUTPUTPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glGetCombinerOutputParameterivNV"));
+			qglGetFinalCombinerInputParameterfvNV = reinterpret_cast<PFNGLGETFINALCOMBINERINPUTPARAMETERFVNVPROC>(ri.GL_GetProcAddress("glGetFinalCombinerInputParameterfvNV"));
+			qglGetFinalCombinerInputParameterivNV = reinterpret_cast<PFNGLGETFINALCOMBINERINPUTPARAMETERIVNVPROC>(ri.GL_GetProcAddress("glGetFinalCombinerInputParameterivNV"));
 
 			// Validate the functions we need.
 			if (!qglCombinerParameterfvNV || !qglCombinerParameterivNV || !qglCombinerParameterfNV || !qglCombinerParameteriNV || !qglCombinerInputNV ||
@@ -641,25 +641,25 @@ static void GLimp_InitExtensions()
 	// If we support one or the other, load the shared function pointers.
 	if (b_arb_vertex_program || b_arb_fragment_program)
 	{
-		qglProgramStringARB = static_cast<PFNGLPROGRAMSTRINGARBPROC>(ri.GL_GetProcAddress("glProgramStringARB"));
-		qglBindProgramARB = static_cast<PFNGLBINDPROGRAMARBPROC>(ri.GL_GetProcAddress("glBindProgramARB"));
-		qglDeleteProgramsARB = static_cast<PFNGLDELETEPROGRAMSARBPROC>(ri.GL_GetProcAddress("glDeleteProgramsARB"));
-		qglGenProgramsARB = static_cast<PFNGLGENPROGRAMSARBPROC>(ri.GL_GetProcAddress("glGenProgramsARB"));
-		qglProgramEnvParameter4dARB = static_cast<PFNGLPROGRAMENVPARAMETER4DARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4dARB"));
-		qglProgramEnvParameter4dvARB = static_cast<PFNGLPROGRAMENVPARAMETER4DVARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4dvARB"));
-		qglProgramEnvParameter4fARB = static_cast<PFNGLPROGRAMENVPARAMETER4FARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4fARB"));
-		qglProgramEnvParameter4fvARB = static_cast<PFNGLPROGRAMENVPARAMETER4FVARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4fvARB"));
-		qglProgramLocalParameter4dARB = static_cast<PFNGLPROGRAMLOCALPARAMETER4DARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4dARB"));
-		qglProgramLocalParameter4dvARB = static_cast<PFNGLPROGRAMLOCALPARAMETER4DVARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4dvARB"));
-		qglProgramLocalParameter4fARB = static_cast<PFNGLPROGRAMLOCALPARAMETER4FARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4fARB"));
-		qglProgramLocalParameter4fvARB = static_cast<PFNGLPROGRAMLOCALPARAMETER4FVARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4fvARB"));
-		qglGetProgramEnvParameterdvARB = static_cast<PFNGLGETPROGRAMENVPARAMETERDVARBPROC>(ri.GL_GetProcAddress("glGetProgramEnvParameterdvARB"));
-		qglGetProgramEnvParameterfvARB = static_cast<PFNGLGETPROGRAMENVPARAMETERFVARBPROC>(ri.GL_GetProcAddress("glGetProgramEnvParameterfvARB"));
-		qglGetProgramLocalParameterdvARB = static_cast<PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC>(ri.GL_GetProcAddress("glGetProgramLocalParameterdvARB"));
-		qglGetProgramLocalParameterfvARB = static_cast<PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC>(ri.GL_GetProcAddress("glGetProgramLocalParameterfvARB"));
-		qglGetProgramivARB = static_cast<PFNGLGETPROGRAMIVARBPROC>(ri.GL_GetProcAddress("glGetProgramivARB"));
-		qglGetProgramStringARB = static_cast<PFNGLGETPROGRAMSTRINGARBPROC>(ri.GL_GetProcAddress("glGetProgramStringARB"));
-		qglIsProgramARB = static_cast<PFNGLISPROGRAMARBPROC>(ri.GL_GetProcAddress("glIsProgramARB"));
+		qglProgramStringARB = reinterpret_cast<PFNGLPROGRAMSTRINGARBPROC>(ri.GL_GetProcAddress("glProgramStringARB"));
+		qglBindProgramARB = reinterpret_cast<PFNGLBINDPROGRAMARBPROC>(ri.GL_GetProcAddress("glBindProgramARB"));
+		qglDeleteProgramsARB = reinterpret_cast<PFNGLDELETEPROGRAMSARBPROC>(ri.GL_GetProcAddress("glDeleteProgramsARB"));
+		qglGenProgramsARB = reinterpret_cast<PFNGLGENPROGRAMSARBPROC>(ri.GL_GetProcAddress("glGenProgramsARB"));
+		qglProgramEnvParameter4dARB = reinterpret_cast<PFNGLPROGRAMENVPARAMETER4DARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4dARB"));
+		qglProgramEnvParameter4dvARB = reinterpret_cast<PFNGLPROGRAMENVPARAMETER4DVARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4dvARB"));
+		qglProgramEnvParameter4fARB = reinterpret_cast<PFNGLPROGRAMENVPARAMETER4FARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4fARB"));
+		qglProgramEnvParameter4fvARB = reinterpret_cast<PFNGLPROGRAMENVPARAMETER4FVARBPROC>(ri.GL_GetProcAddress("glProgramEnvParameter4fvARB"));
+		qglProgramLocalParameter4dARB = reinterpret_cast<PFNGLPROGRAMLOCALPARAMETER4DARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4dARB"));
+		qglProgramLocalParameter4dvARB = reinterpret_cast<PFNGLPROGRAMLOCALPARAMETER4DVARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4dvARB"));
+		qglProgramLocalParameter4fARB = reinterpret_cast<PFNGLPROGRAMLOCALPARAMETER4FARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4fARB"));
+		qglProgramLocalParameter4fvARB = reinterpret_cast<PFNGLPROGRAMLOCALPARAMETER4FVARBPROC>(ri.GL_GetProcAddress("glProgramLocalParameter4fvARB"));
+		qglGetProgramEnvParameterdvARB = reinterpret_cast<PFNGLGETPROGRAMENVPARAMETERDVARBPROC>(ri.GL_GetProcAddress("glGetProgramEnvParameterdvARB"));
+		qglGetProgramEnvParameterfvARB = reinterpret_cast<PFNGLGETPROGRAMENVPARAMETERFVARBPROC>(ri.GL_GetProcAddress("glGetProgramEnvParameterfvARB"));
+		qglGetProgramLocalParameterdvARB = reinterpret_cast<PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC>(ri.GL_GetProcAddress("glGetProgramLocalParameterdvARB"));
+		qglGetProgramLocalParameterfvARB = reinterpret_cast<PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC>(ri.GL_GetProcAddress("glGetProgramLocalParameterfvARB"));
+		qglGetProgramivARB = reinterpret_cast<PFNGLGETPROGRAMIVARBPROC>(ri.GL_GetProcAddress("glGetProgramivARB"));
+		qglGetProgramStringARB = reinterpret_cast<PFNGLGETPROGRAMSTRINGARBPROC>(ri.GL_GetProcAddress("glGetProgramStringARB"));
+		qglIsProgramARB = reinterpret_cast<PFNGLISPROGRAMARBPROC>(ri.GL_GetProcAddress("glIsProgramARB"));
 
 		// Validate the functions we need.
 		if (!qglProgramStringARB || !qglBindProgramARB || !qglDeleteProgramsARB || !qglGenProgramsARB ||
@@ -711,7 +711,7 @@ static void GLimp_InitExtensions()
 	}
 
 #if !defined(__APPLE__)
-	qglStencilOpSeparate = static_cast<PFNGLSTENCILOPSEPARATEPROC>(ri.GL_GetProcAddress("glStencilOpSeparate"));
+	qglStencilOpSeparate = reinterpret_cast<PFNGLSTENCILOPSEPARATEPROC>(ri.GL_GetProcAddress("glStencilOpSeparate"));
 	if (qglStencilOpSeparate)
 	{
 		glConfig.doStencilShadowsInOneDrawcall = qtrue;

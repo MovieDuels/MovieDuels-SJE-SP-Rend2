@@ -74,7 +74,7 @@ class CRagDollParams;
 
 using gentity_t = struct gentity_s;
 
-using SavedGameJustLoaded_e = enum
+using SavedGameJustLoaded_e = enum SavedGameJustLoaded_e_
 {
 	eNO = 0,
 	eFULL,
@@ -143,7 +143,7 @@ class CMiniHeap;
 /*
 Ghoul2 Insert End
 */
-using game_import_t = struct
+using game_import_t = struct game_import_s
 {
 	//============== general Quake services ==================
 
@@ -392,7 +392,7 @@ using game_import_t = struct
 //
 // functions exported by the game subsystem
 //
-using game_export_t = struct
+using game_export_t = struct game_export_s
 {
 	int apiversion;
 

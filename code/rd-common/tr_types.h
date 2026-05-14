@@ -94,7 +94,7 @@ extern int drawskyboxportal;
 
 using color4ub_t = byte[4];
 
-using polyVert_t = struct
+using polyVert_t = struct polyVert_t
 {
 	vec3_t xyz;
 	float st[2];
@@ -129,7 +129,7 @@ using refEntityType_t = enum
 	RT_MAX_REF_ENTITY_TYPE
 };
 
-using miniRefEntity_t = struct
+using miniRefEntity_t = struct miniRefEntity_t
 {
 	refEntityType_t		reType;
 	int					renderfx;
@@ -160,7 +160,7 @@ using miniRefEntity_t = struct
 	int			frame;				// also used as MODEL_BEAM's diameter
 };
 
-using refEntity_t = struct
+using refEntity_t = struct refEntity_s
 {
 	refEntityType_t reType;
 	int renderfx;
@@ -275,7 +275,7 @@ using refEntity_t = struct
 #define	MAX_RENDER_STRINGS			8
 #define	MAX_RENDER_STRING_LENGTH	32
 
-using refdef_t = struct
+using refdef_t = struct refdef_s
 {
 	int x, y, width, height;
 	float fov_x, fov_y;
@@ -296,7 +296,7 @@ using refdef_t = struct
 	//	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
 };
 
-using stereoFrame_t = enum
+using stereoFrame_t = enum stereoFrame_e
 {
 	STEREO_CENTER,
 	STEREO_LEFT,

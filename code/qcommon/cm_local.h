@@ -106,7 +106,7 @@ using cArea_t = struct
 	int floodvalid;
 };
 
-using clipMap_t = struct
+using clipMap_t = struct clipMap_s
 {
 	char name[MAX_QPATH];
 

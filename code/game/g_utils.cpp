@@ -850,19 +850,19 @@ static gentity_t* find_remove_able_gent(void)
 		if (!e->classname)
 			continue;
 
-		if (stricmp(e->classname, "item_shield") == 0
-			|| stricmp(e->classname, "item_Barrier") == 0
-			|| stricmp(e->classname, "item_seeker") == 0
-			|| stricmp(e->classname, "misc_model_gun_rack") == 0
-			|| stricmp(e->classname, "misc_model_ammo_rack") == 0
-			|| stricmp(e->classname, "misc_model_cargo_small") == 0
-			|| stricmp(e->classname, "misc_ammo_floor_unit") == 0
-			|| stricmp(e->classname, "misc_shield_floor_unit") == 0
-			|| stricmp(e->classname, "ammo_blaster") == 0
-			|| stricmp(e->classname, "ammo_powercell") == 0
-			|| stricmp(e->classname, "item_binoculars") == 0
-			|| stricmp(e->classname, "item_shield_lrg_instant") == 0
-			|| stricmp(e->classname, "item_medpak_instant") == 0)
+		if (Q_stricmp(e->classname, "item_shield") == 0
+			|| Q_stricmp(e->classname, "item_Barrier") == 0
+			|| Q_stricmp(e->classname, "item_seeker") == 0
+			|| Q_stricmp(e->classname, "misc_model_gun_rack") == 0
+			|| Q_stricmp(e->classname, "misc_model_ammo_rack") == 0
+			|| Q_stricmp(e->classname, "misc_model_cargo_small") == 0
+			|| Q_stricmp(e->classname, "misc_ammo_floor_unit") == 0
+			|| Q_stricmp(e->classname, "misc_shield_floor_unit") == 0
+			|| Q_stricmp(e->classname, "ammo_blaster") == 0
+			|| Q_stricmp(e->classname, "ammo_powercell") == 0
+			|| Q_stricmp(e->classname, "item_binoculars") == 0
+			|| Q_stricmp(e->classname, "item_shield_lrg_instant") == 0
+			|| Q_stricmp(e->classname, "item_medpak_instant") == 0)
 		{
 			return e;
 		}
@@ -2141,6 +2141,7 @@ void TryUse(gentity_t* ent)
 {
 	trace_t trace;
 	vec3_t src, dest, vf;
+	gentity_t* target;
 
 	if (ent->s.number == 0 && g_npcdebug->integer == 1)
 	{
@@ -2181,7 +2182,7 @@ void TryUse(gentity_t* ent)
 		goto tryJetPack;
 	}
 
-	gentity_t* target = &g_entities[trace.entityNum];
+	target = &g_entities[trace.entityNum];
 
 	if (target && target->client && target->client->NPC_class == CLASS_VEHICLE)
 	{

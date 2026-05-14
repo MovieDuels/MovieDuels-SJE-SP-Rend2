@@ -153,7 +153,7 @@ mdxaCompQuatBone_t
 ;
 
 #ifndef MDXABONEDEF
-using mdxaBone_t = struct
+using mdxaBone_t = struct mdxaBone_t
 {
 	float matrix[3][4];
 
@@ -286,7 +286,7 @@ using mdxmTriangle_t = struct
 // {
 // mdxVertex_t - this is an array with number of verts from the surface definition as its bounds. It contains normal info, texture coors and number of weightings for this bone
 // (this is now kept at 32 bytes for cache-aligning)
-using mdxmVertex_t = struct
+using mdxmVertex_t = struct mdxmVertex_t
 {
 	vec3_t normal;
 	vec3_t vertCoords;
@@ -350,7 +350,7 @@ static float G2_GetVertBoneWeight(const mdxmVertex_t* pVert, const int iWeightNu
 // {
 // mdxVertex_t - this is an array with number of verts from the surface definition as its bounds. It contains normal info, texture coors and number of weightings for this bone
 
-using mdxmVertexTexCoord_t = struct
+using mdxmVertexTexCoord_t = struct mdxmVertexTexCoord_t
 {
 	vec2_t texCoords;
 };
@@ -366,7 +366,7 @@ using mdxmVertexTexCoord_t = struct
 
 // mdxaHeader_t  - this contains the header for the file, with sanity checking and version checking, plus number of lod's to be expected
 //
-using mdxaHeader_t = struct
+using mdxaHeader_t = struct mdxaHeader_t
 {
 	//
 	// ( first 3 fields are same format as MD3/MDR so we can apply easy model-format-type checks )
