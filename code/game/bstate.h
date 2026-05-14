@@ -24,7 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define __BSTATE_H__
 
 //bstate.h
-using bState_t = enum //# bState_e
+using bState_t = enum bState_e //# bState_e
 {
 	//These take over only if script allows them to be autonomous
 	BS_DEFAULT = 0,

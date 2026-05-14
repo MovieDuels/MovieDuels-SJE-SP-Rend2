@@ -1063,14 +1063,14 @@ void CG_PlayEffectID(const int fx_id, vec3_t origin, const vec3_t fwd)
 	CG_PlayEffect(fx_name, origin, fwd);
 }
 
-inline float random()
+inline float Q_random()
 {
 	return rand() / static_cast<float>(0x7fff);
 }
 
-inline float crandom()
+inline float Q_crandom()
 {
-	return 2.0F * (random() - 0.5F);
+	return 2.0F * (Q_random() - 0.5F);
 }
 
 /*
@@ -1088,54 +1088,54 @@ void CG_GibPlayer(vec3_t player_origin)
 	vec3_t origin, velocity{};
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * GIB_VELOCITY;
-	velocity[1] = crandom() * GIB_VELOCITY;
-	velocity[2] = GIB_JUMP + crandom() * GIB_VELOCITY;
+	velocity[0] = Q_crandom() * GIB_VELOCITY;
+	velocity[1] = Q_crandom() * GIB_VELOCITY;
+	velocity[2] = GIB_JUMP + Q_crandom() * GIB_VELOCITY;
 }
 
 constexpr auto DECAPITATE_VELOCITY = 3000;
@@ -1147,22 +1147,22 @@ void CG_GibPlayerHeadshot(vec3_t player_origin)
 
 	VectorCopy(player_origin, origin);
 	origin[2] += 25;
-	velocity[0] = crandom() * DECAPITATE_VELOCITY;
-	velocity[1] = crandom() * DECAPITATE_VELOCITY;
-	velocity[2] = HEAD_JUMP + crandom() * DECAPITATE_VELOCITY;
+	velocity[0] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[1] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[2] = HEAD_JUMP + Q_crandom() * DECAPITATE_VELOCITY;
 	//delete from here
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * DECAPITATE_VELOCITY;
-	velocity[1] = crandom() * DECAPITATE_VELOCITY;
-	velocity[2] = HEAD_JUMP + crandom() * DECAPITATE_VELOCITY;
+	velocity[0] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[1] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[2] = HEAD_JUMP + Q_crandom() * DECAPITATE_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * DECAPITATE_VELOCITY;
-	velocity[1] = crandom() * DECAPITATE_VELOCITY;
-	velocity[2] = HEAD_JUMP + crandom() * DECAPITATE_VELOCITY;
+	velocity[0] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[1] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[2] = HEAD_JUMP + Q_crandom() * DECAPITATE_VELOCITY;
 
 	VectorCopy(player_origin, origin);
-	velocity[0] = crandom() * DECAPITATE_VELOCITY;
-	velocity[1] = crandom() * DECAPITATE_VELOCITY;
-	velocity[2] = HEAD_JUMP + crandom() * DECAPITATE_VELOCITY;
+	velocity[0] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[1] = Q_crandom() * DECAPITATE_VELOCITY;
+	velocity[2] = HEAD_JUMP + Q_crandom() * DECAPITATE_VELOCITY;
 }

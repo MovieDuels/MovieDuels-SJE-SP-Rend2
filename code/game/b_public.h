@@ -117,7 +117,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 //#endif //__DEBUG
 
-using visibility_t = enum
+using visibility_t = enum visibility_e
 {
 	VIS_UNKNOWN,
 	VIS_NOT,
@@ -127,7 +127,7 @@ using visibility_t = enum
 	VIS_SHOOT
 };
 
-using spot_t = enum
+using spot_t = enum spot_e
 {
 	SPOT_ORIGIN,
 	SPOT_CHEST,

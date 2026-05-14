@@ -110,7 +110,7 @@ using saberLockResult_t = enum
 	LOCK_DRAW //both people fall back
 };
 
-using sabersLockMode_t = enum
+using sabersLockMode_t = enum sabersLockMode_t
 {
 	LOCK_FIRST = 0,
 	LOCK_TOP = LOCK_FIRST,
@@ -292,7 +292,7 @@ extern int G_CostForSpecialMove(int cost, qboolean kata_move = qfalse);
 extern gentity_t* G_DropSaberItem(const char* saberType, saber_colors_t saberColor, vec3_t saberPos, vec3_t saberVel,
 	vec3_t saberAngles, const gentity_t* copySaber = nullptr);
 
-using evasionType_t = enum
+using evasionType_t = enum evasionType_t
 {
 	EVASION_NONE = 0,
 	EVASION_PARRY,
@@ -308,7 +308,7 @@ using evasionType_t = enum
 	NUM_EVASION_TYPES
 };
 
-using swingType_t = enum
+using swingType_t = enum swingType_t
 {
 	SWING_FAST,
 	SWING_MEDIUM,
@@ -323,7 +323,7 @@ using swingType_t = enum
 #undef LS_NONE
 #endif
 
-using saber_moveName_t = enum
+using saber_moveName_t = enum saber_moveName_t
 {
 	// Invalid, or saber not armed
 	LS_INVALID = -1,
@@ -560,7 +560,7 @@ using saberQuadrant_t = enum
 	Q_NUM_QUADS
 };
 
-using saber_moveData_t = struct
+using saber_moveData_t = struct saber_moveData_t
 {
 	const char* name;
 	int animToUse;

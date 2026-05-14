@@ -65,7 +65,7 @@ NON-PORTABLE SYSTEM SERVICES
 //	MAX_JOYSTICK_AXIS
 //};
 
-using sysEventType_t = enum
+using sysEventType_t = enum sysEventType_e
 {
 	// bk001129 - make sure SE_NONE is zero
 	SE_NONE = 0,

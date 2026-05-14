@@ -61,8 +61,8 @@ qboolean CL_InitCGameVM(void* gameLibrary)
 	using SyscallProc = intptr_t(intptr_t, ...);
 	using DllEntryProc = void(SyscallProc*);
 
-	const auto dll_entry = static_cast<DllEntryProc*>(Sys_LoadFunction(gameLibrary, "dllEntry"));
-	cgvm.entryPoint = static_cast<intptr_t(*)(int, ...)>(Sys_LoadFunction(gameLibrary, "vmMain"));
+	const auto dll_entry = reinterpret_cast<DllEntryProc*>(Sys_LoadFunction(gameLibrary, "dllEntry"));
+	cgvm.entryPoint = reinterpret_cast<intptr_t(*)(int, ...)>(Sys_LoadFunction(gameLibrary, "vmMain"));
 
 	if (!cgvm.entryPoint || !dll_entry)
 	{

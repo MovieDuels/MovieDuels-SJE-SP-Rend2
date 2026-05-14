@@ -469,7 +469,7 @@ using mapVert_t = struct
 	byte color[MAXLIGHTMAPS][4];
 };
 
-using drawVert_t = struct
+using drawVert_t = struct drawVert_t
 {
 	vec3_t xyz;
 	float st[2];

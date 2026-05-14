@@ -28,7 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #define UI_API_VERSION 4
 
-using uiimport_t = struct
+using uiimport_t = struct uiimport_s
 {
 	//============== general Quake services ==================
 
@@ -166,7 +166,7 @@ using dpTypes_t = enum
 	DP_FORCEPOWERS
 };
 
-using uiImport_t = enum
+using uiImport_t = enum uiImport_e
 {
 	UI_ERROR,
 	UI_PRINT,

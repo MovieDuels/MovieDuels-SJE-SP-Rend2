@@ -353,8 +353,8 @@ namespace ojk
 
 		using DstNumeric = std::conditional_t<
 			std::is_signed<TSrc>::value,
-			std::intptr_t,
-			std::uintptr_t
+			::intptr_t,
+			::uintptr_t
 		>;
 
 		DstNumeric dst_number{};
@@ -636,8 +636,8 @@ namespace ojk
 	{
 		using DstNumeric = std::conditional_t<
 			std::is_signed<TSrc>::value,
-			std::intptr_t,
-			std::uintptr_t
+			::intptr_t,
+			::uintptr_t
 		>;
 
 		const DstNumeric dst_number = reinterpret_cast<DstNumeric>(src_value);

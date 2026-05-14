@@ -803,7 +803,7 @@ using cgEffects_t = struct
 constexpr auto STRIPED_LEVELNAME_VARIATIONS = 3;
 // sigh, to cope with levels that use text from >1 SP file (plus 1 for common);
 
-using cgs_t = struct
+using cgs_t = struct cgs_t
 {
 	gameState_t gameState; // gamestate from server
 	glconfig_t glconfig; // rendering configuration

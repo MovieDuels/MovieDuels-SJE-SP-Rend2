@@ -25,7 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 //	are different choices to offer in the pulldown box. I know, it's tacky, but ModView wasn't planned as an
 //	editor and this was never an external file. A great combination...   - Ste.
 //
-using soundChannel_t = enum //# soundChannel_e
+using soundChannel_t = enum soundChannel_e // soundChannel_e
 {
 	CHAN_AUTO,
 	//## %s !!"W:\game\base\!!sound\*.wav;*.mp3" # Auto-picks an empty channel to play sound on

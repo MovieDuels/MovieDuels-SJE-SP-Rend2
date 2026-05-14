@@ -51,7 +51,9 @@ constexpr auto JPEG_IMAGE_QUALITY = 95;
 #include <qcommon/ojk_saved_game_helper_fwd.h>
 #include <cstdint>
 #include <string>
+#if defined(_WIN32)
 #include <corecrt.h>
+#endif
 #include <ctime>
 #include <client/client.h>
 #include <qcommon/cm_public.h>
@@ -162,7 +164,7 @@ void SV_WipeGame_f()
 		return;
 	}
 	SG_WipeSavegame(Cmd_Argv(1));
-	//	Com_Printf("%s has been wiped\n", Cmd_Argv(1));	// wurde gelöscht in german, but we've only got one string
+	//	Com_Printf("%s has been wiped\n", Cmd_Argv(1));	// wurde gelï¿½scht in german, but we've only got one string
 	//	Com_Printf("Ok\n"); // no localization of this
 }
 

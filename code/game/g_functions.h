@@ -386,7 +386,7 @@ extern void shipboundary_touch(gentity_t* self, gentity_t* other, trace_t* trace
 extern void hyperspace_touch(const gentity_t* self, gentity_t* other, trace_t* trace);
 
 //	void		(*use)(gentity_t *self, gentity_t *other, gentity_t *activator);
-using useFunc_t = enum
+using useFunc_t = enum useFunc_t
 {
 	useF_NULL = 0,
 	//

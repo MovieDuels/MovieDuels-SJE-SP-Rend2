@@ -433,7 +433,7 @@ static void G2_Generate_Matrix(const model_t* mod, boneInfo_v& blist, const int 
 	}
 
 	// keep a copy of the matrix in the newmatrix which is actually what we use
-	memcpy(&blist[index].newMatrix, &blist[index].matrix, sizeof mdxaBone_t);
+	memcpy(&blist[index].newMatrix, &blist[index].matrix, sizeof(mdxaBone_t));
 }
 
 //=========================================================================================
@@ -509,8 +509,8 @@ qboolean G2_Set_Bone_Angles_Matrix_Index(boneInfo_v& blist, const int index, con
 	blist[index].boneBlendStart = current_time;
 	blist[index].boneBlendTime = blend_time;
 
-	memcpy(&blist[index].matrix, &matrix, sizeof mdxaBone_t);
-	memcpy(&blist[index].newMatrix, &matrix, sizeof mdxaBone_t);
+	memcpy(&blist[index].matrix, &matrix, sizeof(mdxaBone_t));
+	memcpy(&blist[index].newMatrix, &matrix, sizeof(mdxaBone_t));
 	return qtrue;
 }
 
@@ -526,8 +526,8 @@ qboolean G2_Set_Bone_Angles_Matrix(const CGhoul2Info* ghlInfo, boneInfo_v& blist
 	{
 		blist[index].flags &= ~(BONE_ANGLES_TOTAL);
 		blist[index].flags |= flags;
-		memcpy(&blist[index].matrix, &matrix, sizeof mdxaBone_t);
-		memcpy(&blist[index].newMatrix, &matrix, sizeof mdxaBone_t);
+		memcpy(&blist[index].matrix, &matrix, sizeof(mdxaBone_t));
+		memcpy(&blist[index].newMatrix, &matrix, sizeof(mdxaBone_t));
 		return qtrue;
 	}
 	return qfalse;
@@ -1116,7 +1116,7 @@ static void G2_Generate_MatrixRag(boneInfo_v& blist, const int index)
 {
 	boneInfo_t& bone = blist[index]; //.sent;
 
-	memcpy(&bone.matrix, &bone.ragOverrideMatrix, sizeof mdxaBone_t);
+	memcpy(&bone.matrix, &bone.ragOverrideMatrix, sizeof(mdxaBone_t));
 #ifdef _DEBUG
 	for (int i = 0; i < 3; i++)
 	{
@@ -1126,7 +1126,7 @@ static void G2_Generate_MatrixRag(boneInfo_v& blist, const int index)
 		}
 	}
 #endif// _DEBUG
-	memcpy(&blist[index].newMatrix, &bone.matrix, sizeof mdxaBone_t);
+	memcpy(&blist[index].newMatrix, &bone.matrix, sizeof(mdxaBone_t));
 }
 
 int G2_Find_Bone_Rag(const CGhoul2Info* ghlInfo, const boneInfo_v& blist, const char* boneName)
@@ -1258,7 +1258,7 @@ static int G2_Set_Bone_Angles_Rag(const CGhoul2Info& ghoul2, boneInfo_v& blist, 
 					{0.0f, 0.0f, 1.0f, 0.0f}
 				}
 			};
-			memcpy(&bone.ragOverrideMatrix, &id, sizeof mdxaBone_t);
+			memcpy(&bone.ragOverrideMatrix, &id, sizeof(mdxaBone_t));
 			VectorClear(bone.anglesOffset);
 			VectorClear(bone.positionOffset);
 			VectorClear(bone.velocityEffector); // this is actually a velocity now
@@ -4254,7 +4254,7 @@ static int G2_Set_Bone_Angles_IK(const CGhoul2Info& ghoul2, boneInfo_v& blist, c
 					{0.0f, 0.0f, 1.0f, 0.0}
 				}
 			};
-			memcpy(&bone.ragOverrideMatrix, &id, sizeof mdxaBone_t);
+			memcpy(&bone.ragOverrideMatrix, &id, sizeof(mdxaBone_t));
 			VectorClear(bone.anglesOffset);
 			VectorClear(bone.positionOffset);
 			VectorClear(bone.velocityEffector); // this is actually a velocity now

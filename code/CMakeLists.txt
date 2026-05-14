@@ -104,7 +104,11 @@ if(BuildSPEngine OR BuildJK2SPEngine)
 	else()
 		find_package(SDL2 REQUIRED)
 		set(SPEngineIncludeDirectories ${SPEngineIncludeDirectories} ${SDL2_INCLUDE_DIR})
-		set(SPEngineLibraries ${SPEngineLibraries} ${SDL2_LIBRARY})
+		if(SDL2_LIBRARY)
+			set(SPEngineLibraries ${SPEngineLibraries} ${SDL2_LIBRARY})
+		else()
+			set(SPEngineLibraries ${SPEngineLibraries} SDL2::SDL2)
+		endif()
 	endif()
 
 	#    Source Files
@@ -434,6 +438,11 @@ if(BuildSPEngine OR BuildJK2SPEngine)
 
 		# Hide symbols not explicitly marked public.
 		set_property(TARGET ${ProjectName} APPEND PROPERTY COMPILE_OPTIONS ${OPENJK_VISIBILITY_FLAGS})
+
+		# Export symbols needed for internal linking and dlopen'd modules
+		if(UNIX AND NOT APPLE)
+			set_target_properties(${ProjectName} PROPERTIES LINK_FLAGS "-rdynamic")
+		endif()
 
 		set_target_properties(${ProjectName} PROPERTIES INCLUDE_DIRECTORIES "${SPEngineIncludeDirectories}")
 		set_target_properties(${ProjectName} PROPERTIES PROJECT_LABEL ${Label})

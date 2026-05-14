@@ -1747,7 +1747,7 @@ Find all trigger entities that ent's current position touches.
 Spectators will only interact with teleporters.
 ============
 */
-static void G_TouchTriggers(gentity_t* ent)
+void G_TouchTriggers(gentity_t* ent)
 {
 	// FIX: move large array off the stack
 	static gentity_t* touch[MAX_GENTITIES];

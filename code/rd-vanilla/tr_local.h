@@ -52,7 +52,7 @@ using dlight_t = struct dlight_s {
 
 // a trRefEntity_t has all the information passed in by
 // the client game, as well as some locally derived info
-using trRefEntity_t = struct {
+using trRefEntity_t = struct trRefEntity_t {
 	refEntity_t	e;
 
 	float		axisLength;		// compensate for non-normalized axis
@@ -68,7 +68,7 @@ using trRefEntity_t = struct {
 
 // trRefdef_t holds everything that comes in refdef_t,
 // as well as the locally generated scene information
-using trRefdef_t = struct {
+using trRefdef_t = struct trRefdef_t {
 	int			x, y, width, height;
 	float		fov_x, fov_y;
 	vec3_t		vieworg;
@@ -104,7 +104,7 @@ using trRefdef_t = struct {
 	int			fogIndex;	//what fog brush the vieworg is in
 };
 
-using orientationr_t = struct {
+using orientationr_t = struct orientationr_t {
 	vec3_t		origin;			// in world coordinates
 	vec3_t		axis[3];		// orientation in world
 	vec3_t		viewOrigin;		// viewParms->or.origin in local coordinates
@@ -212,7 +212,7 @@ using alphaGen_t = enum {
 	AGEN_ONE_MINUS_DOT
 };
 
-using colorGen_t = enum {
+using colorGen_t = enum colorGen_t {
 	CGEN_BAD,
 	CGEN_IDENTITY_LIGHTING,	// tr.identityLight
 	CGEN_IDENTITY,			// always (1,1,1,1)
@@ -258,7 +258,7 @@ using EGLFogOverride = enum {
 	GLFOGOVERRIDE_MAX
 };
 
-using waveForm_t = struct {
+using waveForm_t = struct waveForm_t {
 	genFunc_t	func;
 
 	float base;
@@ -293,7 +293,7 @@ using deformStage_t = struct {
 	float		bulgeSpeed;
 };
 
-using texModInfo_t = struct {
+using texModInfo_t = struct texModInfo_t {
 	texMod_t		type;
 
 	// used for TMOD_TURBULENT and TMOD_STRETCH
@@ -338,7 +338,7 @@ using surfaceSprite_t = struct surfaceSprite_s
 	int				facing;		// Hangdown on vertical sprites, faceup on others.
 };
 
-using textureBundle_t = struct {
+using textureBundle_t = struct textureBundle_t {
 	image_t* image;
 
 	texCoordGen_t	tcGen;
@@ -359,7 +359,7 @@ using textureBundle_t = struct {
 
 #define NUM_TEXTURE_BUNDLES 2
 
-using shaderStage_t = struct {
+using shaderStage_t = struct shaderStage_t {
 	bool			active;
 	bool			isDetail;
 	byte			index;						// index of stage
@@ -516,7 +516,7 @@ using fog_t = struct {
 	float		surface[4];
 };
 
-using viewParms_t = struct {
+using viewParms_t = struct viewParms_t {
 	orientationr_t	ori;
 	orientationr_t	world;
 	vec3_t		pvsOrigin;			// may be different than or.origin for portals
@@ -710,7 +710,7 @@ using mnode_t = struct mnode_s {
 	int			nummarksurfaces;
 };
 
-using bmodel_t = struct {
+using bmodel_t = struct bmodel_t {
 	vec3_t		bounds[2];		// for culling
 	msurface_t* firstSurface;
 	int			numSurfaces;
@@ -723,7 +723,7 @@ using mgrid_t = struct {
 	byte		latLong[2];
 };
 
-using world_t = struct {
+using world_t = struct world_t {
 	char		name[MAX_QPATH];		// ie: maps/tim_dm2.bsp
 	char		baseName[MAX_QPATH];	// ie: tim_dm2
 
@@ -876,7 +876,7 @@ using frontEndCounters_t = struct {
 #define FUNCTABLE_MASK		(FUNCTABLE_SIZE-1)
 
 // the renderer front end should never modify glstate_t
-using glstate_t = struct {
+using glstate_t = struct glstate_t {
 	int			currenttextures[2];
 	int			currenttmu;
 	qboolean	finishCalled;
@@ -901,7 +901,7 @@ using backEndCounters_t = struct {
 
 // all state modified by the back end is seperated
 // from the front end state
-using backEndState_t = struct {
+using backEndState_t = struct backEndState_t {
 	trRefdef_t	refdef;
 	viewParms_t	viewParms;
 	orientationr_t	ori;
@@ -926,7 +926,7 @@ using backEndState_t = struct {
 */
 #define NUM_SCRATCH_IMAGES 16
 
-using trGlobals_t = struct {
+using trGlobals_t = struct trGlobals_t {
 	qboolean				registered;		// cleared at shutdown, set at beginRegistration
 
 	int						visCount;		// incremented every time a new vis cluster is entered
@@ -1744,7 +1744,7 @@ using renderCommand_t = enum {
 
 // all of the information needed by the back end must be
 // contained in a backEndData_t.
-using backEndData_t = struct {
+using backEndData_t = struct backEndData_t {
 	drawSurf_t	drawSurfs[MAX_DRAWSURFS];
 	dlight_t	dlights[MAX_DLIGHTS];
 	trRefEntity_t	entities[MAX_REFENTITIES];

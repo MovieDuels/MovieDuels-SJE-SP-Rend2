@@ -267,7 +267,7 @@ constexpr auto PMF_ACCURATE_MISSILE_BLOCK_HELD = 1 << 24;
 constexpr auto MAXTOUCH = 32;
 
 using gentity_t = struct gentity_s;
-using pmove_t = struct
+using pmove_t = struct pmove_t
 {
 	// state (in / out)
 	playerState_t* ps;
