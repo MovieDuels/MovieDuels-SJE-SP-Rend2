@@ -640,9 +640,8 @@ int Com_HexStrToInt(const char* str)
 	if (str[0] == '0' && str[1] == 'x')
 	{
 		size_t n = 0;
-		const size_t len = strlen(str);
 
-		for (size_t i = 2; i < len; i++)
+		for (size_t i = 2; i < strlen(str); i++)
 		{
 			n *= 16;
 
@@ -1049,8 +1048,7 @@ Com_CharIsOneOfCharset
 */
 static qboolean Com_CharIsOneOfCharset(const char c, const char* set)
 {
-	const size_t len = strlen(set);
-	for (size_t i = 0; i < len; i++)
+	for (size_t i = 0; i < strlen(set); i++)
 	{
 		if (set[i] == c)
 			return qtrue;
