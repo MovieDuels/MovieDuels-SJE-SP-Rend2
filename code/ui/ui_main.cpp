@@ -47,7 +47,9 @@ extern stringID_table_t animTable[MAX_ANIMATIONS + 1];
 #include "../qcommon/stringed_ingame.h"
 #include "../qcommon/stv_version.h"
 #include "../qcommon/q_shared.h"
+#if defined(_WIN32)
 #include <corecrt.h>
+#endif
 #include <cstdint>
 #include <cctype>
 #include <qcommon/qcommon.h>
@@ -2528,6 +2530,7 @@ static qboolean UI_RunMenuScript(const char** args)
 	if (String_Parse(args, &name))
 	{
 #ifdef NEW_FEEDER_V1
+		int i = 0;
 #ifdef NEW_FEEDER_V6
 		if (Q_stricmp(name, "md_char_init") == 0)
 		{
@@ -2541,7 +2544,7 @@ static qboolean UI_RunMenuScript(const char** args)
 			return qtrue;
 		}
 #endif
-		for (int i = 0; i < TOTAL_ERAS; i++) {
+		for (i = 0; i < TOTAL_ERAS; i++) {
 			if (Q_stricmp(name, era_table[i].name) == 0) {
 				uiEra = i;
 #ifdef NEW_FEEDER_V6
@@ -9636,7 +9639,7 @@ static void Menus_SaveGoToMenu(const char* menuTo)
 UI_CheckVid1Data
 =================
 */
-static void UI_CheckVid1Data(const char* menuTo, const char* warningMenuName)
+void UI_CheckVid1Data(const char* menuTo, const char* warningMenuName)
 {
 	// Determine which menu is currently active (video or in‑game video)
 	const menuDef_t* menu = Menu_GetFocused();

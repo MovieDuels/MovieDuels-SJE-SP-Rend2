@@ -63,7 +63,7 @@ using serverState_t = enum
 	SS_GAME // actively running
 };
 
-using server_t = struct
+using server_t = struct server_s
 {
 	serverState_t state;
 	int serverId; // changes each server start
@@ -152,7 +152,7 @@ using challenge_t = struct
 };
 
 // this structure will be cleared only when the game dll changes
-using serverStatic_t = struct
+using serverStatic_t = struct serverStatic_s
 {
 	qboolean initialized; // sv_init has completed
 	client_t* clients; // [sv_maxclients->integer];

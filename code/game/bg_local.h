@@ -34,7 +34,7 @@ constexpr auto OVERCLIP = 1.001F;
 // all of the locals will be zeroed before each
 // pmove, just to make damn sure we don't have
 // any differences when running on client or server
-using pml_t = struct
+using pml_t = struct pml_t
 {
 	vec3_t forward, right, up;
 	float frametime;

@@ -59,7 +59,7 @@ extern void AS_Free();
 constexpr auto PAINTBUFFER_SIZE = 1024;
 
 // !!! if this is changed, the asm code must change !!!
-using portable_samplepair_t = struct
+using portable_samplepair_t = struct portable_samplepair_s
 {
 	int left; // the final values will be clamped to +/- 0x00ffff00 and shifted down
 	int right;
@@ -100,7 +100,7 @@ using sfx_t = struct sfx_s
 	sfx_s* next; // only used because of hash table when registering
 };
 
-using dma_t = struct
+using dma_t = struct dma_s
 {
 	int channels;
 	int samples; // mono samples in buffer
@@ -114,7 +114,7 @@ constexpr auto START_SAMPLE_IMMEDIATE = 0x7fffffff;
 
 // Open AL specific
 #ifdef USE_OPENAL
-using STREAMINGBUFFER = struct
+using STREAMINGBUFFER = struct STREAMINGBUFFER_s
 {
 	ALuint BufferID;
 	ALuint Status;
@@ -128,7 +128,7 @@ constexpr auto STREAMING_BUFFER_SIZE = 4608; // 4 decoded MP3 frames;
 constexpr auto QUEUED = 1;
 constexpr auto UNQUEUED = 2;
 
-using channel_t = struct
+using channel_t = struct channel_s
 {
 	// back-indented fields new in TA codebase, will re-format when MP3 code finished -ste
 	// note: field missing in TA: qboolean	loopSound;		// from an S_AddLoopSound call, cleared each frame

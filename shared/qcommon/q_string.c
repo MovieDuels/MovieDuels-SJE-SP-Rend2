@@ -10,7 +10,9 @@
 #include <string.h>
 
 #include "q_color.h"
+#if defined(_WIN32)
 #include <corecrt.h>
+#endif
 #include <stdarg.h>
 
 int Q_isprint(const int c)
@@ -54,7 +56,7 @@ int Q_isupper(const int c)
 
 int Q_isalpha(const int c)
 {
-	if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
+	if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 		return 1;
 	return 0;
 }

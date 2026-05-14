@@ -584,8 +584,8 @@ qboolean G2_Set_Bone_Angles_Matrix(const CGhoul2Info* ghlInfo, boneInfo_v& blist
 	{
 		blist[index].flags &= ~(BONE_ANGLES_TOTAL);
 		blist[index].flags |= flags;
-		memcpy(&blist[index].matrix, &matrix, sizeof mdxaBone_t);
-		memcpy(&blist[index].newMatrix, &matrix, sizeof mdxaBone_t);
+		memcpy(&blist[index].matrix, &matrix, sizeof(mdxaBone_t));
+		memcpy(&blist[index].newMatrix, &matrix, sizeof(mdxaBone_t));
 		return qtrue;
 	}
 	return qfalse;

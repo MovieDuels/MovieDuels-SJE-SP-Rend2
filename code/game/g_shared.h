@@ -36,7 +36,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #define	FOFS(x) offsetof(gentity_t, x)
 
-using taskID_t = enum //# taskID_e
+using taskID_t = enum taskID_e //# taskID_e
 {
 	TID_CHAN_VOICE = 0,
 	// Waiting for a voice sound to complete
@@ -63,7 +63,7 @@ using taskID_t = enum //# taskID_e
 	// for def of taskID array
 };
 
-using material_t = enum //# material_e
+using material_t = enum material_t //# material_e
 {
 	MAT_METAL = 0,
 	// scorched blue-grey metal

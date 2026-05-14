@@ -48,7 +48,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 // msg.c
 //
-using msg_t = struct
+using msg_t = struct msg_s
 {
 	qboolean allowoverflow; // if false, do a Com_Error
 	qboolean overflowed; // set to true if the buffer size failed (with allowoverflow set)
@@ -119,7 +119,7 @@ constexpr auto PORT_ANY = -1;
 
 constexpr auto MAX_RELIABLE_COMMANDS = 256; // max string commands buffered for restransmit;
 
-using netsrc_t = enum
+using netsrc_t = enum netsrc_e
 {
 	NS_CLIENT,
 	NS_SERVER
@@ -150,7 +150,7 @@ qboolean NET_GetLoopPacket(netsrc_t sock, netadr_t* net_from, msg_t* net_message
 Netchan handles packet fragmentation and out of order / duplicate suppression
 */
 
-using netchan_t = struct
+using netchan_t = struct netchan_s
 {
 	netsrc_t sock;
 
@@ -562,7 +562,7 @@ constexpr auto CONSOLE_PROMPT_CHAR = ']';
 constexpr auto MAX_EDIT_LINE = 256;
 constexpr auto COMMAND_HISTORY = 32;
 
-using field_t = struct
+using field_t = struct field_s
 {
 	int cursor;
 	int scroll;

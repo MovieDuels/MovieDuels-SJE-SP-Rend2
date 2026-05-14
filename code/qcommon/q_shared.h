@@ -206,7 +206,7 @@ constexpr auto MAX_OSPATH = 256; // max length of a filesystem pathname;
 constexpr auto MAX_NAME_LENGTH = 32; // max length of a client name;
 
 // parameters for command buffer stuffing
-using cbufExec_t = enum
+using cbufExec_t = enum cbufExec_e
 {
 	EXEC_NOW,
 	// don't return until completed, a VM should NEVER use this,
@@ -231,7 +231,7 @@ constexpr auto LS_NUM_SWITCH = 32;
 #define	LS_LSNONE			0xff
 
 // print levels from renderer (FIXME: set up for game / cgame?)
-using printParm_t = enum
+using printParm_t = enum printParm_e
 {
 	PRINT_ALL,
 	PRINT_DEVELOPER,
@@ -241,7 +241,7 @@ using printParm_t = enum
 };
 
 // parameters to the main Error routine
-using errorParm_t = enum
+using errorParm_t = enum errorParm_e
 {
 	ERR_FATAL,
 	// exit the entire game with a pop up window
@@ -326,7 +326,7 @@ constexpr auto GIANTCHAR_HEIGHT = 48;
 #define NEW_FEEDER_V10
 
 // Player weapons effects
-using saber_colors_t = enum
+using saber_colors_t = enum saber_colors_e
 {
 	SABER_RED,
 	SABER_ORANGE,
@@ -342,7 +342,7 @@ using saber_colors_t = enum
 	SABER_RGB = 1 << 24
 };
 
-using holster_locations_t = enum
+using holster_locations_t = enum holster_locations_e
 {
 	HOLSTER_INVALID = -1,
 	HOLSTER_NONE = 0,
@@ -434,7 +434,7 @@ char* Com_SkipTokens(char* s, int numTokens, const char* sep);
 char* Com_SkipCharset(char* s, const char* sep);
 
 // mode parm for FS_FOpenFile
-using fsMode_t = enum
+using fsMode_t = enum fsMode_e
 {
 	FS_READ,
 	FS_WRITE,
@@ -442,7 +442,7 @@ using fsMode_t = enum
 	FS_APPEND_SYNC
 };
 
-using fsOrigin_t = enum
+using fsOrigin_t = enum fsOrigin_e
 {
 	FS_SEEK_CUR,
 	FS_SEEK_END,
@@ -540,7 +540,7 @@ using cvarHandle_t = int;
 
 // the modules that run in the virtual machine can't access the cvar_t directly,
 // so they must ask for structured updates
-using vmCvar_t = struct
+using vmCvar_t = struct vmCvar_s
 {
 	cvarHandle_t handle;
 	int modificationCount;
@@ -573,7 +573,7 @@ Ghoul2 Insert End
 
 constexpr auto MAX_G2_COLLISIONS = 32;
 // a trace is returned when a box is swept through the world
-using trace_t = struct
+using trace_t = struct trace_s
 {
 	qboolean allsolid = qfalse;
 	qboolean startsolid = qfalse;
@@ -617,13 +617,13 @@ using trace_t = struct
 // or ENTITYNUM_NONE, ENTITYNUM_WORLD
 
 // markfragments are returned by CM_MarkFragments()
-using markFragment_t = struct
+using markFragment_t = struct markFragment_s
 {
 	int firstPoint;
 	int numPoints;
 };
 
-using orientation_t = struct
+using orientation_t = struct orientation_s
 {
 	vec3_t origin;
 	vec3_t axis[3];
@@ -764,14 +764,14 @@ Ghoul2 Insert End
 constexpr auto BG_NUM_TOGGLEABLE_SURFACES = 31;
 
 constexpr auto MAX_GAMESTATE_CHARS = 32000;
-using gameState_t = struct
+using gameState_t = struct gameState_s
 {
 	int stringOffsets[MAX_CONFIGSTRINGS];
 	char stringData[MAX_GAMESTATE_CHARS];
 	int dataCount;
 };
 
-using forcePowers_t = enum
+using forcePowers_t = enum forcePowers_e
 {
 	FP_FIRST = 0,
 	//marker
@@ -829,7 +829,7 @@ using forcePowers_t = enum
 	NUM_FORCE_POWERS
 };
 
-using saberType_t = enum
+using saberType_t = enum saberType_e
 {
 	SABER_NONE = 0,
 	SABER_SINGLE,
@@ -894,7 +894,7 @@ constexpr auto MAX_PS_EVENTS = 2; // this must be a power of 2 unless you change
 #define MIN_WORLD_COORD		( -64*1024 )
 #define WORLD_SIZE			( MAX_WORLD_COORD - MIN_WORLD_COORD )
 
-using waterHeightLevel_t = enum
+using waterHeightLevel_t = enum waterHeightLevel_e
 {
 	WHL_NONE,
 	WHL_ANKLES,
@@ -907,7 +907,7 @@ using waterHeightLevel_t = enum
 };
 
 // !!!!!!! loadsave affecting struct !!!!!!!
-using saberTrail_t = struct
+using saberTrail_t = struct saberTrail_s
 {
 	// Actual trail stuff
 	int inAction; // controls whether should we even consider starting one
@@ -956,7 +956,7 @@ using saberTrail_t = struct
 constexpr auto MAX_SABER_TRAIL_SEGS = 8;
 
 // !!!!!!!!!!!!! loadsave affecting struct !!!!!!!!!!!!!!!
-using bladeInfo_t = struct
+using bladeInfo_t = struct bladeInfo_s
 {
 	qboolean active;
 	saber_colors_t color;
@@ -1017,7 +1017,7 @@ using bladeInfo_t = struct
 
 constexpr auto MAX_BLADES = 8;
 
-using saber_styles_t = enum
+using saber_styles_t = enum saber_styles_e
 {
 	SS_NONE = 0,
 	SS_FAST,
@@ -1093,7 +1093,7 @@ constexpr auto SFL_NO_ROLLS = 1 << 16; //if set, cannot roll;
 #define SFL2_TRANSITION_DAMAGE2		(1<<17)//if set, the blade does damage in start, transition and return anims (like strong style does)
 
 // !!!!!!!!!!!! loadsave affecting struct !!!!!!!!!!!!!!!!!!!!!!!!!!
-using saberInfo_t = struct
+using saberInfo_t = struct saberInfo_s
 {
 	char* name; //entry in sabers.cfg, if any
 	char* fullName; //the "Proper Name" of the saber, shown in the UI
@@ -2896,7 +2896,7 @@ using usercmd_t = struct usercmd_s
 // if entityState->solid == SOLID_BMODEL, modelindex is an inline model number
 constexpr auto SOLID_BMODEL = 0xffffff;
 
-using trType_t = enum
+using trType_t = enum trType_e
 {
 	// !!!!!!!!!!! LOADSAVE-affecting struct !!!!!!!!!!
 	TR_STATIONARY,
@@ -2910,7 +2910,7 @@ using trType_t = enum
 	TR_GRAVITY
 };
 
-using trajectory_t = struct
+using trajectory_t = struct trajectory_s
 {
 	// !!!!!!!!!!! LOADSAVE-affecting struct !!!!!!!!!!
 	trType_t trType;
@@ -3356,7 +3356,7 @@ using entityState_t = struct entityState_s
 	}
 };
 
-using connstate_t = enum
+using connstate_t = enum connstate_e
 {
 	CA_UNINITIALIZED,
 	CA_DISCONNECTED,
@@ -3417,7 +3417,7 @@ using SSkinGoreData = struct SSkinGoreData_s
 };
 
 //rww - used for my ik stuff (ported directly from mp)
-using sharedRagDollUpdateParams_t = struct
+using sharedRagDollUpdateParams_t = struct sharedRagDollUpdateParams_s
 {
 	vec3_t angles;
 	vec3_t position;
@@ -3427,7 +3427,7 @@ using sharedRagDollUpdateParams_t = struct
 };
 
 //rww - update parms for ik bone stuff
-using sharedIKMoveParams_t = struct
+using sharedIKMoveParams_t = struct sharedIKMoveParams_s
 {
 	char boneName[512]; //name of bone
 	vec3_t desiredOrigin; //world coordinate that this bone should be attempting to reach
@@ -3435,7 +3435,7 @@ using sharedIKMoveParams_t = struct
 	float movementSpeed; //how fast the bone should move toward the destination
 };
 
-using sharedSetBoneIKStateParams_t = struct
+using sharedSetBoneIKStateParams_t = struct sharedSetBoneIKStateParams_s
 {
 	vec3_t pcjMins; //ik joint limit
 	vec3_t pcjMaxs; //ik joint limit
@@ -3517,7 +3517,7 @@ extern parseData_t parseData[];
 extern int parseDataCount;
 
 // cinematic states
-using e_status = enum
+using e_status = enum e_status_e
 {
 	FMV_IDLE,
 	FMV_PLAY,
@@ -3543,7 +3543,7 @@ using memtag_t = unsigned;
 
 // stuff to help out during development process, force reloading/uncacheing of certain filetypes...
 //
-using ForceReload_e = enum
+using ForceReload_e = enum ForceReload_e2
 {
 	eForceReload_NOTHING,
 	eForceReload_BSP,
@@ -3551,7 +3551,7 @@ using ForceReload_e = enum
 	eForceReload_ALL
 };
 
-using ManualBlockingFlag_e = enum
+using ManualBlockingFlag_e = enum ManualBlockingFlag_e2
 {
 	HOLDINGBLOCK,
 	HOLDINGBLOCKANDATTACK,
@@ -3567,7 +3567,7 @@ using ManualBlockingFlag_e = enum
 	MBF_MISSILESTASIS,
 };
 
-using communicatingflags_e = enum
+using communicatingflags_e = enum communicatingflags_e2
 {
 	RESPECTING,
 	GESTURING,
@@ -3581,7 +3581,7 @@ using communicatingflags_e = enum
 	CF_SABERLOCK_ADVANCE,
 };
 
-using PlayerEffectFlags_e = enum
+using PlayerEffectFlags_e = enum PlayerEffectFlags_e2
 {
 	PEF_BURNING,
 	PEF_FREEZING,

@@ -73,8 +73,8 @@ constexpr auto MAX_MARK_POLYS = 256;
 constexpr auto STAT_MINUS = 10; // num frame for '-' stats digit;
 
 constexpr auto ICON_SIZE = 48;
-constexpr auto CHAR_WIDTH = 32;
-constexpr auto CHAR_HEIGHT = 48;
+#define	CHAR_WIDTH			32
+#define	CHAR_HEIGHT			48
 constexpr auto TEXT_ICON_SPACE = 4;
 
 constexpr auto CHARSMALL_WIDTH = 16;
@@ -285,7 +285,7 @@ using localEntity_t = struct localEntity_s
 // each IT_* item has an associated itemInfo_t
 // that constains media references necessary to present the
 // item and its effects
-using itemInfo_t = struct
+using itemInfo_t = struct itemInfo_t
 {
 	qboolean registered;
 	qhandle_t models;
@@ -327,7 +327,7 @@ using overrides_t = struct
 // all cg.stepTime, cg.duckTime, cg.landTime, etc are set to cg.time when the action
 // occurs, and they will have visible effects for #define STEP_TIME or whatever msec after
 
-using cg_t = struct
+using cg_t = struct cg_s
 {
 	int clientFrame; // incremented each frame
 

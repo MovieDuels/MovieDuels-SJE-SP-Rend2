@@ -70,7 +70,7 @@ constexpr auto MAX_PARSE_ENTITIES = 512;
 
 extern int g_console_field_width;
 
-using clientActive_t = struct
+using clientActive_t = struct clientActive_s
 {
 	int timeoutcount;
 
@@ -145,7 +145,7 @@ or just a streaming cinematic.
 =============================================================================
 */
 
-using clientConnection_t = struct
+using clientConnection_t = struct clientConnection_s
 {
 	int lastPacketSentTime; // for retransmits
 	int lastPacketTime;
@@ -179,7 +179,7 @@ no client connection is active at all
 ==================================================================
 */
 
-using clientStatic_t = struct
+using clientStatic_t = struct clientStatic_s
 {
 	connstate_t state; // connection status
 
@@ -213,7 +213,7 @@ using clientStatic_t = struct
 constexpr auto CON_TEXTSIZE = 0x30000; //was 32768;
 constexpr auto NUM_CON_TIMES = 4;
 
-using console_t = struct
+using console_t = struct console_s
 {
 	qboolean initialized;
 

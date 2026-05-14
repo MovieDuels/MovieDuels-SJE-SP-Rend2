@@ -26,7 +26,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "tr_common.h"
 #include <png.h>
+#ifdef _WIN32
 #include <libpng/pngget.c>
+#endif
 
 void user_write_data(const png_structp png_ptr, const png_bytep data, const png_size_t length) {
 	const fileHandle_t fp = *static_cast<fileHandle_t*>(png_get_io_ptr(png_ptr));
@@ -41,6 +43,7 @@ int RE_SavePNG(const char* filename, const byte* buf, const size_t width, const 
 	png_structp png_ptr;
 	png_infop info_ptr;
 	unsigned int y;
+	png_bytepp row_pointers = nullptr;
 	/* "status" contains the return value of this function. At first
 	it is set to a value which means 'failure'. When the routine
 	has finished its work, it is set to a value which means
@@ -86,7 +89,7 @@ int RE_SavePNG(const char* filename, const byte* buf, const size_t width, const 
 
 	/* Initialize rows of PNG. */
 
-	const auto row_pointers = static_cast<png_byte**>(png_malloc(png_ptr, height * sizeof(png_byte*)));
+	row_pointers = static_cast<png_byte**>(png_malloc(png_ptr, height * sizeof(png_byte*)));
 	for (y = 0; y < height; ++y) {
 		auto row = static_cast<png_byte*>(png_malloc(png_ptr, sizeof(uint8_t) * width * byteDepth));
 		row_pointers[height - y - 1] = row;

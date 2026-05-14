@@ -220,6 +220,9 @@ using cgameImport_t = enum
 
 	CG_OPENJK_MENU_PAINT,
 	CG_OPENJK_GETMENU_BYNAME,
+
+	CG_SerenityJediEngine2026_MENU_PAINT,
+	CG_SerenityJediEngine2026_GETMENU_BYNAME,
 };
 
 #ifdef JK2_MODE

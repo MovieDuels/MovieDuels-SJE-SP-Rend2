@@ -12880,7 +12880,7 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 	}
 }
 
-static void WP_SaberInFlightReflectCheck(gentity_t* self)
+void WP_SaberInFlightReflectCheck(gentity_t* self)
 {
 	// --- EARLY VALIDATION ----------------------------------------------------
 	if (!self || !self->client)

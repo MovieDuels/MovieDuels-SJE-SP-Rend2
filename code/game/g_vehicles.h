@@ -57,7 +57,7 @@ extern stringID_table_t VehicleTable[VH_NUM_VEHICLES + 1];
 //===========================================================================================================
 //START VEHICLE WEAPONS
 //===========================================================================================================
-using vehWeaponInfo_t = struct
+using vehWeaponInfo_t = struct vehWeaponInfo_t
 {
 	//*** IMPORTANT!!! *** vWeapFields table correponds to this structure!
 	char* name;
@@ -152,7 +152,7 @@ using vehWeaponStats_t = struct
 // Compiler pre-define.
 struct Vehicle_t;
 
-using vehicleInfo_t = struct
+using vehicleInfo_t = struct vehicleInfo_t
 {
 	//*** IMPORTANT!!! *** vehFields table correponds to this structure!
 	char* name; //unique name of the vehicle

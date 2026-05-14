@@ -36,7 +36,7 @@ static void skipWhitespace(gsl::cstring_view& text, const bool allow_line_breaks
 {
 	auto whitespaceEnd = text.begin();
 	while (whitespaceEnd != text.end() // No EOF
-		&& std::isspace(*whitespaceEnd) // No End of Whitespace
+		&& std::isspace(static_cast<unsigned char>(*whitespaceEnd)) // No End of Whitespace
 		&& (allow_line_breaks || *whitespaceEnd != '\n')) // No unwanted newline
 	{
 		++whitespaceEnd;
@@ -82,7 +82,7 @@ static gsl::cstring_view removeTrailingWhitespace(const gsl::cstring_view& text)
 		text.begin(),
 		std::find_if_not(
 			std::reverse_iterator<const char*>(text.end()), std::reverse_iterator<const char*>(text.begin()),
-			std::isspace
+			[](char c) { return std::isspace(static_cast<unsigned char>(c)); }
 		).base()
 	};
 }
@@ -141,7 +141,7 @@ static gsl::cstring_view GetToken(gsl::cstring_view& text, const bool allow_line
 		return removeTrailingWhitespace(token);
 	}
 	// consume until first whitespace (if allowLineBreaks == false, that may be text.begin(); in that case token is empty.)
-	auto tokenEnd = std::find_if(text.begin(), text.end(), std::isspace);
+	auto tokenEnd = std::find_if(text.begin(), text.end(), [](char c) { return std::isspace(static_cast<unsigned char>(c)); });
 	gsl::cstring_view token{ text.begin(), tokenEnd };
 	text = { tokenEnd, text.end() };
 	return token;

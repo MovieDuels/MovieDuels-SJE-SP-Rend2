@@ -26,7 +26,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "sys/sys_local.h"
 #include "sdl_icon.h"
 #include <string.h>
+#if defined(_WIN32)
 #include <VersionHelpers.h>
+#endif
 #include <SDL_video.h>
 #include <sys/sys_public.h>
 #include <SDL_error.h>

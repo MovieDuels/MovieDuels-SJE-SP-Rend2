@@ -121,7 +121,7 @@ constexpr auto STRING_POOL_SIZE = (4 * 1024 * 1024);
 
 constexpr auto NUM_CROSSHAIRS = 9;
 
-using cachedAssets_t = struct
+using cachedAssets_t = struct cachedAssets_s
 {
 	qhandle_t qhMediumFont;
 	qhandle_t cursor;
@@ -182,7 +182,7 @@ using cachedAssets_t = struct
 
 struct itemDef_s;
 
-using displayContextDef_t = struct
+using displayContextDef_t = struct displayContextDef_s
 {
 	void (*addRefEntityToScene)(const refEntity_t* re);
 	void (*clearScene)();
@@ -308,7 +308,7 @@ constexpr auto MAX_MENUS = 256;
 #define WINDOW_INTRANSITIONMODEL	0x04000000	// delayed script waiting to run
 #define WINDOW_IGNORE_ESCAPE	0x08000000	// ignore normal closeall menus escape functionality
 
-using rectDef_t = struct
+using rectDef_t = struct rectDef_s
 {
 	float x; // horiz position
 	float y; // vert position
@@ -319,7 +319,7 @@ using rectDef_t = struct
 using UIRectangle = rectDef_t;
 
 // FIXME: do something to separate text vs window stuff
-using windowDef_t = struct
+using windowDef_t = struct windowDef_s
 {
 	UIRectangle rect; // client coord rectangle
 	UIRectangle rectClient; // screen coord rectangle
@@ -348,7 +348,7 @@ using windowDef_t = struct
 
 using Window = windowDef_t;
 
-using colorRangeDef_t = struct
+using colorRangeDef_t = struct colorRangeDef_s
 {
 	vec4_t color; //
 	float low; //
@@ -433,7 +433,7 @@ using itemDef_t = struct itemDef_s
 	qboolean disabledHidden; // hide the item when 'disabled' is true (for generic image items)
 };
 
-using menuDef_t = struct
+using menuDef_t = struct menuDef_s
 {
 	Window window;
 	const char* font; // font
@@ -481,7 +481,7 @@ using textScrollDef_t = struct textScrollDef_s
 	const char* pLines[MAX_TEXTSCROLL_LINES]; // can contain NULL ptrs that you should skip over during paint.
 };
 
-using commandDef_t = struct
+using commandDef_t = struct commandDef_s
 {
 	const char* name;
 	qboolean(*handler)(itemDef_t* item, const char** args);

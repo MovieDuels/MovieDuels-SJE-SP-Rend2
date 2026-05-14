@@ -174,9 +174,9 @@ const char *Sys_Basename( char *path )
 Sys_Dirname
 ==================
 */
-const char *Sys_Dirname( char *path )
+const char *Sys_Dirname( const char *path )
 {
-	return dirname( path );
+	return dirname( const_cast<char*>(path) );
 }
 
 /*

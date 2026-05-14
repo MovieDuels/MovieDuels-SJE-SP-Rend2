@@ -533,8 +533,8 @@ void* Sys_LoadLegacyGameDll(const char* name, VMMainProc** vmMain, SystemCallPro
 
 	using DllEntryProc = void QDECL(SystemCallProc* syscallptr);
 
-	auto* dllEntry = static_cast<DllEntryProc*>(Sys_LoadFunction(libHandle, "dllEntry"));
-	*vmMain = static_cast<VMMainProc*>(Sys_LoadFunction(libHandle, "vmMain"));
+	auto* dllEntry = reinterpret_cast<DllEntryProc*>(Sys_LoadFunction(libHandle, "dllEntry"));
+	*vmMain = reinterpret_cast<VMMainProc*>(Sys_LoadFunction(libHandle, "vmMain"));
 
 	if (!*vmMain || !dllEntry)
 	{
@@ -591,7 +591,7 @@ void* Sys_LoadSPGameDll(const char* name, GetGameAPIProc** GetGameAPI)
 			return nullptr;
 	}
 
-	*GetGameAPI = static_cast<GetGameAPIProc*>(Sys_LoadFunction(libHandle, "GetGameAPI"));
+	*GetGameAPI = reinterpret_cast<GetGameAPIProc*>(Sys_LoadFunction(libHandle, "GetGameAPI"));
 	if (!*GetGameAPI)
 	{
 		Com_DPrintf("%s(%s) failed to find GetGameAPI function:\n...%s!\n", __FUNCTION__, name, Sys_LibraryError());
@@ -667,7 +667,7 @@ void* Sys_LoadGameDll(const char* name, GetModuleAPIProc** moduleAPI)
 		}
 	}
 
-	*moduleAPI = static_cast<GetModuleAPIProc*>(Sys_LoadFunction(libHandle, "GetModuleAPI"));
+	*moduleAPI = reinterpret_cast<GetModuleAPIProc*>(Sys_LoadFunction(libHandle, "GetModuleAPI"));
 	if (!*moduleAPI)
 	{
 		Com_DPrintf("Sys_LoadGameDll(%s) failed to find GetModuleAPI function:\n...%s!\n", name, Sys_LibraryError());

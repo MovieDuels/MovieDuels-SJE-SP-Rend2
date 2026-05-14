@@ -24,7 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifndef TEAMS_H
 #define TEAMS_H
 
-using team_t = enum //# team_e
+using team_t = enum team_t //# team_e
 {
 	TEAM_FREE,
 	// caution, some code checks avia "if (!team_t_varname)" so I guess this should stay as entry 0, great or what? -slc
@@ -58,7 +58,7 @@ extern stringID_table_t TeamTable[];
 extern stringID_table_t FactionTable[];
 
 // This list is made up from the model directories, this MUST be in the same order as the ClassNames array in NPC_stats.cpp
-using class_t = enum
+using class_t = enum class_t
 {
 	CLASS_NONE,
 	// hopefully this will never be used by an npc, just covering all bases

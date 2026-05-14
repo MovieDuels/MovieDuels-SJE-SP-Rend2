@@ -84,7 +84,7 @@ extern void UI_UpdateConnectionMessageString(const char* string);
 constexpr auto UI_FADEOUT = 0;
 constexpr auto UI_FADEIN = 1;
 
-using uiStatic_t = struct
+using uiStatic_t = struct uiStatic_s
 {
 	int frametime;
 	int realtime;
@@ -152,7 +152,7 @@ using playerSpeciesInfo_t = struct
 	playerColor_t* Color;
 };
 
-using uiInfo_t = struct
+using uiInfo_t = struct uiInfo_s
 {
 	displayContextDef_t uiDC;
 
