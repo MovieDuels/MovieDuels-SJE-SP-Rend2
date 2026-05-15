@@ -185,7 +185,7 @@ char PCM_Buffer[PCM_BUFBYTES]; // better off being declared, so we don't do mall
 
 typedef struct
 {
-	int (*decode_init)(MPEG_HEAD* h, int framebytes_arg,
+	int (*decode_init)(const MPEG_HEAD* h, int framebytes_arg,
 		int reduction_code, int transform_code,
 		int convert_code, int freq_limit);
 	void (*decode_info)(DEC_INFO* info);

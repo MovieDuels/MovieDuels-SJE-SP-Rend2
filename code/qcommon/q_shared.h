@@ -144,7 +144,7 @@ constexpr auto OPENJKGAME = "MovieDuels-SP";
 #endif
 
 #include "qcommon/q_platform.h"
-#include "ojk_saved_game_helper_fwd.h"
+#include "ojk_saved_game_helper.h"
 
 // ================================================================
 // TYPE DEFINITIONS
