@@ -112,6 +112,7 @@ constexpr auto MISSILE_PRESTEP_TIME = 50;
 extern qboolean PM_InKataAnim(int anim);
 extern qboolean PM_InCartwheel(int anim);
 extern int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc);
+extern qboolean PM_SaberInMassiveBounce(int move);
 //-------------------------------------------------------------------------
 static void G_MissileBounceEffect(const gentity_t* ent, vec3_t org, vec3_t dir, const qboolean hit_world)
 {
@@ -1067,10 +1068,10 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 			Com_Printf(S_COLOR_GREEN "JKA Mode Crosshair Deflection\n");
 		}
 
-		if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
+		if (blocker->client->ps.forcePower < BLOCKPOINTS_TWENTYFIVE)
 		{
 			// Very low points = bad blocks
-			if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
+			if (blocker->client->ps.forcePower < BLOCKPOINTS_FIFTEEN)
 			{
 				WP_BoltBlockVictimFatigued(blocker);
 				blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -1148,9 +1149,9 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 
 			VectorNormalize(bounce_dir);
 
-			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
+			if (blocker->client->ps.forcePower < BLOCKPOINTS_TWENTYFIVE)
 			{
-				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
+				if (blocker->client->ps.forcePower < BLOCKPOINTS_FIFTEEN)
 				{
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -1232,9 +1233,9 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 
 			VectorNormalize(bounce_dir);
 
-			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
+			if (blocker->client->ps.forcePower < BLOCKPOINTS_TWENTYFIVE)
 			{
-				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
+				if (blocker->client->ps.forcePower < BLOCKPOINTS_FIFTEEN)
 				{
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -2192,8 +2193,8 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 			G_Damage(other, ent, ent->owner, velocity, impact_pos, damage, ent->dflags, ent->methodOfDeath, hit_loc);
 
 			//
-			// Universal directional pain animation
-			//
+            // Universal directional pain animation
+            //
 			if (other->client &&
 				beskar == qfalse &&
 				boba_fett == qfalse &&
@@ -2203,12 +2204,20 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				!PM_InKataAnim(other->client->ps.legsAnim) &&
 				!PM_InKataAnim(other->client->ps.torsoAnim) &&
 				!PM_InKnockDown(&other->client->ps) &&
+				!PM_SaberInMassiveBounce(other->client->ps.torsoAnim) &&
 				!WP_DoingForcedAnimationForForcePowers(other))
 			{
-				int		pain_anim = -1;
+				//COOLDOWN CHECK
+				if (other->client->painCooldownTime > level.time)
+				{
+					// Still cooling down → skip pain anim
+					return;
+				}
 
-				if (Q_irand(0, 3))
-				{// 75% chance to play pain anim
+				int pain_anim = -1;
+
+				if (Q_irand(0, 3)) // 75% chance
+				{
 					if (PM_CrouchAnim(other->client->ps.legsAnim))
 					{
 						vec3_t dir;
@@ -2227,11 +2236,16 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 						{
 							parts = SETANIM_LEGS;
 						}
-						NPC_SetAnim(other, parts, pain_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
+						NPC_SetAnim(other, parts, pain_anim,
+							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
 						other->client->ps.torsoAnimTimer = 400;
 					}
+					other->client->painCooldownTime = level.time + 2000;// 2 second cooldown on pain anims
 				}
 			}
+
 
 			// DEMP2 special behaviour
 			if (ent->s.weapon == WP_DEMP2 && otherValid && other->client)
@@ -4009,9 +4023,9 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 		VectorCopy(forward, bounce_dir);
 
 		// Block animation logic
-		if (G_GetBlockPoints(blocker) < BLOCKPOINTS_THIRTY)
+		if (G_GetBlockPoints(blocker) < BLOCKPOINTS_TWENTYFIVE)
 		{
-			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FATIGUE)
+			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FIFTEEN)
 			{
 				WP_BoltBlockVictimFatigued(blocker);
 				blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -4081,9 +4095,9 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(bounce_dir);
 
 			// Block animation
-			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_THIRTY)
+			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_TWENTYFIVE)
 			{
-				if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FATIGUE)
+				if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FIFTEEN)
 				{
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -4155,9 +4169,9 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(bounce_dir);
 
 			// Block animation
-			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_THIRTY)
+			if (G_GetBlockPoints(blocker) < BLOCKPOINTS_TWENTYFIVE)
 			{
-				if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FATIGUE)
+				if (G_GetBlockPoints(blocker) < BLOCKPOINTS_FIFTEEN)
 				{
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -4444,9 +4458,9 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		}
 
 		// Block animation / fatigue logic (using forcePower)
-		if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
+		if (blocker->client->ps.forcePower < BLOCKPOINTS_TWENTYFIVE)
 		{
-			if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
+			if (blocker->client->ps.forcePower < BLOCKPOINTS_FIFTEEN)
 			{
 				WP_BoltBlockVictimFatigued(blocker);
 				blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -4538,9 +4552,9 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(bounce_dir);
 
 			// Block animation / fatigue logic (using forcePower)
-			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
+			if (blocker->client->ps.forcePower < BLOCKPOINTS_TWENTYFIVE)
 			{
-				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
+				if (blocker->client->ps.forcePower < BLOCKPOINTS_FIFTEEN)
 				{
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;
@@ -4637,9 +4651,9 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 
 			VectorNormalize(bounce_dir);
 
-			if (blocker->client->ps.forcePower < BLOCKPOINTS_THIRTY)
+			if (blocker->client->ps.forcePower < BLOCKPOINTS_TWENTYFIVE)
 			{
-				if (blocker->client->ps.forcePower < BLOCKPOINTS_FATIGUE)
+				if (blocker->client->ps.forcePower < BLOCKPOINTS_FIFTEEN)
 				{
 					WP_BoltBlockVictimFatigued(blocker);
 					blocker->client->ps.saberBlocked = BLOCKED_NONE;

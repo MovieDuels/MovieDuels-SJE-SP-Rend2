@@ -16318,6 +16318,11 @@ int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, const qboolean 
 		return 0;
 	}
 
+	if (PM_SaberInMassiveBounce(self->client->ps.torsoAnim))
+	{ // you can't block while in a massive bounce.
+		return 0;
+	}
+
 	if (atk && atk->s.eType == ET_MISSILE
 		&& (atk->s.weapon == WP_ROCKET_LAUNCHER ||
 			atk->s.weapon == WP_THERMAL ||

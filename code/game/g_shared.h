@@ -900,6 +900,8 @@ public:
 	int charKOTORWeapons; // Character uses KOTOR weapons
 	gentity_t* lastSaberTarget;
 	int lastSaberTargetTime;
+	int painCooldownTime;
+
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -1020,6 +1022,7 @@ public:
 		saved_game.write<int32_t>(charKOTORWeapons);
 		saved_game.write<int32_t>(lastSaberTarget);
 		saved_game.write<int32_t>(lastSaberTargetTime);
+		saved_game.write<int32_t>(painCooldownTime);
 	}
 
 	void sg_import(
@@ -1141,6 +1144,7 @@ public:
 		saved_game.read<int32_t>(charKOTORWeapons);
 		saved_game.read<int32_t>(lastSaberTarget);
 		saved_game.read<int32_t>(lastSaberTargetTime);
+		saved_game.read<int32_t>(painCooldownTime);
 	}
 }; // GClientBase
 
