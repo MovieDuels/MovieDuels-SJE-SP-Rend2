@@ -7934,6 +7934,8 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 	{// smart NPCs can try to attack right out of a parry or knockaway if their enemy has high blockpoints
 		if ((PM_SaberInParry(NPC->client->ps.saberMove) ||
 			PM_SaberInKnockaway(NPC->client->ps.saberMove)) &&
+			!npc_is_staff_style(NPC) &&
+			!npc_is_dual_style(NPC) &&
 			NPC->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
 		{
 			// try to attack straight from a parry
@@ -7941,7 +7943,7 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 			NPCInfo->shotTime = 0;
 			NPC->attackDebounceTime = 0;
 			NPC->client->ps.saberBlocked = BLOCKED_NONE;
-			Jedi_AdjustSaberAnimLevel(NPC, SS_MEDIUM); // cinematic, harder hit to chew through block points
+			Jedi_AdjustSaberAnimLevel(NPC, Q_irand(SS_FAST, SS_MEDIUM)); // cinematic, harder hit to chew through block points
 			WeaponThink();
 			return qtrue;
 		}

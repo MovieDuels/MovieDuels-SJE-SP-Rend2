@@ -9090,7 +9090,7 @@ static void G_PlayStaggerAnim(gentity_t* ent, const int use_anim)
 	if (!ent || !ent->client)
 		return;
 
-	if (PM_SaberInKata((saber_moveName_t)ent->client->ps.saberMove))
+	if (PM_SaberInKata(static_cast<saber_moveName_t>(ent->client->ps.saberMove)))
 	{
 		NPC_SetAnim(ent, SETANIM_BOTH, use_anim, SETANIM_AFLAG_PACE);
 	}
@@ -32945,47 +32945,49 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 					}
 				}
 
-				if (!in_camera &&
+				if (in_camera == qfalse &&
+					traceEnt->s.weapon != WP_EMPLACED_GUN &&
 					traceEnt->client != NULL &&
-					(traceEnt->NPC ||
+					(traceEnt->NPC != NULL ||
+						traceEnt->s.eType == ET_PLAYER ||
 						traceEnt->s.number < MAX_CLIENTS ||
-						G_ControlledByPlayer(traceEnt)) &&
-					traceEnt->s.weapon != WP_EMPLACED_GUN)
+						G_ControlledByPlayer(traceEnt) == qtrue))
 				{
-					if (traceEnt->client &&
-						traceEnt->health > 1 &&
-						(PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
-							PM_SaberInKata(static_cast<saber_moveName_t>(traceEnt->client->ps.saberMove)) ||
-							PM_InKataAnim(traceEnt->client->ps.torsoAnim) ||
-							is_class_guard == qtrue))
-					{
-						G_KnockOver(traceEnt, self, dir, 25, qtrue);
-					}
-					else if (traceEnt->client &&
-						!PM_RunningAnim(traceEnt->client->ps.legsAnim) &&
-						!PM_InKnockDown(&traceEnt->client->ps) &&
+					if (traceEnt->client->ps.stats[STAT_HEALTH] > 1 &&
+						PM_InKnockDown(&traceEnt->client->ps) == qfalse &&
 						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE &&
+						lightning_blocked == qfalse)
+					{
+						if (PM_RunningAnim(traceEnt->client->ps.legsAnim) == qtrue ||
+							PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saberMove) == qtrue ||
+							PM_InKataAnim(traceEnt->client->ps.torsoAnim) == qtrue ||
+							is_class_guard == qtrue)
+						{
+							G_KnockOver(traceEnt, self, dir, 25, qtrue);
+						}
+						else
+						{
+							if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_COWER1, SETANIM_AFLAG_PACE);
+							}
+							else if (traceEnt->client->ps.stats[STAT_HEALTH] < 50)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_SONICPAIN_HOLD, SETANIM_AFLAG_PACE);
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
+							}
+						}
+					}
+					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE &&
 						traceEnt->client->ps.stats[STAT_HEALTH] > 1)
 					{
 						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
 						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_COWER1, SETANIM_AFLAG_PACE);
-						}
-						else if (traceEnt->client->ps.stats[STAT_HEALTH] < 50)
-						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_SONICPAIN_HOLD, SETANIM_AFLAG_PACE);
-						}
-						else
-						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
-						}
-					}
-					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE && traceEnt->client->ps.stats[
-						STAT_HEALTH] > 1)
-					{
-						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
-						{
-							NPC_SetAnim(traceEnt, SETANIM_BOTH, Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT),
+							NPC_SetAnim(traceEnt, SETANIM_BOTH,
+								Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT),
 								SETANIM_AFLAG_PACE);
 						}
 						else
@@ -33047,8 +33049,7 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 	}
 }
 
-static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot,
-	vec3_t impact_point)
+static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot,vec3_t impact_point)
 {
 	qboolean lightning_blocked = qfalse;
 	qboolean is_class_guard = qfalse;
@@ -33751,34 +33752,38 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 				}
 			}
 
-			if (dmg && !lightning_blocked || is_class_guard) //amd
+			if ((dmg > 0 && lightning_blocked == qfalse) || is_class_guard == qtrue) //AMD
 			{
-				if (jedi_win_po(traceEnt))
+				if (jedi_win_po(traceEnt) == qtrue)
 				{
-					G_Damage(traceEnt, self, self, dir, impact_point, dmg, DAMAGE_LIGHNING_KNOCKBACK,
-						MOD_FORCE_LIGHTNING);
+					G_Damage(traceEnt, self, self, dir, impact_point, dmg,
+						DAMAGE_LIGHNING_KNOCKBACK, MOD_FORCE_LIGHTNING);
+
 					if (g_lightningdamage->integer)
 					{
-						gi.Printf(S_COLOR_RED"WINDU AMD LIGHTNING DAMAGE KNOCKBACK TEST\n");
+						gi.Printf(S_COLOR_RED "WINDU AMD LIGHTNING DAMAGE KNOCKBACK TEST\n");
 					}
 				}
 				else
 				{
-					G_Damage(traceEnt, self, self, dir, impact_point, dmg, DAMAGE_DEATH_KNOCKBACK,
-						MOD_FORCE_LIGHTNING);
+					G_Damage(traceEnt, self, self, dir, impact_point, dmg,
+						DAMAGE_DEATH_KNOCKBACK, MOD_FORCE_LIGHTNING);
+
 					if (g_lightningdamage->integer)
 					{
-						gi.Printf(S_COLOR_RED"NORMAL AMD LIGHTNING DAMAGE KNOCKBACK TEST\n");
+						gi.Printf(S_COLOR_RED "NORMAL AMD LIGHTNING DAMAGE KNOCKBACK TEST\n");
 					}
 				}
 
-				if (!in_camera &&
+				if (in_camera == qfalse &&
 					traceEnt->s.weapon != WP_EMPLACED_GUN &&
 					traceEnt->client != NULL &&
-					(traceEnt->NPC || traceEnt->s.eType == ET_PLAYER ||
-						traceEnt->s.number < MAX_CLIENTS || G_ControlledByPlayer(traceEnt)))
+					(traceEnt->NPC != NULL ||
+						traceEnt->s.eType == ET_PLAYER ||
+						traceEnt->s.number < MAX_CLIENTS ||
+						G_ControlledByPlayer(traceEnt) == qtrue))
 				{
-					if (traceEnt && traceEnt->client && traceEnt->client->ps.stats[STAT_HEALTH] <= 35)
+					if (traceEnt->client->ps.stats[STAT_HEALTH] <= 35)
 					{
 						traceEnt->client->stunDamage = 5;
 						traceEnt->client->stunTime = level.time + 1000;
@@ -33786,40 +33791,46 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						gentity_t* tent = G_TempEntity(traceEnt->currentOrigin, EV_STUNNED);
 						tent->owner = traceEnt;
 					}
-					if (traceEnt->client &&
-						traceEnt->health > 1 &&
-						(PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
-							PM_SaberInKata(static_cast<saber_moveName_t>(traceEnt->client->ps.saberMove)) ||
-							PM_InKataAnim(traceEnt->client->ps.torsoAnim) ||
-							is_class_guard == qtrue))
-					{
-						G_KnockOver(traceEnt, self, dir, 25, qtrue);
-					}
-					else if (traceEnt->client &&
-						!PM_RunningAnim(traceEnt->client->ps.legsAnim) &&
-						!PM_InKnockDown(&traceEnt->client->ps) &&
+					if (traceEnt->client->ps.stats[STAT_HEALTH] > 1 &&
+						PM_InKnockDown(&traceEnt->client->ps) == qfalse &&
 						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE &&
+						lightning_blocked == qfalse)
+					{ 
+						if (PM_RunningAnim(traceEnt->client->ps.legsAnim) == qtrue ||
+							PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saberMove) == qtrue ||
+							PM_InKataAnim(traceEnt->client->ps.torsoAnim) == qtrue ||
+							is_class_guard == qtrue)
+						{
+							G_KnockOver(traceEnt, self, dir, 25, qtrue);
+
+							if (g_lightningdamage->integer)
+							{
+								gi.Printf(S_COLOR_YELLOW "traceEnt AMD LIGHTNING DAMAGE G_KnockOver TEST\n");
+							}
+						}
+						else
+						{
+							if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_COWER1, SETANIM_AFLAG_PACE);
+							}
+							else if (traceEnt->client->ps.stats[STAT_HEALTH] < 50)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_SONICPAIN_HOLD, SETANIM_AFLAG_PACE);
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
+							}
+						}
+					}
+					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE &&
 						traceEnt->client->ps.stats[STAT_HEALTH] > 1)
 					{
 						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
 						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_COWER1, SETANIM_AFLAG_PACE);
-						}
-						else if (traceEnt->client->ps.stats[STAT_HEALTH] < 50)
-						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_SONICPAIN_HOLD, SETANIM_AFLAG_PACE);
-						}
-						else
-						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
-						}
-					}
-					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE && traceEnt->client->ps.stats[
-						STAT_HEALTH] > 1)
-					{
-						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
-						{
-							NPC_SetAnim(traceEnt, SETANIM_BOTH, Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT),
+							NPC_SetAnim(traceEnt, SETANIM_BOTH,
+								Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT),
 								SETANIM_AFLAG_PACE);
 						}
 						else
@@ -34513,12 +34524,16 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 						gi.Printf(S_COLOR_RED"NORMAL MD LIGHTNING KNOCKBACK TEST\n");
 					}
 				}
-
-				if (!in_camera &&
+				
+				if (in_camera == qfalse &&
 					traceEnt->s.weapon != WP_EMPLACED_GUN &&
-					(traceEnt->NPC || traceEnt->s.eType == ET_PLAYER || (traceEnt->s.number < MAX_CLIENTS || G_ControlledByPlayer(traceEnt))))
+					traceEnt->client != NULL &&
+					(traceEnt->NPC != NULL ||
+						traceEnt->s.eType == ET_PLAYER ||
+						traceEnt->s.number < MAX_CLIENTS ||
+						G_ControlledByPlayer(traceEnt) == qtrue))
 				{
-					if (traceEnt && traceEnt->client && traceEnt->client->ps.stats[STAT_HEALTH] <= 20)
+					if (traceEnt->client->ps.stats[STAT_HEALTH] <= 35)
 					{
 						traceEnt->client->stunDamage = 5;
 						traceEnt->client->stunTime = level.time + 1000;
@@ -34526,40 +34541,42 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 						gentity_t* tent = G_TempEntity(traceEnt->currentOrigin, EV_STUNNED);
 						tent->owner = traceEnt;
 					}
-					if (traceEnt->client &&
-						traceEnt->health > 1 &&
-						(PM_RunningAnim(traceEnt->client->ps.legsAnim) ||
-							PM_SaberInKata(static_cast<saber_moveName_t>(traceEnt->client->ps.saberMove)) ||
-							PM_InKataAnim(traceEnt->client->ps.torsoAnim) ||
-							is_class_guard == qtrue))
-					{
-						G_KnockOver(traceEnt, self, dir, 25, qtrue);
-					}
-					else if (traceEnt->client &&
-						!PM_RunningAnim(traceEnt->client->ps.legsAnim) &&
-						!PM_InKnockDown(&traceEnt->client->ps) &&
+					if (traceEnt->client->ps.stats[STAT_HEALTH] > 1 &&
+						PM_InKnockDown(&traceEnt->client->ps) == qfalse &&
 						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE &&
-						traceEnt->client->ps.stats[STAT_HEALTH] > 1)
+						lightning_blocked == qfalse)
 					{
-						if (traceEnt->health < 75)
+						if (PM_RunningAnim(traceEnt->client->ps.legsAnim) == qtrue ||
+							PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saberMove) == qtrue ||
+							PM_InKataAnim(traceEnt->client->ps.torsoAnim) == qtrue ||
+							is_class_guard == qtrue)
 						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_COWER1, SETANIM_AFLAG_PACE);
-						}
-						else if (traceEnt->health < 50)
-						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_SONICPAIN_HOLD, SETANIM_AFLAG_PACE);
+							G_KnockOver(traceEnt, self, dir, 25, qtrue);
 						}
 						else
 						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
+							if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_COWER1, SETANIM_AFLAG_PACE);
+							}
+							else if (traceEnt->client->ps.stats[STAT_HEALTH] < 50)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_SONICPAIN_HOLD, SETANIM_AFLAG_PACE);
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_WIND, SETANIM_AFLAG_PACE);
+							}
 						}
 					}
 					else if (traceEnt->client->ps.groundEntityNum == ENTITYNUM_NONE &&
 						traceEnt->client->ps.stats[STAT_HEALTH] > 1)
 					{
-						if (traceEnt->health < 75)
+						if (traceEnt->client->ps.stats[STAT_HEALTH] < 75)
 						{
-							NPC_SetAnim(traceEnt, SETANIM_BOTH, Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT), SETANIM_AFLAG_PACE);
+							NPC_SetAnim(traceEnt, SETANIM_BOTH,
+								Q_irand(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNLEFT),
+								SETANIM_AFLAG_PACE);
 						}
 						else
 						{

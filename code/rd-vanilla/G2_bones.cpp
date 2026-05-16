@@ -1603,7 +1603,7 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 		return;
 	default:
 #ifdef _DEBUG
-		Com_Printf("Debug: G2_SetRagDoll - Unknown RagPhase %d\n", parms->RagPhase);
+		//Com_Printf("Debug: G2_SetRagDoll - Unknown RagPhase %d\n", parms->RagPhase);
 #endif
 		return;
 	}
@@ -1681,11 +1681,11 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 	int startFrame = parms->startFrame, endFrame = parms->endFrame;
 
 #ifdef _DEBUG
-	Com_Printf("Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n", startFrame, mod_a->numFrames - 1);
+	//Com_Printf("Debug: G2_SetRagDoll - startFrame %d out of range (0..%d). Clamping.\n", startFrame, mod_a->numFrames - 1);
 #endif
 
 #ifdef _DEBUG
-	Com_Printf("Debug: G2_SetRagDoll - endFrame %d out of range (0..%d). Clamping.\n", endFrame, mod_a->numFrames - 1);
+	//Com_Printf("Debug: G2_SetRagDoll - endFrame %d out of range (0..%d). Clamping.\n", endFrame, mod_a->numFrames - 1);
 #endif
 
 	G2_Set_Bone_Anim_No_BS(ghoul2, mod_a, blist, "upper_lumbar", startFrame, endFrame - 1,
@@ -1892,7 +1892,7 @@ void G2_SetRagDoll(CGhoul2Info_v& ghoul2_v, CRagDollParams* parms)
 		if (!warned_missing_rag_bones)
 		{
 #ifdef _DEBUG
-			Com_Printf("WARNING: G2_SetRagDoll - model has no usable rag bones; skipping ragdoll for this model\n");
+			//Com_Printf("WARNING: G2_SetRagDoll - model has no usable rag bones; skipping ragdoll for this model\n");
 #endif
 			warned_missing_rag_bones = qtrue;
 		}
