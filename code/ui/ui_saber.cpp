@@ -820,8 +820,8 @@ static void UI_DoSFXSaber(vec3_t blade_muz, vec3_t blade_dir, const float length
 	float effectradius = (radius * 1.6 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersGlowSizeSFX.value;
 	float coreradius = (radius * 0.4 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersCoreSizeSFX.value;
 
-	effectradius *= 0.75;
-	coreradius *= 1.25;
+	effectradius *= 0.75f;
+	coreradius *= 1.15f;
 
 	{
 		constexpr float angle_scale = 1.0f;
@@ -965,8 +965,8 @@ static void UI_DoEp1Saber(vec3_t blade_muz, vec3_t blade_dir, const float length
 	float effectradius = (radius * 1.6 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersGlowSizeEP1.value;
 	float coreradius = (radius * 0.4 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersCoreSizeEP1.value;
 
-	effectradius *= 0.75;
-	coreradius *= 1.5;
+	effectradius *= 0.75f;
+	coreradius *= 1.4f;
 
 	{
 		constexpr float angle_scale = 1.0f;
@@ -1111,8 +1111,8 @@ static void UI_DoEp2Saber(vec3_t blade_muz, vec3_t blade_dir, const float length
 	float effectradius = (radius * 1.6 + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersGlowSizeEP2.value;
 	float coreradius = (radius * 0.4 + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeEP2.value;
 
-	effectradius *= 0.75;
-	coreradius *= 1.5;
+	effectradius *= 0.75f;
+	coreradius *= 1.3f;
 
 	{
 		constexpr float angle_scale = 1.0f;
@@ -1255,9 +1255,10 @@ static void UI_DoEp3Saber(vec3_t blade_muz, vec3_t blade_dir, const float length
 	}
 
 	float effectradius = (radius * 1.6 + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersGlowSizeEP3.value;
-	const float coreradius = (radius * 0.4 + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeEP3.value;
+	float coreradius = (radius * 0.4 + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeEP3.value;
 
-	effectradius *= 0.75;
+	effectradius *= 0.75f;
+	coreradius *= 0.85f;
 
 	{
 		constexpr float angle_scale = 1.0f;
@@ -1535,8 +1536,8 @@ static void UI_DoRotJSaber(vec3_t blade_muz, vec3_t blade_dir, const float lengt
 	float effectradius = (radius * 1.6 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersGlowSizeROTJ.value;
 	float coreradius = (radius * 0.4 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersCoreSizeROTJ.value;
 
-	effectradius *= 0.75;
-	coreradius *= 0.75;
+	effectradius *= 0.75f;
+	coreradius *= 0.7f;
 
 	{
 		constexpr float angle_scale = 1.0f;
@@ -1670,7 +1671,7 @@ static void UI_DoTFASaber(vec3_t blade_muz, vec3_t blade_dir, const float length
 	float effectradius = (radius * 1.6 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersGlowSizeTFA.value;
 	const float coreradius = (radius * 0.4 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersCoreSizeTFA.value;
 
-	effectradius *= 0.75;
+	effectradius *= 0.8f;
 
 	{
 		constexpr float angle_scale = 1.0f;
@@ -1877,8 +1878,10 @@ static void UI_DoUnstableSaber(vec3_t blade_muz, vec3_t blade_dir, const float l
 
 	{
 		constexpr float angle_scale = 1.0f;
-		const float effectradius = (radius * 1.6f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersGlowSizeUSB.value;
-		const float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeUSB.value;
+		float effectradius = (radius * 1.6f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersGlowSizeUSB.value;
+		float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeUSB.value;
+
+		effectradius *= 0.75f;
 
 		if (blade_len - effectradius * angle_scale / 2 > 0)
 		{
@@ -2162,6 +2165,8 @@ static void UI_DoSaber(vec3_t origin, vec3_t dir, const float length, const floa
 
 	float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSize.value;
 
+	effectradius *= 0.75f;
+
 	// Main glow
 	{
 		constexpr float effectalpha = 0.8f;
@@ -2314,9 +2319,9 @@ static void UI_DoRebelsSaber(vec3_t blade_muz, vec3_t blade_dir, const float len
 
 	float effectradius = (radius * 1.6 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersGlowSizeRebels.value;
 	float coreradius = (radius * 0.4 + crandoms() * 0.1f) * radiusmult * ui_SFXSabersCoreSizeRebels.value;
-
-	effectradius *= 0.75;
-	coreradius *= 1.5;
+	
+	effectradius *= 0.5f;
+	coreradius *= 0.9f;
 
 	{
 		constexpr float angle_scale = 1.0f;
@@ -2463,7 +2468,7 @@ static void UI_DoCWSaber(vec3_t origin, vec3_t dir, const float length, const fl
 
 	float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeCW.value;
 
-	effectradius *= 0.4f;
+	effectradius *= 0.42f;
 	coreradius *= 0.85f;
 
 	// Main glow
@@ -2627,7 +2632,7 @@ static void UI_DoMaulSaber(vec3_t origin, vec3_t dir, const float length, const 
 
 	float coreradius = (radius * 0.4f + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * ui_SFXSabersCoreSizeMaul.value;
 
-	effectradius *= 0.4f;
+	effectradius *= 0.42f;
 	coreradius *= 0.85f;
 
 	// Main glow

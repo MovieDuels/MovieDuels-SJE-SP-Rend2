@@ -7652,8 +7652,8 @@ static void CG_DoEp1Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.75;
-	coreradius *= 1.5;
+	effectradius *= 0.75f;
+	coreradius *= 1.4f;
 
 	//Main Blade
 	//--------------------
@@ -8208,8 +8208,8 @@ static void CG_DoEp2Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.75;
-	coreradius *= 1.5;
+	effectradius *= 0.75f;
+	coreradius *= 1.3f;
 
 	//Main Blade
 	//--------------------
@@ -8765,8 +8765,8 @@ static void CG_DoEp3Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.75;
-	//coreradius *= 0.75;
+	effectradius *= 0.75f;
+	coreradius *= 0.85f;
 
 	//Main Blade
 	//--------------------
@@ -9323,8 +9323,8 @@ static void CG_DoSFXSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.75;
-	coreradius *= 1.25;
+	effectradius *= 0.75f;
+	coreradius *= 1.15f;
 
 	{
 		saber.renderfx = rfx;
@@ -9908,7 +9908,6 @@ static void CG_DoOTSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, ve
 		for (i = 0; i < count; i++)
 		{
 			VectorMA(saber.origin, dist, blade_dir, saber.origin);
-			effectradius = (radius * 1.6 * v1 + flrand(0.3f, 1.8f)/* * 0.1f*/) * radiusmult;
 			saber.radius = effectradius * angle_scale;
 			cgi_R_AddRefEntityToScene(&saber);
 		}
@@ -9958,7 +9957,6 @@ static void CG_DoOTSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, ve
 		for (i = 0; i < count; i++)
 		{
 			VectorMA(saber.origin, dist, trail_dir, saber.origin);
-			effectradius = (radius * 1.6 * v1 + flrand(0.3f, 1.8f)/* * 0.1f*/) * radiusmult;
 			saber.radius = effectradius * angle_scale;
 			cgi_R_AddRefEntityToScene(&saber);
 		}
@@ -10010,7 +10008,6 @@ static void CG_DoOTSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, ve
 		for (i = 0; i < count; i++)
 		{
 			VectorMA(saber.origin, dist, base_dir, saber.origin);
-			effectradius = (radius * 1.6 * v1 + flrand(0.3f, 1.8f)) * radiusmult;
 			saber.radius = effectradius * angle_scale;
 			cgi_R_AddRefEntityToScene(&saber);
 		}
@@ -10452,8 +10449,8 @@ static void CG_DoRotJSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, 
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.75;
-	coreradius *= 0.75;
+	effectradius *= 0.75f;
+	coreradius *= 0.7f;
 
 	{
 		saber.renderfx = rfx;
@@ -11001,7 +10998,7 @@ static void CG_DoTFASaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.75;
+	effectradius *= 0.8f;
 
 	{
 		saber.renderfx = rfx;
@@ -11645,6 +11642,8 @@ static void CG_DoSaber(vec3_t origin, vec3_t dir, float length, float length_max
 
 	coreradius = (radius * 0.4f * v2 + Q_flrand(-1.0f, 1.0f) * 0.1f) * radiusmult * cg_SFXSabersCoreSize.value;
 
+	effectradius *= 0.75f;
+
 	ignite_len = length_max * 0.30f;
 	ignite_radius = effectradius * effectradius * 1.5f;
 	ignite_radius -= length;
@@ -12049,6 +12048,8 @@ static void CG_DoUnstableSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_t
 	ignite_radius = effectradius * effectradius * 1.5f;
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
+
+	effectradius *= 0.75f;
 
 	{
 		saber.renderfx = rfx;
@@ -12801,8 +12802,8 @@ static void CG_DoRebelsSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip
 	ignite_radius -= blade_len;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.75;
-	coreradius *= 1.5;
+	effectradius *= 0.5f;
+	coreradius *= 0.9f;
 
 	//Main Blade
 	//--------------------
@@ -13253,7 +13254,7 @@ static void CG_DoCWSaber(vec3_t origin, vec3_t dir, float length, float length_m
 	ignite_radius -= length;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.4f;
+	effectradius *= 0.42f;
 	coreradius *= 0.85f;
 
 	if (ignite_radius < 0.0f)
@@ -13505,7 +13506,7 @@ static void CG_DoMaulSaber(vec3_t origin, vec3_t dir, float length, float length
 	ignite_radius -= length;
 	ignite_radius *= 2.2f;
 
-	effectradius *= 0.4f;
+	effectradius *= 0.42f;
 	coreradius *= 0.85f;
 
 	if (ignite_radius < 0.0f)
