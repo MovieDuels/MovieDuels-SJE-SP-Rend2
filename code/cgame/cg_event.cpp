@@ -663,38 +663,54 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		break;
 
 	case EV_FIRE_WEAPON:
+	{
 		DEBUGNAME("EV_FIRE_WEAPON");
 
-		if (g_entities[0].client->reloadTime > 0)
+		gentity_t* shooter = cent->gent;
+
+		if (shooter && shooter->client)
 		{
-			cancel_firing(cg_entities[0].gent);
+			if (shooter->client->reloadTime > 0)
+			{
+				cancel_firing(shooter);
+			}
+			else if (PM_PainAnim(shooter->client->ps.torsoAnim))
+			{
+				cancel_firing(shooter);
+			}
+			else
+			{
+				CG_FireWeapon(cent, qfalse);
+			}
 		}
-		else if (PM_PainAnim(cg_entities[0].gent->client->ps.torsoAnim))
-		{
-			cancel_firing(cg_entities[0].gent);
-		}
-		else
-		{
-			CG_FireWeapon(cent, qfalse);
-		}
-		break;
+	}
+	break;
 
 	case EV_ALT_FIRE:
+	{
 		DEBUGNAME("EV_ALT_FIRE");
 
-		if (g_entities[0].client->reloadTime > 0)
+		// Shooter is the entity that generated this event
+		gentity_t* shooter = cent->gent;
+
+		if (shooter && shooter->client)
 		{
-			cancel_firing(cg_entities[0].gent);
+			if (shooter->client->reloadTime > 0)
+			{
+				cancel_firing(shooter);
+			}
+			else if (PM_PainAnim(shooter->client->ps.torsoAnim))
+			{
+				// Only cancel if the SHOOTER is in pain
+				cancel_firing(shooter);
+			}
+			else
+			{
+				CG_FireWeapon(cent, qtrue);
+			}
 		}
-		else if (PM_PainAnim(cg_entities[0].gent->client->ps.torsoAnim))
-		{
-			cancel_firing(cg_entities[0].gent);
-		}
-		else
-		{
-			CG_FireWeapon(cent, qtrue);
-		}
-		break;
+	}
+	break;
 
 	case EV_DISRUPTOR_MAIN_SHOT:
 		DEBUGNAME("EV_DISRUPTOR_MAIN_SHOT");

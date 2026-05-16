@@ -1569,8 +1569,8 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 		}
 
 		//
-        // ⭐ Rocket / Thermal proximity + lifetime logic (fixed)
-        //
+		// ⭐ Rocket / Thermal proximity + lifetime logic (fixed)
+		//
 		if (missile->s.weapon == WP_ROCKET_LAUNCHER ||
 			missile->s.weapon == WP_THERMAL)
 		{
@@ -1623,7 +1623,6 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 				missile->e_ThinkFunc = thinkF_NULL;
 			}
 		}
-
 	}
 	else
 	{

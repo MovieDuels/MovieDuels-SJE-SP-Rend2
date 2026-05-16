@@ -2329,6 +2329,7 @@ static void ClientEvents(gentity_t* ent, const int old_event_sequence)
 			break;
 
 		case EV_FIRE_WEAPON:
+		{
 #ifndef FINAL_BUILD
 			if (fired)
 			{
@@ -2336,41 +2337,52 @@ static void ClientEvents(gentity_t* ent, const int old_event_sequence)
 			}
 			fired = qtrue;
 #endif
-			if (ent->reloadTime > 0)
+
+			gentity_t* shooter = ent; // ent is the shooter in ClientEvents
+
+			if (shooter->client->reloadTime > 0)
 			{
-				cancel_firing(ent);
+				cancel_firing(shooter);
 			}
-			else if (PM_PainAnim(ent->client->ps.torsoAnim))
+			else if (PM_PainAnim(shooter->client->ps.torsoAnim))
 			{
-				cancel_firing(ent);
+				// Only cancel if the SHOOTER is in pain
+				cancel_firing(shooter);
 			}
 			else
 			{
-				FireWeapon(ent, qfalse);
+				FireWeapon(shooter, qfalse);
 			}
-			break;
+		}
+		break;
 
 		case EV_ALT_FIRE:
+		{
 #ifndef FINAL_BUILD
-			if (fired) {
+			if (fired)
+			{
 				gi.Printf("DOUBLE EV_FIRE_WEAPON AND-OR EV_ALT_FIRE!!\n");
 			}
 			fired = qtrue;
 #endif
 
-			if (ent->reloadTime > 0)
+			gentity_t* shooter = ent; // ent is the shooter
+
+			if (shooter->client->reloadTime > 0)
 			{
-				cancel_firing(ent);
+				cancel_firing(shooter);
 			}
-			else if (PM_PainAnim(ent->client->ps.torsoAnim))
+			else if (PM_PainAnim(shooter->client->ps.torsoAnim))
 			{
-				cancel_firing(ent);
+				// Only cancel if the SHOOTER is in pain
+				cancel_firing(shooter);
 			}
 			else
 			{
-				FireWeapon(ent, qtrue);
+				FireWeapon(shooter, qtrue);
 			}
-			break;
+		}
+		break;
 
 		default:
 			break;
