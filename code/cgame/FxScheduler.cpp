@@ -1507,8 +1507,6 @@ void CFxScheduler::AddScheduledEffects(const bool portal)
 	gEffectsInPortal = qfalse;
 }
 
-
-
 //------------------------------------------------------
 // CreateEffect
 //	Creates the specified fx taking into account the

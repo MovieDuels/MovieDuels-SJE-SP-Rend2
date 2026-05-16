@@ -186,7 +186,6 @@ CGCam_Disable
 	VectorCopy(player->client->ps.viewangles, cg.refdefViewAngles);
 }
 
-
 /*
 -------------------------
 CGCam_SetPosition

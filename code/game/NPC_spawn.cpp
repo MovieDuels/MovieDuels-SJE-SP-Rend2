@@ -1683,7 +1683,7 @@ void NPC_Begin(gentity_t* ent)
 	else if (ent->NPC->stats.health) // Was health supplied in NPC.cfg?
 	{
 		/* Base JKA
-		* 
+		*
 		if (ent->client->NPC_class != CLASS_REBORN
 			&& ent->client->NPC_class != CLASS_SHADOWTROOPER
 			&& ent->client->NPC_class != CLASS_JEDI)

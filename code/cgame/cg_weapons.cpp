@@ -1707,8 +1707,6 @@ static void CG_DoMuzzleFlash(centity_t* cent, vec3_t org, vec3_t dir, const weap
 	}
 }
 
-
-
 static void CG_DrawZ6TruegunsBarrel(const playerState_t* ps)
 {
 	// Validate input
@@ -1774,7 +1772,6 @@ static void CG_DrawZ6TruegunsBarrel(const playerState_t* ps)
 		CG_AddWeaponWithPowerups(&barrel);
 	}
 }
-
 
 // Draw only the spinning barrel (trueguns = 0 case)
 static void CG_DrawZ6SpinningBarrelOnly(const playerState_t* ps)

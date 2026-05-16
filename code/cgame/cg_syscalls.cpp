@@ -30,9 +30,9 @@ extern void CG_PreInit();
 
 static intptr_t(QDECL* Q_syscall)(intptr_t arg, ...) =
 #ifdef _WIN32
-	reinterpret_cast<intptr_t(__cdecl*)(intptr_t, ...)>(-1);
+reinterpret_cast<intptr_t(__cdecl*)(intptr_t, ...)>(-1);
 #else
-	reinterpret_cast<intptr_t(*)(intptr_t, ...)>(-1);
+reinterpret_cast<intptr_t(*)(intptr_t, ...)>(-1);
 #endif
 
 extern "C" Q_EXPORT void QDECL dllEntry(intptr_t(QDECL* syscallptr)(intptr_t arg, ...))

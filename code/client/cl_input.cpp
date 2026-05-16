@@ -358,7 +358,7 @@ static void IN_LookdownUp() { IN_KeyUp(&in_lookdown); }
 static void IN_MoveleftDown() { IN_KeyDown(&in_moveleft); }
 static void IN_MoveleftUp() { IN_KeyUp(&in_moveleft); }
 static void IN_MoverightDown() { IN_KeyDown(&in_moveright); }
-static void IN_MoverightUp() { IN_KeyUp(&in_moveright); }		
+static void IN_MoverightUp() { IN_KeyUp(&in_moveright); }
 static void IN_SpeedDown() { IN_KeyDown(&in_speed); }
 static void IN_SpeedUp() { IN_KeyUp(&in_speed); }
 static void IN_StrafeDown() { IN_KeyDown(&in_strafe); }

@@ -540,7 +540,6 @@ static void R_CheckMP3s(const char* ps_dir)
 	}
 }
 
-
 // this console-function is for development purposes, and makes sure that sound/*.mp3 /s have tags in them
 //	specifying stuff like their max volume (and uncompressed size) etc...
 //

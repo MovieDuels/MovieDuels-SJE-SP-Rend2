@@ -2193,8 +2193,8 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 			G_Damage(other, ent, ent->owner, velocity, impact_pos, damage, ent->dflags, ent->methodOfDeath, hit_loc);
 
 			//
-            // Universal directional pain animation
-            //
+			// Universal directional pain animation
+			//
 			if (other->client &&
 				beskar == qfalse &&
 				boba_fett == qfalse &&
@@ -2245,7 +2245,6 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 					other->client->painCooldownTime = level.time + 2000;// 2 second cooldown on pain anims
 				}
 			}
-
 
 			// DEMP2 special behaviour
 			if (ent->s.weapon == WP_DEMP2 && otherValid && other->client)

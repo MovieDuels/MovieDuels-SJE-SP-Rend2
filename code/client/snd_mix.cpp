@@ -102,7 +102,6 @@ static void S_TransferStereo16(unsigned long* pbuf, const int endtime)
 	}
 }
 
-
 /*
 ===================
 S_TransferPaintBuffer

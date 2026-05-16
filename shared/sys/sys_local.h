@@ -31,7 +31,7 @@ void IN_Restart(void);
 void Sys_PlatformInit();
 void Sys_PlatformExit();
 char* Sys_ConsoleInput();
-void Sys_AnsiColorPrint(const char *msg);
+void Sys_AnsiColorPrint(const char* msg);
 void Sys_QueEvent(int ev_time, sysEventType_t ev_type, int value, int value2, int ptrLength, void* ptr);
 void Sys_SigHandler(int signal);
 

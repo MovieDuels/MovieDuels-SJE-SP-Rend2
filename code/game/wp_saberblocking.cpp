@@ -1584,7 +1584,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							//since it was parried, take away any damage done
 							wp_saber_clear_damage_for_ent_num(attacker, blocker->s.number, saber_num, blade_num);
 
-							WP_ForcePowerRegenerate(blocker, BLOCKPOINTS_FIFTEEN); //FP Reward blocker								
+							WP_ForcePowerRegenerate(blocker, BLOCKPOINTS_FIFTEEN); //FP Reward blocker
 							sab_beh_add_balance(blocker, -MPCOST_MBLOCKED); //SAC Reward blocker
 
 							if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
@@ -1831,7 +1831,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						{
 							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_FIFTEEN);
 						}
-						else 
+						else
 						{
 							PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
 						}

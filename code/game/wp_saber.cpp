@@ -7121,6 +7121,7 @@ static qboolean WP_BrokenParryKnockDown(gentity_t* victim)
 }
 
 qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir);
+qboolean saberShotOutOfHand(gentity_t* self, vec3_t throw_dir);
 void G_Stagger(gentity_t* hit_ent);
 
 qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
@@ -7142,12 +7143,18 @@ qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
 
 		vec3_t throw_dir = { 0, 0, 350 };
 
-		WP_SaberDisarmed(victim, throw_dir);
+		if (g_spskill->integer < 2) //was < 2
+		{
+			WP_SaberDisarmed(victim, throw_dir);
+		}
+		else
+		{
+			saberShotOutOfHand(victim, throw_dir);
+		}
 
 		G_AddEvent(victim, EV_PAIN, victim->health);
 		return qtrue;
 	}
-	G_Stagger(victim);
 	return qtrue;
 }
 
@@ -7173,7 +7180,14 @@ qboolean wp_bolt_block_victim_reflected(gentity_t* victim)
 
 			vec3_t throw_dir = { 0, 0, 350 };
 
-			WP_SaberDisarmed(victim, throw_dir);
+			if (g_spskill->integer < 2) //was < 2
+			{
+				WP_SaberDisarmed(victim, throw_dir);
+			}
+			else
+			{
+				saberShotOutOfHand(victim, throw_dir);
+			}
 
 			G_AddEvent(victim, EV_PAIN, victim->health);
 			return qtrue;
@@ -9256,7 +9270,14 @@ void SabBeh_SaberShouldBeDisarmedBlocker(gentity_t* blocker, const int saber_num
 			//knocked the saber right out of his hand!
 			vec3_t throw_dir = { 0, 0, 350 };
 
-			WP_SaberDisarmed(blocker, throw_dir);
+			if (g_spskill->integer < 2) //was < 2
+			{
+				WP_SaberDisarmed(blocker, throw_dir);
+			}
+			else
+			{
+				saberShotOutOfHand(blocker, throw_dir);
+			}
 		}
 	}
 }
@@ -9271,7 +9292,14 @@ void sab_beh_saber_should_be_disarmed_attacker(gentity_t* attacker, const int sa
 			//knocked the saber right out of his hand!
 			vec3_t throw_dir = { 0, 0, 350 };
 
-			WP_SaberDisarmed(attacker, throw_dir);
+			if (g_spskill->integer < 2) //was < 2
+			{
+				WP_SaberDisarmed(attacker, throw_dir);
+			}
+			else
+			{
+				saberShotOutOfHand(attacker, throw_dir);
+			}
 		}
 	}
 }
@@ -14032,6 +14060,56 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 
 	self->client->usercmd.buttons &= ~BUTTON_ATTACK;
 
+	return qtrue;
+}
+
+qboolean saberShotOutOfHand(gentity_t* self, vec3_t throw_dir)
+{
+	if (!self || !self->client || self->client->ps.saberEntityNum <= 0)
+	{
+		return qfalse;
+	}
+
+	if (self->client->NPC_class == CLASS_SABER_DROID)
+	{
+		//saber droids can't drop their saber
+		return qfalse;
+	}
+
+	gentity_t* dropped = &g_entities[self->client->ps.saberEntityNum];
+
+	if (!self->client->ps.saberInFlight)
+	{
+		if (!WP_SaberLaunch(self, dropped, qfalse))
+		{
+			return qfalse;
+		}
+	}
+
+	if (self->client->ps.saber[0].Active())
+	{
+		//drop it instantly
+		WP_SaberKnockedOutOfHand(self, dropped);
+		self->client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCK);
+		self->client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCKANDATTACK);
+		self->client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
+		self->client->ps.ManualBlockingFlags &= ~(1 << MBF_BLOCKWALKING);
+		self->client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
+		self->client->ps.ManualBlockingTime = 0; //Blocking time 1 on
+		self->client->ps.Manual_m_blockingTime = 0;
+	}
+	//optionally give it some thrown velocity
+	if (throw_dir && !VectorCompare(throw_dir, vec3_origin))
+	{
+		VectorCopy(throw_dir, dropped->s.pos.trDelta);
+	}
+	//don't pull it back on the next frame
+	if (self->client && level.time - self->client->ps.saberThrowTime <= MAX_LEAVE_TIME)
+	{
+		self->client->usercmd.buttons &= ~BUTTON_ATTACK;
+	}
+
+	WP_BlockPointsRegenerate(self, BLOCKPOINTS_FATIGUE); //BP Reward blocker
 	return qtrue;
 }
 
@@ -33054,7 +33132,7 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 	}
 }
 
-static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot,vec3_t impact_point)
+static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot, vec3_t impact_point)
 {
 	qboolean lightning_blocked = qfalse;
 	qboolean is_class_guard = qfalse;
@@ -33800,7 +33878,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						PM_InKnockDown(&traceEnt->client->ps) == qfalse &&
 						traceEnt->client->ps.groundEntityNum != ENTITYNUM_NONE &&
 						lightning_blocked == qfalse)
-					{ 
+					{
 						if (PM_RunningAnim(traceEnt->client->ps.legsAnim) == qtrue ||
 							PM_SaberInKata((saber_moveName_t)traceEnt->client->ps.saberMove) == qtrue ||
 							PM_InKataAnim(traceEnt->client->ps.torsoAnim) == qtrue ||
@@ -34529,7 +34607,7 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 						gi.Printf(S_COLOR_RED"NORMAL MD LIGHTNING KNOCKBACK TEST\n");
 					}
 				}
-				
+
 				if (in_camera == qfalse &&
 					traceEnt->s.weapon != WP_EMPLACED_GUN &&
 					traceEnt->client != NULL &&
@@ -38101,15 +38179,19 @@ void ForceGrasp(gentity_t* self)
 					vec3_t throw_dir = { 0, 0, 20 };
 
 					if (g_SerenityJediEngineMode->integer <= 2 && traceEnt->client->ps.forcePower <= BLOCKPOINTS_FULL
-						|| g_SerenityJediEngineMode->integer == 2 && traceEnt->client->ps.blockPoints <=
-						BLOCKPOINTS_FULL) //less than 90 BP
+						|| g_SerenityJediEngineMode->integer == 2 && traceEnt->client->ps.blockPoints <= BLOCKPOINTS_FULL) //less than 90 BP
 					{
-						if (g_SerenityJediEngineMode->integer <= 2 && traceEnt->client->ps.forcePower <=
-							BLOCKPOINTS_HALF
-							|| g_SerenityJediEngineMode->integer == 2 && traceEnt->client->ps.blockPoints <=
-							BLOCKPOINTS_HALF) // Less than 50 Bp
+						if (g_SerenityJediEngineMode->integer <= 2 && traceEnt->client->ps.forcePower <= BLOCKPOINTS_HALF
+							|| g_SerenityJediEngineMode->integer == 2 && traceEnt->client->ps.blockPoints <= BLOCKPOINTS_HALF) // Less than 50 Bp
 						{
-							WP_SaberDisarmed(traceEnt, throw_dir);
+							if (g_spskill->integer < 2) //was < 2
+							{
+								WP_SaberDisarmed(traceEnt, throw_dir);
+							}
+							else
+							{
+								saberShotOutOfHand(traceEnt, throw_dir);
+							}
 							G_Sound(traceEnt, G_SoundIndex(va("sound/weapons/saber/bounce%d.wav", Q_irand(1, 3))));
 							// low drops saber
 						}

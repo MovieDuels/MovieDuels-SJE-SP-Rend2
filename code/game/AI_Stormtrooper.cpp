@@ -973,7 +973,7 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 			// NORMAL / NON-SMART DETECTION
 			// -----------------------------------------------------------------
 			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
-			
+
 			if (isYavin1b || in_camera)
 			{
 				const float radius_sq = DETECTION_RADIUS_SMALL * DETECTION_RADIUS_SMALL;

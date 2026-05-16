@@ -29,9 +29,8 @@ constexpr auto MAX_GTIMERS = 16384;using gtimer_t = struct gtimer_s
 {
 	hstring     id{};
 	int         time{};
-	gtimer_s* next{ nullptr };   
+	gtimer_s* next{ nullptr };
 };
-
 
 gtimer_t g_timerPool[MAX_GTIMERS];
 gtimer_t* g_timers[MAX_GENTITIES];

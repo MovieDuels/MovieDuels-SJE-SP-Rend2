@@ -902,7 +902,6 @@ public:
 	int lastSaberTargetTime;
 	int painCooldownTime;
 
-
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
 	{
