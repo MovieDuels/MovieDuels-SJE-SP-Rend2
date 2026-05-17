@@ -8233,10 +8233,10 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		G_HeldByMonster(ent, &ucmd);
 	}
 
-	if (ent->client && ent->client->ps.Manual_m_blockingTime <= level.time && ent->client->ps.Manual_m_blockingTime > 0)
+	if (ent->client && ent->client->ps.ManualMBlockingTime <= level.time && ent->client->ps.ManualMBlockingTime > 0)
 	{
 		ent->client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
-		ent->client->ps.Manual_m_blockingTime = 0;
+		ent->client->ps.ManualMBlockingTime = 0;
 	}
 
 	if (ent->client && ent->client->ps.powerups[PW_GALAK_SHIELD] && !droideka_npc(ent))
@@ -8830,7 +8830,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 				if ((client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) == 0)
 				{
 					client->ps.ManualBlockingFlags |= (1 << HOLDINGBLOCKANDATTACK);
-					client->ps.Manual_m_blockingTime = level.time;
+					client->ps.ManualMBlockingTime = level.time;
 				}
 				client->usercmd.buttons &= ~BUTTON_ATTACK;
 
@@ -8925,7 +8925,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
 
 			client->ps.ManualBlockingTime = 0;
-			client->ps.Manual_m_blockingTime = 0;
+			client->ps.ManualMBlockingTime = 0;
 			client->IsBlockingLightning = qfalse;
 		}
 	}

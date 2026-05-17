@@ -7121,7 +7121,7 @@ static qboolean WP_BrokenParryKnockDown(gentity_t* victim)
 }
 
 qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir);
-qboolean saberShotOutOfHand(gentity_t* self, vec3_t throw_dir);
+qboolean WP_saberKnockOutOfHand(gentity_t* self, vec3_t throw_dir);
 void G_Stagger(gentity_t* hit_ent);
 
 qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
@@ -7149,7 +7149,7 @@ qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
 		}
 		else
 		{
-			saberShotOutOfHand(victim, throw_dir);
+			WP_saberKnockOutOfHand(victim, throw_dir);
 		}
 
 		G_AddEvent(victim, EV_PAIN, victim->health);
@@ -7186,7 +7186,7 @@ qboolean wp_bolt_block_victim_reflected(gentity_t* victim)
 			}
 			else
 			{
-				saberShotOutOfHand(victim, throw_dir);
+				WP_saberKnockOutOfHand(victim, throw_dir);
 			}
 
 			G_AddEvent(victim, EV_PAIN, victim->health);
@@ -9276,7 +9276,7 @@ void SabBeh_SaberShouldBeDisarmedBlocker(gentity_t* blocker, const int saber_num
 			}
 			else
 			{
-				saberShotOutOfHand(blocker, throw_dir);
+				WP_saberKnockOutOfHand(blocker, throw_dir);
 			}
 		}
 	}
@@ -9298,7 +9298,7 @@ void sab_beh_saber_should_be_disarmed_attacker(gentity_t* attacker, const int sa
 			}
 			else
 			{
-				saberShotOutOfHand(attacker, throw_dir);
+				WP_saberKnockOutOfHand(attacker, throw_dir);
 			}
 		}
 	}
@@ -14046,6 +14046,13 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	if (self->client->ps.saber[0].Active())
 	{
 		WP_SaberKnockedOutOfHand(self, dropped);
+		self->client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCK);
+		self->client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCKANDATTACK);
+		self->client->ps.ManualBlockingFlags &= ~(1 << PERFECTBLOCKING);
+		self->client->ps.ManualBlockingFlags &= ~(1 << MBF_BLOCKWALKING);
+		self->client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
+		self->client->ps.ManualBlockingTime = 0; //Blocking time 1 on
+		self->client->ps.ManualMBlockingTime = 0; 
 
 		if (d_JediAI->integer || g_DebugSaberCombat->integer)
 		{
@@ -14057,13 +14064,18 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	{
 		VectorCopy(throw_dir, dropped->s.pos.trDelta);
 	}
+	//don't pull it back on the next frame
+	if (self->client && level.time - self->client->ps.saberThrowTime <= MAX_LEAVE_TIME)
+	{
+		self->client->usercmd.buttons &= ~BUTTON_ATTACK;
+	}
 
-	self->client->usercmd.buttons &= ~BUTTON_ATTACK;
+	WP_BlockPointsRegenerate(self, BLOCKPOINTS_FATIGUE); //BP Reward blocker
 
 	return qtrue;
 }
 
-qboolean saberShotOutOfHand(gentity_t* self, vec3_t throw_dir)
+qboolean WP_saberKnockOutOfHand(gentity_t* self, vec3_t throw_dir)
 {
 	if (!self || !self->client || self->client->ps.saberEntityNum <= 0)
 	{
@@ -14096,7 +14108,7 @@ qboolean saberShotOutOfHand(gentity_t* self, vec3_t throw_dir)
 		self->client->ps.ManualBlockingFlags &= ~(1 << MBF_BLOCKWALKING);
 		self->client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
 		self->client->ps.ManualBlockingTime = 0; //Blocking time 1 on
-		self->client->ps.Manual_m_blockingTime = 0;
+		self->client->ps.ManualMBlockingTime = 0;
 	}
 	//optionally give it some thrown velocity
 	if (throw_dir && !VectorCompare(throw_dir, vec3_origin))
@@ -38190,7 +38202,7 @@ void ForceGrasp(gentity_t* self)
 							}
 							else
 							{
-								saberShotOutOfHand(traceEnt, throw_dir);
+								WP_saberKnockOutOfHand(traceEnt, throw_dir);
 							}
 							G_Sound(traceEnt, G_SoundIndex(va("sound/weapons/saber/bounce%d.wav", Q_irand(1, 3))));
 							// low drops saber
