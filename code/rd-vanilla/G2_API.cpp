@@ -1861,13 +1861,14 @@ qboolean G2API_AttachEnt(int* boltInfo, CGhoul2Info* ghlInfoTo, int toBoltIndex,
 	// validate bolt index bounds
 	if (bltCount <= 0 || toBoltIndex < 0 || toBoltIndex >= bltCount)
 	{
-		Com_Printf("G2API_AttachEnt: invalid toBoltIndex %d for model %s (num bolts %d), entNum %d\n",
-			toBoltIndex,
-			(ghlInfoTo->mFileName && ghlInfoTo->mFileName[0]) ? ghlInfoTo->mFileName : "<unknown>",
-			bltCount,
-			entNum);
+#ifdef _DEBUG
+		Com_Printf("G2API_AttachEnt: invalid toBoltIndex %d for model %s (num bolts %d), entNum %d\n",toBoltIndex,
+			(ghlInfoTo->mFileName && ghlInfoTo->mFileName[0]) ? ghlInfoTo->mFileName : "<unknown>",bltCount,entNum);
+#endif
 		*boltInfo = 0;
+#ifdef _DEBUG
 		G2WARNING(ret, "G2API_AttachEnt Failed (invalid bolt index)");
+#endif
 		return qfalse;
 	}
 

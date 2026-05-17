@@ -1289,7 +1289,9 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 			{
 				if (cineGLAIndex != normalGLAIndex + 1)
 				{
+#ifdef _DEBUG
 					Com_Printf("Warning: cineGLAIndex (%d) != normalGLAIndex+1 (%d)\n", cineGLAIndex, normalGLAIndex + 1);
+#endif
 				}
 				G_ParseAnimationFile(1, skeletonMapName, file_index);
 				G_ParseAnimationEvtFile(1, skeletonMapName, file_index, cineGLAIndex, false);
