@@ -208,7 +208,7 @@ extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_
 extern void G_KnockOffVehicle(gentity_t* pRider, const gentity_t* self, qboolean bPull);
 extern qboolean PM_LockedAnim(int anim);
 extern qboolean Rosh_BeingHealed(const gentity_t* self);
-extern qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, qboolean interrupt_okay);
+extern qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, qboolean interruptOkay);
 int WP_AbsorbConversion(const gentity_t* attacked, int atd_abs_level, int at_power, int at_power_level,
 	int at_force_spent);
 void WP_ForcePowerStart(gentity_t* self, forcePowers_t force_power, int override_amt);

@@ -80,6 +80,7 @@ extern qboolean PM_InLedgeMove(int anim);
 extern qboolean PM_SaberInMassiveBounce(int move);
 extern qboolean PM_SaberInBashedAnim(int anim);
 extern qboolean	PM_CrouchAnim(const int anim);
+extern qboolean PM_InKataAnim(int anim);
 
 extern qboolean cg_usingInFrontOf;
 extern qboolean player_locked;
@@ -1530,11 +1531,11 @@ qboolean PM_AdjustAnglesForHeldByMonster(gentity_t* ent, const gentity_t* monste
 	return qtrue;
 }
 
-qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, const qboolean interrupt_okay)
+qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, const qboolean interruptOkay)
 {
 	if ((ps->clientNum < MAX_CLIENTS || G_ControlledByPlayer(&g_entities[ps->clientNum])) //player
 		&& ps->groundEntityNum != ENTITYNUM_NONE //on ground
-		&& (interrupt_okay //okay to interrupt a lean
+		&& (interruptOkay //okay to interrupt a lean
 			&& !PM_CrouchAnim(ps->legsAnim)
 			&& PM_DodgeAnim(ps->torsoAnim)
 			|| PM_BlockAnim(ps->torsoAnim) || PM_BlockDualAnim(ps->torsoAnim) || PM_BlockStaffAnim(ps->torsoAnim)
@@ -1552,27 +1553,30 @@ qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, const qbool
 	return qfalse;
 }
 
-static qboolean G_OkayToDoStandingBlock(const playerState_t* ps, const usercmd_t* cmd, const qboolean interrupt_okay)
+static qboolean G_OkayToDoStandingBlock(const playerState_t* ps, const usercmd_t* uscmd, const qboolean interruptOkay)
 {
-	if ((ps->clientNum < MAX_CLIENTS || G_ControlledByPlayer(&g_entities[ps->clientNum])) //player
-		&& ps->groundEntityNum != ENTITYNUM_NONE //on ground
-		&& (interrupt_okay
+	if ((ps->clientNum < MAX_CLIENTS || G_ControlledByPlayer(&g_entities[ps->clientNum])) // player
+		&& ps->groundEntityNum != ENTITYNUM_NONE // on ground
+		&& ((interruptOkay //okay to interrupt a block
 			&& !in_camera
 			&& !PM_SaberInMassiveBounce(ps->torsoAnim)
 			&& !PM_SaberInBashedAnim(ps->torsoAnim)
-			&& (PM_BlockAnim(ps->torsoAnim) || PM_BlockDualAnim(ps->torsoAnim) || PM_BlockStaffAnim(ps->torsoAnim))
-			//already leaning
-			|| !ps->weaponTime //not attacking or being prevented from attacking
-			&& !ps->legsAnimTimer //not in any held legs anim
-			&& !ps->torsoAnimTimer) //not in any held torso anim
-		&& !(cmd->buttons & (BUTTON_ALT_ATTACK | BUTTON_FORCE_LIGHTNING | BUTTON_USE_FORCE | BUTTON_FORCE_DRAIN |
-			BUTTON_DASH | BUTTON_FORCEGRIP | BUTTON_REPULSE | BUTTON_FORCEGRASP | BUTTON_LIGHTNING_STRIKE |
-			BUTTON_PROJECTION)) //not trying to attack
-		&& VectorCompare(ps->velocity, vec3_origin) //not moving
-		&& !cg_usingInFrontOf) //use button wouldn't be used for anything else
+			&& !PM_InKataAnim(ps->torsoAnim)
+			&& (PM_BlockAnim(ps->torsoAnim)
+				|| PM_BlockDualAnim(ps->torsoAnim)
+				|| PM_BlockStaffAnim(ps->torsoAnim)))
+			|| (!ps->weaponTime
+				&& !ps->legsAnimTimer
+				&& !ps->torsoAnimTimer))
+		&& !(uscmd->buttons & (BUTTON_ALT_ATTACK | BUTTON_FORCE_LIGHTNING | BUTTON_USE_FORCE |
+			BUTTON_FORCE_DRAIN | BUTTON_DASH | BUTTON_FORCEGRIP | BUTTON_REPULSE |
+			BUTTON_FORCEGRASP | BUTTON_LIGHTNING_STRIKE | BUTTON_PROJECTION))
+		&& VectorCompare(ps->velocity, vec3_origin)
+		&& !cg_usingInFrontOf)
 	{
 		return qtrue;
 	}
+
 	return qfalse;
 }
 
