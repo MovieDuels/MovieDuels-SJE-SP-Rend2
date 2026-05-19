@@ -2616,9 +2616,6 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 
 static void G_SetsaberdownorAnim(gentity_t* ent)
 {
-	const qboolean is_holding_block_button = ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-	const qboolean active_blocking = ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-
 	if (ent->client->ps.saberLockTime >= level.time)
 	{
 		return;
@@ -2628,34 +2625,21 @@ static void G_SetsaberdownorAnim(gentity_t* ent)
 	{
 		if (ent->client->ps.SaberActive())
 		{
-			// play correct sound depending on which blade is active
-			if (ent->client->ps.saber[1].Active())
-			{
-				G_Sound(ent, ent->client->ps.saber[1].soundOff);
-			}
-			else if (ent->client->ps.saber[0].Active())
-			{
-				G_Sound(ent, ent->client->ps.saber[0].soundOff);
-			}
-
-			ent->client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCK);
-			ent->client->ps.ManualBlockingFlags &= ~(1 << HOLDINGBLOCKANDATTACK);
-
 			// deactivate saber
 			ent->client->ps.SaberDeactivate();
 
 			if (!g_noIgniteTwirl->integer &&
-				!active_blocking &&
-				!is_holding_block_button &&
 				!IsSurrendering(ent)) //twirl on
 			{
 				switch (ent->client->ps.saberAnimLevel)
 				{
 				case SS_DUAL:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_GRIEVOUS_SABERON, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_S6_S1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					G_Sound(ent, ent->client->ps.saber[0].soundOff);
 					break;
 				case SS_STAFF:
 					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SABER_BACKHAND_IGNITION, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					G_Sound(ent, ent->client->ps.saber[0].soundOff);
 					break;
 				case SS_NONE:
 				case SS_FAST:
@@ -2664,9 +2648,11 @@ static void G_SetsaberdownorAnim(gentity_t* ent)
 				case SS_TAVION:
 				case SS_DESANN:
 					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					G_Sound(ent, ent->client->ps.saber[0].soundOff);
 					break;
 				default:
 					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					G_Sound(ent, ent->client->ps.saber[0].soundOff);
 					break;
 				}
 			}
@@ -2677,43 +2663,65 @@ static void G_SetsaberdownorAnim(gentity_t* ent)
 		// SABER OFF
 		else
 		{
-			// play saber-on sounds
-			if (ent->client->ps.saber[0].soundOn)
-			{
-				G_Sound(ent, ent->client->ps.saber[0].soundOn);
-			}
-			if (ent->client->ps.saber[1].soundOn)
-			{
-				G_Sound(ent, ent->client->ps.saber[1].soundOn);
-			}
-
 			// activate saber
 			ent->client->ps.SaberActivate();
 
 			if (!g_noIgniteTwirl->integer &&
-				!active_blocking &&
-				!is_holding_block_button &&
 				!IsSurrendering(ent)) //twirl on
 			{
-				switch (ent->client->ps.saberAnimLevel)
+				if (PM_WalkingAnim(ent->client->ps.legsAnim))
 				{
-				case SS_DUAL:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_GRIEVOUS_SABERON, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				case SS_STAFF:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SABER_BACKHAND_IGNITION, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				case SS_NONE:
-				case SS_FAST:
-				case SS_MEDIUM:
-				case SS_STRONG:
-				case SS_TAVION:
-				case SS_DESANN:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
-				default:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-					break;
+					switch (ent->client->ps.saberAnimLevel)
+					{
+					case SS_DUAL:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_GRIEVOUS_SABERON, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					case SS_STAFF:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SABER_BACKHAND_IGNITION, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					case SS_NONE:
+					case SS_FAST:
+					case SS_MEDIUM:
+					case SS_STRONG:
+					case SS_TAVION:
+					case SS_DESANN:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SABER_IGNITION_JFA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					default:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SABER_IGNITION_JFA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					}
+				}
+				else
+				{
+					switch (ent->client->ps.saberAnimLevel)
+					{
+					case SS_DUAL:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_S1_S6, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					case SS_STAFF:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SABER_BACKHAND_IGNITION, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					case SS_NONE:
+					case SS_FAST:
+					case SS_MEDIUM:
+					case SS_STRONG:
+					case SS_TAVION:
+					case SS_DESANN:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					default:
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						G_Sound(ent, ent->client->ps.saber[0].soundOn);
+						break;
+					}
 				}
 			}
 		}
