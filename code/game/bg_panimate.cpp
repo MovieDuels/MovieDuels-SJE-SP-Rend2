@@ -126,7 +126,6 @@ qboolean PM_CheckFlipOverAttackMove(qboolean check_enemy);
 saber_moveName_t PM_SaberJumpForwardAttackMove();
 saber_moveName_t PM_SaberLungeAttackMove(qboolean fallback_to_normal_lunge);
 qboolean PM_CheckLungeAttackMove();
-qboolean PM_StandingidleAnim(int anim);
 extern qboolean PM_WindAnim(int anim);
 extern cvar_t* g_SerenityJediEngineMode;
 qboolean PM_StandingAtReadyAnim(int anim);
@@ -6678,8 +6677,10 @@ static void PM_TorsoAnimLightsaber()
 					if (g_SerenityJediEngineMode->integer == 2)
 					{
 						//AMD Mode
-						if (!g_noIgniteTwirl->integer && !active_blocking
-							&& !is_holding_block_button && !IsSurrendering(pm->gent)) //twirl on
+						if (!g_noIgniteTwirl->integer &&
+							!active_blocking
+							&& !is_holding_block_button
+							&& !IsSurrendering(pm->gent)) //twirl on
 						{
 							PM_SetSaberMove(LS_DRAW);
 						}
@@ -6733,7 +6734,8 @@ static void PM_TorsoAnimLightsaber()
 					else
 					{
 						//MD Mode
-						if (!g_noIgniteTwirl->integer && !active_blocking
+						if (!g_noIgniteTwirl->integer &&
+							!active_blocking
 							&& !is_holding_block_button
 							&& !IsSurrendering(pm->gent)) //twirl on
 						{
@@ -6790,7 +6792,8 @@ static void PM_TorsoAnimLightsaber()
 				else
 				{
 					//JKA Mode
-					if (!g_noIgniteTwirl->integer && !active_blocking
+					if (!g_noIgniteTwirl->integer &&
+						!active_blocking
 						&& !is_holding_block_button
 						&& !IsSurrendering(pm->gent)) //twirl on
 					{
@@ -6857,7 +6860,9 @@ static void PM_TorsoAnimLightsaber()
 			}
 			else
 			{
-				if (!g_noIgniteTwirl->integer
+				if (!g_noIgniteTwirl->integer &&
+					!active_blocking
+					&& !is_holding_block_button
 					&& !IsSurrendering(pm->gent)) //twirl on
 				{
 					PM_SetSaberMove(LS_PUTAWAY);

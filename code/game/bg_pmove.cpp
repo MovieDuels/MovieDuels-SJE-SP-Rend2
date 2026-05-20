@@ -148,7 +148,6 @@ qboolean PM_InReboundJump(int anim);
 qboolean PM_ForceJumpingAnim(int anim);
 void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd);
 extern qboolean PM_SaberInAttackPure(int move);
-extern qboolean PM_StandingidleAnim(int move);
 extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_RealisticBlockingMode;
 extern qboolean PM_SaberInDamageMove(int move);
