@@ -7230,7 +7230,7 @@ qboolean PM_InKnockDownNoGetup(const playerState_t* ps)
 	return qfalse;
 }
 
-static qboolean PM_BoltBlockingAnim(const int anim)
+qboolean PM_BoltBlockingAnim(const int anim)
 {
 	switch (anim)
 	{

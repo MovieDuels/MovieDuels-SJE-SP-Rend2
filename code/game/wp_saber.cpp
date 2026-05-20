@@ -178,6 +178,8 @@ extern qboolean PM_SaberInOverHeadSlash(saber_moveName_t saberMove);
 extern qboolean PM_SaberInRollStab(saber_moveName_t saberMove);
 extern qboolean PM_SaberInLungeStab(saber_moveName_t saberMove);
 extern qboolean PM_StabDownAnim(int anim);
+extern qboolean PM_SaberDrawPutawayAnim(const int anim);
+extern qboolean PM_BoltBlockingAnim(const int anim);
 extern int PM_PowerLevelForSaberAnim(const playerState_t* ps, int saber_num = 0);
 extern void PM_VelocityForSaberMove(const playerState_t* ps, vec3_t throw_dir);
 extern qboolean PM_VelocityForBlockedMove(const playerState_t* ps, vec3_t throw_dir);
@@ -5060,89 +5062,17 @@ qboolean G_InScriptedCinematicSaberAnim(const gentity_t* self)
 static qboolean G_DrawSaberTrailForAnimation(const gentity_t* self)
 {
 	// These animations will do saber trail (for JKA, CW and Maul cg_sfxsabers)
+	if (PM_SaberInMassiveBounce(self->client->ps.torsoAnim) ||
+		PM_SaberInBashedAnim(self->client->ps.torsoAnim) ||
+		PM_BoltBlockingAnim(self->client->ps.torsoAnim) ||
+		PM_SaberDrawPutawayAnim(self->client->ps.torsoAnim))
+	{
+		return qtrue;
+	}
+
+	// Taunts
 	switch (self->client->ps.torsoAnim)
 	{
-		// One Hand Backsaber Style / staff replacement for starkiller
-	case BOTH_BOLT_BLOCK_BACKHAND_BOTTOM_LEFT:
-	case BOTH_BOLT_BLOCK_BACKHAND_BOTTOM_RIGHT:
-	case BOTH_BOLT_BLOCK_BACKHAND_MIDDLE_LEFT:
-	case BOTH_BOLT_BLOCK_BACKHAND_MIDDLE_RIGHT:
-	case BOTH_BOLT_BLOCK_BACKHAND_TOP_LEFT:
-	case BOTH_BOLT_BLOCK_BACKHAND_TOP_MIDDLE:
-	case BOTH_BOLT_BLOCK_BACKHAND_TOP_RIGHT:
-
-		// Dual Lightsaber Style
-	case BOTH_BOLT_BLOCK_DUAL_BOTTOM_LEFT:
-	case BOTH_BOLT_BLOCK_DUAL_BOTTOM_RIGHT:
-	case BOTH_BOLT_BLOCK_DUAL_MIDDLE_LEFT:
-	case BOTH_BOLT_BLOCK_DUAL_MIDDLE_RIGHT:
-	case BOTH_BOLT_BLOCK_DUAL_TOP_LEFT:
-	case BOTH_BOLT_BLOCK_DUAL_TOP_MIDDLE:
-	case BOTH_BOLT_BLOCK_DUAL_TOP_RIGHT:
-
-		// Staff Saber Style
-	case BOTH_BOLT_BLOCK_STAFF_BOTTOM_LEFT:
-	case BOTH_BOLT_BLOCK_STAFF_BOTTOM_RIGHT:
-	case BOTH_BOLT_BLOCK_STAFF_MIDDLE_LEFT:
-	case BOTH_BOLT_BLOCK_STAFF_MIDDLE_RIGHT:
-	case BOTH_BOLT_BLOCK_STAFF_TOP_LEFT:
-	case BOTH_BOLT_BLOCK_STAFF_TOP_MIDDLE:
-	case BOTH_BOLT_BLOCK_STAFF_TOP_RIGHT:
-
-		// One Saber and one Hand Style
-	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT:
-	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT:
-	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT:
-	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT:
-	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT:
-	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE:
-	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT:
-
-		// One Saber and two Hands Style
-	case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_LEFT:
-	case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_RIGHT:
-	case BOTH_BOLT_BLOCK_TWO_HAND_MIDDLE_LEFT:
-	case BOTH_BOLT_BLOCK_TWO_HAND_MIDDLE_RIGHT:
-	case BOTH_BOLT_BLOCK_TWO_HAND_TOP_LEFT:
-	case BOTH_BOLT_BLOCK_TWO_HAND_TOP_MIDDLE:
-	case BOTH_BOLT_BLOCK_TWO_HAND_TOP_RIGHT:
-
-		//Saber parry broken
-	case BOTH_H1_S1_T_:
-	case BOTH_H1_S1_TR:
-	case BOTH_H1_S1_TL:
-	case BOTH_H1_S1_BL:
-	case BOTH_H1_S1_B_:
-	case BOTH_H1_S1_BR:
-		//Dual Saber parry broken
-	case BOTH_H6_S6_T_:
-	case BOTH_H6_S6_TR:
-	case BOTH_H6_S6_TL:
-	case BOTH_H6_S6_BL:
-	case BOTH_H6_S6_B_:
-	case BOTH_H6_S6_BR:
-		//SaberStaff parry broken
-	case BOTH_H7_S7_T_:
-	case BOTH_H7_S7_TR:
-	case BOTH_H7_S7_TL:
-	case BOTH_H7_S7_BL:
-	case BOTH_H7_S7_B_:
-	case BOTH_H7_S7_BR:
-		//Saber  perfect block
-	case BOTH_K1_S1_TR_MD:
-	case BOTH_K1_S1_TL_MD:
-		//Saberstaff  perfect block
-	case BOTH_B7_TR___:
-	case BOTH_B7_TL___:
-		//SaberDual  perfect block
-	case BOTH_B6_TR___:
-	case BOTH_B6_TL___:
-		//Saber/Dual/staff back block
-	case BOTH_P1_S1_B1_:
-	case BOTH_P6_S1_B1_:
-	case BOTH_P7_S1_B1_:
-
-		// Taunts
 	case BOTH_ENGAGETAUNT:
 	case BOTH_DUAL_TAUNT:
 	case BOTH_STAFF_TAUNT:
@@ -20858,28 +20788,32 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 		minsize = 32;
 	}
 
-	if (G_InCinematicSaberAnim(self))
+	// If we are not currently drawing a trail, see if we should be.
+	if (self->client->ps.weapon == WP_SABER && self->client->ps.saber[0].Active() && !self->client->ps.saber[0].blade[0].trail.inAction)
 	{
-		//fake some blocking
-		self->client->ps.saberBlocking = BLK_TIGHT;
-		if (self->client->ps.saber[0].Active())
+		if (G_InCinematicSaberAnim(self))
 		{
-			self->client->ps.saber[0].ActivateTrail(150);
+			//fake some blocking
+			self->client->ps.saberBlocking = BLK_TIGHT;
+			if (self->client->ps.saber[0].Active())
+			{
+				self->client->ps.saber[0].ActivateTrail(150);
+			}
+			if (self->client->ps.saber[1].Active())
+			{
+				self->client->ps.saber[1].ActivateTrail(150);
+			}
 		}
-		if (self->client->ps.saber[1].Active())
+		else if (G_DrawSaberTrailForAnimation(self))
 		{
-			self->client->ps.saber[1].ActivateTrail(150);
-		}
-	}
-	else if (G_DrawSaberTrailForAnimation(self))
-	{
-		if (self->client->ps.saber[0].Active())
-		{
-			self->client->ps.saber[0].ActivateTrail(300);
-		}
-		if (self->client->ps.saber[1].Active())
-		{
-			self->client->ps.saber[1].ActivateTrail(300);
+			if (self->client->ps.saber[0].Active())
+			{
+				self->client->ps.saber[0].ActivateTrail(300);
+			}
+			if (self->client->ps.saber[1].Active())
+			{
+				self->client->ps.saber[1].ActivateTrail(300);
+			}
 		}
 	}
 
@@ -21164,28 +21098,32 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 		minsize = 32;
 	}
 
-	if (G_InCinematicSaberAnim(self))
+	// If we are not currently drawing a trail, see if we should be.
+	if (self->client->ps.weapon == WP_SABER && self->client->ps.saber[0].Active() && !self->client->ps.saber[0].blade[0].trail.inAction)
 	{
-		//fake some blocking
-		self->client->ps.saberBlocking = BLK_TIGHT;
-		if (self->client->ps.saber[0].Active())
+		if (G_InCinematicSaberAnim(self))
 		{
-			self->client->ps.saber[0].ActivateTrail(150);
+			//fake some blocking
+			self->client->ps.saberBlocking = BLK_TIGHT;
+			if (self->client->ps.saber[0].Active())
+			{
+				self->client->ps.saber[0].ActivateTrail(150);
+			}
+			if (self->client->ps.saber[1].Active())
+			{
+				self->client->ps.saber[1].ActivateTrail(150);
+			}
 		}
-		if (self->client->ps.saber[1].Active())
+		else if (G_DrawSaberTrailForAnimation(self))
 		{
-			self->client->ps.saber[1].ActivateTrail(150);
-		}
-	}
-	else if (G_DrawSaberTrailForAnimation(self))
-	{
-		if (self->client->ps.saber[0].Active())
-		{
-			self->client->ps.saber[0].ActivateTrail(300);
-		}
-		if (self->client->ps.saber[1].Active())
-		{
-			self->client->ps.saber[1].ActivateTrail(300);
+			if (self->client->ps.saber[0].Active())
+			{
+				self->client->ps.saber[0].ActivateTrail(300);
+			}
+			if (self->client->ps.saber[1].Active())
+			{
+				self->client->ps.saber[1].ActivateTrail(300);
+			}
 		}
 	}
 
