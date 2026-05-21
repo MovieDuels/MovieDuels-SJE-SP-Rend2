@@ -5093,11 +5093,9 @@ static qboolean G_DrawSaberTrailForAnimation(const gentity_t* self)
 	case BOTH_VICTORY_DUAL:
 	case BOTH_VICTORY_STAFF:
 		return qtrue;
-
 	default:
 		return qfalse;
 	}
-
 	return qfalse;
 }
 

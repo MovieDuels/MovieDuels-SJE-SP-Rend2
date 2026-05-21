@@ -9306,7 +9306,12 @@ qboolean PM_SaberDrawPutawayAnim(const int anim)
 	case BOTH_S7_S1:
 	case BOTH_S1_S6:
 	case BOTH_S6_S1:
+	case BOTH_DOOKU_FULLDRAW:
+	case BOTH_DOOKU_SMALLDRAW:
+	case BOTH_SABER_IGNITION:
 	case BOTH_SABER_IGNITION_JFA:
+	case BOTH_SABER_BACKHAND_IGNITION:
+	case BOTH_GRIEVOUS_SABERON:
 		return qtrue;
 	default:;
 	}
