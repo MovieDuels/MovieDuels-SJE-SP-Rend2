@@ -2219,6 +2219,7 @@ public:
 	int			hackingBaseTime;
 	int         saberstuckinwalltimer;
 	int         saberDisarmProtectTime;
+	int         npcKickBlockStartTime;
 
 #endif // !JK2_MODE
 
@@ -2500,6 +2501,7 @@ public:
 		saved_game.write<int32_t>(hackingBaseTime);
 		saved_game.write<int32_t>(saberstuckinwalltimer);
 		saved_game.write<int32_t>(saberDisarmProtectTime);
+		saved_game.write<int32_t>(npcKickBlockStartTime);
 
 #endif // !JK2_MODE
 	}
@@ -2782,6 +2784,7 @@ public:
 		saved_game.read<int32_t>(hackingBaseTime);
 		saved_game.read<int32_t>(saberstuckinwalltimer);
 		saved_game.read<int32_t>(saberDisarmProtectTime);
+		saved_game.read<int32_t>(npcKickBlockStartTime);
 
 #endif // !JK2_MODE
 	}

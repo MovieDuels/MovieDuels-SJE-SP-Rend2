@@ -15527,12 +15527,6 @@ int BotCanAbsorbKick(const gentity_t* defender, const vec3_t push_dir) //Can the
 		return qfalse;
 	}
 
-	if (!WalkCheck(defender))
-	{
-		// runners cant absorb kick
-		return qfalse;
-	}
-
 	if (in_camera)
 	{
 		return qfalse;
@@ -15563,10 +15557,7 @@ int BotCanAbsorbKick(const gentity_t* defender, const vec3_t push_dir) //Can the
 		// No force saber defense (Gunners cant do it at all)
 		|| defender->client->moveType == MT_FLYSWIM // Bobafett flying cant do it
 		|| defender->client->ps.groundEntityNum == ENTITYNUM_NONE // Your in the air (jumping).
-		|| defender->client->ps.blockPoints < FATIGUE_DODGEING // Less than 35 Block points
-		|| defender->client->ps.forcePower < FATIGUE_DODGEING // Less than 35 Force points
-		|| defender->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN
-		&& !npc_blocking) // Your saber fatigued
+		&& !npc_blocking)
 	{
 		return qfalse;
 	}
@@ -15574,7 +15565,7 @@ int BotCanAbsorbKick(const gentity_t* defender, const vec3_t push_dir) //Can the
 	VectorSet(p_l_angles, 0, defender->client->ps.viewangles[YAW], 0);
 	AngleVectors(p_l_angles, p_l_fwd, nullptr, nullptr);
 
-	if (DotProduct(p_l_fwd, push_dir) > 0.2f)
+	if (DotProduct(p_l_fwd, push_dir) > -0.2f)
 	{
 		//not hit in the front, can't absorb kick.
 		return qfalse;
@@ -15591,8 +15582,8 @@ qboolean Manual_NPCKickAbsorbing(const gentity_t* defender) //Is this guy blocki
 	}
 
 	if (defender->client->ps.saberFatigueChainCount > MISHAPLEVEL_TEN
-		&& (g_SerenityJediEngineMode->integer == 1 && defender->client->ps.forcePower <= BLOCKPOINTS_HALF
-			|| g_SerenityJediEngineMode->integer == 2 && defender->client->ps.blockPoints <= BLOCKPOINTS_HALF))
+		&& (g_SerenityJediEngineMode->integer == 1 && defender->client->ps.forcePower <= BLOCKPOINTS_THIRTY
+			|| g_SerenityJediEngineMode->integer == 2 && defender->client->ps.blockPoints <= BLOCKPOINTS_THIRTY))
 	{
 		return qfalse;
 	}
@@ -15619,8 +15610,6 @@ qboolean Manual_NPCKickAbsorbing(const gentity_t* defender) //Is this guy blocki
 		|| PM_SaberInMassiveBounce(defender->client->ps.saberMove)
 		|| PM_SaberInBashedAnim(defender->client->ps.saberMove)
 		|| defender->client->ps.groundEntityNum == ENTITYNUM_NONE
-		|| defender->client->ps.blockPoints < BLOCKPOINTS_THIRTY
-		|| defender->client->ps.forcePower < BLOCKPOINTS_THIRTY
 		|| defender->client->ps.userInt3 & 1 << FLAG_FATIGUED)
 	{
 		return qfalse;
@@ -15650,12 +15639,6 @@ qboolean Manual_NPCKickAbsorbing(const gentity_t* defender) //Is this guy blocki
 	if (g_SerenityJediEngineMode->integer && !WalkCheck(defender))
 	{
 		//can't block while running.
-		return qfalse;
-	}
-
-	if (g_SerenityJediEngineMode->integer == 1 && defender->client->ps.forcePower <= BLOCKPOINTS_TEN
-		|| g_SerenityJediEngineMode->integer == 2 && defender->client->ps.blockPoints <= BLOCKPOINTS_TEN)
-	{
 		return qfalse;
 	}
 

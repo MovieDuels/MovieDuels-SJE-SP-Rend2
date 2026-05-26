@@ -9029,25 +9029,48 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 	}
 
-	if (ent->NPC || ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent) &&
+	// 5 second minimum active time
+	const int kickBlockMinTime = 5000;
+
+	if ((ent->NPC || (ent->s.clientNum >= MAX_CLIENTS && G_ControlledByPlayer(ent) == qfalse)) &&
 		client->ps.weapon == WP_SABER &&
-		client->ps.SaberActive()
-		&& !PM_SaberInMassiveBounce(client->ps.torsoAnim)
-		&& !PM_SaberInBashedAnim(client->ps.torsoAnim)
-		&& !PM_Saberinstab(client->ps.saberMove))
+		client->ps.SaberActive() == qtrue &&
+		PM_SaberInMassiveBounce(client->ps.torsoAnim) == qfalse &&
+		PM_SaberInBashedAnim(client->ps.torsoAnim) == qfalse &&
+		PM_Saberinstab(client->ps.saberMove) == qfalse)
 	{
-		if (Manual_NPCKickAbsorbing(ent))
+		if (Manual_NPCKickAbsorbing(ent) == qtrue)
 		{
-			if (!(client->ps.ManualBlockingFlags & 1 << MBF_NPCKICKBLOCK))
+			// Activate kick block if not already active
+			if ((client->ps.ManualBlockingFlags & (1 << MBF_NPCKICKBLOCK)) == 0)
 			{
-				client->ps.ManualBlockingFlags |= 1 << MBF_NPCKICKBLOCK;
+				client->ps.ManualBlockingFlags |= (1 << MBF_NPCKICKBLOCK);
+				client->ps.npcKickBlockStartTime = level.time;
+
+				if (d_combatinfo->integer != 0)
+				{
+					Com_Printf(S_COLOR_ORANGE "NPC KICK BLOCK activated (Manual_NPCKICKBLOCK)\n");
+				}
 			}
 		}
 		else
 		{
-			client->ps.ManualBlockingFlags &= ~(1 << MBF_NPCKICKBLOCK);
+			// Only allow deactivation if 5 seconds have passed
+			if ((client->ps.ManualBlockingFlags & (1 << MBF_NPCKICKBLOCK)) != 0)
+			{
+				if (level.time - client->ps.npcKickBlockStartTime >= kickBlockMinTime)
+				{
+					client->ps.ManualBlockingFlags &= ~(1 << MBF_NPCKICKBLOCK);
+
+					if (d_combatinfo->integer != 0)
+					{
+						Com_Printf(S_COLOR_ORANGE "NPC KICK BLOCK deactivated after timer\n");
+					}
+				}
+			}
 		}
 	}
+
 
 	if (g_SerenityJediEngineMode->integer <= 1
 		&& (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent))

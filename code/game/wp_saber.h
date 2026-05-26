@@ -185,7 +185,8 @@ constexpr auto JUMP_OFF_WALL_SPEED = 200.0f;
 
 constexpr auto FORCE_LONG_LEAP_SPEED = 475.0f; //300;
 
-constexpr auto SABER_KATA_ATTACK_POWER = 80; //75?;
+constexpr auto SABER_KATA_ATTACK_POWER = 75;
+constexpr auto SABER_KATA_ATTACK_POWER_COST = 40;
 
 constexpr auto SPECIAL_NPC_ATTACK = 60;
 

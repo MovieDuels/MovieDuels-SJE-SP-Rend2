@@ -6818,7 +6818,6 @@ gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, c
 	vec3_t forward, mins{}, maxs{};
 	gentity_t* enemy = fallback;
 
-	// FIX: move this off the stack
 	static gentity_t* entity_list[MAX_GENTITIES];
 
 	int e;
@@ -6857,7 +6856,7 @@ gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, c
 			continue;
 		if (gi.inPVS(check->currentOrigin, self->currentOrigin) == qfalse)
 		{
-			if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 && self->s.weapon == WP_SABER /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 			{
 				const float range = (g_npc_is_smart_range != NULL)
 					? static_cast<float>(g_npc_is_smart_range->integer)
@@ -7924,7 +7923,7 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 	}
 
 	if (g_SerenityJediEngineMode->integer > 1 &&
-		g_spskill->integer > 1 &&
+		/*g_spskill->integer > 1 &&*/
 		g_npc_is_smart &&
 		g_npc_is_smart->integer != 0 &&
 		NPC->client->ps.saberFatigueChainCount < MISHAPLEVEL_HEAVY &&
@@ -7971,7 +7970,7 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 		!(ucmd.buttons & BUTTON_FORCE_FOCUS))
 	{
 		if (g_SerenityJediEngineMode->integer > 1 &&
-			g_spskill->integer > 1 &&
+			/*g_spskill->integer > 1 &&*/
 			g_npc_is_smart &&
 			g_npc_is_smart->integer != 0)
 		{
@@ -8966,7 +8965,7 @@ static void jedi_combat()
 
 					return;
 				}
-				if (NPC->s.weapon == WP_SABER && (g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+				if (NPC->s.weapon == WP_SABER && (g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 				{
 					if (NPCInfo->aiFlags & NPCAI_BLOCKED)
 					{//been blocked for a little while, try something else
@@ -9057,7 +9056,7 @@ static void jedi_combat()
 			&& (!(NPC->client->ps.forcePowersActive & 1 << FP_GRASP) || NPC->client->ps.forcePowerLevel[FP_GRASP] < FORCE_LEVEL_2))
 		{//not throwing saber or using force grip
 			//see if we can attack
-			if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 			{// we have advanced combat enabled, so try to do something smart
 				if (!jedi_attack_decide(enemy_dist) == qfalse)
 				{// not attacking, decide what else to do
@@ -9438,7 +9437,7 @@ static qboolean jedi_check_ambush_player(void)
 		if (gi.inPVS(player->currentOrigin, NPC->currentOrigin) == qfalse)
 		{
 			// Allow "suspicious" fallback if configured
-			if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 			{
 				const float range = (g_npc_is_smart_range != NULL)
 					? (float)g_npc_is_smart_range->integer
@@ -9605,7 +9604,7 @@ static void jedi_patrol(void)
 			//
 			if (gi.inPVS(NPC->currentOrigin, enemy->currentOrigin) == qfalse)
 			{
-				if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+				if ((g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 				{
 					const float range = (g_npc_is_smart_range != NULL)
 						? (float)g_npc_is_smart_range->integer
@@ -9853,7 +9852,7 @@ void npc_bs_jedi_follow_leader()
 		}
 	}
 
-	if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0) && NPCInfo->goalEntity)
+	if ((g_SerenityJediEngineMode->integer > 1 && NPC->s.weapon == WP_SABER /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0) && NPCInfo->goalEntity)
 	{// If we're trying to get to a goal, but have been blocked for a bit, try jumping to it
 		trace_t trace;
 
