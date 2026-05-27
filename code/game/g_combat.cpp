@@ -6990,61 +6990,73 @@ static int G_LocationDamage(const vec3_t point, const gentity_t* targ, int take)
 		targ->client->lasthurt_location |= LOCATION_LEG;
 	}
 
-	// Check the location ignoring the rotation info
-	switch (targ->client->lasthurt_location & ~(LOCATION_BACK | LOCATION_LEFT | LOCATION_RIGHT | LOCATION_FRONT))
+	// Apply location-based damage ONLY if gun dismemberment is enabled
+	if (g_gundismemberment->integer > 0)
 	{
-	case LOCATION_HEAD:
-		take *= 2.8;
-		break;
-	case LOCATION_FACE:
-		if (targ->client->lasthurt_location & LOCATION_FRONT)
+		switch (targ->client->lasthurt_location & ~(LOCATION_BACK | LOCATION_LEFT | LOCATION_RIGHT | LOCATION_FRONT))
 		{
-			take *= 3.0; // Faceshots REALLY suck
+		case LOCATION_HEAD:
+			take *= 1.8f;
+			break;
+
+		case LOCATION_FACE:
+			if (targ->client->lasthurt_location & LOCATION_FRONT)
+			{
+				take *= 2.0f; // front face shot
+			}
+			else
+			{
+				take *= 1.6f; // side/back face shot
+			}
+			break;
+
+		case LOCATION_SHOULDER:
+			if (targ->client->lasthurt_location & (LOCATION_FRONT | LOCATION_BACK))
+			{
+				take *= 1.1f; // throat or nape
+			}
+			else
+			{
+				take *= 1.0f; // shoulder
+			}
+			break;
+
+		case LOCATION_CHEST:
+			if (targ->client->lasthurt_location & (LOCATION_FRONT | LOCATION_BACK))
+			{
+				take *= 1.2f; // chest/back
+			}
+			else
+			{
+				take *= 1.1f; // arms
+			}
+			break;
+
+		case LOCATION_STOMACH:
+			take *= 1.1f;
+			break;
+
+		case LOCATION_GROIN:
+			if (targ->client->lasthurt_location & LOCATION_FRONT)
+			{
+				take *= 1.1f;
+			}
+			break;
+
+		case LOCATION_LEG:
+			take *= 0.8f;
+			break;
+
+		case LOCATION_FOOT:
+			take *= 0.7f;
+			break;
+
+		default:
+			break;
 		}
-		else
-		{
-			take *= 2.2;
-		}
-		break;
-	case LOCATION_SHOULDER:
-		if (targ->client->lasthurt_location & (LOCATION_FRONT | LOCATION_BACK))
-		{
-			take *= 1.2; // Throat or nape of neck
-		}
-		else
-		{
-			take *= 1; // Shoulders
-		}
-		break;
-	case LOCATION_CHEST:
-		if (targ->client->lasthurt_location & (LOCATION_FRONT | LOCATION_BACK))
-		{
-			take *= 1.5; // Belly or back
-		}
-		else
-		{
-			take *= 1.4; // Arms
-		}
-		break;
-	case LOCATION_STOMACH:
-		take *= 1.3;
-		break;
-	case LOCATION_GROIN:
-		if (targ->client->lasthurt_location & LOCATION_FRONT)
-		{
-			take *= 1.2; // Groin shot
-		}
-		break;
-	case LOCATION_LEG:
-		take *= 0.7;
-		break;
-	case LOCATION_FOOT:
-		take *= 0.5;
-		break;
-	default:;
 	}
-	return take;
 }
+
 
 static void G_CheckKnockdown(gentity_t* targ, gentity_t* attacker, vec3_t new_dir, const int dflags, const int mod)
 {
@@ -7745,8 +7757,7 @@ dflags		these flags are used to control how T_Damage works
 ============
 */
 int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc);
-void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const vec3_t dir, const vec3_t point,
-	int damage, int dflags, int mod, int hit_loc)
+void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const vec3_t dir, const vec3_t point,int damage, int dflags, int mod, int hit_loc)
 {
 	gclient_t* client;
 	int take;
@@ -8379,9 +8390,9 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		knockback = 200;
 	}
 
-	if (targ->client
-		&& targ->client->ps.forcePowersActive & 1 << FP_PROTECT && targ->client->ps.forcePowerLevel[FP_PROTECT] ==
-		FORCE_LEVEL_3)
+	if (targ->client &&
+		(targ->client->ps.forcePowersActive & (1 << FP_PROTECT)) &&
+		targ->client->ps.forcePowerLevel[FP_PROTECT] == FORCE_LEVEL_3)
 	{
 		//pretend there was no damage?
 		knockback = 0;
@@ -8401,7 +8412,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 	}
 	else if (attacker->s.number >= MAX_CLIENTS //an NPC fired
 		&& targ->client //hit a client
-		&& attacker->client //attacker is a client
 		&& targ->client->playerTeam == attacker->client->playerTeam) //on same team
 	{
 		//crap, ignore knockback
@@ -8934,11 +8944,11 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			targ->client->lasthurt_location = LOCATION_NONE;
 		}
 	}
-
-	if (targ->client && attacker->client && targ->health > 0 && g_standard_humanoid(targ) && !
-		NPC_IsNotDismemberable(targ))
+	
+	if (targ->client && attacker->client && targ->health > 0 &&
+		g_standard_humanoid(targ) && !NPC_IsNotDismemberable(targ))
 	{
-		//do head shots
+		// do head shots
 		if (inflictor->s.weapon == WP_BLASTER
 			|| inflictor->s.weapon == WP_TUSKEN_RIFLE
 			|| inflictor->s.weapon == WP_FLECHETTE
@@ -8967,31 +8977,46 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			int height;
 			float z_rel;
 			float z_ratio;
+
 			targ_maxs2 = targ->maxs[2];
+
 			// handling crouching
 			if (targ->client->ps.pm_flags & PMF_DUCKED)
 			{
-				height = (abs(targ->mins[2]) + targ_maxs2) * 0.75;
+				height = (abs(targ->mins[2]) + targ_maxs2) * 0.75f;
 			}
 			else
 			{
 				height = abs(targ->mins[2]) + targ_maxs2;
 			}
-			// project the z component of point
-			// onto the z component of the model's origin
-			// this results in the z component from the origin at 0
+
 			z_rel = point[2] - targ->currentOrigin[2] + abs(targ->mins[2]);
 			z_ratio = z_rel / height;
 
-			if (z_ratio > 0.90)
+			// -----------------------------------------
+			// HEALTH RESTRICTION FOR DISMEMBERMENT
+			// -----------------------------------------
+			const int maxHP = targ->client->ps.stats[STAT_MAX_HEALTH];
+			const int hp = targ->health;
+
+			if (hp > (maxHP * 0.25f))
 			{
-				take = G_LocationDamage(point, targ, take);
-				mod = MOD_HEADSHOT;
+				// Too healthy → no head/body dismemberment
+				targ->client->lasthurt_location = LOCATION_NONE;
 			}
 			else
 			{
-				take = G_LocationDamage(point, targ, take);
-				mod = MOD_BODYSHOT;
+				// Existing logic
+				if (z_ratio > 0.90f)
+				{
+					take = G_LocationDamage(point, targ, take);
+					mod = MOD_HEADSHOT;
+				}
+				else
+				{
+					take = G_LocationDamage(point, targ, take);
+					mod = MOD_BODYSHOT;
+				}
 			}
 		}
 	}
@@ -9048,7 +9073,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			if (remove_arm)
 			{
 				targ->client->dismembered = false;
-				//FIXME: the limb should just disappear, cuz I ate it
 				G_DoDismemberment(targ, targ->currentOrigin, MOD_SABER, HL_ARM_RT, qtrue);
 			}
 		}
