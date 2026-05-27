@@ -7054,8 +7054,8 @@ static int G_LocationDamage(const vec3_t point, const gentity_t* targ, int take)
 		default:
 			break;
 		}
-		return take;
 	}
+	return take;
 }
 
 
