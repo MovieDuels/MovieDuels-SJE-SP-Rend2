@@ -8412,6 +8412,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		knockback = 0;
 	}
 	else if (attacker->s.number >= MAX_CLIENTS //an NPC fired
+		&& attacker->client
 		&& targ->client //hit a client
 		&& targ->client->playerTeam == attacker->client->playerTeam) //on same team
 	{
