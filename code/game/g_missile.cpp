@@ -2211,10 +2211,10 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				if (other->client->painCooldownTime > level.time)
 				{
 					// Still cooling down → skip pain anim
-					return;
 				}
-
-				int pain_anim = -1;
+				else
+				{
+					int pain_anim = -1;
 
 				if (Q_irand(0, 3)) // 75% chance
 				{
@@ -2243,6 +2243,7 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 						other->client->ps.torsoAnimTimer = 400;
 					}
 					other->client->painCooldownTime = level.time + 2000;// 2 second cooldown on pain anims
+				}
 				}
 			}
 
