@@ -811,14 +811,23 @@ void CG_RegisterWeapon(const int weapon_num)
 		cgs.media.blueEp7GlowShader = cgi_R_RegisterShader("gfx/effects/sabers_tfa/blue_glow");
 		cgs.media.purpleEp7GlowShader = cgi_R_RegisterShader("gfx/effects/sabers_tfa/purple_glow");
 		//Rebels Sabers
-		cgs.media.RebelsSaberCoreShader = cgi_R_RegisterShader("SFX_Sabers/saber_blade");
-		cgs.media.RebelsblackSaberCoreShader = cgi_R_RegisterShader("SFX_Sabers/saber_blade_black");
-		cgs.media.RebelsredGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/red_glow");
-		cgs.media.RebelsorangeGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/orange_glow");
-		cgs.media.RebelsyellowGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/yellow_glow");
-		cgs.media.RebelsgreenGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/green_glow");
-		cgs.media.RebelsblueGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/blue_glow");
-		cgs.media.RebelspurpleGlowShader = cgi_R_RegisterShader("gfx/effects/sabers/purple_glow");
+		cgs.media.rebelsSaberBlurShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/saberBlur");
+		cgs.media.rebelsSwordTrailShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/swordTrail");
+		cgs.media.rebelsSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/rgb_line");
+		cgs.media.rebelsredSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/red_line");
+		cgs.media.rebelsorangeSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/orange_line");
+		cgs.media.rebelsyellowSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/yellow_line");
+		cgs.media.rebelsgreenSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/green_line");
+		cgs.media.rebelsblueSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/blue_line");
+		cgs.media.rebelspurpleSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/purple_line");
+		cgs.media.rebelsblackSaberCoreShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/black_line");
+		cgs.media.rgbRebelsGlowShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/rgb_glow");
+		cgs.media.redRebelsGlowShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/red_glow");
+		cgs.media.orangeRebelsGlowShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/orange_glow");
+		cgs.media.yellowRebelsGlowShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/yellow_glow");
+		cgs.media.greenRebelsGlowShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/green_glow");
+		cgs.media.blueRebelsGlowShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/blue_glow");
+		cgs.media.purpleRebelsGlowShader = cgi_R_RegisterShader("gfx/effects/sabers_rebels/purple_glow");
 		//Clone Wars Sabers
 		cgs.media.cwSaberBlurShader = cgi_R_RegisterShader("gfx/effects/sabers_tcw/saberBlur");
 		cgs.media.cwSwordTrailShader = cgi_R_RegisterShader("gfx/effects/sabers_tcw/swordTrail");

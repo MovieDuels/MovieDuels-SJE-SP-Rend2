@@ -448,14 +448,23 @@ using cgMedia_t = struct
 	qhandle_t purpleEp3GlowShader;
 
 	//Rebels Sabers
-	qhandle_t RebelsSaberCoreShader;
-	qhandle_t RebelsblackSaberCoreShader;
-	qhandle_t RebelsredGlowShader;
-	qhandle_t RebelsorangeGlowShader;
-	qhandle_t RebelsyellowGlowShader;
-	qhandle_t RebelsgreenGlowShader;
-	qhandle_t RebelsblueGlowShader;
-	qhandle_t RebelspurpleGlowShader;
+	qhandle_t rebelsSaberBlurShader;
+	qhandle_t rebelsSwordTrailShader;
+	qhandle_t rebelsSaberCoreShader;
+	qhandle_t rebelsredSaberCoreShader;
+	qhandle_t rebelsorangeSaberCoreShader;
+	qhandle_t rebelsyellowSaberCoreShader;
+	qhandle_t rebelsgreenSaberCoreShader;
+	qhandle_t rebelsblueSaberCoreShader;
+	qhandle_t rebelspurpleSaberCoreShader;
+	qhandle_t rebelsblackSaberCoreShader;
+	qhandle_t rgbRebelsGlowShader;
+	qhandle_t redRebelsGlowShader;
+	qhandle_t orangeRebelsGlowShader;
+	qhandle_t yellowRebelsGlowShader;
+	qhandle_t greenRebelsGlowShader;
+	qhandle_t blueRebelsGlowShader;
+	qhandle_t purpleRebelsGlowShader;
 
 	//Clone Wars Sabers
 	qhandle_t cwSaberBlurShader;
