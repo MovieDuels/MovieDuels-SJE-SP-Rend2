@@ -7942,7 +7942,14 @@ static qboolean jedi_attack_decide(const int enemy_dist)
 			NPCInfo->shotTime = 0;
 			NPC->attackDebounceTime = 0;
 			NPC->client->ps.saberBlocked = BLOCKED_NONE;
-			Jedi_AdjustSaberAnimLevel(NPC, Q_irand(SS_FAST, SS_MEDIUM)); // cinematic, harder hit to chew through block points
+			if (g_spskill->integer > 1)
+			{// on higher difficulties, try to follow-up with a quick attack
+				Jedi_AdjustSaberAnimLevel(NPC, SS_FAST); 
+			}
+			else
+			{// on lower difficulties, just do a normal attack
+				Jedi_AdjustSaberAnimLevel(NPC, Q_irand(SS_FAST, SS_MEDIUM)); // cinematic, harder hit to chew through block points
+			}
 			WeaponThink();
 			return qtrue;
 		}

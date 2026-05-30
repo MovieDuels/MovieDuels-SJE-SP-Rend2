@@ -7058,7 +7058,6 @@ static int G_LocationDamage(const vec3_t point, const gentity_t* targ, int take)
 	return take;
 }
 
-
 static void G_CheckKnockdown(gentity_t* targ, gentity_t* attacker, vec3_t new_dir, const int dflags, const int mod)
 {
 	if (!targ || !attacker)
@@ -7758,7 +7757,7 @@ dflags		these flags are used to control how T_Damage works
 ============
 */
 int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc);
-void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const vec3_t dir, const vec3_t point,int damage, int dflags, int mod, int hit_loc)
+void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const vec3_t dir, const vec3_t point, int damage, int dflags, int mod, int hit_loc)
 {
 	gclient_t* client;
 	int take;
@@ -8945,7 +8944,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			targ->client->lasthurt_location = LOCATION_NONE;
 		}
 	}
-	
+
 	if (targ->client && attacker->client && targ->health > 0 &&
 		g_standard_humanoid(targ) && !NPC_IsNotDismemberable(targ))
 	{
