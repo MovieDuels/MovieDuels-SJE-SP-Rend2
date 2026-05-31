@@ -161,6 +161,15 @@ using sexType_t = enum
 	SEX_SHEMALE //what the Hell, ya never know...
 };
 
+using movetype_t = enum //# movetype_e
+{
+	MT_STATIC = 0,
+	MT_WALK,
+	MT_RUNJUMP,
+	MT_FLYSWIM,
+	NUM_MOVETYPES
+};
+
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 class gNPCstats_t
 {
@@ -180,6 +189,7 @@ public:
 	float vigilance; //			"
 	float visrange; //			"
 	//Movement
+	movetype_t	moveType;
 	int runSpeed;
 	int walkSpeed;
 	float yawSpeed; // 1 - whatever, default is 50
@@ -203,6 +213,7 @@ public:
 		saved_game.write<int32_t>(vfov);
 		saved_game.write<float>(vigilance);
 		saved_game.write<float>(visrange);
+		saved_game.write<int32_t>(moveType);
 		saved_game.write<int32_t>(runSpeed);
 		saved_game.write<int32_t>(walkSpeed);
 		saved_game.write<float>(yawSpeed);
@@ -226,6 +237,7 @@ public:
 		saved_game.read<int32_t>(vfov);
 		saved_game.read<float>(vigilance);
 		saved_game.read<float>(visrange);
+		saved_game.read<int32_t>(moveType);
 		saved_game.read<int32_t>(runSpeed);
 		saved_game.read<int32_t>(walkSpeed);
 		saved_game.read<float>(yawSpeed);

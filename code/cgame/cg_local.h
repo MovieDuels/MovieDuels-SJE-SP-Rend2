@@ -754,7 +754,7 @@ void CG_TestModelPrevFrame_f();
 void CG_TestModelNextSkin_f();
 void CG_TestModelPrevSkin_f();
 
-void CG_DrawActiveFrame(int server_time, stereoFrame_t stereo_view);
+void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view);
 /*
 Ghoul2 Insert Start
 */

@@ -706,15 +706,6 @@ using saberBlockedType_t = enum
 	BLOCKED_BACK
 };
 
-using movetype_t = enum //# movetype_e
-{
-	MT_STATIC = 0,
-	MT_WALK,
-	MT_RUNJUMP,
-	MT_FLYSWIM,
-	NUM_MOVETYPES
-};
-
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 
 // this structure is cleared on each ClientSpawn(),
