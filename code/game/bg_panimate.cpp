@@ -6860,10 +6860,7 @@ static void PM_TorsoAnimLightsaber()
 			}
 			else
 			{
-				if (!g_noIgniteTwirl->integer &&
-					!active_blocking
-					&& !is_holding_block_button
-					&& !IsSurrendering(pm->gent)) //twirl on
+				if (!g_noIgniteTwirl->integer && !IsSurrendering(pm->gent)) //twirl on
 				{
 					PM_SetSaberMove(LS_PUTAWAY);
 				}

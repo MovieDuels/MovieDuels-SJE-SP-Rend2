@@ -1013,7 +1013,6 @@ static void G_ParseAnimationEvtFile(const int gla_index, const char* events_dire
 	COM_EndParseSession();
 }
 
-
 // -----------------------------------------------------------------------------
 // G_ParseAnimationFile
 // Loads and parses an animation.cfg for a given skeleton.
@@ -1214,7 +1213,6 @@ static qboolean G_ParseAnimationFile(const int gla_index, const char* skeletonNa
 
 	return qtrue;
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // G_ParseAnimFileSet

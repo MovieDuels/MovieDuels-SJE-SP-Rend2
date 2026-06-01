@@ -954,7 +954,6 @@ static qboolean NPC_CheckEnemyStealth_Smart(gentity_t* target)
 	return qfalse;
 }
 
-
 // -----------------------------------------------------------------------------
 // NPC_CheckEnemyStealth
 // Determines whether an NPC should detect a potential enemy (player or NPC)
@@ -1238,6 +1237,8 @@ static qboolean NPC_CheckEnemyStealth(gentity_t* target)
 qboolean NPC_CheckPlayerTeamStealth()
 {
 	gentity_t* enemy;
+	const qboolean cairn_dock1 = (Q_stricmp(level.mapname, "cairn_dock1") == 0) ? qtrue : qfalse;
+	const qboolean isYavin1b = (Q_stricmp(level.mapname, "yavin1b") == 0) ? qtrue : qfalse;
 
 	for (int i = 0; i < ENTITYNUM_WORLD; i++)
 	{
@@ -1249,7 +1250,7 @@ qboolean NPC_CheckPlayerTeamStealth()
 			&& enemy->client
 			&& NPC_ValidEnemy(enemy))
 		{
-			if ((g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 && cairn_dock1 == qfalse && isYavin1b == qfalse) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
 			{
 				if (NPC_CheckEnemyStealth_Smart(enemy))
 				{
@@ -1271,6 +1272,7 @@ qboolean NPC_CheckPlayerTeamStealth()
 static qboolean NPC_CheckEnemiesInSpotlight(void)
 {
 	const qboolean isYavin1b = (Q_stricmp(level.mapname, "yavin1b") == 0) ? qtrue : qfalse;
+	const qboolean cairn_dock1 = (Q_stricmp(level.mapname, "cairn_dock1") == 0) ? qtrue : qfalse;
 
 	if (NPC == NULL || NPC->client == NULL || NPCInfo == NULL)
 	{
@@ -1289,9 +1291,9 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 
 	for (int i = 0; i < 3; i++)
 	{
-		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b)
+		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b == qtrue || cairn_dock1 == qtrue)
 		{
-			if (isYavin1b || in_camera)
+			if (isYavin1b == qtrue || in_camera || cairn_dock1 == qtrue)
 			{// Yavin 1b monsters shouldn't be able to see you from as far away as the smart NPCs, and they shouldn't have extended hearing either
 				mins[i] = NPC->client->renderInfo.eyePoint[i] - DETECTION_RADIUS_SMALL;
 				maxs[i] = NPC->client->renderInfo.eyePoint[i] + DETECTION_RADIUS_SMALL;
@@ -1334,14 +1336,14 @@ static qboolean NPC_CheckEnemiesInSpotlight(void)
 			continue;
 		}
 
-		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b)
+		if (g_npc_is_smart->integer != 1 || in_camera || isYavin1b == qtrue || cairn_dock1 == qtrue)
 		{
 			// -----------------------------------------------------------------
 			// NORMAL / NON-SMART DETECTION
 			// -----------------------------------------------------------------
 			const float dist_sq = DistanceSquared(NPC->client->renderInfo.eyePoint, enemy->currentOrigin);
 
-			if (isYavin1b || in_camera)
+			if (isYavin1b == qtrue || in_camera || cairn_dock1 == qtrue)
 			{
 				const float radius_sq = DETECTION_RADIUS_SMALL * DETECTION_RADIUS_SMALL;
 
