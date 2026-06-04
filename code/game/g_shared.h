@@ -875,6 +875,7 @@ public:
 	int DekaFired;
 	int BoltsFired;
 	int Dash_Count;
+	int Dash_NPC_Count;
 	bool saberCollisions;
 	int reloadTime;
 
@@ -999,6 +1000,7 @@ public:
 		saved_game.write<int32_t>(DekaFired);
 		saved_game.write<int32_t>(BoltsFired);
 		saved_game.write<int32_t>(Dash_Count);
+		saved_game.write<int32_t>(Dash_NPC_Count);
 		saved_game.write<int32_t>(saberCollisions);
 		saved_game.write<int32_t>(reloadTime);
 		saved_game.write<int32_t>(isHacking);
@@ -1121,6 +1123,7 @@ public:
 		saved_game.read<int32_t>(DekaFired);
 		saved_game.read<int32_t>(BoltsFired);
 		saved_game.read<int32_t>(Dash_Count);
+		saved_game.read<int32_t>(Dash_NPC_Count);
 		saved_game.read<int32_t>(saberCollisions);
 		saved_game.read<int32_t>(reloadTime);
 		saved_game.read<int32_t>(isHacking);
@@ -1553,6 +1556,7 @@ struct gentity_s
 	int npc_roll_time;
 	qboolean npc_roll_start;
 	int npc_roll_direction;
+	int Dash_NPC_Count;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -1778,6 +1782,7 @@ struct gentity_s
 		saved_game.write<int32_t>(npc_roll_time);
 		saved_game.write<int32_t>(npc_roll_start);
 		saved_game.write<int32_t>(npc_roll_direction);
+		saved_game.write<int32_t>(Dash_NPC_Count);
 	}
 
 	void sg_import(
@@ -2004,6 +2009,7 @@ struct gentity_s
 		saved_game.read<int32_t>(npc_roll_time);
 		saved_game.read<int32_t>(npc_roll_start);
 		saved_game.read<int32_t>(npc_roll_direction);
+		saved_game.read<int32_t>(Dash_NPC_Count);
 	}
 };
 #endif //#ifdef GAME_INCLUDE

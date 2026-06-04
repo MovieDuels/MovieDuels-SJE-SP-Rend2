@@ -9071,7 +9071,6 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 	}
 
-
 	if (g_SerenityJediEngineMode->integer <= 1
 		&& (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
 		&& !PM_SaberInMassiveBounce(client->ps.torsoAnim)

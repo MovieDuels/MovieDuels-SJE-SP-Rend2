@@ -2198,7 +2198,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 	{
 		stats = &npc->NPC->stats;
 
-		if ((g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+		if ((g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0))
 		{
 			// fill in defaults
 			stats->sex = SEX_MALE;

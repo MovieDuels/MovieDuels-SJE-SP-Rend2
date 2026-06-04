@@ -7088,43 +7088,75 @@ qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
 
 qboolean wp_bolt_block_victim_reflected(gentity_t* victim)
 {
-	if (!victim || !victim->client)
+	// Sanity check
+	if (victim == nullptr || victim->client == nullptr)
 	{
 		return qfalse;
 	}
 
-	if (victim->s.weapon == WP_SABER && victim->client->ps.SaberActive() && g_SerenityJediEngineMode->integer == 2 &&
-		victim->client->ps.blockPoints <= BLOCKPOINTS_TWENTYFIVE
-		|| victim->s.weapon == WP_SABER && victim->client->ps.SaberActive() && g_SerenityJediEngineMode->integer == 1 &&
-		victim->client->ps.forcePower <= BLOCKPOINTS_TWENTYFIVE)
+	// Must be using an active saber
+	if (victim->s.weapon != WP_SABER ||
+		victim->client->ps.SaberActive() == qfalse)
 	{
-		if (victim->s.weapon == WP_SABER && victim->client->ps.SaberActive() && g_SerenityJediEngineMode->integer == 2
-			&& victim->client->ps.blockPoints <= BLOCKPOINTS_TEN
-			|| victim->s.weapon == WP_SABER && victim->client->ps.SaberActive() && g_SerenityJediEngineMode->integer ==
-			1 && victim->client->ps.forcePower <= BLOCKPOINTS_TEN)
-		{
-			//knock their asses down!!
-			G_Stagger(victim);
+		return qfalse;
+	}
 
-			vec3_t throw_dir = { 0, 0, 350 };
+	// Determine which resource to check based on engine mode
+	qboolean lowThreshold = qfalse;
+	qboolean severeThreshold = qfalse;
 
-			if (g_spskill->integer < 2) //was < 2
-			{
-				WP_SaberDisarmed(victim, throw_dir);
-			}
-			else
-			{
-				WP_saberKnockOutOfHand(victim, throw_dir);
-			}
+	if (g_SerenityJediEngineMode->integer == 2)
+	{
+		// BlockPoints mode
+		lowThreshold =
+			((victim->client->ps.blockPoints <= BLOCKPOINTS_TWENTYFIVE) ? qtrue : qfalse);
 
-			G_AddEvent(victim, EV_PAIN, victim->health);
-			return qtrue;
-		}
-		//knock their asses down!!
+		severeThreshold =
+			((victim->client->ps.blockPoints <= BLOCKPOINTS_TEN) ? qtrue : qfalse);
+	}
+	else if (g_SerenityJediEngineMode->integer == 1)
+	{
+		// ForcePower mode
+		lowThreshold =
+			((victim->client->ps.forcePower <= BLOCKPOINTS_TWENTYFIVE) ? qtrue : qfalse);
+
+		severeThreshold =
+			((victim->client->ps.forcePower <= BLOCKPOINTS_TEN) ? qtrue : qfalse);
+	}
+	else
+	{
+		// Unsupported mode → no knockback
+		return qfalse;
+	}
+
+	// If not low enough, no knockback
+	if (lowThreshold == qfalse)
+	{
+		return qfalse;
+	}
+
+	// Severe threshold → knockdown + saber disarm
+	if (severeThreshold == qtrue)
+	{
 		G_Stagger(victim);
+
+		vec3_t throw_dir = { 0.0f, 0.0f, 350.0f };
+
+		if (g_spskill->integer < 2)
+		{
+			WP_SaberDisarmed(victim, throw_dir);
+		}
+		else
+		{
+			WP_saberKnockOutOfHand(victim, throw_dir);
+		}
+
+		G_AddEvent(victim, EV_PAIN, victim->health);
 		return qtrue;
 	}
 
+	// Mild threshold → stagger only
+	G_Stagger(victim);
 	return qtrue;
 }
 
@@ -13980,7 +14012,7 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 		self->client->ps.ManualBlockingFlags &= ~(1 << MBF_BLOCKWALKING);
 		self->client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
 		self->client->ps.ManualBlockingTime = 0; //Blocking time 1 on
-		self->client->ps.ManualMBlockingTime = 0; 
+		self->client->ps.ManualMBlockingTime = 0;
 
 		if (d_JediAI->integer || g_DebugSaberCombat->integer)
 		{
@@ -16319,7 +16351,12 @@ int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, const qboolean 
 		return 0;
 	}
 
-	if (PM_SaberInMassiveBounce(self->client->ps.torsoAnim))
+	if (self && self->client && self->client->MassiveBounceAnimTime > level.time)
+	{
+		return 0;
+	}
+
+	if (PM_SaberInMassiveBounce(self->client->ps.torsoAnim) || PM_SaberInBashedAnim(self->client->ps.torsoAnim))
 	{ // you can't block while in a massive bounce.
 		return 0;
 	}

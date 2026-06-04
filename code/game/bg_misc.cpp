@@ -494,6 +494,7 @@ void PlayerStateToEntityState(playerState_t* ps, entityState_t* s)
 	s->dashstartTime = ps->dashstartTime;
 	s->dashlaststartTime = ps->dashlaststartTime;
 	s->Dash_Count = ps->Dash_Count;
+	s->Dash_NPC_Count = ps->Dash_NPC_Count;
 
 	s->destructtimeplayer = ps->destructtimeplayer;
 	s->destructstartTime = ps->destructstartTime;

@@ -616,6 +616,7 @@ static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
 	client->ps.dashstartTime = 0;
 	client->ps.dashlaststartTime = 0;
 	client->ps.Dash_Count = 0;
+	client->ps.Dash_NPC_Count = 0;
 	client->ps.pm_flags &= ~PMF_DASH_HELD;
 	client->pers.lastCommand.buttons &= ~BUTTON_DASH;
 	// Also clear any persisted command/button state that may have been saved

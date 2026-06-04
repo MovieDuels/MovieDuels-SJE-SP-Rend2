@@ -2178,6 +2178,7 @@ public:
 	int dashstartTime;
 	int dashlaststartTime;
 	int Dash_Count;
+	int Dash_NPC_Count;
 
 	int destructtimeplayer;
 	int destructstartTime;
@@ -2465,6 +2466,7 @@ public:
 		saved_game.write<int32_t>(dashstartTime);
 		saved_game.write<int32_t>(dashlaststartTime);
 		saved_game.write<int32_t>(Dash_Count);
+		saved_game.write<int32_t>(Dash_NPC_Count);
 
 		saved_game.write<int32_t>(destructtimeplayer);
 		saved_game.write<int32_t>(destructstartTime);
@@ -2748,6 +2750,7 @@ public:
 		saved_game.read<int32_t>(dashstartTime);
 		saved_game.read<int32_t>(dashlaststartTime);
 		saved_game.read<int32_t>(Dash_Count);
+		saved_game.read<int32_t>(Dash_NPC_Count);
 
 		saved_game.read<int32_t>(destructtimeplayer);
 		saved_game.read<int32_t>(destructstartTime);
@@ -3077,6 +3080,7 @@ using entityState_t = struct entityState_s
 	int dashstartTime;
 	int dashlaststartTime;
 	int Dash_Count;
+	int Dash_NPC_Count;
 
 	int destructtimeplayer;
 	int destructstartTime;
@@ -3202,6 +3206,7 @@ using entityState_t = struct entityState_s
 		saved_game.write<int32_t>(dashstartTime);
 		saved_game.write<int32_t>(dashlaststartTime);
 		saved_game.write<int32_t>(Dash_Count);
+		saved_game.write<int32_t>(Dash_NPC_Count);
 
 		saved_game.write<int32_t>(destructtimeplayer);
 		saved_game.write<int32_t>(destructstartTime);
@@ -3325,6 +3330,7 @@ using entityState_t = struct entityState_s
 		saved_game.read<int32_t>(dashstartTime);
 		saved_game.read<int32_t>(dashlaststartTime);
 		saved_game.read<int32_t>(Dash_Count);
+		saved_game.read<int32_t>(Dash_NPC_Count);
 
 		saved_game.read<int32_t>(destructtimeplayer);
 		saved_game.read<int32_t>(destructstartTime);

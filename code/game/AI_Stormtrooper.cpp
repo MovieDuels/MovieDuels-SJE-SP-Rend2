@@ -1250,7 +1250,7 @@ qboolean NPC_CheckPlayerTeamStealth()
 			&& enemy->client
 			&& NPC_ValidEnemy(enemy))
 		{
-			if ((g_SerenityJediEngineMode->integer > 1 && cairn_dock1 == qfalse && isYavin1b == qfalse) && (g_npc_is_smart != NULL && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 && cairn_dock1 == qfalse && isYavin1b == qfalse) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0))
 			{
 				if (NPC_CheckEnemyStealth_Smart(enemy))
 				{
