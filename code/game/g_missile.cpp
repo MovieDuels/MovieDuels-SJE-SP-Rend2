@@ -992,7 +992,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 	const qboolean manual_blocking =
 		(blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_0) ? qtrue : qfalse;
 	const qboolean manual_proj_blocking = WalkCheck(blocker) ? qtrue : qfalse;
-	const qboolean np_cis_blocking =
+	const qboolean npc_is_blocking =
 		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_JKAMODENPCBLOCKING)) ? qtrue : qfalse;
 
 	float slop_factor =
@@ -1018,7 +1018,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 		npc_reflection = qfalse;
 	}
 
-	if (np_cis_blocking)
+	if (npc_is_blocking)
 	{
 		npc_reflection = qtrue;
 	}
@@ -3936,22 +3936,15 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 
 	const int punish = BLOCKPOINTS_TWELVE;
 
-	const qboolean manual_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
+	const qboolean manual_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
 
-	const qboolean manual_proj_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
+	const qboolean manual_proj_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
 
-	const qboolean np_cis_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) ? qtrue : qfalse;
+	const qboolean npc_is_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) ? qtrue : qfalse;
 
-	const qboolean accurate_missile_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) ? qtrue : qfalse;
+	const qboolean accurate_missile_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) ? qtrue : qfalse;
 
-	float slop_factor =
-		(FATIGUE_AUTOBOLTBLOCK - 6) *
-		((float)FORCE_LEVEL_3 - G_GetDefenseLevel(blocker)) /
-		FORCE_LEVEL_3;
+	float slop_factor = (FATIGUE_AUTOBOLTBLOCK - 6) * ((float)FORCE_LEVEL_3 - G_GetDefenseLevel(blocker)) / FORCE_LEVEL_3;
 
 	// Save original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
@@ -3974,7 +3967,14 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 		npc_reflection = qfalse;
 	}
 
-	if (np_cis_blocking)
+	if (accurate_missile_blocking)
+	{
+		saber_block_reflection = qtrue;
+		bolt_block_reflection = qfalse;
+		npc_reflection = qfalse;
+	}
+
+	if (npc_is_blocking)
 	{
 		npc_reflection = qtrue;
 	}
@@ -3995,7 +3995,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 	{
 		vec3_t angs;
 
-		if (level.time - blocker->client->ps.ManualblockStartTime < 3000)
+		if (level.time - blocker->client->ps.ManualBlockingTime < 6000)
 		{
 			// Good block
 			vectoangles(forward, angs);
@@ -4004,7 +4004,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 		else if (blocker->client->pers.cmd.forwardmove >= 0)
 		{
 			// Bad block
-			slop_factor += Q_irand(1, 5);
+			slop_factor += Q_irand(2, 5);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
@@ -4013,7 +4013,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 		else
 		{
 			// Average block
-			slop_factor += Q_irand(1, 3);
+			slop_factor += Q_irand(0.5, 1.5);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
@@ -4114,7 +4114,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			}
 
 			// Block point cost
-			int cost = accurate_missile_blocking ? 2 : WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
+			int cost = WP_SaberBlockCost(blocker, missile, missile->currentOrigin) * 2;
 
 			if (G_GetBlockPoints(blocker) < cost)
 			{
@@ -4359,22 +4359,15 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 
 	constexpr int punish = BLOCKPOINTS_TWELVE;
 
-	const qboolean manual_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
+	const qboolean manual_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
 
-	const qboolean manual_proj_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
+	const qboolean manual_proj_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
 
-	const qboolean np_cis_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) ? qtrue : qfalse;
+	const qboolean npc_is_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) ? qtrue : qfalse;
 
-	const qboolean accurate_missile_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) ? qtrue : qfalse;
+	const qboolean accurate_missile_blocking = (blocker->client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) ? qtrue : qfalse;
 
-	float slop_factor =
-		(FATIGUE_AUTOBOLTBLOCK - 6) *
-		(static_cast<float>(FORCE_LEVEL_3) - blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE]) /
-		FORCE_LEVEL_3;
+	float slop_factor = (FATIGUE_AUTOBOLTBLOCK - 6) * (static_cast<float>(FORCE_LEVEL_3) - blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE]) / FORCE_LEVEL_3;
 
 	// Save original speed
 	const float speed = VectorNormalize(missile->s.pos.trDelta);
@@ -4397,7 +4390,14 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		npc_reflection = qfalse;
 	}
 
-	if (np_cis_blocking)
+	if (accurate_missile_blocking)
+	{
+		saber_block_reflection = qtrue;
+		bolt_block_reflection = qfalse;
+		npc_reflection = qfalse;
+	}
+
+	if (npc_is_blocking)
 	{
 		npc_reflection = qtrue;
 	}
@@ -4425,7 +4425,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 	{
 		vec3_t angs;
 
-		if (level.time - blocker->client->ps.ManualblockStartTime < 3000)
+		if (level.time - blocker->client->ps.ManualblockStartTime < 6000)
 		{
 			// Good block
 			vectoangles(forward, angs);
@@ -4443,7 +4443,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		else
 		{
 			// Average block
-			slop_factor += Q_irand(1, 3);
+			slop_factor += Q_irand(0.5, 1.5);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
@@ -4579,7 +4579,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			}
 			else
 			{
-				force_points_used_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin);
+				force_points_used_used = WP_SaberBlockCost(blocker, missile, missile->currentOrigin) * 2;
 			}
 
 			if (blocker->client->ps.forcePower < force_points_used_used)

@@ -268,28 +268,24 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 		// Huh?  Was doing a INV_MAX+1 which was wrong because then you'd actually have every inventory item including INV_MAX
 		ent->client->ps.stats[STAT_ITEMS] = (1 << INV_MAX) - (1 << INV_ELECTROBINOCULARS);
 
+		if (com_outcast->integer == 1 || com_outcast->integer == 4) //playing outcast
+		{
+			ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
+		}
+		else
+		{
+			ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
+		}
+		ent->client->ps.inventory[INV_BACTA_CANISTER] = 5;
+		ent->client->ps.inventory[INV_GOODIE_KEY] = 5;
+		ent->client->ps.inventory[INV_SECURITY_KEY] = 5;
+
 		if (g_SerenityJediEngineMode->integer)
 		{
-			if (com_outcast->integer == 1) //playing outcast
-			{
-				ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
-			}
-			else
-			{
-				ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
-			}
-			ent->client->ps.inventory[INV_BACTA_CANISTER] = 5;
-			ent->client->ps.inventory[INV_GOODIE_KEY] = 5;
-			ent->client->ps.inventory[INV_SECURITY_KEY] = 5;
-
 			if (HeIsJedi(ent))
-			{
+			{// jedi inventory
 				ent->client->ps.inventory[INV_CLOAK] = 1;
-				ent->client->ps.inventory[INV_SEEKER] = 5;
-
-				ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
-				ent->client->ps.inventory[INV_BARRIER] = 0;
-				ent->client->ps.inventory[INV_SENTRY] = 0;
+				ent->client->ps.inventory[INV_SEEKER] = 1;
 			}
 
 			if (Grievious_Classes(ent))
@@ -304,74 +300,46 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 			}
 
 			if (!HeIsJedi(ent))
-			{
+			{//Gunner inventory
+				if (com_outcast->integer == 1) //playing outcast
+				{//Outcast inventory
+					ent->client->ps.inventory[INV_CLOAK] = 1;
+				}
+				else
+				{//Academy inventory
+					ent->client->ps.inventory[INV_CLOAK] = 0;
+				}
 				if (ent->client->NPC_class == CLASS_DROIDEKA)
 				{
-					ent->client->ps.inventory[INV_BARRIER] = 1;
+					ent->client->ps.stats[STAT_WEAPONS] = 1 << WP_DROIDEKA;
 
+					ent->client->ps.inventory[INV_BARRIER] = 1;
+					//Remove these if he has them when changing model to decca
 					ent->client->ps.inventory[INV_CLOAK] = 0;
 					ent->client->ps.inventory[INV_SEEKER] = 0;
 					ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 0;
 					ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 0;
-					ent->client->ps.inventory[INV_CLOAK] = 0;
-					ent->client->ps.inventory[INV_SEEKER] = 0;
 					ent->client->ps.inventory[INV_BACTA_CANISTER] = 0;
 					ent->client->ps.inventory[INV_SENTRY] = 0;
-
-					if (ent->client->ps.powerups[PW_GALAK_SHIELD] || ent->flags & FL_SHIELDED)
-					{
-						TurnBarrierOff(ent);
-					}
 				}
 				else
 				{
-					if (ent->client->NPC_class == CLASS_BOBAFETT
-						|| ent->client->NPC_class == CLASS_JANGO
-						|| ent->client->NPC_class == CLASS_JANGODUAL
-						|| ent->client->NPC_class == CLASS_MANDALORIAN
-						|| char_has_beskar_armor(ent))
-					{
-						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 1;
-
-						if (ent->client->NPC_class == CLASS_JANGO
-							|| ent->client->NPC_class == CLASS_JANGODUAL
-							|| ent->client->NPC_class == CLASS_MANDALORIAN
-							|| char_has_beskar_armor(ent))
-						{
-							ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
-						}
-
-						if (!Q_stricmp("boba_fett", ent->NPC_type))
-						{
-							ent->flags |= FL_BOBAFETT; //low-level shots bounce off, no knockback
-						}
-						ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
-					}
-					else
-					{
-						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
-					}
 					ent->client->ps.inventory[INV_BARRIER] = 1;
-					ent->client->ps.inventory[INV_SENTRY] = 5;
-
-					ent->client->ps.inventory[INV_CLOAK] = 0;
-					ent->client->ps.inventory[INV_SEEKER] = 0;
+					ent->client->ps.inventory[INV_SENTRY] = 1;
+					ent->client->ps.inventory[INV_SEEKER] = 1;
 				}
 			}
 		}
 		else
-		{
-			ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
-			ent->client->ps.inventory[INV_BACTA_CANISTER] = 5;
-			ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
-			ent->client->ps.inventory[INV_GOODIE_KEY] = 5;
-			ent->client->ps.inventory[INV_SECURITY_KEY] = 5;
+		{//jka mode inventory
+			// Huh?  Was doing a INV_MAX+1 which was wrong because then you'd actually have every inventory item including INV_MAX
+			ent->client->ps.stats[STAT_ITEMS] = (1 << (INV_MAX)) - (1 << INV_ELECTROBINOCULARS);
+
 			ent->client->ps.inventory[INV_SEEKER] = 5;
 			ent->client->ps.inventory[INV_SENTRY] = 5;
-
-			ent->client->ps.inventory[INV_CLOAK] = 0;
+			ent->client->ps.inventory[INV_CLOAK] = 1;
+			ent->client->ps.inventory[INV_BARRIER] = 1;
 			ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
-			ent->client->ps.inventory[INV_BARRIER] = 0;
 		}
 
 		if (!give_all)
@@ -1871,7 +1839,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			PM_CrouchAnim(ent->client->ps.torsoAnim) ||
 			PM_RestAnim(ent->client->ps.legsAnim) ||
 			PM_RestAnim(ent->client->ps.torsoAnim))
-		{
+		{// don't allow taunts if in a crouch or rest anim
 			return;
 		}
 	}
@@ -1896,7 +1864,8 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 		return;
 	}
 
-	if (ent->client->ps.weaponTime <= 0 && ent->client->ps.saberLockTime < level.time)
+	if (!ent->client->ps.torsoAnimTimer
+		&& !ent->client->ps.legsAnimTimer && ent->client->ps.weaponTime <= 0 && ent->client->ps.saberLockTime < level.time)
 	{
 		int anim = -1;
 		switch (taunt)
@@ -2037,28 +2006,23 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			}
 			break;
 		case TAUNT_MEDITATE:
-			//G_TauntSound(ent, TAUNT_MEDITATE);
-
-			if (ent->client->ps.weapon != WP_SABER) //SP
-			{
+			if (ent->client->ps.weapon != WP_SABER)
+			{// Gunner meditating
 				if (PM_WalkingAnim(ent->client->ps.legsAnim) || PM_RunningAnim(ent->client->ps.legsAnim))
-				{
-					//TORSO ONLY
+				{//TORSO ONLY
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
 					else
 					{
-						if (ent->client->ps.weapon == WP_DISRUPTOR)
+						if (ent->client->ps.weapon == WP_DISRUPTOR || ent->client->NPC_class == CLASS_TUSKEN)
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_TUSKENTAUNT1,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_TUSKENTAUNT1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
 						else
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL1,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
 					}
 				}
@@ -2075,34 +2039,38 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				}
 			}
 			else if (ent->client->ps.saber[0].meditateAnim != -1)
-			{
+			{// Unless the .sab fle states a different anim.
 				anim = ent->client->ps.saber[0].meditateAnim;
 			}
-			else if (ent->client->ps.dualSabers
-				&& ent->client->ps.saber[1].meditateAnim != -1)
-			{
+			else if (ent->client->ps.dualSabers && ent->client->ps.saber[1].meditateAnim != -1)
+			{// Unless the .sab fle states a different anim.
 				anim = ent->client->ps.saber[1].meditateAnim;
 			}
 			else
 			{
 				if (PM_WalkingAnim(ent->client->ps.legsAnim) || PM_RunningAnim(ent->client->ps.legsAnim))
-				{
-					//TORSO ONLY
-					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				{//TORSO ONLY
+					if (ent->client->ps.weapon == WP_DISRUPTOR || ent->client->NPC_class == CLASS_TUSKEN)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_TUSKENTAUNT1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 				else
 				{
 					if (ent->client->ps.saber[1].Active())
-					{
-						//turn off second saber
+					{//turn off second saber
 						G_Sound(ent, ent->client->ps.saber[1].soundOff);
 					}
 					else if (ent->client->ps.saber[0].Active())
-					{
-						//turn off first
+					{//turn off first
 						G_Sound(ent, ent->client->ps.saber[0].soundOff);
 					}
 					ent->client->ps.SaberDeactivate();
+
 					if (g_SerenityJediEngineMode->integer)
 					{
 						anim = BOTH_MEDITATE_SABER;

@@ -57,6 +57,7 @@ extern void NPC_GalakMech_Init(gentity_t* ent);
 extern void NPC_GalakMech_Precache();
 extern qboolean PM_SaberInAttack(int move);
 extern cvar_t* com_outcast;
+extern cvar_t* g_SerenityJediEngineMode;
 
 // NPC spawn names for random spawner
 const char* lightside_jedi1[] = {
@@ -363,6 +364,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		//set some stuff, precache
 		NPC->flags |= FL_UNDYING; // Can't Kill Boba
 		ent->flags |= FL_SHIELDED; //reflect normal shots
+		ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
 	}
 	else if (ent->client->NPC_class == CLASS_MANDALORIAN
 		|| ent->client->NPC_class == CLASS_JANGO
@@ -386,11 +388,14 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 	{
 		if (Q_stricmpn("shadowtrooper", ent->NPC_type, 13) == 0 || Q_stricmpn("ShadowTrooper2", ent->NPC_type, 13) == 0)
 		{
-			if (char_has_beskar_armor(ent))
+			if ((g_SerenityJediEngineMode->integer > 1) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0))
 			{
-				ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
+				if (char_has_beskar_armor(ent))
+				{
+					ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
+				}
+				ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
 			}
-			ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
 		}
 	}
 	else if (NPC->client->ps.weapon == WP_CLONECARBINE || NPC->client->ps.weapon == WP_CLONERIFLE ||

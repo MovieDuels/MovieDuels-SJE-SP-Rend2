@@ -49,84 +49,51 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 {
 	char expanded[MAX_QPATH] = { 0 };
 
-	char* jko_maps[] =
+	// -------------------------------------------------
+	// Jedi Outcast SP maps
+	// -------------------------------------------------
+	const char* jko_maps[] =
 	{
-		"kejim_post",
-		"kejim_base",
-		"kejim_impb",
-		"artus_mine",
-		"artus_detention",
-		"artus_topside",
-		"valley",
-		"yavin_temple",
-		"yavin_trial",
-		"ns_streets",
-		"ns_hideout",
-		"ns_starpad",
-		"bespin_undercity",
-		"bespin_streets",
-		"bespin_platform",
-		"cairn_bay",
-		"cairn_assembly",
-		"cairn_reactor",
-		"cairn_dock1",
-		"doom_comm",
-		"doom_detention",
-		"doom_shields",
-		"yavin_swamp",
-		"yavin_canyon",
-		"yavin_courtyard",
-		"yavin_final",
-		"demo",
-		"jodemo",
-		"pit"
+		"kejim_post", "kejim_base", "kejim_impb",
+		"artus_mine", "artus_detention", "artus_topside",
+		"valley", "yavin_temple", "yavin_trial",
+		"ns_streets", "ns_hideout", "ns_starpad",
+		"bespin_undercity", "bespin_streets", "bespin_platform",
+		"cairn_bay", "cairn_assembly", "cairn_reactor", "cairn_dock1",
+		"doom_comm", "doom_detention", "doom_shields",
+		"yavin_swamp", "yavin_canyon", "yavin_courtyard", "yavin_final",
+		"demo", "jodemo", "pit"
 	};
 
-	char* jka_maps[] =
+	// -------------------------------------------------
+	// Jedi Academy SP maps
+	// -------------------------------------------------
+	const char* jka_maps[] =
 	{
-		"academy1",
-		"academy2",
-		"academy3",
-		"academy4",
-		"academy5",
-		"academy6",
-		"hoth2",
-		"hoth3",
-		"kor1",
-		"kor2",
-		"t1_danger",
-		"t1_fatal",
-		"t1_inter",
-		"t1_rail",
-		"t1_sour",
-		"t1_surprise",
-		"t2_dpred",
-		"t2_rancor",
-		"t2_rogue",
-		"t2_trip",
-		"t2_wedge",
-		"t3_bounty",
-		"t3_byss",
-		"t3_hevil",
-		"t3_rift",
-		"t3_stamp",
-		"taspir1",
-		"taspir2",
-		"vjun1",
-		"vjun2",
-		"vjun3",
-		"yavin1",
-		"yavin1b",
-		"yavin2",
+		"academy1", "academy2", "academy3", "academy4", "academy5", "academy6",
+		"hoth2", "hoth3",
+		"kor1", "kor2",
+		"t1_danger", "t1_fatal", "t1_inter", "t1_rail", "t1_sour", "t1_surprise",
+		"t2_dpred", "t2_rancor", "t2_rogue", "t2_trip", "t2_wedge",
+		"t3_bounty", "t3_byss", "t3_hevil", "t3_rift", "t3_stamp",
+		"taspir1", "taspir2",
+		"vjun1", "vjun2", "vjun3",
+		"yavin1", "yavin1b", "yavin2",
 		"ladder"
 	};
 
-	char* NoCubeMapping_Maps[] =
+	// -------------------------------------------------
+	// Maps that must disable cube mapping
+	// -------------------------------------------------
+	const char* NoCubeMapping_Maps[] =
 	{
 		"yavin1",
 		"yavin1b"
 	};
 
+	// -------------------------------------------------
+	// Get map name
+	// -------------------------------------------------
 	char* map = Cmd_Argv(1);
 	if (!*map)
 	{
@@ -134,33 +101,42 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 		return false;
 	}
 
-	// make sure the level exists before trying to change, so that
-	// a typo at the server console won't end the game
+	// Disallow backslashes in map names
 	if (strchr(map, '\\'))
 	{
 		Com_Printf("Can't have mapnames with a \\\n");
 		return false;
 	}
 
-	Com_sprintf(expanded, sizeof expanded, "maps/%s.bsp", map);
+	// Build BSP path
+	Com_sprintf(expanded, sizeof(expanded), "maps/%s.bsp", map);
 
+	// Check map exists
 	if (FS_ReadFile(expanded, nullptr) == -1)
 	{
 		Com_Printf("Can't find map %s\n", expanded);
+
 		extern cvar_t* com_buildScript;
-		if (com_buildScript && com_buildScript->integer)
+		if (com_buildScript != nullptr && com_buildScript->integer != 0)
 		{
-			//yes, it's happened, someone deleted a map during my build...
 			Com_Error(ERR_FATAL, "Can't find map %s\n", expanded);
 		}
 		return false;
 	}
 
+	// Clamp SP skill
 	if (g_spskill->integer > 2)
 	{
 		Cvar_Set("g_spskill", "2");
 	}
 
+	// -------------------------------------------------
+	// com_outcast logic:
+	//   0 = JKA behaviour
+	//   1 = JKO behaviour
+	// -------------------------------------------------
+
+	// If currently in JKO mode (non-zero) but loading a JKA map → force JKA mode
 	if (com_outcast->integer != 0)
 	{
 		for (auto& jka_map : jka_maps)
@@ -168,10 +144,12 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 			if (strcmp(map, jka_map) == 0)
 			{
 				Cvar_Set("com_outcast", "0");
+				break;
 			}
 		}
 	}
 
+	// If not in JKO mode (1) but loading a JKO map → force JKO mode
 	if (com_outcast->integer != 1)
 	{
 		for (auto& jko_map : jko_maps)
@@ -179,10 +157,14 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 			if (strcmp(map, jko_map) == 0)
 			{
 				Cvar_Set("com_outcast", "1");
+				break;
 			}
 		}
 	}
 
+	// -------------------------------------------------
+	// Detect maps that are neither JKO nor JKA SP maps
+	// -------------------------------------------------
 	bool not_jk_map = true;
 
 	for (auto& jko_map : jko_maps)
@@ -190,22 +172,31 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 		if (strcmp(map, jko_map) == 0)
 		{
 			not_jk_map = false;
+			break;
 		}
 	}
 
-	for (auto& jka_map : jka_maps)
+	if (not_jk_map)
 	{
-		if (strcmp(map, jka_map) == 0)
+		for (auto& jka_map : jka_maps)
 		{
-			not_jk_map = false;
+			if (strcmp(map, jka_map) == 0)
+			{
+				not_jk_map = false;
+				break;
+			}
 		}
 	}
 
-	if (not_jk_map) //then it must be a MD or MP Map so just to be sure go to "0".
+	// MD/MP maps → always JKA behaviour
+	if (not_jk_map == true)
 	{
 		Cvar_Set("com_outcast", "0");
 	}
 
+	// -------------------------------------------------
+	// Reset weather and NPC freeze
+	// -------------------------------------------------
 	if (g_Weather->integer >= 0)
 	{
 		Cvar_Set("r_weather", "0");
@@ -216,6 +207,9 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 		Cvar_Set("d_npcfreeze", "0");
 	}
 
+	// -------------------------------------------------
+	// Disable cube mapping on specific maps
+	// -------------------------------------------------
 	for (auto& NoCubeMapping_Map : NoCubeMapping_Maps)
 	{
 		if (strcmp(map, NoCubeMapping_Map) == 0)
@@ -224,15 +218,22 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 			{
 				Cvar_Set("r_cubeMapping", "0");
 			}
+			break;
 		}
 	}
 
+	// -------------------------------------------------
+	// Wipe autosave unless loading a special "_" map
+	// -------------------------------------------------
 	if (map[0] != '_')
 	{
 		SG_WipeSavegame("auto");
 	}
 
-	SV_SpawnServer(map, e_force_reload, qtrue); // start up the map
+	// -------------------------------------------------
+	// Start the map
+	// -------------------------------------------------
+	SV_SpawnServer(map, e_force_reload, qtrue);
 	return true;
 }
 
@@ -498,7 +499,7 @@ void SV_LoadTransition_f()
 
 //===============================================================
 
-char* ivtos(const vec3_t v)
+static char* ivtos(const vec3_t v)
 {
 	static int index;
 	static char str[8][32];

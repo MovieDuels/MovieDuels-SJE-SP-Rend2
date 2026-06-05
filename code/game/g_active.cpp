@@ -5664,7 +5664,8 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			{
 				NPC_SetAnim(ent, SETANIM_BOTH, BOTH_MEDITATE_END, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
 			}
-			else if (ent->client->ps.legsAnim == BOTH_MEDITATE_SABER)
+			else if (ent->client->ps.legsAnim == BOTH_MEDITATE_SABER
+				&& ent->client->ps.torsoAnim == BOTH_MEDITATE_SABER)
 			{
 				NPC_SetAnim(ent, SETANIM_BOTH, BOTH_MEDITATE_SABER_END, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
 			}
@@ -5682,9 +5683,23 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 					ent->client->ps.legsAnimTimer = 100;
 				}
 			}
+			if (ent->client->ps.torsoAnim == BOTH_MEDITATE)
+			{
+				if (ent->client->ps.torsoAnimTimer < 100)
+				{
+					ent->client->ps.legsAnimTimer = 100;
+				}
+			}
 			if (ent->client->ps.legsAnim == BOTH_MEDITATE_SABER)
 			{
 				if (ent->client->ps.legsAnimTimer < 100)
+				{
+					ent->client->ps.legsAnimTimer = 100;
+				}
+			}
+			if (ent->client->ps.torsoAnim == BOTH_MEDITATE_SABER)
+			{
+				if (ent->client->ps.torsoAnimTimer < 100)
 				{
 					ent->client->ps.legsAnimTimer = 100;
 				}
@@ -8892,7 +8907,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 						}
 					}
 					else if (((client->ps.ManualBlockingFlags & (1 << MBF_ACCURATEMISSILEBLOCKING)) != 0) &&
-						(level.time - client->ps.BoltblockStartTime >= 3000))
+						(level.time - client->ps.BoltblockStartTime >= 6000))
 					{
 						client->ps.ManualBlockingFlags &= ~(1 << MBF_ACCURATEMISSILEBLOCKING);
 					}

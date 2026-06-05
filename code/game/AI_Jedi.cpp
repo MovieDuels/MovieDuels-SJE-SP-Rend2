@@ -2603,9 +2603,9 @@ static void jedi_combat_distance(const int enemy_dist)
 			NPC->Dash_NPC_Count++;
 
 			// Start cooldown after second dash
-			if (NPC->Dash_NPC_Count == 2)
+			if (NPC->Dash_NPC_Count == 1)
 			{
-				TIMER_Set(NPC, "DashOutTime", Q_irand(3000, 5000));
+				TIMER_Set(NPC, "DashOutTime", Q_irand(10000, 15000));
 			}
 
 			return;
@@ -9249,7 +9249,7 @@ static void jedi_combat()
 								NPC->client->ps.groundEntityNum != ENTITYNUM_NONE)
 							{//try to dash to TargetPosition
 								JediDirectionalDashAttack(NPC, NPC->enemy);
-								TIMER_Set(NPC, "DashInTime", Q_irand(3000, 5000));
+								TIMER_Set(NPC, "DashInTime", Q_irand(20000, 30000));
 								if (d_JediAI->integer || g_DebugSaberCombat->integer)
 								{
 									Com_Printf(S_COLOR_RED"Debug: NPC dashing to player...\n");

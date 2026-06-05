@@ -745,7 +745,7 @@ void Boba_StartFlameThrower(gentity_t* self)
 		NPC_SetAnim(self, SETANIM_TORSO, BOTH_FLAMETHROWER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
 		self->NPC->aiFlags |= NPCAI_FLAMETHROW;
-		self->client->ps.torsoAnimTimer = BOBA_FLAMEDURATION;
+		self->client->ps.torsoAnimTimer = BOBA_FLAMEDURATION + 500; //Give it a little extra time to make sure the animation doesn't end before the effect does
 
 		TIMER_Set(self, "flameTime", BOBA_FLAMEDURATION);
 		TIMER_Set(self, "nextAttackDelay", BOBA_FLAMEDURATION);
@@ -778,7 +778,7 @@ void Boba_DoFlameThrower(gentity_t* self)
 			if (!self->client->ps.forcePowerDuration[FP_LIGHTNING])
 			{
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FLAMETHROWER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				self->client->ps.torsoAnimTimer = BOBA_FLAMEDURATION;
+				self->client->ps.torsoAnimTimer = BOBA_FLAMEDURATION + 500; //Give it a little extra time to make sure the animation doesn't end before the effect does
 				G_SoundOnEnt(self, CHAN_WEAPON, "sound/weapons/boba/bf_flame.mp3");
 				G_PlayEffect(G_EffectIndex("boba/fthrw"), self->playerModel, self->genericBolt3, self->s.number,
 					self->s.origin, 1);
@@ -818,9 +818,8 @@ void Mando_DoFlameThrower(gentity_t* self)
 		{
 			if (!self->client->ps.forcePowerDuration[FP_LIGHTNING])
 			{
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FLAMETHROWER,
-					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
-				self->client->ps.torsoAnimTimer = BOBA_FLAMEDURATION;
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FLAMETHROWER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+				self->client->ps.torsoAnimTimer = BOBA_FLAMEDURATION + 500; //Give it a little extra time to make sure the animation doesn't end before the effect does
 				self->client->flamethrowerOn = qtrue;
 
 				G_SoundOnEnt(self, CHAN_WEAPON, "sound/weapons/boba/bf_flame.mp3");

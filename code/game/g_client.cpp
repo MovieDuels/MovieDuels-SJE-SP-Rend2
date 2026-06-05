@@ -2737,37 +2737,29 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 
 				client_userinfo_changed(ent->s.number);
 
-				if (ent->client->NPC_class == CLASS_BOBAFETT
-					|| ent->client->NPC_class == CLASS_MANDALORIAN
-					|| ent->client->NPC_class == CLASS_JANGO
-					|| ent->client->NPC_class == CLASS_JANGODUAL
-					|| ent->client->NPC_class == CLASS_ROCKETTROOPER)
-				{
-					Boba_Precache(); // player as boba?
-					G_RemoveHolsterModels(ent);
-				}
-
+				//changing models, set correct inventory for class
 				if (g_SerenityJediEngineMode->integer)
 				{
-					if (com_outcast->integer == 1) //playing outcast
-					{
-						ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
-					}
-					else
-					{
-						ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
-					}
-
-					ent->client->ps.inventory[INV_BACTA_CANISTER] = 2;
-
 					if (HeIsJedi(ent))
-					{
-						ent->client->ps.inventory[INV_CLOAK] = 1;
-						ent->client->ps.inventory[INV_SEEKER] = 2;
-
-						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
-						ent->client->ps.inventory[INV_BARRIER] = 0;
+					{// jedi inventory
+						if (com_outcast->integer == 1) //playing outcast
+						{//Outcast inventory
+							ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
+							ent->client->ps.inventory[INV_CLOAK] = 1;
+							ent->client->ps.inventory[INV_SEEKER] = 1;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+						}
+						else
+						{//Academy inventory
+							ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
+							ent->client->ps.inventory[INV_CLOAK] = 0;
+							ent->client->ps.inventory[INV_SEEKER] = 0;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+						}
+						//remove if held when changing models
 						ent->client->ps.inventory[INV_SENTRY] = 0;
+						ent->client->ps.inventory[INV_BARRIER] = 0;
+						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
 					}
 
 					if (Grievious_Classes(ent))
@@ -2782,55 +2774,85 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 					}
 
 					if (!HeIsJedi(ent))
-					{
+					{//Gunner inventory
 						if (ent->client->NPC_class == CLASS_DROIDEKA)
 						{
-							ent->client->ps.inventory[INV_BARRIER] = 1;
+							ent->client->ps.stats[STAT_WEAPONS] = 1 << WP_DROIDEKA;
 
+							ent->client->ps.inventory[INV_BARRIER] = 1;
+							//Remove these if he has them when changing model to decca
 							ent->client->ps.inventory[INV_CLOAK] = 0;
 							ent->client->ps.inventory[INV_SEEKER] = 0;
 							ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 0;
 							ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 0;
-							ent->client->ps.inventory[INV_CLOAK] = 0;
-							ent->client->ps.inventory[INV_SEEKER] = 0;
-							ent->client->ps.inventory[INV_BACTA_CANISTER] = 0;
 							ent->client->ps.inventory[INV_SENTRY] = 0;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 0;
+							ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
 
 							if (ent->client->ps.powerups[PW_GALAK_SHIELD] || ent->flags & FL_SHIELDED)
 							{
 								TurnBarrierOff(ent);
 							}
 						}
-						else
+						else if (ent->client->NPC_class == CLASS_BOBAFETT
+							|| ent->client->NPC_class == CLASS_MANDALORIAN
+							|| ent->client->NPC_class == CLASS_JANGO
+							|| ent->client->NPC_class == CLASS_JANGODUAL
+							|| ent->client->NPC_class == CLASS_ROCKETTROOPER
+							|| char_has_beskar_armor(ent))
 						{
 							if (ent->client->NPC_class == CLASS_BOBAFETT
+								|| ent->client->NPC_class == CLASS_MANDALORIAN
 								|| ent->client->NPC_class == CLASS_JANGO
 								|| ent->client->NPC_class == CLASS_JANGODUAL
-								|| ent->client->NPC_class == CLASS_MANDALORIAN
-								|| char_has_beskar_armor(ent))
+								|| ent->client->NPC_class == CLASS_ROCKETTROOPER)
 							{
+								Boba_Precache(); // player as boba?
+								G_RemoveHolsterModels(ent);
 								ent->client->ps.inventory[INV_GRAPPLEHOOK] = 1;
+								ent->client->ps.inventory[INV_CLOAK] = 1;
+								ent->client->ps.inventory[INV_SENTRY] = 1;
+								ent->client->ps.inventory[INV_BARRIER] = 1;
+								ent->client->ps.inventory[INV_SEEKER] = 1;
+								ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+							}
 
-								if (char_has_beskar_armor(ent))
-								{
-									ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
-								}
+							if (char_has_beskar_armor(ent))
+							{
+								ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
+							}
 
-								if (!Q_stricmp("boba_fett", ent->NPC_type))
-								{
-									ent->flags |= FL_BOBAFETT; //low-level shots bounce off, no knockback
-								}
-								ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
+							if (!Q_stricmp("boba_fett", ent->NPC_type))
+							{
+								ent->flags |= FL_BOBAFETT; //low-level shots bounce off, no knockback
+							}
+							ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
+
+							if (com_outcast->integer == 1) //playing outcast
+							{//Outcast inventory
+								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							}
 							else
-							{
-								ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
+							{//Academy inventory
+								ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
 							}
+						}
+						else
+						{
+							if (com_outcast->integer == 1) //playing outcast
+							{//Outcast inventory
+								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
+							}
+							else
+							{//Academy inventory
+								ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
+							}
+							ent->client->ps.inventory[INV_CLOAK] = 1;
+							ent->client->ps.inventory[INV_SENTRY] = 1;
 							ent->client->ps.inventory[INV_BARRIER] = 1;
-							ent->client->ps.inventory[INV_SENTRY] = 2;
-
-							ent->client->ps.inventory[INV_CLOAK] = 0;
-							ent->client->ps.inventory[INV_SEEKER] = 0;
+							ent->client->ps.inventory[INV_SEEKER] = 1;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+							ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
 						}
 					}
 				}
@@ -2907,37 +2929,29 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 
 				client_userinfo_changed(ent->s.number);
 
-				if (ent->client->NPC_class == CLASS_BOBAFETT
-					|| ent->client->NPC_class == CLASS_MANDALORIAN
-					|| ent->client->NPC_class == CLASS_JANGO
-					|| ent->client->NPC_class == CLASS_JANGODUAL
-					|| ent->client->NPC_class == CLASS_ROCKETTROOPER)
-				{
-					Boba_Precache(); // player as boba?
-					G_RemoveHolsterModels(ent);
-				}
-
+				//changing models, set correct inventory for class
 				if (g_SerenityJediEngineMode->integer)
 				{
-					if (com_outcast->integer == 1) //playing outcast
-					{
-						ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
-					}
-					else
-					{
-						ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
-					}
-
-					ent->client->ps.inventory[INV_BACTA_CANISTER] = 2;
-
 					if (HeIsJedi(ent))
-					{
-						ent->client->ps.inventory[INV_CLOAK] = 1;
-						ent->client->ps.inventory[INV_SEEKER] = 2;
-
-						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
-						ent->client->ps.inventory[INV_BARRIER] = 0;
+					{// jedi inventory
+						if (com_outcast->integer == 1) //playing outcast
+						{//Outcast inventory
+							ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
+							ent->client->ps.inventory[INV_CLOAK] = 1;
+							ent->client->ps.inventory[INV_SEEKER] = 1;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+						}
+						else
+						{//Academy inventory
+							ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
+							ent->client->ps.inventory[INV_CLOAK] = 0;
+							ent->client->ps.inventory[INV_SEEKER] = 0;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+						}
+						//remove if held when changing models
 						ent->client->ps.inventory[INV_SENTRY] = 0;
+						ent->client->ps.inventory[INV_BARRIER] = 0;
+						ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
 					}
 
 					if (Grievious_Classes(ent))
@@ -2952,55 +2966,85 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 					}
 
 					if (!HeIsJedi(ent))
-					{
+					{//Gunner inventory
 						if (ent->client->NPC_class == CLASS_DROIDEKA)
 						{
-							ent->client->ps.inventory[INV_BARRIER] = 1;
+							ent->client->ps.stats[STAT_WEAPONS] = 1 << WP_DROIDEKA;
 
+							ent->client->ps.inventory[INV_BARRIER] = 1;
+							//Remove these if he has them when changing model to decca
 							ent->client->ps.inventory[INV_CLOAK] = 0;
 							ent->client->ps.inventory[INV_SEEKER] = 0;
 							ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 0;
 							ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 0;
-							ent->client->ps.inventory[INV_CLOAK] = 0;
-							ent->client->ps.inventory[INV_SEEKER] = 0;
-							ent->client->ps.inventory[INV_BACTA_CANISTER] = 0;
 							ent->client->ps.inventory[INV_SENTRY] = 0;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 0;
+							ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
 
 							if (ent->client->ps.powerups[PW_GALAK_SHIELD] || ent->flags & FL_SHIELDED)
 							{
 								TurnBarrierOff(ent);
 							}
 						}
-						else
+						else if (ent->client->NPC_class == CLASS_BOBAFETT
+							|| ent->client->NPC_class == CLASS_MANDALORIAN
+							|| ent->client->NPC_class == CLASS_JANGO
+							|| ent->client->NPC_class == CLASS_JANGODUAL
+							|| ent->client->NPC_class == CLASS_ROCKETTROOPER
+							|| char_has_beskar_armor(ent))
 						{
 							if (ent->client->NPC_class == CLASS_BOBAFETT
+								|| ent->client->NPC_class == CLASS_MANDALORIAN
 								|| ent->client->NPC_class == CLASS_JANGO
 								|| ent->client->NPC_class == CLASS_JANGODUAL
-								|| ent->client->NPC_class == CLASS_MANDALORIAN
-								|| char_has_beskar_armor(ent))
+								|| ent->client->NPC_class == CLASS_ROCKETTROOPER)
 							{
+								Boba_Precache(); // player as boba?
+								G_RemoveHolsterModels(ent);
 								ent->client->ps.inventory[INV_GRAPPLEHOOK] = 1;
+								ent->client->ps.inventory[INV_CLOAK] = 1;
+								ent->client->ps.inventory[INV_SENTRY] = 1;
+								ent->client->ps.inventory[INV_BARRIER] = 1;
+								ent->client->ps.inventory[INV_SEEKER] = 1;
+								ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+							}
 
-								if (char_has_beskar_armor(ent))
-								{
-									ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
-								}
+							if (char_has_beskar_armor(ent))
+							{
+								ent->flags |= FL_DINDJARIN; //low-level shots bounce off, no knockback
+							}
 
-								if (!Q_stricmp("boba_fett", ent->NPC_type))
-								{
-									ent->flags |= FL_BOBAFETT; //low-level shots bounce off, no knockback
-								}
-								ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
+							if (!Q_stricmp("boba_fett", ent->NPC_type))
+							{
+								ent->flags |= FL_BOBAFETT; //low-level shots bounce off, no knockback
+							}
+							ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
+
+							if (com_outcast->integer == 1) //playing outcast
+							{//Outcast inventory
+								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							}
 							else
-							{
-								ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
+							{//Academy inventory
+								ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
 							}
+						}
+						else
+						{
+							if (com_outcast->integer == 1) //playing outcast
+							{//Outcast inventory
+								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
+							}
+							else
+							{//Academy inventory
+								ent->client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
+							}
+							ent->client->ps.inventory[INV_CLOAK] = 1;
+							ent->client->ps.inventory[INV_SENTRY] = 1;
 							ent->client->ps.inventory[INV_BARRIER] = 1;
-							ent->client->ps.inventory[INV_SENTRY] = 2;
-
-							ent->client->ps.inventory[INV_CLOAK] = 0;
-							ent->client->ps.inventory[INV_SEEKER] = 0;
+							ent->client->ps.inventory[INV_SEEKER] = 1;
+							ent->client->ps.inventory[INV_BACTA_CANISTER] = 1;
+							ent->client->ps.inventory[INV_GRAPPLEHOOK] = 0;
 						}
 					}
 				}
@@ -3021,8 +3065,6 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 					ent->client->ps.inventory[INV_SEEKER] = 0;
 					ent->client->ps.inventory[INV_SENTRY] = 0;
 					ent->client->ps.inventory[INV_CLOAK] = 0;
-
-					TurnBarrierOff(ent);
 				}
 			}
 			else
@@ -3124,6 +3166,9 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 
 	index = static_cast<int>(ent - g_entities);
 	client = ent->client;
+
+	client->lastSaberTarget = nullptr;
+	client->lastSaberTargetTime = 0;
 
 	if (e_saved_game_just_loaded == eFULL && g_qbLoadTransition == qfalse) // qbFromSavedGame
 	{
@@ -3282,14 +3327,13 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			{
 				weapon = 0;
 			}
-			client->ps.weapons[WP_NONE] = 1;
+			client->ps.weapons[WP_MELEE] = 1;
 
 			if (g_SerenityJediEngineMode->integer)
 			{
 				client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
 				client->ps.inventory[INV_BACTA_CANISTER] = 1;
 				client->ps.inventory[INV_CLOAK] = 1;
-				client->ps.inventory[INV_SEEKER] = 1;
 			}
 			else
 			{
@@ -3299,13 +3343,15 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 		else if (com_outcast->integer == 1) // playing outcast
 		{
 			client->ps.weapons[WP_MELEE] = 1;
-			client->ps.weapon = WP_BRYAR_PISTOL;
+			client->ps.weapons[WP_BRYAR_PISTOL] = 1;
+			client->ps.weapons[WP_STUN_BATON] = 1;
 
 			if (g_SerenityJediEngineMode->integer)
 			{
-				client->ps.inventory[INV_BACTA_CANISTER] = 1;
+				client->ps.inventory[INV_SEEKER] = 1;
 				client->ps.inventory[INV_BARRIER] = 1;
 				client->ps.inventory[INV_SENTRY] = 1;
+				client->ps.inventory[INV_CLOAK] = 1; //Added this for cairn_dock1
 			}
 			else
 			{
@@ -3313,29 +3359,13 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			}
 		}
 		else
-		{
+		{// playing MovieDuels
 			for (char& weapon : client->ps.weapons)
 			{
 				weapon = 0;
 			}
 			client->ps.weapons[WP_NONE] = 1;
-
-			if (g_SerenityJediEngineMode->integer)
-			{
-				client->ps.inventory[INV_ELECTROBINOCULARS] = 1;
-				client->ps.inventory[INV_BACTA_CANISTER] = 1;
-				client->ps.inventory[INV_CLOAK] = 1;
-				client->ps.inventory[INV_SEEKER] = 1;
-			}
-			else
-			{
-				client->ps.inventory[INV_BACTA_CANISTER] = 1;
-				client->ps.inventory[INV_GRAPPLEHOOK] = 0;
-				client->ps.inventory[INV_BARRIER] = 0;
-				client->ps.inventory[INV_SEEKER] = 0;
-				client->ps.inventory[INV_SENTRY] = 0;
-				client->ps.inventory[INV_CLOAK] = 0;
-			}
+			client->ps.inventory[INV_BACTA_CANISTER] = 1;
 		}
 
 		if (com_freeMelee->integer == 1)
