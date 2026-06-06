@@ -1354,7 +1354,7 @@ static void jedi_aggression_erosion(const int amt)
 			{
 				//turn off the saber
 				WP_DeactivateSaber(NPC);
-				NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				G_AddVoiceEvent(NPC, Q_irand(EV_VICTORY1, EV_VICTORY3), 3000);
 			}
 		}
@@ -9180,7 +9180,7 @@ static void jedi_combat()
 						&& Distance(NPC->enemy->currentOrigin, NPC->currentOrigin) <= 64
 						&& (NPC->client->ps.weapon == WP_SABER)
 						&& NPC->next_kick_time <= level.time
-						&& irand(0, 100) > 75)
+						&& irand(0, 100) > 75) 
 					{// Close range - switch to melee... KICK!
 						if (d_JediAI->integer || g_DebugSaberCombat->integer)
 						{
@@ -9199,11 +9199,10 @@ static void jedi_combat()
 						}
 
 						NPC_SetAnim(NPC, SETANIM_BOTH, desiredAnim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						WP_Melee(NPC);
 
 						if (!npc_is_dark_jedi(NPC))
 						{
-							G_AddVoiceEvent(NPC, Q_irand(EV_DEFLECT1, EV_DEFLECT3), 2000);
+							G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 2000);
 						}
 						else
 						{
@@ -9246,7 +9245,8 @@ static void jedi_combat()
 							if (TIMER_Done(NPC, "DashInTime") &&
 								Distance(NPC->enemy->currentOrigin, NPC->currentOrigin) > 128 &&
 								Distance(NPC->enemy->currentOrigin, NPC->currentOrigin) < 256 &&
-								NPC->client->ps.groundEntityNum != ENTITYNUM_NONE)
+								NPC->client->ps.groundEntityNum != ENTITYNUM_NONE &&
+								PM_InKnockDown(&NPC->client->ps) == qfalse)
 							{//try to dash to TargetPosition
 								JediDirectionalDashAttack(NPC, NPC->enemy);
 								TIMER_Set(NPC, "DashInTime", Q_irand(20000, 30000));
