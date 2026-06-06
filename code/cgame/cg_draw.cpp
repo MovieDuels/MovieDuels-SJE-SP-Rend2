@@ -6286,6 +6286,18 @@ static void CG_DrawCrosshair(vec3_t world_point)
 		return;
 	}
 
+	//ent->client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING ||
+	//	ent->client->ps.PlayerEffectFlags & 1 << PEF_WEAPONSPRINTING ||
+
+	if (cg_adaptiveCrosshair.integer && cg.snap->ps.weapon == WP_SABER &&
+		(!(cg.predictedPlayerState.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK) ||
+			!(cg.predictedPlayerState.ManualBlockingFlags & 1 << HOLDINGBLOCK) ||
+			cg.predictedPlayerState.IsSprinting))
+	{
+		// Don't show crosshair when using a saber (unless blocking) and we're not blocking or holding block and attack if adaptive crosshair is on
+		return;
+	}
+
 	if (in_camera)
 	{
 		//no crosshair while in cutscenes

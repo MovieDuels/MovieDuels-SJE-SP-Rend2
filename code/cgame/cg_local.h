@@ -613,6 +613,7 @@ extern vmCvar_t cg_drawSnapshot;
 extern vmCvar_t cg_drawAmmoWarning;
 extern vmCvar_t cg_drawCrosshair;
 extern vmCvar_t cg_dynamicCrosshair;
+extern vmCvar_t cg_adaptiveCrosshair;
 extern vmCvar_t cg_drawCrosshairNames;
 extern vmCvar_t cg_DrawCrosshairItem;
 extern vmCvar_t cg_crosshairForceHint;
