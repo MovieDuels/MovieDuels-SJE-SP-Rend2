@@ -19227,6 +19227,12 @@ saber_moveName_t PM_DoAI_Fake(const int curmove)
 		return LS_NONE;
 	}
 
+	if (pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
+	{
+		//already attack faking, can't do another one until this one is over.
+		return LS_NONE;
+	}
+
 	if (pm->cmd.rightmove > 0)
 	{
 		//moving right
@@ -20319,7 +20325,10 @@ static void PM_WeaponLightsaber()
 					}
 
 					//starting a new attack, as such, remove the attack fake flag.
-					pm->ps->userInt3 &= ~(1 << FLAG_ATTACKFAKE);
+					if (pm && pm->ps && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
+					{
+						pm->ps->userInt3 &= ~(1 << FLAG_ATTACKFAKE);
+					}
 
 					if (PM_SaberKataDone(curmove, newmove))
 					{
@@ -23614,7 +23623,10 @@ void PM_SaberFakeFlagUpdate(const int new_move)
 	if (!PM_SaberInTransition(new_move) && !PM_SaberInStart(new_move) && !PM_SaberInAttackPure(new_move))
 	{
 		//not going into an attack move, clear the flag
-		pm->ps->userInt3 &= ~(1 << FLAG_ATTACKFAKE);
+		if (pm && pm->ps && pm->ps->userInt3 & 1 << FLAG_ATTACKFAKE)
+		{
+			pm->ps->userInt3 &= ~(1 << FLAG_ATTACKFAKE);
+		}
 	}
 }
 
