@@ -4001,10 +4001,18 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			vectoangles(forward, angs);
 			AngleVectors(angs, forward, NULL, NULL);
 		}
-		else if (blocker->client->pers.cmd.forwardmove >= 0)
+		else if (blocker->client->pers.cmd.forwardmove >= 0 || (G_GetBlockPoints(blocker) < BLOCKPOINTS_HALF)) // walking or <65
 		{
 			// Bad block
-			slop_factor += Q_irand(2, 5);
+			if ((G_GetBlockPoints(blocker) < BLOCKPOINTS_TWENTYFIVE))
+			{
+				slop_factor += Q_irand(3, 5);
+			}
+			else
+			{
+				slop_factor += Q_irand(1.5, 3);
+			}
+
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
 			angs[YAW] += Q_irand(-slop_factor, slop_factor);
@@ -4012,7 +4020,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 		}
 		else
 		{
-			// Average block
+			// Average block after 6 seconds of blocking
 			slop_factor += Q_irand(0.5, 1.5);
 			vectoangles(forward, angs);
 			angs[PITCH] += Q_irand(-slop_factor, slop_factor);
@@ -4079,15 +4087,9 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(bounce_dir);
 
 			// Wildness based on saber state
-			if (!PM_SaberInIdle(blocker->client->ps.saberMove))
+			if (!PM_SaberInIdle(blocker->client->ps.saberMove) || (G_GetBlockPoints(blocker) < BLOCKPOINTS_HALF))
 			{
-				float amt =
-					(PM_SaberInAttack(blocker->client->ps.saberMove) ||
-						PM_SaberInTransitionAny(blocker->client->ps.saberMove) ||
-						PM_SaberInSpecialAttack(blocker->client->ps.torsoAnim) ||
-						G_GetBlockPoints(blocker) < BLOCKPOINTS_KNOCKAWAY)
-					? 0.3f
-					: 0.1f;
+				float amt =	(G_GetBlockPoints(blocker) < BLOCKPOINTS_TWENTYFIVE)? 0.3f: 0.1f;
 
 				G_AddWildness(bounce_dir, amt);
 			}

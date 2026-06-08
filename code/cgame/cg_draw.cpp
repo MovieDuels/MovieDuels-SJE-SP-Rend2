@@ -6284,6 +6284,7 @@ static void CG_DrawCrosshair(vec3_t world_point)
 	const qboolean holding_block = (cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
 	const qboolean holding_block_and_attack = (cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
 	const qboolean holding_sprint = (cg.predictedPlayerState.PlayerEffectFlags & (1 << PEF_SPRINTING)) ? qtrue : qfalse;
+	const qboolean holding_block_button = (cg.predictedPlayerState.pm_flags & PMF_BLOCK_HELD) ? qtrue : qfalse;
 
 	if (!cg_drawCrosshair.integer)
 	{
@@ -6291,7 +6292,7 @@ static void CG_DrawCrosshair(vec3_t world_point)
 	}
 
 	if (cg_adaptiveCrosshair.integer == 1 &&
-		cg.snap->ps.weapon == WP_SABER)
+		(cg.snap->ps.weapon == WP_SABER))
 	{
 		if ((holding_block == qfalse &&
 			holding_block_and_attack == qfalse) ||
@@ -6302,14 +6303,20 @@ static void CG_DrawCrosshair(vec3_t world_point)
 		}
 	}
 
+	if (cg_adaptiveCrosshair.integer == 1 &&
+		(cg.snap->ps.weapon == WP_MELEE || cg.snap->ps.weapon == WP_NONE))
+	{
+		if ((holding_block_button == qfalse) ||
+			holding_sprint == qtrue)
+		{
+			// Don't show crosshair when using a MELEE and we're not HOLDING THE BLOCK BUTTON
+			return;
+		}
+	}
+
 	if (in_camera)
 	{
 		//no crosshair while in cutscenes
-		return;
-	}
-
-	if (cg.snap->ps.weapon == WP_MELEE || cg.snap->ps.weapon == WP_NONE)
-	{
 		return;
 	}
 
@@ -6578,7 +6585,7 @@ static void CG_DrawCrosshair(vec3_t world_point)
 		if (cg_weaponcrosshairs.integer)
 		{
 			if (cg.snap->ps.weapon == WP_SABER ||
-				cg.snap->ps.weapon == WP_MELEE)
+				cg.snap->ps.weapon == WP_MELEE || cg.snap->ps.weapon == WP_NONE)
 			{
 				cgi_R_DrawStretchPic(x + cg.refdef.x + 0.5 * (640 - w), y + cg.refdef.y + 0.5 * (480 - h), w, h, 0, 0,
 					1, 1, cgs.media.crosshairShader[1]);
