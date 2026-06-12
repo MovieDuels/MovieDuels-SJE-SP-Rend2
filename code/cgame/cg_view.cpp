@@ -2172,6 +2172,8 @@ extern vec3_t serverViewOrg;
 static qboolean cg_rangedFogging = qfalse; //so we know if we should go back to normal fog
 void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 {
+	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
+
 	// Tracks whether the view is considered "in water" for audio and fog.
 	qboolean inwater = qfalse;
 
@@ -2257,8 +2259,8 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 	was_force_speed = is_force_speed;
 
 	// Optional per‑vehicle mouse sensitivity overrides.
-	float m_pitch_override = 0.0f;
-	float m_yaw_override = 0.0f;
+	float mPitchOverride = 0.0f;
+	float mYawOverride = 0.0f;
 
 	if (cg.snap->ps.clientNum == 0 && cg_scaleVehicleSensitivity.integer != 0)
 	{
@@ -2297,16 +2299,16 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 				{
 					if (p_veh->m_pVehicleInfo->type == VH_FIGHTER)
 					{
-						m_pitch_override = p_veh->m_pVehicleInfo->mousePitch * speed_frac;
+						mPitchOverride = p_veh->m_pVehicleInfo->mousePitch * speed_frac;
 					}
 					else
 					{
-						m_pitch_override = p_veh->m_pVehicleInfo->mousePitch;
+						mPitchOverride = p_veh->m_pVehicleInfo->mousePitch;
 					}
 				}
 				else
 				{
-					m_pitch_override = 0.08f;
+					mPitchOverride = 0.08f;
 				}
 			}
 
@@ -2317,23 +2319,32 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 				{
 					if (p_veh->m_pVehicleInfo->type == VH_FIGHTER)
 					{
-						m_yaw_override = p_veh->m_pVehicleInfo->mouseYaw * speed_frac;
+						mYawOverride = p_veh->m_pVehicleInfo->mouseYaw * speed_frac;
 					}
 					else
 					{
-						m_yaw_override = p_veh->m_pVehicleInfo->mouseYaw;
+						mYawOverride = p_veh->m_pVehicleInfo->mouseYaw;
 					}
 				}
 				else
 				{
-					m_yaw_override = 0.08f;
+					mYawOverride = 0.08f;
 				}
 			}
 		}
 	}
+	// ---------------------------------------------------------
+	// Precision mode for joystick: slow aim when WALK held
+	// ---------------------------------------------------------
+	if (in_joystick->integer &&
+		(holding_walking_button))
+	{
+		mPitchOverride = 0.05f;
+		mYawOverride = 0.05f;
+	}
 
 	// Send weapon selection, speed, and mouse overrides to the engine.
-	cgi_SetUserCmdValue(cg.weaponSelect, speed, m_pitch_override, m_yaw_override);
+	cgi_SetUserCmdValue(cg.weaponSelect, speed, mPitchOverride, mYawOverride);
 
 	// This counter will be bumped for every valid scene we generate.
 	cg.clientFrame++;

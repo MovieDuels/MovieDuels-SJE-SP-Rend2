@@ -55,7 +55,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "teams.h"
 
 extern int WP_SaberInitBladeData(gentity_t* ent);
-extern void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, int bolt_num, int weapon_num);
+extern void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num, const int weapon_num);
 extern qboolean CheatsOk(const gentity_t* ent);
 extern void Boba_Precache();
 extern qboolean HeIsJedi(const gentity_t* ent);

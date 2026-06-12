@@ -6842,13 +6842,13 @@ static void G_CheckMovingLoopingSounds(gentity_t* ent, const usercmd_t* ucmd)
 
 /*
 ==============
-DoCallout
+CommandNPCtoAttack
 
 This will mark an enemy. If our friend is an NPC, order them to attack.
 ==============
 */
 
-static void DoCallout(gentity_t* caller, gentity_t* our_friend)
+static void CommandNPCtoAttack(gentity_t* caller, gentity_t* ourFriend)
 {
 	trace_t tr;
 	vec3_t end_trace, forward;
@@ -6862,70 +6862,64 @@ static void DoCallout(gentity_t* caller, gentity_t* our_friend)
 	gi.trace(&tr, eyes, vec3_origin, vec3_origin, end_trace, caller->s.number, MASK_SHOT, G2_NOCOLLIDE, 0);
 
 	if (tr.fraction >= 1.0f)
-	{
-		// Didn't hit anything.
+	{// nothing was hit, so just target the point in space
 		return;
 	}
 
 	if (tr.entityNum == ENTITYNUM_WORLD)
-	{
-		// Didn't hit an entity
+	{// we hit the world, so just target the point in space
 		return;
 	}
 
 	if (g_allowcallout->integer == 0)
-	{
+	{// callouts are disabled, so just target the point in space
 		return;
 	}
 
-	gentity_t* tracedEnemy = &g_entities[tr.entityNum];
+	gentity_t* tracedEnemy = &g_entities[tr.entityNum]; // The entity we are looking at
 
 	if (tracedEnemy->s.eType != ET_PLAYER)
-	{
-		// We hit an entity, but it wasn't an NPC.
+	{// we are not looking at a player, so just target the point in space
 		return;
 	}
 
 	if (tracedEnemy->health <= 0)
-	{
-		// We hit an entity, but it wasn't an NPC.
+	{// Player is dead, ignore
 		return;
 	}
 
-	if (tracedEnemy->client->playerTeam == our_friend->client->playerTeam)
-	{
-		// They're on the same team. Whoops.
+	if (tracedEnemy->client->playerTeam == ourFriend->client->playerTeam)
+	{// Player is on the same team, ignore
 		return;
 	}
 
 	if (caller->s.number == 0)
-	{
-		// Sic 'em!
-		G_SetEnemy(our_friend, tracedEnemy);
+	{// caller is the player, so we want to order our friend to attack the enemy we are looking at
+		G_SetEnemy(ourFriend, tracedEnemy);
 	}
 
 	NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
-	if (Distance(our_friend->currentOrigin, tracedEnemy->currentOrigin) >= 512)
-	{
-		G_AddEvent(caller, Q_irand(EV_ESCAPING1, EV_ESCAPING3), 0);
-		NPC_SetAnim(our_friend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	if (Distance(ourFriend->currentOrigin, tracedEnemy->currentOrigin) >= 512)
+	{// if the enemy is far away, use a long range callout
+		G_AddEvent(caller, Q_irand(EV_CHASE1, EV_CHASE3), 0);
+		NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 	}
 	else
-	{
+	{// if the enemy is close, use a short range callout
 		vec3_t dir;
-		VectorSubtract(our_friend->currentOrigin, tracedEnemy->currentOrigin, dir);
-		const vec_t angle = DotProduct(our_friend->currentAngles, dir);
+		VectorSubtract(ourFriend->currentOrigin, tracedEnemy->currentOrigin, dir);
+		const vec_t angle = DotProduct(ourFriend->currentAngles, dir);
 
 		if (angle >= 0.2 && angle <= 1.0)
-		{
-			G_AddEvent(caller, Q_irand(EV_CONFUSE1, EV_CONFUSE3), 0);
-			NPC_SetAnim(our_friend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		{// enemy is in front of us, use a front callout
+			G_AddEvent(caller, Q_irand(EV_ANGER1, EV_ANGER3), 0);
+			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 		else
-		{
-			G_AddEvent(caller, Q_irand(EV_SIGHT1, EV_SIGHT3), 0);
-			NPC_SetAnim(our_friend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		{// enemy is behind us, use a back callout
+			G_AddEvent(caller, Q_irand(EV_LOOK1, EV_LOOK2), 0);
+			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 	}
 	tracedEnemy->markTime = level.time + 5000;
@@ -8369,11 +8363,16 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 
 		if (!in_camera &&
-			g_entities[0].nearAllies != ENTITYNUM_NONE &&
-			ucmd->buttons & BUTTON_USE &&
-			g_entities[0].calloutTime <= level.time && g_allowcallout->integer == 1)
-		{
-			DoCallout(&g_entities[0], &g_entities[g_entities[0].nearAllies]);
+			!PM_SaberInTransitionAny(ent->client->ps.saberMove) //not going to/from/between an attack anim
+			&& !PM_SaberInAttack(ent->client->ps.saberMove) //not in attack anim
+			&& ent->client->ps.weaponTime <= 0 && //not waiting for a weapon anim to finish
+			g_entities[0].nearAllies != ENTITYNUM_NONE && //player has allies
+			!(ent->client->ps.userInt3 & 1 << FLAG_ATTACKFAKE) && //not fake attacking
+			!(ent->client->ps.communicatingflags & 1 << CF_SABERLOCKING) && //not saber locking
+			ucmd->buttons & BUTTON_USE && //using
+			g_entities[0].calloutTime <= level.time) //callout timer is up
+		{ //call out to allies
+			CommandNPCtoAttack(&g_entities[0], &g_entities[g_entities[0].nearAllies]);
 		}
 
 		if (cg.zoomMode == 2)
@@ -9884,7 +9883,6 @@ extern qboolean PM_GentCantJump(const gentity_t* gent);
 
 void ClientThink(const int clientNum, usercmd_t* ucmd)
 {
-	// FIX: ent->client can be NULL during certain transitions
 	gentity_t* ent = g_entities + clientNum;
 	if (!ent->client)
 	{

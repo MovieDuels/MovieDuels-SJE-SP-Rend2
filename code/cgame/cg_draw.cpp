@@ -6285,6 +6285,7 @@ static void CG_DrawCrosshair(vec3_t world_point)
 	const qboolean holding_block_and_attack = (cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
 	const qboolean holding_sprint = (cg.predictedPlayerState.PlayerEffectFlags & (1 << PEF_SPRINTING)) ? qtrue : qfalse;
 	const qboolean holding_block_button = (cg.predictedPlayerState.pm_flags & PMF_BLOCK_HELD) ? qtrue : qfalse;
+	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
 
 	if (!cg_drawCrosshair.integer)
 	{
@@ -6306,7 +6307,7 @@ static void CG_DrawCrosshair(vec3_t world_point)
 	if (cg_adaptiveCrosshair.integer == 1 &&
 		(cg.snap->ps.weapon == WP_MELEE || cg.snap->ps.weapon == WP_NONE))
 	{
-		if ((holding_block_button == qfalse) ||
+		if ((holding_block_button == qfalse || holding_walking_button == qfalse) ||
 			holding_sprint == qtrue)
 		{
 			// Don't show crosshair when using a MELEE and we're not HOLDING THE BLOCK BUTTON
@@ -7212,19 +7213,28 @@ static void CG_DrawCrosshairItem()
 
 	if (cg_entities[cg.crosshairclientNum].currentState.eType == ET_ITEM && cg.snap->ps.weapon != WP_DROIDEKA)
 	{
-		if (cg_SerenityJediEngineHudMode.integer == 4)
+		vec3_t diff;
+		VectorSubtract(cg_entities[cg.crosshairclientNum].lerpOrigin, cg.refdef.vieworg, diff);
+
+		float distSq = VectorLengthSquared(diff);
+
+		// Only show hint if within 512 units
+		if (distSq < (512.0f * 512.0f))
 		{
-			CG_DrawPic(20, 285, 26, 26, cgs.media.useableHint);
+			if (cg_SerenityJediEngineHudMode.integer == 4)
+			{
+				CG_DrawPic(20, 285, 26, 26, cgs.media.useableHint);
+			}
+			else if (cg_SerenityJediEngineHudMode.integer == 5)
+			{
+				CG_DrawPic(157, 429, 26, 26, cgs.media.useableHint);
+			}
+			else
+			{
+				CG_DrawPic(50, 285, 32, 32, cgs.media.useableHint);
+			}
+			return;
 		}
-		else if (cg_SerenityJediEngineHudMode.integer == 5)
-		{
-			CG_DrawPic(157, 429, 26, 26, cgs.media.useableHint);
-		}
-		else
-		{
-			CG_DrawPic(50, 285, 32, 32, cgs.media.useableHint);
-		}
-		return;
 	}
 
 	cgi_R_SetColor(nullptr);
@@ -7992,17 +8002,26 @@ static void CG_UseIcon()
 	{
 		cgi_R_SetColor(nullptr);
 
-		if (cg_SerenityJediEngineHudMode.integer == 4)
+		vec3_t diff;
+		VectorSubtract(cg_entities[cg.crosshairclientNum].lerpOrigin, cg.refdef.vieworg, diff);
+
+		float distSq = VectorLengthSquared(diff);
+
+		// Only show hint if within 512 units
+		if (distSq < (512.0f * 512.0f))
 		{
-			CG_DrawPic(20, 285, 26, 26, cgs.media.useableHint);
-		}
-		else if (cg_SerenityJediEngineHudMode.integer == 5)
-		{
-			CG_DrawPic(157, 429, 26, 26, cgs.media.useableHint);
-		}
-		else
-		{
-			CG_DrawPic(50, 285, 32, 32, cgs.media.useableHint);
+			if (cg_SerenityJediEngineHudMode.integer == 4)
+			{
+				CG_DrawPic(20, 285, 26, 26, cgs.media.useableHint);
+			}
+			else if (cg_SerenityJediEngineHudMode.integer == 5)
+			{
+				CG_DrawPic(157, 429, 26, 26, cgs.media.useableHint);
+			}
+			else
+			{
+				CG_DrawPic(50, 285, 32, 32, cgs.media.useableHint);
+			}
 		}
 	}
 }

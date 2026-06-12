@@ -5489,8 +5489,8 @@ static void PM_SetVehicleAngles(vec3_t normal)
 	}
 }
 
-void BG_VehicleTurnRateForSpeed(const Vehicle_t* p_veh, const float speed, float* m_pitch_override,
-	float* m_yaw_override)
+void BG_VehicleTurnRateForSpeed(const Vehicle_t* p_veh, const float speed, float* mPitchOverride,
+	float* mYawOverride)
 {
 	if (p_veh && p_veh->m_pVehicleInfo)
 	{
@@ -5513,11 +5513,11 @@ void BG_VehicleTurnRateForSpeed(const Vehicle_t* p_veh, const float speed, float
 		}
 		if (p_veh->m_pVehicleInfo->mousePitch)
 		{
-			*m_pitch_override = p_veh->m_pVehicleInfo->mousePitch * speed_frac;
+			*mPitchOverride = p_veh->m_pVehicleInfo->mousePitch * speed_frac;
 		}
 		if (p_veh->m_pVehicleInfo->mouseYaw)
 		{
-			*m_yaw_override = p_veh->m_pVehicleInfo->mouseYaw * speed_frac;
+			*mYawOverride = p_veh->m_pVehicleInfo->mouseYaw * speed_frac;
 		}
 	}
 }
@@ -23500,6 +23500,15 @@ void Pmove(pmove_t* pmove)
 	else
 	{
 		pm->ps->pm_flags &= ~PMF_BLOCK_HELD;
+	}
+
+	if (pm->cmd.buttons & BUTTON_WALKING)
+	{
+		pm->ps->pm_flags |= PMF_WALKING_HELD;
+	}
+	else
+	{
+		pm->ps->pm_flags &= ~PMF_WALKING_HELD;
 	}
 
 	if (pm->cmd.buttons & BUTTON_KICK)

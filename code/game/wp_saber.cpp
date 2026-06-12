@@ -687,8 +687,7 @@ void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model,
 	}
 }
 
-void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,
-	const int weapon_num)
+void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,	const int weapon_num)
 {
 	if (!ent)
 	{
@@ -35643,7 +35642,7 @@ static void ForceShootDrain(gentity_t* self)
 		if (self->client->ps.forcePowerLevel[FP_DRAIN] > FORCE_LEVEL_2)
 		{
 			// Arc drain
-			vec3_t center, mins{}, maxs{}, v;
+			vec3_t center, mins{}, maxs{}, v{};
 			constexpr float radius = MAX_DRAIN_DISTANCE;
 			static gentity_t* entity_list[MAX_GENTITIES];
 

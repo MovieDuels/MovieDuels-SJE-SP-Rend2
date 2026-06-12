@@ -750,7 +750,7 @@ static void Workshop_Set_Aiflags_f(gentity_t* ent)
 extern stringID_table_t WPTable[];
 extern void ChangeWeapon(const gentity_t* ent, int new_weapon);
 extern int WP_SaberInitBladeData(gentity_t* ent);
-extern void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, int bolt_num, int weapon_num);
+extern void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num, const int weapon_num);
 extern void WP_SaberAddG2SaberModels(gentity_t* ent, int specific_saber_num = -1);
 extern void WP_SaberAddHolsteredG2SaberModels(gentity_t* ent, int specific_saber_num = -1);
 

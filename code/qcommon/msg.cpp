@@ -448,7 +448,7 @@ extern cvar_t* cl_shownet;
 
 #define	LOG(x) if( cl_shownet->integer == 4 ) { Com_Printf("%s ", x ); };
 
-void MSG_WriteDelta(msg_t* msg, const int old_v, const int new_v, const int bits)
+static void MSG_WriteDelta(msg_t* msg, const int old_v, const int new_v, const int bits)
 {
 	if (old_v == new_v)
 	{
@@ -459,7 +459,7 @@ void MSG_WriteDelta(msg_t* msg, const int old_v, const int new_v, const int bits
 	MSG_WriteBits(msg, new_v, bits);
 }
 
-int MSG_ReadDelta(msg_t* msg, const int old_v, const int bits)
+static int MSG_ReadDelta(msg_t* msg, const int old_v, const int bits)
 {
 	if (MSG_ReadBits(msg, 1))
 	{
@@ -468,7 +468,7 @@ int MSG_ReadDelta(msg_t* msg, const int old_v, const int bits)
 	return old_v;
 }
 
-void MSG_WriteDeltaFloat(msg_t* msg, const float old_v, const float new_v)
+static void MSG_WriteDeltaFloat(msg_t* msg, const float old_v, const float new_v)
 {
 	byteAlias_t fi{};
 	if (old_v == new_v)
@@ -481,7 +481,7 @@ void MSG_WriteDeltaFloat(msg_t* msg, const float old_v, const float new_v)
 	MSG_WriteBits(msg, fi.i, 32);
 }
 
-float MSG_ReadDeltaFloat(msg_t* msg, const float old_v)
+static float MSG_ReadDeltaFloat(msg_t* msg, const float old_v)
 {
 	if (MSG_ReadBits(msg, 1))
 	{
@@ -759,7 +759,7 @@ Ghoul2 Insert Start
 #define	FLOAT_INT_BITS	13
 #define	FLOAT_INT_BIAS	(1<<(FLOAT_INT_BITS-1))
 
-void MSG_WriteField(msg_t* msg, const int* to_f, const netField_t* field)
+static void MSG_WriteField(msg_t* msg, const int* to_f, const netField_t* field)
 {
 	if (field->bits == -1)
 	{
@@ -810,7 +810,7 @@ void MSG_WriteField(msg_t* msg, const int* to_f, const netField_t* field)
 	}
 }
 
-void MSG_ReadField(msg_t* msg, int* to_f, const netField_t* field, const int print)
+static void MSG_ReadField(msg_t* msg, int* to_f, const netField_t* field, const int print)
 {
 	if (field->bits == -1)
 	{

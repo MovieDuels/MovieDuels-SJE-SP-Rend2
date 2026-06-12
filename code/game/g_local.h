@@ -477,8 +477,7 @@ void G_DebugLine(vec3_t a, vec3_t b, int duration, int color);
 qboolean CanDamage(const gentity_t* targ, const vec3_t origin);
 void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const vec3_t dir, const vec3_t point,
 	int damage, int dflags, int mod, int hit_loc = HL_NONE);
-void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, float damage, float radius, const gentity_t* ignore,
-	int mod);
+void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage, float radius, const gentity_t* ignore, const int mod);
 gentity_t* TossClientItems(gentity_t* self);
 void ExplodeDeath_Wait(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod,
 	int d_flags, int hit_loc);
@@ -610,7 +609,7 @@ void ClientCommand(int clientNum);
 //
 // g_active.c
 //
-void ClientThink(int clientNum, usercmd_t* ucmd);
+void ClientThink(const int clientNum, usercmd_t* ucmd);
 void ClientEndFrame(gentity_t* ent);
 
 //

@@ -623,72 +623,102 @@ struct stick_state_s
 IN_InitJoystick
 ===============
 */
-static void IN_InitJoystick()
+static void IN_InitJoystick(void)
 {
-	char buf[16384] = "";
-
-	if (gamepad)
+	// ---------------------------------------------------------
+	// Reset joystick and gamepad handles
+	// ---------------------------------------------------------
+	if (gamepad != nullptr)
+	{
 		SDL_GameControllerClose(gamepad);
+		gamepad = nullptr;
+	}
 
 	if (stick != nullptr)
+	{
 		SDL_JoystickClose(stick);
+		stick = nullptr;
+	}
 
-	stick = nullptr;
-	gamepad = nullptr;
-	memset(&stick_state, '\0', sizeof(stick_state));
+	Com_Memset(&stick_state, 0, sizeof(stick_state));
 
-	// SDL 2.0.4 requires SDL_INIT_JOYSTICK to be initialized separately from
-	// SDL_INIT_GAMECONTROLLER for SDL_JoystickOpen() to work correctly,
-	// despite https://wiki.libsdl.org/SDL_Init (retrieved 2016-08-16)
-	// indicating SDL_INIT_JOYSTICK should be initialized automatically.
-	if (!SDL_WasInit(SDL_INIT_JOYSTICK))
+	// ---------------------------------------------------------
+	// Ensure SDL joystick subsystems are initialized
+	// ---------------------------------------------------------
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
 		Com_DPrintf("Calling SDL_Init(SDL_INIT_JOYSTICK)...\n");
+
 		if (SDL_Init(SDL_INIT_JOYSTICK) != 0)
 		{
 			Com_DPrintf("SDL_Init(SDL_INIT_JOYSTICK) failed: %s\n", SDL_GetError());
 			return;
 		}
+
 		Com_DPrintf("SDL_Init(SDL_INIT_JOYSTICK) passed.\n");
 	}
 
-	if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER))
+	if (SDL_WasInit(SDL_INIT_GAMECONTROLLER) == 0)
 	{
 		Com_DPrintf("Calling SDL_Init(SDL_INIT_GAMECONTROLLER)...\n");
+
 		if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0)
 		{
 			Com_DPrintf("SDL_Init(SDL_INIT_GAMECONTROLLER) failed: %s\n", SDL_GetError());
 			return;
 		}
+
 		Com_DPrintf("SDL_Init(SDL_INIT_GAMECONTROLLER) passed.\n");
 	}
 
+	// ---------------------------------------------------------
+	// Enumerate available joysticks
+	// ---------------------------------------------------------
 	const int total = SDL_NumJoysticks();
 	Com_DPrintf("%d possible joysticks\n", total);
 
-	// Print list and build cvar to allow ui to select joystick.
+	// Build newline‑separated list without stack‑heavy buffers
+	char* listBuf = static_cast<char*>(Z_Malloc(4096, TAG_TEMP_WORKSPACE, qfalse));
+	listBuf[0] = '\0';
+
 	for (int i = 0; i < total; i++)
 	{
-		Q_strcat(buf, sizeof(buf), SDL_JoystickNameForIndex(i));
-		Q_strcat(buf, sizeof(buf), "\n");
+		const char* name = SDL_JoystickNameForIndex(i);
+		if (name != nullptr)
+		{
+			Q_strcat(listBuf, 4096, name);
+			Q_strcat(listBuf, 4096, "\n");
+		}
 	}
 
-	Cvar_Get("in_availableJoysticks", buf, CVAR_ROM);
+	Cvar_Get("in_availableJoysticks", listBuf, CVAR_ROM);
+	Z_Free(listBuf);
 
-	if (!in_joystick->integer)
+	// ---------------------------------------------------------
+	// Joystick disabled?
+	// ---------------------------------------------------------
+	if (in_joystick->integer == 0)
 	{
 		Com_DPrintf("Joystick is not active.\n");
 		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 		return;
 	}
 
+	// ---------------------------------------------------------
+	// Select joystick index
+	// ---------------------------------------------------------
 	in_joystickNo = Cvar_Get("in_joystickNo", "0", CVAR_ARCHIVE_ND);
+
 	if (in_joystickNo->integer < 0 || in_joystickNo->integer >= total)
+	{
 		Cvar_Set("in_joystickNo", "0");
+	}
 
+	// ---------------------------------------------------------
+	// Load joystick cvars
+	// ---------------------------------------------------------
 	in_joystickUseAnalog = Cvar_Get("in_joystickUseAnalog", "0", CVAR_ARCHIVE_ND);
-
-	in_joystickThreshold = Cvar_Get("joy_threshold", "0.635156", CVAR_ARCHIVE_ND);
+	in_joystickThreshold = Cvar_Get("joy_threshold", "0.378125", CVAR_ARCHIVE_ND);
 
 	j_pitch = Cvar_Get("j_pitch", "0.022", CVAR_ARCHIVE_ND);
 	j_yaw = Cvar_Get("j_yaw", "-0.022", CVAR_ARCHIVE_ND);
@@ -701,7 +731,8 @@ static void IN_InitJoystick()
 	j_forward_axis = Cvar_Get("j_forward_axis", "1", CVAR_ARCHIVE_ND);
 	j_side_axis = Cvar_Get("j_side_axis", "0", CVAR_ARCHIVE_ND);
 	j_up_axis = Cvar_Get("j_up_axis", "4", CVAR_ARCHIVE_ND);
-	j_sensitivity = Cvar_Get("j_sensitivity", "1", CVAR_ARCHIVE);
+
+	j_sensitivity = Cvar_Get("j_sensitivity", "0.156250", CVAR_ARCHIVE);
 
 	Cvar_CheckRange(j_pitch_axis, 0, MAX_JOYSTICK_AXIS - 1, qtrue);
 	Cvar_CheckRange(j_yaw_axis, 0, MAX_JOYSTICK_AXIS - 1, qtrue);
@@ -709,6 +740,9 @@ static void IN_InitJoystick()
 	Cvar_CheckRange(j_side_axis, 0, MAX_JOYSTICK_AXIS - 1, qtrue);
 	Cvar_CheckRange(j_up_axis, 0, MAX_JOYSTICK_AXIS - 1, qtrue);
 
+	// ---------------------------------------------------------
+	// Open joystick
+	// ---------------------------------------------------------
 	stick = SDL_JoystickOpen(in_joystickNo->integer);
 
 	if (stick == nullptr)
@@ -717,18 +751,26 @@ static void IN_InitJoystick()
 		return;
 	}
 
-	if (SDL_IsGameController(in_joystickNo->integer))
+	// ---------------------------------------------------------
+	// Open gamepad interface if supported
+	// ---------------------------------------------------------
+	if (SDL_IsGameController(in_joystickNo->integer) != 0)
+	{
 		gamepad = SDL_GameControllerOpen(in_joystickNo->integer);
+	}
 
+	// ---------------------------------------------------------
+	// Log joystick info
+	// ---------------------------------------------------------
 	Com_DPrintf("Joystick %d opened\n", in_joystickNo->integer);
 	Com_DPrintf("Name:       %s\n", SDL_JoystickNameForIndex(in_joystickNo->integer));
 	Com_DPrintf("Axes:       %d\n", SDL_JoystickNumAxes(stick));
 	Com_DPrintf("Hats:       %d\n", SDL_JoystickNumHats(stick));
 	Com_DPrintf("Buttons:    %d\n", SDL_JoystickNumButtons(stick));
 	Com_DPrintf("Balls:      %d\n", SDL_JoystickNumBalls(stick));
-	Com_DPrintf("Use Analog: %s\n", in_joystickUseAnalog->integer ? "Yes" : "No");
-	Com_DPrintf("Threshold: %f\n", in_joystickThreshold->value);
-	Com_DPrintf("Is gamepad: %s\n", gamepad ? "Yes" : "No");
+	Com_DPrintf("Use Analog: %s\n", (in_joystickUseAnalog->integer != 0) ? "Yes" : "No");
+	Com_DPrintf("Threshold:  %f\n", in_joystickThreshold->value);
+	Com_DPrintf("Is gamepad: %s\n", (gamepad != nullptr) ? "Yes" : "No");
 
 	SDL_JoystickEventState(SDL_QUERY);
 	SDL_GameControllerEventState(SDL_QUERY);
