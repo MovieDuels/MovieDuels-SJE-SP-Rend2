@@ -17106,6 +17106,7 @@ qboolean PM_Can_Do_Kill_Move()
 		&& pm->cmd.buttons & BUTTON_ATTACK //pressing attack
 		&& pm->cmd.forwardmove >= 0 //not moving back (used to be !pm->cmd.forwardmove)
 		&& !pm->cmd.rightmove //not moving r/l
+		&& !in_camera //not in camera mode
 		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER_FB, qtrue, isPlayer)) // have enough power
 	{
 		return qtrue;

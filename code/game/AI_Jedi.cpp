@@ -10510,6 +10510,11 @@ static qboolean Jedi_CanUseKata(gentity_t* self)
 {
 	const playerState_t* ps = &self->client->ps;
 
+	if (in_camera)
+	{
+		return qfalse; // don't do this in camera mode
+	}
+
 	// Must not be defending
 	if (ps->saberBlocked != BLOCKED_NONE)
 	{
@@ -10827,6 +10832,11 @@ static saberCombo_t JediChooseCombo(gentity_t* self)
 	combo.valid = qfalse;
 	combo.length = 0;
 	combo.useForcePushFinisher = qfalse;
+
+	if (in_camera)
+	{
+		return combo; // don't do this in camera mode
+	}
 
 	if (!self || !self->enemy)
 	{

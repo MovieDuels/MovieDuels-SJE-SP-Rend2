@@ -3150,6 +3150,11 @@ saber_moveName_t PM_SaberLungeAttackMove(const qboolean fallback_to_normal_lunge
 {
 	vec3_t fwd_angles, jumpFwd;
 
+	if (in_camera) 
+	{
+		return LS_NONE; // don't do this in camera mode
+	}
+
 	WP_ForcePowerDrain(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER_FB);
 	//see if we have an overridden (or cancelled) lunge move
 	if (pm->ps->saber[0].lungeAtkMove != LS_INVALID)
@@ -3258,6 +3263,10 @@ saber_moveName_t PM_SaberLungeAttackMove(const qboolean fallback_to_normal_lunge
 
 qboolean PM_CheckLungeAttackMove()
 {
+	if (in_camera)
+	{
+		return qfalse; // don't do this in camera mode
+	}
 	//check to see if it's cancelled?
 	if (pm->ps->saber[0].lungeAtkMove == LS_NONE)
 	{

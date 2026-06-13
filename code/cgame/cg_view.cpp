@@ -2173,6 +2173,7 @@ static qboolean cg_rangedFogging = qfalse; //so we know if we should go back to 
 void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 {
 	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
+	const qboolean holding_block_button = (cg.predictedPlayerState.pm_flags & PMF_BLOCK_HELD) ? qtrue : qfalse;
 
 	// Tracks whether the view is considered "in water" for audio and fog.
 	qboolean inwater = qfalse;
@@ -2336,11 +2337,13 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 	// ---------------------------------------------------------
 	// Precision mode for joystick: slow aim when WALK held
 	// ---------------------------------------------------------
-	if (in_joystick->integer &&
-		(holding_walking_button))
+	if ((in_joystick->integer) && //if we are using a joystick
+		((cg.snap->ps.weapon != WP_SABER) || //if we are not using a saber
+			((cg.snap->ps.weapon == WP_SABER) && (!cg.snap->ps.SaberActive()) && !holding_block_button)) && // if we are using a saber, it is not active and we are not holding block
+		(holding_walking_button)) //and we are holding the walk button
 	{
-		mPitchOverride = 0.05f;
-		mYawOverride = 0.05f;
+		mPitchOverride = 0.05f; //slow down the pitch
+		mYawOverride = 0.05f; //slow down the yaw
 	}
 
 	// Send weapon selection, speed, and mouse overrides to the engine.

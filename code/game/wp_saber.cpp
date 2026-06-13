@@ -7371,6 +7371,10 @@ qboolean G_TryingJumpForwardAttack(const gentity_t* self, const usercmd_t* cmd)
 
 qboolean G_TryingLungeAttack(const gentity_t* self, const usercmd_t* cmd)
 {
+	if (in_camera)
+	{
+		return qfalse; // don't do this in camera mode
+	}
 	if (g_saberNewControlScheme->integer)
 	{
 		//use the new control scheme: force focus button
