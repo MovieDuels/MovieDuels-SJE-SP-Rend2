@@ -8024,7 +8024,6 @@ static qboolean Jedi_AttackDecide(const int enemy_dist)
 	}
 
 	if (g_SerenityJediEngineMode->integer > 1 &&
-		/*g_spskill->integer > 1 &&*/
 		g_npc_is_smart &&
 		g_npc_is_smart->integer != 0 &&
 		NPC->client->ps.saberFatigueChainCount < MISHAPLEVEL_HEAVY &&

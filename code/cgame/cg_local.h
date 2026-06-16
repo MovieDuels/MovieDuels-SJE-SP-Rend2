@@ -697,6 +697,7 @@ extern vmCvar_t cg_fovViewmodel;
 extern vmCvar_t cg_fovViewmodelAdjust;
 
 extern vmCvar_t cg_scaleVehicleSensitivity;
+extern vmCvar_t cg_scaleJoystickSensitivity;
 
 extern vmCvar_t cg_drawRadar;
 

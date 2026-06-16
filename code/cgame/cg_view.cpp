@@ -2156,6 +2156,163 @@ static void CG_RunEmplacedWeapon()
 
 //=========================================================================
 
+static qboolean Holding_Gun_And_Walking(const gentity_t* self)
+{
+	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
+
+	if (holding_walking_button)
+	{
+		switch (self->client->ps.weapon)
+		{
+		case WP_MELEE:
+		case WP_STUN_BATON:
+		case WP_BLASTER_PISTOL:
+		case WP_BLASTER:
+		case WP_DISRUPTOR:
+		case WP_BOWCASTER:
+		case WP_REPEATER:
+		case WP_DEMP2:
+		case WP_FLECHETTE:
+		case WP_ROCKET_LAUNCHER:
+		case WP_THERMAL:
+		case WP_TRIP_MINE:
+		case WP_DET_PACK:
+		case WP_CONCUSSION:
+		case WP_ATST_MAIN:
+		case WP_ATST_SIDE:
+		case WP_BRYAR_PISTOL:
+		case WP_EMPLACED_GUN:
+		case WP_DROIDEKA:
+		case WP_SBD_BLASTER:
+		case WP_WRIST_BLASTER:
+		case WP_DUAL_PISTOL:
+		case WP_DUAL_CLONEPISTOL:
+		case WP_BOT_LASER:
+		case WP_TURRET:
+		case WP_TIE_FIGHTER:
+		case WP_RAPID_FIRE_CONC:
+		case WP_JAWA:
+		case WP_TUSKEN_RIFLE:
+		case WP_TUSKEN_STAFF:
+		case WP_SCEPTER:
+		case WP_NOGHRI_STICK:
+		case WP_BATTLEDROID:
+		case WP_THEFIRSTORDER:
+		case WP_CLONECARBINE:
+		case WP_REBELBLASTER:
+		case WP_CLONERIFLE:
+		case WP_CLONECOMMANDO:
+		case WP_Z6_ROTARY_CANNON:
+		case WP_REBELRIFLE:
+		case WP_REY:
+		case WP_JANGO:
+		case WP_BOBA:
+		case WP_CLONEPISTOL:
+			// Is Gunner...
+			return qtrue;
+		default:
+			// NOT Gunner...
+			break;
+		}
+	}
+
+	return qfalse;
+}
+
+static qboolean Holding_Gun_And_Walking_And_Blocking(const gentity_t* self)
+{
+	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
+	const qboolean holding_block_button = (cg.predictedPlayerState.pm_flags & PMF_BLOCK_HELD) ? qtrue : qfalse;
+
+	if (holding_block_button && holding_walking_button)
+	{
+		switch (self->client->ps.weapon)
+		{
+		case WP_MELEE:
+		case WP_STUN_BATON:
+		case WP_BLASTER_PISTOL:
+		case WP_BLASTER:
+		case WP_DISRUPTOR:
+		case WP_BOWCASTER:
+		case WP_REPEATER:
+		case WP_DEMP2:
+		case WP_FLECHETTE:
+		case WP_ROCKET_LAUNCHER:
+		case WP_THERMAL:
+		case WP_TRIP_MINE:
+		case WP_DET_PACK:
+		case WP_CONCUSSION:
+		case WP_ATST_MAIN:
+		case WP_ATST_SIDE:
+		case WP_BRYAR_PISTOL:
+		case WP_EMPLACED_GUN:
+		case WP_DROIDEKA:
+		case WP_SBD_BLASTER:
+		case WP_WRIST_BLASTER:
+		case WP_DUAL_PISTOL:
+		case WP_DUAL_CLONEPISTOL:
+		case WP_BOT_LASER:
+		case WP_TURRET:
+		case WP_TIE_FIGHTER:
+		case WP_RAPID_FIRE_CONC:
+		case WP_JAWA:
+		case WP_TUSKEN_RIFLE:
+		case WP_TUSKEN_STAFF:
+		case WP_SCEPTER:
+		case WP_NOGHRI_STICK:
+		case WP_BATTLEDROID:
+		case WP_THEFIRSTORDER:
+		case WP_CLONECARBINE:
+		case WP_REBELBLASTER:
+		case WP_CLONERIFLE:
+		case WP_CLONECOMMANDO:
+		case WP_Z6_ROTARY_CANNON:
+		case WP_REBELRIFLE:
+		case WP_REY:
+		case WP_JANGO:
+		case WP_BOBA:
+		case WP_CLONEPISTOL:
+			// Is Gunner...
+			return qtrue;
+		default:
+			// NOT Gunner...
+			break;
+		}
+	}
+
+	return qfalse;
+}
+
+static qboolean Holding_Saber_And_Its_Turned_Off(const gentity_t* self)
+{
+	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
+
+	if (holding_walking_button)
+	{
+		if ((cg.snap->ps.weapon == WP_SABER) && (!cg.snap->ps.SaberActive()))
+		{
+			return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
+static qboolean Holding_Saber_And_Its_Turned_On(const gentity_t* self)
+{
+	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
+
+	if (holding_walking_button)
+	{
+		if ((cg.snap->ps.weapon == WP_SABER) && (cg.snap->ps.SaberActive()))
+		{
+			return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
 /*
 =================
 CG_DrawActiveFrame
@@ -2172,9 +2329,6 @@ extern vec3_t serverViewOrg;
 static qboolean cg_rangedFogging = qfalse; //so we know if we should go back to normal fog
 void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 {
-	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
-	const qboolean holding_block_button = (cg.predictedPlayerState.pm_flags & PMF_BLOCK_HELD) ? qtrue : qfalse;
-
 	// Tracks whether the view is considered "in water" for audio and fog.
 	qboolean inwater = qfalse;
 
@@ -2334,16 +2488,33 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 			}
 		}
 	}
+
 	// ---------------------------------------------------------
 	// Precision mode for joystick: slow aim when WALK held
 	// ---------------------------------------------------------
-	if ((in_joystick->integer) && //if we are using a joystick
-		((cg.snap->ps.weapon != WP_SABER) || //if we are not using a saber
-			((cg.snap->ps.weapon == WP_SABER) && (!cg.snap->ps.SaberActive()) && !holding_block_button)) && // if we are using a saber, it is not active and we are not holding block
-		(holding_walking_button)) //and we are holding the walk button
+
+	if (cg.snap->ps.clientNum == 0 && (in_joystick->integer && cg_scaleJoystickSensitivity.integer))
 	{
-		mPitchOverride = 0.05f; //slow down the pitch
-		mYawOverride = 0.05f; //slow down the yaw
+		if (Holding_Gun_And_Walking(&g_entities[0]))
+		{
+			mPitchOverride = 0.05f; //slow down the pitch
+			mYawOverride = 0.05f; //slow down the yaw
+		}
+		if (Holding_Gun_And_Walking_And_Blocking(&g_entities[0]))
+		{
+			mPitchOverride = 0.025f; //slow down the pitch for aiming guns
+			mYawOverride = 0.025f; //slow down the yaw  for aiming guns
+		}
+		if (Holding_Saber_And_Its_Turned_On(&g_entities[0]))
+		{
+			mPitchOverride = 0.10f; // faster up and downpitch for saber combat
+			mYawOverride = 0.10f; // faster side to side yaw for saber dueling
+		}
+		if (Holding_Saber_And_Its_Turned_Off(&g_entities[0]))
+		{
+			mPitchOverride = 0.10f; //slow down the pitch
+			mYawOverride = 0.10f; //slow down the yaw
+		}
 	}
 
 	// Send weapon selection, speed, and mouse overrides to the engine.
