@@ -790,7 +790,7 @@ void IN_Init(void* windowData)
 	// joystick variables
 	in_keyboardDebug = Cvar_Get("in_keyboardDebug", "0", CVAR_ARCHIVE_ND);
 
-	in_joystick = Cvar_Get("in_joystick", "1", CVAR_ARCHIVE_ND | CVAR_LATCH);
+	in_joystick = Cvar_Get("in_joystick", "0", CVAR_ARCHIVE_ND | CVAR_LATCH);
 
 	// mouse variables
 	in_mouse = Cvar_Get("in_mouse", "1", CVAR_ARCHIVE);

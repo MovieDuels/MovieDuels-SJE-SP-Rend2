@@ -645,7 +645,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_fovViewmodelAdjust, "cg_fovViewmodelAdjust", "1", CVAR_ARCHIVE},
 
 	{&cg_scaleVehicleSensitivity, "cg_scaleVehicleSensitivity", "1", CVAR_ARCHIVE},
-	{&cg_scaleJoystickSensitivity, "cg_scaleJoystickSensitivity", "1", CVAR_ARCHIVE},
+	{&cg_scaleJoystickSensitivity, "cg_scaleJoystickSensitivity", "0", CVAR_ARCHIVE},
 
 	{&cg_SFXSabers, "cg_SFXSabers", "4", CVAR_ARCHIVE},
 	{&cg_SFXSabersGlowSize, "cg_SFXSabersGlowSize", "1.0", CVAR_ARCHIVE},

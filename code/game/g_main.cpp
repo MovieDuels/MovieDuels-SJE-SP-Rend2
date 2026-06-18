@@ -871,7 +871,7 @@ static void G_InitCvars()
 
 	g_AllowLedgeGrab = gi.cvar("g_allowledgegrab", "0", CVAR_ARCHIVE);
 
-	in_joystick = gi.cvar("in_joystick", "1", CVAR_ARCHIVE_ND | CVAR_LATCH);
+	in_joystick = gi.cvar("in_joystick", "0", CVAR_ARCHIVE_ND | CVAR_LATCH);
 
 	g_AllowReload = gi.cvar("g_AllowReload", "1", CVAR_ARCHIVE | CVAR_NORESTART);
 
