@@ -16061,7 +16061,7 @@ void CG_Player(centity_t* cent)
 
 					if (cent->gent->client->ps.saber[saber_num].blade[blade_num].length > 0)
 					{
-						if (!cent->gent->client->ps.saberInFlight || saber_num != 0)
+						if (!cent->gent->client->ps.saberInFlight)
 							//&& cent->gent->client->ps.saberActive)
 						{
 							//holding the saber in-hand
@@ -16069,32 +16069,13 @@ void CG_Player(centity_t* cent)
 							//						CGhoul2Info *nextModel = &cent->gent->ghoul2[1];
 							//FIXME: need a version of this that *doesn't* need the mFileName in the ghoul2
 							//FIXME: use an actual surfaceIndex?
-							char hand_name[MAX_QPATH];
-							if (saber_num == 0)
+							if (!gi.G2API_GetSurfaceRenderStatus(&cent->gent->ghoul2[cent->gent->playerModel], "r_hand"))//surf is still on
 							{
-								//this returns qfalse if it doesn't exist or isn't being rendered
-								if (G_GetRootSurfNameWithVariant(cent->gent, "r_hand", hand_name, sizeof hand_name))
-									//!gi.G2API_GetSurfaceRenderStatus( &cent->gent->ghoul2[cent->gent->playerModel], "r_hand" ) )//surf is still on
-								{
-									CG_AddSaberBladeGo(cent, cent, ent.renderfx, cent->gent->weaponModel[saber_num],
-										ent.origin, temp_angles, saber_num,
-										blade_num);
-									//CG_AddSaberBlades( cent, ent.renderfx, ent.origin, tempAngles, saber_num );
-								} //else, the limb will draw the blade itself
-							}
-							else if (saber_num == 1)
-							{
-								//this returns qfalse if it doesn't exist or isn't being rendered
-								if (G_GetRootSurfNameWithVariant(cent->gent, "l_hand", hand_name, sizeof hand_name))
-									//!gi.G2API_GetSurfaceRenderStatus( &cent->gent->ghoul2[cent->gent->playerModel], "l_hand" ) )//surf is still on
-								{
-									CG_AddSaberBladeGo(cent, cent, ent.renderfx, cent->gent->weaponModel[saber_num],
-										ent.origin, temp_angles, saber_num,
-										blade_num);
-									//CG_AddSaberBlades( cent, ent.renderfx, ent.origin, tempAngles, saber_num );
-								} //else, the limb will draw the blade itself
-							}
-						} //in-flight saber draws it's own blade
+								CG_AddSaberBladeGo(cent, cent, ent.renderfx, cent->gent->weaponModel[saber_num],
+									ent.origin, temp_angles, saber_num,
+									blade_num);
+							}//else, the limb will draw the blade itself
+						}//in-flight saber draws it's own blade
 					}
 					else
 					{
