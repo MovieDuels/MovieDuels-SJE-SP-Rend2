@@ -1257,6 +1257,7 @@ qboolean g_standard_humanoid(gentity_t* self)
 		"models/players/wampa/wampa",
 		"models/players/galak_mech/galak_mech",
 		"models/players/droideka/droideka",
+		"models/players/kotor_monster/kotor_monster",
 	};
 
 	// ------------------------------------------------------------
@@ -1329,6 +1330,7 @@ qboolean G_StandardHumanoid(const char* gla_name)
 		"wampa",           // models/players/wampa/wampa
 		"galak_mech",      // models/players/galak_mech/galak_mech
 		"droideka",
+		"kotor_monster",   // models/players/kotor_monster/kotor_monster
 	};
 
 	// ------------------------------------------------------------
@@ -1761,7 +1763,7 @@ qboolean g_set_g2_player_model_info(gentity_t* ent, const char* model_name, cons
 				ent->gutBolt = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "*mouth");
 				ent->crotchBolt = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "*ground");
 			}
-			else if (!Q_stricmp("wampa", model_name))
+			else if (!Q_stricmp("wampa", model_name) || !Q_stricmp("kotor_monster", model_name))
 			{
 				ent->headBolt = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "*head_eyes");
 				ent->cervicalBolt = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "neck_bone");
@@ -2010,7 +2012,7 @@ qboolean g_set_g2_player_model_info(gentity_t* ent, const char* model_name, cons
 		else if (!Q_stricmp("sand_creature", model_name))
 		{
 		}
-		else if (!Q_stricmp("wampa", model_name))
+		else if (!Q_stricmp("wampa", model_name) || !Q_stricmp("kotor_monster", model_name))
 		{
 		}
 		else if (!Q_stricmp("rockettrooper", model_name)
