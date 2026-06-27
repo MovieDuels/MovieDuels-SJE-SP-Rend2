@@ -1282,14 +1282,14 @@ qboolean G2API_SetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int
 	return ret;
 }
 
-qboolean G2API_GetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int acurrent_time, float* current_frame, int* startFrame, int* endFrame, int* flags, float* animSpeed, qhandle_t* model_list)
+qboolean G2API_GetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int acurrent_time, float* currentFrame, int* startFrame, int* endFrame, int* flags, float* animSpeed, qhandle_t* model_list)
 {
 	G2ERROR(boneName, "G2API_GetBoneAnim: NULL boneName");
 
 	assert(startFrame != endFrame); //this is bad
 	assert(startFrame != flags); //this is bad
 	assert(endFrame != flags); //this is bad
-	assert(current_frame != animSpeed); //this is bad
+	assert(currentFrame != animSpeed); //this is bad
 
 	if (G2_SetupModelPointers(ghlInfo))
 	{
@@ -1312,17 +1312,17 @@ qboolean G2API_GetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int
 		{
 			*startFrame = 1;
 		}
-		if (*current_frame < 0.0f)
+		if (*currentFrame < 0.0f)
 		{
-			*current_frame = 0.0f;
+			*currentFrame = 0.0f;
 		}
-		if (*current_frame > 100000)
+		if (*currentFrame > 100000)
 		{
-			*current_frame = 1;
+			*currentFrame = 1;
 		}
 #endif
 
-		qboolean ret = G2_Get_Bone_Anim(ghlInfo, ghlInfo->mBlist, boneName, a_CurrentTime, current_frame, startFrame, endFrame, flags, animSpeed);
+		qboolean ret = G2_Get_Bone_Anim(ghlInfo, ghlInfo->mBlist, boneName, a_CurrentTime, currentFrame, startFrame, endFrame, flags, animSpeed);
 		return ret;
 	}
 
@@ -1330,7 +1330,7 @@ qboolean G2API_GetBoneAnim(CGhoul2Info* ghlInfo, const char* boneName, const int
 	return qfalse;
 }
 
-qboolean G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, const int acurrent_time, float* current_frame, int* startFrame, int* endFrame, int* flags, float* animSpeed, qhandle_t* model_list)
+qboolean G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, const int acurrent_time, float* currentFrame, int* startFrame, int* endFrame, int* flags, float* animSpeed, qhandle_t* model_list)
 {
 	qboolean ret = qfalse;
 	if (G2_SetupModelPointers(ghlInfo))
@@ -1348,7 +1348,7 @@ qboolean G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, cons
 				ret = G2_Get_Bone_Anim_Index(ghlInfo->mBlist, // boneInfo_v &blist,
 					iBoneIndex, // const int index,
 					current_time, // const int current_time,
-					current_frame, // float *current_frame,
+					currentFrame, // float *currentFrame,
 					&sf, // int *startFrame,
 					&ef, // int *endFrame,
 					flags, // int *flags,
@@ -1359,10 +1359,10 @@ qboolean G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, cons
 				G2ERROR(sf < ghlInfo->aHeader->numFrames, "returning startframe>=numframes");
 				G2ERROR(ef > 0, "returning endframe<=0");
 				G2ERROR(ef <= ghlInfo->aHeader->numFrames, "returning endframe>numframes");
-				if (current_frame)
+				if (currentFrame)
 				{
-					G2ERROR(*current_frame >= 0.0f, "returning currentframe<0");
-					G2ERROR(((int)(*current_frame)) < ghlInfo->aHeader->numFrames, "returning currentframe>=numframes");
+					G2ERROR(*currentFrame >= 0.0f, "returning currentframe<0");
+					G2ERROR(((int)(*currentFrame)) < ghlInfo->aHeader->numFrames, "returning currentframe>=numframes");
 				}
 				if (endFrame)
 				{
@@ -1381,7 +1381,7 @@ qboolean G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, cons
 		if (endFrame) *endFrame = 1;
 		if (startFrame) *startFrame = 0;
 		if (flags) *flags = 0;
-		if (current_frame) *current_frame = 0.0f;
+		if (currentFrame) *currentFrame = 0.0f;
 		if (animSpeed) *animSpeed = 1.0f;
 	}
 	G2NOTE(ret, "G2API_GetBoneAnimIndex Failed");
@@ -1928,10 +1928,10 @@ qboolean G2API_AttachEnt(int* boltInfo, CGhoul2Info* ghlInfoTo, int toBoltIndex,
 	if (bltCount <= 0 || toBoltIndex < 0 || toBoltIndex >= bltCount)
 	{
 #ifdef _DEBUG
-		Com_Printf("G2API_AttachEnt: invalid toBoltIndex %d for model %s (num bolts %d), entNum %d\n",toBoltIndex,
-			(ghlInfoTo->mFileName && ghlInfoTo->mFileName[0]) ? ghlInfoTo->mFileName : "<unknown>",bltCount,entNum);
+		Com_Printf("G2API_AttachEnt: invalid toBoltIndex %d for model %s (num bolts %d), entNum %d\n", toBoltIndex,
+			(ghlInfoTo->mFileName && ghlInfoTo->mFileName[0]) ? ghlInfoTo->mFileName : "<unknown>", bltCount, entNum);
 #endif
-		*boltInfo = 0;
+		* boltInfo = 0;
 #ifdef _DEBUG
 		G2WARNING(ret, "G2API_AttachEnt Failed (invalid bolt index)");
 #endif

@@ -9179,7 +9179,7 @@ static void jedi_combat()
 						&& Distance(NPC->enemy->currentOrigin, NPC->currentOrigin) <= 64
 						&& (NPC->client->ps.weapon == WP_SABER)
 						&& NPC->next_kick_time <= level.time
-						&& irand(0, 100) > 75) 
+						&& irand(0, 100) > 75)
 					{// Close range - switch to melee... KICK!
 						if (d_JediAI->integer || g_DebugSaberCombat->integer)
 						{

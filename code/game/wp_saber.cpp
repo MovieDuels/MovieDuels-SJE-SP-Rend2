@@ -687,7 +687,7 @@ void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model,
 	}
 }
 
-void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,	const int weapon_num)
+void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num, const int weapon_num)
 {
 	if (!ent)
 	{
@@ -36916,7 +36916,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 		// Only affect enemies or non‑teammates, or explicit enemies
 		if (!traceEnt->client || is_same_team == qfalse || is_mutual_enemy == qtrue)
 		{
-			float current_frame = 0.0f;
+			float currentFrame = 0.0f;
 			float animSpeed = 0.0f;
 			int junk = 0;
 			int actual_time = 0;
@@ -36971,7 +36971,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
 						level.time,
-						&current_frame,
+						&currentFrame,
 						&junk,
 						&junk,
 						&junk,
@@ -36981,12 +36981,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 					gi.G2API_SetBoneAnimIndex(
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
-						current_frame,
-						current_frame + 1,
+						currentFrame,
+						currentFrame + 1,
 						BONE_ANIM_OVERRIDE_FREEZE,
 						animSpeed,
 						level.time,
-						current_frame,
+						currentFrame,
 						100);
 
 					if (traceEnt->headModel > 0)
@@ -36994,12 +36994,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						gi.G2API_SetBoneAnimIndex(
 							&traceEnt->ghoul2[traceEnt->headModel],
 							traceEnt->headRootBone,
-							current_frame,
-							current_frame + 1,
+							currentFrame,
+							currentFrame + 1,
 							BONE_ANIM_OVERRIDE_FREEZE,
 							animSpeed,
 							level.time,
-							current_frame,
+							currentFrame,
 							100);
 					}
 				}
@@ -37056,7 +37056,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
 						level.time,
-						&current_frame,
+						&currentFrame,
 						&junk,
 						&junk,
 						&junk,
@@ -37066,12 +37066,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 					gi.G2API_SetBoneAnimIndex(
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
-						current_frame,
-						current_frame + 1,
+						currentFrame,
+						currentFrame + 1,
 						BONE_ANIM_OVERRIDE_FREEZE,
 						animSpeed,
 						level.time,
-						current_frame,
+						currentFrame,
 						100);
 
 					if (traceEnt->headModel > 0)
@@ -37079,12 +37079,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						gi.G2API_SetBoneAnimIndex(
 							&traceEnt->ghoul2[traceEnt->headModel],
 							traceEnt->headRootBone,
-							current_frame,
-							current_frame + 1,
+							currentFrame,
+							currentFrame + 1,
 							BONE_ANIM_OVERRIDE_FREEZE,
 							animSpeed,
 							level.time,
-							current_frame,
+							currentFrame,
 							100);
 					}
 				}
@@ -37122,7 +37122,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
 						level.time,
-						&current_frame,
+						&currentFrame,
 						&junk,
 						&junk,
 						&junk,
@@ -37132,12 +37132,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 					gi.G2API_SetBoneAnimIndex(
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
-						current_frame,
-						current_frame + 1,
+						currentFrame,
+						currentFrame + 1,
 						BONE_ANIM_OVERRIDE_FREEZE,
 						animSpeed,
 						level.time,
-						current_frame,
+						currentFrame,
 						100);
 
 					if (traceEnt->headModel > 0)
@@ -37145,12 +37145,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						gi.G2API_SetBoneAnimIndex(
 							&traceEnt->ghoul2[traceEnt->headModel],
 							traceEnt->headRootBone,
-							current_frame,
-							current_frame + 1,
+							currentFrame,
+							currentFrame + 1,
 							BONE_ANIM_OVERRIDE_FREEZE,
 							animSpeed,
 							level.time,
-							current_frame,
+							currentFrame,
 							100);
 					}
 				}
@@ -37189,7 +37189,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
 						level.time,
-						&current_frame,
+						&currentFrame,
 						&junk,
 						&junk,
 						&junk,
@@ -37199,12 +37199,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 					gi.G2API_SetBoneAnimIndex(
 						&traceEnt->ghoul2[traceEnt->playerModel],
 						traceEnt->rootBone,
-						current_frame,
-						current_frame + 1,
+						currentFrame,
+						currentFrame + 1,
 						BONE_ANIM_OVERRIDE_FREEZE,
 						animSpeed,
 						level.time,
-						current_frame,
+						currentFrame,
 						100);
 
 					if (traceEnt->headModel > 0)
@@ -37212,12 +37212,12 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 						gi.G2API_SetBoneAnimIndex(
 							&traceEnt->ghoul2[traceEnt->headModel],
 							traceEnt->headRootBone,
-							current_frame,
-							current_frame + 1,
+							currentFrame,
+							currentFrame + 1,
 							BONE_ANIM_OVERRIDE_FREEZE,
 							animSpeed,
 							level.time,
-							current_frame,
+							currentFrame,
 							100);
 					}
 				}
@@ -37236,7 +37236,7 @@ void ForceStasis(gentity_t* self)
 	trace_t tr;
 	vec3_t forward;
 	gentity_t* traceEnt = nullptr;
-	float current_frame, animSpeed;
+	float currentFrame, animSpeed;
 	int junk, actual_time;
 
 	if (self->health <= 0)
@@ -37530,16 +37530,16 @@ void ForceStasis(gentity_t* self)
 			{
 				actual_time = cg.time ? cg.time : level.time;
 				gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					level.time, &currentFrame, &junk, &junk, &junk, &animSpeed, nullptr);
 
 				gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					current_frame, current_frame + 1,
-					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					currentFrame, currentFrame + 1,
+					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				if (traceEnt->headModel > 0)
 				{
 					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+						currentFrame, currentFrame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				}
 			}
 		}
@@ -37587,16 +37587,16 @@ void ForceStasis(gentity_t* self)
 			{
 				actual_time = cg.time ? cg.time : level.time;
 				gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					level.time, &currentFrame, &junk, &junk, &junk, &animSpeed, nullptr);
 
 				gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					current_frame, current_frame + 1,
-					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					currentFrame, currentFrame + 1,
+					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				if (traceEnt->headModel > 0)
 				{
 					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+						currentFrame, currentFrame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				}
 			}
 		}
@@ -37639,16 +37639,16 @@ void ForceStasis(gentity_t* self)
 			{
 				actual_time = cg.time ? cg.time : level.time;
 				gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					level.time, &currentFrame, &junk, &junk, &junk, &animSpeed, nullptr);
 
 				gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					current_frame, current_frame + 1,
-					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					currentFrame, currentFrame + 1,
+					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				if (traceEnt->headModel > 0)
 				{
 					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+						currentFrame, currentFrame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				}
 			}
 		}
@@ -37691,16 +37691,16 @@ void ForceStasis(gentity_t* self)
 			{
 				actual_time = cg.time ? cg.time : level.time;
 				gi.G2API_GetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					level.time, &current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
+					level.time, &currentFrame, &junk, &junk, &junk, &animSpeed, nullptr);
 
 				gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->playerModel], traceEnt->rootBone,
-					current_frame, current_frame + 1,
-					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+					currentFrame, currentFrame + 1,
+					BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				if (traceEnt->headModel > 0)
 				{
 					gi.G2API_SetBoneAnimIndex(&traceEnt->ghoul2[traceEnt->headModel], traceEnt->headRootBone,
-						current_frame, current_frame + 1,
-						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, current_frame, 100);
+						currentFrame, currentFrame + 1,
+						BONE_ANIM_OVERRIDE_FREEZE, animSpeed, level.time, currentFrame, 100);
 				}
 			}
 		}

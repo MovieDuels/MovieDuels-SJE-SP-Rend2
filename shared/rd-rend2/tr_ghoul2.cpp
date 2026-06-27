@@ -309,7 +309,7 @@ public:
 struct SBoneCalc
 {
 	int newFrame;
-	int	current_frame;
+	int	currentFrame;
 	float backlerp;
 	float blendFrame;
 	int blendOldFrame;
@@ -340,7 +340,7 @@ class CBoneCache
 				const SBoneCalc& par = mBones[mFinalBones[index].parent];
 				SBoneCalc& bone = mBones[index];
 				bone.newFrame = par.newFrame;
-				bone.current_frame = par.current_frame;
+				bone.currentFrame = par.currentFrame;
 				bone.backlerp = par.backlerp;
 				bone.blendFrame = par.blendFrame;
 				bone.blendOldFrame = par.blendOldFrame;
@@ -1225,7 +1225,7 @@ void G2_TimingModel(
 	boneInfo_t& bone,
 	const int current_time,
 	const int numFramesInFile,
-	int& current_frame,
+	int& currentFrame,
 	int& newFrame,
 	float& lerp)
 {
@@ -1317,7 +1317,7 @@ void G2_TimingModel(
 						// Lerp fraction between endFrame and startFrame.
 						lerp = (endFrame + 1.0f) - newLerpFrame;
 
-						current_frame = (int)endFrame;
+						currentFrame = (int)endFrame;
 						newFrame = bone.startFrame;
 					}
 					else
@@ -1332,15 +1332,15 @@ void G2_TimingModel(
 
 						lerp = ceilf(newLerpFrame) - newLerpFrame;
 
-						current_frame = (int)ceilf(newLerpFrame);
+						currentFrame = (int)ceilf(newLerpFrame);
 
-						if (current_frame <= (int)(endFrame + 1.0f))
+						if (currentFrame <= (int)(endFrame + 1.0f))
 						{
 							newFrame = bone.startFrame;
 						}
 						else
 						{
-							newFrame = current_frame - 1;
+							newFrame = currentFrame - 1;
 						}
 					}
 				}
@@ -1352,7 +1352,7 @@ void G2_TimingModel(
 						// Virtual frame between last frame and startFrame.
 						lerp = newLerpFrame - (float)((int)newLerpFrame);
 
-						current_frame = (int)newLerpFrame;
+						currentFrame = (int)newLerpFrame;
 						newFrame = bone.startFrame;
 					}
 					else
@@ -1367,7 +1367,7 @@ void G2_TimingModel(
 
 						lerp = newLerpFrame - (float)((int)newLerpFrame);
 
-						current_frame = (int)newLerpFrame;
+						currentFrame = (int)newLerpFrame;
 
 						if (newLerpFrame >= (endFrame - 1.0f))
 						{
@@ -1375,7 +1375,7 @@ void G2_TimingModel(
 						}
 						else
 						{
-							newFrame = current_frame + 1;
+							newFrame = currentFrame + 1;
 						}
 					}
 				}
@@ -1388,14 +1388,14 @@ void G2_TimingModel(
 					// Freeze on last frame depending on direction.
 					if (animSpeed > 0.0f)
 					{
-						current_frame = bone.endFrame - 1;
+						currentFrame = bone.endFrame - 1;
 					}
 					else
 					{
-						current_frame = bone.endFrame + 1;
+						currentFrame = bone.endFrame + 1;
 					}
 
-					newFrame = current_frame;
+					newFrame = currentFrame;
 					lerp = 0.0f;
 				}
 				else
@@ -1411,28 +1411,28 @@ void G2_TimingModel(
 			if (animSpeed > 0.0f)
 			{
 				// Forward animation.
-				current_frame = (int)newLerpFrame;
-				lerp = newLerpFrame - (float)current_frame;
+				currentFrame = (int)newLerpFrame;
+				lerp = newLerpFrame - (float)currentFrame;
 
-				if (current_frame < 0 || current_frame >= numFramesInFile)
+				if (currentFrame < 0 || currentFrame >= numFramesInFile)
 				{
 #ifdef _DEBUG
 					Com_Printf(
-						"Debug: G2_TimingModel - current_frame %d out of range (0..%d). Clamping.\n",
-						current_frame, numFramesInFile - 1);
+						"Debug: G2_TimingModel - currentFrame %d out of range (0..%d). Clamping.\n",
+						currentFrame, numFramesInFile - 1);
 #endif
 
-					if (current_frame < 0)
+					if (currentFrame < 0)
 					{
-						current_frame = 0;
+						currentFrame = 0;
 					}
 					else
 					{
-						current_frame = numFramesInFile - 1;
+						currentFrame = numFramesInFile - 1;
 					}
 				}
 
-				newFrame = current_frame + 1;
+				newFrame = currentFrame + 1;
 
 				if ((int)endFrame > numFramesInFile)
 				{
@@ -1460,17 +1460,17 @@ void G2_TimingModel(
 				// Reverse animation.
 				lerp = ceilf(newLerpFrame) - newLerpFrame;
 
-				current_frame = (int)ceilf(newLerpFrame);
+				currentFrame = (int)ceilf(newLerpFrame);
 
-				if (current_frame > bone.startFrame)
+				if (currentFrame > bone.startFrame)
 				{
-					current_frame = bone.startFrame;
-					newFrame = current_frame;
+					currentFrame = bone.startFrame;
+					newFrame = currentFrame;
 					lerp = 0.0f;
 				}
 				else
 				{
-					newFrame = current_frame - 1;
+					newFrame = currentFrame - 1;
 
 					if (newFrame < (endFrame + 1.0f))
 					{
@@ -1494,44 +1494,44 @@ void G2_TimingModel(
 		// ----------------------------------------------------
 		if (animSpeed < 0.0f)
 		{
-			current_frame = bone.endFrame + 1;
+			currentFrame = bone.endFrame + 1;
 		}
 		else
 		{
-			current_frame = bone.endFrame - 1;
+			currentFrame = bone.endFrame - 1;
 		}
 
-		if (current_frame < 0)
+		if (currentFrame < 0)
 		{
-			current_frame = 0;
+			currentFrame = 0;
 		}
-		else if (current_frame >= numFramesInFile)
+		else if (currentFrame >= numFramesInFile)
 		{
-			current_frame = numFramesInFile - 1;
+			currentFrame = numFramesInFile - 1;
 		}
 
-		newFrame = current_frame;
+		newFrame = currentFrame;
 		lerp = 0.0f;
 	}
 
 	// --------------------------------------------------------
 	// Final safety clamps (replace final asserts)
 	// --------------------------------------------------------
-	if (current_frame < 0 || current_frame >= numFramesInFile)
+	if (currentFrame < 0 || currentFrame >= numFramesInFile)
 	{
 #ifdef _DEBUG
 		Com_Printf(
-			"Debug: G2_TimingModel - final current_frame %d out of range (0..%d). Clamping.\n",
-			current_frame, numFramesInFile - 1);
+			"Debug: G2_TimingModel - final currentFrame %d out of range (0..%d). Clamping.\n",
+			currentFrame, numFramesInFile - 1);
 #endif
 
-		if (current_frame < 0)
+		if (currentFrame < 0)
 		{
-			current_frame = 0;
+			currentFrame = 0;
 		}
 		else
 		{
-			current_frame = numFramesInFile - 1;
+			currentFrame = numFramesInFile - 1;
 		}
 	}
 
@@ -1763,7 +1763,7 @@ static void G2_TransformBone(int child, CBoneCache& BC)
 				bone,
 				BC.incomingTime,
 				BC.header->numFrames,
-				TB.current_frame,
+				TB.currentFrame,
 				TB.newFrame,
 				TB.backlerp);
 		}
@@ -1779,9 +1779,9 @@ static void G2_TransformBone(int child, CBoneCache& BC)
 		TB.newFrame = 0;
 	}
 
-	if (!(TB.current_frame >= 0 && TB.current_frame < BC.header->numFrames))
+	if (!(TB.currentFrame >= 0 && TB.currentFrame < BC.header->numFrames))
 	{
-		TB.current_frame = 0;
+		TB.currentFrame = 0;
 	}
 
 	// figure out where the location of the blended animation data is
@@ -1815,7 +1815,7 @@ static void G2_TransformBone(int child, CBoneCache& BC)
 				boneListIndex,
 				BC.incomingTime,
 				(int)TB.newFrame,
-				(int)TB.current_frame,
+				(int)TB.currentFrame,
 				(int)TB.blendFrame,
 				(int)TB.blendOldFrame,
 				TB.backlerp,
@@ -1829,7 +1829,7 @@ static void G2_TransformBone(int child, CBoneCache& BC)
 				boneListIndex,
 				BC.incomingTime,
 				TB.newFrame,
-				TB.current_frame,
+				TB.currentFrame,
 				TB.backlerp);
 		}
 
@@ -1875,14 +1875,14 @@ static void G2_TransformBone(int child, CBoneCache& BC)
 	// transforms into
 	if (!TB.backlerp)
 	{
-		UnCompressBone(currentBone.matrix, child, BC.header, TB.current_frame);
+		UnCompressBone(currentBone.matrix, child, BC.header, TB.currentFrame);
 	}
 	else
 	{
 		mdxaBone_t newFrameBone{};
 		mdxaBone_t currentFrameBone{};
 		UnCompressBone(newFrameBone.matrix, child, BC.header, TB.newFrame);
-		UnCompressBone(currentFrameBone.matrix, child, BC.header, TB.current_frame);
+		UnCompressBone(currentFrameBone.matrix, child, BC.header, TB.currentFrame);
 		Mat3x4_Lerp(&currentBone, &newFrameBone, &currentFrameBone, TB.backlerp);
 	}
 
@@ -2180,7 +2180,7 @@ static void G2_TransformGhoulBones(
 
 	SBoneCalc& TB = ghoul2.mBoneCache->Root();
 	TB.newFrame = 0;
-	TB.current_frame = 0;
+	TB.currentFrame = 0;
 	TB.backlerp = 0.0f;
 	TB.blendFrame = 0;
 	TB.blendOldFrame = 0;

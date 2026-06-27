@@ -592,27 +592,41 @@ Update the default VBO to replace the client side vertex arrays
 */
 void RB_UpdateVBOs(unsigned int attribBits)
 {
-	gpuFrame_t* current_frame = backEndData->currentFrame;
+	gpuFrame_t* currentFrame = backEndData->currentFrame;
 
 	GLimp_LogComment("--- RB_UpdateVBOs ---\n");
 
 	backEnd.pc.c_dynamicVboDraws++;
 
-	// update the default VBO
-	if (tess.numVertexes > 0 && tess.numVertexes <= SHADER_MAX_VERTEXES)
-	{
-		VBO_t* frameVbo = current_frame->dynamicVbo;
-		GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT;
-		VertexArraysProperties vertexArrays = {};
-		CalculateVertexArraysProperties(attribBits, &vertexArrays);
+	VertexArraysProperties vertexArrays = {};
+	CalculateVertexArraysProperties(attribBits, &vertexArrays);
+	int numVertexes = (tess.numVertexes > 0 && tess.numVertexes <= SHADER_MAX_VERTEXES) ? tess.numVertexes : 0;
+	size_t totalVertexDataSize = numVertexes * vertexArrays.vertexDataSize;
+	int numIndexes = (tess.numIndexes > 0 && tess.numIndexes <= SHADER_MAX_INDEXES) ? tess.numIndexes : 0;
+	int totalIndexDataSize = numIndexes * sizeof(tess.indexes[0]);
+	VBO_t* frameVbo = currentFrame->dynamicVbo;
+	IBO_t* frameIbo = currentFrame->dynamicIbo;
 
-		size_t totalVertexDataSize = tess.numVertexes * vertexArrays.vertexDataSize;
+	// Exceeding dynamic surface buffer, do a full frame sync
+	if (((currentFrame->dynamicVboWriteOffset + totalVertexDataSize) > frameVbo->vertexesSize) ||
+		((currentFrame->dynamicIboWriteOffset + totalIndexDataSize) > frameIbo->indexesSize))
+	{
+		R_NewFrameSync();
+		RE_BeginFrame(tr.refdef.stereoFrame);
+	}
+
+	// update the default VBO
+	if (numVertexes)
+	{
+		GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT;
+
 		backEnd.pc.c_dynamicVboTotalSize += totalVertexDataSize;
 
-		if ((current_frame->dynamicVboWriteOffset + totalVertexDataSize) > frameVbo->vertexesSize)
+		if ((currentFrame->dynamicVboWriteOffset + totalVertexDataSize) > frameVbo->vertexesSize)
 		{
 			// TODO: Eh...resize?
-			assert(!"This shouldn't happen");
+			//assert(!"This shouldn't happen");
+			Com_Printf("^1WARNING: Dynamic VBO overflow — skipping draw this frame\n");
 			return;
 		}
 
@@ -621,11 +635,11 @@ void RB_UpdateVBOs(unsigned int attribBits)
 		void* dstPtr;
 		if (glRefConfig.immutableBuffers)
 		{
-			dstPtr = (byte*)current_frame->dynamicVboMemory + current_frame->dynamicVboWriteOffset;
+			dstPtr = (byte*)currentFrame->dynamicVboMemory + currentFrame->dynamicVboWriteOffset;
 		}
 		else
 		{
-			dstPtr = qglMapBufferRange(GL_ARRAY_BUFFER, current_frame->dynamicVboWriteOffset,
+			dstPtr = qglMapBufferRange(GL_ARRAY_BUFFER, currentFrame->dynamicVboWriteOffset,
 				totalVertexDataSize, mapFlags);
 		}
 
@@ -650,33 +664,32 @@ void RB_UpdateVBOs(unsigned int attribBits)
 			qglUnmapBuffer(GL_ARRAY_BUFFER);
 		}
 
-		current_frame->dynamicVboWriteOffset += totalVertexDataSize;
+		currentFrame->dynamicVboWriteOffset += totalVertexDataSize;
 	}
 
 	// update the default IBO
-	if (tess.numIndexes > 0 && tess.numIndexes <= SHADER_MAX_INDEXES)
+	if (numIndexes)
 	{
-		IBO_t* frameIbo = current_frame->dynamicIbo;
 		GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT;
-		int totalIndexDataSize = tess.numIndexes * sizeof(tess.indexes[0]);
 
 		R_BindIBO(frameIbo);
 
-		if ((current_frame->dynamicIboWriteOffset + totalIndexDataSize) > frameIbo->indexesSize)
+		if ((currentFrame->dynamicIboWriteOffset + totalIndexDataSize) > frameIbo->indexesSize)
 		{
 			// TODO: Resize the buffer?
-			assert(!"This shouldn't happen");
+			//assert(!"This shouldn't happen");
+			Com_Printf("^1WARNING: Dynamic VBO overflow — skipping draw this frame\n");
 			return;
 		}
 
 		void* dst;
 		if (glRefConfig.immutableBuffers)
 		{
-			dst = (byte*)current_frame->dynamicIboMemory + current_frame->dynamicIboWriteOffset;
+			dst = (byte*)currentFrame->dynamicIboMemory + currentFrame->dynamicIboWriteOffset;
 		}
 		else
 		{
-			dst = qglMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, current_frame->dynamicIboWriteOffset,
+			dst = qglMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, currentFrame->dynamicIboWriteOffset,
 				totalIndexDataSize, mapFlags);
 		}
 
@@ -687,7 +700,7 @@ void RB_UpdateVBOs(unsigned int attribBits)
 			qglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		}
 
-		current_frame->dynamicIboWriteOffset += totalIndexDataSize;
+		currentFrame->dynamicIboWriteOffset += totalIndexDataSize;
 	}
 }
 
@@ -738,10 +751,10 @@ void RB_UpdateGoreVertexData(gpuFrame_t* currentFrame, srfG2GoreSurface_t* goreS
 
 void RB_CommitInternalBufferData()
 {
-	gpuFrame_t* current_frame = backEndData->currentFrame;
+	gpuFrame_t* currentFrame = backEndData->currentFrame;
 
-	current_frame->dynamicIboCommitOffset = current_frame->dynamicIboWriteOffset;
-	current_frame->dynamicVboCommitOffset = current_frame->dynamicVboWriteOffset;
+	currentFrame->dynamicIboCommitOffset = currentFrame->dynamicIboWriteOffset;
+	currentFrame->dynamicVboCommitOffset = currentFrame->dynamicVboWriteOffset;
 }
 
 void RB_BindUniformBlock(GLuint ubo, uniformBlock_t block, size_t offset)

@@ -29,14 +29,14 @@ R_PerformanceCounters
 */
 static void R_PerformanceCounters(void)
 {
-	gpuFrame_t* current_frame = backEndData->frames + (backEndData->realFrameNumber % MAX_FRAMES);
+	gpuFrame_t* currentFrame = backEndData->frames + (backEndData->realFrameNumber % MAX_FRAMES);
 
 	if (!r_speeds->integer) {
 		// clear the counters even if we aren't printing
 		Com_Memset(&tr.pc, 0, sizeof(tr.pc));
 		Com_Memset(&backEnd.pc, 0, sizeof(backEnd.pc));
-		current_frame->numTimedBlocks = 0;
-		current_frame->numTimers = 0;
+		currentFrame->numTimedBlocks = 0;
+		currentFrame->numTimers = 0;
 		return;
 	}
 
@@ -131,8 +131,8 @@ static void R_PerformanceCounters(void)
 
 	Com_Memset(&tr.pc, 0, sizeof(tr.pc));
 	Com_Memset(&backEnd.pc, 0, sizeof(backEnd.pc));
-	current_frame->numTimedBlocks = 0;
-	current_frame->numTimers = 0;
+	currentFrame->numTimedBlocks = 0;
+	currentFrame->numTimers = 0;
 }
 
 /*
@@ -804,11 +804,11 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 
 void R_NewFrameSync()
 {
-	gpuFrame_t* current_frame = backEndData->currentFrame;
+	gpuFrame_t* currentFrame = backEndData->currentFrame;
 
-	assert(!current_frame->sync);
-	current_frame->sync = qglFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-	current_frame->currentScene = 0;
+	assert(!currentFrame->sync);
+	currentFrame->sync = qglFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	currentFrame->currentScene = 0;
 
 	backEndData->realFrameNumber++;
 	backEnd.framePostProcessed = qfalse;

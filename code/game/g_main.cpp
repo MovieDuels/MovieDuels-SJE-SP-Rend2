@@ -1952,7 +1952,7 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 
 		// Lock current anim frame on some key bones
 		{
-			float current_frame;
+			float currentFrame;
 			int   startFrame;
 			int   endFrame;
 			int   flags;
@@ -1960,26 +1960,26 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 
 			if (gi.G2API_GetBoneAnim(&ent->ghoul2[0], "model_root",
 				cg.time ? cg.time : level.time,
-				&current_frame, &startFrame, &endFrame,
+				&currentFrame, &startFrame, &endFrame,
 				&flags, &animSpeed, NULL))
 			{
 				const int blend_time = 500;
 
 				gi.G2API_SetBoneAnim(&ent->ghoul2[0], "lower_lumbar",
-					current_frame, current_frame + 1,
+					currentFrame, currentFrame + 1,
 					flags, animSpeed,
 					cg.time ? cg.time : level.time,
-					current_frame, blend_time);
+					currentFrame, blend_time);
 				gi.G2API_SetBoneAnim(&ent->ghoul2[0], "model_root",
-					current_frame, current_frame + 1,
+					currentFrame, currentFrame + 1,
 					flags, animSpeed,
 					cg.time ? cg.time : level.time,
-					current_frame, blend_time);
+					currentFrame, blend_time);
 				gi.G2API_SetBoneAnim(&ent->ghoul2[0], "Motion",
-					current_frame, current_frame + 1,
+					currentFrame, currentFrame + 1,
 					flags, animSpeed,
 					cg.time ? cg.time : level.time,
-					current_frame, blend_time);
+					currentFrame, blend_time);
 			}
 		}
 

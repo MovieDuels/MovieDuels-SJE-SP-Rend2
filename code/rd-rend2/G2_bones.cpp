@@ -631,12 +631,12 @@ qboolean G2_Set_Bone_Anim_Index(
 	// Blending logic
 	if (modFlags & BONE_ANIM_BLEND)
 	{
-		float current_frame, curAnimSpeed;
+		float currentFrame, curAnimSpeed;
 		int curStart, curEnd, curFlags;
 
 		if (G2_Get_Bone_Anim_Index(
 			blist, index, current_time,
-			&current_frame, &curStart, &curEnd, &curFlags, &curAnimSpeed, numFrames))
+			&currentFrame, &curStart, &curEnd, &curFlags, &curAnimSpeed, numFrames))
 		{
 			if (blist[index].blendStart == current_time)
 			{
@@ -646,13 +646,13 @@ qboolean G2_Set_Bone_Anim_Index(
 			{
 				if (curAnimSpeed < 0.0f)
 				{
-					blist[index].blendFrame = floor(current_frame);
-					blist[index].blendLerpFrame = floor(current_frame);
+					blist[index].blendFrame = floor(currentFrame);
+					blist[index].blendLerpFrame = floor(currentFrame);
 				}
 				else
 				{
-					blist[index].blendFrame = current_frame;
-					blist[index].blendLerpFrame = current_frame + 1;
+					blist[index].blendFrame = currentFrame;
+					blist[index].blendLerpFrame = currentFrame + 1;
 
 					// Clamp blendFrame
 					if (blist[index].blendFrame >= curEnd)
@@ -814,7 +814,7 @@ qboolean G2_Get_Bone_Anim_Range(const CGhoul2Info* ghlInfo, const boneInfo_v& bl
 
 // given a model, bonelist and bonename, return the current frame, startframe and endframe of the current animation
 // NOTE if we aren't running an animation, then qfalse is returned
-void G2_TimingModel(boneInfo_t& bone, const int current_time, const int numFramesInFile, int& current_frame, int& newFrame, float& lerp);
+void G2_TimingModel(boneInfo_t& bone, const int current_time, const int numFramesInFile, int& currentFrame, int& newFrame, float& lerp);
 
 qboolean G2_Get_Bone_Anim_Index(boneInfo_v& blist, const int index, const int current_time, float* retcurrent_frame, int* startFrame, int* endFrame, int* flags, float* retAnimSpeed, const int numFrames)
 {
@@ -824,13 +824,13 @@ qboolean G2_Get_Bone_Anim_Index(boneInfo_v& blist, const int index, const int cu
 		// are we an animating bone?
 		if (blist[index].flags & (BONE_ANIM_OVERRIDE_LOOP | BONE_ANIM_OVERRIDE))
 		{
-			int current_frame, newFrame;
+			int currentFrame, newFrame;
 			float lerp;
-			G2_TimingModel(blist[index], current_time, numFrames, current_frame, newFrame, lerp);
+			G2_TimingModel(blist[index], current_time, numFrames, currentFrame, newFrame, lerp);
 
 			if (retcurrent_frame)
 			{
-				*retcurrent_frame = static_cast<float>(current_frame) + lerp;
+				*retcurrent_frame = static_cast<float>(currentFrame) + lerp;
 			}
 			if (startFrame)
 			{
@@ -876,7 +876,7 @@ qboolean G2_Get_Bone_Anim_Index(boneInfo_v& blist, const int index, const int cu
 
 // given a model, bonelist and bonename, return the current frame, startframe and endframe of the current animation
 // NOTE if we aren't running an animation, then qfalse is returned
-qboolean G2_Get_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int current_time, float* current_frame, int* startFrame, int* endFrame, int* flags, float* retAnimSpeed)
+qboolean G2_Get_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int current_time, float* currentFrame, int* startFrame, int* endFrame, int* flags, float* retAnimSpeed)
 {
 	model_t* mod_a = (model_t*)ghlInfo->animModel;
 	int index = G2_Find_Bone(mod_a, blist, boneName);
@@ -893,11 +893,11 @@ qboolean G2_Get_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 
 	assert(ghlInfo->aHeader);
 
-	if (G2_Get_Bone_Anim_Index(blist, index, current_time, current_frame, startFrame, endFrame, flags, retAnimSpeed, ghlInfo->aHeader->numFrames))
+	if (G2_Get_Bone_Anim_Index(blist, index, current_time, currentFrame, startFrame, endFrame, flags, retAnimSpeed, ghlInfo->aHeader->numFrames))
 	{
 		assert(*startFrame >= 0 && *startFrame < ghlInfo->aHeader->numFrames);
 		assert(*endFrame > 0 && *endFrame <= ghlInfo->aHeader->numFrames);
-		assert(*current_frame >= 0.0f && ((int)(*current_frame)) < ghlInfo->aHeader->numFrames);
+		assert(*currentFrame >= 0.0f && ((int)(*currentFrame)) < ghlInfo->aHeader->numFrames);
 		return qtrue;
 	}
 
@@ -913,13 +913,13 @@ qboolean G2_Pause_Bone_Anim_Index(boneInfo_v& blist, const int bone_index, const
 		if (blist[bone_index].pauseTime)
 		{
 			int startFrame, endFrame, flags;
-			float current_frame, animSpeed;
+			float currentFrame, animSpeed;
 
 			// figure out what frame we are on now
-			if (G2_Get_Bone_Anim_Index(blist, bone_index, blist[bone_index].pauseTime, &current_frame, &startFrame, &endFrame, &flags, &animSpeed, numFrames))
+			if (G2_Get_Bone_Anim_Index(blist, bone_index, blist[bone_index].pauseTime, &currentFrame, &startFrame, &endFrame, &flags, &animSpeed, numFrames))
 			{
 				// reset start time so we are actually on this frame right now
-				G2_Set_Bone_Anim_Index(blist, bone_index, startFrame, endFrame, flags, animSpeed, current_time, current_frame, 0, numFrames);
+				G2_Set_Bone_Anim_Index(blist, bone_index, startFrame, endFrame, flags, animSpeed, current_time, currentFrame, 0, numFrames);
 				// no pausing anymore
 				blist[bone_index].pauseTime = 0;
 			}

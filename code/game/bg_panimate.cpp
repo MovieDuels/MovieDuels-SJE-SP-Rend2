@@ -3150,7 +3150,7 @@ saber_moveName_t PM_SaberLungeAttackMove(const qboolean fallback_to_normal_lunge
 {
 	vec3_t fwd_angles, jumpFwd;
 
-	if (in_camera) 
+	if (in_camera)
 	{
 		return LS_NONE; // don't do this in camera mode
 	}
@@ -5483,7 +5483,7 @@ int PM_TorsoAnimForFrame(gentity_t* ent, const int torso_frame)
 qboolean PM_FinishedCurrentLegsAnim(gentity_t* self)
 {
 	int junk;
-	float current_frame, animSpeed;
+	float currentFrame, animSpeed;
 
 	if (!self->client)
 	{
@@ -5491,8 +5491,8 @@ qboolean PM_FinishedCurrentLegsAnim(gentity_t* self)
 	}
 
 	gi.G2API_GetBoneAnimIndex(&self->ghoul2[self->playerModel], self->rootBone, cg.time ? cg.time : level.time,
-		&current_frame, &junk, &junk, &junk, &animSpeed, nullptr);
-	const int cur_frame = floor(current_frame);
+		&currentFrame, &junk, &junk, &junk, &animSpeed, nullptr);
+	const int cur_frame = floor(currentFrame);
 
 	const int legs_anim = self->client->ps.legsAnim;
 	const animation_t* animations = level.knownAnimFileSets[self->client->clientInfo.animFileIndex].animations;

@@ -121,7 +121,7 @@ public:
 struct SBoneCalc
 {
 	int				newFrame;
-	int				current_frame;
+	int				currentFrame;
 	float			backlerp;
 	float			blendFrame;
 	int				blendOldFrame;
@@ -146,7 +146,7 @@ class CBoneCache
 				EvalLow(mFinalBones[index].parent); // make sure parent is evaluated
 				const SBoneCalc& par = mBones[mFinalBones[index].parent];
 				mBones[index].newFrame = par.newFrame;
-				mBones[index].current_frame = par.current_frame;
+				mBones[index].currentFrame = par.currentFrame;
 				mBones[index].backlerp = par.backlerp;
 				mBones[index].blendFrame = par.blendFrame;
 				mBones[index].blendOldFrame = par.blendOldFrame;
@@ -947,7 +947,7 @@ void G2_TimingModel(
 	boneInfo_t& bone,
 	const int current_time,
 	const int numFramesInFile,
-	int& current_frame,
+	int& currentFrame,
 	int& newFrame,
 	float& lerp)
 {
@@ -1033,21 +1033,21 @@ void G2_TimingModel(
 					{
 						lerp = (endFrame + 1.0f) - newFrame_g;
 
-						current_frame = static_cast<int>(endFrame);
-						if (current_frame < 0 || current_frame >= numFramesInFile)
+						currentFrame = static_cast<int>(endFrame);
+						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
 #ifdef _DEBUG
 							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - current_frame %d out of range. Clamping.\n",
-								current_frame);
+								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
+								currentFrame);
 #endif
-							if (current_frame < 0)
+							if (currentFrame < 0)
 							{
-								current_frame = 0;
+								currentFrame = 0;
 							}
 							else
 							{
-								current_frame = numFramesInFile - 1;
+								currentFrame = numFramesInFile - 1;
 							}
 						}
 
@@ -1082,31 +1082,31 @@ void G2_TimingModel(
 
 						lerp = ceilf(newFrame_g) - newFrame_g;
 
-						current_frame = static_cast<int>(ceilf(newFrame_g));
-						if (current_frame < 0 || current_frame >= numFramesInFile)
+						currentFrame = static_cast<int>(ceilf(newFrame_g));
+						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
 #ifdef _DEBUG
 							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - current_frame %d out of range. Clamping.\n",
-								current_frame);
+								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
+								currentFrame);
 #endif
-							if (current_frame < 0)
+							if (currentFrame < 0)
 							{
-								current_frame = 0;
+								currentFrame = 0;
 							}
 							else
 							{
-								current_frame = numFramesInFile - 1;
+								currentFrame = numFramesInFile - 1;
 							}
 						}
 
-						if (current_frame <= static_cast<int>(endFrame + 1.0f))
+						if (currentFrame <= static_cast<int>(endFrame + 1.0f))
 						{
 							newFrame = bone.startFrame;
 						}
 						else
 						{
-							newFrame = current_frame - 1;
+							newFrame = currentFrame - 1;
 						}
 
 						if (newFrame < 0 || newFrame >= numFramesInFile)
@@ -1134,21 +1134,21 @@ void G2_TimingModel(
 					{
 						lerp = newFrame_g - static_cast<float>(static_cast<int>(newFrame_g));
 
-						current_frame = static_cast<int>(newFrame_g);
-						if (current_frame < 0 || current_frame >= numFramesInFile)
+						currentFrame = static_cast<int>(newFrame_g);
+						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
 #ifdef _DEBUG
 							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - current_frame %d out of range. Clamping.\n",
-								current_frame);
+								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
+								currentFrame);
 #endif
-							if (current_frame < 0)
+							if (currentFrame < 0)
 							{
-								current_frame = 0;
+								currentFrame = 0;
 							}
 							else
 							{
-								current_frame = numFramesInFile - 1;
+								currentFrame = numFramesInFile - 1;
 							}
 						}
 
@@ -1183,21 +1183,21 @@ void G2_TimingModel(
 
 						lerp = newFrame_g - static_cast<float>(static_cast<int>(newFrame_g));
 
-						current_frame = static_cast<int>(newFrame_g);
-						if (current_frame < 0 || current_frame >= numFramesInFile)
+						currentFrame = static_cast<int>(newFrame_g);
+						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
 #ifdef _DEBUG
 							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - current_frame %d out of range. Clamping.\n",
-								current_frame);
+								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
+								currentFrame);
 #endif
-							if (current_frame < 0)
+							if (currentFrame < 0)
 							{
-								current_frame = 0;
+								currentFrame = 0;
 							}
 							else
 							{
-								current_frame = numFramesInFile - 1;
+								currentFrame = numFramesInFile - 1;
 							}
 						}
 
@@ -1207,7 +1207,7 @@ void G2_TimingModel(
 						}
 						else
 						{
-							newFrame = current_frame + 1;
+							newFrame = currentFrame + 1;
 						}
 
 						if (newFrame < 0 || newFrame >= numFramesInFile)
@@ -1247,31 +1247,31 @@ void G2_TimingModel(
 				{
 					if (animSpeed > 0.0f)
 					{
-						current_frame = bone.endFrame - 1;
+						currentFrame = bone.endFrame - 1;
 					}
 					else
 					{
-						current_frame = bone.endFrame + 1;
+						currentFrame = bone.endFrame + 1;
 					}
 
-					if (current_frame < 0 || current_frame >= numFramesInFile)
+					if (currentFrame < 0 || currentFrame >= numFramesInFile)
 					{
 #ifdef _DEBUG
 						Com_Printf(
-							"Debug: G2_TimingModel (rd-vanilla) - current_frame %d out of range. Clamping.\n",
-							current_frame);
+							"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
+							currentFrame);
 #endif
-						if (current_frame < 0)
+						if (currentFrame < 0)
 						{
-							current_frame = 0;
+							currentFrame = 0;
 						}
 						else
 						{
-							current_frame = numFramesInFile - 1;
+							currentFrame = numFramesInFile - 1;
 						}
 					}
 
-					newFrame = current_frame;
+					newFrame = currentFrame;
 					lerp = 0.0f;
 				}
 				else
@@ -1285,27 +1285,27 @@ void G2_TimingModel(
 			// Still within the animation range.
 			if (animSpeed > 0.0f)
 			{
-				current_frame = static_cast<int>(newFrame_g);
-				lerp = newFrame_g - static_cast<float>(current_frame);
+				currentFrame = static_cast<int>(newFrame_g);
+				lerp = newFrame_g - static_cast<float>(currentFrame);
 
-				if (current_frame < 0 || current_frame >= numFramesInFile)
+				if (currentFrame < 0 || currentFrame >= numFramesInFile)
 				{
 #ifdef _DEBUG
 					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - current_frame %d out of range. Clamping.\n",
-						current_frame);
+						"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
+						currentFrame);
 #endif
-					if (current_frame < 0)
+					if (currentFrame < 0)
 					{
-						current_frame = 0;
+						currentFrame = 0;
 					}
 					else
 					{
-						current_frame = numFramesInFile - 1;
+						currentFrame = numFramesInFile - 1;
 					}
 				}
 
-				newFrame = current_frame + 1;
+				newFrame = currentFrame + 1;
 
 				if (static_cast<int>(endFrame) > numFramesInFile)
 				{
@@ -1349,17 +1349,17 @@ void G2_TimingModel(
 			{
 				lerp = ceilf(newFrame_g) - newFrame_g;
 
-				current_frame = static_cast<int>(ceilf(newFrame_g));
+				currentFrame = static_cast<int>(ceilf(newFrame_g));
 
-				if (current_frame > bone.startFrame)
+				if (currentFrame > bone.startFrame)
 				{
-					current_frame = bone.startFrame;
-					newFrame = current_frame;
+					currentFrame = bone.startFrame;
+					newFrame = currentFrame;
 					lerp = 0.0f;
 				}
 				else
 				{
-					newFrame = current_frame - 1;
+					newFrame = currentFrame - 1;
 
 					if (newFrame < endFrame + 1.0f)
 					{
@@ -1374,20 +1374,20 @@ void G2_TimingModel(
 					}
 				}
 
-				if (current_frame < 0 || current_frame >= numFramesInFile)
+				if (currentFrame < 0 || currentFrame >= numFramesInFile)
 				{
 #ifdef _DEBUG
 					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - current_frame %d out of range. Clamping.\n",
-						current_frame);
+						"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
+						currentFrame);
 #endif
-					if (current_frame < 0)
+					if (currentFrame < 0)
 					{
-						current_frame = 0;
+						currentFrame = 0;
 					}
 					else
 					{
-						current_frame = numFramesInFile - 1;
+						currentFrame = numFramesInFile - 1;
 					}
 				}
 
@@ -1417,43 +1417,43 @@ void G2_TimingModel(
 		// ----------------------------------------------------
 		if (animSpeed < 0.0f)
 		{
-			current_frame = bone.endFrame + 1;
+			currentFrame = bone.endFrame + 1;
 		}
 		else
 		{
-			current_frame = bone.endFrame - 1;
+			currentFrame = bone.endFrame - 1;
 		}
 
-		if (current_frame < 0)
+		if (currentFrame < 0)
 		{
-			current_frame = 0;
+			currentFrame = 0;
 		}
-		else if (current_frame >= numFramesInFile)
+		else if (currentFrame >= numFramesInFile)
 		{
-			current_frame = numFramesInFile - 1;
+			currentFrame = numFramesInFile - 1;
 		}
 
-		newFrame = current_frame;
+		newFrame = currentFrame;
 		lerp = 0.0f;
 	}
 
 	// --------------------------------------------------------
 	// Final safety clamps (replacing final asserts)
 	// --------------------------------------------------------
-	if (current_frame < 0 || current_frame >= numFramesInFile)
+	if (currentFrame < 0 || currentFrame >= numFramesInFile)
 	{
 #ifdef _DEBUG
 		Com_Printf(
-			"Debug: G2_TimingModel (rd-vanilla) - final current_frame %d out of range. Clamping.\n",
-			current_frame);
+			"Debug: G2_TimingModel (rd-vanilla) - final currentFrame %d out of range. Clamping.\n",
+			currentFrame);
 #endif
-		if (current_frame < 0)
+		if (currentFrame < 0)
 		{
-			current_frame = 0;
+			currentFrame = 0;
 		}
 		else
 		{
-			current_frame = numFramesInFile - 1;
+			currentFrame = numFramesInFile - 1;
 		}
 	}
 
@@ -1678,7 +1678,7 @@ void G2_TransformBone(const int index, const CBoneCache& cb)
 		// should this animation be overridden by an animation in the bone list?
 		if (bone_list[bone_list_index].flags & (BONE_ANIM_OVERRIDE_LOOP | BONE_ANIM_OVERRIDE))
 		{
-			G2_TimingModel(bone_list[bone_list_index], cb.incomingTime, cb.header->numFrames, tb.current_frame, tb.newFrame, tb.backlerp);
+			G2_TimingModel(bone_list[bone_list_index], cb.incomingTime, cb.header->numFrames, tb.currentFrame, tb.newFrame, tb.backlerp);
 		}
 #if DEBUG_G2_TIMING
 		printTiming = true;
@@ -1695,12 +1695,12 @@ void G2_TransformBone(const int index, const CBoneCache& cb)
 		tb.newFrame = 0;
 	}
 	//	aFrame = (mdxaFrame_t *)((byte *)BC.header + BC.header->ofsFrames + TB.newFrame * BC.frameSize );
-	assert(tb.current_frame >= 0 && tb.current_frame < cb.header->numFrames);
-	if (!(tb.current_frame >= 0 && tb.current_frame < cb.header->numFrames))
+	assert(tb.currentFrame >= 0 && tb.currentFrame < cb.header->numFrames);
+	if (!(tb.currentFrame >= 0 && tb.currentFrame < cb.header->numFrames))
 	{
-		tb.current_frame = 0;
+		tb.currentFrame = 0;
 	}
-	//	aoldFrame = (mdxaFrame_t *)((byte *)BC.header + BC.header->ofsFrames + TB.current_frame * BC.frameSize );
+	//	aoldFrame = (mdxaFrame_t *)((byte *)BC.header + BC.header->ofsFrames + TB.currentFrame * BC.frameSize );
 
 		// figure out where the location of the blended animation data is
 	assert(!(tb.blendFrame < 0.0 || tb.blendFrame >= cb.header->numFrames + 1));
@@ -1727,11 +1727,11 @@ void G2_TransformBone(const int index, const CBoneCache& cb)
 		char mess[1000];
 		if (TB.blendMode)
 		{
-			sprintf(mess, "b %2d %5d   %4d %4d %4d %4d  %f %f\n", boneListIndex, BC.incomingTime, (int)TB.newFrame, (int)TB.current_frame, (int)TB.blendFrame, (int)TB.blendOldFrame, TB.backlerp, TB.blendLerp);
+			sprintf(mess, "b %2d %5d   %4d %4d %4d %4d  %f %f\n", boneListIndex, BC.incomingTime, (int)TB.newFrame, (int)TB.currentFrame, (int)TB.blendFrame, (int)TB.blendOldFrame, TB.backlerp, TB.blendLerp);
 		}
 		else
 		{
-			sprintf(mess, "a %2d %5d   %4d %4d            %f\n", boneListIndex, BC.incomingTime, TB.newFrame, TB.current_frame, TB.backlerp);
+			sprintf(mess, "a %2d %5d   %4d %4d            %f\n", boneListIndex, BC.incomingTime, TB.newFrame, TB.currentFrame, TB.backlerp);
 		}
 		OutputDebugString(mess);
 		const boneInfo_t& bone = boneList[boneListIndex];
@@ -1802,7 +1802,7 @@ void G2_TransformBone(const int index, const CBoneCache& cb)
 	if (!tb.backlerp)
 	{
 		// 		MC_UnCompress(tbone[2].matrix,compBonePointer[aoldFrame->boneIndexes[child]].Comp);
-		UnCompressBone(tbone[2].matrix, index, cb.header, tb.current_frame);
+		UnCompressBone(tbone[2].matrix, index, cb.header, tb.currentFrame);
 
 		// blend in the other frame if we need to
 		if (tb.blendMode)
@@ -1827,7 +1827,7 @@ void G2_TransformBone(const int index, const CBoneCache& cb)
 		// 		MC_UnCompress(tbone[0].matrix,compBonePointer[aFrame->boneIndexes[child]].Comp);
 		//		MC_UnCompress(tbone[1].matrix,compBonePointer[aoldFrame->boneIndexes[child]].Comp);
 		UnCompressBone(tbone[0].matrix, index, cb.header, tb.newFrame);
-		UnCompressBone(tbone[1].matrix, index, cb.header, tb.current_frame);
+		UnCompressBone(tbone[1].matrix, index, cb.header, tb.currentFrame);
 
 		for (j = 0; j < 12; j++)
 		{
@@ -2218,7 +2218,7 @@ static void G2_TransformGhoulBones(boneInfo_v& rootBoneList, const mdxaBone_t& r
 
 	SBoneCalc& TB = ghoul2.mBoneCache->Root();
 	TB.newFrame = 0;
-	TB.current_frame = 0;
+	TB.currentFrame = 0;
 	TB.backlerp = 0.0f;
 	TB.blendFrame = 0;
 	TB.blendOldFrame = 0;

@@ -125,6 +125,7 @@ using refEntityType_t = enum
 	// doesn't draw anything, just info for portals
 	RT_CLOUDS,
 	RT_LIGHTNING,
+	RT_ENT_CHAIN,
 
 	RT_MAX_REF_ENTITY_TYPE
 };

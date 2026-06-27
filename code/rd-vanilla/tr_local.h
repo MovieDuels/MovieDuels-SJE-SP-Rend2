@@ -1409,7 +1409,7 @@ extern	shaderCommands_t	tess;
 extern	color4ub_t	styleColors[MAX_LIGHT_STYLES];
 extern	bool		styleUpdated[MAX_LIGHT_STYLES];
 
-void RB_BeginSurface(shader_t* shader, int fogNum);
+void RB_BeginSurface(shader_t* shader, const int fogNum);
 void RB_EndSurface();
 void RB_CheckOverflow(int verts, int indexes);
 #define RB_CHECKOVERFLOW(v,i) if (tess.numVertexes + (v) >= SHADER_MAX_VERTEXES || tess.numIndexes + (i) >= SHADER_MAX_INDEXES ) {RB_CheckOverflow(v,i);}

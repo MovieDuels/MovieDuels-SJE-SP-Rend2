@@ -16253,7 +16253,7 @@ static qboolean PM_SaberLocked()
 				int remaining;
 				if (ValidAnimFileIndex(gent->client->clientInfo.animFileIndex))
 				{
-					float current_frame, junk2;
+					float currentFrame, junk2;
 					int cur_frame, junk;
 					int strength = G_SaberLockStrength(gent);
 					const animation_t* anim = &level.knownAnimFileSets[gent->client->clientInfo.animFileIndex].
@@ -16263,7 +16263,7 @@ static qboolean PM_SaberLocked()
 					const qboolean ret =
 #endif
 						gi.G2API_GetBoneAnimIndex(&gent->ghoul2[gent->playerModel], gent->lowerLumbarBone,
-							cg.time ? cg.time : level.time, &current_frame, &junk, &junk,
+							cg.time ? cg.time : level.time, &currentFrame, &junk, &junk,
 							&junk,
 							&junk2, nullptr);
 #ifdef _DEBUG
@@ -16276,7 +16276,7 @@ static qboolean PM_SaberLocked()
 						if (pm->ps->torsoAnim == BOTH_CCWCIRCLELOCK ||
 							pm->ps->torsoAnim == BOTH_BF2LOCK)
 						{
-							cur_frame = floor(current_frame) - strength;
+							cur_frame = floor(currentFrame) - strength;
 							//drop my frame one
 							if (cur_frame <= anim->firstFrame)
 							{
@@ -16295,7 +16295,7 @@ static qboolean PM_SaberLocked()
 						}
 						else
 						{
-							cur_frame = ceil(current_frame) + strength;
+							cur_frame = ceil(currentFrame) + strength;
 							//advance my frame one
 							if (cur_frame >= anim->firstFrame + anim->numFrames)
 							{
@@ -16318,7 +16318,7 @@ static qboolean PM_SaberLocked()
 						//new locks
 						if (G_CheckIncrementLockAnim(pm->ps->torsoAnim, SABERLOCK_WIN))
 						{
-							cur_frame = ceil(current_frame) + strength;
+							cur_frame = ceil(currentFrame) + strength;
 							//advance my frame one
 							if (cur_frame >= anim->firstFrame + anim->numFrames)
 							{
@@ -16337,7 +16337,7 @@ static qboolean PM_SaberLocked()
 						}
 						else
 						{
-							cur_frame = floor(current_frame) - strength;
+							cur_frame = floor(currentFrame) - strength;
 							//drop my frame one
 							if (cur_frame <= anim->firstFrame)
 							{
@@ -20112,8 +20112,8 @@ static void PM_WeaponLightsaber()
 				return;
 			}
 		}
-		else if (pm->cmd.buttons & BUTTON_ATTACK && pm->cmd.buttons & BUTTON_USE && 
-			g_SerenityJediEngineMode->integer && 
+		else if (pm->cmd.buttons & BUTTON_ATTACK && pm->cmd.buttons & BUTTON_USE &&
+			g_SerenityJediEngineMode->integer &&
 			(pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()))
 		{
 			//do some fancy faking stuff.
@@ -23655,7 +23655,7 @@ void PM_SaberFakeFlagUpdate(const int new_move)
 void PM_SaberPerfectBlockUpdate(const int new_move)
 {
 	// This is the manual blocking state.
-	const qboolean is_manual_blocking =	(pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
+	const qboolean is_manual_blocking = (pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
 
 	// Conditions that cancel perfect block
 	if (is_manual_blocking == qfalse ||
@@ -23666,7 +23666,6 @@ void PM_SaberPerfectBlockUpdate(const int new_move)
 		pm->ps->userInt3 &= ~(1 << FLAG_PERFECTBLOCK); // Clear perfect block flag
 	}
 }
-
 
 // saber status utility tools
 static qboolean PM_SaberInFullDamageMove(const playerState_t* ps)

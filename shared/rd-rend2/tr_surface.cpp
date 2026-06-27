@@ -389,9 +389,9 @@ static void RB_SurfaceVertsAndIndexes(int numVerts, srfVert_t* verts, int numInd
 	uint32_t* tangent;
 	glIndex_t* outIndex;
 	float* color;
-	gpuFrame_t* current_frame = backEndData->currentFrame;
+	gpuFrame_t* currentFrame = backEndData->currentFrame;
 
-	RB_CheckVBOandIBO(current_frame->dynamicVbo, current_frame->dynamicIbo);
+	RB_CheckVBOandIBO(currentFrame->dynamicVbo, currentFrame->dynamicIbo);
 
 	RB_CHECKOVERFLOW(numVerts, numIndexes);
 
@@ -2380,8 +2380,10 @@ RB_SurfaceEntity
 Entities that have a single procedurally generated surface
 ====================
 */
-static void RB_SurfaceEntity(surfaceType_t* surfType) {
-	switch (backEnd.currentEntity->e.reType) {
+static void RB_SurfaceEntity(surfaceType_t* surfType)
+{
+	switch (backEnd.currentEntity->e.reType)
+	{
 	case RT_SPRITE:
 		RB_SurfaceSprite();
 		break;
@@ -2409,6 +2411,30 @@ static void RB_SurfaceEntity(surfaceType_t* surfType) {
 	case RT_ORIENTEDLINE:
 		RB_SurfaceOrientedLine();
 		break;
+	case RT_ENT_CHAIN:
+	{
+		static trRefEntity_t tempEnt = *backEnd.currentEntity;
+
+		//rww - if not static then currentEntity is garbage because
+		//this is a local. This was not static in sof2.. but I guess
+		//they never check ce.renderfx so it didn't show up.
+
+		const int start = backEnd.currentEntity->e.uRefEnt.uMini.miniStart;
+		const int count = backEnd.currentEntity->e.uRefEnt.uMini.miniCount;
+		assert(count > 0);
+		backEnd.currentEntity = &tempEnt;
+
+		assert(backEnd.currentEntity->e.renderfx >= 0);
+
+		for (int i = 0, j = start; i < count; i++, j++)
+		{
+			backEnd.currentEntity->e = backEnd.refdef.entities[j].e;
+			assert(backEnd.currentEntity->e.renderfx >= 0);
+
+			RB_SurfaceEntity(surfType);
+		}
+	}
+	break;
 	case RT_LATHE:
 		RB_SurfaceLathe();
 		break;
@@ -2417,6 +2443,18 @@ static void RB_SurfaceEntity(surfaceType_t* surfType) {
 		break;
 	default:
 		RB_SurfaceAxis();
+		break;
+	}
+
+	// Tell the backend to merge the drawcalls except
+	// for types that can't be merged
+	// TODO: Create RT_BEAM internal shader and make it compatible with pass system
+	switch (backEnd.currentEntity->e.reType) {
+	case RT_BEAM:
+	case RT_ENT_CHAIN:
+		break;
+	default:
+		tess.entityMergable = true;
 		break;
 	}
 }

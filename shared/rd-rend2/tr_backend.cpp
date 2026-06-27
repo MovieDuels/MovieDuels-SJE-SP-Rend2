@@ -1329,7 +1329,7 @@ static void RB_SubmitDrawSurfsForDepthFill(drawSurf_t* drawSurfs, int numDrawSur
 		// seperate entities merged into a single batch, like smoke and blood
 		// puff sprites
 		if (shader != oldShader ||
-			(entityNum != oldEntityNum && !shader->entityMergable))
+			(entityNum != oldEntityNum && !tess.entityMergable))
 		{
 			if (oldShader != nullptr)
 			{
@@ -1426,7 +1426,7 @@ static void RB_SubmitDrawSurfs(
 			dlighted != oldDlighted ||
 			postRender != oldPostRender ||
 			cubemapIndex != oldCubemapIndex ||
-			(entityNum != oldEntityNum && !shader->entityMergable)))
+			(entityNum != oldEntityNum && !tess.entityMergable)))
 		{
 			if (oldShader != nullptr)
 			{
@@ -3362,16 +3362,16 @@ static const void* RB_BeginTimedBlock(const void* data)
 	const beginTimedBlockCommand_t* cmd = (const beginTimedBlockCommand_t*)data;
 	if (glRefConfig.timerQuery)
 	{
-		gpuFrame_t* current_frame = &backEndData->frames[backEndData->realFrameNumber % MAX_FRAMES];
-		gpuTimer_t* timer = current_frame->timers + current_frame->numTimers++;
+		gpuFrame_t* currentFrame = &backEndData->frames[backEndData->realFrameNumber % MAX_FRAMES];
+		gpuTimer_t* timer = currentFrame->timers + currentFrame->numTimers++;
 
-		if (cmd->timerHandle >= 0 && current_frame->numTimers <= MAX_GPU_TIMERS)
+		if (cmd->timerHandle >= 0 && currentFrame->numTimers <= MAX_GPU_TIMERS)
 		{
-			gpuTimedBlock_t* timedBlock = current_frame->timedBlocks + cmd->timerHandle;
+			gpuTimedBlock_t* timedBlock = currentFrame->timedBlocks + cmd->timerHandle;
 			timedBlock->beginTimer = timer->queryName;
 			timedBlock->name = cmd->name;
 
-			current_frame->numTimedBlocks++;
+			currentFrame->numTimedBlocks++;
 
 			qglQueryCounter(timer->queryName, GL_TIMESTAMP);
 		}
@@ -3385,12 +3385,12 @@ static const void* RB_EndTimedBlock(const void* data)
 	const endTimedBlockCommand_t* cmd = (const endTimedBlockCommand_t*)data;
 	if (glRefConfig.timerQuery)
 	{
-		gpuFrame_t* current_frame = &backEndData->frames[backEndData->realFrameNumber % MAX_FRAMES];
-		gpuTimer_t* timer = current_frame->timers + current_frame->numTimers++;
+		gpuFrame_t* currentFrame = &backEndData->frames[backEndData->realFrameNumber % MAX_FRAMES];
+		gpuTimer_t* timer = currentFrame->timers + currentFrame->numTimers++;
 
-		if (cmd->timerHandle >= 0 && current_frame->numTimers <= MAX_GPU_TIMERS)
+		if (cmd->timerHandle >= 0 && currentFrame->numTimers <= MAX_GPU_TIMERS)
 		{
-			gpuTimedBlock_t* timedBlock = current_frame->timedBlocks + cmd->timerHandle;
+			gpuTimedBlock_t* timedBlock = currentFrame->timedBlocks + cmd->timerHandle;
 			timedBlock->endTimer = timer->queryName;
 
 			qglQueryCounter(timer->queryName, GL_TIMESTAMP);

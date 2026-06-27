@@ -506,17 +506,17 @@ static qboolean SV_G2API_GetAnimRangeIndex(CGhoul2Info* ghlInfo, const int bone_
 
 static qboolean SV_G2API_GetBoneAnim(
 	CGhoul2Info* ghlInfo, const char* boneName, const int acurrent_time,
-	float* current_frame, int* startFrame, int* endFrame, int* flags, float* animSpeed, int* model_list)
+	float* currentFrame, int* startFrame, int* endFrame, int* flags, float* animSpeed, int* model_list)
 {
-	return re.G2API_GetBoneAnim(ghlInfo, boneName, acurrent_time, current_frame,
+	return re.G2API_GetBoneAnim(ghlInfo, boneName, acurrent_time, currentFrame,
 		startFrame, endFrame, flags, animSpeed, model_list);
 }
 
 static qboolean SV_G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, const int acurrent_time,
-	float* current_frame, int* startFrame, int* endFrame, int* flags,
+	float* currentFrame, int* startFrame, int* endFrame, int* flags,
 	float* animSpeed, int* model_list)
 {
-	return re.G2API_GetBoneAnimIndex(ghlInfo, iBoneIndex, acurrent_time, current_frame,
+	return re.G2API_GetBoneAnimIndex(ghlInfo, iBoneIndex, acurrent_time, currentFrame,
 		startFrame, endFrame, flags, animSpeed, model_list);
 }
 

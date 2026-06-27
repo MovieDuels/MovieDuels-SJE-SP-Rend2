@@ -4089,7 +4089,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			// Wildness based on saber state
 			if (!PM_SaberInIdle(blocker->client->ps.saberMove) || (G_GetBlockPoints(blocker) < BLOCKPOINTS_HALF))
 			{
-				float amt =	(G_GetBlockPoints(blocker) < BLOCKPOINTS_TWENTYFIVE)? 0.3f: 0.1f;
+				float amt = (G_GetBlockPoints(blocker) < BLOCKPOINTS_TWENTYFIVE) ? 0.3f : 0.1f;
 
 				G_AddWildness(bounce_dir, amt);
 			}

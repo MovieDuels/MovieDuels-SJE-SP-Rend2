@@ -1523,14 +1523,14 @@ static void CGG2_AnimEvents(centity_t* cent)
 	if (ValidAnimFileIndex(cent->gent->client->clientInfo.animFileIndex))
 	{
 		int junk, cur_frame = 0;
-		float current_frame = 0, animSpeed;
+		float currentFrame = 0, animSpeed;
 
 		if (cent->gent->rootBone >= 0 && gi.G2API_GetBoneAnimIndex(&cent->gent->ghoul2[cent->gent->playerModel],
-			cent->gent->rootBone, cg.time, &current_frame, &junk,
+			cent->gent->rootBone, cg.time, &currentFrame, &junk,
 			&junk, &junk, &animSpeed, cgs.model_draw))
 		{
 			// the above may have failed, not sure what to do about it, current frame will be zero in that case
-			cur_frame = floor(current_frame);
+			cur_frame = floor(currentFrame);
 		}
 		if (cur_frame != cent->gent->client->renderInfo.legsFrame)
 		{
@@ -1541,10 +1541,10 @@ static void CGG2_AnimEvents(centity_t* cent)
 		cent->pe.legs.frame = cur_frame;
 
 		if (cent->gent->lowerLumbarBone >= 0 && gi.G2API_GetBoneAnimIndex(
-			&cent->gent->ghoul2[cent->gent->playerModel], cent->gent->lowerLumbarBone, cg.time, &current_frame, &junk,
+			&cent->gent->ghoul2[cent->gent->playerModel], cent->gent->lowerLumbarBone, cg.time, &currentFrame, &junk,
 			&junk, &junk, &animSpeed, cgs.model_draw))
 		{
-			cur_frame = floor(current_frame);
+			cur_frame = floor(currentFrame);
 		}
 		if (cur_frame != cent->gent->client->renderInfo.torsoFrame)
 		{
@@ -14710,7 +14710,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 			}
 			else if (cg_SFXSabers.integer == 9)
 			{
-				fx->mShader = cgs.media.rebelsSwordTrailShader; 
+				fx->mShader = cgs.media.rebelsSwordTrailShader;
 			}
 			else if (cg_SFXSabers.integer == 10)
 			{

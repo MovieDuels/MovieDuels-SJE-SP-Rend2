@@ -7218,8 +7218,8 @@ static void CG_DrawCrosshairItem()
 
 		float distSq = VectorLengthSquared(diff);
 
-		// Only show hint if within 512 units
-		if (distSq < (512.0f * 512.0f))
+		// Only show hint if within 256 units
+		if (distSq < (256.0f * 256.0f))
 		{
 			if (cg_SerenityJediEngineHudMode.integer == 4)
 			{
@@ -8007,8 +8007,8 @@ static void CG_UseIcon()
 
 		float distSq = VectorLengthSquared(diff);
 
-		// Only show hint if within 512 units
-		if (distSq < (512.0f * 512.0f))
+		// Only show hint if within 256 units
+		if (distSq < (256.0f * 256.0f))
 		{
 			if (cg_SerenityJediEngineHudMode.integer == 4)
 			{
