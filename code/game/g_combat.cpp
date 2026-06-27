@@ -151,8 +151,7 @@ extern void WP_ForcePowerRegenerate(const gentity_t* self, int override_amt);
 extern void WP_BlockPointsRegenerate(const gentity_t* self, int override_amt);
 extern void TurnBarrierOff(gentity_t* ent);
 
-qboolean G_GetRootSurfNameWithVariant(gentity_t* ent, const char* root_surf_name, char* return_surf_name,
-	int return_size);
+qboolean G_GetRootSurfNameWithVariant(gentity_t* ent, const char* rootSurfName, char* returnSurfName, const int returnSize);
 /*
 ============
 AddScore
@@ -2191,9 +2190,6 @@ static qboolean G_LimbLost(const gentity_t* ent, const int hit_loc)
 	}
 }
 
-extern qboolean G_GetRootSurfNameWithVariant(gentity_t* ent, const char* root_surf_name, char* return_surf_name,
-	int return_size);
-
 static void G_RemoveWeaponsWithLimbs(gentity_t* ent, gentity_t* limb, const int limb_anim)
 {
 	int check_anim;
@@ -2627,6 +2623,109 @@ qboolean G_GetRootSurfNameWithVariant(gentity_t* ent, const char* root_surf_name
 	Q_strncpyz(return_surf_name, root_surf_name, return_size);
 	return qfalse;
 }
+
+/// leaving this here for now just incase we want to use it later.JaseSolaris
+
+//// Add any custom names you want here.
+//// You can extend this list without touching the logic.
+//static const char* g_handSuffixes[] =
+//{
+//	"_tcw",
+//	"_test",
+//	"_ccc",
+//	"_model",
+//	"_custom",
+//	"_alt",
+//	"_skin",
+//	"_rod",
+//	"_swo",
+//	"_ep2",
+//	"_robotic",
+//	"_glove",
+//	nullptr
+//};
+//
+///*
+//===============================
+//G_GetRootSurfNameWithVariant
+//
+//Attempts to resolve a surface name by checking:
+//1. The base name (rootSurfName)
+//2. Custom suffixes (rootSurfName + suffix)
+//3. Legacy variants (rootSurfName + 'a'..'h')
+//
+//Returns qtrue if a matching surface is found and writes it into returnSurfName.
+//===============================
+//*/
+//qboolean G_GetRootSurfNameWithVariant(gentity_t* ent, const char* rootSurfName, char* returnSurfName, const int returnSize)
+//{
+//	if (!ent || !rootSurfName || !returnSurfName)
+//	{
+//		Com_Printf(S_COLOR_RED "G_GetRootSurfNameWithVariant: invalid parameters\n" S_COLOR_WHITE);
+//		return qfalse;
+//	}
+//
+//	// ---------------------------------------------------------
+//	// 1. Base name
+//	// ---------------------------------------------------------
+//	if (!gi.G2API_GetSurfaceRenderStatus(&ent->ghoul2[ent->playerModel], rootSurfName))
+//	{
+//		Q_strncpyz(returnSurfName, rootSurfName, returnSize);
+//		return qtrue;
+//	}
+//
+//	// ---------------------------------------------------------
+//	// 2. Generic custom-hand support:
+//	//    If rootSurfName is "l_hand" or "r_hand",
+//	//    try rootSurfName + "_" which matches ANY custom hand name.
+//	// ---------------------------------------------------------
+//	if (!Q_stricmp(rootSurfName, "l_hand") || !Q_stricmp(rootSurfName, "r_hand"))
+//	{
+//		char prefixName[MAX_QPATH] = { 0 };
+//		Com_sprintf(prefixName, sizeof(prefixName), "%s_", rootSurfName);
+//
+//		if (!gi.G2API_GetSurfaceRenderStatus(&ent->ghoul2[ent->playerModel], prefixName))
+//		{
+//			Q_strncpyz(returnSurfName, prefixName, returnSize);
+//			return qtrue;
+//		}
+//	}
+//
+//	// ---------------------------------------------------------
+//	// 3. Custom suffixes (supports ANY hand name you add)
+//	// ---------------------------------------------------------
+//	for (int i = 0; g_handSuffixes[i] != nullptr; i++)
+//	{
+//		char testName[MAX_QPATH] = { 0 };
+//		Com_sprintf(testName, sizeof(testName), "%s%s", rootSurfName, g_handSuffixes[i]);
+//
+//		if (!gi.G2API_GetSurfaceRenderStatus(&ent->ghoul2[ent->playerModel], testName))
+//		{
+//			Q_strncpyz(returnSurfName, testName, returnSize);
+//			return qtrue;
+//		}
+//	}
+//
+//	// ---------------------------------------------------------
+//	// 4. Legacy variants (rootSurfName + 'a'..'h')
+//	// ---------------------------------------------------------
+//	for (int i = 0; i < MAX_VARIANTS; i++)
+//	{
+//		Com_sprintf(returnSurfName, returnSize, "%s%c", rootSurfName, 'a' + i);
+//
+//		if (!gi.G2API_GetSurfaceRenderStatus(&ent->ghoul2[ent->playerModel], returnSurfName))
+//		{
+//			return qtrue;
+//		}
+//	}
+//
+//	// ---------------------------------------------------------
+//	// Nothing found
+//	// ---------------------------------------------------------
+//	Q_strncpyz(returnSurfName, rootSurfName, returnSize);
+//	return qfalse;
+//}
+
 
 extern qboolean g_standard_humanoid(gentity_t* self);
 
