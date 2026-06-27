@@ -1948,13 +1948,13 @@ public:
 		}
 	};
 
-	int SaberDisarmBonus(int blade_num)
+	int SaberDisarmBonus(int bladeNum)
 	{
 		int disarmBonus = 0;
 		if (saber[0].Active())
 		{
 			if (saber[0].bladeStyle2Start > 0
-				&& blade_num >= saber[0].bladeStyle2Start)
+				&& bladeNum >= saber[0].bladeStyle2Start)
 			{
 				disarmBonus += saber[0].disarmBonus2;
 			}
@@ -1967,7 +1967,7 @@ public:
 		{
 			//bonus for having 2 sabers
 			if (saber[1].bladeStyle2Start > 0
-				&& blade_num >= saber[1].bladeStyle2Start)
+				&& bladeNum >= saber[1].bladeStyle2Start)
 			{
 				disarmBonus += 1 + saber[1].disarmBonus2;
 			}

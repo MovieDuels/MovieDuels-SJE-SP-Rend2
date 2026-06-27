@@ -37,8 +37,8 @@ extern void CrystalAmmoSettings(gentity_t* ent);
 extern void ChangeWeapon(const gentity_t* ent, int new_weapon);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_InGetUp(const playerState_t* ps);
-extern void WP_SetSaber(gentity_t* ent, int saber_num, const char* saber_name);
-extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
+extern void WP_SetSaber(gentity_t* ent, int saberNum, const char* saber_name);
+extern void WP_RemoveSaber(gentity_t* ent, int saberNum);
 extern void WP_SaberFallSound(const gentity_t* owner, const gentity_t* saber);
 extern saber_colors_t TranslateSaberColor(const char* name);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
@@ -375,7 +375,7 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 		if (WP_SaberParseParms(pickUpSaber->NPC_type, &newSaber))
 		{
 			//successfully found a saber .sab entry to use
-			int saber_num = 0;
+			int saberNum = 0;
 			qboolean removeLeftSaber = qfalse;
 			if (pickUpSaber->alt_fire)
 			{
@@ -385,14 +385,14 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 					//can't have a saber only in your left hand!
 					return qfalse;
 				}
-				saber_num = 1;
+				saberNum = 1;
 				//just in case...
 				removeLeftSaber = qtrue;
 			}
 			else if (!hadSaber)
 			{
 				//don't have a saber at all yet, put it in our right hand
-				saber_num = 0;
+				saberNum = 0;
 				//just in case...
 				removeLeftSaber = qtrue;
 			}
@@ -401,7 +401,7 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 				|| hadSaber && self->client->ps.saber[0].saberFlags & SFL_TWO_HANDED) //old saber is two-handed
 			{
 				//replace the old right-hand saber and remove the left hand one
-				saber_num = 0;
+				saberNum = 0;
 				removeLeftSaber = qtrue;
 			}
 			else
@@ -418,11 +418,11 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 					rightDir[2] = 0;
 					if (DotProduct(rightDir, dir2Saber) > 0)
 					{
-						saber_num = 0;
+						saberNum = 0;
 					}
 					else
 					{
-						saber_num = 1;
+						saberNum = 1;
 						//just in case...
 						removeLeftSaber = qtrue;
 					}
@@ -430,12 +430,12 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 				else
 				{
 					//just add it as a second saber
-					saber_num = 1;
+					saberNum = 1;
 					//just in case...
 					removeLeftSaber = qtrue;
 				}
 			}
-			if (saber_num == 0)
+			if (saberNum == 0)
 			{
 				//want to reach out with right hand
 				if (self->client->ps.torsoAnim == BOTH_BUTTON_HOLD)
@@ -446,8 +446,8 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 				if (swapSabers)
 				{
 					//drop first one where the one we're picking up is
-					G_DropSaberItem(self->client->ps.saber[saber_num].name,
-						self->client->ps.saber[saber_num].blade[0].color, pickUpSaber->currentOrigin,
+					G_DropSaberItem(self->client->ps.saber[saberNum].name,
+						self->client->ps.saber[saberNum].blade[0].color, pickUpSaber->currentOrigin,
 						vec3_origin, pickUpSaber->currentAngles, pickUpSaber);
 					if (removeLeftSaber)
 					{
@@ -461,8 +461,8 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 			{
 				if (swapSabers)
 				{
-					G_DropSaberItem(self->client->ps.saber[saber_num].name,
-						self->client->ps.saber[saber_num].blade[0].color, pickUpSaber->currentOrigin,
+					G_DropSaberItem(self->client->ps.saber[saberNum].name,
+						self->client->ps.saber[saberNum].blade[0].color, pickUpSaber->currentOrigin,
 						vec3_origin, pickUpSaber->currentAngles, pickUpSaber);
 				}
 			}
@@ -470,23 +470,23 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 			{
 				WP_RemoveSaber(self, 1);
 			}
-			WP_SetSaber(self, saber_num, pickUpSaber->NPC_type);
+			WP_SetSaber(self, saberNum, pickUpSaber->NPC_type);
 			WP_SaberInitBladeData(self);
-			if (self->client->ps.saber[saber_num].stylesLearned)
+			if (self->client->ps.saber[saberNum].stylesLearned)
 			{
-				self->client->ps.saberStylesKnown |= self->client->ps.saber[saber_num].stylesLearned;
+				self->client->ps.saberStylesKnown |= self->client->ps.saber[saberNum].stylesLearned;
 			}
-			if (self->client->ps.saber[saber_num].singleBladeStyle)
+			if (self->client->ps.saber[saberNum].singleBladeStyle)
 			{
-				self->client->ps.saberStylesKnown |= self->client->ps.saber[saber_num].singleBladeStyle;
+				self->client->ps.saberStylesKnown |= self->client->ps.saber[saberNum].singleBladeStyle;
 			}
 			if (pickUpSaber->NPC_targetname != nullptr)
 			{
 				//NPC_targetname = saberColor
 				saber_colors_t saber_color = TranslateSaberColor(pickUpSaber->NPC_targetname);
-				for (auto& blade_num : self->client->ps.saber[saber_num].blade)
+				for (auto& bladeNum : self->client->ps.saber[saberNum].blade)
 				{
-					blade_num.color = saber_color;
+					bladeNum.color = saber_color;
 				}
 			}
 			if (self->client->ps.torsoAnim == BOTH_BUTTON_HOLD

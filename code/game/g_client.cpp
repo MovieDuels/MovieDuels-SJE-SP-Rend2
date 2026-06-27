@@ -2413,8 +2413,8 @@ static void G_AddWeaponModels(gentity_t* ent)
 }
 
 extern saber_colors_t TranslateSaberColor(const char* name);
-extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
-extern void WP_RemoveSecondSaber(gentity_t* ent, int saber_num);
+extern void WP_RemoveSaber(gentity_t* ent, int saberNum);
+extern void WP_RemoveSecondSaber(gentity_t* ent, int saberNum);
 
 void G_SetSabersFromCVars(gentity_t* ent)
 {
@@ -3219,7 +3219,9 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			// Rebuild the player from the saved character cvars after a full save-load.
 			// This mirrors the in-game character menu workaround and refreshes model,
 			// sound, saber, and weapon state that can otherwise go stale.
-			G_InitPlayerFromCvars(ent);
+			//G_InitPlayerFromCvars(ent);
+			G_LoadAnimFileSet(ent, ent->NPC_type);
+			G_SetSkin(ent);
 		}
 
 		// setup sabers

@@ -119,7 +119,7 @@ extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_InRoll(const playerState_t* ps);
 extern qboolean PM_SpinningAnim(const int anim);
 extern qboolean PM_RunningAnim(const int anim);
-extern int PM_PowerLevelForSaberAnim(const playerState_t* ps, int saber_num = 0);
+extern int PM_PowerLevelForSaberAnim(const playerState_t* ps, int saberNum = 0);
 extern qboolean PM_SaberInSpecialAttack(const int anim);
 extern qboolean PM_SpinningSaberAnim(const int anim);
 extern qboolean PM_FlippingAnim(const int anim);
@@ -141,7 +141,7 @@ static int G_CheckForLedge(const gentity_t* self, vec3_t fall_check_dir, float c
 static void G_TrackWeaponUsage(const gentity_t* self, const gentity_t* inflictor, int add, int mod);
 static qboolean G_Dismemberable(const gentity_t* self, int hit_loc);
 extern gitem_t* FindItemForAmmo(ammo_t ammo);
-extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
+extern void WP_RemoveSaber(gentity_t* ent, int saberNum);
 extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_ffamode;
 extern cvar_t* g_Bloodmist;
@@ -2202,7 +2202,7 @@ static void G_RemoveWeaponsWithLimbs(gentity_t* ent, gentity_t* limb, const int 
 	{
 		if (ent->weaponModel[weapon_model_num] >= 0)
 		{
-			char hand_name[MAX_QPATH];
+			char handName[MAX_QPATH];
 			//have a weapon in this hand
 			if (weapon_model_num == 0 && ent->client->ps.saberInFlight)
 			{
@@ -2214,11 +2214,11 @@ static void G_RemoveWeaponsWithLimbs(gentity_t* ent, gentity_t* limb, const int 
 			{
 			case 0: //right hand
 				check_anim = BOTH_DISMEMBER_RARM;
-				G_GetRootSurfNameWithVariant(ent, "r_hand", hand_name, sizeof hand_name);
+				G_GetRootSurfNameWithVariant(ent, "r_hand", handName, sizeof handName);
 				break;
 			case 1: //left hand
 				check_anim = BOTH_DISMEMBER_LARM;
-				G_GetRootSurfNameWithVariant(ent, "l_hand", hand_name, sizeof hand_name);
+				G_GetRootSurfNameWithVariant(ent, "l_hand", handName, sizeof handName);
 				break;
 			default: //not handled/valid
 				continue;
@@ -2227,7 +2227,7 @@ static void G_RemoveWeaponsWithLimbs(gentity_t* ent, gentity_t* limb, const int 
 			if (limb_anim == check_anim || limb_anim == BOTH_DISMEMBER_TORSO1) //either/both hands
 			{
 				//FIXME: is this first check needed with this lower one?
-				if (!gi.G2API_GetSurfaceRenderStatus(&limb->ghoul2[0], hand_name))
+				if (!gi.G2API_GetSurfaceRenderStatus(&limb->ghoul2[0], handName))
 				{
 					//only copy the weapon over if the hand is actually on this limb...
 					//copy it to limb

@@ -6085,20 +6085,20 @@ static qboolean jedi_saber_block()
 		return qfalse;
 	}
 
-	for (int saber_num = 0; saber_num < MAX_SABERS; saber_num++)
+	for (int saberNum = 0; saberNum < MAX_SABERS; saberNum++)
 	{
-		for (int blade_num = 0; blade_num < NPC->enemy->client->ps.saber[saber_num].numBlades; blade_num++)
+		for (int bladeNum = 0; bladeNum < NPC->enemy->client->ps.saber[saberNum].numBlades; bladeNum++)
 		{
-			if (NPC->enemy->client->ps.saber[saber_num].type != SABER_NONE
-				&& NPC->enemy->client->ps.saber[saber_num].blade[blade_num].length > 0)
+			if (NPC->enemy->client->ps.saber[saberNum].type != SABER_NONE
+				&& NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].length > 0)
 			{
 				//valid saber and this blade is on
-				VectorMA(NPC->enemy->client->ps.saber[saber_num].blade[blade_num].muzzlePointOld,
-					NPC->enemy->client->ps.saber[saber_num].blade[blade_num].length,
-					NPC->enemy->client->ps.saber[saber_num].blade[blade_num].muzzleDirOld, saber_tip_old);
-				VectorMA(NPC->enemy->client->ps.saber[saber_num].blade[blade_num].muzzlePoint,
-					NPC->enemy->client->ps.saber[saber_num].blade[blade_num].length,
-					NPC->enemy->client->ps.saber[saber_num].blade[blade_num].muzzleDir, saber_tip);
+				VectorMA(NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].muzzlePointOld,
+					NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].length,
+					NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].muzzleDirOld, saber_tip_old);
+				VectorMA(NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].muzzlePoint,
+					NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].length,
+					NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].muzzleDir, saber_tip);
 
 				VectorCopy(NPC->currentOrigin, top);
 				top[2] = NPC->absmax[2];
@@ -6106,13 +6106,13 @@ static qboolean jedi_saber_block()
 				bottom[2] = NPC->absmin[2];
 
 				dist = ShortestLineSegBewteen2LineSegs(
-					NPC->enemy->client->ps.saber[saber_num].blade[blade_num].muzzlePoint, saber_tip, bottom, top,
+					NPC->enemy->client->ps.saber[saberNum].blade[bladeNum].muzzlePoint, saber_tip, bottom, top,
 					saber_point, axis_point);
 				if (dist < best_dist)
 				{
 					best_dist = dist;
-					closest_saber_num = saber_num;
-					closest_blade_num = blade_num;
+					closest_saber_num = saberNum;
+					closest_blade_num = bladeNum;
 				}
 			}
 		}

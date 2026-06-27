@@ -9455,17 +9455,17 @@ static void UI_UpdateCharacterSkin()
 		Cvar_Set("g_saber2_color", charMD[uiVariantIndex].color2);
 #endif
 
-		for (int saber_num = 0; saber_num < num_sabers; saber_num++)
+		for (int saberNum = 0; saberNum < num_sabers; saberNum++)
 		{
 			//bolt sabers
 			char model_path[MAX_QPATH];
 
-			if (UI_SaberModelForSaber(saber_num ? charMD[uiVariantIndex].saber2 : charMD[uiVariantIndex].saber1, model_path))
+			if (UI_SaberModelForSaber(saberNum ? charMD[uiVariantIndex].saber2 : charMD[uiVariantIndex].saber1, model_path))
 			{ //successfully found a model
 				const int g2_saber = DC->g2_InitGhoul2Model(item->ghoul2, model_path, 0, 0, 0, 0, 0); //add the model
 				if (g2_saber) {
 					DC->g2_SetSkin(&item->ghoul2[g2_saber], -1, 0); //turn off custom skin, only use default for sabers and guns
-					re.G2API_AttachG2Model(&item->ghoul2[g2_saber], &item->ghoul2[0], DC->g2_AddBolt(&item->ghoul2[0], saber_num ? "*l_hand" : "*r_hand"), 0);
+					re.G2API_AttachG2Model(&item->ghoul2[g2_saber], &item->ghoul2[0], DC->g2_AddBolt(&item->ghoul2[0], saberNum ? "*l_hand" : "*r_hand"), 0);
 				}
 			}
 		}

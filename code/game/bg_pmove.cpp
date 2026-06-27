@@ -124,7 +124,7 @@ extern qboolean G_TryingKataAttack(const usercmd_t* cmd);
 extern qboolean G_TryingCartwheel(const gentity_t* self, const usercmd_t* cmd);
 extern qboolean G_TryingJumpAttack(const gentity_t* self, const usercmd_t* cmd);
 extern qboolean G_TryingJumpForwardAttack(const gentity_t* self, const usercmd_t* cmd);
-extern void WP_SaberSwingSound(const gentity_t* ent, int saber_num, swingType_t swing_type);
+extern void WP_SaberSwingSound(const gentity_t* ent, int saberNum, swingType_t swing_type);
 extern qboolean WP_UseFirstValidSaberStyle(const gentity_t* ent, int* saberAnimLevel);
 extern qboolean WP_SaberStyleValidForSaber(const gentity_t* ent, int saberAnimLevel);
 extern int jedi_re_calc_parry_time(const gentity_t* self, evasionType_t evasion_type);

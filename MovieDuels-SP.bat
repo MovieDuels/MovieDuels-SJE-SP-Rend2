@@ -1,4 +1,4 @@
-@REM Create MovieDuels SP projects for Visual Studio 2026 using CMake
+@REM Create MovieDuels projects for Visual Studio 2026 using CMake
 @echo off
 for %%X in (cmake.exe) do (set FOUND=%%~$PATH:X)
 if not defined FOUND (

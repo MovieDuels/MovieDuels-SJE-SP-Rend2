@@ -2169,7 +2169,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 	{
 		num_sabers = 2;
 	}
-	for (int saber_num = 0; saber_num < num_sabers; saber_num++)
+	for (int saberNum = 0; saberNum < num_sabers; saberNum++)
 	{
 		refEntity_t gun = {};
 
@@ -2202,7 +2202,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 
 		if (cent->gent && cent->gent->client && cent->currentState.weapon == WP_SABER)
 		{
-			for (int blade_num = 0; blade_num < cent->gent->client->ps.saber[saber_num].numBlades; blade_num++)
+			for (int bladeNum = 0; bladeNum < cent->gent->client->ps.saber[saberNum].numBlades; bladeNum++)
 			{
 				vec3_t axis[3];
 				vec3_t org;
@@ -2220,16 +2220,16 @@ void CG_AddViewWeapon(playerState_t* ps)
 							lengthMax;
 					}
 				}
-				if (saber_num == 0 && blade_num == 0)
+				if (saberNum == 0 && bladeNum == 0)
 				{
 					VectorCopy(axis[0], cent->gent->client->renderInfo.muzzleDir);
 				}
 				else
 				{
 					//need these points stored here when in 1st person saber
-					VectorCopy(org, cent->gent->client->ps.saber[saber_num].blade[blade_num].muzzlePoint);
+					VectorCopy(org, cent->gent->client->ps.saber[saberNum].blade[bladeNum].muzzlePoint);
 				}
-				VectorCopy(axis[0], cent->gent->client->ps.saber[saber_num].blade[blade_num].muzzleDir);
+				VectorCopy(axis[0], cent->gent->client->ps.saber[saberNum].blade[bladeNum].muzzleDir);
 			}
 		}
 		//---------
@@ -2278,7 +2278,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 
 		if (cent->gent && cent->gent->client)
 		{
-			if (saber_num == 0)
+			if (saberNum == 0)
 			{
 				VectorCopy(flash.origin, cent->gent->client->renderInfo.muzzlePoint);
 				VectorCopy(flash.axis[0], cent->gent->client->renderInfo.muzzleDir);
@@ -2679,7 +2679,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 	{
 		num_sabers = 2;
 	}
-	for (int saber_num = 0; saber_num < num_sabers; saber_num++)
+	for (int saberNum = 0; saberNum < num_sabers; saberNum++)
 	{
 		refEntity_t gun = {};
 
@@ -2712,7 +2712,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 
 		if (cent->gent && cent->gent->client && cent->currentState.weapon == WP_SABER)
 		{
-			for (int blade_num = 0; blade_num < cent->gent->client->ps.saber[saber_num].numBlades; blade_num++)
+			for (int bladeNum = 0; bladeNum < cent->gent->client->ps.saber[saberNum].numBlades; bladeNum++)
 			{
 				vec3_t axis[3];
 				vec3_t org;
@@ -2729,16 +2729,16 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 							lengthMax;
 					}
 				}
-				if (saber_num == 0 && blade_num == 0)
+				if (saberNum == 0 && bladeNum == 0)
 				{
 					VectorCopy(axis[0], cent->gent->client->renderInfo.muzzleDir);
 				}
 				else
 				{
 					//need these points stored here when in 1st person saber
-					VectorCopy(org, cent->gent->client->ps.saber[saber_num].blade[blade_num].muzzlePoint);
+					VectorCopy(org, cent->gent->client->ps.saber[saberNum].blade[bladeNum].muzzlePoint);
 				}
-				VectorCopy(axis[0], cent->gent->client->ps.saber[saber_num].blade[blade_num].muzzleDir);
+				VectorCopy(axis[0], cent->gent->client->ps.saber[saberNum].blade[bladeNum].muzzleDir);
 			}
 		}
 		//---------
@@ -2811,7 +2811,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 
 		if (cent->gent && cent->gent->client)
 		{
-			if (saber_num == 0)
+			if (saberNum == 0)
 			{
 				VectorCopy(flash.origin, cent->gent->client->renderInfo.muzzlePointOld);
 				VectorCopy(flash.axis[0], cent->gent->client->renderInfo.muzzleDirOld);

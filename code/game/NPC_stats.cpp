@@ -47,7 +47,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include <string.h>
 
-extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
+extern void WP_RemoveSaber(gentity_t* ent, int saberNum);
 extern qboolean NPCsPrecached;
 extern vec3_t playerMins;
 extern vec3_t playerMaxs;

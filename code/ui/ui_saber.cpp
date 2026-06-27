@@ -506,7 +506,7 @@ static int UI_saber_numBladesForSaber(const char* saber_name)
 	return numBlades;
 }
 
-static qboolean UI_SaberShouldDrawBlade(const char* saber_name, const int blade_num)
+static qboolean UI_SaberShouldDrawBlade(const char* saber_name, const int bladeNum)
 {
 	int bladeStyle2Start = 0, noBlade = 0;
 	char bladeStyle2StartString[8] = { 0 };
@@ -517,7 +517,7 @@ static qboolean UI_SaberShouldDrawBlade(const char* saber_name, const int blade_
 		bladeStyle2Start = atoi(bladeStyle2StartString);
 	}
 	if (bladeStyle2Start
-		&& blade_num >= bladeStyle2Start)
+		&& bladeNum >= bladeStyle2Start)
 	{
 		//use second blade style
 		UI_SaberParseParm(saber_name, "noBlade2", noBladeString);
@@ -538,7 +538,7 @@ static qboolean UI_SaberShouldDrawBlade(const char* saber_name, const int blade_
 	return static_cast<qboolean>(noBlade == 0);
 }
 
-static float UI_SaberBladeLengthForSaber(const char* saber_name, const int blade_num)
+static float UI_SaberBladeLengthForSaber(const char* saber_name, const int bladeNum)
 {
 	char lengthString[8] = { 0 };
 	float length = 40.0f;
@@ -552,7 +552,7 @@ static float UI_SaberBladeLengthForSaber(const char* saber_name, const int blade
 		}
 	}
 
-	UI_SaberParseParm(saber_name, va("saberLength%d", blade_num + 1), lengthString);
+	UI_SaberParseParm(saber_name, va("saberLength%d", bladeNum + 1), lengthString);
 	if (lengthString[0])
 	{
 		length = atof(lengthString);
@@ -565,7 +565,7 @@ static float UI_SaberBladeLengthForSaber(const char* saber_name, const int blade
 	return length;
 }
 
-static float UI_SaberBladeRadiusForSaber(const char* saber_name, const int blade_num)
+static float UI_SaberBladeRadiusForSaber(const char* saber_name, const int bladeNum)
 {
 	char radiusString[8] = { 0 };
 	float radius = 3.0f;
@@ -579,7 +579,7 @@ static float UI_SaberBladeRadiusForSaber(const char* saber_name, const int blade
 		}
 	}
 
-	UI_SaberParseParm(saber_name, va("saberRadius%d", blade_num + 1), radiusString);
+	UI_SaberParseParm(saber_name, va("saberRadius%d", bladeNum + 1), radiusString);
 	if (radiusString[0])
 	{
 		radius = atof(radiusString);
@@ -2941,7 +2941,7 @@ static saberType_t TranslateSaberType(const char* name)
 	return SABER_SINGLE;
 }
 
-static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int saber_model, const saberType_t saber_type, vec3_t origin, const float cur_yaw, const int blade_num)
+static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int saber_model, const saberType_t saber_type, vec3_t origin, const float cur_yaw, const int bladeNum)
 {
 	char blade_color_string[MAX_QPATH];
 	vec3_t angles = { 0 };
@@ -2983,14 +2983,14 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 	}
 	const saber_colors_t blade_color = TranslateSaberColor(blade_color_string);
 
-	const float blade_length = UI_SaberBladeLengthForSaber(saber_name, blade_num);
-	const float blade_radius = UI_SaberBladeRadiusForSaber(saber_name, blade_num);
+	const float blade_length = UI_SaberBladeLengthForSaber(saber_name, bladeNum);
+	const float blade_radius = UI_SaberBladeRadiusForSaber(saber_name, bladeNum);
 	vec3_t blade_origin = { 0 };
 	vec3_t axis[3] = {};
 	mdxaBone_t bolt_matrix;
 	qboolean tag_hack = qfalse;
 
-	const char* tag_name = va("*blade%d", blade_num + 1);
+	const char* tag_name = va("*blade%d", bladeNum + 1);
 	int bolt = DC->g2_AddBolt(&item->ghoul2[saber_model], tag_name);
 
 	if (bolt == -1)
@@ -3035,28 +3035,28 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 		case SABER_STAFF_UNSTABLE:
 		case SABER_STAFF_THIN:
 		case SABER_STAFF_SFX:
-			if (blade_num == 1)
+			if (bladeNum == 1)
 			{
 				VectorScale(axis[0], -1, axis[0]);
 				VectorMA(blade_origin, 16 * scale, axis[0], blade_origin);
 			}
 			break;
 		case SABER_BROAD:
-			if (blade_num == 0)
+			if (bladeNum == 0)
 			{
 				VectorMA(blade_origin, -1 * scale, axis[1], blade_origin);
 			}
-			else if (blade_num == 1)
+			else if (bladeNum == 1)
 			{
 				VectorMA(blade_origin, 1 * scale, axis[1], blade_origin);
 			}
 			break;
 		case SABER_PRONG:
-			if (blade_num == 0)
+			if (bladeNum == 0)
 			{
 				VectorMA(blade_origin, -3 * scale, axis[1], blade_origin);
 			}
-			else if (blade_num == 1)
+			else if (bladeNum == 1)
 			{
 				VectorMA(blade_origin, 3 * scale, axis[1], blade_origin);
 			}
@@ -3064,7 +3064,7 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 		case SABER_ARC:
 			VectorSubtract(axis[1], axis[2], axis[1]);
 			VectorNormalize(axis[1]);
-			switch (blade_num)
+			switch (bladeNum)
 			{
 			case 0:
 				VectorMA(blade_origin, 8 * scale, axis[0], blade_origin);
@@ -3093,17 +3093,17 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case SABER_SAI:
-			if (blade_num == 1)
+			if (bladeNum == 1)
 			{
 				VectorMA(blade_origin, -3 * scale, axis[1], blade_origin);
 			}
-			else if (blade_num == 2)
+			else if (bladeNum == 2)
 			{
 				VectorMA(blade_origin, 3 * scale, axis[1], blade_origin);
 			}
 			break;
 		case SABER_CLAW:
-			switch (blade_num)
+			switch (bladeNum)
 			{
 			case 0:
 				VectorMA(blade_origin, 2 * scale, axis[0], blade_origin);
@@ -3123,7 +3123,7 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case SABER_STAR:
-			switch (blade_num)
+			switch (bladeNum)
 			{
 			case 0:
 				VectorMA(blade_origin, 8 * scale, axis[0], blade_origin);
@@ -3160,7 +3160,7 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 			}
 			break;
 		case SABER_TRIDENT:
-			switch (blade_num)
+			switch (bladeNum)
 			{
 			case 0:
 				VectorMA(blade_origin, 24 * scale, axis[0], blade_origin);
@@ -3351,12 +3351,12 @@ static void UI_SaberDrawBlade(itemDef_t* item, const char* saber_name, const int
 extern qboolean ItemParse_asset_model_go(itemDef_t* item, const char* name);
 extern qboolean ItemParse_model_g2skin_go(itemDef_t* item, const char* skinName);
 
-static void UI_GetSaberForMenu(char* saber, const int saber_num)
+static void UI_GetSaberForMenu(char* saber, const int saberNum)
 {
 	char saber_type_string[MAX_QPATH] = { 0 };
 	saberType_t saber_type = SABER_NONE;
 
-	if (saber_num == 0)
+	if (saberNum == 0)
 	{
 		DC->getCVarString("g_saber", saber, MAX_QPATH);
 	}
@@ -3400,8 +3400,8 @@ static void UI_GetSaberForMenu(char* saber, const int saber_num)
 }
 
 #ifdef NEW_FEEDER_V10
-static void UI_GetSaberForMD(char* saber, const int saber_num) {
-	if (saber_num == 0)
+static void UI_GetSaberForMD(char* saber, const int saberNum) {
+	if (saberNum == 0)
 		DC->getCVarString("ui_saber", saber, MAX_QPATH);
 	else
 		DC->getCVarString("ui_saber2", saber, MAX_QPATH);
@@ -3425,7 +3425,7 @@ void UI_SaberDrawBlades(itemDef_t* item, vec3_t origin, const float cur_yaw)
 		num_sabers = 2;
 	}
 
-	for (int saber_num = 0; saber_num < num_sabers; saber_num++)
+	for (int saberNum = 0; saberNum < num_sabers; saberNum++)
 	{
 		char saber[MAX_QPATH];
 		if (item->flags & ITF_ISCHARACTER)
@@ -3440,11 +3440,11 @@ void UI_SaberDrawBlades(itemDef_t* item, vec3_t origin, const float cur_yaw)
 			}
 
 			if (isMD)
-				UI_GetSaberForMD(saber, saber_num);
+				UI_GetSaberForMD(saber, saberNum);
 			else
 #endif
-				UI_GetSaberForMenu(saber, saber_num);
-			saber_model = saber_num + 1;
+				UI_GetSaberForMenu(saber, saberNum);
+			saber_model = saberNum + 1;
 		}
 		else if (item->flags & ITF_ISSABER)
 		{
@@ -3501,13 +3501,13 @@ void UI_SaberAttachToChar(itemDef_t* item)
 		num_sabers = 2;
 	}
 
-	for (int saber_num = 0; saber_num < num_sabers; saber_num++)
+	for (int saberNum = 0; saberNum < num_sabers; saberNum++)
 	{
 		//bolt sabers
 		char model_path[MAX_QPATH];
 		char saber[MAX_QPATH];
 
-		UI_GetSaberForMenu(saber, saber_num);
+		UI_GetSaberForMenu(saber, saberNum);
 
 		if (UI_SaberModelForSaber(saber, model_path))
 		{
@@ -3528,7 +3528,7 @@ void UI_SaberAttachToChar(itemDef_t* item)
 					DC->g2_SetSkin(&item->ghoul2[g2_saber], -1, 0); //turn off custom skin
 				}
 				int bolt_num;
-				if (saber_num == 0)
+				if (saberNum == 0)
 				{
 					bolt_num = DC->g2_AddBolt(&item->ghoul2[0], "*r_hand");
 				}

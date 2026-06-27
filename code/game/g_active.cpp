@@ -1926,17 +1926,17 @@ void G_MatchPlayerWeapon(gentity_t* ent)
 				const int num_sabers = WP_SaberInitBladeData(ent);
 				WP_SaberAddG2SaberModels(ent);
 				G_RemoveHolsterModels(ent);
-				for (int saber_num = 0; saber_num < num_sabers; saber_num++)
+				for (int saberNum = 0; saberNum < num_sabers; saberNum++)
 				{
-					ent->client->ps.saber[saber_num].type = g_entities[0].client->ps.saber[saber_num].type;
-					for (int blade_num = 0; blade_num < ent->client->ps.saber[saber_num].numBlades; blade_num++)
+					ent->client->ps.saber[saberNum].type = g_entities[0].client->ps.saber[saberNum].type;
+					for (int bladeNum = 0; bladeNum < ent->client->ps.saber[saberNum].numBlades; bladeNum++)
 					{
-						ent->client->ps.saber[saber_num].blade[0].active = g_entities[0].client->ps.saber[saber_num].
+						ent->client->ps.saber[saberNum].blade[0].active = g_entities[0].client->ps.saber[saberNum].
 							blade
-							[blade_num].active;
-						ent->client->ps.saber[saber_num].blade[0].length = g_entities[0].client->ps.saber[saber_num].
+							[bladeNum].active;
+						ent->client->ps.saber[saberNum].blade[0].length = g_entities[0].client->ps.saber[saberNum].
 							blade
-							[blade_num].length;
+							[bladeNum].length;
 					}
 				}
 				ent->client->ps.saberAnimLevel = g_entities[0].client->ps.saberAnimLevel;

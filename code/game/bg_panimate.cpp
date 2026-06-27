@@ -670,7 +670,7 @@ static int PM_AnimLevelForSaberAnim(const int anim)
 	return FORCE_LEVEL_0;
 }
 
-int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saber_num)
+int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 {
 	if (!ps)
 	{
@@ -1156,7 +1156,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saber_num)
 	}
 	return FORCE_LEVEL_5;
 	case BOTH_LK_DL_S_S_SB_1_W:
-		if (saber_num != 0)
+		if (saberNum != 0)
 		{
 			//only right hand saber does damage in this suberbreak
 			return FORCE_LEVEL_0;
@@ -1173,7 +1173,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saber_num)
 		}
 		return FORCE_LEVEL_5;
 	case BOTH_LK_DL_S_T_SB_1_W:
-		if (saber_num != 0)
+		if (saberNum != 0)
 		{
 			//only right hand saber does damage in this suberbreak
 			return FORCE_LEVEL_0;

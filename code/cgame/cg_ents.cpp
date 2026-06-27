@@ -34,7 +34,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 extern void CG_AddSaberBlade(centity_t* cent, centity_t* scent, int renderfx, int modelIndex,
 	vec3_t origin, vec3_t angles);
-extern void CG_CheckSaberInWater(const centity_t* cent, const centity_t* scent, int saber_num, int modelIndex,
+extern void CG_CheckSaberInWater(const centity_t* cent, const centity_t* scent, int saberNum, int modelIndex,
 	vec3_t origin,
 	vec3_t angles);
 extern void CG_ForcePushBlur(const vec3_t org, qboolean dark_side = qfalse);

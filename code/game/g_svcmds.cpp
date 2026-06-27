@@ -36,10 +36,10 @@ extern void Q3_SetViewEntity(int entID, const char* name);
 extern qboolean G_ClearViewEntity(gentity_t* ent);
 extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength, const qboolean breakSaberLock);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
-extern void WP_SetSaber(gentity_t* ent, int saber_num, const char* saber_name);
-extern void WP_RemoveSaber(gentity_t* ent, int saber_num);
+extern void WP_SetSaber(gentity_t* ent, int saberNum, const char* saber_name);
+extern void WP_RemoveSaber(gentity_t* ent, int saberNum);
 extern saber_colors_t TranslateSaberColor(const char* name);
-extern qboolean WP_SaberBladeUseSecondBladeStyle(const saberInfo_t* saber, int blade_num);
+extern qboolean WP_SaberBladeUseSecondBladeStyle(const saberInfo_t* saber, int bladeNum);
 extern qboolean WP_UseFirstValidSaberStyle(const gentity_t* ent, int* saberAnimLevel);
 extern void G_RemoveWeather();
 extern void RemoveBarrier(gentity_t* ent);
@@ -254,25 +254,25 @@ static void Svcmd_SaberBlade_f()
 {
 	if (gi.argc() < 2)
 	{
-		gi.Printf("USAGE: saberblade <saber_num> <blade_num> [0 = off, 1 = on, no arg = toggle]\n");
+		gi.Printf("USAGE: saberblade <saberNum> <bladeNum> [0 = off, 1 = on, no arg = toggle]\n");
 		return;
 	}
 	if (g_entities[0].client == nullptr)
 	{
 		return;
 	}
-	const int saber_num = atoi(gi.argv(1)) - 1;
-	if (saber_num < 0 || saber_num > 1)
+	const int saberNum = atoi(gi.argv(1)) - 1;
+	if (saberNum < 0 || saberNum > 1)
 	{
 		return;
 	}
-	if (saber_num > 0 && !g_entities[0].client->ps.dualSabers)
+	if (saberNum > 0 && !g_entities[0].client->ps.dualSabers)
 	{
 		return;
 	}
 	//FIXME: what if don't even have a single saber at all?
-	const int blade_num = atoi(gi.argv(2)) - 1;
-	if (blade_num < 0 || blade_num >= g_entities[0].client->ps.saber[saber_num].numBlades)
+	const int bladeNum = atoi(gi.argv(2)) - 1;
+	if (bladeNum < 0 || bladeNum >= g_entities[0].client->ps.saber[saberNum].numBlades)
 	{
 		return;
 	}
@@ -285,62 +285,62 @@ static void Svcmd_SaberBlade_f()
 	else
 	{
 		//toggle
-		turnOn = static_cast<qboolean>(!g_entities[0].client->ps.saber[saber_num].blade[blade_num].active);
+		turnOn = static_cast<qboolean>(!g_entities[0].client->ps.saber[saberNum].blade[bladeNum].active);
 	}
 
-	g_entities[0].client->ps.SaberBladeActivate(saber_num, blade_num, turnOn);
+	g_entities[0].client->ps.SaberBladeActivate(saberNum, bladeNum, turnOn);
 }
 
 static void Svcmd_SaberColor_f()
 {
-	int saber_num = atoi(gi.argv(1));
+	int saberNum = atoi(gi.argv(1));
 	const char* color[MAX_BLADES]{};
-	int blade_num;
+	int bladeNum;
 
-	for (blade_num = 0; blade_num < MAX_BLADES; blade_num++)
+	for (bladeNum = 0; bladeNum < MAX_BLADES; bladeNum++)
 	{
-		color[blade_num] = gi.argv(2 + blade_num);
+		color[bladeNum] = gi.argv(2 + bladeNum);
 	}
 
-	if (saber_num < 1 || saber_num > 2 || gi.argc() < 3)
+	if (saberNum < 1 || saberNum > 2 || gi.argc() < 3)
 	{
-		gi.Printf("Usage:  saberColor <saber_num> <blade1 color> <blade2 color> ... <blade8 color>\n");
+		gi.Printf("Usage:  saberColor <saberNum> <blade1 color> <blade2 color> ... <blade8 color>\n");
 		gi.Printf("valid saber_nums:  1 or 2\n");
 		gi.Printf("valid colors:  red, orange, yellow, green, blue, purple, white, unstable_red, and black\n");
 
 		return;
 	}
-	saber_num--;
+	saberNum--;
 
 	const gentity_t* self = G_GetSelfForPlayerCmd();
 
-	for (blade_num = 0; blade_num < MAX_BLADES; blade_num++)
+	for (bladeNum = 0; bladeNum < MAX_BLADES; bladeNum++)
 	{
-		if (!color[blade_num] || !color[blade_num][0])
+		if (!color[bladeNum] || !color[bladeNum][0])
 		{
 			break;
 		}
 		if (Q_stricmp("rgbsp1", gi.argv(2)) == 0)
 		{
-			self->client->ps.saber[saber_num].blade[blade_num].color = TranslateSaberColor(g_saber_color->string);
+			self->client->ps.saber[saberNum].blade[bladeNum].color = TranslateSaberColor(g_saber_color->string);
 		}
 		else if (Q_stricmp("rgbsp2", gi.argv(2)) == 0)
 		{
-			self->client->ps.saber[saber_num].blade[blade_num].color = TranslateSaberColor(g_saber2_color->string);
+			self->client->ps.saber[saberNum].blade[bladeNum].color = TranslateSaberColor(g_saber2_color->string);
 		}
 		else
 		{
-			self->client->ps.saber[saber_num].blade[blade_num].color = TranslateSaberColor(color[blade_num]);
+			self->client->ps.saber[saberNum].blade[bladeNum].color = TranslateSaberColor(color[bladeNum]);
 		}
 	}
 
 	if (Q_stricmp("rgbsp1", gi.argv(2)) != 0 && Q_stricmp("rgbsp2", gi.argv(2)) != 0)
 	{
-		if (saber_num == 0)
+		if (saberNum == 0)
 		{
 			gi.cvar_set("g_saber_color", color[0]);
 		}
-		else if (saber_num == 1)
+		else if (saberNum == 1)
 		{
 			gi.cvar_set("g_saber2_color", color[0]);
 		}
@@ -452,10 +452,10 @@ static void Svcmd_SaberAttackCycle_f()
 			if (self->client->ps.saber[1].ActiveManualOnly())
 			{
 				//turn it off
-				for (int blade_num = 0; blade_num < self->client->ps.saber[1].numBlades; blade_num++)
+				for (int bladeNum = 0; bladeNum < self->client->ps.saber[1].numBlades; bladeNum++)
 				{
 					qboolean skip_this_blade = qfalse;
-					if (WP_SaberBladeUseSecondBladeStyle(&self->client->ps.saber[1], blade_num))
+					if (WP_SaberBladeUseSecondBladeStyle(&self->client->ps.saber[1], bladeNum))
 					{
 						//check to see if we should check the secondary style's flags
 						if (self->client->ps.saber[1].saberFlags2 & SFL2_NO_MANUAL_DEACTIVATE2)
@@ -473,7 +473,7 @@ static void Svcmd_SaberAttackCycle_f()
 					}
 					if (!skip_this_blade)
 					{
-						self->client->ps.saber[1].BladeActivate(blade_num, qfalse);
+						self->client->ps.saber[1].BladeActivate(bladeNum, qfalse);
 						G_SoundIndexOnEnt(self, CHAN_WEAPON, self->client->ps.saber[1].soundOff);
 					}
 				}
@@ -536,18 +536,18 @@ static void Svcmd_SaberAttackCycle_f()
 			return;
 		}
 
-		for (int blade_num = 1; blade_num < self->client->ps.saber[0].numBlades; blade_num++)
+		for (int bladeNum = 1; bladeNum < self->client->ps.saber[0].numBlades; bladeNum++)
 		{
-			if (!self->client->ps.saber[0].blade[blade_num].active)
+			if (!self->client->ps.saber[0].blade[bladeNum].active)
 			{
 				//extra is off, turn it on
-				self->client->ps.saber[0].BladeActivate(blade_num, qtrue);
+				self->client->ps.saber[0].BladeActivate(bladeNum, qtrue);
 			}
 			else
 			{
 				//turn extra off
 				qboolean skipThisBlade = qfalse;
-				if (WP_SaberBladeUseSecondBladeStyle(&self->client->ps.saber[1], blade_num))
+				if (WP_SaberBladeUseSecondBladeStyle(&self->client->ps.saber[1], bladeNum))
 				{
 					//check to see if we should check the secondary style's flags
 					if (self->client->ps.saber[1].saberFlags2 & SFL2_NO_MANUAL_DEACTIVATE2)
@@ -565,7 +565,7 @@ static void Svcmd_SaberAttackCycle_f()
 				}
 				if (!skipThisBlade)
 				{
-					self->client->ps.saber[0].BladeActivate(blade_num, qfalse);
+					self->client->ps.saber[0].BladeActivate(bladeNum, qfalse);
 					if (!playedSound)
 					{
 						G_SoundIndexOnEnt(self, CHAN_WEAPON, self->client->ps.saber[0].soundOff);
@@ -1000,7 +1000,7 @@ static void Svcmd_Knockdown_f()
 
 extern void BG_LetGoofLedge(playerState_t* ps);
 extern qboolean JET_Flying(const gentity_t* self);
-extern void WP_RemoveSecondSaber(gentity_t* ent, int saber_num);
+extern void WP_RemoveSecondSaber(gentity_t* ent, int saberNum);
 
 static void Svcmd_PlayerModel_f()
 {
