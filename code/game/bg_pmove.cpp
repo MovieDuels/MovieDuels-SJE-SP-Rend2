@@ -11932,6 +11932,12 @@ static void PM_BeginWeaponChange(const int weapon)
 		return;
 	}
 
+	if (pm->ps->communicatingflags & (1u << AIMINGGUN))
+	{
+		pm->ps->communicatingflags &= ~(1u << AIMINGGUN);
+		g_entities[pm->ps->clientNum].client->IsAiming = qfalse;
+	}
+
 	if (pm->ps->weapon != WP_DUAL_PISTOL)
 	{
 		//Changing weaps, remove dual weaps
