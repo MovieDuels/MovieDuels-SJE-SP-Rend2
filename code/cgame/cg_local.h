@@ -306,6 +306,7 @@ constexpr auto CG_OVERRIDE_3RD_PERSON_CDP = 0x00000020;
 constexpr auto CG_OVERRIDE_3RD_PERSON_APH = 0x00000040;
 constexpr auto CG_OVERRIDE_3RD_PERSON_HOF = 0x00000080;
 constexpr auto CG_OVERRIDE_FOV = 0x00000100;
+constexpr auto CG_OVERRIDE_3RD_PERSON_TDP = 0x00000200;
 
 using overrides_t = struct
 {
@@ -317,6 +318,7 @@ using overrides_t = struct
 	float thirdPersonVertOffset; //how high to be above them
 	float thirdPersonPitchOffset; //what offset pitch to apply the the camera view
 	float thirdPersonCameraDamp; //how tightly to move the camera pos behind the player
+	float thirdPersonTargetDamp; //how tightly to move the camera pos behind the player
 	float thirdPersonHorzOffset; //NOTE: could put Alpha and HorzOffset and the target & camera damps, but no-one is trying to override those, so... YES WE ARE
 	float thirdPersonAlpha; //how tightly to move the camera pos behind the player
 	float fov; //what fov to use

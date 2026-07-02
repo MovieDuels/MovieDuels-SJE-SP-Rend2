@@ -447,11 +447,6 @@ static void CG_CalcIdealThirdPersonViewTarget()
 
 		// Shorter forward distance so we don't zoom into the back of the head
 		VectorMA(cameraFocusLoc, 64.0f, forward, cameraIdealTarget);
-
-		// Shoulder camera tuning
-		cg.overrides.thirdPersonAngle = 10.0f;   // yaw inward
-		cg.overrides.thirdPersonPitchOffset = -2.0f;   // slight downward pitch
-		cg.overrides.thirdPersonHorzOffset = -14.0f;  // softer shoulder shift
 	}
 	else
 	{
@@ -668,6 +663,38 @@ static void CG_UpdateThirdPersonTargetDamp()
 		//if moving on a plat, camera is *tight*
 		VectorCopy(cameraIdealTarget, cameraCurTarget);
 	}
+	else if (cg.overrides.active & CG_OVERRIDE_3RD_PERSON_TDP)
+	{
+		if (cg.overrides.thirdPersonTargetDamp >= 1.0)
+		{
+			// No damping.
+			VectorCopy(cameraIdealTarget, cameraCurTarget);
+		}
+		else
+		{
+			float ratio;
+			vec3_t targetdiff;
+			// Calculate the difference from the current position to the new one.
+			VectorSubtract(cameraIdealTarget, cameraCurTarget, targetdiff);
+
+			// Now we calculate how much of the difference we cover in the time allotted.
+			// The equation is (Damp)^(time)
+			const float dampfactor = 1.0 - cg.overrides.thirdPersonTargetDamp;
+			// We must exponent the amount LEFT rather than the amount bled off
+			const float dtime = static_cast<float>(cg.time - cameraLastFrame) * (1.0 / cg_timescale.value) * (1.0 /
+				static_cast<float>(CAMERA_DAMP_INTERVAL)); // Our dampfactor is geared towards a time interval equal to "1".
+
+			// Note that since there are a finite number of "practical" delta millisecond values possible,
+			// the ratio should be initialized into a chart ultimately.
+			if (cg_smoothCamera.integer)
+				ratio = powf(dampfactor, dtime);
+			else
+				ratio = Q_powf(dampfactor, dtime);
+
+			// This value is how much distance is "left" from the ideal.
+			VectorMA(cameraIdealTarget, -ratio, targetdiff, cameraCurTarget);
+		}
+	}
 	else if (cg_thirdPersonTargetDamp.value >= 1.0) //||cg.thisFrameTeleport)
 	{
 		// No damping.
@@ -857,7 +884,7 @@ static void CG_OffsetThirdPersonView()
 	}
 
 	vec3_t diff;
-	static int aimLockTime = 0;
+	//static int aimLockTime = 0;
 
 	camWaterAdjust = 0;
 	cameraStiffFactor = 0.0f;
@@ -936,16 +963,41 @@ static void CG_OffsetThirdPersonView()
 		cameraFocusAngles[YAW] += (cg.overrides.thirdPersonAngle = 40.5f);
 		cameraFocusAngles[PITCH] += (cg.overrides.thirdPersonPitchOffset = -11.25f);
 	}
-	// Aiming cinematic
+	// Aiming weapon
 	else if (cg.renderingThirdPerson &&
 		(cg.predictedPlayerState.communicatingflags & (1 << AIMINGGUN)))
 	{
-		cg.overrides.thirdPersonAngle = 10.0f;
-		cg.overrides.thirdPersonPitchOffset = -2.0f;
+		// Shoulder camera tuning
+		cg.overrides.thirdPersonAngle = 0.0f;			// yaw inward
+		cg.overrides.thirdPersonAlpha = 1.0f;			// tighter camera
+		cg.overrides.thirdPersonPitchOffset = 0.0f;		// slight downward pitch
+		cg.overrides.thirdPersonHorzOffset = -20.0f;	// softer shoulder shift
+		cg.overrides.thirdPersonVertOffset = 4.0f;		// slight upward shift
+		cg.overrides.thirdPersonCameraDamp = 1.0f;		// tighter camera damping
+		cg.overrides.thirdPersonTargetDamp = 1.0f;		// tighter target damping
+		cg.overrides.thirdPersonRange = 50.0f;			// closer to the player
+		cg.overrides.fov = 60.0f;						// closer FOV
 
 		cameraFocusAngles[YAW] += cg.overrides.thirdPersonAngle;
 		cameraFocusAngles[PITCH] += cg.overrides.thirdPersonPitchOffset;
 
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_ANG;
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_APH;
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_POF;
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_HOF;
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_VOF;
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_CDP;
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_TDP;
+		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG;
+		cg.overrides.active |= CG_OVERRIDE_FOV;
+
+		/*
+		Somehow need to add a smooth transition from normal third-person to these camera overrides.
+		Camera is now tight because I added CG_OVERRIDE_3RD_PERSON_TDP so don't really need the code below.
+			- Mike
+		*/
+
+		/*
 		// Start aim-lock timer
 		if (aimLockTime == 0)
 		{
@@ -977,7 +1029,7 @@ static void CG_OffsetThirdPersonView()
 				// NOT strafing → disable shoulder lock
 				cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_CDP;
 			}
-		}
+		}*/
 	}
 	// Normal third‑person angle
 	else
@@ -1000,8 +1052,16 @@ static void CG_OffsetThirdPersonView()
 			cameraFocusAngles[PITCH] += cg_thirdPersonPitchOffset.value;
 		}
 		// Not aiming → reset everything
-		aimLockTime = 0;
+		//aimLockTime = 0;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_ANG;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_APH;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_POF;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_HOF;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_VOF;
 		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_CDP;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_TDP;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_RNG;
+		cg.overrides.active &= ~CG_OVERRIDE_FOV;
 	}
 
 	// First‑person saber handling
