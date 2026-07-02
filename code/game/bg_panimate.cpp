@@ -8804,21 +8804,43 @@ void PM_TorsoAnimation()
 						}
 						else
 						{ //not busy, so just hold the idle anim
-
-							if (pm->cmd.buttons & BUTTON_WALKING && pm->cmd.buttons & BUTTON_BLOCK)
+							if (cg.renderingThirdPerson)
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_READY_DUAL, SETANIM_FLAG_NORMAL);
-							}
-							else if (PM_RunningAnim(pm->ps->legsAnim)
-								|| PM_WalkingAnim(pm->ps->legsAnim)
-								|| PM_JumpingAnim(pm->ps->legsAnim)
-								|| PM_SwimmingAnim(pm->ps->legsAnim))
-							{//running w/1-handed weapon uses full-body anim
-								PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+								if (pm->cmd.buttons & BUTTON_WALKING && pm->cmd.buttons & BUTTON_BLOCK)
+								{
+									//running w/1-handed weapon uses full-body anim
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_READY_DUAL, SETANIM_FLAG_NORMAL);
+
+									if (!(pm->ps->communicatingflags & (1u << AIMINGGUN)))
+									{
+										pm->ps->communicatingflags |= (1u << AIMINGGUN);
+										g_entities[pm->ps->clientNum].client->IsAiming = qtrue;
+									}
+								}
+								else
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim)
+										|| PM_JumpingAnim(pm->ps->legsAnim)
+										|| PM_WalkingAnim(pm->ps->legsAnim)
+										|| PM_SwimmingAnim(pm->ps->legsAnim))
+									{//running w/1-handed weapon uses full-body anim
+										PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+									}
+									else
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, BOTH_READY_DUAL, SETANIM_FLAG_NORMAL);
+									}
+
+									if (pm->ps->communicatingflags & (1u << AIMINGGUN))
+									{
+										pm->ps->communicatingflags &= ~(1u << AIMINGGUN);
+										g_entities[pm->ps->clientNum].client->IsAiming = qfalse;
+									}
+								}
 							}
 							else
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_READY_DUAL, SETANIM_FLAG_NORMAL);
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE2, SETANIM_FLAG_NORMAL);
 							}
 						}
 					}
@@ -8843,23 +8865,34 @@ void PM_TorsoAnimation()
 										g_entities[pm->ps->clientNum].client->IsAiming = qtrue;
 									}
 								}
-							}
-							else if (PM_RunningAnim(pm->ps->legsAnim)
-								|| PM_WalkingAnim(pm->ps->legsAnim)
-								|| PM_JumpingAnim(pm->ps->legsAnim)
-								|| PM_SwimmingAnim(pm->ps->legsAnim))
-							{//running w/1-handed weapon uses full-body anim
-								PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+								else
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim)
+										|| PM_JumpingAnim(pm->ps->legsAnim)
+										|| PM_WalkingAnim(pm->ps->legsAnim)
+										|| PM_SwimmingAnim(pm->ps->legsAnim))
+									{//running w/1-handed weapon uses full-body anim
+										PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+									}
+									else if (pm->cmd.buttons & BUTTON_WALKING)
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE2, SETANIM_FLAG_NORMAL);
+									}
+									else
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1, SETANIM_FLAG_NORMAL);
+									}
+
+									if (pm->ps->communicatingflags & (1u << AIMINGGUN))
+									{
+										pm->ps->communicatingflags &= ~(1u << AIMINGGUN);
+										g_entities[pm->ps->clientNum].client->IsAiming = qfalse;
+									}
+								}
 							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE2, SETANIM_FLAG_NORMAL);
-
-								if (pm->ps->communicatingflags & (1u << AIMINGGUN))
-								{
-									pm->ps->communicatingflags &= ~(1u << AIMINGGUN);
-									g_entities[pm->ps->clientNum].client->IsAiming = qfalse;
-								}
 							}
 						}
 					}
