@@ -2221,6 +2221,7 @@ public:
 	int         saberstuckinwalltimer;
 	int         saberDisarmProtectTime;
 	int         npcKickBlockStartTime;
+	qboolean IsAiming;
 
 #endif // !JK2_MODE
 
@@ -2504,6 +2505,7 @@ public:
 		saved_game.write<int32_t>(saberstuckinwalltimer);
 		saved_game.write<int32_t>(saberDisarmProtectTime);
 		saved_game.write<int32_t>(npcKickBlockStartTime);
+		saved_game.write<int32_t>(IsAiming);
 
 #endif // !JK2_MODE
 	}
@@ -2788,6 +2790,7 @@ public:
 		saved_game.read<int32_t>(saberstuckinwalltimer);
 		saved_game.read<int32_t>(saberDisarmProtectTime);
 		saved_game.read<int32_t>(npcKickBlockStartTime);
+		saved_game.read<int32_t>(IsAiming);
 
 #endif // !JK2_MODE
 	}
@@ -3588,6 +3591,7 @@ using communicatingflags_e = enum communicatingflags_e2
 	PROJECTING,
 	CF_SABERLOCKING,
 	CF_SABERLOCK_ADVANCE,
+	AIMINGGUN,
 };
 
 using PlayerEffectFlags_e = enum PlayerEffectFlags_e2

@@ -439,6 +439,20 @@ static void CG_CalcIdealThirdPersonViewTarget()
 		VectorCopy(cameraFocusLoc, cameraIdealTarget);
 		cameraIdealTarget[2] -= 15.5f;
 	}
+	else if (cg.renderingThirdPerson &&
+		(cg.predictedPlayerState.communicatingflags & (1 << AIMINGGUN)))
+	{
+		vec3_t forward;
+		AngleVectors(cg.refdefViewAngles, forward, NULL, NULL);
+
+		// Shorter forward distance so we don't zoom into the back of the head
+		VectorMA(cameraFocusLoc, 64.0f, forward, cameraIdealTarget);
+
+		// Shoulder camera tuning
+		cg.overrides.thirdPersonAngle = 10.0f;   // yaw inward
+		cg.overrides.thirdPersonPitchOffset = -2.0f;   // slight downward pitch
+		cg.overrides.thirdPersonHorzOffset = -14.0f;  // softer shoulder shift
+	}
 	else
 	{
 		VectorCopy(cameraFocusLoc, cameraIdealTarget);
@@ -843,6 +857,7 @@ static void CG_OffsetThirdPersonView()
 	}
 
 	vec3_t diff;
+	static int aimLockTime = 0;
 
 	camWaterAdjust = 0;
 	cameraStiffFactor = 0.0f;
@@ -921,6 +936,49 @@ static void CG_OffsetThirdPersonView()
 		cameraFocusAngles[YAW] += (cg.overrides.thirdPersonAngle = 40.5f);
 		cameraFocusAngles[PITCH] += (cg.overrides.thirdPersonPitchOffset = -11.25f);
 	}
+	// Aiming cinematic
+	else if (cg.renderingThirdPerson &&
+		(cg.predictedPlayerState.communicatingflags & (1 << AIMINGGUN)))
+	{
+		cg.overrides.thirdPersonAngle = 10.0f;
+		cg.overrides.thirdPersonPitchOffset = -2.0f;
+
+		cameraFocusAngles[YAW] += cg.overrides.thirdPersonAngle;
+		cameraFocusAngles[PITCH] += cg.overrides.thirdPersonPitchOffset;
+
+		// Start aim-lock timer
+		if (aimLockTime == 0)
+		{
+			aimLockTime = cg.time + 250;   // wait for zoom-in to finish
+		}
+
+		// Only apply dynamic shoulder tracking AFTER zoom-in
+		if (cg.time > aimLockTime)
+		{
+			float side = cg.predictedPlayerState.velocity[1];
+
+			// Only track sideways movement if actually strafing
+			if (fabs(side) > 5.0f)
+			{
+				float sideNorm = side / 200.0f;
+
+				if (sideNorm > 1.0f)  sideNorm = 1.0f;
+				if (sideNorm < -1.0f) sideNorm = -1.0f;
+
+				float baseShoulder = -14.0f;
+				cg.overrides.thirdPersonHorzOffset = baseShoulder + (-6.0f * sideNorm);
+
+				// Tight camera damp (keeps camera glued to shoulder)
+				cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_CDP;
+				cg.overrides.thirdPersonCameraDamp = 0.8f;
+			}
+			else
+			{
+				// NOT strafing → disable shoulder lock
+				cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_CDP;
+			}
+		}
+	}
 	// Normal third‑person angle
 	else
 	{
@@ -941,6 +999,9 @@ static void CG_OffsetThirdPersonView()
 		{
 			cameraFocusAngles[PITCH] += cg_thirdPersonPitchOffset.value;
 		}
+		// Not aiming → reset everything
+		aimLockTime = 0;
+		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_CDP;
 	}
 
 	// First‑person saber handling

@@ -21603,10 +21603,6 @@ static void PM_Weapon()
 			case WP_BRYAR_PISTOL:
 			case WP_SBD_BLASTER:
 			case WP_JAWA:
-				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2,
-					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
-				break;
-
 			case WP_BLASTER_PISTOL:
 			case WP_REY:
 			case WP_JANGO:
@@ -21617,14 +21613,12 @@ static void PM_Weapon()
 				if (pm->gent && pm->gent->weaponModel[1] > 0)
 				{
 					//dual pistols
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL,	SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
 					//single pistol
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2,SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				break;
 
@@ -21789,15 +21783,33 @@ static void PM_Weapon()
 				}
 				break;
 
+			case WP_STUN_BATON:
+			case WP_BOWCASTER:
 			case WP_FLECHETTE:
-				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+
+				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
+				{
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					if (cg.renderingThirdPerson)
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4,
+							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,
+							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+					}
+				}
 				break;
 
 			case WP_CLONERIFLE:
 			case WP_ROCKET_LAUNCHER:
 			case WP_CONCUSSION:
-			case WP_BOWCASTER:
 			case WP_DEMP2:
 			case WP_Z6_ROTARY_CANNON:
 				if (cg.renderingThirdPerson)
@@ -21824,18 +21836,11 @@ static void PM_Weapon()
 			case WP_CLONECARBINE:
 			case WP_BATTLEDROID:
 			case WP_CLONECOMMANDO:
+
 				if (pm->cmd.buttons & BUTTON_ALT_ATTACK || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 				{
-					if (cg.renderingThirdPerson)
-					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
-					}
-					else
-					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
-					}
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				else
 				{

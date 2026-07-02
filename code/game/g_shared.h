@@ -893,6 +893,7 @@ public:
 	gentity_t* lastSaberTarget;
 	int lastSaberTargetTime;
 	int painCooldownTime;
+	qboolean IsAiming;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -1015,6 +1016,7 @@ public:
 		saved_game.write<int32_t>(lastSaberTarget);
 		saved_game.write<int32_t>(lastSaberTargetTime);
 		saved_game.write<int32_t>(painCooldownTime);
+		saved_game.write<int32_t>(IsAiming);
 	}
 
 	void sg_import(
@@ -1138,6 +1140,7 @@ public:
 		saved_game.read<int32_t>(lastSaberTarget);
 		saved_game.read<int32_t>(lastSaberTargetTime);
 		saved_game.read<int32_t>(painCooldownTime);
+		saved_game.read<int32_t>(IsAiming);
 	}
 }; // GClientBase
 
