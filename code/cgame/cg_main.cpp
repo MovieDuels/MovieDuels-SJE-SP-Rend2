@@ -504,6 +504,8 @@ vmCvar_t cg_hudRatio;
 
 vmCvar_t cg_saberLockCinematicCamera;
 
+vmCvar_t cg_AimingCinematicCamera;
+
 vmCvar_t cg_allowcallout;
 
 vmCvar_t cg_allowcalloutmarker;
@@ -732,6 +734,8 @@ static cvarTable_t cvarTable[] = {
 	{&cg_com_kotor, "com_kotor", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 
 	{&cg_saberLockCinematicCamera, "g_saberLockCinematicCamera", "0", CVAR_ARCHIVE},
+
+	{ &cg_AimingCinematicCamera, "g_AimingCinematicCamera", "1", CVAR_ARCHIVE },
 
 	{&cg_jumpSounds, "cg_jumpSounds", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 

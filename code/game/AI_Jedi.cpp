@@ -11736,7 +11736,7 @@ static void Jedi_Attack(void)
 			NPC_PlayGloatAndMaybeSheathe(NPC);
 			return;
 		}
-		else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << RESPECTING)))
+		else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << CF_RESPECTING)))
 		{
 			// Enemy is showing respect: NPC bows or handsignal and may speak
 			if (NPC->s.weapon == WP_SABER)
@@ -11753,7 +11753,7 @@ static void Jedi_Attack(void)
 				NPC_HandleSpeechDebounceAndIncrement(NPC);
 			}
 		}
-		else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << GESTURING)))
+		else if (NPC_CanReactToEnemy(NPC, enemy) && (enemy->client->ps.communicatingflags & (1 << CF_GESTURING)))
 		{
 			// Enemy gestured: return gesture or taunt depending on saber and saber level
 			if (NPC->s.weapon == WP_SABER)

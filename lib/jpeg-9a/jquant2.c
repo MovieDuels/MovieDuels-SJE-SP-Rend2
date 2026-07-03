@@ -74,7 +74,7 @@
 #define G_SCALE 3		/* scale G distances by this much */
 #define B_SCALE 1		/* and B by this much */
 
-  /* Relabel R/G/B as components 0/1/2, RESPECTING the RGB ordering defined
+  /* Relabel R/G/B as components 0/1/2, CF_RESPECTING the RGB ordering defined
    * in jmorecfg.h.  As the code stands, it will do the right thing for R,G,B
    * and B,G,R orders.  If you define some other weird order in jmorecfg.h,
    * you'll get compile errors until you extend this logic.  In that case

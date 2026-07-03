@@ -598,13 +598,13 @@ static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
 	// Clear communicating / gesture / special flags
 	client->ps.communicatingflags &= ~(1 << CF_SABERLOCK_ADVANCE);
 	client->ps.communicatingflags &= ~(1 << CF_SABERLOCKING);
-	client->ps.communicatingflags &= ~(1 << SURRENDERING);
-	client->ps.communicatingflags &= ~(1 << RESPECTING);
-	client->ps.communicatingflags &= ~(1 << GESTURING);
-	client->ps.communicatingflags &= ~(1 << DASHING);
-	client->ps.communicatingflags &= ~(1 << DESTRUCTING);
-	client->ps.communicatingflags &= ~(1 << PROJECTING);
-	client->ps.communicatingflags &= ~(1 << KICKING);
+	client->ps.communicatingflags &= ~(1 << CF_SURRENDERING);
+	client->ps.communicatingflags &= ~(1 << CF_RESPECTING);
+	client->ps.communicatingflags &= ~(1 << CF_GESTURING);
+	client->ps.communicatingflags &= ~(1 << CF_DASHING);
+	client->ps.communicatingflags &= ~(1 << CF_DESTRUCTING);
+	client->ps.communicatingflags &= ~(1 << CF_PROJECTING);
+	client->ps.communicatingflags &= ~(1 << CF_KICKING);
 	// Reset speed timers
 	client->ps.forcePowerDebounce[FP_SPEED] = 0;
 	client->ps.forcePowerDuration[FP_SPEED] = 0;
@@ -629,7 +629,7 @@ static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
 	client->latched_buttons &= ~BUTTON_DASH;
 	client->buttons &= ~BUTTON_DASH;
 
-	// Clear userInt3 DASHING flag if a saved game mistakenly left it set.
+	// Clear userInt3 CF_DASHING flag if a saved game mistakenly left it set.
 	client->ps.userInt3 &= ~(1 << FLAG_DASHING);
 }
 
