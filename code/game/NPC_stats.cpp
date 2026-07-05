@@ -3391,7 +3391,9 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 			{
 				if (COM_ParseString(&p, &value))
 				{
+					continue;
 				}
+				npc->client->fullName = G_NewString(value);
 				continue;
 			}
 

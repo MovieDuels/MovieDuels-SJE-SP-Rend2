@@ -884,6 +884,7 @@ public:
 	vec3_t		hackingAngles;
 
 	// MD NPC attributes
+	char* fullName; // Character's full name
 	int charDualPistols; // Character uses dual pistols
 	int charForceUser; // Character attacks with force powers
 	int charNoKnockback; // Character is immune to knockback
@@ -1007,6 +1008,7 @@ public:
 		saved_game.write<int32_t>(isHacking);
 		saved_game.write<int32_t>(hackingAngles);
 
+		saved_game.write<int32_t>(fullName);
 		saved_game.write<int32_t>(charDualPistols);
 		saved_game.write<int32_t>(charForceUser);
 		saved_game.write<int32_t>(charNoKnockback);
@@ -1131,6 +1133,7 @@ public:
 		saved_game.read<int32_t>(isHacking);
 		saved_game.read<int32_t>(hackingAngles);
 
+		saved_game.read<int32_t>(fullName);
 		saved_game.read<int32_t>(charDualPistols);
 		saved_game.read<int32_t>(charForceUser);
 		saved_game.read<int32_t>(charNoKnockback);
