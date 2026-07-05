@@ -2726,7 +2726,6 @@ qboolean G_GetRootSurfNameWithVariant(gentity_t* ent, const char* root_surf_name
 //	return qfalse;
 //}
 
-
 extern qboolean g_standard_humanoid(gentity_t* self);
 
 qboolean G_DoDismemberment(gentity_t* self, vec3_t point, const int mod, const int hit_loc,

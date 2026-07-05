@@ -8532,9 +8532,9 @@ static void CG_Draw2D()
 		CG_DrawPic(0, 0, 640, 480, cgi_R_RegisterShader("gfx/2d/droid_view"));
 	}
 
-	//if (cg.predictedPlayerState.communicatingflags & (1 << DASHING))
+	//if (cg.predictedPlayerState.communicatingflags & (1 << CF_DASHING))
 		//if (cg.predictedPlayerState.communicatingflags & (1 << CF_SABERLOCKING))
-		//if (cg.predictedPlayerState.communicatingflags & (1 << PROJECTING))
+		//if (cg.predictedPlayerState.communicatingflags & (1 << CF_PROJECTING))
 		//if (cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK))
 		//if (cg_entities[cg.snap->ps.clientNum].currentState.userInt3 & (1 << FLAG_ATTACKFAKE))
 		//if (cent->currentState.eFlags & EF2_DUAL_WEAPONS)

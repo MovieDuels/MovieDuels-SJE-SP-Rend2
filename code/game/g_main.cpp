@@ -310,6 +310,7 @@ cvar_t* com_kotor;
 cvar_t* g_attackskill;
 cvar_t* g_npcSpecialAttackFreq;
 cvar_t* g_saberLockCinematicCamera;
+cvar_t* g_AimingCinematicCamera;
 cvar_t* g_ffamode;
 
 cvar_t* g_SaberBounceOnWalls;
@@ -921,6 +922,8 @@ static void G_InitCvars()
 	g_npcSpecialAttackFreq = gi.cvar("g_npcSpecialAttackFreq", "1.0", CVAR_ARCHIVE);
 
 	g_saberLockCinematicCamera = gi.cvar("g_saberLockCinematicCamera", "0", CVAR_ARCHIVE);
+
+	g_AimingCinematicCamera = gi.cvar("g_AimingCinematicCamera", "1", CVAR_ARCHIVE);
 
 	g_ffamode = gi.cvar("g_ffamode", "0", CVAR_ARCHIVE);
 

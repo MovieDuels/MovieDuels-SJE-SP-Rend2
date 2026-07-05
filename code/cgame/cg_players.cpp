@@ -5604,7 +5604,7 @@ extern qboolean NPC_IsOversized(const gentity_t* self);
 
 void CG_AddRefEntityWithPowerups(refEntity_t* ent, int powerups, centity_t* cent)
 {
-	const qboolean doing_dash_action = cg.predictedPlayerState.communicatingflags & 1 << DASHING ? qtrue : qfalse;
+	const qboolean doing_dash_action = cg.predictedPlayerState.communicatingflags & 1 << CF_DASHING ? qtrue : qfalse;
 
 	if (!cent)
 	{

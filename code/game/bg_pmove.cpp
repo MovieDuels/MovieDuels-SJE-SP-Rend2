@@ -262,9 +262,7 @@ qboolean BG_UnrestrainedPitchRoll(const playerState_t* ps, const Vehicle_t* p_ve
 
 qboolean BG_AllowThirdPersonSpecialMove(const playerState_t* ps)
 {
-	return static_cast<qboolean>((cg.renderingThirdPerson || cg_trueguns.integer || ps->weapon == WP_SABER || ps->weapon
-		==
-		WP_MELEE) && !cg.zoomMode);
+	return static_cast<qboolean>((cg.renderingThirdPerson || cg_trueguns.integer || ps->weapon == WP_SABER || ps->weapon == WP_MELEE) && !cg.zoomMode);
 }
 
 /*
@@ -1346,7 +1344,7 @@ static qboolean PM_CheckJump()
 		return qfalse;
 	}
 
-	if (pm->ps->communicatingflags & 1 << DASHING || PM_Is_A_Dash_Anim(pm->ps->torsoAnim))
+	if (pm->ps->communicatingflags & 1 << CF_DASHING || PM_Is_A_Dash_Anim(pm->ps->torsoAnim))
 	{
 		return qfalse;
 	}
@@ -11932,9 +11930,9 @@ static void PM_BeginWeaponChange(const int weapon)
 		return;
 	}
 
-	if (pm->ps->communicatingflags & (1u << AIMINGGUN))
+	if (pm->ps->communicatingflags & (1u << CF_AIMINGGUN))
 	{
-		pm->ps->communicatingflags &= ~(1u << AIMINGGUN);
+		pm->ps->communicatingflags &= ~(1u << CF_AIMINGGUN);
 		g_entities[pm->ps->clientNum].client->IsAiming = qfalse;
 	}
 
@@ -17272,7 +17270,7 @@ static void PM_CheckKick()
 	{
 		if (pm->ps->weapon == WP_SABER && pm->ps->SaberActive() && !pm->ps->saberInFlight)
 		{
-			if (!(pm->ps->communicatingflags & 1 << KICKING))
+			if (!(pm->ps->communicatingflags & 1 << CF_KICKING))
 			{
 				return;
 			}
@@ -17728,7 +17726,7 @@ static void pm_melee_move_for_conditions()
 	{
 		if (pm->ps->weapon == WP_SABER && pm->ps->SaberActive() && !pm->ps->saberInFlight)
 		{
-			if (!(pm->ps->communicatingflags & 1 << KICKING))
+			if (!(pm->ps->communicatingflags & 1 << CF_KICKING))
 			{
 				return;
 			}
@@ -19437,7 +19435,7 @@ static void PM_WeaponLightsaber()
 	}
 	else
 	{
-		if (pm->cmd.buttons & BUTTON_KICK && pm->ps->communicatingflags & 1 << KICKING
+		if (pm->cmd.buttons & BUTTON_KICK && pm->ps->communicatingflags & 1 << CF_KICKING
 			&& pm->gent->client->NPC_class != CLASS_DROIDEKA)
 		{
 			//allow them to do the kick now!
@@ -19693,7 +19691,7 @@ static void PM_WeaponLightsaber()
 			&& pm->ps->saberBlocked == BLOCKED_NONE //not interacting with any other saber
 			&& !(pm->cmd.buttons & BUTTON_ATTACK) //not trying to swing the saber
 			&& (pm->cmd.forwardmove || pm->cmd.rightmove) &&
-			pm->ps->communicatingflags & 1 << KICKING) //trying to kick in a specific direction
+			pm->ps->communicatingflags & 1 << CF_KICKING) //trying to kick in a specific direction
 		{
 			if (PM_CheckAltKickAttack()) //trying to do a kick
 			{
@@ -19978,7 +19976,7 @@ static void PM_WeaponLightsaber()
 
 	if ((pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) //player
 		&& PM_CheckAltKickAttack() &&
-		pm->ps->communicatingflags & 1 << KICKING)
+		pm->ps->communicatingflags & 1 << CF_KICKING)
 	{
 		//trying to do a kick
 		if (pm->ps->saberAnimLevel == SS_STAFF)
@@ -21619,12 +21617,12 @@ static void PM_Weapon()
 				if (pm->gent && pm->gent->weaponModel[1] > 0)
 				{
 					//dual pistols
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL,	SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
 					//single pistol
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2,SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				break;
 
@@ -21700,13 +21698,11 @@ static void PM_Weapon()
 					const int anim = PM_PickAnim(pm->gent, BOTH_TUSKENATTACK1, BOTH_TUSKENATTACK3); // Rifle
 					if (VectorCompare(pm->ps->velocity, vec3_origin) && pm->cmd.upmove >= 0)
 					{
-						PM_SetAnim(pm, SETANIM_BOTH, anim,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, anim,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 				}
 				break;
@@ -21795,20 +21791,17 @@ static void PM_Weapon()
 
 				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); //from hip
 				}
 				else
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); // from center of body
 					}
 				}
 				break;
@@ -21820,20 +21813,13 @@ static void PM_Weapon()
 			case WP_Z6_ROTARY_CANNON:
 				if (cg.renderingThirdPerson)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); //from hip
 				}
 				else
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);// from center of body
 				}
 				break;
-
-				/*case WP_Z6_ROTARY_CANNON:
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_MINIGUN,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
-					break;*/
 
 			case WP_BLASTER:
 			case WP_THEFIRSTORDER:
@@ -21866,46 +21852,42 @@ static void PM_Weapon()
 			case WP_REPEATER:
 				if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_GALAKMECH)
 				{
-					//
 					if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK1,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 					}
 				}
 				else
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 				}
 				break;
 
 			case WP_DISRUPTOR:
-				if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer() && pm->gent && pm->gent->NPC &&
+				if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer() &&
+					pm->gent && pm->gent->NPC &&
 					pm->gent->NPC->scriptFlags & SCF_ALT_FIRE ||
-					(pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) && cg.zoomMode == 2)
-				{
-					//NPC or player in alt-fire, sniper mode
+					(pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) &&
+					cg.zoomMode == 2)
+				{ //NPC or player in alt-fire, sniper mode
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD); //from shoulder
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD); //from center of body
 					}
 				}
 				else
@@ -21913,13 +21895,11 @@ static void PM_Weapon()
 					//in primary fire mode
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from shoulder
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from center of body
 					}
 				}
 				break;
@@ -21930,32 +21910,28 @@ static void PM_Weapon()
 				break;
 
 			case WP_THERMAL:
-				if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
+				if ((pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()))
 				{
 					if (PM_StandingAnim(pm->ps->legsAnim))
 					{
 						PM_SetAnim(pm, SETANIM_LEGS, BOTH_ATTACK10, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK10,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK10, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
-					if (BG_AllowThirdPersonSpecialMove(pm->ps))
+					if (cg.renderingThirdPerson)
 					{
 						if (PM_StandingAnim(pm->ps->legsAnim)
 							|| pm->ps->legsAnim == BOTH_THERMAL_READY)
 						{
-							PM_SetAnim(pm, SETANIM_LEGS, BOTH_THERMAL_THROW,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_THERMAL_THROW, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_THERMAL_THROW,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD); //|SETANIM_FLAG_RESTART
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_THERMAL_THROW, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 					}
 				}
 				break;
@@ -21970,8 +21946,7 @@ static void PM_Weapon()
 
 			case WP_TRIP_MINE:
 			case WP_DET_PACK:
-				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK11,
-					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK11, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				break;
 
 			default: //2-handed heavy weapon

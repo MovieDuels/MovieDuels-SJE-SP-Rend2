@@ -3581,17 +3581,17 @@ using ManualBlockingFlag_e = enum ManualBlockingFlag_e2
 
 using communicatingflags_e = enum communicatingflags_e2
 {
-	RESPECTING,
-	GESTURING,
-	SURRENDERING,
-	DASHING,
-	STUNNING,
-	DESTRUCTING,
-	KICKING,
-	PROJECTING,
+	CF_RESPECTING,
+	CF_GESTURING,
+	CF_SURRENDERING,
+	CF_DASHING,
+	CF_STUNNING,
+	CF_DESTRUCTING,
+	CF_KICKING,
+	CF_PROJECTING,
 	CF_SABERLOCKING,
 	CF_SABERLOCK_ADVANCE,
-	AIMINGGUN,
+	CF_AIMINGGUN,
 };
 
 using PlayerEffectFlags_e = enum PlayerEffectFlags_e2

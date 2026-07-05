@@ -2566,7 +2566,7 @@ void ItemUse_Grapple(gentity_t* ent)
 				}
 				else
 				{
-					if (!(ent->client->ps.communicatingflags & 1 << DASHING))
+					if (!(ent->client->ps.communicatingflags & 1 << CF_DASHING))
 					{
 						Weapon_MandoGrappleHook_Fire(ent);
 						ent->client->hookhasbeenfired = qtrue;

@@ -348,6 +348,7 @@ extern qboolean NPC_FaceEnemy(qboolean doPitch = qtrue);
 extern cvar_t* g_spskill;
 extern cvar_t* g_attackskill;
 extern cvar_t* g_saberLockCinematicCamera;
+extern cvar_t* g_AimingCinematicCamera;
 
 #define	NIF_NONE		0x00000000
 #define	NIF_FAILED		0x00000001	//failed to find a way to the goal

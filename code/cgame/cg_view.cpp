@@ -440,7 +440,8 @@ static void CG_CalcIdealThirdPersonViewTarget()
 		cameraIdealTarget[2] -= 15.5f;
 	}
 	else if (cg.renderingThirdPerson &&
-		(cg.predictedPlayerState.communicatingflags & (1 << AIMINGGUN)))
+		(cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN)) &&
+		cg_AimingCinematicCamera.integer)
 	{
 		vec3_t forward;
 		AngleVectors(cg.refdefViewAngles, forward, NULL, NULL);
@@ -516,7 +517,7 @@ static void CG_CalcIdealThirdPersonViewLocation()
 	}
 
 	const qboolean doing_dash_action =
-		(cg.predictedPlayerState.communicatingflags & (1 << DASHING)) ? qtrue : qfalse;
+		(cg.predictedPlayerState.communicatingflags & (1 << CF_DASHING)) ? qtrue : qfalse;
 
 	// Override: explicit range
 	if (cg.overrides.active & CG_OVERRIDE_3RD_PERSON_RNG)
@@ -965,7 +966,8 @@ static void CG_OffsetThirdPersonView()
 	}
 	// Aiming weapon
 	else if (cg.renderingThirdPerson &&
-		(cg.predictedPlayerState.communicatingflags & (1 << AIMINGGUN)))
+		(cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN)) &&
+		cg_AimingCinematicCamera.integer)
 	{
 		// Shoulder camera tuning
 		cg.overrides.thirdPersonAngle = 0.0f;			// yaw inward
@@ -1584,7 +1586,7 @@ Fixed fov at intermissions, otherwise account for fov variable and zooms.
 static qboolean CG_CalcFov()
 {
 	float fov_x{};
-	const qboolean doing_dash_action = cg.predictedPlayerState.communicatingflags & 1 << DASHING ? qtrue : qfalse;
+	const qboolean doing_dash_action = cg.predictedPlayerState.communicatingflags & 1 << CF_DASHING ? qtrue : qfalse;
 
 	if (cg.predictedPlayerState.pm_type == PM_INTERMISSION)
 	{
