@@ -296,6 +296,7 @@ field_t fields[] =
 	{"starttime", FOFS(radius), F_FLOAT}, //for dlight
 	{"turfrange", FOFS(radius), F_FLOAT}, //for sand creatures
 	{"type", FOFS(count), F_FLOAT}, //for fx_crew_beam_in
+	{"fullName", FOFS(fullName), F_LSTRING},
 	{"fxfile", FOFS(fxFile), F_LSTRING},
 	{"fxfile2", FOFS(cameraGroup), F_LSTRING},
 	{"noVisTime", FOFS(endFrame), F_INT}, //for NPC_Vehicle
@@ -1023,7 +1024,7 @@ in a gentity
 */
 void Q3_SetParm(int entID, int parmNum, const char* parmValue);
 
-void G_ParseField(const char* key, const char* value, gentity_t* ent)
+static void G_ParseField(const char* key, const char* value, gentity_t* ent)
 {
 	float v;
 

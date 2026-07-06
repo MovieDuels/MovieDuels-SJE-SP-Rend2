@@ -32,20 +32,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 extern cvar_t* g_SerenityJediEngineMode;
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 
-char* GetFullName(const gentity_t* self)
-{
-	if (!self || !self->client)
-	{
-		return " ";
-	}
-
-	if (self->client->fullName)
-	{
-		return self->client->fullName;
-	}
-	return " ";
-}
-
 qboolean HeIsJedi(const gentity_t* ent)
 {
 	if (!ent || !ent->client)

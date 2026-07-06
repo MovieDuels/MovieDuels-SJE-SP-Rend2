@@ -2423,6 +2423,7 @@ gentity_t* NPC_Spawn_Do(gentity_t* ent, const qboolean fullSpawnNow)
 	newent->client = static_cast<gclient_t*>(gi.Malloc(sizeof(gclient_t), TAG_G_ALLOC, qtrue));
 
 	newent->svFlags |= SVF_NPC;
+	newent->fullName = ent->fullName;
 
 	if (ent->NPC_type == nullptr)
 	{
@@ -2939,8 +2940,10 @@ void SP_NPC_spawner(gentity_t* self)
 {
 	float f_delay;
 
-	//register/precache the models needed for this NPC, not anymore
-	//self->classname = "NPC_spawner";
+	if (!self->fullName || !self->fullName[0])
+	{
+		self->fullName = "Humanoid Lifeform";
+	}
 
 	if (!self->count)
 	{

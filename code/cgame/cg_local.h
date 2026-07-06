@@ -617,6 +617,7 @@ extern vmCvar_t cg_drawCrosshair;
 extern vmCvar_t cg_dynamicCrosshair;
 extern vmCvar_t cg_adaptiveCrosshair;
 extern vmCvar_t cg_drawCrosshairNames;
+extern vmCvar_t cg_drawCrosshairBackupNames;
 extern vmCvar_t cg_DrawCrosshairItem;
 extern vmCvar_t cg_crosshairForceHint;
 extern vmCvar_t cg_crosshairIdentifyTarget;
@@ -807,6 +808,7 @@ void CG_DrawProportionalString(int x, int y, const char* str, int style, vec4_t 
 void CG_DrawStringExt(int x, int y, const char* string, const float* set_color, qboolean force_color, qboolean shadow,
 	int char_width, int char_height);
 void CG_DrawSmallStringColor(int x, int y, const char* s, vec4_t color);
+void CG_DrawBigStringColor(int x, int y, const char* s, vec4_t color);
 
 int CG_DrawStrlen(const char* str);
 

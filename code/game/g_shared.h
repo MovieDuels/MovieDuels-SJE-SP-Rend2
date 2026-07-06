@@ -1388,6 +1388,7 @@ struct gentity_s
 	char* behaviorSet[NUM_BSETS];
 	char* script_targetname;
 	int delayScriptTime;
+	char* fullName;
 
 	// Ambient sound info
 	char* soundSet; //Only used for local sets
@@ -1677,6 +1678,7 @@ struct gentity_s
 		saved_game.write<int32_t>(behaviorSet);
 		saved_game.write<int32_t>(script_targetname);
 		saved_game.write<int32_t>(delayScriptTime);
+		saved_game.write<int32_t>(fullName);
 		saved_game.write<int32_t>(soundSet);
 		saved_game.write<int32_t>(setTime);
 		saved_game.write<int32_t>(cameraGroup);
@@ -1904,6 +1906,7 @@ struct gentity_s
 		saved_game.read<int32_t>(behaviorSet);
 		saved_game.read<int32_t>(script_targetname);
 		saved_game.read<int32_t>(delayScriptTime);
+		saved_game.read<int32_t>(fullName);
 		saved_game.read<int32_t>(soundSet);
 		saved_game.read<int32_t>(setTime);
 		saved_game.read<int32_t>(cameraGroup);

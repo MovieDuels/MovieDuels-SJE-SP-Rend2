@@ -79,6 +79,7 @@ static const save_field_t savefields_gEntity[] =
 	{strFOFS(cameraGroup), F_STRING},
 	{strFOFS(parms), F_BOOLPTR},
 	{strFOFS(m_pVehicle), F_BOOLPTR},
+	{strFOFS(fullName),	F_STRING},
 
 	{nullptr, 0, F_IGNORE}
 };

@@ -3393,7 +3393,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 				{
 					continue;
 				}
-				npc->client->fullName = G_NewString(value);
+				npc->fullName = G_NewString(value);
 				continue;
 			}
 

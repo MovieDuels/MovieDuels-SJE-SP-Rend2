@@ -303,6 +303,9 @@ constexpr auto SCREEN_HEIGHT = 480;
 #define TINYCHAR_WIDTH		(SMALLCHAR_WIDTH)
 #define TINYCHAR_HEIGHT		(SMALLCHAR_HEIGHT/2)
 
+constexpr auto MINUTE_WIDTH = 4;
+constexpr auto MINUTE_HEIGHT = 8;
+
 constexpr auto SMALLCHAR_WIDTH = 8;
 constexpr auto SMALLCHAR_HEIGHT = 16;
 

@@ -560,6 +560,7 @@ stringID_table_t setTable[] =
 	ENUM2STRING(SET_CLOSINGCREDITS),
 	ENUM2STRING(SET_SKILL),
 	ENUM2STRING(SET_MISSIONSTATUSTIME),
+	ENUM2STRING(SET_FULLNAME),
 	ENUM2STRING(SET_FORCE_HEAL_LEVEL),
 	ENUM2STRING(SET_FORCE_JUMP_LEVEL),
 	ENUM2STRING(SET_FORCE_SPEED_LEVEL),
@@ -4162,6 +4163,35 @@ static void Q3_SetPainTarget(const int entID, const char* targetname)
 	else
 	{
 		self->paintarget = G_NewString(targetname);
+	}
+}
+
+/*
+============
+Q3_SetFullName
+  Description	:
+  Return type	: static void
+  Argument		: int entID
+  Argument		: const char *fullName
+============
+*/
+static void Q3_SetFullName(int entID, const char* fullName)
+{
+	gentity_t* self = &g_entities[entID];
+
+	if (!self)
+	{
+		Quake3Game()->DebugPrint(IGameInterface::WL_WARNING, "Q3_SetFullName: invalid entID %d\n", entID);
+		return;
+	}
+
+	if (!Q_stricmp("NULL", ((char*)fullName)))
+	{
+		self->fullName = nullptr;
+	}
+	else
+	{
+		self->fullName = G_NewString(fullName);
 	}
 }
 
@@ -9790,6 +9820,10 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 		//		//can never be set
 		break;
 
+	case SET_FULLNAME:
+		Q3_SetFullName(entID, (char*)data);
+		break;
+
 	case SET_DISABLE_SHADER_ANIM:
 		if (!Q_stricmp("true", data))
 		{
@@ -11582,6 +11616,10 @@ int CQuake3GameInterface::GetString(const int entID, const char* name, char** va
 
 	case SET_UNDYINGPLAYERVICTORYSCRIPT: //## %s="NULL" !!"W:\game\base\scripts\!!#*.txt" # Script to run when killed someone
 		*value = ent->behaviorSet[UNDYINGPLAYERVICTORY];
+		break;
+
+	case SET_FULLNAME://## %s="NULL" # Set/change your targetname
+		*value = ent->fullName;
 		break;
 
 	default:

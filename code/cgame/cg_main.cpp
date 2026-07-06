@@ -330,6 +330,7 @@ vmCvar_t cg_crosshairIdentifyTarget;
 vmCvar_t cg_dynamicCrosshair;
 vmCvar_t cg_adaptiveCrosshair;
 vmCvar_t cg_drawCrosshairNames;
+vmCvar_t cg_drawCrosshairBackupNames;
 vmCvar_t cg_DrawCrosshairItem;
 vmCvar_t cg_crosshairForceHint;
 vmCvar_t cg_crosshairX;
@@ -550,6 +551,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_dynamicCrosshair, "cg_dynamicCrosshair", "6", CVAR_ARCHIVE},
 	{&cg_adaptiveCrosshair, "cg_adaptiveCrosshair", "0", CVAR_ARCHIVE},
 	{&cg_drawCrosshairNames, "cg_drawCrosshairNames", "0", CVAR_ARCHIVE},
+	{&cg_drawCrosshairBackupNames, "cg_drawCrosshairBackupNames", "0", CVAR_ARCHIVE},
 	{&cg_DrawCrosshairItem, "cg_DrawCrosshairItem", "1", CVAR_ARCHIVE},
 	// NOTE : I also create this in UI_Init()
 	{&cg_crosshairIdentifyTarget, "cg_crosshairIdentifyTarget", "1", CVAR_ARCHIVE},
