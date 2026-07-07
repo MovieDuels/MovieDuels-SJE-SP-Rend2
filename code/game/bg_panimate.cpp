@@ -8334,7 +8334,6 @@ void PM_TorsoAnimation()
 
 				case WP_STUN_BATON:
 				case WP_BOWCASTER:
-				case WP_FLECHETTE:
 					if (pm->gent->alt_fire)
 					{ //alt fire
 						PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
@@ -8357,6 +8356,7 @@ void PM_TorsoAnimation()
 				case WP_CONCUSSION:
 				case WP_DEMP2:
 				case WP_Z6_ROTARY_CANNON:
+				case WP_FLECHETTE:
 					if (weaponBusy)
 					{
 						if (cg.renderingThirdPerson)
@@ -8985,7 +8985,6 @@ void PM_TorsoAnimation()
 
 				case WP_STUN_BATON:
 				case WP_BOWCASTER:
-				case WP_FLECHETTE:
 
 					if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
 					{// holding an enemy aloft with force-grip
@@ -9091,6 +9090,7 @@ void PM_TorsoAnimation()
 				case WP_CONCUSSION:
 				case WP_DEMP2:
 				case WP_Z6_ROTARY_CANNON:
+				case WP_FLECHETTE:
 
 					if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
 					{// holding an enemy aloft with force-grip

@@ -7167,15 +7167,17 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 CG_DrawCrosshairNames
 =====================
 */
-
-static const char* GetFullName(const gentity_t* NPC)
+static const char* GetFullName(const gentity_t* self)
 {
-	if (!NPC || !NPC->client)
+	if (!self || !self->client)
+	{
 		return "";
+	}
 
-	if (NPC->fullName && NPC->fullName[0])
-		return NPC->fullName;
-
+	if (self->fullName && self->fullName[0])
+	{
+		return self->fullName;
+	}
 	return "";
 }
 
@@ -7187,7 +7189,6 @@ static void CG_DrawCrosshairBackupNames()
 	{
 		return;
 	}
-
 	if (!cg_drawCrosshairNames.integer)
 	{
 		return;
@@ -7195,623 +7196,660 @@ static void CG_DrawCrosshairBackupNames()
 
 	CG_ScanForCrosshairEntity(scan_all);
 
-	const float w = CG_DrawStrlen(va("Civilian")) * TINYCHAR_WIDTH;
+	if (g_crosshairEntNum <= 0 || g_crosshairEntNum >= MAX_GENTITIES)
+	{
+		return;
+	}
+	gentity_t* CrosshairEnt = &g_entities[g_crosshairEntNum];
 
-	if (cg_entities[cg.crosshairclientNum].currentState.powerups & 1 << PW_CLOAKED)
+	if (!CrosshairEnt || !CrosshairEnt->client)
 	{
 		return;
 	}
 
+	if (CrosshairEnt->health <= 0)
+	{
+		return;
+	}
+
+	if (CrosshairEnt->client->ps.powerups[PW_CLOAKED])
+	{
+		return;
+	}
+
+	vec3_t diff;
+	VectorSubtract(cg_entities[g_crosshairEntNum].lerpOrigin, cg.refdef.vieworg, diff);
+	const float distSq = VectorLengthSquared(diff);
+
+	centity_t* cent = &cg_entities[g_crosshairEntNum];
+
+	vec3_t headPos;
+	VectorCopy(cent->lerpOrigin, headPos);
+	headPos[2] += cent->gent->maxs[2] + 20;
+
+	float sx, sy;
+
+	if (CG_WorldCoordToScreenCoordFloat(headPos, &sx, &sy) == qfalse)
+	{
+		return;
+	}
+
+	const float scale = 0.4f;
+	float textWidth = cgi_R_Font_StrLenPixels(va("Civilian"), cgs.media.qhFontMedium, scale);
+
+	int drawX = (int)(sx - (textWidth / 2));
+	int drawY = (int)(sy - 25);
+
+	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
 	if (cg_crosshairIdentifyTarget.integer)
 	{
-		const gentity_t* crossEnt = &g_entities[g_crosshairEntNum];
+		float distSq = VectorLengthSquared(diff);
 
-		if (crossEnt->client)
+		if (distSq < (256.0f * 256.0f))
 		{
-			switch (crossEnt->client->NPC_class)
+			if (CrosshairEnt->client)
 			{
-			case CLASS_REBEL:
-				if (Q_stricmp("rosh_penin_noforce", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Rosh Penin"), colorTable[CT_WHITE]);
-				}
-				else if (Q_stricmp("rosh_penin", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Jedi Rosh"), colorTable[CT_WHITE]);
-				}
-				else if (Q_stricmp("rosh_dark", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Dark Rosh"), colorTable[CT_WHITE]);
-				}
-				else if (Q_stricmp("chewie", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Chewbacca"), colorTable[CT_WHITE]);
-				}
-				else if (Q_stricmp("chewie_cin", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Chewbacca"), colorTable[CT_WHITE]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Rebel"), colorTable[CT_WHITE]);
-				}
-				break;
-			case CLASS_JEDI:
-				if (Q_stricmp("rosh_penin_noforce", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Rosh Penin"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("rosh_penin", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Jedi Rosh"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("rosh_dark", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Dark Rosh"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Jedi Knight"), colorTable[CT_CYAN]);
-				}
-				break;
-			case CLASS_KYLE:
-				if (Q_stricmp("kyle", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("kyle Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("kyle2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("kyle Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Kyle_boss", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("kyle Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("KyleJK2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("kyle Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("KyleJK2noforce", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("kyle Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Kyle_JKA", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("kyle Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Kyle_MOD", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("kyle Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("jedi_kyle", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Master Katarn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Jedi Master"), colorTable[CT_CYAN]);
-				}
-				break;
-			case CLASS_WOOKIE:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Chewie"), colorTable[CT_CYAN]);
-				break;
-			case CLASS_YODA:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Master Yoda"), colorTable[CT_CYAN]);
-				break;
-			case CLASS_LUKE:
-				if (Q_stricmp("luke", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("luke2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Luke_JKA1", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Luke_JKA2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("LukeJK2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Luke_MOD1", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Luke_MOD2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Luke_EOC1", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Luke_EOC2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Luke Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("jedi_luke", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Master Skywalker"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Jedi GrandMaster"), colorTable[CT_CYAN]);
-				}
-				break;
-			case CLASS_JAN:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Jan Ors"), colorTable[CT_MAGENTA]);
-				break;
-			case CLASS_MONMOTHA:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Monmothma"), colorTable[CT_GREEN]);
-				break;
-			case CLASS_MORGANKATARN:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Morgan Katarn"), colorTable[CT_LTORANGE]);
-				break;
-			case CLASS_GONK:
-				if (Q_stricmp("gonk", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("gonk"), colorTable[CT_LTORANGE]);
-				}
-				else if (Q_stricmp("gonk2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("gonk"), colorTable[CT_LTORANGE]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("gonk"), colorTable[CT_LTORANGE]);
-				}
-				break;
-			case CLASS_CLONETROOPER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("CloneTrooper"), colorTable[CT_LTORANGE]);
-				break;
-			case CLASS_STORMCOMMANDO:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("StormCommando"), colorTable[CT_LTORANGE]);
-				break;
-			case CLASS_OBJECT:
-				//
-				break;
-			case CLASS_STORMTROOPER:
-				if (Q_stricmp("human_merc", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_bow", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_rep", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_flc", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_cnc", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_bow2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_rep2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_flc2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("human_merc_key", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Mercenary"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("lannik_racto", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("lannik racto"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("STCommander", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Storm Commander"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("STOfficer", crossEnt->NPC_type) == 0
-					|| Q_stricmp("STOfficer2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Storm Officer"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("StormPilot", crossEnt->NPC_type) == 0
-					|| Q_stricmp("StormPilot2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Storm Pilot"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Stormtrooper"), colorTable[CT_RED]);
-				}
-				break;
-			case CLASS_SWAMPTROOPER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Swamptrooper"), colorTable[CT_RED]);
-				break;
-			case CLASS_IMPWORKER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("ImpWorker"), colorTable[CT_RED]);
-				break;
-			case CLASS_IMPERIAL:
-				if (Q_stricmp("Galak", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Galak"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Imperial"), colorTable[CT_RED]);
-				}
-				break;
-			case CLASS_GALAKMECH:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("GalakMech"), colorTable[CT_RED]);
-				break;
-			case CLASS_SHADOWTROOPER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Shadowtrooper"), colorTable[CT_DKRED1]);
-				break;
-			case CLASS_COMMANDO:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Commando"), colorTable[CT_RED]);
-				break;
-			case CLASS_TAVION:
-				if (Q_stricmp("Tavion", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Master Tavion"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Tavion2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Darth Tavion"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith6", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Tavion"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Sith Boss"), colorTable[CT_VLTPURPLE1]);
-				}
-				break;
-			case CLASS_ALORA:
-				if (Q_stricmp("alora", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Master alora"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith5", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Alora"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Sith Warrior"), colorTable[CT_VLTPURPLE1]);
-				}
-				break;
-			case CLASS_DESANN:
-				if (Q_stricmp("Desann", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Lord Desann"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith7", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Desann"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Darth_Vader", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Darth Vader"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Sith Master"), colorTable[CT_VLTPURPLE1]);
-				}
-				break;
-			case CLASS_VADER:
-				if (Q_stricmp("Darth Vader", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Lord Vader"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Darth_Vader", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Darth Vader"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Darth Vader"), colorTable[CT_VLTPURPLE1]);
-				}
-				break;
-			case CLASS_REBORN:
-				if (Q_stricmp("human_merc", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("scout"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("cultist_saber2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_throw2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_med2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_med_throw2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_strong2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_strong_throw2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_all2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("Sith1", crossEnt->NPC_type) == 0
-					|| Q_stricmp("Sith2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_all_throw2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Dark cultist"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("cultist_saber", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_throw", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_med", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_med_throw", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_strong", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_strong_throw", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_all", crossEnt->NPC_type) == 0
-					|| Q_stricmp("cultist_saber_all_throw", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Dark Cultist"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith3", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("RebornChiss"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("cultist", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Cultist Commando"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornBoss", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Boss"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith8", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Boss"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith9", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Rodian"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornRodian", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith10", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Trandoshan"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornTrandoshan", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith11", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Acrobat"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornAcrobat", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Acrobat"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith12", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Fencer"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornFencer", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Fencer"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("rosh_penin_noforce", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Rosh Penin"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("rosh_penin", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Jedi Rosh"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Sith4", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Dark Rosh"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("rosh_dark", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Dark Rosh"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornForceUser", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn ForceUser"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornWeequay", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("Reborn", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("reborn_dual", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("reborn_dual2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("reborn_new", crossEnt->NPC_type) == 0
-					|| Q_stricmp("reborn_new2", crossEnt->NPC_type) == 0
-					|| Q_stricmp("reborn_staff", crossEnt->NPC_type) == 0
-					|| Q_stricmp("reborn_staff2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("DKothos", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("DKothos"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("VKothos", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("VKothos"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("RebornMaster", crossEnt->NPC_type) == 0
-					|| Q_stricmp("RebornMasterDual", crossEnt->NPC_type) == 0
-					|| Q_stricmp("RebornMasterStaff", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Reborn Master"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Sith"), colorTable[CT_VLTPURPLE1]);
-				}
-				break;
-			case CLASS_BOBAFETT:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Bobafett"), colorTable[CT_LTORANGE]);
-				break;
-			case CLASS_MANDALORIAN:
-				if (Q_stricmp("human_merc2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Mandolorian"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("human_merc_bow2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Mandolorian"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("human_merc_rep2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Mandolorian"), colorTable[CT_VLTPURPLE1]);
-				}
-				else if (Q_stricmp("human_merc_flc2", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Mandolorian"), colorTable[CT_VLTPURPLE1]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Mandolorian"), colorTable[CT_LTORANGE]);
-				}
-				break;
-			case CLASS_ATST:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Vehicle"), colorTable[CT_BLUE]);
-				break;
-			case CLASS_CLAW:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Animal"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_FISH:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Animal"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_FLIER2:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Animal"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_GLIDER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Animal"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_HOWLER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Howler"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_MINEMONSTER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("MineMonster"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_LIZARD:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Animal"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_SWAMP:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Animal"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_RANCOR:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Rancor"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_WAMPA:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Wampa"), colorTable[CT_MDGREY]);
-				break;
-			case CLASS_VEHICLE:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Vehicle"), colorTable[CT_BLUE]);
-				break;
-			case CLASS_BESPIN_COP:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Bespin Cop"), colorTable[CT_GREEN]);
-				break;
-			case CLASS_LANDO:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Lando"), colorTable[CT_GREEN]);
-				break;
-			case CLASS_PRISONER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Prisoner"), colorTable[CT_GREEN]);
-				break;
-			case CLASS_GALAK:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Galak"), colorTable[CT_RED]);
-				break;
-			case CLASS_GRAN:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Gran"), colorTable[CT_RED]);
-				break;
-			case CLASS_REELO:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Reelo"), colorTable[CT_RED]);
-				break;
-			case CLASS_MURJJ:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Murjj"), colorTable[CT_RED]);
-				break;
-			case CLASS_RODIAN:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Rodian"), colorTable[CT_RED]);
-				break;
-			case CLASS_TRANDOSHAN:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Trandoshan"), colorTable[CT_RED]);
-				break;
-			case CLASS_UGNAUGHT:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Ugnaught"), colorTable[CT_GREEN]);
-				break;
-			case CLASS_WEEQUAY:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Weequay"), colorTable[CT_RED]);
-				break;
-			case CLASS_BARTENDER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Bartender"), colorTable[CT_BLUE]);
-				break;
-			case CLASS_JAWA:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Jawa"), colorTable[CT_MAGENTA]);
-				break;
-			case CLASS_REMOTE:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Remote Droid"), colorTable[CT_YELLOW]);
-				break;
-			case CLASS_SEEKER:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Seeker Droid"), colorTable[CT_YELLOW]);
-				break;
-			case CLASS_PROTOCOL:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Protocol Droid"), colorTable[CT_YELLOW]);
-				break;
-			case CLASS_R2D2:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("R2 Astromech Droid"), colorTable[CT_YELLOW]);
-				break;
-			case CLASS_PROBE:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Probe Droid"), colorTable[CT_YELLOW]);
-				break;
-			case CLASS_R5D2:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("R5 Astromech Droid"), colorTable[CT_YELLOW]);
-				break;
-			case CLASS_ASSASSIN_DROID:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Assassin droid"), colorTable[CT_YELLOW]);
-				break;
-			case CLASS_SABER_DROID:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Saber Droid"), colorTable[CT_MAGENTA]);
-				break;
-			case CLASS_TUSKEN:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Tusken"), colorTable[CT_VLTORANGE]);
-				break;
-			case CLASS_MARK1:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Droid"), colorTable[CT_VLTORANGE]);
-				break;
-			case CLASS_MARK2:
-				CG_DrawBigStringColor(320 - w / 2, 170, va("Droid"), colorTable[CT_VLTORANGE]);
-				break;
-			case CLASS_DROIDEKA:
-				if (Q_stricmp("Droideka_trooper", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Droideka"), colorTable[CT_MAGENTA]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Droideka"), colorTable[CT_MAGENTA]);
-				}
-				break;
-			case CLASS_BATTLEDROID:
-				if (Q_stricmp("Battle_Trooper", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Battle Droid"), colorTable[CT_MAGENTA]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Battle Droid"), colorTable[CT_MAGENTA]);
-				}
-				break;
-			case CLASS_SBD:
-				if (Q_stricmp("SBD_Trooper", crossEnt->NPC_type) == 0)
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Super Battle Droid"), colorTable[CT_MAGENTA]);
-				}
-				else
-				{
-					CG_DrawBigStringColor(320 - w / 2, 170, va("Super Battle Droid"), colorTable[CT_MAGENTA]);
-				}
-				break;
-			default:
-				//CG_DrawBigStringColor(320 - w / 2, 170, va("Civilian"), colorTable[CT_GREEN]);
-				break;
+				switch (CrosshairEnt->client->NPC_class)
+				{
+				case CLASS_REBEL:
+					if (Q_stricmp("rosh_penin_noforce", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Rosh Penin"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("rosh_penin", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Jedi Rosh"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("rosh_dark", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Dark Rosh"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("chewie", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Chewbacca"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("chewie_cin", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Chewbacca"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Rebel"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_JEDI:
+					if (Q_stricmp("rosh_penin_noforce", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Rosh Penin"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("rosh_penin", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Jedi Rosh"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("rosh_dark", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Dark Rosh"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Jedi Knight"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_KYLE:
+					if (Q_stricmp("kyle", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("kyle Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("kyle2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("kyle Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Kyle_boss", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("kyle Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("KyleJK2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("kyle Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Kyle_JKA", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("kyle Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Kyle_MOD", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("kyle Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("jedi_kyle", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Master Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Jedi Master"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_WOOKIE:
+					cgi_R_Font_DrawString(drawX, drawY, va("Chewie"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_YODA:
+					cgi_R_Font_DrawString(drawX, drawY, va("Master Yoda"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_LUKE:
+					if (Q_stricmp("luke", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("luke2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Luke_JKA1", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Luke_JKA2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("LukeJK2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Luke_MOD1", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Luke_MOD2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Luke_EOC1", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Luke_EOC2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Luke Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("jedi_luke", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Master Skywalker"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Jedi GrandMaster"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_JAN:
+					cgi_R_Font_DrawString(drawX, drawY, va("Jan Ors"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_MONMOTHA:
+					cgi_R_Font_DrawString(drawX, drawY, va("Monmothma"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_MORGANKATARN:
+					cgi_R_Font_DrawString(drawX, drawY, va("Morgan Katarn"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_GONK:
+					if (Q_stricmp("gonk", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("gonk"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("gonk2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("gonk"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("gonk"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_CLONETROOPER:
+					cgi_R_Font_DrawString(drawX, drawY, va("CloneTrooper"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_STORMCOMMANDO:
+					cgi_R_Font_DrawString(drawX, drawY, va("StormCommando"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_OBJECT:
+					//
+					break;
+				case CLASS_STORMTROOPER:
+					if (Q_stricmp("human_merc", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_bow", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_rep", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_flc", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_cnc", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_bow2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_rep2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_flc2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("human_merc_key", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Mercenary"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("lannik_racto", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("lannik racto"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("STCommander", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Storm Commander"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("STOfficer", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("STOfficer2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Storm Officer"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("StormPilot", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("StormPilot2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Storm Pilot"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Stormtrooper"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_SWAMPTROOPER:
+					cgi_R_Font_DrawString(drawX, drawY, va("Swamptrooper"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_IMPWORKER:
+					cgi_R_Font_DrawString(drawX, drawY, va("ImpWorker"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_IMPERIAL:
+					if (Q_stricmp("Galak", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Galak"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Imperial"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_GALAKMECH:
+					cgi_R_Font_DrawString(drawX, drawY, va("GalakMech"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_SHADOWTROOPER:
+					cgi_R_Font_DrawString(drawX, drawY, va("Shadowtrooper"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_COMMANDO:
+					cgi_R_Font_DrawString(drawX, drawY, va("Commando"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_TAVION:
+					if (Q_stricmp("Tavion", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Master Tavion"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Tavion2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Darth Tavion"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith6", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Tavion"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Sith Boss"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_ALORA:
+					if (Q_stricmp("alora", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Master alora"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith5", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Alora"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Sith Warrior"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_DESANN:
+					if (Q_stricmp("Desann", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Lord Desann"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith7", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Desann"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Darth_Vader", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Darth Vader"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Sith Master"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_VADER:
+					if (Q_stricmp("Darth Vader", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Lord Vader"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Darth_Vader", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Darth Vader"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Darth Vader"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_REBORN:
+					if (Q_stricmp("human_merc", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("scout"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("cultist_saber2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_throw2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_med2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_med_throw2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_strong2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_strong_throw2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_all2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("Sith1", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("Sith2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_all_throw2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Dark cultist"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("cultist_saber", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_throw", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_med", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_med_throw", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_strong", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_strong_throw", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_all", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("cultist_saber_all_throw", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Dark Cultist"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith3", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("RebornChiss"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("cultist", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Cultist Commando"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornBoss", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Boss"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith8", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Boss"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith9", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Rodian"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornRodian", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith10", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Trandoshan"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornTrandoshan", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith11", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Acrobat"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornAcrobat", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Acrobat"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith12", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Fencer"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornFencer", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Fencer"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("rosh_penin_noforce", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Rosh Penin"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("rosh_penin", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Jedi Rosh"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Sith4", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Dark Rosh"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("rosh_dark", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Dark Rosh"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornForceUser", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn ForceUser"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornWeequay", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("Reborn", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("reborn_dual", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("reborn_dual2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("reborn_new", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("reborn_new2", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("reborn_staff", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("reborn_staff2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("DKothos", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("DKothos"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("VKothos", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("VKothos"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("RebornMaster", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("RebornMasterDual", CrosshairEnt->NPC_type) == 0
+						|| Q_stricmp("RebornMasterStaff", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Reborn Master"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Sith"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_BOBAFETT:
+					cgi_R_Font_DrawString(drawX, drawY, va("Bobafett"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_MANDALORIAN:
+					if (Q_stricmp("human_merc2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Mandolorian"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("human_merc_bow2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Mandolorian"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("human_merc_rep2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Mandolorian"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else if (Q_stricmp("human_merc_flc2", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Mandolorian"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Mandolorian"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_ATST:
+					cgi_R_Font_DrawString(drawX, drawY, va("Vehicle"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_CLAW:
+					cgi_R_Font_DrawString(drawX, drawY, va("Animal"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_FISH:
+					cgi_R_Font_DrawString(drawX, drawY, va("Animal"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_FLIER2:
+					cgi_R_Font_DrawString(drawX, drawY, va("Animal"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_GLIDER:
+					cgi_R_Font_DrawString(drawX, drawY, va("Animal"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_HOWLER:
+					cgi_R_Font_DrawString(drawX, drawY, va("Howler"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_MINEMONSTER:
+					cgi_R_Font_DrawString(drawX, drawY, va("MineMonster"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_LIZARD:
+					cgi_R_Font_DrawString(drawX, drawY, va("Animal"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_SWAMP:
+					cgi_R_Font_DrawString(drawX, drawY, va("Animal"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_RANCOR:
+					cgi_R_Font_DrawString(drawX, drawY, va("Rancor"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_WAMPA:
+					cgi_R_Font_DrawString(drawX, drawY, va("Wampa"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_VEHICLE:
+					cgi_R_Font_DrawString(drawX, drawY, va("Vehicle"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_BESPIN_COP:
+					cgi_R_Font_DrawString(drawX, drawY, va("Bespin Cop"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_LANDO:
+					cgi_R_Font_DrawString(drawX, drawY, va("Lando"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_PRISONER:
+					cgi_R_Font_DrawString(drawX, drawY, va("Prisoner"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_GALAK:
+					cgi_R_Font_DrawString(drawX, drawY, va("Galak"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_GRAN:
+					cgi_R_Font_DrawString(drawX, drawY, va("Gran"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_REELO:
+					cgi_R_Font_DrawString(drawX, drawY, va("Reelo"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_MURJJ:
+					cgi_R_Font_DrawString(drawX, drawY, va("Murjj"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_RODIAN:
+					cgi_R_Font_DrawString(drawX, drawY, va("Rodian"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_TRANDOSHAN:
+					cgi_R_Font_DrawString(drawX, drawY, va("Trandoshan"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_UGNAUGHT:
+					cgi_R_Font_DrawString(drawX, drawY, va("Ugnaught"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_WEEQUAY:
+					cgi_R_Font_DrawString(drawX, drawY, va("Weequay"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_BARTENDER:
+					cgi_R_Font_DrawString(drawX, drawY, va("Bartender"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_JAWA:
+					cgi_R_Font_DrawString(drawX, drawY, va("Jawa"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_REMOTE:
+					cgi_R_Font_DrawString(drawX, drawY, va("Remote Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_SEEKER:
+					cgi_R_Font_DrawString(drawX, drawY, va("Seeker Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_PROTOCOL:
+					cgi_R_Font_DrawString(drawX, drawY, va("Protocol Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_R2D2:
+					cgi_R_Font_DrawString(drawX, drawY, va("R2 Astromech Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_PROBE:
+					cgi_R_Font_DrawString(drawX, drawY, va("Probe Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_R5D2:
+					cgi_R_Font_DrawString(drawX, drawY, va("R5 Astromech Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_ASSASSIN_DROID:
+					cgi_R_Font_DrawString(drawX, drawY, va("Assassin droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_SABER_DROID:
+					cgi_R_Font_DrawString(drawX, drawY, va("Saber Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_TUSKEN:
+					cgi_R_Font_DrawString(drawX, drawY, va("Tusken"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_MARK1:
+					cgi_R_Font_DrawString(drawX, drawY, va("Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_MARK2:
+					cgi_R_Font_DrawString(drawX, drawY, va("Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				case CLASS_DROIDEKA:
+					if (Q_stricmp("Droideka_trooper", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Droideka"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Droideka"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_BATTLEDROID:
+					if (Q_stricmp("Battle_Trooper", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Battle Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Battle Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				case CLASS_SBD:
+					if (Q_stricmp("SBD_Trooper", CrosshairEnt->NPC_type) == 0)
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Super Battle Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					else
+					{
+						cgi_R_Font_DrawString(drawX, drawY, va("Super Battle Droid"), color, cgs.media.qhFontMedium, -1, scale);
+					}
+					break;
+				default:
+					cgi_R_Font_DrawString(drawX, drawY, va("Unknown"), color, cgs.media.qhFontMedium, -1, scale);
+					break;
+				}
+				VectorCopy4(colorTable[CT_WHITE], color);
 			}
 		}
 	}
-
-	cgi_R_SetColor(nullptr);
 }
 
 static void CG_DrawCrosshairNames(void)
@@ -7884,7 +7922,7 @@ static void CG_DrawCrosshairNames(void)
 	int drawX = (int)(sx - (textWidth / 2));
 	int drawY = (int)(sy - 25);
 
-	vec4_t color;
+	vec4_t color = {1.0f, 1.0f, 1.0f, 1.0f};
 
 	if (cg_crosshairIdentifyTarget.integer)
 	{
@@ -7894,35 +7932,42 @@ static void CG_DrawCrosshairNames(void)
 		{
 			if (CrosshairEnt->client && name)
 			{
-				switch (CrosshairEnt->client->playerTeam)
+				if (cg_drawCrosshairColourNames.integer)
 				{
-				case TEAM_ENEMY:
-					VectorCopy4(colorTable[CT_RED], color);
-					break;
+					switch (CrosshairEnt->client->playerTeam)
+					{
+					case TEAM_ENEMY:
+						VectorCopy4(colorTable[CT_RED], color);
+						break;
 
-				case TEAM_NEUTRAL:
+					case TEAM_NEUTRAL:
+						VectorCopy4(colorTable[CT_WHITE], color);
+						break;
+
+					case TEAM_PLAYER:
+						VectorCopy4(colorTable[CT_GREEN], color);
+						break;
+
+					case TEAM_SOLO:
+						VectorCopy4(colorTable[CT_BLUE], color);
+						break;
+
+					case TEAM_PROJECTION:
+						VectorCopy4(colorTable[CT_LTGREY], color);
+						break;
+
+					case TEAM_FREE:
+						VectorCopy4(colorTable[CT_YELLOW], color);
+						break;
+
+					default:
+						VectorCopy4(colorTable[CT_WHITE], color);
+						break;
+					}
+				}
+				else
+				{
 					VectorCopy4(colorTable[CT_WHITE], color);
-					break;
-
-				case TEAM_PLAYER:
-					VectorCopy4(colorTable[CT_GREEN], color);
-					break;
-
-				case TEAM_SOLO:
-					VectorCopy4(colorTable[CT_BLUE], color);
-					break;
-
-				case TEAM_PROJECTION:
-					VectorCopy4(colorTable[CT_LTGREY], color);
-					break;
-
-				case TEAM_FREE:
-					VectorCopy4(colorTable[CT_YELLOW], color);
-					break;
-
-				default:
-					VectorCopy4(colorTable[CT_WHITE], color);
-					break;
 				}
 			}
 		}

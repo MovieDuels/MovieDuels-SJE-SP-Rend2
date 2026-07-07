@@ -41,7 +41,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "qcommon/stringed_ingame.h"
 
-void UI_LoadMenus(const char* menuFile, qboolean reset);
+void UI_LoadMenus(const char* menuFile, const qboolean reset);
 
 extern vmCvar_t ui_char_color_red;
 extern vmCvar_t ui_char_color_green;
@@ -3412,25 +3412,38 @@ ItemParse_flag
 */
 static qboolean ItemParse_flag(itemDef_t* item)
 {
-	const char* tempStr;
+	const char* tempStr = nullptr;
 
+	/* Read next string token */
 	if (PC_ParseString(&tempStr))
 	{
 		return qfalse;
 	}
 
+	/* Determine number of entries in itemFlags safely */
+	const int itemFlagsCount = sizeof(itemFlags) / sizeof(itemFlags[0]);
+
 	int i = 0;
-	while (itemFlags[i].string)
+	qboolean found = qfalse;
+
+	/* Search for matching flag string */
+	for (i = 0; i < itemFlagsCount; i++)
 	{
+		if (itemFlags[i].string == nullptr)
+		{
+			break; /* reached sentinel */
+		}
+
 		if (Q_stricmp(tempStr, itemFlags[i].string) == 0)
 		{
 			item->window.flags |= itemFlags[i].value;
+			found = qtrue;
 			break;
 		}
-		i++;
 	}
 
-	if (itemFlags[i].string == nullptr)
+	/* If not found, warn safely */
+	if (found == qfalse)
 	{
 		PC_ParseWarning(va("Unknown item flag value '%s'", tempStr));
 	}
@@ -6196,7 +6209,7 @@ static void Item_SetTextExtents(itemDef_t* item, int* width, int* height, const 
 		}
 		else if (item->textalignment == ITEM_ALIGN_CENTER)
 		{
-			item->textRect.x = item->textalignx - originalWidth / 2;
+			item->textRect.x = item->textalignx - originalWidth / static_cast<float>(2);
 		}
 
 		ToWindowCoords(&item->textRect.x, &item->textRect.y, &item->window);
@@ -8671,21 +8684,28 @@ void Item_Text_AutoWrapped_Paint(itemDef_t* item)
 	{
 		textPtr = item->text;
 	}
-	if (*textPtr == '@') // string reference
+
+	/* Safe string reference */
+	if (textPtr && *textPtr == '@')
 	{
 		textPtr = SE_GetString(&textPtr[1]);
 	}
 
-	if (*textPtr == '\0')
+	/* Guard: textPtr may be NULL */
+	if (!textPtr || *textPtr == '\0')
 	{
 		return;
 	}
+
 	Item_TextColor(item, &color);
+
 	if (item->value == 0)
 	{
-		item->value = static_cast<int>(0.5 + static_cast<float>(DC->textWidth(textPtr, item->textscale, item->font)) /
+		item->value = static_cast<int>(
+			0.5f + static_cast<float>(DC->textWidth(textPtr, item->textscale, item->font)) /
 			item->window.rect.w);
 	}
+
 	const int height = DC->textHeight(textPtr, item->textscale, item->font);
 	item->special = 0;
 
@@ -8694,9 +8714,18 @@ void Item_Text_AutoWrapped_Paint(itemDef_t* item)
 	buff[0] = '\0';
 	int newLine = 0;
 	int newLineWidth = 0;
+
 	const char* p = textPtr;
+
+	/* ⭐ Guard against NULL p (fixes C6011) */
+	if (!p)
+	{
+		return;
+	}
+
 	int line = 1;
-	while (true) //findmeste (this will break widechar languages)!
+
+	while (true)
 	{
 		if (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\0')
 		{
@@ -8704,10 +8733,13 @@ void Item_Text_AutoWrapped_Paint(itemDef_t* item)
 			newLinePtr = p + 1;
 			newLineWidth = textWidth;
 		}
+
 		textWidth = DC->textWidth(buff, item->textscale, 0);
-		if (newLine && textWidth >= item->window.rect.w - item->textalignx || *p == '\n' || *p == '\0')
+
+		if ((newLine && textWidth >= item->window.rect.w - item->textalignx) ||
+			*p == '\n' || *p == '\0')
 		{
-			if (line > item->cursorPos) //scroll
+			if (line > item->cursorPos)
 			{
 				if (len)
 				{
@@ -8721,27 +8753,32 @@ void Item_Text_AutoWrapped_Paint(itemDef_t* item)
 					}
 					else if (item->textalignment == ITEM_ALIGN_CENTER)
 					{
-						item->textRect.x = item->textalignx - newLineWidth / 2;
+						item->textRect.x = item->textalignx - newLineWidth / static_cast<float>(2);
 					}
+
 					item->textRect.y = y;
 					ToWindowCoords(&item->textRect.x, &item->textRect.y, &item->window);
-					//
+
 					buff[newLine] = '\0';
 
 					if (*p && y + height + 4 > item->window.rect.h - height)
 					{
 						item->special = 1;
-						strcat(buff, "..."); //uhh, let's render some ellipses
+						strcat(buff, "...");
 					}
-					DC->drawText(item->textRect.x, item->textRect.y, item->textscale, color, buff, 0, item->textStyle,
-						item->font);
+
+					DC->drawText(item->textRect.x, item->textRect.y,
+						item->textscale, color, buff, 0,
+						item->textStyle, item->font);
 				}
+
 				y += height + 4;
+
 				if (y > item->window.rect.h - height)
 				{
-					//reached the bottom of the box, so stop
 					break;
 				}
+
 				len = 0;
 			}
 			else
@@ -8749,19 +8786,29 @@ void Item_Text_AutoWrapped_Paint(itemDef_t* item)
 				strcpy(buff, "...");
 				len = 3;
 			}
+
 			if (*p == '\0')
 			{
-				//end of string
 				break;
 			}
+
 			p = newLinePtr;
+
+			/* ⭐ Guard again after jump */
+			if (!p)
+			{
+				break;
+			}
+
 			newLine = 0;
 			newLineWidth = 0;
 			line++;
 		}
+
 		buff[len++] = *p++;
 		buff[len] = '\0';
 	}
+
 	item->textRect = item->window.rect;
 }
 
@@ -9920,7 +9967,7 @@ static qboolean Item_TextField_HandleKey(itemDef_t* item, int key)
 				// ctrl-h is backspace
 				if (item->cursorPos > 0)
 				{
-					memmove(&buff[item->cursorPos - 1], &buff[item->cursorPos], len + 1 - item->cursorPos);
+					memmove(&buff[item->cursorPos - 1], &buff[item->cursorPos], static_cast<size_t>(len) + 1 - item->cursorPos);
 					item->cursorPos--;
 					if (item->cursorPos < editPtr->paintOffset)
 					{
@@ -9953,7 +10000,7 @@ static qboolean Item_TextField_HandleKey(itemDef_t* item, int key)
 				{
 					return qtrue;
 				}
-				memmove(&buff[item->cursorPos + 1], &buff[item->cursorPos], len + 1 - item->cursorPos);
+				memmove(&buff[item->cursorPos + 1], &buff[item->cursorPos], static_cast<size_t>(len) + 1 - item->cursorPos);
 			}
 			else
 			{
@@ -9982,7 +10029,7 @@ static qboolean Item_TextField_HandleKey(itemDef_t* item, int key)
 			{
 				if (item->cursorPos < len)
 				{
-					memmove(buff + item->cursorPos, buff + item->cursorPos + 1, len - item->cursorPos);
+					memmove(buff + item->cursorPos, buff + item->cursorPos + 1, static_cast<size_t>(len) - item->cursorPos);
 					DC->setCVar(item->cvar, buff);
 				}
 				return qtrue;

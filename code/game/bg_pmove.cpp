@@ -21787,7 +21787,6 @@ static void PM_Weapon()
 
 			case WP_STUN_BATON:
 			case WP_BOWCASTER:
-			case WP_FLECHETTE:
 
 				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
 				{
@@ -21811,6 +21810,7 @@ static void PM_Weapon()
 			case WP_CONCUSSION:
 			case WP_DEMP2:
 			case WP_Z6_ROTARY_CANNON:
+			case WP_FLECHETTE:
 				if (cg.renderingThirdPerson)
 				{
 					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); //from hip

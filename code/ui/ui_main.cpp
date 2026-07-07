@@ -1444,7 +1444,7 @@ static void UI_RecordForceLevels();
 static void UI_RecordWeapons();
 static void UI_ResetCharacterListBoxes();
 
-void UI_LoadMenus(const char* menuFile, qboolean reset);
+void UI_LoadMenus(const char* menuFile, const qboolean reset);
 static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw,
 	int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader,
 	int textStyle, int iFontIndex);
@@ -5424,9 +5424,9 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("---- Genuine MovieDuels SerenityJediEngine (Solaris Edition) ----\n");
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("-------------------------- Update 7.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 06/07/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 04 ----------------------------\n");
+	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
+	Com_Printf("--------------------- Build Date 07/07/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 05 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -5434,6 +5434,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 
 	//Com_Printf("------Type (seta cl_noprint 0) to see text------\n");
 	//Com_Printf("------Type (Debuginfo) to open debug command list------\n");
+	
 
 	ui.FS_FreeFile(buffer); //let go of the buffer
 }

@@ -618,6 +618,7 @@ extern vmCvar_t cg_dynamicCrosshair;
 extern vmCvar_t cg_adaptiveCrosshair;
 extern vmCvar_t cg_drawCrosshairNames;
 extern vmCvar_t cg_drawCrosshairBackupNames;
+extern vmCvar_t cg_drawCrosshairColourNames;
 extern vmCvar_t cg_DrawCrosshairItem;
 extern vmCvar_t cg_crosshairForceHint;
 extern vmCvar_t cg_crosshairIdentifyTarget;
