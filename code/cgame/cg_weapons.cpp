@@ -72,9 +72,9 @@ void CG_GrappleTrail(centity_t* ent)
 	ent->trailTime = cg.time;
 
 	//FIXME adjust for muzzle position
-	VectorCopy(cg_entities[ent->currentState.otherentity_num].lerpOrigin, from);
+	VectorCopy(cg_entities[ent->currentState.otherentityNum].lerpOrigin, from);
 	from[2] += 26;
-	AngleVectors(cg_entities[ent->currentState.otherentity_num].lerpAngles, forward, nullptr, up);
+	AngleVectors(cg_entities[ent->currentState.otherentityNum].lerpAngles, forward, nullptr, up);
 	VectorMA(from, -6, up, from);
 	FX_AddLine(from, to, 0.5f, 0.5f, 0.0f, BLUER, BLUER, 15, cgi_R_RegisterShader("gfx/misc/bolt1"), FX_SIZE_LINEAR);
 }
@@ -93,10 +93,10 @@ static void CG_StunTrail(centity_t* ent, const weaponInfo_t* wi)
 	memset(&beam, 0, sizeof beam);
 
 	//FIXME adjust for muzzle position
-	VectorCopy(cg_entities[ent->currentState.otherentity_num].lerpOrigin, beam.origin);
+	VectorCopy(cg_entities[ent->currentState.otherentityNum].lerpOrigin, beam.origin);
 	beam.origin[2] += 26;
 
-	AngleVectors(cg_entities[ent->currentState.otherentity_num].lerpAngles, forward, nullptr, up);
+	AngleVectors(cg_entities[ent->currentState.otherentityNum].lerpAngles, forward, nullptr, up);
 	VectorMA(beam.origin, -6, up, beam.origin);
 	VectorCopy(origin, beam.oldorigin);
 
@@ -5538,7 +5538,6 @@ void CG_Weapon_f()
 				//can't toggle it if not holding it and not controlling it or dead
 				if (cg.predictedPlayerState.stats[STAT_HEALTH] > 0
 					&& (!cg_entities[0].gent->client->ps.saberInFlight ||
-						&g_entities[cg_entities[0].gent->client->ps.saberEntityNum] != nullptr &&
 						g_entities[cg_entities[0].gent->client->ps.saberEntityNum].s.pos.trType == TR_LINEAR))
 				{
 					//it's either in-hand or it's under telekinetic control
@@ -5924,11 +5923,11 @@ void CG_MissileStick(const centity_t* cent, const int weapon)
 qboolean CG_VehicleWeaponImpact(centity_t* cent)
 {
 	//see if this is a missile entity that's owned by a vehicle and should do a special, overridden impact effect
-	if (cent->currentState.otherentity_num2
-		&& g_vehWeaponInfo[cent->currentState.otherentity_num2].iImpactFX)
+	if (cent->currentState.otherentityNum2
+		&& g_vehWeaponInfo[cent->currentState.otherentityNum2].iImpactFX)
 	{
 		//missile is from a special vehWeapon
-		CG_PlayEffectID(g_vehWeaponInfo[cent->currentState.otherentity_num2].iImpactFX, cent->lerpOrigin,
+		CG_PlayEffectID(g_vehWeaponInfo[cent->currentState.otherentityNum2].iImpactFX, cent->lerpOrigin,
 			cent->gent->pos1);
 		return qtrue;
 	}
@@ -6185,7 +6184,7 @@ void CG_MissileHitPlayer(const centity_t* cent, const int weapon, vec3_t origin,
 
 	if (cent->gent)
 	{
-		other = &g_entities[cent->gent->s.otherentity_num];
+		other = &g_entities[cent->gent->s.otherentityNum];
 		if (other->client)
 		{
 			const class_t npc_class = other->client->NPC_class;

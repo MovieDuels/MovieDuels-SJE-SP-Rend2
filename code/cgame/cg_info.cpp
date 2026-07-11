@@ -692,61 +692,84 @@ static void CG_GetLoadScreenInfo(char* weapons, int* forceBits)
 	float fDummy;
 	const char* var;
 
-	gi.Cvar_VariableStringBuffer(sCVARNAME_PLAYERSAVE, s, sizeof s);
+	// Load the saved player state string
+	gi.Cvar_VariableStringBuffer(sCVARNAME_PLAYERSAVE, s, sizeof(s));
 
-	// Get player weapons and force powers known
-	if (s[0])
+	// Get player weapons and force powers known from the save string
+	if (s[0] != '\0')
 	{
-		//				|general info				  |-force powers
-		sscanf(s, "%i %i %i %i %i %i %f %f %f %i %i",
-			&iDummy, //	&client->ps.stats[STAT_HEALTH],
-			&iDummy, //	&client->ps.stats[STAT_ARMOR],
-			&iDummy, //	&client->ps.stats[STAT_ITEMS],
-			&iDummy, //	&client->ps.weapon,
-			&iDummy, //	&client->ps.weaponstate,
-			&iDummy, //	&client->ps.batteryCharge,
-			&fDummy, //	&client->ps.viewangles[0],
-			&fDummy, //	&client->ps.viewangles[1],
-			&fDummy, //	&client->ps.viewangles[2],
-			//force power data
-			&*forceBits, //	&client->ps.forcePowersKnown,
-			&iDummy //	&client->ps.forcePower,
-
+		//              |general info                 |-force powers
+		// We care only about forceBits here; other fields go into dummy vars.
+		const int numRead = sscanf(
+			s,
+			"%i %i %i %i %i %i %f %f %f %i %i",
+			&iDummy, // &client->ps.stats[STAT_HEALTH],
+			&iDummy, // &client->ps.stats[STAT_ARMOR],
+			&iDummy, // &client->ps.stats[STAT_ITEMS],
+			&iDummy, // &client->ps.weapon,
+			&iDummy, // &client->ps.weaponstate,
+			&iDummy, // &client->ps.batteryCharge,
+			&fDummy, // &client->ps.viewangles[0],
+			&fDummy, // &client->ps.viewangles[1],
+			&fDummy, // &client->ps.viewangles[2],
+			forceBits, // &client->ps.forcePowersKnown,
+			&iDummy    // &client->ps.forcePower
 		);
+
+		// Basic sanity check: if parsing failed, clear forceBits to a safe default.
+		if (numRead < 10)
+		{
+			*forceBits = 0;
+		}
 	}
 
-	gi.Cvar_VariableStringBuffer("playerweaps", s, sizeof s);
+	// Load the weapon list string
+	gi.Cvar_VariableStringBuffer("playerweaps", s, sizeof(s));
+
 	int i = 0;
-	if (s[0])
+
+	if (s[0] != '\0')
 	{
 		var = strtok(s, " ");
-		while (var != nullptr)
+		while (var != NULL && i < WP_NUM_WEAPONS)
 		{
-			/* While there are tokens in "s" */
-			weapons[i++] = atoi(var);
-			/* Get next token: */
-			var = strtok(nullptr, " ");
+			// While there are tokens in "s"
+			weapons[i] = (char)atoi(var);
+			++i;
+
+			// Get next token
+			var = strtok(NULL, " ");
 		}
-		assert(i == WP_NUM_WEAPONS);
+
+		// If we didn't get the expected number of weapons, log it but keep running.
+		if (i != WP_NUM_WEAPONS)
+		{
+			Com_Printf("CG_GetLoadScreenInfo: expected %d weapons, got %d\n",
+				WP_NUM_WEAPONS, i);
+		}
 	}
 	else
 	{
+		// No weapon data; mark first slot invalid.
 		weapons[0] = -1;
 	}
 
-	// the new JK2 stuff - force powers, etc...
-	//
-	gi.Cvar_VariableStringBuffer("playerfplvl", s, sizeof s);
+	// The new JK2 stuff - force powers, etc...
+	gi.Cvar_VariableStringBuffer("playerfplvl", s, sizeof(s));
+
 	i = 0;
 	var = strtok(s, " ");
-	while (var != nullptr)
+	while (var != NULL && i < NUM_FORCE_POWERS)
 	{
-		/* While there are tokens in "s" */
-		loadForcePowerLevel[i++] = atoi(var);
-		/* Get next token: */
-		var = strtok(nullptr, " ");
+		// While there are tokens in "s"
+		loadForcePowerLevel[i] = atoi(var);
+		++i;
+
+		// Get next token
+		var = strtok(NULL, " ");
 	}
 }
+
 
 /*
 ====================

@@ -77,7 +77,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 extern gentity_t* NPC_Spawn_Do(gentity_t* pEnt, qboolean fullSpawnNow);
 extern qboolean G_ClearLineOfSight(const vec3_t point1, const vec3_t point2, int ignore, int clipmask);
-extern qboolean g_set_g2_player_model_info(gentity_t* pEnt, const char* model_name, const char* surf_off, const char* surf_on);
+extern qboolean G_SetG2PlayerModelInfo(gentity_t* pEnt, const char* model_name, const char* surf_off, const char* surf_on);
 extern void G_RemovePlayerModel(gentity_t* pEnt);
 extern void G_ChangePlayerModel(gentity_t* pEnt, const char* new_model);
 extern void G_RemoveWeaponModels(gentity_t* ent);
@@ -384,7 +384,7 @@ void G_PilotXWing(gentity_t* ent)
 	{
 		ent->client->ps.vehicleModel = G_ModelIndex("models/map_objects/ships/x_wing.md3");
 
-		ent->client->ps.stats[STAT_WEAPONS] |= 1 << WP_ATST_SIDE;
+		ent->client->ps.weapon = WP_ATST_SIDE;
 		ent->client->ps.ammo[weaponData[WP_ATST_SIDE].ammoIndex] = ammoData[weaponData[WP_ATST_SIDE].ammoIndex].max;
 		const gitem_t* item = FindItemForWeapon(WP_ATST_SIDE);
 		RegisterItem(item); //make sure the weapon is cached in case this runs at startup
@@ -409,34 +409,38 @@ void G_DrivableATSTDie(gentity_t* self)
 
 void G_DriveATST(gentity_t* pEnt, gentity_t* atst)
 {
-	if (pEnt->NPC_type && pEnt->client && pEnt->client->NPC_class == CLASS_ATST)
+	// SAFETY FIX: pEnt or pEnt->client may be NULL in edge cases
+	if (pEnt == NULL || pEnt->client == NULL)
+	{
+		Com_Printf(S_COLOR_YELLOW "G_DriveATST: NULL pEnt or pEnt->client\n");
+		return;
+	}
+
+	if (pEnt->NPC_type && pEnt->client->NPC_class == CLASS_ATST)
 	{
 		//already an atst, switch back
-		//open hatch
 		G_RemovePlayerModel(pEnt);
 		pEnt->NPC_type = "player";
 		pEnt->client->NPC_class = CLASS_PLAYER;
 		pEnt->flags &= ~FL_SHIELDED;
 		pEnt->client->ps.eFlags &= ~EF_IN_ATST;
-		//size
+
 		VectorCopy(playerMins, pEnt->mins);
 		VectorCopy(playerMaxs, pEnt->maxs);
 		pEnt->client->crouchheight = CROUCH_MAXS_2;
 		pEnt->client->standheight = DEFAULT_MAXS_2;
-		pEnt->s.radius = 0;
+
 		G_ChangePlayerModel(pEnt, pEnt->NPC_type);
 
-		pEnt->client->ps.weapons[WP_ATST_MAIN] = 0;
-		pEnt->client->ps.weapons[WP_ATST_SIDE] = 0;
+		pEnt->client->ps.stats[STAT_WEAPONS] &= ~(1 << WP_ATST_MAIN | 1 << WP_ATST_SIDE);
 		pEnt->client->ps.ammo[weaponData[WP_ATST_MAIN].ammoIndex] = 0;
 		pEnt->client->ps.ammo[weaponData[WP_ATST_SIDE].ammoIndex] = 0;
-		if (pEnt->client->ps.weapons[WP_BLASTER])
+
+		if (pEnt->client->ps.stats[STAT_WEAPONS] & (1 << WP_BLASTER))
 		{
 			CG_ChangeWeapon(WP_BLASTER);
-			//camera
 			if (cg_gunAutoFirst.integer)
 			{
-				//go back to first person
 				gi.cvar_set("cg_thirdperson", "0");
 			}
 		}
@@ -444,12 +448,19 @@ void G_DriveATST(gentity_t* pEnt, gentity_t* atst)
 		{
 			CG_ChangeWeapon(WP_NONE);
 		}
-		cg.overrides.active &= ~(CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_3RD_PERSON_VOF | CG_OVERRIDE_3RD_PERSON_POF |
+
+		cg.overrides.active &= ~(CG_OVERRIDE_3RD_PERSON_RNG |
+			CG_OVERRIDE_3RD_PERSON_VOF |
+			CG_OVERRIDE_3RD_PERSON_POF |
 			CG_OVERRIDE_3RD_PERSON_APH);
-		cg.overrides.thirdPersonRange = cg.overrides.thirdPersonVertOffset = cg.overrides.thirdPersonPitchOffset = 0;
+
+		cg.overrides.thirdPersonRange =
+			cg.overrides.thirdPersonVertOffset =
+			cg.overrides.thirdPersonPitchOffset = 0;
+
 		cg.overrides.thirdPersonAlpha = cg_thirdPersonAlpha.value;
+
 		pEnt->client->ps.viewheight = pEnt->maxs[2] + STANDARD_VIEWHEIGHT_OFFSET;
-		//pEnt->mass = 10;
 	}
 	else
 	{
@@ -458,56 +469,70 @@ void G_DriveATST(gentity_t* pEnt, gentity_t* atst)
 		pEnt->client->NPC_class = CLASS_ATST;
 		pEnt->client->ps.eFlags |= EF_IN_ATST;
 		pEnt->flags |= FL_SHIELDED;
-		//size
+
 		VectorSet(pEnt->mins, ATST_MINS0, ATST_MINS1, ATST_MINS2);
 		VectorSet(pEnt->maxs, ATST_MAXS0, ATST_MAXS1, ATST_MAXS2);
+
 		pEnt->client->crouchheight = ATST_MAXS2;
 		pEnt->client->standheight = ATST_MAXS2;
+
 		if (!atst)
 		{
-			//no pEnt to copy from
 			G_ChangePlayerModel(pEnt, "atst");
-			//G_SetG2PlayerModel( pEnt, "atst", NULL, NULL, NULL );
 			NPC_SetAnim(pEnt, SETANIM_BOTH, BOTH_STAND1, SETANIM_FLAG_OVERRIDE, 200);
 		}
 		else
 		{
 			G_RemovePlayerModel(pEnt);
 			G_RemoveWeaponModels(pEnt);
+
 			gi.G2API_CopyGhoul2Instance(atst->ghoul2, pEnt->ghoul2, -1);
 			pEnt->playerModel = 0;
-			g_set_g2_player_model_info(pEnt, "atst", nullptr, nullptr);
-			//turn off hatch underside
-			gi.G2API_SetSurfaceOnOff(&pEnt->ghoul2[pEnt->playerModel], "head_hatchcover",
-				0x00000002/*G2SURFACEFLAG_OFF*/);
+
+			G_SetG2PlayerModelInfo(pEnt, "atst", NULL, NULL);
+
+			gi.G2API_SetSurfaceOnOff(&pEnt->ghoul2[pEnt->playerModel],
+				"head_hatchcover",
+				0x00000002);
+
 			G_Sound(pEnt, G_SoundIndex("sound/chars/atst/atst_hatch_close"));
 		}
+
 		pEnt->s.radius = 320;
-		//weapon
-		const gitem_t* item = FindItemForWeapon(WP_ATST_MAIN); //precache the weapon
+
+		const gitem_t* item = FindItemForWeapon(WP_ATST_MAIN);
 		CG_RegisterItemSounds(item - bg_itemlist);
 		CG_RegisterItemVisuals(item - bg_itemlist);
-		item = FindItemForWeapon(WP_ATST_SIDE); //precache the weapon
+
+		item = FindItemForWeapon(WP_ATST_SIDE);
 		CG_RegisterItemSounds(item - bg_itemlist);
 		CG_RegisterItemVisuals(item - bg_itemlist);
+
 		pEnt->client->ps.weapons[WP_ATST_MAIN] = 1;
 		pEnt->client->ps.weapons[WP_ATST_SIDE] = 1;
+
 		pEnt->client->ps.ammo[weaponData[WP_ATST_MAIN].ammoIndex] = ammoData[weaponData[WP_ATST_MAIN].ammoIndex].max;
+
 		pEnt->client->ps.ammo[weaponData[WP_ATST_SIDE].ammoIndex] = ammoData[weaponData[WP_ATST_SIDE].ammoIndex].max;
+
 		CG_ChangeWeapon(WP_ATST_MAIN);
-		//HACKHACKHACKTEMP
+
 		item = FindItemForWeapon(WP_EMPLACED_GUN);
 		CG_RegisterItemSounds(item - bg_itemlist);
 		CG_RegisterItemVisuals(item - bg_itemlist);
+
 		item = FindItemForWeapon(WP_ROCKET_LAUNCHER);
 		CG_RegisterItemSounds(item - bg_itemlist);
 		CG_RegisterItemVisuals(item - bg_itemlist);
+
 		item = FindItemForWeapon(WP_BOWCASTER);
 		CG_RegisterItemSounds(item - bg_itemlist);
 		CG_RegisterItemVisuals(item - bg_itemlist);
+
 		gi.cvar_set("cg_thirdperson", "1");
 		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG;
 		cg.overrides.thirdPersonRange = 240;
+
 		pEnt->client->ps.viewheight = 120;
 	}
 }
@@ -703,7 +728,7 @@ static bool Board(Vehicle_t* p_veh, bgEntity_t* pEnt)
 		if (ent->s.number < MAX_CLIENTS)
 		{
 			// Riding means you get WP_NONE
-			ent->client->ps.stats[STAT_WEAPONS] |= 1 << WP_NONE;
+			ent->client->ps.weapon = WP_NONE;
 		}
 		//PM_WeaponOkOnVehicle
 		if (ent->client->ps.weapon != WP_SABER
@@ -857,7 +882,7 @@ static void G_EjectDroidUnit(Vehicle_t* p_veh, qboolean kill)
 #else
 	p_veh->m_pDroidUnit->owner = nullptr;
 #endif
-	//	p_veh->m_pDroidUnit->s.otherentity_num2 = ENTITYNUM_NONE;
+	//	p_veh->m_pDroidUnit->s.otherentityNum2 = ENTITYNUM_NONE;
 #ifdef QAGAME
 	{
 		gentity_t* droidEnt = (gentity_t*)p_veh->m_pDroidUnit;
@@ -1131,59 +1156,12 @@ static bool Eject(Vehicle_t* p_veh, bgEntity_t* pEnt, const qboolean force_eject
 #endif
 	ent->s.m_iVehicleNum = 0;
 
-	// Jump out.
-	/*	if ( ent->client->ps.velocity[2] < JUMP_VELOCITY )
-		{
-			ent->client->ps.velocity[2] = JUMP_VELOCITY;
-		}
-		else
-		{
-			ent->client->ps.velocity[2] += JUMP_VELOCITY;
-		}*/
-
 		// Make sure entity is facing the direction it got off at.
 #ifndef _JK2MP
 	VectorCopy(p_veh->m_vOrientation, vPlayerDir);
 	vPlayerDir[ROLL] = 0;
 	SetClientViewAngle(ent, vPlayerDir);
 #endif
-
-	//if was using vehicle weapon, remove it and switch to normal weapon when hop out...
-	if (ent->client->ps.weapon == WP_NONE)
-	{
-		//FIXME: check against this vehicle's gun from the g_vehicleInfo table
-		//remove the vehicle's weapon from me
-		//ent->client->ps.stats[STAT_WEAPONS] &= ~( 1 << WP_EMPLACED_GUN );
-		//ent->client->ps.ammo[weaponData[WP_EMPLACED_GUN].ammoIndex] = 0;//maybe store this ammo on the vehicle before clearing it?
-		//switch back to a normal weapon we're carrying
-
-		//FIXME: store the weapon we were using when we got on and restore that when hop off
-		/*		if ( (ent->client->ps.stats[STAT_WEAPONS]&(1<<WP_SABER)) )
-				{
-					CG_ChangeWeapon( WP_SABER );
-				}
-				else
-				{//go through all weapons and switch to highest held
-					for ( int checkWp = WP_NUM_WEAPONS-1; checkWp > WP_NONE; checkWp-- )
-					{
-						if ( (ent->client->ps.stats[STAT_WEAPONS]&(1<<checkWp)) )
-						{
-							CG_ChangeWeapon( checkWp );
-						}
-					}
-					if ( checkWp == WP_NONE )
-					{
-						CG_ChangeWeapon( WP_NONE );
-					}
-				}*/
-	}
-	else
-	{
-		//FIXME: if they have their saber out:
-		//if dualSabers, add the second saber into the left hand
-		//saber[0] has more than one blade, turn them all on
-		//NOTE: this is because you're only allowed to use your first saber's first blade on a vehicle
-	}
 	PM_SetLegsAnimTimer(ent, &ent->client->ps.legsAnimTimer, 0);
 	PM_SetTorsoAnimTimer(ent, &ent->client->ps.torsoAnimTimer, 0);
 

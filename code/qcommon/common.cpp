@@ -886,31 +886,43 @@ Com_EventLoop
 Returns last event time
 =================
 */
-int Com_EventLoop()
+int Com_EventLoop(void)
 {
 	netadr_t evFrom;
-	byte bufData[MAX_MSGLEN];
-	msg_t buf;
 
-	MSG_Init(&buf, bufData, sizeof(bufData));
+	/* Large message buffer moved off stack to avoid C6262 */
+	static byte* bufData = nullptr;
+
+	if (bufData == nullptr)
+	{
+		bufData = static_cast<byte*>(Z_Malloc(MAX_MSGLEN, TAG_TEMP_WORKSPACE, qfalse));
+		if (bufData == nullptr)
+		{
+			Com_Printf("^1Com_EventLoop: Failed to allocate bufData\n");
+			return 0;
+		}
+	}
+
+	msg_t buf;
+	MSG_Init(&buf, bufData, MAX_MSGLEN);
 
 	while (true)
 	{
 		sysEvent_t ev = Com_GetEvent();
 
-		// if no more events are available
+		/* No more events available */
 		if (ev.evType == SE_NONE)
 		{
-			// manually send packet events for the loopback channel
+			/* Loopback client packets */
 			while (NET_GetLoopPacket(NS_CLIENT, &evFrom, &buf))
 			{
 				CL_PacketEvent(evFrom, &buf);
 			}
 
+			/* Loopback server packets */
 			while (NET_GetLoopPacket(NS_SERVER, &evFrom, &buf))
 			{
-				// if the server just shut down, flush the events
-				if (com_sv_running->integer)
+				if (com_sv_running->integer != 0)
 				{
 					Com_RunAndTimeServerPacket(&evFrom, &buf);
 				}
@@ -923,28 +935,37 @@ int Com_EventLoop()
 		{
 		default:
 			Com_Error(ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType);
+			break;
+
 		case SE_NONE:
 			break;
+
 		case SE_KEY:
-			CL_KeyEvent(ev.evValue, static_cast<qboolean>(ev.evValue2), ev.evTime);
+			CL_KeyEvent(ev.evValue,
+				(ev.evValue2 ? qtrue : qfalse),
+				ev.evTime);
 			break;
+
 		case SE_CHAR:
 			CL_CharEvent(ev.evValue);
 			break;
+
 		case SE_MOUSE:
 			CL_MouseEvent(ev.evValue, ev.evValue2, ev.evTime);
 			break;
+
 		case SE_JOYSTICK_AXIS:
 			CL_JoystickEvent(ev.evValue, ev.evValue2, ev.evTime);
 			break;
+
 		case SE_CONSOLE:
 			Cbuf_AddText(static_cast<char*>(ev.evPtr));
 			Cbuf_AddText("\n");
 			break;
 		}
 
-		// free any block data
-		if (ev.evPtr)
+		/* Free any block data */
+		if (ev.evPtr != nullptr)
 		{
 			Z_Free(ev.evPtr);
 		}
@@ -1666,6 +1687,7 @@ void Com_Frame()
 Com_Shutdown
 =================
 */
+extern void Netchan_Shutdown();
 void Com_Shutdown()
 {
 	CM_ClearMap();
@@ -1700,8 +1722,6 @@ void Com_Shutdown()
 #else
 	SE_ShutDown(); //close the string packages
 #endif
-
-	extern void Netchan_Shutdown();
 	Netchan_Shutdown();
 }
 

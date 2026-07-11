@@ -97,10 +97,10 @@ struct CreditCard_t
 
 struct CreditLine_t
 {
-	int iLine;
+	int iLine{};
 	StringAndSize_t strText;
 	std::vector<StringAndSize_t> vstrText;
-	bool bDotted;
+	bool bDotted{};
 };
 
 using CreditLines_t = std::list<CreditLine_t>;
@@ -108,7 +108,7 @@ using CreditCards_t = std::list<CreditCard_t>;
 
 struct CreditData_t
 {
-	int iStartTime;
+	int iStartTime = 0;
 
 	CreditCards_t CreditCards;
 	CreditLines_t CreditLines;

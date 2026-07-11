@@ -86,13 +86,17 @@ gz_statep state;
 local int gz_look(state)
 gz_statep state;
 {
-	z_streamp strm = &(state->strm);
+	z_streamp strm = &state->strm;
 
 	/* allocate read buffers and inflate memory */
 	if (state->size == 0) {
-		/* allocate buffers */
-		state->in = (unsigned char*)malloc(state->want);
-		state->out = (unsigned char*)malloc(state->want << 1);
+		/* allocate buffers safely */
+		size_t inSize = (size_t)state->want;
+		size_t outSize = (size_t)state->want << 1;   /* safe: shift in size_t */
+
+		state->in = (unsigned char*)malloc(inSize);
+		state->out = (unsigned char*)malloc(outSize);
+
 		if (state->in == NULL || state->out == NULL) {
 			if (state->out != NULL)
 				free(state->out);
@@ -101,6 +105,7 @@ gz_statep state;
 			gz_error(state, Z_MEM_ERROR, "out of memory");
 			return -1;
 		}
+
 		state->size = state->want;
 
 		/* allocate inflate memory */
@@ -109,7 +114,8 @@ gz_statep state;
 		state->strm.opaque = Z_NULL;
 		state->strm.avail_in = 0;
 		state->strm.next_in = Z_NULL;
-		if (inflateInit2(&(state->strm), 15 + 16) != Z_OK) {    /* gunzip */
+
+		if (inflateInit2(&state->strm, 15 + 16) != Z_OK) {    /* gunzip */
 			free(state->out);
 			free(state->in);
 			state->size = 0;
@@ -126,13 +132,7 @@ gz_statep state;
 			return 0;
 	}
 
-	/* look for gzip magic bytes -- if there, do gzip decoding (note: there is
-	   a logical dilemma here when considering the case of a partially written
-	   gzip file, to wit, if a single 31 byte is written, then we cannot tell
-	   whether this is a single-byte file, or just a partially written gzip
-	   file -- for here we assume that if a gzip file is being written, then
-	   the header will be written in a single operation, so that reading a
-	   single byte is sufficient indication that it is not a gzip file) */
+	/* look for gzip magic bytes */
 	if (strm->avail_in > 1 &&
 		strm->next_in[0] == 31 && strm->next_in[1] == 139) {
 		inflateReset(strm);
@@ -141,8 +141,7 @@ gz_statep state;
 		return 0;
 	}
 
-	/* no gzip header -- if we were decoding gzip before, then this is trailing
-	   garbage.  Ignore the trailing garbage and finish. */
+	/* no gzip header -- if we were decoding gzip before, then this is trailing garbage */
 	if (state->direct == 0) {
 		strm->avail_in = 0;
 		state->eof = 1;
@@ -150,15 +149,14 @@ gz_statep state;
 		return 0;
 	}
 
-	/* doing raw i/o, copy any leftover input to output -- this assumes that
-	   the output buffer is larger than the input buffer, which also assures
-	   space for gzungetc() */
+	/* doing raw i/o, copy leftover input to output */
 	state->x.next = state->out;
 	if (strm->avail_in) {
 		memcpy(state->x.next, strm->next_in, strm->avail_in);
 		state->x.have = strm->avail_in;
 		strm->avail_in = 0;
 	}
+
 	state->how = COPY;
 	state->direct = 1;
 	return 0;
@@ -447,10 +445,13 @@ gzFile file;
 	if (c < 0)
 		return -1;
 
+	/* compute safe buffer size (size_t avoids overflow) */
+	size_t outSize = (size_t)state->size << 1;
+
 	/* if output buffer empty, put byte at end (allows more pushing) */
 	if (state->x.have == 0) {
 		state->x.have = 1;
-		state->x.next = state->out + (state->size << 1) - 1;
+		state->x.next = state->out + outSize - 1;   /* SAFE */
 		state->x.next[0] = c;
 		state->x.pos--;
 		state->past = 0;
@@ -458,7 +459,7 @@ gzFile file;
 	}
 
 	/* if no room, give up (must have already done a gzungetc()) */
-	if (state->x.have == (state->size << 1)) {
+	if ((size_t)state->x.have == outSize) {
 		gz_error(state, Z_DATA_ERROR, "out of room to push characters");
 		return -1;
 	}
@@ -466,16 +467,20 @@ gzFile file;
 	/* slide output data if needed and insert byte before existing data */
 	if (state->x.next == state->out) {
 		unsigned char* src = state->out + state->x.have;
-		unsigned char* dest = state->out + (state->size << 1);
+		unsigned char* dest = state->out + outSize;
+
 		while (src > state->out)
 			*--dest = *--src;
+
 		state->x.next = dest;
 	}
+
 	state->x.have++;
 	state->x.next--;
 	state->x.next[0] = c;
 	state->x.pos--;
 	state->past = 0;
+
 	return c;
 }
 

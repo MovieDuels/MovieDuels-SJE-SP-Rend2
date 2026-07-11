@@ -5853,6 +5853,55 @@ static void CG_DrawHaqrBar(const float chX, const float chY, const float chW, co
 	CG_DrawPic(x, y - HACK_WIDTH, HACK_WIDTH, HACK_WIDTH, cgs.media.hackerIconShader);
 }
 
+//generic timing bar
+int cg_genericTimerBar = 0;
+int cg_genericTimerDur = 0;
+vec4_t cg_genericTimerColor = { 1.0f, 1.0f, 0.0f, 0.4f };
+#define CGTIMERBAR_H			50.0f
+#define CGTIMERBAR_W			10.0f
+#define CGTIMERBAR_X			(SCREEN_WIDTH-CGTIMERBAR_W-120.0f)
+#define CGTIMERBAR_Y			(SCREEN_HEIGHT-CGTIMERBAR_H-20.0f)
+
+static void CG_DrawGenericTimerBar(void)
+{
+	vec4_t aColor = { 1.0f, 1.0f, 0.0f, 0.4f };
+	vec4_t cColor = { 0.5f, 0.5f, 0.5f, 0.1f };
+	float x = CGTIMERBAR_X;
+	float y = CGTIMERBAR_Y;
+	float percent = ((float)(cg_genericTimerBar - cg.time) / (float)cg_genericTimerDur) * CGTIMERBAR_H;
+
+	if (percent > CGTIMERBAR_H)
+	{
+		return;
+	}
+
+	if (percent < 0.1f)
+	{
+		percent = 0.1f;
+	}
+
+	//color of the bar
+	aColor[0] = cg_genericTimerColor[0];
+	aColor[1] = cg_genericTimerColor[1];
+	aColor[2] = cg_genericTimerColor[2];
+	aColor[3] = cg_genericTimerColor[3];
+
+	//color of greyed out "missing fuel"
+	cColor[0] = 0.5f;
+	cColor[1] = 0.5f;
+	cColor[2] = 0.5f;
+	cColor[3] = 0.1f;
+
+	//draw the background (black)
+	CG_DrawRect(x, y, CGTIMERBAR_W, CGTIMERBAR_H, 1.0f, colorTable[CT_BLACK]);
+
+	//now draw the part to show how much health there is in the color specified
+	CG_FillRect(x + 1.0f, y + 1.0f + (CGTIMERBAR_H - percent), CGTIMERBAR_W - 2.0f, CGTIMERBAR_H - 1.0f - (CGTIMERBAR_H - percent), aColor);
+
+	//then draw the other part greyed out
+	CG_FillRect(x + 1.0f, y + 1.0f, CGTIMERBAR_W - 2.0f, CGTIMERBAR_H - percent, cColor);
+}
+
 static void CG_DrawBlockPointBar(const centity_t* cent, const float ch_x, const float ch_y, const float ch_w, const float ch_h)
 {
 	vec4_t aColor{};
@@ -8595,8 +8644,8 @@ static float cg_draw_radar(const float y)
 				{
 					//I'm in a vehicle
 					//if it's targeting me, then play an alarm sound if I'm in a vehicle
-					if (cent->currentState.otherentity_num == cg.predictedPlayerState.clientNum || cent->
-						currentState.otherentity_num == cg.predictedPlayerState.m_iVehicleNum)
+					if (cent->currentState.otherentityNum == cg.predictedPlayerState.clientNum || cent->
+						currentState.otherentityNum == cg.predictedPlayerState.m_iVehicleNum)
 					{
 						if (radarLockSoundDebounceTime < cg.time)
 						{

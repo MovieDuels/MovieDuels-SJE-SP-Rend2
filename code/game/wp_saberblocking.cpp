@@ -77,7 +77,7 @@ extern qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, int sa
 extern qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, int saberNum, int bladeNum, vec3_t hit_loc);
 extern cvar_t* g_saberAutoBlocking;
 extern void g_do_m_block_response(const gentity_t* speaker_npc_self);
-extern qboolean PM_SaberInKata(saber_moveName_t saberMove);
+extern qboolean PM_SaberInKata(saberMoveName_t saberMove);
 extern qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker, vec3_t hit_loc);
 extern qboolean WalkCheck(const gentity_t* self);
 extern qboolean Rosh_BeingHealed(const gentity_t* self);
@@ -851,7 +851,7 @@ static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker
 	//
 	// CASE 4: Attacker in kata
 	//
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(attacker->client->ps.saberMove)))
+	if (PM_SaberInKata(static_cast<saberMoveName_t>(attacker->client->ps.saberMove)))
 	{
 		sab_beh_add_balance(attacker, MPCOST_PARRIED);
 		sab_beh_add_balance(blocker, -MPCOST_PARRIED);
@@ -873,7 +873,7 @@ static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker
 	//
 	// CASE 5: Blocker in kata
 	//
-	if (PM_SaberInKata(static_cast<saber_moveName_t>(blocker->client->ps.saberMove)))
+	if (PM_SaberInKata(static_cast<saberMoveName_t>(blocker->client->ps.saberMove)))
 	{
 		sab_beh_add_balance(attacker, -MPCOST_PARRIED);
 		sab_beh_add_balance(blocker, MPCOST_PARRIED);

@@ -382,55 +382,55 @@ using modelDef_t = struct modelDef_s
 
 using itemDef_t = struct itemDef_s
 {
-	Window window; // common positional, border, style, layout info
-	UIRectangle textRect; // rectangle the text ( if any ) consumes
-	int type; // text, button, radiobutton, checkbox, textfield, listbox, combo
-	int alignment; // left center right
-	int textalignment; // ( optional ) alignment for text within rect based on text width
-	float textalignx; // ( optional ) text alignment x coord
-	float textaligny; // ( optional ) text alignment y coord
-	float text2alignx; // ( optional ) text2 alignment x coord
-	float text2aligny; // ( optional ) text2 alignment y coord
-	float textscale; // scale percentage from 72pts
-	int textStyle; // ( optional ) style, normal and shadowed are it for now
-	char* text; // display text
-	char* text2; // display text2
-	const char* descText; //	Description text
-	void* parent; // menu owner
-	qhandle_t asset; // handle to asset
-	CGhoul2Info_v ghoul2; // ghoul2 instance if available instead of a model.
-	int flags; // flags like g2valid, character, saber, saber2, etc.
-	const char* mouseEnterText; // mouse enter script
-	const char* mouseExitText; // mouse exit script
-	const char* mouseEnter; // mouse enter script
-	const char* mouseExit; // mouse exit script
-	const char* action; // select script
-	const char* exec; // Exec command
+	Window window = {}; // common positional, border, style, layout info
+	UIRectangle textRect = {}; // rectangle the text ( if any ) consumes
+	int type = 0; // text, button, radiobutton, checkbox, textfield, listbox, combo
+	int alignment = 0; // left center right
+	int textalignment = 0; // ( optional ) alignment for text within rect based on text width
+	float textalignx = 0.0f; // ( optional ) text alignment x coord
+	float textaligny = 0.0f; // ( optional ) text alignment y coord
+	float text2alignx = 0.0f; // ( optional ) text2 alignment x coord
+	float text2aligny = 0.0f; // ( optional ) text2 alignment y coord
+	float textscale = 0.0f; // scale percentage from 72pts
+	int textStyle = 0; // ( optional ) style, normal and shadowed are it for now
+	char* text = nullptr; // display text
+	char* text2 = nullptr; // display text2
+	const char* descText = nullptr; //	Description text
+	void* parent = nullptr; // menu owner
+	qhandle_t asset = 0; // handle to asset
+	CGhoul2Info_v ghoul2 = {}; // ghoul2 instance if available instead of a model.
+	int flags = 0; // flags like g2valid, character, saber, saber2, etc.
+	const char* mouseEnterText = nullptr; // mouse enter script
+	const char* mouseExitText = nullptr; // mouse exit script
+	const char* mouseEnter = nullptr; // mouse enter script
+	const char* mouseExit = nullptr; // mouse exit script
+	const char* action = nullptr; // select script
+	const char* exec = nullptr; // Exec command
 	//JLFACCEPT MPMOVED
-	const char* accept;
+	const char* accept = nullptr;
 	//JLFDPADSCRIPT MPMOVED
-	const char* selectionNext;
-	const char* selectionPrev;
+	const char* selectionNext = nullptr;
+	const char* selectionPrev = nullptr;
 
-	const char* onFocus; // select script
-	const char* leaveFocus; // select script
-	const char* cvar; // associated cvar
-	const char* cvarTest; // associated cvar for enable actions
-	const char* enableCvar; // enable, disable, show, or hide based on value, this can contain a list
-	int cvarFlags; //	what type of action to take on cvarenables
-	sfxHandle_t focusSound; //
-	int numColors; // number of color ranges
-	colorRangeDef_t colorRanges[MAX_COLOR_RANGES];
-	float special; // used for feeder id's etc.. diff per type
-	int cursorPos; // cursor position in characters
-	void* typeData; // type specific data ptr's
-	int appearanceSlot; // order of appearance
-	int value; // used by ITEM_TYPE_MULTI that aren't linked to a particular cvar.
-	int font; // FONT_SMALL,FONT_MEDIUM,FONT_LARGE
-	int invertYesNo;
-	int xoffset;
-	qboolean disabled; // Does this item ignore mouse and keyboard focus
-	qboolean disabledHidden; // hide the item when 'disabled' is true (for generic image items)
+	const char* onFocus = nullptr; // select script
+	const char* leaveFocus = nullptr; // select script
+	const char* cvar = nullptr; // associated cvar
+	const char* cvarTest = nullptr; // associated cvar for enable actions
+	const char* enableCvar = nullptr; // enable, disable, show, or hide based on value, this can contain a list
+	int cvarFlags = 0; //	what type of action to take on cvarenables
+	sfxHandle_t focusSound = 0; //
+	int numColors = 0; // number of color ranges
+	colorRangeDef_t colorRanges[MAX_COLOR_RANGES] = {};
+	float special = 0.0f; // used for feeder id's etc.. diff per type
+	int cursorPos = 0; // cursor position in characters
+	void* typeData = nullptr; // type specific data ptr's
+	int appearanceSlot = 0; // order of appearance
+	int value = 0; // used by ITEM_TYPE_MULTI that aren't linked to a particular cvar.
+	int font = 0; // FONT_SMALL,FONT_MEDIUM,FONT_LARGE
+	int invertYesNo = 0;
+	int xoffset = 0;
+	qboolean disabled = qfalse; // Does this item ignore mouse and keyboard focus
+	qboolean disabledHidden = qfalse; // hide the item when 'disabled' is true (for generic image items)
 };
 
 using menuDef_t = struct menuDef_s

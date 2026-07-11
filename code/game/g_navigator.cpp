@@ -403,10 +403,10 @@ using TPath = ratl::vector_vs<SPathPoint, NAV::MAX_PATH_SIZE>;
 ////////////////////////////////////////////////////////////////////////////////////////
 struct SPathUser
 {
-	int mEnd;
-	bool mSuccess;
-	int mLastUseTime;
-	int mLastAStarTime;
+	int mEnd = 0;
+	bool mSuccess = false;
+	int mLastUseTime = 0;
+	int mLastAStarTime = 0;
 	TPath mPath;
 };
 

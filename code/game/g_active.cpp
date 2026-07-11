@@ -9212,6 +9212,20 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 					client->ps.dashlaststartTime = level.time;
 					client->ps.Dash_Count++;
 
+					// fire event when Dash_Count becomes 2
+					//if (client->ps.Dash_Count == 2)
+					//{
+					//	gentity_t* te = G_TempEntity(ent->client->ps.origin, EV_LOCALTIMER);
+					//	te->s.time = level.time;
+					//	te->s.time2 = 2500;
+
+					//	// server-side owner pointer
+					//	te->owner = ent;
+
+					//	// networked index for cgame
+					//	te->s.otherentityNum = ent->s.number;
+					//}
+
 					if ((client->ps.communicatingflags & (1 << CF_DASHING)) == 0)
 					{
 						client->ps.communicatingflags |= (1 << CF_DASHING);

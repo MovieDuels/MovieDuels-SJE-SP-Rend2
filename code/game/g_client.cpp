@@ -1544,7 +1544,7 @@ void G_BoneOrientationsForClass(const int npc_class, const char* boneName, Eorie
 
 extern void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name);
 
-qboolean g_set_g2_player_model_info(gentity_t* ent, const char* model_name, const char* surf_off, const char* surf_on)
+qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const char* surf_off, const char* surf_on)
 {
 	if (ent->playerModel != -1)
 	{
@@ -2288,7 +2288,7 @@ void g_set_g2_player_model(gentity_t* ent, const char* model_name, const char* c
 	//this is going to set the surfs on/off matching the skin file
 
 	// did we find a ghoul2 model? if so, load the animation.cfg file
-	if (!g_set_g2_player_model_info(ent, model_name, surf_off, surf_on))
+	if (!G_SetG2PlayerModelInfo(ent, model_name, surf_off, surf_on))
 	{
 		//couldn't set g2 info, fall back to a mouse md3
 		NPC_ParseParms("mouse", ent);
@@ -2779,7 +2779,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 					{//Gunner inventory
 						if (ent->client->NPC_class == CLASS_DROIDEKA)
 						{
-							ent->client->ps.stats[STAT_WEAPONS] = 1 << WP_DROIDEKA;
+							ent->client->ps.weapon = WP_DROIDEKA;
 
 							ent->client->ps.inventory[INV_BARRIER] = 1;
 							//Remove these if he has them when changing model to decca
@@ -2971,7 +2971,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 					{//Gunner inventory
 						if (ent->client->NPC_class == CLASS_DROIDEKA)
 						{
-							ent->client->ps.stats[STAT_WEAPONS] = 1 << WP_DROIDEKA;
+							ent->client->ps.weapon = WP_DROIDEKA;
 
 							ent->client->ps.inventory[INV_BARRIER] = 1;
 							//Remove these if he has them when changing model to decca

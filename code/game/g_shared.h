@@ -1199,29 +1199,29 @@ using centity_t = struct centity_s;
 // !!!!!!!!!!! LOADSAVE-affecting struct !!!!!!!!!!!!!
 struct gentity_s
 {
-	entityState_t s; // communicated by server to clients
-	gclient_t* client; // NULL if not a player (unless it's NPC ( if (this->NPC != NULL)  )  <sigh>... -slc)
-	qboolean inuse;
-	qboolean linked; // qfalse if not in any good cluster
+	entityState_t s = {}; // communicated by server to clients
+	gclient_t* client = nullptr; // NULL if not a player (unless it's NPC ( if (this->NPC != NULL)  )  <sigh>... -slc)
+	qboolean inuse = qfalse;
+	qboolean linked = qfalse; // qfalse if not in any good cluster
 
-	int svFlags; // SVF_NOCLIENT, SVF_BROADCAST, etc
+	int svFlags = 0; // SVF_NOCLIENT, SVF_BROADCAST, etc
 
-	qboolean bmodel; // if false, assume an explicit mins / maxs bounding box
+	qboolean bmodel = qfalse; // if false, assume an explicit mins / maxs bounding box
 	// only set by gi.SetBrushModel
-	vec3_t mins, maxs;
-	int contents; // CONTENTS_TRIGGER, CONTENTS_SOLID, CONTENTS_BODY, etc
+	vec3_t mins = { 0, 0, 0 }, maxs = { 0, 0, 0 };
+	int contents = 0; // CONTENTS_TRIGGER, CONTENTS_SOLID, CONTENTS_BODY, etc
 	// a non-solid entity should set to 0
 
-	vec3_t absmin, absmax; // derived from mins/maxs and origin + rotation
+	vec3_t absmin = {}, absmax = {}; // derived from mins/maxs and origin + rotation
 
 	// currentOrigin will be used for all collision detection and world linking.
 	// it will not necessarily be the same as the trajectory evaluation for the current
 	// time, because each entity must be moved one at a time after time is advanced
 	// to avoid simultanious collision issues
-	vec3_t currentOrigin;
-	vec3_t currentAngles;
+	vec3_t currentOrigin = {};
+	vec3_t currentAngles = {};
 
-	gentity_t* owner; // objects never interact with their owners, to
+	gentity_t* owner = nullptr; // objects never interact with their owners, to
 	// prevent player missiles from immediately
 	// colliding with their owner
 	/*
@@ -1230,9 +1230,9 @@ struct gentity_s
 	// this marker thing of Jake's is used for memcpy() length calcs, so don't put any ordinary fields (like above)
 	//	below this point or they won't work, and will mess up all sorts of stuff.
 	//
-	CGhoul2Info_v ghoul2;
+	CGhoul2Info_v ghoul2 = {};
 
-	vec3_t modelScale; //needed for g2 collision
+	vec3_t modelScale = {}; //needed for g2 collision
 	/*
 	Ghoul2 Insert End
 	*/
@@ -1246,51 +1246,51 @@ struct gentity_s
 	// note: all the char* fields from here on should be left as ptrs, not declared, because of the way that ent-parsing
 	//	works by forcing field offset ptrs as char* and using G_NewString()!! (see G_ParseField() in gmae/g_spawn.cpp -slc
 	//
-	char* classname; // set in QuakeEd
-	mutable int spawnflags; // set in QuakeEd
+	char* classname = nullptr; // set in QuakeEd
+	mutable int spawnflags = 0; // set in QuakeEd
 
-	int flags; // FL_* variables
+	int flags = 0; // FL_* variables
 
-	char* model; // Normal model, or legs model on tri-models
-	char* model2; // Torso model
+	char* model = nullptr; // Normal model, or legs model on tri-models
+	char* model2 = nullptr; // Torso model
 
-	int freetime; // sv.time when the object was freed
+	int freetime = 0; // sv.time when the object was freed
 
-	int eventTime; // events will be cleared EVENT_VALID_MSEC after set
+	int eventTime = 0; // events will be cleared EVENT_VALID_MSEC after set
 	qboolean freeAfterEvent;
 	//	qboolean	unlinkAfterEvent;
 
 	//Physics and movement fields
-	float physicsBounce; // 1.0 = continuous bounce, 0.0 = no bounce
-	int clipmask; // brushes with this content value will be collided against
+	float physicsBounce = 0.0f; // 1.0 = continuous bounce, 0.0 = no bounce
+	int clipmask = 0; // brushes with this content value will be collided against
 	// when moving.  items and corpses do not collide against
 	// players, for instance
 	//	moveInfo_t	moveInfo;		//FIXME: use this more?
-	float speed;
-	float resultspeed;
-	int lastMoveTime;
-	vec3_t movedir;
-	vec3_t lastOrigin; //Where you were last frame
-	vec3_t lastAngles; //Where you were looking last frame
-	float mass; //How heavy you are
-	int lastImpact; //Last time you impacted something
+	float speed = 0.0f;
+	float resultspeed = 0.0f;
+	int lastMoveTime = 0;
+	vec3_t movedir = {};
+	vec3_t lastOrigin = {}; //Where you were last frame
+	vec3_t lastAngles = {}; //Where you were looking last frame
+	float mass = 0.0f; //How heavy you are
+	int lastImpact = 0; //Last time you impacted something
 	gentity_t* parent;
 
 	//Variables reflecting environment
-	int watertype;
-	int waterlevel;
-	short wupdate;
-	short prev_waterlevel;
+	int watertype = 0;
+	int waterlevel = 0;
+	short wupdate = 0;
+	short prev_waterlevel = 0;
 
 	//Targeting/linking fields
-	float angle; // set in editor, -1 = up, -2 = down
-	char* target;
-	char* target2; //For multiple targets, not used for firing/triggering/using, though, only for path branches
-	char* target3; //For multiple targets, not used for firing/triggering/using, though, only for path branches
-	char* target4; //For multiple targets, not used for firing/triggering/using, though, only for path branches
-	char* targetJump;
-	mutable char* targetname;
-	char* team;
+	float angle = 0.0f; // set in editor, -1 = up, -2 = down
+	char* target = nullptr;
+	char* target2 = nullptr; //For multiple targets, not used for firing/triggering/using, though, only for path branches
+	char* target3 = nullptr; //For multiple targets, not used for firing/triggering/using, though, only for path branches
+	char* target4 = nullptr; //For multiple targets, not used for firing/triggering/using, though, only for path branches
+	char* targetJump = nullptr;
+	mutable char* targetname = nullptr;
+	char* team = nullptr;
 	gentity_t* touchedByPlayer;
 
 	union
@@ -1316,19 +1316,19 @@ struct gentity_s
 	dieFunc_t e_DieFunc; //Called by G_Damage when health reaches <= 0
 
 	//Health and damage fields
-	int health;
-	int max_health;
-	qboolean takedamage;
+	int health = 0;
+	int max_health = 0;
+	qboolean takedamage = qfalse;
 	material_t material;
-	int damage;
-	int dflags;
+	int damage = 0;
+	int dflags = 0;
 	//explosives, breakable brushes
-	int splashDamage; // quad will increase this without increasing radius
-	int splashRadius;
-	int methodOfDeath;
-	int splashMethodOfDeath;
+	int splashDamage = 0; // quad will increase this without increasing radius
+	int splashRadius = 0;
+	int methodOfDeath = 0;
+	int splashMethodOfDeath = 0;
 	//int			hit_loc;//where you were last hit
-	int locationDamage[HL_MAX]; // Damage accumulated on different body locations
+	int locationDamage[HL_MAX] = { 0 }; // Damage accumulated on different body locations
 
 	//Entity pointers
 	gentity_t* chain;
@@ -1343,15 +1343,15 @@ struct gentity_s
 	float random;
 	int delay;
 	qboolean alt_fire;
-	int count;
-	int bounceCount;
-	int fly_sound_debounce_time; // wind tunnel
-	int painDebounceTime;
-	int disconnectDebounceTime;
-	int attackDebounceTime;
-	int pushDebounceTime;
-	int aimDebounceTime;
-	int useDebounceTime;
+	int count = 0;
+	int bounceCount = 0;
+	int fly_sound_debounce_time = 0; // wind tunnel
+	int painDebounceTime = 0;
+	int disconnectDebounceTime = 0;
+	int attackDebounceTime = 0;
+	int pushDebounceTime = 0;
+	int aimDebounceTime = 0;
+	int useDebounceTime = 0;
 	gentity_t* target_ent;
 
 	//Unions for miscellaneous fields used under very specific circumstances
@@ -1371,87 +1371,87 @@ struct gentity_s
 	int lastInAirTime;
 	int noWaypointTime;
 	//Debouncer - so don't keep checking every waypoint in existance every frame that you can't find one
-	int combatPoint;
-	vec3_t followPos;
-	int followPosRecalcTime;
-	int followPosWaypoint;
+	int combatPoint = 0;
+	vec3_t followPos = { 0, 0, 0 };
+	int followPosRecalcTime = 0;
+	int followPosWaypoint = 0;
 
 	//Animation
-	qboolean loopAnim;
-	int startFrame;
-	int endFrame;
+	qboolean loopAnim = qfalse;
+	int startFrame = 0;
+	int endFrame = 0;
 
 	//Script/ICARUS-related fields
-	int m_iIcarusID;
-	int taskID[NUM_TIDS];
-	parms_t* parms;
-	char* behaviorSet[NUM_BSETS];
-	char* script_targetname;
-	int delayScriptTime;
-	char* fullName;
+	int m_iIcarusID = 0;
+	int taskID[NUM_TIDS] = { 0 };
+	parms_t* parms = nullptr;
+	char* behaviorSet[NUM_BSETS] = { nullptr };
+	char* script_targetname = nullptr;
+	int delayScriptTime = 0;
+	char* fullName = nullptr;
 
 	// Ambient sound info
-	char* soundSet; //Only used for local sets
-	int setTime;
+	char* soundSet = nullptr; //Only used for local sets
+	int setTime = 0;
 
 	//Used by cameras to locate subjects
-	char* cameraGroup;
+	char* cameraGroup = nullptr;
 
 	//For damage
-	team_t noDamageTeam;
+	team_t noDamageTeam = TEAM_FREE;
 	faction_t noDamageFaction;
 
 	// Ghoul2 Animation info
-	short headModel;
-	short headRootBone;
-	short headMotionBone;
-	short headCraniumBone;
-	short headCervicalBone;
-	short headThoracicBone;
-	short headUpperLumbarBone;
-	short headLowerLumbarBone;
-	short headHipsBone;
-	short headFaceBone;
-	short holsterModel[MAX_HOLSTER_WEAPONS];
-	short playerModel;
-	short weaponModel[MAX_INHAND_WEAPONS];
-	short handRBolt;
-	short handLBolt;
-	short headBolt;
-	short cervicalBolt;
-	short chestBolt;
-	short gutBolt;
-	short torsoBolt;
-	short crotchBolt;
-	short motionBolt;
-	short kneeLBolt;
-	short kneeRBolt;
-	short elbowLBolt;
-	short elbowRBolt;
-	short footLBolt;
-	short footRBolt;
-	short faceBone;
-	short craniumBone;
-	short cervicalBone;
-	short thoracicBone;
-	short upperLumbarBone;
-	short lowerLumbarBone;
-	short hipsBone;
-	short motionBone;
-	short rootBone;
-	short footLBone;
-	short footRBone;
-	short humerusRBone;
+	short headModel = 0;
+	short headRootBone = 0;
+	short headMotionBone = 0;
+	short headCraniumBone = 0;
+	short headCervicalBone = 0;
+	short headThoracicBone = 0;
+	short headUpperLumbarBone = 0;
+	short headLowerLumbarBone = 0;
+	short headHipsBone = 0;
+	short headFaceBone = 0;
+	short holsterModel[MAX_HOLSTER_WEAPONS] = { 0 };
+	short playerModel = 0;
+	short weaponModel[MAX_INHAND_WEAPONS] = { 0 };
+	short handRBolt = 0;
+	short handLBolt = 0;
+	short headBolt = 0;
+	short cervicalBolt = 0;
+	short chestBolt = 0;
+	short gutBolt = 0;
+	short torsoBolt = 0;
+	short crotchBolt = 0;
+	short motionBolt = 0;
+	short kneeLBolt = 0;
+	short kneeRBolt = 0;
+	short elbowLBolt = 0;
+	short elbowRBolt = 0;
+	short footLBolt = 0;
+	short footRBolt = 0;
+	short faceBone = 0;
+	short craniumBone = 0;
+	short cervicalBone = 0;
+	short thoracicBone = 0;
+	short upperLumbarBone = 0;
+	short lowerLumbarBone = 0;
+	short hipsBone = 0;
+	short motionBone = 0;
+	short rootBone = 0;
+	short footLBone = 0;
+	short footRBone = 0;
+	short humerusRBone = 0;
 
-	short genericBone1; // For bones special to an entity
-	short genericBone2;
-	short genericBone3;
+	short genericBone1 = 0; // For bones special to an entity
+	short genericBone2 = 0;
+	short genericBone3 = 0;
 
-	short genericBolt1; // For bolts special to an entity
-	short genericBolt2;
-	short genericBolt3;
-	short genericBolt4;
-	short genericBolt5;
+	short genericBolt1 = 0; // For bolts special to an entity
+	short genericBolt2 = 0;
+	short genericBolt3 = 0;
+	short genericBolt4 = 0;
+	short genericBolt5 = 0;
 
 	qhandle_t cinematicModel;
 

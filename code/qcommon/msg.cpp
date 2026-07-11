@@ -614,8 +614,8 @@ const netField_t	entityStateFields[] =
 { NETF(angles2[1]), 0 },
 { NETF(angles2[2]), 0 },
 
-{ NETF(otherentity_num), GENTITYNUM_BITS },
-//{ NETF(otherentity_num2), GENTITYNUM_BITS },
+{ NETF(otherentityNum), GENTITYNUM_BITS },
+//{ NETF(otherentityNum2), GENTITYNUM_BITS },
 { NETF(groundEntityNum), GENTITYNUM_BITS },
 
 { NETF(constantLight), 32 },

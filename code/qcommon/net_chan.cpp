@@ -144,71 +144,76 @@ A 0 length will still generate a packet.
 */
 void Netchan_Transmit(netchan_t* chan, const int length, const byte* data)
 {
-	msg_t send;
-	byte send_buf[MAX_PACKETLEN];
+	/* Large buffer moved off stack to avoid C6262 */
+	static byte* send_buf = nullptr;
 
-	// fragment large reliable messages
+	if (send_buf == nullptr)
+	{
+		send_buf = static_cast<byte*>(Z_Malloc(MAX_PACKETLEN, TAG_TEMP_WORKSPACE, qfalse));
+		if (!send_buf)
+		{
+			Com_Printf("^1Netchan_Transmit: Failed to allocate send_buf\n");
+			return;
+		}
+	}
+
+	msg_t send;
+
+	/* Fragment large reliable messages */
 	if (length >= FRAGMENT_SIZE)
 	{
-		int fragment_length;
+		int fragmentLength;
 		int fragmentStart = 0;
+
 		do
 		{
-			// write the packet header
-			MSG_Init(&send, send_buf, sizeof(send_buf));
+			MSG_Init(&send, send_buf, MAX_PACKETLEN);
 
 			MSG_WriteLong(&send, chan->outgoingSequence | FRAGMENT_BIT);
 			MSG_WriteLong(&send, chan->incomingSequence);
 
-			// send the qport if we are a client
 			if (chan->sock == NS_CLIENT)
 			{
 				MSG_WriteShort(&send, qport->integer);
 			}
 
-			// copy the reliable message to the packet first
-			fragment_length = FRAGMENT_SIZE;
-			if (fragmentStart + fragment_length > length)
+			fragmentLength = FRAGMENT_SIZE;
+			if (fragmentStart + fragmentLength > length)
 			{
-				fragment_length = length - fragmentStart;
+				fragmentLength = length - fragmentStart;
 			}
 
 			MSG_WriteShort(&send, fragmentStart);
-			MSG_WriteShort(&send, fragment_length);
-			MSG_WriteData(&send, data + fragmentStart, fragment_length);
+			MSG_WriteShort(&send, fragmentLength);
+			MSG_WriteData(&send, data + fragmentStart, fragmentLength);
 
-			// send the datagram
 			NET_SendPacket(chan->sock, send.cursize, send.data, chan->remoteAddress);
 
 			if (showpackets->integer)
 			{
-				Com_Printf("%s send %4i : s=%i ack=%i fragment=%i,%i\n"
-					, netsrcString[chan->sock]
-					, send.cursize
-					, chan->outgoingSequence - 1
-					, chan->incomingSequence
-					, fragmentStart, fragment_length);
+				Com_Printf("%s send %4i : s=%i ack=%i fragment=%i,%i\n",
+					netsrcString[chan->sock],
+					send.cursize,
+					chan->outgoingSequence - 1,
+					chan->incomingSequence,
+					fragmentStart,
+					fragmentLength);
 			}
 
-			fragmentStart += fragment_length;
-			// this exit condition is a little tricky, because a packet
-			// that is exactly the fragment length still needs to send
-			// a second packet of zero length so that the other side
-			// can tell there aren't more to follow
-		} while (fragmentStart != length || fragment_length == FRAGMENT_SIZE);
+			fragmentStart += fragmentLength;
+		} while (fragmentStart != length || fragmentLength == FRAGMENT_SIZE);
 
 		chan->outgoingSequence++;
 		return;
 	}
 
-	// write the packet header
-	MSG_Init(&send, send_buf, sizeof(send_buf));
+	/* Normal packet */
+	MSG_Init(&send, send_buf, MAX_PACKETLEN);
 
 	MSG_WriteLong(&send, chan->outgoingSequence);
 	MSG_WriteLong(&send, chan->incomingSequence);
 	chan->outgoingSequence++;
 
-	// send the qport if we are a client
 	if (chan->sock == NS_CLIENT)
 	{
 		MSG_WriteShort(&send, qport->integer);
@@ -216,16 +221,15 @@ void Netchan_Transmit(netchan_t* chan, const int length, const byte* data)
 
 	MSG_WriteData(&send, data, length);
 
-	// send the datagram
 	NET_SendPacket(chan->sock, send.cursize, send.data, chan->remoteAddress);
 
 	if (showpackets->integer)
 	{
-		Com_Printf("%s send %4i : s=%i ack=%i\n"
-			, netsrcString[chan->sock]
-			, send.cursize
-			, chan->outgoingSequence - 1
-			, chan->incomingSequence);
+		Com_Printf("%s send %4i : s=%i ack=%i\n",
+			netsrcString[chan->sock],
+			send.cursize,
+			chan->outgoingSequence - 1,
+			chan->incomingSequence);
 	}
 }
 
@@ -535,20 +539,33 @@ Sends a text message in an out-of-band datagram
 */
 void QDECL NET_OutOfBandPrint(const netsrc_t sock, const netadr_t adr, const char* format, ...)
 {
-	va_list argptr;
-	char string[MAX_MSGLEN]{};
+	/* Large buffer moved off stack to avoid C6262 */
+	static char* string = nullptr;
 
-	// set the header
+	if (string == nullptr)
+	{
+		string = static_cast<char*>(Z_Malloc(MAX_MSGLEN, TAG_TEMP_WORKSPACE, qfalse));
+		if (!string)
+		{
+			Com_Printf("^1NET_OutOfBandPrint: Failed to allocate string buffer\n");
+			return;
+		}
+	}
+
+	va_list argptr;
+
+	/* Set the header */
 	string[0] = static_cast<char>(0xff);
 	string[1] = static_cast<char>(0xff);
 	string[2] = static_cast<char>(0xff);
 	string[3] = static_cast<char>(0xff);
 
+	/* Format the message */
 	va_start(argptr, format);
-	Q_vsnprintf(string + 4, sizeof(string) - 4, format, argptr);
+	Q_vsnprintf(string + 4, MAX_MSGLEN - 4, format, argptr);
 	va_end(argptr);
 
-	// send the datagram
+	/* Send the datagram */
 	NET_SendPacket(sock, strlen(string), string, adr);
 }
 

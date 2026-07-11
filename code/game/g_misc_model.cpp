@@ -42,28 +42,53 @@ extern cvar_t* g_spskill;
 // Helper functions
 //
 //------------------------------------------------------------
+/*
+===========================
+SetMiscModelModels
+- Sets main, damaged, and chunk model indices for misc_model entities.
+- Fixed MSVC C6053 by ensuring chunkModel is always null-terminated.
+===========================
+*/
 static void SetMiscModelModels(const char* modelNameString, gentity_t* ent, const qboolean damage_model)
 {
-	//Main model
+	/* Main model */
 	ent->s.modelindex = G_ModelIndex(modelNameString);
 
 	if (damage_model)
 	{
-		char chunkModel[MAX_QPATH];
-		char damageModel[MAX_QPATH];
-		const int len = strlen(modelNameString) - 4; // extract the extension
+		char chunkModel[MAX_QPATH]{};
+		char damageModel[MAX_QPATH]{};
 
-		//Dead/damaged model
-		strncpy(damageModel, modelNameString, len);
-		damageModel[len] = 0;
-		strncpy(chunkModel, damageModel, sizeof chunkModel);
-		strcat(damageModel, "_d1.md3");
+		/* Extract base name (strip extension) */
+		const int len = strlen(modelNameString) - 4; /* assumes ".md3" */
+
+		/* Dead/damaged model */
+		if (len < 0 || len >= MAX_QPATH)
+		{
+			/* Safety fallback */
+			damageModel[0] = '\0';
+			chunkModel[0] = '\0';
+		}
+		else
+		{
+			/* Copy base name safely */
+			memcpy(damageModel, modelNameString, len);
+			damageModel[len] = '\0';
+
+			/* Copy into chunkModel safely */
+			memcpy(chunkModel, damageModel, len);
+			chunkModel[len] = '\0';
+		}
+
+		/* Append damaged suffix */
+		Q_strcat(damageModel, sizeof(damageModel), "_d1.md3");
 		ent->s.modelindex2 = G_ModelIndex(damageModel);
 
-		ent->spawnflags |= 4; // deadsolid
+		/* Mark entity as deadsolid */
+		ent->spawnflags |= 4;
 
-		//Chunk model
-		strcat(chunkModel, "_c1.md3");
+		/* Append chunk suffix */
+		Q_strcat(chunkModel, sizeof(chunkModel), "_c1.md3");
 		ent->s.modelindex3 = G_ModelIndex(chunkModel);
 	}
 }

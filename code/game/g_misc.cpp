@@ -399,30 +399,52 @@ void SP_misc_model(gentity_t* ent)
 loaded as a model in the renderer - does not take up precious bsp space!
 */
 extern void CG_CreateMiscEntFromGent(const gentity_t* ent, const vec3_t scale, float zOff); //cg_main.cpp
+/*
+===========================
+SP_misc_model_static
+- Spawns a static misc_model entity.
+- Fixed MSVC C6031 by checking sscanf return value.
+===========================
+*/
 void SP_misc_model_static(gentity_t* ent)
 {
 	char* value;
 	float temp;
 	float zOff;
-	vec3_t scale{};
+	vec3_t scale{ 1.0f, 1.0f, 1.0f };   /* default safe scale */
 
+	/* Read modelscale_vec */
 	G_SpawnString("modelscale_vec", "1 1 1", &value);
-	sscanf(value, "%f %f %f", &scale[0], &scale[1], &scale[2]);
 
+	/* ⭐ FIX: check sscanf return value */
+	const int parsed = sscanf(value, "%f %f %f", &scale[0], &scale[1], &scale[2]);
+	if (parsed != 3)
+	{
+		/* fallback to uniform scale */
+		scale[0] = scale[1] = scale[2] = 1.0f;
+	}
+
+	/* Read modelscale (uniform override) */
 	G_SpawnFloat("modelscale", "0", &temp);
 	if (temp != 0.0f)
 	{
 		scale[0] = scale[1] = scale[2] = temp;
 	}
 
+	/* Read zoffset */
 	G_SpawnFloat("zoffset", "0", &zOff);
 
 	if (!ent->model)
 	{
-		Com_Error(ERR_DROP, "misc_model_static at %s with out a MODEL!\n", vtos(ent->s.origin));
+		Com_Error(ERR_DROP,
+			"misc_model_static at %s with out a MODEL!\n",
+			vtos(ent->s.origin));
 	}
-	//we can be horrible and cheat since this is SP!
+
+	/* SP-only cheat: create client-side misc entity */
 	CG_CreateMiscEntFromGent(ent, scale, zOff);
+
+	/* Remove server entity */
 	G_FreeEntity(ent);
 }
 

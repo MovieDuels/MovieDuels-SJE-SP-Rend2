@@ -331,6 +331,8 @@ cvar_t* g_fixJOItems;
 cvar_t* g_npc_is_smart;
 cvar_t* g_npc_is_smart_range;
 
+cvar_t* g_jkoeffects;
+
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
@@ -948,6 +950,8 @@ static void G_InitCvars()
 
 	g_npc_is_smart = gi.cvar("g_npc_is_smart", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
 	g_npc_is_smart_range = gi.cvar("g_npc_is_smart_range", "3500", CVAR_ARCHIVE);
+
+	g_jkoeffects = gi.cvar("cg_outcastpusheffect", "1", CVAR_ARCHIVE);
 }
 
 /*
@@ -1554,16 +1558,28 @@ static void G_CheckEndLevelTimers(gentity_t* ent)
 }
 
 //rww - RAGDOLL_BEGIN
-class CGameRagDollUpdateParams : public CRagDollUpdateParams
+class CGameRagDollUpdateParams final : public CRagDollUpdateParams
 {
+public:
+	CGameRagDollUpdateParams()
+	{
+		// Initialize effector accumulation vector
+		effectorTotal[0] = 0.0f;
+		effectorTotal[1] = 0.0f;
+		effectorTotal[2] = 0.0f;
+
+		// No effector data yet
+		hasEffectorData = qfalse;
+	}
+
 	void EffectorCollision(const SRagDollEffectorCollision& data) override
 	{
 		vec3_t effectorPosDif;
 
 		if (data.useTracePlane)
 		{
-			constexpr float magic_factor42 = 64.0f;
-			VectorScale(data.tr.plane.normal, magic_factor42, effectorPosDif);
+			constexpr float magicFactor42 = 64.0f;
+			VectorScale(data.tr.plane.normal, magicFactor42, effectorPosDif);
 		}
 		else
 		{
@@ -1593,19 +1609,16 @@ class CGameRagDollUpdateParams : public CRagDollUpdateParams
 	}
 
 	void Collision() override
-		// we had a collision, please stop animating and (sometime soon) call SetRagDoll RP_DEATH_COLLISION
 	{
+		// collision occurred; ragdoll system will handle RP_DEATH_COLLISION soon
 	}
 
 #ifdef _DEBUG
 	void DebugLine(vec3_t p1, vec3_t p2, const int color, const bool bbox) override
 	{
-		// SP cannot draw polygon debug surfaces.
-		// Only draw simple test lines.
 		if (!bbox)
 		{
-			// lifetime = 50ms, depthTest = 1
-			CG_TestLine(p1, p2, 50, color, qtrue);
+			CG_TestLine(p1, p2, 50, color, 1);
 		}
 	}
 #endif

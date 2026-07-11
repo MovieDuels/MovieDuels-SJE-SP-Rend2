@@ -310,7 +310,7 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 				}
 				if (ent->client->NPC_class == CLASS_DROIDEKA)
 				{
-					ent->client->ps.stats[STAT_WEAPONS] = 1 << WP_DROIDEKA;
+					ent->client->ps.weapon = WP_DROIDEKA;
 
 					ent->client->ps.inventory[INV_BARRIER] = 1;
 					//Remove these if he has them when changing model to decca

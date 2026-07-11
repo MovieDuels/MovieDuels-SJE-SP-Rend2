@@ -2307,12 +2307,12 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 	if (otherValid && other->client && other->takedamage)
 	{
 		G_AddEvent(ent, EV_MISSILE_HIT, DirToByte(normal));
-		ent->s.otherentity_num = other->s.number;
+		ent->s.otherentityNum = other->s.number;
 	}
 	else
 	{
 		G_AddEvent(ent, EV_MISSILE_MISS, DirToByte(normal));
-		ent->s.otherentity_num = otherValid ? other->s.number : ENTITYNUM_NONE;
+		ent->s.otherentityNum = otherValid ? other->s.number : ENTITYNUM_NONE;
 	}
 
 	VectorCopy(normal, ent->pos1);
@@ -2621,7 +2621,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		if (other->client || other->s.eType == ET_MOVER)
 		{
 			G_PlayEffect("stunBaton/flesh_impact", ent->currentOrigin);
-			nent->s.otherentity_num2 = other->s.number;
+			nent->s.otherentityNum2 = other->s.number;
 			ent->enemy = other;
 
 			if (other->takedamage && other->client)
@@ -2699,7 +2699,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 		if (other->client || other->s.eType == ET_MOVER)
 		{
 			G_PlayEffect("blaster/flesh_impact", ent->currentOrigin);
-			nent->s.otherentity_num2 = other->s.number;
+			nent->s.otherentityNum2 = other->s.number;
 			ent->enemy = other;
 
 			if (other->takedamage && other->client)
@@ -2708,7 +2708,7 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 
 				GEntity_PainFunc(other, ent, ent, other->currentOrigin, 0, MOD_IMPACT);
 			}
-			nent->s.otherentity_num2 = other->s.number;
+			nent->s.otherentityNum2 = other->s.number;
 
 			ent->enemy = other;
 			v[0] = other->currentOrigin[0] + (other->mins[0] + other->maxs[0]) * 0.5f;
@@ -4882,7 +4882,7 @@ gentity_t* fire_stun(gentity_t* self, vec3_t start, vec3_t dir)
 	stun->target_ent = nullptr;
 	stun->s.pos.trType = TR_LINEAR;
 	stun->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;
-	stun->s.otherentity_num = self->s.number;
+	stun->s.otherentityNum = self->s.number;
 	VectorCopy(start, stun->s.pos.trBase);
 	VectorScale(dir, 2000, stun->s.pos.trDelta);
 	SnapVector(stun->s.pos.trDelta);
@@ -4916,7 +4916,7 @@ gentity_t* fire_grapple(gentity_t* self, vec3_t start, vec3_t dir)
 	hook->target_ent = nullptr;
 	hook->s.pos.trType = TR_LINEAR;
 	hook->s.pos.trTime = level.time - HOOK_PRESTEP_TIME;
-	hook->s.otherentity_num = self->s.number;
+	hook->s.otherentityNum = self->s.number;
 	VectorCopy(start, hook->s.pos.trBase);
 	VectorScale(dir, 1200, hook->s.pos.trDelta);
 	SnapVector(hook->s.pos.trDelta);

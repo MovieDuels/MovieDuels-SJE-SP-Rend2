@@ -320,6 +320,22 @@ qboolean CG_UnsafeEventType(const int event_type)
 	}
 }
 
+//set the local timing bar
+extern int cg_genericTimerBar;
+extern int cg_genericTimerDur;
+extern vec4_t cg_genericTimerColor;
+
+static void CG_LocalTimingBar(const int start_time, const int duration)
+{
+	cg_genericTimerBar = start_time + duration;
+	cg_genericTimerDur = duration;
+
+	cg_genericTimerColor[0] = 1.0f;
+	cg_genericTimerColor[1] = 1.0f;
+	cg_genericTimerColor[2] = 0.0f;
+	cg_genericTimerColor[3] = 1.0f;
+}
+
 /*
 ==============
 CG_EntityEvent
@@ -753,7 +769,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 
 	case EV_LIGHTNING_STRIKE:
 		DEBUGNAME("EV_LIGHTNING_STRIKE");
-		CG_StrikeBolt(cent, cg_entities[cent->currentState.otherentity_num].gent->client->renderInfo.handLPoint);
+		CG_StrikeBolt(cent, cg_entities[cent->currentState.otherentityNum].gent->client->renderInfo.handLPoint);
 		break;
 
 	case EV_JEDISPAWN:
@@ -790,13 +806,13 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		DEBUGNAME("EV_KOTHOS_BEAM");
 		if (Q_irand(0, 1))
 		{
-			FX_KothosBeam(cg_entities[cent->currentState.otherentity_num].gent->client->renderInfo.handRPoint,
-				cg_entities[cent->currentState.otherentity_num2].lerpOrigin);
+			FX_KothosBeam(cg_entities[cent->currentState.otherentityNum].gent->client->renderInfo.handRPoint,
+				cg_entities[cent->currentState.otherentityNum2].lerpOrigin);
 		}
 		else
 		{
-			FX_KothosBeam(cg_entities[cent->currentState.otherentity_num].gent->client->renderInfo.handLPoint,
-				cg_entities[cent->currentState.otherentity_num2].lerpOrigin);
+			FX_KothosBeam(cg_entities[cent->currentState.otherentityNum].gent->client->renderInfo.handLPoint,
+				cg_entities[cent->currentState.otherentityNum2].lerpOrigin);
 		}
 		break;
 		//=================================================================
@@ -973,7 +989,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 	case EV_SHIELD_HIT:
 		DEBUGNAME("EV_SHIELD_HIT");
 		ByteToDir(es->eventParm, dir);
-		CG_PlayerShieldHit(es->otherentity_num, dir, es->time2);
+		CG_PlayerShieldHit(es->otherentityNum, dir, es->time2);
 		break;
 
 	case EV_PAIN:
@@ -1054,9 +1070,9 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 				CrossProduct(axis[0], axis[1], axis[2]);
 
 				// the entNum the effect may be attached to
-				if (es->otherentity_num)
+				if (es->otherentityNum)
 				{
-					theFxScheduler.PlayEffect(s, cent->lerpOrigin, axis, -1, es->otherentity_num, portal_ent);
+					theFxScheduler.PlayEffect(s, cent->lerpOrigin, axis, -1, es->otherentityNum, portal_ent);
 				}
 				else
 				{
@@ -1072,7 +1088,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		DEBUGNAME("EV_PLAY_MUZZLE_EFFECT");
 		s = CG_ConfigString(CS_EFFECTS + es->eventParm);
 
-		theFxScheduler.PlayEffect(s, es->otherentity_num);
+		theFxScheduler.PlayEffect(s, es->otherentityNum);
 		break;
 
 	case EV_STOP_EFFECT:
@@ -1369,6 +1385,20 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 	case EV_DEBUG_LINE:
 		DEBUGNAME("EV_DEBUG_LINE");
 		CG_TestLine(position, es->origin2, es->time, static_cast<unsigned>(es->time2), es->weapon);
+		break;
+
+	case EV_LOCALTIMER:
+		DEBUGNAME("EV_LOCALTIMER");
+		// Prefer the engine's mapped owner pointer if present
+		if (cent->gent && cent->gent->owner && cent->gent->owner->s.number == cg.snap->ps.clientNum)
+		{
+			CG_LocalTimingBar(es->time, es->time2);
+		}
+		// Fallback: the server may have set otherentityNum
+		else if (es->otherentityNum == cg.snap->ps.clientNum)
+		{
+			CG_LocalTimingBar(es->time, es->time2);
+		}
 		break;
 
 	default:

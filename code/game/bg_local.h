@@ -29,27 +29,33 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 constexpr auto TIMER_LAND = 130;
 constexpr auto TIMER_GESTURE = 34 * 66 + 50;
 
-constexpr auto OVERCLIP = 1.001F;
+constexpr auto OVERCLIP = 1.001f;
 
 // all of the locals will be zeroed before each
 // pmove, just to make damn sure we don't have
 // any differences when running on client or server
-using pml_t = struct pml_t
+using pml_t = struct
 {
-	vec3_t forward, right, up;
-	float frametime;
+    // movement orientation
+    vec3_t forward = { 0.0f, 0.0f, 0.0f };
+    vec3_t right = { 0.0f, 0.0f, 0.0f };
+    vec3_t up = { 0.0f, 0.0f, 0.0f };
 
-	int msec;
+    // frame timing
+    float frametime = 0.0f;
+    int   msec = 0;
 
-	qboolean walking;
-	qboolean groundPlane;
-	trace_t groundTrace;
+    // movement state
+    qboolean walking = qfalse;
+    qboolean groundPlane = qfalse;
+    trace_t  groundTrace = {};
 
-	float impactSpeed;
+    float impactSpeed = 0.0f;
 
-	vec3_t previous_origin;
-	vec3_t previous_velocity;
-	int previous_waterlevel;
+    // previous frame state (explicitly initialized to avoid C26495)
+    vec3_t previous_origin = { 0.0f, 0.0f, 0.0f };
+    vec3_t previous_velocity = { 0.0f, 0.0f, 0.0f };
+    int    previous_waterlevel = 0;
 };
 
 extern pmove_t* pm;

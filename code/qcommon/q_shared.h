@@ -2979,8 +2979,8 @@ using entityState_t = struct entityState_s
 	vec3_t angles;
 	vec3_t angles2;
 
-	int otherentity_num; // shotgun sources, etc
-	int otherentity_num2;
+	int otherentityNum; // shotgun sources, etc
+	int otherentityNum2;
 
 	int groundEntityNum; // -1 = in air
 
@@ -3137,8 +3137,8 @@ using entityState_t = struct entityState_s
 		saved_game.write<float>(origin2);
 		saved_game.write<float>(angles);
 		saved_game.write<float>(angles2);
-		saved_game.write<int32_t>(otherentity_num);
-		saved_game.write<int32_t>(otherentity_num2);
+		saved_game.write<int32_t>(otherentityNum);
+		saved_game.write<int32_t>(otherentityNum2);
 		saved_game.write<int32_t>(groundEntityNum);
 		saved_game.write<int32_t>(constantLight);
 		saved_game.write<int32_t>(loopSound);
@@ -3261,8 +3261,8 @@ using entityState_t = struct entityState_s
 		saved_game.read<float>(origin2);
 		saved_game.read<float>(angles);
 		saved_game.read<float>(angles2);
-		saved_game.read<int32_t>(otherentity_num);
-		saved_game.read<int32_t>(otherentity_num2);
+		saved_game.read<int32_t>(otherentityNum);
+		saved_game.read<int32_t>(otherentityNum2);
 		saved_game.read<int32_t>(groundEntityNum);
 		saved_game.read<int32_t>(constantLight);
 		saved_game.read<int32_t>(loopSound);

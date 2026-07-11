@@ -52,7 +52,7 @@ enum EWeaponPose
 
 extern stringID_table_t VehicleTable[VH_NUM_VEHICLES + 1];
 
-#define NO_PILOT_DIE_TIME 10000
+constexpr auto NO_PILOT_DIE_TIME = 10000;
 
 //===========================================================================================================
 //START VEHICLE WEAPONS
@@ -638,67 +638,67 @@ struct Vehicle_t
 {
 	// The entity who pilots/drives this vehicle.
 	// NOTE: This is redundant (since m_pParentEntity->owner _should_ be the pilot). This makes things clearer though.
-	gentity_t* m_pPilot;
+	gentity_t* m_pPilot = nullptr;
 
-	int m_iPilotTime; //if spawnflag to die without pilot and this < level.time then die.
-	qboolean m_bHasHadPilot; //qtrue once the vehicle gets its first pilot
+	int m_iPilotTime = 0; //if spawnflag to die without pilot and this < level.time then die.
+	qboolean m_bHasHadPilot = qfalse; //qtrue once the vehicle gets its first pilot
 
 	//the droid unit NPC for this vehicle, if any
-	gentity_t* m_pDroidUnit;
+	gentity_t* m_pDroidUnit = nullptr;
 
 	// The entity from which this NPC comes from.
-	gentity_t* m_pParentEntity;
+	gentity_t* m_pParentEntity = nullptr;
 
 	// If not zero, how long to wait before we can do anything with the vehicle (we're getting on still).
 	// -1 = board from left, -2 = board from right, -3 = jump/quick board.  -4 & -5 = throw off existing pilot
-	int m_iBoarding;
+	int m_iBoarding = 0;
 
 	// Used to check if we've just started the boarding process
-	bool m_bWasBoarding;
+	bool m_bWasBoarding = false;
 
 	// The speed the vehicle maintains while boarding occurs (often zero)
-	vec3_t m_vBoardingVelocity;
+	vec3_t m_vBoardingVelocity = { 0, 0, 0 };
 
 	// Time modifier (must only be used in ProcessMoveCommands() and ProcessOrientCommands() and is updated in Update()).
-	float m_fTimeModifier;
+	float m_fTimeModifier = 1.0f;
 
 	// Ghoul2 Animation info.
 	// NOTE: Since each vehicle has their own model instance, these bolts must be local to each vehicle as well.
-	int m_iLeftWingBone;
-	int m_iRightWingBone;
+	int m_iLeftWingBone = 0;
+	int m_iRightWingBone = 0;
 	//int m_iDriverTag;
-	int m_iExhaustTag[MAX_VEHICLE_EXHAUSTS];
-	int m_iMuzzleTag[MAX_VEHICLE_MUZZLES];
-	int m_iDroidUnitTag;
-	int m_iGunnerViewTag[MAX_VEHICLE_TURRETS]; //Where to put the view origin of the gunner (index)
+	int m_iExhaustTag[MAX_VEHICLE_EXHAUSTS] = { 0 };
+	int m_iMuzzleTag[MAX_VEHICLE_MUZZLES] = { 0 };
+	int m_iDroidUnitTag = 0;
+	int m_iGunnerViewTag[MAX_VEHICLE_TURRETS] = { 0 }; //Where to put the view origin of the gunner (index)
 
 	// This vehicles weapon muzzles.
-	Muzzle m_Muzzles[MAX_VEHICLE_MUZZLES];
+	Muzzle m_Muzzles[MAX_VEHICLE_MUZZLES] = {};
 
 	// The user commands structure.
-	usercmd_t m_ucmd;
+	usercmd_t m_ucmd = {};
 
 	// The direction an entity will eject from the vehicle towards.
-	int m_EjectDir;
+	int m_EjectDir = 0;
 
 	// Flags that describe the vehicles behavior.
-	unsigned long m_ulFlags;
+	unsigned long m_ulFlags = 0;
 
 	// NOTE: Vehicle Type ID, Orientation, and Armor MUST be transmitted over the net.
 
 	// Current angles of this vehicle.
-	vec3_t m_vOrientation;
+	vec3_t m_vOrientation = { 0, 0, 0 };
 
 	// How long you have strafed left or right (increments every frame that you strafe to right, decrements every frame you strafe left)
-	int m_fStrafeTime;
+	int m_fStrafeTime = 0;
 
 	// Previous angles of this vehicle.
-	vec3_t m_vPrevOrientation;
+	vec3_t m_vPrevOrientation = { 0, 0, 0 };
 
 	// When control is lost on a speeder, current angular velocity is stored here and applied until landing
-	float m_vAngularVelocity;
+	float m_vAngularVelocity = 0;
 
-	vec3_t m_vFullAngleVelocity;
+	vec3_t m_vFullAngleVelocity = { 0, 0, 0 };
 
 	// Current armor and shields of your vehicle (explodes if armor to 0).
 	int m_iArmor; //hull strength - STAT_HEALTH on NPC
@@ -714,38 +714,38 @@ struct Vehicle_t
 	// This pointer is to a valid VehicleInfo (which could be an animal, speeder, fighter, whatever). This
 	// contains the functions actually used to do things to this specific kind of vehicle as well as shared
 	// information (max speed, type, etc...).
-	vehicleInfo_t* m_pVehicleInfo;
+	vehicleInfo_t* m_pVehicleInfo = nullptr;
 
 	// This trace tells us if we're within landing height.
 	trace_t m_LandTrace;
 
 	//bitflag of surfaces that have broken off
-	int m_iRemovedSurfaces;
+	int m_iRemovedSurfaces = 0;
 
 	// the last time this vehicle fired a turbo burst
-	int m_iTurboTime;
+	int m_iTurboTime = 0;
 
 	//how long it should drop like a rock for after freed from SUSPEND
-	int m_iDropTime;
+	int m_iDropTime = 0;
 
-	int m_iSoundDebounceTimer;
+	int m_iSoundDebounceTimer = 0;
 
 	//last time we incremented the shields
-	int lastShieldInc;
+	int lastShieldInc = 0;
 
 	//so we don't hold it down and toggle it back and forth
-	qboolean linkWeaponToggleHeld;
+	qboolean linkWeaponToggleHeld = qfalse;
 
 	//info about our weapons (linked, ammo, etc.)
-	vehWeaponStatus_t weaponStatus[MAX_VEHICLE_WEAPONS];
-	vehTurretStatus_t turretStatus[MAX_VEHICLE_TURRETS];
+	vehWeaponStatus_t weaponStatus[MAX_VEHICLE_WEAPONS] = {};
+	vehTurretStatus_t turretStatus[MAX_VEHICLE_TURRETS] = {};
 
 	//the guy who was previously the pilot
 	gentity_t* m_pOldPilot;
 
 	// don't need these in mp
-	int m_safeJumpMountTime;
-	float m_safeJumpMountRightDot;
+	int m_safeJumpMountTime = 0;
+	float m_safeJumpMountRightDot = 0;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const

@@ -58,7 +58,7 @@ void CG_InitLocalEntities()
 CG_FreeLocalEntity
 ==================
 */
-void CG_FreeLocalEntity(localEntity_t* le)
+static void CG_FreeLocalEntity(localEntity_t* le)
 {
 	if (!le->prev)
 	{
@@ -83,24 +83,49 @@ Will allways succeed, even if it requires freeing an old active entity
 */
 localEntity_t* CG_AllocLocalEntity()
 {
-	if (!cg_freeLocalEntities)
+	// SAFETY: ensure free list is valid before use
+	if (cg_freeLocalEntities == NULL)
 	{
 		// no free entities, so free the one at the end of the chain
-		// remove the oldest active entity
+		if (cg_activeLocalEntities.prev == NULL)
+		{
+			Com_Printf(S_COLOR_YELLOW "CG_AllocLocalEntity: no free LEs and active list has no prev\n");
+			return NULL;
+		}
+
 		CG_FreeLocalEntity(cg_activeLocalEntities.prev);
+
+		// after freeing, we still expect cg_freeLocalEntities to be non-NULL
+		if (cg_freeLocalEntities == NULL)
+		{
+			Com_Printf(S_COLOR_YELLOW "CG_AllocLocalEntity: cg_freeLocalEntities still NULL after CG_FreeLocalEntity\n");
+			return NULL;
+		}
 	}
 
 	localEntity_t* le = cg_freeLocalEntities;
 	cg_freeLocalEntities = cg_freeLocalEntities->next;
 
-	memset(le, 0, sizeof * le);
+	if (le == NULL)
+	{
+		Com_Printf(S_COLOR_YELLOW "CG_AllocLocalEntity: le is NULL after taking from free list\n");
+		return NULL;
+	}
+
+	memset(le, 0, sizeof(*le));
 
 	// link into the active list
 	le->next = cg_activeLocalEntities.next;
 	le->prev = &cg_activeLocalEntities;
-	cg_activeLocalEntities.next->prev = le;
+
+	if (cg_activeLocalEntities.next != NULL)
+	{
+		cg_activeLocalEntities.next->prev = le;
+	}
+
 	cg_activeLocalEntities.next = le;
 	le->ownerGentNum = -1;
+
 	return le;
 }
 
@@ -120,7 +145,7 @@ or generates more localentities along a trail.
 CG_FragmentBounceSound
 ================
 */
-void CG_FragmentBounceSound(localEntity_t* le, const trace_t* trace)
+static void CG_FragmentBounceSound(localEntity_t* le, const trace_t* trace)
 {
 	// half the fragments will make a bounce sounds
 	if (rand() & 1)
@@ -162,7 +187,7 @@ void CG_FragmentBounceSound(localEntity_t* le, const trace_t* trace)
 CG_ReflectVelocity
 ================
 */
-void CG_ReflectVelocity(localEntity_t* le, const trace_t* trace)
+static void CG_ReflectVelocity(localEntity_t* le, const trace_t* trace)
 {
 	vec3_t velocity;
 
@@ -191,7 +216,7 @@ void CG_ReflectVelocity(localEntity_t* le, const trace_t* trace)
 CG_AddFragment
 ================
 */
-void CG_AddFragment(localEntity_t* le)
+static void CG_AddFragment(localEntity_t* le)
 {
 	vec3_t newOrigin;
 	trace_t trace;
@@ -282,7 +307,7 @@ These only do simple scaling or modulation before passing to the renderer
 /*
 ** CG_AddTeleporterEffect
 */
-void CG_AddTeleporterEffect(localEntity_t* le)
+static void CG_AddTeleporterEffect(localEntity_t* le)
 {
 	refEntity_t* re = &le->refEntity;
 
@@ -299,7 +324,7 @@ void CG_AddTeleporterEffect(localEntity_t* le)
 /*
 ** CG_AddFadeRGB
 */
-void CG_AddFadeRGB(localEntity_t* le)
+static void CG_AddFadeRGB(localEntity_t* le)
 {
 	refEntity_t* re = &le->refEntity;
 
@@ -523,7 +548,7 @@ CG_AddLine
 for beams and the like.
 ===================
 */
-void CG_AddLine(localEntity_t* le)
+static void CG_AddLine(localEntity_t* le)
 {
 	refEntity_t* re = &le->refEntity;
 

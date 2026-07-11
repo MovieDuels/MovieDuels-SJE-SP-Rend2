@@ -507,14 +507,37 @@ static void Cvar_QSortByName(cvar_t** a, const int n)
 	if (n > i) Cvar_QSortByName(a + i, n - i);
 }
 
-static void Cvar_Sort()
+/*
+===========================
+Cvar_Sort
+- Sorts all cvars alphabetically.
+- Fixed MSVC C6262 by moving large list[] buffer off the stack.
+===========================
+*/
+static void Cvar_Sort(void)
 {
-	cvar_t* list[MAX_CVARS]{}, * var;
-	int count;
+	/* Large pointer array moved off stack to avoid C6262 */
+	static cvar_t** list = nullptr;
 
-	for (count = 0, var = cvar_vars; var; var = var->next)
+	if (list == nullptr)
 	{
-		if (var->name)
+		list = static_cast<cvar_t**>(
+			Z_Malloc(MAX_CVARS * sizeof(cvar_t*), TAG_TEMP_WORKSPACE, qfalse));
+
+		if (list == nullptr)
+		{
+			Com_Printf("^1Cvar_Sort: Failed to allocate list buffer\n");
+			return;
+		}
+	}
+
+	cvar_t* var = nullptr;
+	int count = 0;
+
+	/* Collect all cvars into list[] */
+	for (var = cvar_vars; var; var = var->next)
+	{
+		if (var->name != nullptr)
 		{
 			list[count++] = var;
 		}
@@ -526,21 +549,26 @@ static void Cvar_Sort()
 
 	if (count < 2)
 	{
-		return; // nothing to sort
+		return; /* nothing to sort */
 	}
 
+	/* Sort alphabetically */
 	Cvar_QSortByName(&list[0], count - 1);
 
+	/* Relink cvars in sorted order */
 	cvar_vars = nullptr;
 
-	// relink cvars
 	for (int i = 0; i < count; i++)
 	{
 		var = list[i];
-		// link the variable in
+
 		var->next = cvar_vars;
-		if (cvar_vars)
+
+		if (cvar_vars != nullptr)
+		{
 			cvar_vars->prev = var;
+		}
+
 		var->prev = nullptr;
 		cvar_vars = var;
 	}

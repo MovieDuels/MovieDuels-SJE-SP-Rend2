@@ -1264,52 +1264,71 @@ All of the parts of a door have been spawned, so create
 a trigger that encloses all of them
 ======================
 */
+// Spawns a door trigger sized to the combined bounds of all team-linked movers
 void Think_SpawnNewDoorTrigger(gentity_t* ent)
 {
-	gentity_t* other;
+	// SAFETY FIX: ent may be NULL in edge cases (modded maps, script errors)
+	if (ent == NULL)
+	{
+		Com_Printf(S_COLOR_YELLOW "Think_SpawnNewDoorTrigger: ent was NULL, aborting\n");
+		return;
+	}
+
+	gentity_t* other = NULL;
 	vec3_t mins, maxs;
 
-	// set all of the slaves as shootable
-	if (ent->takedamage)
+	// Mark all slaves as shootable
+	if (ent->takedamage == qtrue)
 	{
-		for (other = ent; other; other = other->teamchain)
+		for (other = ent; other != NULL; other = other->teamchain)
 		{
 			other->takedamage = qtrue;
 		}
 	}
 
-	// find the bounds of everything on the team
+	// Start with the master mover's bounds
 	VectorCopy(ent->absmin, mins);
 	VectorCopy(ent->absmax, maxs);
 
-	for (other = ent->teamchain; other; other = other->teamchain)
+	// Expand bounds to include all team-linked movers
+	for (other = ent->teamchain; other != NULL; other = other->teamchain)
 	{
 		AddPointToBounds(other->absmin, mins, maxs);
 		AddPointToBounds(other->absmax, mins, maxs);
 	}
 
-	// find the thinnest axis, which will be the one we expand
+	// Find thinnest axis and expand it to create a usable trigger volume
 	int best = 0;
 	for (int i = 1; i < 3; i++)
 	{
-		if (maxs[i] - mins[i] < maxs[best] - mins[best])
+		if ((maxs[i] - mins[i]) < (maxs[best] - mins[best]))
 		{
 			best = i;
 		}
 	}
-	maxs[best] += 120;
-	mins[best] -= 120;
 
-	// create a trigger with this size
+	maxs[best] += 120.0f;
+	mins[best] -= 120.0f;
+
+	// Create the trigger entity
 	other = G_Spawn();
+	if (other == NULL)
+	{
+		Com_Printf(S_COLOR_RED "Think_SpawnNewDoorTrigger: G_Spawn failed\n");
+		return;
+	}
+
 	VectorCopy(mins, other->mins);
 	VectorCopy(maxs, other->maxs);
+
 	other->owner = ent;
 	other->contents = CONTENTS_TRIGGER;
 	other->e_TouchFunc = touchF_Touch_DoorTrigger;
-	gi.linkentity(other);
 	other->classname = "trigger_door";
 
+	gi.linkentity(other);
+
+	// Sync mover team state
 	MatchTeam(ent, ent->moverState, level.time);
 }
 

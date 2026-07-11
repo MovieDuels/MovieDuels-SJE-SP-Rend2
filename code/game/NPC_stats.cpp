@@ -1153,17 +1153,17 @@ static qboolean G_ParseAnimationFile(const int gla_index, const char* skeletonNa
 			{
 				for (int x = 4; x < LS_MOVE_MAX; x++)
 				{
-					if (saber_moveData[x].animToUse + 77 * 4 == anim_num)
+					if (saberMoveData[x].animToUse + 77 * 4 == anim_num)
 					{
 						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.2f);
 						break;
 					}
-					if (saber_moveData[x].animToUse + 77 * 5 == anim_num)
+					if (saberMoveData[x].animToUse + 77 * 5 == anim_num)
 					{
 						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
 						break;
 					}
-					if (saber_moveData[x].animToUse + 77 * 6 == anim_num)
+					if (saberMoveData[x].animToUse + 77 * 6 == anim_num)
 					{
 						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
 						break;
@@ -1189,17 +1189,17 @@ static qboolean G_ParseAnimationFile(const int gla_index, const char* skeletonNa
 			{
 				for (int x = 4; x < LS_MOVE_MAX; x++)
 				{
-					if (saber_moveData[x].animToUse + 77 * 4 == anim_num)
+					if (saberMoveData[x].animToUse + 77 * 4 == anim_num)
 					{
 						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.2f);
 						break;
 					}
-					if (saber_moveData[x].animToUse + 77 * 5 == anim_num)
+					if (saberMoveData[x].animToUse + 77 * 5 == anim_num)
 					{
 						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
 						break;
 					}
-					if (saber_moveData[x].animToUse + 77 * 6 == anim_num)
+					if (saberMoveData[x].animToUse + 77 * 6 == anim_num)
 					{
 						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
 						break;

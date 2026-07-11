@@ -90,6 +90,8 @@ clientStatic_t cls;
 refexport_t re;
 static void* rendererLib = nullptr;
 
+extern void CL_FreeServerCommands();
+
 //RAZFIXME: BAD BAD, maybe? had to move it out of ghoul2_shared.h -> CGhoul2Info_v at the least..
 IGhoul2InfoArray& _TheGhoul2InfoArray()
 {
@@ -288,8 +290,6 @@ void CL_Disconnect()
 	CL_ClearState();
 
 	CL_FreeReliableCommands();
-
-	extern void CL_FreeServerCommands();
 	CL_FreeServerCommands();
 
 	memset(&clc, 0, sizeof(clc));

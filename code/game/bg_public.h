@@ -682,6 +682,8 @@ using entity_event_t = enum
 	EV_LIGHTNING_STRIKE,
 
 	EV_JEDISPAWN,
+
+	EV_LOCALTIMER,
 };
 
 class animation_t

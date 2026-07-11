@@ -112,12 +112,12 @@ extern qboolean PM_InAirKickingAnim(int anim);
 extern qboolean PM_KickingAnim(int anim);
 extern qboolean PM_StabDownAnim(int anim);
 extern qboolean PM_SuperBreakLoseAnim(int anim);
-extern qboolean PM_SaberInKata(saber_moveName_t saberMove);
+extern qboolean PM_SaberInKata(saberMoveName_t saberMove);
 extern qboolean PM_InRollIgnoreTimer(const playerState_t* ps);
 extern qboolean PM_PainAnim(int anim);
 extern qboolean G_CanKickEntity(const gentity_t* self, const gentity_t* target);
-extern saber_moveName_t G_PickAutoKick(const gentity_t* self, const gentity_t* enemy, qboolean store_move);
-extern saber_moveName_t g_pick_auto_multi_kick(gentity_t* self, qboolean allow_singles, qboolean store_move);
+extern saberMoveName_t G_PickAutoKick(const gentity_t* self, const gentity_t* enemy, qboolean store_move);
+extern saberMoveName_t g_pick_auto_multi_kick(gentity_t* self, qboolean allow_singles, qboolean store_move);
 extern qboolean NAV_DirSafe(const gentity_t* self, vec3_t dir, float dist);
 extern qboolean NAV_MoveDirSafe(const gentity_t* self, const usercmd_t* cmd, float distScale = 1.0f);
 extern float NPC_EnemyRangeFromBolt(int bolt_index);
@@ -2585,7 +2585,7 @@ static void jedi_combat_distance(const int enemy_dist)
 		!PM_SaberInBashedAnim(ps->torsoAnim) &&
 		!PM_InKnockDown(&NPC->client->ps) &&
 		InFront(enemy->currentOrigin, NPC->currentOrigin, ps->viewangles, 0.7f) &&
-		(PM_SaberInKata((saber_moveName_t)enemy->client->ps.saberMove) ||
+		(PM_SaberInKata((saberMoveName_t)enemy->client->ps.saberMove) ||
 			(ps->weapon == WP_SABER && (ps->saberInFlight || ps->saberEntityState == SES_RETURNING))))
 	{
 		// Reset dash count when cooldown expires
@@ -4858,7 +4858,7 @@ static qboolean jedi_in_no_ai_anim(const gentity_t* self)
 		|| PM_StabDownAnim(NPC->client->ps.legsAnim)
 		|| PM_InAirKickingAnim(NPC->client->ps.legsAnim)
 		|| PM_InRollIgnoreTimer(&NPC->client->ps)
-		|| PM_SaberInKata(static_cast<saber_moveName_t>(NPC->client->ps.saberMove))
+		|| PM_SaberInKata(static_cast<saberMoveName_t>(NPC->client->ps.saberMove))
 		|| PM_SuperBreakWinAnim(NPC->client->ps.torsoAnim)
 		|| PM_SuperBreakLoseAnim(NPC->client->ps.torsoAnim))
 	{
@@ -10328,7 +10328,7 @@ static inline void JediPressAltAttack(void)
 typedef struct saberCombo_s
 {
 	qboolean          valid;
-	saber_moveName_t  moves[4];
+	saberMoveName_t  moves[4];
 	int               length;
 	qboolean          useForcePushFinisher;
 } saberCombo_t;
@@ -10338,7 +10338,7 @@ typedef struct saberCombo_s
 // =====================
 
 // Fast style (agile, mostly directional, occasional acrobatics)
-static const saber_moveName_t s_fastSignatureCombos[][4] =
+static const saberMoveName_t s_fastSignatureCombos[][4] =
 {
 	// Pure directional, quick exchanges
 	{ LS_A_L2R,   LS_A_R2L,   LS_A_T2B,          LS_NONE },
@@ -10354,7 +10354,7 @@ static const saber_moveName_t s_fastSignatureCombos[][4] =
 };
 
 // Medium style (balanced, classic Jedi duelist)
-static const saber_moveName_t s_mediumSignatureCombos[][4] =
+static const saberMoveName_t s_mediumSignatureCombos[][4] =
 {
 	// Core directional chains
 	{ LS_A_TL2BR, LS_A_L2R,   LS_A_TR2BL,        LS_NONE },
@@ -10370,7 +10370,7 @@ static const saber_moveName_t s_mediumSignatureCombos[][4] =
 };
 
 // Strong style (heavy, aggressive, Sith-like)
-static const saber_moveName_t s_strongSignatureCombos[][4] =
+static const saberMoveName_t s_strongSignatureCombos[][4] =
 {
 	// Heavy directional pressure
 	{ LS_A_T2B,   LS_A_BR2TL, LS_A_T2B,          LS_NONE },
@@ -10386,7 +10386,7 @@ static const saber_moveName_t s_strongSignatureCombos[][4] =
 };
 
 // Dual style (flashy, flowing, more specials but still grounded)
-static const saber_moveName_t s_dualSignatureCombos[][4] =
+static const saberMoveName_t s_dualSignatureCombos[][4] =
 {
 	// Directional dual chains
 	{ LS_A_L2R,   LS_A_R2L,   LS_A_T2B,              LS_NONE },
@@ -10401,7 +10401,7 @@ static const saber_moveName_t s_dualSignatureCombos[][4] =
 };
 
 // Staff style (wide arcs, Maul-like, a bit more special-heavy)
-static const saber_moveName_t s_staffSignatureCombos[][4] =
+static const saberMoveName_t s_staffSignatureCombos[][4] =
 {
 	// Wide directional arcs
 	{ LS_A_L2R,   LS_A_R2L,   LS_A_T2B,          LS_NONE },
@@ -10416,7 +10416,7 @@ static const saber_moveName_t s_staffSignatureCombos[][4] =
 };
 
 // Light cinematic pool (shorter, safer)
-static const saber_moveName_t s_lightComboPool[][3] =
+static const saberMoveName_t s_lightComboPool[][3] =
 {
 	{ LS_A_L2R,   LS_A_R2L,   LS_NONE },
 	{ LS_A_TL2BR, LS_A_TR2BL, LS_NONE },
@@ -10426,7 +10426,7 @@ static const saber_moveName_t s_lightComboPool[][3] =
 };
 
 // Heavy/aggressive pool (longer, riskier)
-static const saber_moveName_t s_heavyComboPool[][4] =
+static const saberMoveName_t s_heavyComboPool[][4] =
 {
 	{ LS_A_T2B,   LS_A_BR2TL, LS_A_T2B,        LS_NONE },
 	{ LS_A_R2L,   LS_A_L2R,   LS_A_T2B,        LS_NONE },
@@ -10437,7 +10437,7 @@ static const saber_moveName_t s_heavyComboPool[][4] =
 	{ LS_A_T2B,   LS_A_BR2TL, LS_A_LUNGE,      LS_NONE }
 };
 
-static const saber_moveName_t s_duelistCounterPool[][3] =
+static const saberMoveName_t s_duelistCounterPool[][3] =
 {
 	{ LS_A_R2L,   LS_A_T2B,   LS_NONE },
 	{ LS_A_L2R,   LS_A_T2B,   LS_NONE },
@@ -10801,7 +10801,7 @@ static void JediHandleCounterattacks(gentity_t* self)
 	self->client->ps.saberBlockingTime = level.time + 500;
 }
 
-static saberCombo_t JediBuildCombo(const saber_moveName_t* moves, int maxLen)
+static saberCombo_t JediBuildCombo(const saberMoveName_t* moves, int maxLen)
 {
 	saberCombo_t combo{};
 	combo.valid = qtrue;
@@ -10847,7 +10847,7 @@ static saberCombo_t JediChooseCombo(gentity_t* self)
 	// =====================
 	if (self->NPC->aiFlags & AIFLAG_HEAVYCOUNTER)
 	{
-		const saber_moveName_t* chosen =
+		const saberMoveName_t* chosen =
 			s_heavyComboPool[Q_irand(0, ARRAY_LEN(s_heavyComboPool) - 1)];
 
 		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
@@ -10859,7 +10859,7 @@ static saberCombo_t JediChooseCombo(gentity_t* self)
 
 	if (self->NPC->aiFlags & AIFLAG_RIPOSTE)
 	{
-		const saber_moveName_t* chosen =
+		const saberMoveName_t* chosen =
 			s_duelistCounterPool[Q_irand(0, ARRAY_LEN(s_duelistCounterPool) - 1)];
 
 		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
@@ -10871,7 +10871,7 @@ static saberCombo_t JediChooseCombo(gentity_t* self)
 
 	if (self->NPC->aiFlags & AIFLAG_COUNTERATTACK)
 	{
-		const saber_moveName_t* chosen =
+		const saberMoveName_t* chosen =
 			s_lightComboPool[Q_irand(0, ARRAY_LEN(s_lightComboPool) - 1)];
 
 		self->NPC->aiFlags &= ~(AIFLAG_HEAVYCOUNTER | AIFLAG_RIPOSTE |
@@ -10915,7 +10915,7 @@ static saberCombo_t JediChooseCombo(gentity_t* self)
 	// 70% chance signature combo, 30% chance pool combo
 	const qboolean useSignature = (Q_irand(0, 9) < 7) ? qtrue : qfalse;
 
-	const saber_moveName_t* chosen = NULL;
+	const saberMoveName_t* chosen = NULL;
 	int maxLen = 0;
 
 	// -------------------------
@@ -11039,7 +11039,7 @@ static void JediExecuteCombo(gentity_t* self, const saberCombo_t& combo)
 	// Execute each move in the combo
 	for (int i = 0; i < combo.length; i++)
 	{
-		saber_moveName_t move = combo.moves[i];
+		saberMoveName_t move = combo.moves[i];
 		if (move == LS_NONE)
 		{
 			break;
@@ -11968,8 +11968,8 @@ static qboolean kothos_heal_rosh()
 			//BEG HACK LINE
 			gentity_t* tent = G_TempEntity(NPC->currentOrigin, EV_KOTHOS_BEAM);
 			tent->svFlags |= SVF_BROADCAST;
-			tent->s.otherentity_num = NPC->s.number;
-			tent->s.otherentity_num2 = NPC->client->leader->s.number;
+			tent->s.otherentityNum = NPC->s.number;
+			tent->s.otherentityNum2 = NPC->client->leader->s.number;
 			//END HACK LINE
 
 			NPC->client->leader->health += Q_irand(1 + g_spskill->integer * 2, 4 + g_spskill->integer * 3);

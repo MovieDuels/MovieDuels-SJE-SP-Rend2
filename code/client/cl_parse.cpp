@@ -40,7 +40,7 @@ const char* svc_strings[256] = {
 	"svc_snapshot"
 };
 
-void SHOWNET(const msg_t* msg, const char* s)
+static void SHOWNET(const msg_t* msg, const char* s)
 {
 	if (cl_shownet->integer >= 2)
 	{
@@ -64,7 +64,7 @@ Parses deltas from the given base and adds the resulting entity
 to the current frame
 ==================
 */
-void CL_DeltaEntity(msg_t* msg, clSnapshot_t* frame)
+static void CL_DeltaEntity(msg_t* msg, clSnapshot_t* frame)
 {
 	// save the parsed entity state into the big circular buffer so
 	// it can be used as the source for a later delta
@@ -86,17 +86,20 @@ CL_ParsePacketEntities
 
 ==================
 */
-void CL_ParsePacketEntities(msg_t* msg, const clSnapshot_t* oldframe, clSnapshot_t* newframe)
+static void CL_ParsePacketEntities(msg_t* msg, const clSnapshot_t* oldframe, clSnapshot_t* newframe)
 {
 	int oldnum;
 
 	newframe->parseEntitiesNum = cl.parseEntitiesNum;
 	newframe->numEntities = 0;
 
-	// delta from the entities present in oldframe
 	int oldindex = 0;
-	const entityState_t* oldstate;
-	if (!oldframe)
+	const entityState_t* oldstate = nullptr;
+
+	/* ---------------------------------------------------------
+	   Establish initial oldnum safely
+	   --------------------------------------------------------- */
+	if (oldframe == nullptr)
 	{
 		oldnum = 99999;
 	}
@@ -108,18 +111,20 @@ void CL_ParsePacketEntities(msg_t* msg, const clSnapshot_t* oldframe, clSnapshot
 		}
 		else
 		{
-			oldstate = &cl.parseEntities[
-				(oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1)];
+			const int ofs = (oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1);
+			oldstate = &cl.parseEntities[ofs];
 			oldnum = oldstate->number;
 		}
 	}
 
-	while (true)
+	/* ---------------------------------------------------------
+	   Main delta loop
+	   --------------------------------------------------------- */
+	while (qtrue)
 	{
-		// read the entity index number
 		const int newnum = MSG_ReadBits(msg, GENTITYNUM_BITS);
 
-		if (newnum == (MAX_GENTITIES - 1))
+		if (newnum == MAX_GENTITIES - 1)
 		{
 			break;
 		}
@@ -129,83 +134,96 @@ void CL_ParsePacketEntities(msg_t* msg, const clSnapshot_t* oldframe, clSnapshot
 			Com_Error(ERR_DROP, "CL_ParsePacketEntities: end of message");
 		}
 
+		/* -----------------------------------------------------
+		   Copy unchanged entities from oldframe
+		   ----------------------------------------------------- */
 		while (oldnum < newnum)
 		{
-			// one or more entities from the old packet are unchanged
 			if (cl_shownet->integer == 3)
 			{
 				Com_Printf("%3i:  unchanged: %i\n", msg->readcount, oldnum);
 			}
+
 			CL_DeltaEntity(msg, newframe);
 
 			oldindex++;
 
-			if (oldindex >= oldframe->numEntities)
+			if (oldframe == nullptr || oldindex >= oldframe->numEntities)
 			{
 				oldnum = 99999;
 			}
 			else
 			{
-				oldstate = &cl.parseEntities[
-					(oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1)];
+				const int ofs = (oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1);
+				oldstate = &cl.parseEntities[ofs];
 				oldnum = oldstate->number;
 			}
 		}
+
+		/* -----------------------------------------------------
+		   Delta from previous state
+		   ----------------------------------------------------- */
 		if (oldnum == newnum)
 		{
-			// delta from previous state
 			if (cl_shownet->integer == 3)
 			{
 				Com_Printf("%3i:  delta: %i\n", msg->readcount, newnum);
 			}
+
 			CL_DeltaEntity(msg, newframe);
 
 			oldindex++;
 
-			if (oldindex >= oldframe->numEntities)
+			if (oldframe == NULL || oldindex >= oldframe->numEntities)
 			{
 				oldnum = 99999;
 			}
 			else
 			{
-				oldstate = &cl.parseEntities[
-					(oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1)];
+				const int ofs = (oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1);
+				oldstate = &cl.parseEntities[ofs];
 				oldnum = oldstate->number;
 			}
+
 			continue;
 		}
 
+		/* -----------------------------------------------------
+		   Delta from baseline
+		   ----------------------------------------------------- */
 		if (oldnum > newnum)
 		{
-			// delta from baseline
 			if (cl_shownet->integer == 3)
 			{
 				Com_Printf("%3i:  baseline: %i\n", msg->readcount, newnum);
 			}
+
 			CL_DeltaEntity(msg, newframe);
 		}
 	}
 
-	// any remaining entities in the old frame are copied over
+	/* ---------------------------------------------------------
+	   Copy remaining unchanged entities
+	   --------------------------------------------------------- */
 	while (oldnum != 99999)
 	{
-		// one or more entities from the old packet are unchanged
 		if (cl_shownet->integer == 3)
 		{
 			Com_Printf("%3i:  unchanged: %i\n", msg->readcount, oldnum);
 		}
+
 		CL_DeltaEntity(msg, newframe);
 
 		oldindex++;
 
-		if (oldindex >= oldframe->numEntities)
+		if (oldframe == NULL || oldindex >= oldframe->numEntities)
 		{
 			oldnum = 99999;
 		}
 		else
 		{
-			oldstate = &cl.parseEntities[
-				(oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1)];
+			const int ofs = (oldframe->parseEntitiesNum + oldindex) & (MAX_PARSE_ENTITIES - 1);
+			oldstate = &cl.parseEntities[ofs];
 			oldnum = oldstate->number;
 		}
 	}
@@ -220,7 +238,7 @@ cl.frame and saved in cl.frames[].  If the snapshot is invalid
 for any reason, no changes to the state will be made at all.
 ================
 */
-void CL_ParseSnapshot(msg_t* msg)
+static void CL_ParseSnapshot(msg_t* msg)
 {
 	clSnapshot_t* old;
 	clSnapshot_t new_snap;
@@ -403,7 +421,7 @@ void UI_UpdateConnectionString(const char* string);
 CL_ParseGamestate
 ==================
 */
-void CL_ParseGamestate(msg_t* msg)
+static void CL_ParseGamestate(msg_t* msg)
 {
 	Con_Close();
 
@@ -443,7 +461,7 @@ void CL_ParseGamestate(msg_t* msg)
 
 			// append it to the gameState string buffer
 			cl.gameState.stringOffsets[i] = cl.gameState.dataCount;
-			memcpy(cl.gameState.stringData + cl.gameState.dataCount, s, len + 1);
+			memcpy(cl.gameState.stringData + cl.gameState.dataCount, s, static_cast<size_t>(len) + 1);
 			cl.gameState.dataCount += len + 1;
 			if (cl_shownet->integer == 3)
 			{
@@ -500,7 +518,7 @@ Command strings are just saved off until cgame asks for them
 when it transitions a snapshot
 =====================
 */
-void CL_ParseCommandString(msg_t* msg)
+static void CL_ParseCommandString(msg_t* msg)
 {
 	const int seq = MSG_ReadLong(msg);
 	const char* s = MSG_ReadString(msg);
