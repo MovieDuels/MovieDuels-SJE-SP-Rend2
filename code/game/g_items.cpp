@@ -50,6 +50,7 @@ extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingAnim(int anim);
 extern qboolean PM_CrouchAnim(int anim);
 extern qboolean JET_Flying(const gentity_t* self);
+extern void CG_ItemPickup(int itemNum, qboolean bHadItem);
 
 extern cvar_t* g_spskill;
 extern cvar_t* g_sex;
@@ -999,7 +1000,6 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace)
 	if (!other->s.number && g_timescale->value < 1.0f)
 	{
 		//SIGH... with timescale on, you lose events left and right
-		extern void CG_ItemPickup(int itemNum, qboolean bHadItem);
 		// but we're SP so we'll cheat
 		cgi_S_StartSound(nullptr, other->s.number, CHAN_AUTO, cgi_S_RegisterSound(ent->item->pickup_sound));
 		// show icon and name on status bar

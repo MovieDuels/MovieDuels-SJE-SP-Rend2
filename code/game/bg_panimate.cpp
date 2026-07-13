@@ -6927,7 +6927,8 @@ static void PM_TorsoAnimLightsaber()
 		pm->ps->weaponstate == WEAPON_CHARGING_ALT)
 	{
 		//ready
-		if (pm->ps->weapon == WP_SABER && pm->ps->SaberLength() && (pm->ps->SaberActive() || !g_noIgniteTwirl->integer))
+		if (pm->ps->weapon == WP_SABER && pm->ps->SaberLength() && (pm->ps->SaberActive() || !g_noIgniteTwirl->integer
+			&& !is_holding_block_button))
 		{
 			//saber is on
 			// Select the proper idle Lightsaber attack move from the chart.

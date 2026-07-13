@@ -12042,6 +12042,9 @@ extern qboolean PM_AllowedDualPistol();
 
 static void PM_BeginWeaponChange(const int weapon)
 {
+	const qboolean is_holding_block_button = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
+
 	if (pm->gent && pm->gent->client && pm->gent->client->pers.enterTime >= level.time - 500)
 	{
 		//just entered map
@@ -12062,8 +12065,7 @@ static void PM_BeginWeaponChange(const int weapon)
 		return;
 	}
 
-	if (pm->ps->weapon == WP_SABER && pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK || pm->ps->ManualBlockingFlags
-		& 1 << HOLDINGBLOCKANDATTACK)
+	if (pm->ps->weapon == WP_SABER && (is_holding_block_button || is_holding_block_button_and_attack))
 	{
 		return;
 	}
@@ -12171,7 +12173,7 @@ static void PM_BeginWeaponChange(const int weapon)
 			}
 			if (!G_IsRidingVehicle(pm->gent))
 			{
-				if (!g_noIgniteTwirl->integer && !IsSurrendering(pm->gent)) //twirl on
+				if (!g_noIgniteTwirl->integer && !is_holding_block_button && !IsSurrendering(pm->gent)) //twirl on
 				{
 					PM_SetSaberMove(LS_PUTAWAY);
 				}
@@ -19711,7 +19713,7 @@ static void PM_WeaponLightsaber(void)
 				{
 					//okay to do roll-stab
 					PM_SetSaberMove(LS_ROLL_STAB);
-					WP_ForcePowerDrain(pm->gent, FP_SABER_OFFENSE, SABER_KATA_ATTACK_POWER);
+					WP_ForcePowerDrain(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER_FB);
 				}
 			}
 		}
@@ -19957,45 +19959,56 @@ static void PM_WeaponLightsaber(void)
 		pm->ps->weaponstate = WEAPON_IDLE;
 
 		if (pm->gent->s.number < MAX_CLIENTS || G_ControlledByPlayer(pm->gent))
-		{
-			switch (pm->ps->legsAnim)
+		{// player only
+			if (!(is_holding_block_button))
 			{
-			case BOTH_WALK1:
-			case BOTH_WALK1_MDA:
-			case BOTH_WALK2:
-			case BOTH_WALK_STAFF:
-			case BOTH_WALK_STAFF_AMD:
-			case BOTH_WALK_DUAL:
-			case BOTH_WALK_DUAL_AMD:
-			case BOTH_WALKBACK1:
-			case BOTH_WALKBACK_PISTOL:
-			case BOTH_WALKBACK_BLASTER:
-			case BOTH_WALKBACK_HEAVY:
-			case BOTH_WALKBACK_GRENADE:
-			case BOTH_WALKBACK2:
-			case BOTH_WALKBACK_STAFF:
-			case BOTH_WALKBACK_DUAL:
-			case BOTH_WALKBACK_DUALPISTOL:
-			case BOTH_RUN1:
-			case BOTH_SPRINT:
-			case BOTH_SPRINT_SINGLE_LIGHTSABER:
-			case BOTH_SPRINT_STAFF_LIGHTSABER:
-			case BOTH_SPRINT_DUAL_LIGHTSABER:
-			case BOTH_RUN2:
-			case BOTH_RUN_STAFF:
-			case BOTH_RUN_DUAL:
-			case BOTH_RUNBACK1:
-			case BOTH_RUNBACK2:
-			case BOTH_RUNBACK_STAFF:
-			case BOTH_MENUIDLE1:
-			case BOTH_SABERSINGLECROUCH:
-			case BOTH_SABERDUALCROUCH:
-			case BOTH_SABERSTAFFCROUCH:
-			case BOTH_WALK1_STICK:
-				PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
-				break;
-
-			default:
+				switch (pm->ps->legsAnim)
+				{
+				case BOTH_WALK1:
+				case BOTH_WALK1_MDA:
+				case BOTH_WALK2:
+				case BOTH_WALK_STAFF:
+				case BOTH_WALK_STAFF_AMD:
+				case BOTH_WALK_DUAL:
+				case BOTH_WALK_DUAL_AMD:
+				case BOTH_WALKBACK1:
+				case BOTH_WALKBACK_PISTOL:
+				case BOTH_WALKBACK_BLASTER:
+				case BOTH_WALKBACK_HEAVY:
+				case BOTH_WALKBACK_GRENADE:
+				case BOTH_WALKBACK2:
+				case BOTH_WALKBACK_STAFF:
+				case BOTH_WALKBACK_DUAL:
+				case BOTH_WALKBACK_DUALPISTOL:
+				case BOTH_RUN1:
+				case BOTH_SPRINT:
+				case BOTH_SPRINT_SINGLE_LIGHTSABER:
+				case BOTH_SPRINT_STAFF_LIGHTSABER:
+				case BOTH_SPRINT_DUAL_LIGHTSABER:
+				case BOTH_RUN2:
+				case BOTH_RUN_STAFF:
+				case BOTH_RUN_DUAL:
+				case BOTH_RUNBACK1:
+				case BOTH_RUNBACK2:
+				case BOTH_RUNBACK_STAFF:
+				case BOTH_MENUIDLE1:
+				case BOTH_SABERSINGLECROUCH:
+				case BOTH_SABERDUALCROUCH:
+				case BOTH_SABERSTAFFCROUCH:
+				case BOTH_WALK1_STICK:
+					PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+					break;
+				default:;
+					anim = PM_ReadyPoseForSaberAnimLevel();
+					if (anim != -1)
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, anim, SETANIM_FLAG_NORMAL);
+					}
+					break;
+				}
+			}
+			else
+			{
 				if (is_holding_block_button)
 				{
 					if (pm->ps->saberAnimLevel == SS_DUAL)
@@ -20034,13 +20047,8 @@ static void PM_WeaponLightsaber(void)
 				}
 				else
 				{
-					anim = PM_ReadyPoseForSaberAnimLevel();
+					PM_ReadyPoseForSaberAnimLevel();
 				}
-				if (anim != -1)
-				{
-					PM_SetAnim(pm, SETANIM_TORSO, anim, SETANIM_FLAG_NORMAL);
-				}
-				break;
 			}
 		}
 		else
@@ -20720,41 +20728,52 @@ static void PM_WeaponLightsaber(void)
 			// ----------------------------------------------------------------------
 			if (anim == -1)
 			{
-				switch (pm->ps->legsAnim)
+				if (!(is_holding_block_button))
 				{
-				case BOTH_WALK1:
-				case BOTH_WALK1_MDA:
-				case BOTH_WALK2:
-				case BOTH_WALK_STAFF:
-				case BOTH_WALK_STAFF_AMD:
-				case BOTH_WALK_DUAL:
-				case BOTH_WALK_DUAL_AMD:
-				case BOTH_WALKBACK1:
-				case BOTH_WALKBACK_PISTOL:
-				case BOTH_WALKBACK_BLASTER:
-				case BOTH_WALKBACK_HEAVY:
-				case BOTH_WALKBACK_GRENADE:
-				case BOTH_WALKBACK2:
-				case BOTH_WALKBACK_STAFF:
-				case BOTH_WALKBACK_DUAL:
-				case BOTH_WALKBACK_DUALPISTOL:
-				case BOTH_RUN1:
-				case BOTH_SPRINT:
-				case BOTH_SPRINT_SINGLE_LIGHTSABER:
-				case BOTH_SPRINT_STAFF_LIGHTSABER:
-				case BOTH_SPRINT_DUAL_LIGHTSABER:
-				case BOTH_RUN2:
-				case BOTH_RUN_STAFF:
-				case BOTH_RUN_DUAL:
-				case BOTH_RUNBACK1:
-				case BOTH_RUNBACK2:
-				case BOTH_RUNBACK_STAFF:
-				case BOTH_MENUIDLE1:
-				case BOTH_WALK1_STICK:
-					// Use the current legs anim as the attack anim.
-					anim = pm->ps->legsAnim;
-					break;
-				default:;
+					switch (pm->ps->legsAnim)
+					{
+					case BOTH_WALK1:
+					case BOTH_WALK1_MDA:
+					case BOTH_WALK2:
+					case BOTH_WALK_STAFF:
+					case BOTH_WALK_STAFF_AMD:
+					case BOTH_WALK_DUAL:
+					case BOTH_WALK_DUAL_AMD:
+					case BOTH_WALKBACK1:
+					case BOTH_WALKBACK_PISTOL:
+					case BOTH_WALKBACK_BLASTER:
+					case BOTH_WALKBACK_HEAVY:
+					case BOTH_WALKBACK_GRENADE:
+					case BOTH_WALKBACK2:
+					case BOTH_WALKBACK_STAFF:
+					case BOTH_WALKBACK_DUAL:
+					case BOTH_WALKBACK_DUALPISTOL:
+					case BOTH_RUN1:
+					case BOTH_SPRINT:
+					case BOTH_SPRINT_SINGLE_LIGHTSABER:
+					case BOTH_SPRINT_STAFF_LIGHTSABER:
+					case BOTH_SPRINT_DUAL_LIGHTSABER:
+					case BOTH_RUN2:
+					case BOTH_RUN_STAFF:
+					case BOTH_RUN_DUAL:
+					case BOTH_RUNBACK1:
+					case BOTH_RUNBACK2:
+					case BOTH_RUNBACK_STAFF:
+					case BOTH_MENUIDLE1:
+					case BOTH_SABERSINGLECROUCH:
+					case BOTH_SABERDUALCROUCH:
+					case BOTH_SABERSTAFFCROUCH:
+					case BOTH_WALK1_STICK:
+						// Use the current legs anim as the attack anim.
+						anim = pm->ps->legsAnim;
+						break;
+					default:;
+						anim = PM_ReadyPoseForSaberAnimLevel();
+						break;
+					}
+				}
+				else
+				{
 					if (is_holding_block_button)
 					{
 						if (pm->ps->saberAnimLevel == SS_DUAL)
@@ -20795,8 +20814,8 @@ static void PM_WeaponLightsaber(void)
 					{
 						PM_ReadyPoseForSaberAnimLevel();
 					}
-					break;
 				}
+
 				newmove = LS_READY;
 			}
 
@@ -20838,6 +20857,45 @@ static void PM_WeaponLightsaber(void)
 
 	// We are in a firing state for the weapon.
 	pm->ps->weaponstate = WEAPON_FIRING;
+
+	// If we are still in weaponTime and holding block, force a blocking pose.
+	if (pm->ps->weaponTime > 0 && (is_holding_block_button))
+	{
+		if (pm->ps->saberAnimLevel == SS_STAFF)
+		{
+			if (g_SerenityJediEngineMode->integer == 2)
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelStaffAMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelStaffMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		else if (pm->ps->saberAnimLevel == SS_DUAL)
+		{
+			if (g_SerenityJediEngineMode->integer == 2)
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelDualAMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelDualMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			if (g_SerenityJediEngineMode->integer == 2)
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelSingleAMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelSingleMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		PM_SetSaberMove(LS_READY);
+	}
 
 	// If this entity has a fireDelay, we are not actually firing yet.
 	if (pm->gent && pm->gent->client && pm->gent->client->fireDelay > 0)
