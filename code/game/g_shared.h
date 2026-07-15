@@ -819,6 +819,10 @@ public:
 	int inSpaceSuffocation;
 	int inSpaceIndex;
 
+	// Tracks which entities have been hit in the current saber swing
+	int			saberHitEntityBitMask;
+	int			saberLastAttackSequence;
+
 	qboolean jetPackOn;
 	int jetPackToggleTime;
 	int jetPackDebRecharge;
@@ -963,6 +967,8 @@ public:
 		saved_game.write<float>(rocketTargetTime);
 		saved_game.write<int32_t>(inSpaceSuffocation);
 		saved_game.write<int32_t>(inSpaceIndex);
+		saved_game.write<int32_t>(saberHitEntityBitMask);
+		saved_game.write<int32_t>(saberLastAttackSequence);
 
 		saved_game.write<int32_t>(stunDamage);
 		saved_game.write<int32_t>(stunTime);
@@ -1088,6 +1094,8 @@ public:
 		saved_game.read<float>(rocketTargetTime);
 		saved_game.read<int32_t>(inSpaceSuffocation);
 		saved_game.read<int32_t>(inSpaceIndex);
+		saved_game.read<int32_t>(saberHitEntityBitMask);
+		saved_game.read<int32_t>(saberLastAttackSequence);
 
 		saved_game.read<int32_t>(stunDamage);
 		saved_game.read<int32_t>(stunTime);
