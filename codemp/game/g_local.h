@@ -796,6 +796,10 @@ struct gclient_s {
 		int		drainDebounce;
 		int		lightningDebounce;
 	} force;
+
+	// Tracks which entities have been hit in the current saber swing
+	int						saberHitEntityBitMask;
+	int						saberLastAttackSequence;
 };
 
 //Interest points
