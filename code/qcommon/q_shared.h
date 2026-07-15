@@ -2036,6 +2036,7 @@ public:
 	int saberEventFlags;
 	int saberAnimLevel;
 	int saberAttackChainCount;
+	int saberAttackSequence;
 	int saberFatigueChainCount;
 	int BlasterAttackChainCount;
 	int saberLockTime;
