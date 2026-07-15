@@ -2595,6 +2595,94 @@ void G_ChangeScale(const char* data)
 }
 
 extern const char* GetSaberColor(int color);
+extern void jet_fly_stop(gentity_t* self);
+extern void Boba_StopFlameThrower(const gentity_t* self);
+extern void Jetpack_Off(const gentity_t* ent);
+
+// ============================================================================
+// Allow model change to cancel buttons and stop jetpack and flamethrower
+// ============================================================================
+static void G_ForceSafeModelChangeState(gentity_t* ent)
+{
+	if (ent == NULL || ent->client == NULL)
+	{
+		Com_Printf("G_ForceSafeModelChangeState: NULL ent or ent->client\n");
+		return;
+	}
+
+	if (ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN))
+	{
+		ent->client->ps.communicatingflags &= ~(1u << CF_AIMINGGUN);
+		ent->client->IsAiming = qfalse;
+	}
+
+	// ----------------------------------------------------------------------
+	// Clear forbidden BUTTON_* inputs
+	// ----------------------------------------------------------------------
+	ent->client->usercmd.buttons &=
+		~(BUTTON_ATTACK |
+			BUTTON_ALT_ATTACK |
+			BUTTON_USE_FORCE |
+			BUTTON_FORCEGRIP |
+			BUTTON_FORCE_LIGHTNING |
+			BUTTON_LIGHTNING_STRIKE |
+			BUTTON_PROJECTION |
+			BUTTON_FORCE_DRAIN |
+			BUTTON_BLOCK |
+			BUTTON_KICK |
+			BUTTON_DASH);
+
+	// ----------------------------------------------------------------------
+	// Clear PMF_* flags representing held actions
+	// ----------------------------------------------------------------------
+	ent->client->ps.pm_flags &=
+		~(PMF_ATTACK_HELD |
+			PMF_ALT_ATTACK_HELD |
+			PMF_USEFORCE_HELD |
+			PMF_FORCE_FOCUS_HELD |
+			PMF_USE_HELD |
+			PMF_BLOCK_HELD |
+			PMF_KICK_HELD |
+			PMF_DASH_HELD |
+			PMF_WALKING_HELD);
+
+	// ----------------------------------------------------------------------
+	// Turn off jetpack safely
+	// ----------------------------------------------------------------------
+	if (JET_Flying(ent) == qtrue)
+	{
+		jet_fly_stop(ent); 
+	}
+	if (ent->client->jetPackOn)
+	{
+		Jetpack_Off(ent);
+		ent->client->jetPackOn = qfalse;
+	}
+
+	// ----------------------------------------------------------------------
+	// Turn off flamethrower safely
+	// ----------------------------------------------------------------------
+	if (ent->client->flamethrowerOn == qtrue)
+	{
+		ent->client->flamethrowerOn = qfalse;
+		Jetpack_Off(ent);
+		if (JET_Flying(ent))
+		{
+			jet_fly_stop(ent);
+		}
+		Boba_StopFlameThrower(ent);
+	}
+
+	// ----------------------------------------------------------------------
+	// Clear movement flags that block model changes
+	// ----------------------------------------------------------------------
+	ent->client->ps.pm_flags &= ~(PMF_STUCK_TO_WALL);
+
+	// Reset animation timers if needed
+	ent->client->ps.legsAnimTimer = 0;
+	ent->client->ps.torsoAnimTimer = 0;
+}
+
 
 void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 {
@@ -2608,35 +2696,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 		gi.cvar_set("cg_trueguns", "0");
 	}
 
-	if (ent->client && (ent->client->moveType == MT_FLYSWIM || ent->s.groundEntityNum == ENTITYNUM_NONE ||
-		JET_Flying(ent) || ent->client->flamethrowerOn)
-		&& (ent->client->NPC_class == CLASS_BOBAFETT
-			|| ent->client->NPC_class == CLASS_MANDALORIAN
-			|| ent->client->NPC_class == CLASS_JANGO
-			|| ent->client->NPC_class == CLASS_JANGODUAL
-			|| ent->client->NPC_class == CLASS_ROCKETTROOPER))
-	{
-		gi.Printf(S_COLOR_RED "ERROR: You can not change characters when jetpacking or using the flamethrower. You must now re-select a character.\n");
-		return;
-	}
-
-	if (!in_camera
-		&& (ent->client->usercmd.buttons & BUTTON_ATTACK
-			|| ent->client->usercmd.buttons & BUTTON_ALT_ATTACK
-			|| ent->client->usercmd.buttons & BUTTON_USE_FORCE
-			|| ent->client->usercmd.buttons & BUTTON_FORCEGRIP
-			|| ent->client->usercmd.buttons & BUTTON_FORCE_LIGHTNING
-			|| ent->client->usercmd.buttons & BUTTON_LIGHTNING_STRIKE
-			|| ent->client->usercmd.buttons & BUTTON_PROJECTION
-			|| ent->client->usercmd.buttons & BUTTON_FORCE_DRAIN
-			|| ent->client->usercmd.buttons & BUTTON_BLOCK
-			|| ent->client->usercmd.buttons & BUTTON_KICK
-			//|| (ent->client->usercmd.buttons & BUTTON_USE)
-			|| ent->client->usercmd.buttons & BUTTON_DASH))
-	{
-		gi.Printf(S_COLOR_RED "ERROR: You can not change characters when holding function buttons. You must now re-select a character.\n");
-		return;
-	}
+	G_ForceSafeModelChangeState(ent);
 
 	if (ent->client->NPC_class != CLASS_JANGODUAL && ent->client->ps.eFlags & EF2_JANGO_DUALS)
 	{

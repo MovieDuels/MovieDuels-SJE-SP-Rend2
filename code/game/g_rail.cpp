@@ -220,38 +220,38 @@ public:
 	void RandomizeTestCols(int startCol, int stopCol);
 
 public:
-	hstring mName;
+	hstring mName = "";
 
-	int mRow;
-	int mNumMoversPerRow;
+	int mRow = 0;
+	int mNumMoversPerRow = 0;
 
-	int mNextUpdateTime;
-	int mNextUpdateDelay;
-	int mStartTime;
+	int mNextUpdateTime = 0;
+	int mNextUpdateDelay = 0;
+	int mStartTime = 0;
 
-	int mRows;
-	int mCols;
+	int mRows = 0;
+	int mCols = 0;
 
-	bool mVertical;
-	bool mNegative;
-	int mHAxis;
-	int mWAxis;
+	bool mVertical = false;
+	bool mNegative = false;
+	int mHAxis = 0;
+	int mWAxis = 0;
 
-	int mSpeedGridCellsPerSecond;
-	float mSpeedUnitsPerMillisecond;
-	int mTravelTimeMilliseconds;
-	float mTravelDistanceUnits;
-	CVec3 mDirection;
-	CVec3 mVelocity;
+	int mSpeedGridCellsPerSecond = 0;
+	float mSpeedUnitsPerMillisecond = 0.0f;
+	int mTravelTimeMilliseconds = 0;
+	float mTravelDistanceUnits = 0.0f;
+	CVec3 mDirection = { 0, 0, 0 };
+	CVec3 mVelocity = { 0, 0, 0 };
 
-	CVec3 mMins;
-	CVec3 mMaxs;
+	CVec3 mMins = { 0, 0, 0 };
+	CVec3 mMaxs = { 0, 0, 0 };
 
-	CVec3 mGridBottomLeftCorner;
-	CVec3 mGridCenter;
-	float mGridCellSize;
+	CVec3 mGridBottomLeftCorner = { 0, 0, 0 };
+	CVec3 mGridCenter = { 0, 0, 0 };
+	float mGridCellSize = 0.0f;
 
-	bool mCenterLocked;
+	bool mCenterLocked = false;
 
 	ratl::grid2_vs<CRailMover*, MAX_COLS, MAX_ROWS> mCells;
 	ratl::vector_vs<CRailMover*, MAX_MOVERS_TRACK> mMovers;

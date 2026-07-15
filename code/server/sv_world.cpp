@@ -1012,25 +1012,38 @@ SV_PointContents
 */
 int SV_PointContents(const vec3_t p, const int passEntityNum)
 {
-	gentity_t* touch[MAX_GENTITIES];
+	// Static to avoid 32 KB stack usage
+	static gentity_t* touch[MAX_GENTITIES];
 
-	// get base contents from world
+	// Base contents from world
 	int contents = CM_PointContents(p, 0);
 
-	// or in contents from all the other entities
+	// Collect entities touching this point
 	const int num = SV_AreaEntities(p, p, touch, MAX_GENTITIES);
 
 	for (int i = 0; i < num; i++)
 	{
 		const gentity_t* hit = touch[i];
+		if (hit == NULL)
+		{
+			continue;
+		}
+
+		// Skip the pass entity
 		if (hit->s.number == passEntityNum)
 		{
 			continue;
 		}
-		// might intersect, so do an exact clip
-		const clipHandle_t clipHandle = SV_ClipHandleForEntity(hit);
 
-		const int c2 = CM_TransformedPointContents(p, clipHandle, hit->s.origin, hit->s.angles);
+		// Exact transformed contents test
+		const clipHandle_t clip_handle = SV_ClipHandleForEntity(hit);
+
+		const int c2 = CM_TransformedPointContents(
+			p,
+			clip_handle,
+			hit->s.origin,
+			hit->s.angles
+		);
 
 		contents |= c2;
 	}

@@ -266,7 +266,7 @@ int SV_AreaEntities(const vec3_t mins, const vec3_t maxs, gentity_t** elist, int
 // returns the number of pointers filled in
 // The world entity is never returned in this list.
 
-int SV_PointContents(const vec3_t p, int passEntityNum);
+int SV_PointContents(const vec3_t p, const int passEntityNum);
 // returns the CONTENTS_* value from the world and all entities at the given point.
 
 /*

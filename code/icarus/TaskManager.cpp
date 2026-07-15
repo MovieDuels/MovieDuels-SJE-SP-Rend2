@@ -1825,28 +1825,6 @@ void CTaskManager::Load(CIcarus* icarus)
 	int id, num_tasks, num_members;
 	int b_id, b_size;
 
-	// Data expected/loaded here.
-	//	Taskmanager GUID.
-	//	Number of Tasks.
-	//	Tasks:
-	//				- GUID.
-	//				- Timestamp.
-	//				- Block/Command.
-	//	Number of task groups.
-	//	Task groups ID's.
-	//	Task groups (data).
-	//				- Parent.
-	//				- Number of Commands.
-	//				- Commands:
-	//						+ ID.
-	//						+ State of Completion.
-	//				- Number of Completed Commands.
-	//	Currently active group.
-	//	Task group names:
-	//				- String Size.
-	//				- String.
-	//				- ID.
-
 	const auto p_icarus = static_cast<CIcarus*>(IIcarusInterface::GetIcarus());
 
 	//Get the GUID

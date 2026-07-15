@@ -372,10 +372,10 @@ private:
 	bool       mTargetVisable = false;
 	int        mTargetVisableStartTime = 0;
 	int        mTargetVisableStopTime = 0;
-	CVec3      mTargetVisablePosition;
+	CVec3      mTargetVisablePosition = CVec3(0, 0, 0);
 	int        mTargetIndex = 0;
 	int        mTargetLastKnownTime = 0;
-	CVec3      mTargetLastKnownPosition;
+	CVec3      mTargetLastKnownPosition = CVec3(0, 0, 0);
 	bool       mTargetLastKnownPositionVisited = false;
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -599,9 +599,9 @@ private:
 
 	ETroopState mState = TS_NONE;
 
-	CVec3 mFormHead;
-	CVec3 mFormFwd;
-	CVec3 mFormRight;
+	CVec3 mFormHead = CVec3(0, 0, 0);
+	CVec3 mFormFwd = CVec3(0, 0, 0);
+	CVec3 mFormRight = CVec3(0, 0, 0);
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// TroopInFormation

@@ -239,9 +239,11 @@ int SFxHelper::GetOriginAxisFromBolt(
 
 	if (doesBoltExist == 0)
 	{
+#if _DEBUG
 		gi.Printf(
 			"SFxHelper::GetOriginAxisFromBolt: bolt %d not found on model %d for ent %d\n",
 			boltNum, modelNum, cent.currentState.number);
+#endif
 		return 0;
 	}
 

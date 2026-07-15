@@ -374,8 +374,14 @@ void CG_ProcessSnapshots(void)
 			return;
 		}
 
-		// Initialize client state from first snapshot
 		CG_SetInitialSnapshot(snap);
+
+		// After initialization, cg.snap MUST be non‑NULL
+		if (cg.snap == NULL)
+		{
+			Com_Printf("CG_ProcessSnapshots ERROR: CG_SetInitialSnapshot failed\n");
+			return;
+		}
 	}
 
 	// ------------------------------------------------------------------
@@ -396,13 +402,26 @@ void CG_ProcessSnapshots(void)
 
 			CG_SetNextSnap(snap);
 
+			// Guard: ensure cg.nextSnap is valid before dereferencing
+			if (cg.nextSnap == NULL)
+			{
+				Com_Printf("CG_ProcessSnapshots WARNING: CG_SetNextSnap returned NULL\n");
+				break;
+			}
+
 			// Level restart detection: time went backwards
-			if (cg.nextSnap->serverTime < cg.snap->serverTime)
+			if (cg.snap != NULL && cg.nextSnap->serverTime < cg.snap->serverTime)
 			{
 				Com_Printf("CG_ProcessSnapshots: Level restart detected\n");
 				CG_RestartLevel();
 				continue;
 			}
+		}
+
+		// Guard: ensure both snapshots are valid before comparing times
+		if (cg.snap == NULL || cg.nextSnap == NULL)
+		{
+			break;
 		}
 
 		// If current time is before next snapshot time → interpolation OK
@@ -413,6 +432,13 @@ void CG_ProcessSnapshots(void)
 
 		// We have passed the transition point → move nextSnap → snap
 		CG_TransitionSnapshot();
+
+		// After transition, cg.snap MUST be non‑NULL
+		if (cg.snap == NULL)
+		{
+			Com_Printf("CG_ProcessSnapshots ERROR: CG_TransitionSnapshot produced NULL cg.snap\n");
+			return;
+		}
 	}
 
 	// ------------------------------------------------------------------

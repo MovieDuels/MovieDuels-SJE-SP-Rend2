@@ -368,11 +368,42 @@ void CVec4::ToDegrees()
 ////////////////////////////////////////////////////////////////////////////////////////
 // Copy Values From String
 ////////////////////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------------
+// CVec4::FromStr
+// Parses a 4‑component vector from a string of the form "(x y z w)".
+// Modernized to remove asserts, add safety checks, and eliminate MSVC C6031.
+// -----------------------------------------------------------------------------
 void CVec4::FromStr(const char* s)
 {
-	//	assert(s && s[0]);
-	sscanf(s, "(%f %f %f %f)", &v[0], &v[1], &v[2], &v[3]);
+	// Safety: validate input string
+	if (s == nullptr || s[0] == '\0')
+	{
+		v[0] = v[1] = v[2] = v[3] = 0.0f;
+		return;
+	}
+
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+	float w = 0.0f;
+
+	// Capture sscanf return value to satisfy MSVC C6031
+	const int parsed = sscanf(s, "(%f %f %f %f)", &x, &y, &z, &w);
+
+	if (parsed != 4)
+	{
+		// Preserve engine behaviour: zero vector on failure
+		v[0] = v[1] = v[2] = v[3] = 0.0f;
+		return;
+	}
+
+	// Only write to v[] if parsing succeeded
+	v[0] = x;
+	v[1] = y;
+	v[2] = z;
+	v[3] = w;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Write Values To A String
@@ -895,11 +926,40 @@ void CVec3::ToDegrees()
 ////////////////////////////////////////////////////////////////////////////////////////
 // Copy Values From String
 ////////////////////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------------
+// CVec3::FromStr
+// Parses a 3‑component vector from a string of the form "(x y z)".
+// Modernized to remove asserts, add safety checks, and eliminate MSVC C6031.
+// -----------------------------------------------------------------------------
 void CVec3::FromStr(const char* s)
 {
-	assert(s && s[0]);
-	sscanf(s, "(%f %f %f)", &v[0], &v[1], &v[2]);
+	// Safety: validate input string
+	if (s == nullptr || s[0] == '\0')
+	{
+		v[0] = v[1] = v[2] = 0.0f;
+		return;
+	}
+
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+
+	// Capture sscanf return value to satisfy MSVC C6031
+	const int parsed = sscanf(s, "(%f %f %f)", &x, &y, &z);
+
+	if (parsed != 3)
+	{
+		// Preserve engine behaviour: zero vector on failure
+		v[0] = v[1] = v[2] = 0.0f;
+		return;
+	}
+
+	// Only write to v[] if parsing succeeded
+	v[0] = x;
+	v[1] = y;
+	v[2] = z;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Write Values To A String

@@ -34,12 +34,11 @@ SV_DirectConnect
 A "connect" OOB command has been received
 ==================
 */
-void SV_DirectConnect(const netadr_t from)
+void SV_DirectConnect(netadr_t from)
 {
 	char userinfo[MAX_INFO_STRING];
 	int i;
 	client_t* cl;
-	client_t temp{};
 
 	Com_DPrintf("SVC_DirectConnect ()\n");
 
@@ -55,37 +54,42 @@ void SV_DirectConnect(const netadr_t from)
 
 	const int qport = atoi(Info_ValueForKey(userinfo, "qport"));
 
-	//challenge = atoi( Info_ValueForKey( userinfo, "challenge" ) );
-
-	// see if the challenge is valid (local clients don't need to challenge)
 	if (!NET_IsLocalAddress(from))
 	{
 		NET_OutOfBandPrint(NS_SERVER, from, "print\nNo challenge for address.\n");
 		return;
 	}
-	// force the "ip" info key to "localhost"
+
 	Info_SetValueForKey(userinfo, "ip", "localhost");
 
-	client_t* newcl = &temp;
-	memset(newcl, 0, sizeof(client_t));
+	/* ---------------------------------------------------------
+	   FIX: move huge client_t temp off stack → heap
+	   --------------------------------------------------------- */
+	client_t* temp = (client_t*)Z_Malloc(sizeof(client_t), TAG_TEMP_WORKSPACE, qfalse);
+	memset(temp, 0, sizeof(client_t));
 
-	// if there is already a slot for this ip, reuse it
+	client_t* newcl = temp;
+
+	/* ---------------------------------------------------------
+	   Reconnect logic
+	   --------------------------------------------------------- */
 	for (i = 0, cl = svs.clients; i < 1; i++, cl++)
 	{
 		if (cl->state == CS_FREE)
 		{
 			continue;
 		}
-		if (NET_CompareBaseAdr(from, cl->netchan.remoteAddress)
-			&& (cl->netchan.qport == qport
-				|| from.port == cl->netchan.remoteAddress.port))
+
+		if (NET_CompareBaseAdr(from, cl->netchan.remoteAddress) &&
+			(cl->netchan.qport == qport || from.port == cl->netchan.remoteAddress.port))
 		{
-			if ((sv.time - cl->lastConnectTime)
-				< (sv_reconnectlimit->integer * 1000))
+			if (sv.time - cl->lastConnectTime < sv_reconnectlimit->integer * 1000)
 			{
 				Com_DPrintf("%s:reconnect rejected : too soon\n", NET_AdrToString(from));
+				Z_Free(temp);
 				return;
 			}
+
 			Com_Printf("%s:reconnect\n", NET_AdrToString(from));
 			newcl = cl;
 			goto gotnewcl;
@@ -107,26 +111,26 @@ void SV_DirectConnect(const netadr_t from)
 	{
 		NET_OutOfBandPrint(NS_SERVER, from, "print\nServer is full.\n");
 		Com_DPrintf("Rejected a connection.\n");
+		Z_Free(temp);
 		return;
 	}
 
 gotnewcl:
-	// build a new connection
-	// accept the new client
-	// this is the only place a client_t is ever initialized
-	*newcl = temp;
+	/* ---------------------------------------------------------
+	   Build new connection
+	   --------------------------------------------------------- */
+	*newcl = *temp;   // copy heap temp → real client slot
+	Z_Free(temp);     // free temp
+
 	const int clientNum = newcl - svs.clients;
 	gentity_t* ent = SV_GentityNum(clientNum);
 	newcl->gentity = ent;
 
-	// save the address
 	Netchan_Setup(NS_SERVER, &newcl->netchan, from, qport);
 
-	// save the userinfo
 	Q_strncpyz(newcl->userinfo, userinfo, sizeof(newcl->userinfo));
 
-	// get the game a chance to reject this connection or modify the userinfo
-	char* denied = ge->ClientConnect(clientNum, qtrue, e_saved_game_just_loaded); // firstTime = qtrue
+	char* denied = ge->ClientConnect(clientNum, qtrue, e_saved_game_just_loaded);
 	if (denied)
 	{
 		NET_OutOfBandPrint(NS_SERVER, from, "print\n%s\n", denied);
@@ -136,16 +140,11 @@ gotnewcl:
 
 	SV_UserinfoChanged(newcl);
 
-	// send the connect packet to the client
 	NET_OutOfBandPrint(NS_SERVER, from, "connectResponse");
 
 	newcl->state = CS_CONNECTED;
 	newcl->lastPacketTime = sv.time;
 	newcl->lastConnectTime = sv.time;
-
-	// when we receive the first packet from the client, we will
-	// notice that it is from a different serverid and that the
-	// gamestate message was not just sent, forcing a retransmit
 	newcl->gamestateMessageNum = -1;
 }
 
@@ -197,27 +196,25 @@ the wrong gamestate.
 void SV_SendClientGameState(client_t* client)
 {
 	msg_t msg;
-	byte msg_buffer[MAX_MSGLEN];
+
+	/* FIX: move huge msgBuffer off stack → heap */
+	byte* msgBuffer = (byte*)Z_Malloc(MAX_MSGLEN, TAG_TEMP_WORKSPACE, qfalse);
 
 	Com_DPrintf("SV_SendGameState() for %s\n", client->name);
 	client->state = CS_PRIMED;
 
-	// when we receive the first packet from the client, we will
-	// notice that it is from a different serverid and that the
-	// gamestate message was not just sent, forcing a retransmit
 	client->gamestateMessageNum = client->netchan.outgoingSequence;
 
-	// clear the reliable message list for this client
 	client->reliableSequence = 0;
 	client->reliableAcknowledge = 0;
 
-	MSG_Init(&msg, msg_buffer, sizeof(msg_buffer));
+	MSG_Init(&msg, msgBuffer, MAX_MSGLEN);
 
 	// send the gamestate
 	MSG_WriteByte(&msg, svc_gamestate);
 	MSG_WriteLong(&msg, client->reliableSequence);
 
-	// write the configstrings
+	// write configstrings
 	for (int start = 0; start < MAX_CONFIGSTRINGS; start++)
 	{
 		if (sv.configstrings[start][0])
@@ -230,14 +227,15 @@ void SV_SendClientGameState(client_t* client)
 
 	MSG_WriteByte(&msg, 0);
 
-	// check for overflow
 	if (msg.overflowed)
 	{
 		Com_Printf("WARNING: GameState overflowed for %s\n", client->name);
 	}
 
-	// deliver this to the client
 	SV_SendMessageToClient(&msg, client);
+
+	/* free temporary buffer */
+	Z_Free(msgBuffer);
 }
 
 /*

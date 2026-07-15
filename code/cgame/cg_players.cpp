@@ -17164,8 +17164,8 @@ void CG_Player(centity_t* cent)
 			}
 
 			//
-// add the gun
-//
+            // add the gun
+            //
 			CG_RegisterWeapon(cent->currentState.weapon);
 			weapon = &cg_weapons[cent->currentState.weapon];
 
