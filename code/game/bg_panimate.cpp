@@ -6637,12 +6637,9 @@ static void PM_TorsoAnimLightsaber()
 	// WEAPON_READY
 	// *********************************************************
 
-	const qboolean is_holding_block_button = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-	//Holding Block Button
-	const qboolean active_blocking = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
-	//Active Blocking
-	const qboolean walking_blocking = pm->ps->ManualBlockingFlags & 1 << MBF_BLOCKWALKING ? qtrue : qfalse;
-	//Walking Blocking
+	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_walking_and_blocking = ((pm->cmd.buttons & BUTTON_WALKING) && (is_holding_block_button)) ? qtrue : qfalse;
 
 	if (pm->ps->forcePowersActive & 1 << FP_GRIP && pm->ps->forcePowerLevel[FP_GRIP] > FORCE_LEVEL_1)
 	{
@@ -6687,7 +6684,7 @@ static void PM_TorsoAnimLightsaber()
 					{
 						//AMD Mode
 						if (!g_noIgniteTwirl->integer &&
-							!active_blocking
+							!is_holding_block_button_and_attack
 							&& !is_holding_block_button
 							&& !IsSurrendering(pm->gent)) //twirl on
 						{
@@ -6707,9 +6704,9 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALKBACK2)
 								&& pm->ps->saberBlockingTime < cg.time
-								&& !active_blocking
+								&& !is_holding_block_button_and_attack
 								&& !is_holding_block_button
-								&& !walking_blocking
+								&& !is_walking_and_blocking
 								&& !IsSurrendering(pm->gent))
 							{
 								//running w/1-handed weapon uses full-body anim
@@ -6744,7 +6741,7 @@ static void PM_TorsoAnimLightsaber()
 					{
 						//MD Mode
 						if (!g_noIgniteTwirl->integer &&
-							!active_blocking
+							!is_holding_block_button_and_attack
 							&& !is_holding_block_button
 							&& !IsSurrendering(pm->gent)) //twirl on
 						{
@@ -6764,9 +6761,9 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALKBACK2)
 								&& pm->ps->saberBlockingTime < cg.time
-								&& !active_blocking
+								&& !is_holding_block_button_and_attack
 								&& !is_holding_block_button
-								&& !walking_blocking
+								&& !is_walking_and_blocking
 								&& !IsSurrendering(pm->gent))
 							{
 								//running w/1-handed weapon uses full-body anim
@@ -6802,7 +6799,7 @@ static void PM_TorsoAnimLightsaber()
 				{
 					//JKA Mode
 					if (!g_noIgniteTwirl->integer &&
-						!active_blocking
+						!is_holding_block_button_and_attack
 						&& !is_holding_block_button
 						&& !IsSurrendering(pm->gent)) //twirl on
 					{
@@ -6822,9 +6819,9 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALK2
 							|| pm->ps->legsAnim == BOTH_WALKBACK2)
 							&& pm->ps->saberBlockingTime < cg.time
-							&& !active_blocking
+							&& !is_holding_block_button_and_attack
 							&& !is_holding_block_button
-							&& !walking_blocking
+							&& !is_walking_and_blocking
 							&& !IsSurrendering(pm->gent))
 						{
 							//running w/1-handed weapon uses full-body anim
@@ -6973,9 +6970,9 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALK2
 							|| pm->ps->legsAnim == BOTH_WALKBACK2)
 							&& pm->ps->saberBlockingTime < cg.time
-							&& !active_blocking
+							&& !is_holding_block_button_and_attack
 							&& !is_holding_block_button
-							&& !walking_blocking
+							&& !is_walking_and_blocking
 							&& !IsSurrendering(pm->gent))
 						{
 							//running w/1-handed weapon uses full-body anim
@@ -7514,9 +7511,9 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALKBACK2)
 								&& pm->ps->saberBlockingTime < cg.time
-								&& !active_blocking
+								&& !is_holding_block_button_and_attack
 								&& !is_holding_block_button
-								&& !walking_blocking
+								&& !is_walking_and_blocking
 								&& !(gent && IsSurrendering(gent)))
 							{
 								int set_flags = SETANIM_FLAG_NORMAL;

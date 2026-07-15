@@ -819,10 +819,6 @@ public:
 	int inSpaceSuffocation;
 	int inSpaceIndex;
 
-	// Tracks which entities have been hit in the current saber swing
-	int			saberHitEntityBitMask;
-	int			saberLastAttackSequence;
-
 	qboolean jetPackOn;
 	int jetPackToggleTime;
 	int jetPackDebRecharge;
@@ -899,6 +895,9 @@ public:
 	int lastSaberTargetTime;
 	int painCooldownTime;
 	qboolean IsAiming;
+	// Tracks which entities have been hit in the current saber swing
+	int			saberHitEntityBitMask;
+	int			saberLastAttackSequence;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -967,8 +966,6 @@ public:
 		saved_game.write<float>(rocketTargetTime);
 		saved_game.write<int32_t>(inSpaceSuffocation);
 		saved_game.write<int32_t>(inSpaceIndex);
-		saved_game.write<int32_t>(saberHitEntityBitMask);
-		saved_game.write<int32_t>(saberLastAttackSequence);
 
 		saved_game.write<int32_t>(stunDamage);
 		saved_game.write<int32_t>(stunTime);
@@ -1025,6 +1022,8 @@ public:
 		saved_game.write<int32_t>(lastSaberTargetTime);
 		saved_game.write<int32_t>(painCooldownTime);
 		saved_game.write<int32_t>(IsAiming);
+		saved_game.write<int32_t>(saberHitEntityBitMask);
+		saved_game.write<int32_t>(saberLastAttackSequence);
 	}
 
 	void sg_import(
@@ -1094,8 +1093,6 @@ public:
 		saved_game.read<float>(rocketTargetTime);
 		saved_game.read<int32_t>(inSpaceSuffocation);
 		saved_game.read<int32_t>(inSpaceIndex);
-		saved_game.read<int32_t>(saberHitEntityBitMask);
-		saved_game.read<int32_t>(saberLastAttackSequence);
 
 		saved_game.read<int32_t>(stunDamage);
 		saved_game.read<int32_t>(stunTime);
@@ -1152,6 +1149,8 @@ public:
 		saved_game.read<int32_t>(lastSaberTargetTime);
 		saved_game.read<int32_t>(painCooldownTime);
 		saved_game.read<int32_t>(IsAiming);
+		saved_game.read<int32_t>(saberHitEntityBitMask);
+		saved_game.read<int32_t>(saberLastAttackSequence);
 	}
 }; // GClientBase
 

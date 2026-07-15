@@ -3477,13 +3477,6 @@ void WP_SaberApplyDamage(gentity_t* self)
 
 		gentity_t* victim = &g_entities[victimEntityNum[i]];
 
-		// Single-hit enforcement: skip if already damaged this swing
-		if ( victim->s.number < MAX_CLIENTS &&
-			( self->client->saberHitEntityBitMask & ( 1 << victim->s.number ) ) )
-		{
-			continue;
-		}
-
 		// nmckenzie: SABER_DAMAGE_WALLS
 		if (!victim->client)
 		{
@@ -3496,10 +3489,6 @@ void WP_SaberApplyDamage(gentity_t* self)
 		}
 		dflags |= saberKnockbackFlags[i];
 
-		if ( victim->s.number < MAX_CLIENTS )
-		{
-			self->client->saberHitEntityBitMask |= ( 1 << victim->s.number );
-		}
 		G_Damage(victim, self, self, dmgDir[i], dmgSpot[i], totalDmg[i], dflags, MOD_SABER);
 	}
 }
@@ -8629,13 +8618,6 @@ nextStep:
 			{//thrown saber still in flight, so do damage
 				rsaber_num = 0;//was 1?
 			}
-		}
-
-		// Reset hit tracking when a new swing begins
-		if ( self->client->ps.saberAttackSequence != self->client->saberLastAttackSequence )
-		{
-			self->client->saberHitEntityBitMask = 0;
-			self->client->saberLastAttackSequence = self->client->ps.saberAttackSequence;
 		}
 
 		WP_SaberClearDamage();

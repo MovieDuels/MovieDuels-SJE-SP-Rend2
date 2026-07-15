@@ -6330,11 +6330,11 @@ static void CG_DrawCrosshair(vec3_t world_point)
 	float x, y;
 	float		chX, chY;
 
-	const qboolean holding_block = (cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCK)) ? qtrue : qfalse;
-	const qboolean holding_block_and_attack = (cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) ? qtrue : qfalse;
-	const qboolean holding_sprint = (cg.predictedPlayerState.PlayerEffectFlags & (1 << PEF_SPRINTING)) ? qtrue : qfalse;
-	const qboolean holding_block_button = (cg.predictedPlayerState.pm_flags & PMF_BLOCK_HELD) ? qtrue : qfalse;
-	const qboolean holding_walking_button = (cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) ? qtrue : qfalse;
+	const qboolean holding_block = ((cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean holding_block_and_attack = ((cg.predictedPlayerState.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean holding_sprint = ((cg.predictedPlayerState.PlayerEffectFlags & (1 << PEF_SPRINTING)) != 0) ? qtrue : qfalse;
+	const qboolean holding_block_button = ((cg.predictedPlayerState.pm_flags & PMF_BLOCK_HELD) != 0) ? qtrue : qfalse;
+	const qboolean holding_walking_button = ((cg.predictedPlayerState.pm_flags & PMF_WALKING_HELD) != 0) ? qtrue : qfalse;
 
 	if (!cg_drawCrosshair.integer)
 	{

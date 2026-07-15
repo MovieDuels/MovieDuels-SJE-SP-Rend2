@@ -909,14 +909,13 @@ qboolean sab_beh_attack_vs_block(gentity_t* attacker, gentity_t* blocker, const 
 {
 	//if the attack is blocked -(Im the attacker)
 	const qboolean accurate_parry = g_accurate_blocking(blocker, attacker, hit_loc); // Perfect Normal Blocking
-
-	const qboolean blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;	//Normal Blocking (just holding block button)
-	const qboolean m_blocking = blocker->client->ps.ManualBlockingFlags & 1 << PERFECTBLOCKING ? qtrue : qfalse;	//perfect Blocking (Timed Block)
-	const qboolean active_blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;	//Active Blocking (Holding Block button = Attack button)
-	const qboolean npc_blocking = blocker->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING ? qtrue : qfalse;
+	const qboolean blocking = ((blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;	//Normal Blocking (just holding block button)
+	const qboolean m_blocking = ((blocker->client->ps.ManualBlockingFlags & (1 << PERFECTBLOCKING)) != 0) ? qtrue : qfalse;	//perfect Blocking (Timed Block)
+	const qboolean is_holding_block_button_and_attack = ((blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;	//Active Blocking (Holding Block button = Attack button)
+	const qboolean npc_blocking = ((blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 
 	//(Npc Blocking function)
-	const qboolean atkfake = attacker->client->ps.userInt3 & 1 << FLAG_ATTACKFAKE ? qtrue : qfalse;
+	const qboolean atkfake = ((attacker->client->ps.userInt3 & (1 << FLAG_ATTACKFAKE)) != 0) ? qtrue : qfalse;
 
 	if (pm_saber_innonblockable_attack(attacker->client->ps.torsoAnim))
 	{
@@ -1009,9 +1008,9 @@ qboolean sab_beh_attack_vs_block(gentity_t* attacker, gentity_t* blocker, const 
 	else
 	{
 		//standard attack.
-		if (accurate_parry || blocking || m_blocking || active_blocking || npc_blocking) // All types of active blocking
+		if (accurate_parry || blocking || m_blocking || is_holding_block_button_and_attack || npc_blocking) // All types of active blocking
 		{
-			if (m_blocking || active_blocking || npc_blocking)
+			if (m_blocking || is_holding_block_button_and_attack || npc_blocking)
 			{
 				if (npc_blocking && (g_SerenityJediEngineMode->integer == 2 && blocker->client->ps.blockPoints >= BLOCKPOINTS_MISSILE
 					|| g_SerenityJediEngineMode->integer == 1 && blocker->client->ps.forcePower >= BLOCKPOINTS_MISSILE)
@@ -1103,10 +1102,10 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 	}
 	//-(Im the blocker)
 	const qboolean accurate_parry = g_accurate_blocking(blocker, attacker, hit_loc); // Perfect Normal Blocking
-	const qboolean blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;	//Normal Blocking
-	const qboolean m_blocking = blocker->client->ps.ManualBlockingFlags & 1 << PERFECTBLOCKING ? qtrue : qfalse;	//perfect Blocking
-	const qboolean active_blocking = blocker->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;	//Active Blocking
-	const qboolean npc_blocking = blocker->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING ? qtrue : qfalse;	//Active NPC Blocking
+	const qboolean blocking = ((blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;	//Normal Blocking
+	const qboolean m_blocking = ((blocker->client->ps.ManualBlockingFlags & (1 << PERFECTBLOCKING)) != 0) ? qtrue : qfalse;	//perfect Blocking
+	const qboolean is_holding_block_button_and_attack = ((blocker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;	//Active Blocking
+	const qboolean npc_blocking = ((blocker->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;	//Active NPC Blocking
 
 	if (g_SerenityJediEngineMode->integer)
 	{
@@ -1175,7 +1174,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 				else
 				{
 					//just block it //jacesolaris
-					if (active_blocking) //Holding Block Button + attack button
+					if (is_holding_block_button_and_attack) //Holding Block Button + attack button
 					{//Active Blocking
 						//perfect Blocking
 						if (m_blocking) // A perfectly timed block
@@ -1279,7 +1278,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							wp_saber_clear_damage_for_ent_num(attacker, blocker->s.number, saberNum, bladeNum);
 						}
 					}
-					else if (blocking && !active_blocking) //Holding block button only (spamming block)
+					else if (blocking && !is_holding_block_button_and_attack) //Holding block button only (spamming block)
 					{
 						if (blocker->client->ps.blockPoints <= BLOCKPOINTS_HALF)
 						{
@@ -1535,7 +1534,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 				else
 				{
 					//just block it //jacesolaris
-					if (active_blocking) //Holding Block Button + attack button
+					if (is_holding_block_button_and_attack) //Holding Block Button + attack button
 					{
 						//perfect Blocking
 						if (m_blocking) // A perfectly timed block
@@ -1647,7 +1646,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							wp_saber_clear_damage_for_ent_num(attacker, blocker->s.number, saberNum, bladeNum);
 						}
 					}
-					else if (blocking && !active_blocking) //Holding block button only (spamming block)
+					else if (blocking && !is_holding_block_button_and_attack) //Holding block button only (spamming block)
 					{
 						if (blocker->client->ps.forcePower <= BLOCKPOINTS_HALF)
 						{

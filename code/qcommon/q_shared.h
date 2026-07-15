@@ -2036,7 +2036,6 @@ public:
 	int saberEventFlags;
 	int saberAnimLevel;
 	int saberAttackChainCount;
-	int saberAttackSequence;
 	int saberFatigueChainCount;
 	int BlasterAttackChainCount;
 	int saberLockTime;
@@ -2225,7 +2224,8 @@ public:
 	int         saberstuckinwalltimer;
 	int         saberDisarmProtectTime;
 	int         npcKickBlockStartTime;
-	qboolean IsAiming;
+	qboolean    IsAiming;
+	int		    saberAttackSequence;
 
 #endif // !JK2_MODE
 
@@ -2510,6 +2510,7 @@ public:
 		saved_game.write<int32_t>(saberDisarmProtectTime);
 		saved_game.write<int32_t>(npcKickBlockStartTime);
 		saved_game.write<int32_t>(IsAiming);
+		saved_game.write<int32_t>(saberAttackSequence);
 
 #endif // !JK2_MODE
 	}
@@ -2795,6 +2796,7 @@ public:
 		saved_game.read<int32_t>(saberDisarmProtectTime);
 		saved_game.read<int32_t>(npcKickBlockStartTime);
 		saved_game.read<int32_t>(IsAiming);
+		saved_game.read<int32_t>(saberAttackSequence);
 
 #endif // !JK2_MODE
 	}
