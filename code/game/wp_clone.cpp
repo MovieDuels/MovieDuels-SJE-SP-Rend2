@@ -66,7 +66,7 @@ void WP_FireCloneMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qboolea
 
 	WP_MissileTargetHint(ent, start, dir);
 
-	gentity_t* missile = create_missile(start, dir, velocity, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, dir, velocity, 10000, ent, alt_fire);
 
 	missile->classname = "clone_proj";
 	missile->s.weapon = WP_CLONECARBINE;
@@ -228,7 +228,7 @@ void WP_FireCloneRifleMissile(gentity_t* ent, vec3_t start, vec3_t dir, const qb
 
 	WP_MissileTargetHint(ent, start, dir);
 
-	gentity_t* missile = create_missile(start, dir, velocity, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, dir, velocity, 10000, ent, alt_fire);
 
 	missile->classname = "clone_proj";
 	missile->s.weapon = WP_CLONERIFLE;
@@ -382,7 +382,7 @@ void WP_FireCloneCommandoMissile(gentity_t* ent, vec3_t start, vec3_t dir, const
 
 	WP_MissileTargetHint(ent, start, dir);
 
-	gentity_t* missile = create_missile(start, dir, velocity, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, dir, velocity, 10000, ent, alt_fire);
 
 	missile->classname = "clone_proj";
 	missile->s.weapon = WP_CLONECOMMANDO;
@@ -535,7 +535,7 @@ void WP_FireZ6RotaryCannonMissile(gentity_t* ent, vec3_t start, vec3_t dir)
 
 	WP_MissileTargetHint(ent, start, dir);
 
-	gentity_t* missile = create_missile(start, dir, velocity, 10000, ent, qfalse);
+	gentity_t* missile = CreateMissile(start, dir, velocity, 10000, ent, qfalse);
 
 	missile->classname = "z6_rotary_proj";
 	missile->s.weapon = WP_Z6_ROTARY_CANNON;

@@ -36,7 +36,7 @@ void turret_SetBoneAngles(gentity_t* ent, const char* bone, const vec3_t angles)
 extern gentity_t* player;
 extern qboolean G_ClearViewEntity(gentity_t* ent);
 extern void G_SetViewEntity(gentity_t* self, gentity_t* view_entity);
-extern gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
+extern gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 extern cvar_t* com_outcast;
 
 constexpr auto ARM_ANGLE_RANGE = 60;
@@ -2365,7 +2365,7 @@ Creates a turret that, when the player uses a panel, takes control of this turre
 
 static void panel_turret_shoot(gentity_t* self, vec3_t org, vec3_t dir)
 {
-	gentity_t* missile = create_missile(org, dir, self->speed, 10000, self);
+	gentity_t* missile = CreateMissile(org, dir, self->speed, 10000, self);
 
 	if (com_outcast->integer == 1) //playing outcast
 	{

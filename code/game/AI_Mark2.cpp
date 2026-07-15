@@ -58,7 +58,7 @@ enum
 	LSTATE_RISINGUP,
 };
 
-gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
+gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 
 void NPC_Mark2_Precache()
 {
@@ -199,7 +199,7 @@ static void Mark2_FireBlaster()
 
 	G_Sound(NPC, G_SoundIndex("sound/chars/mark2/misc/mark2_fire"));
 
-	gentity_t* missile = create_missile(muzzle1, forward, 1600, 10000, NPC);
+	gentity_t* missile = CreateMissile(muzzle1, forward, 1600, 10000, NPC);
 
 	missile->classname = "bryar_proj";
 	missile->s.weapon = WP_BRYAR_PISTOL;

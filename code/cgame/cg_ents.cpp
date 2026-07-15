@@ -2021,12 +2021,9 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 	{
 		const float f = cg.frameInterpolation;
 
-		cent->currentState.vehicleAngles[0] = LerpAngle(cent->currentState.vehicleAngles[0],
-			cent->nextState->vehicleAngles[0], f);
-		cent->currentState.vehicleAngles[1] = LerpAngle(cent->currentState.vehicleAngles[1],
-			cent->nextState->vehicleAngles[1], f);
-		cent->currentState.vehicleAngles[2] = LerpAngle(cent->currentState.vehicleAngles[2],
-			cent->nextState->vehicleAngles[2], f);
+		cent->currentState.vehicleAngles[0] = LerpAngle(cent->currentState.vehicleAngles[0], cent->nextState->vehicleAngles[0], f);
+		cent->currentState.vehicleAngles[1] = LerpAngle(cent->currentState.vehicleAngles[1], cent->nextState->vehicleAngles[1], f);
+		cent->currentState.vehicleAngles[2] = LerpAngle(cent->currentState.vehicleAngles[2], cent->nextState->vehicleAngles[2], f);
 	}
 
 	if (cent->currentState.number == cg.snap->ps.clientNum)
@@ -2034,17 +2031,9 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 		// if the player, take position from prediction
 		VectorCopy(cg.predictedPlayerState.origin, cent->lerpOrigin);
 		VectorCopy(cg.predictedPlayerState.viewangles, cent->lerpAngles);
-		/*
-		Ghoul2 Insert Start
-		*/
-		//		LerpBoneAngleOverrides(cent);
-		/*
-		Ghoul2 Insert End
-		*/
 		return;
 	}
 
-	//FIXME: prediction on clients in timescale results in jerky positional translation
 	if (cent->interpolate)
 	{
 		// if the entity has a valid next state, interpolate a value between the frames
@@ -2068,26 +2057,6 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 			cent->lerpAngles[0] = LerpAngle(current[0], next[0], f);
 			cent->lerpAngles[1] = LerpAngle(current[1], next[1], f);
 			cent->lerpAngles[2] = LerpAngle(current[2], next[2], f);
-
-			/*
-			if(cent->gent && cent->currentState.clientNum != 0 && !VectorCompare(current, next))
-			{
-				Com_Printf("%s last/next/lerp apos %s/%s/%s, f = %4.2f\n", cent->gent->script_targetname, vtos(current), vtos(next), vtos(cent->lerpAngles), f);
-			}
-			*/
-			/*
-			Ghoul2 Insert Start
-			*/
-			// now the nasty stuff - this will interpolate all ghoul2 models bone angle overrides per model attached to this cent
-			/*
-			if (cent->gent->ghoul2.size())
-			{
-				LerpBoneAngleOverrides(cent);
-			}
-			*/
-			/*
-			Ghoul2 Insert End
-			*/
 		}
 		if (cent->currentState.pos.trType == TR_INTERPOLATE && cent->nextState)
 		{
@@ -2099,14 +2068,7 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 			cent->lerpOrigin[0] = current[0] + f * (next[0] - current[0]);
 			cent->lerpOrigin[1] = current[1] + f * (next[1] - current[1]);
 			cent->lerpOrigin[2] = current[2] + f * (next[2] - current[2]);
-
-			/*
-			if ( cent->gent && cent->currentState.clientNum != 0 )
-			{
-				Com_Printf("%s last/next/lerp pos %s/%s/%s, f = %4.2f\n", cent->gent->script_targetname, vtos(current), vtos(next), vtos(cent->lerpOrigin), f);
-			}
-			*/
-			return; //FIXME: should this be outside this if?
+			return;
 		}
 	}
 	else
@@ -2118,18 +2080,9 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 		if (cent->currentState.pos.trType == TR_INTERPOLATE)
 		{
 			EvaluateTrajectory(&cent->currentState.pos, cg.snap->serverTime, cent->lerpOrigin);
-			/*
-			if(cent->gent && cent->currentState.clientNum != 0 )
-			{
-				Com_Printf("%s last/next/lerp pos %s, f = 1.0\n", cent->gent->script_targetname, vtos(cent->lerpOrigin) );
-			}
-			*/
 			return;
 		}
 	}
-
-	// FIXME: if it's blocked, it wigs out, draws it in a predicted spot, but never
-	// makes it there - we need to predict it in the right place if this is happens...
 
 	// just use the current frame and evaluate as best we can
 	const trajectory_t* pos_data = &cent->currentState.pos;
@@ -2162,20 +2115,6 @@ void CG_CalcEntityLerpPositions(centity_t* cent)
 
 	// adjust for riding a mover
 	CG_AdjustPositionForMover(cent->lerpOrigin, cent->currentState.groundEntityNum, cg.time, cent->lerpOrigin);
-	/*
-	Ghoul2 Insert Start
-	*/
-	// now the nasty stuff - this will interpolate all ghoul2 models bone angle overrides per model attached to this cent
-	/*
-	if (cent->gent->ghoul2.size())
-	{
-		LerpBoneAngleOverrides(cent);
-	}
-	*/
-	/*
-	Ghoul2 Insert End
-	*/
-	// FIXME: perform general error decay?
 }
 #else
 void CG_CalcEntityLerpPositions(centity_t* cent)

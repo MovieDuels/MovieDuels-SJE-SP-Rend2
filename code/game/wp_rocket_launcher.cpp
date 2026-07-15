@@ -193,7 +193,7 @@ void WP_FireRocket(gentity_t* ent, const qboolean alt_fire)
 	WP_TraceSetStart(ent, start);
 	//make sure our start point isn't on the other side of a wall
 
-	gentity_t* missile = create_missile(start, forward_vec, vel, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, vel, 10000, ent, alt_fire);
 
 	missile->classname = "rocket_proj";
 	missile->s.weapon = WP_ROCKET_LAUNCHER;

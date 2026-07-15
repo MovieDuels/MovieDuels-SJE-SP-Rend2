@@ -139,7 +139,7 @@ static void WP_BowcasterMainFire(gentity_t* ent)
 
 		AngleVectors(angs, dir, nullptr, nullptr);
 
-		gentity_t* missile = create_missile(start, dir, vel, 10000, ent);
+		gentity_t* missile = CreateMissile(start, dir, vel, 10000, ent);
 
 		missile->classname = "bowcaster_proj";
 		missile->s.weapon = WP_BOWCASTER;
@@ -174,7 +174,7 @@ static void WP_BowcasterAltFire(gentity_t* ent)
 
 	WP_MissileTargetHint(ent, start, forward_vec);
 
-	gentity_t* missile = create_missile(start, forward_vec, BOWCASTER_VELOCITY, 10000, ent, qtrue);
+	gentity_t* missile = CreateMissile(start, forward_vec, BOWCASTER_VELOCITY, 10000, ent, qtrue);
 
 	missile->classname = "bowcaster_alt_proj";
 	missile->s.weapon = WP_BOWCASTER;

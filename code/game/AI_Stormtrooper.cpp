@@ -69,6 +69,7 @@ extern cvar_t* g_allowgunnerbash;
 extern qboolean char_can_gun_bash(const gentity_t* self);
 extern qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t push_dir);
 extern void speaker_speech(const gentity_t* self, int speech_type, float fail_chance);
+extern void NPC_AngerSound();
 
 extern cvar_t* d_asynchronousGroupAI;
 extern void npc_check_speak(gentity_t* speaker_npc);
@@ -1913,6 +1914,7 @@ void NPC_BSST_Patrol()
 				{
 					G_SetEnemy(NPC, enemy);
 					TIMER_Set(NPC, "attackDelay", Q_irand(500, 2500));
+					NPC_AngerSound();
 					NPC_UpdateAngles(qtrue, qtrue);
 					return;
 				}
@@ -1920,6 +1922,7 @@ void NPC_BSST_Patrol()
 
 			if (NPC_CheckEnemiesInSpotlight())
 			{
+				NPC_AngerSound();
 				NPC_UpdateAngles(qtrue, qtrue);
 				return;
 			}
@@ -1937,6 +1940,7 @@ void NPC_BSST_Patrol()
 			{
 				if (NPC_CheckPlayerTeamStealth())
 				{
+					NPC_AngerSound();
 					NPC_UpdateAngles(qtrue, qtrue);
 					return;
 				}

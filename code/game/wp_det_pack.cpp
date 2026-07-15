@@ -71,7 +71,7 @@ static void WP_DropDetPack(gentity_t* self, vec3_t start)
 	WP_TraceSetStart(self, start);
 	//make sure our start point isn't on the other side of a wall
 
-	gentity_t* missile = create_missile(start, forward_vec, 300, 10000, self, qfalse);
+	gentity_t* missile = CreateMissile(start, forward_vec, 300, 10000, self, qfalse);
 
 	missile->fxID = G_EffectIndex("detpack/explosion");
 	// if we set an explosion effect, explode death can use that instead

@@ -47,8 +47,8 @@ extern cvar_t* g_Advancedaitalk;
 //
 extern qboolean npc_is_dark_jedi(const gentity_t* self);
 extern qboolean npc_is_light_jedi(const gentity_t* self);
-extern void jedi_set_enemy_info(vec3_t enemy_dest, vec3_t enemy_dir, float* enemy_dist, vec3_t enemy_movedir,
-	float* enemy_movespeed, int prediction);
+extern void jedi_set_enemy_info(vec3_t enemy_dest, vec3_t enemy_dir, float* enemy_dist, vec3_t enemy_movedir, float* enemy_movespeed, int prediction);
+extern void NPC_AngerSound();
 
 void npc_check_speak(gentity_t* speaker_npc)
 {
@@ -923,9 +923,8 @@ void NPC_BSPatrol()
 		NPC_CheckEnemy(qtrue, qfalse);
 		if (NPC->enemy)
 		{
-			//FIXME: do anger script
 			NPCInfo->behaviorState = BS_HUNT_AND_KILL;
-			//NPC_AngerSound();
+			NPC_AngerSound();
 			return;
 		}
 	}

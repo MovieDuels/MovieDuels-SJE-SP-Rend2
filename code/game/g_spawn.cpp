@@ -116,19 +116,68 @@ qboolean G_SpawnInt(const char* key, const char* defaultString, int* out)
 
 qboolean G_SpawnVector(const char* key, const char* defaultString, float* out)
 {
-	char* s;
+	char* s = NULL;
 
+	// Retrieve the string value
 	const qboolean present = G_SpawnString(key, defaultString, &s);
-	sscanf(s, "%f %f %f", &out[0], &out[1], &out[2]);
+
+	// Safety: ensure s is not NULL (should never happen, but prevents UB)
+	if (s == NULL)
+	{
+		out[0] = 0.0f;
+		out[1] = 0.0f;
+		out[2] = 0.0f;
+		Com_Printf(S_COLOR_YELLOW "G_SpawnVector: NULL string for key '%s'\n", key);
+		return qfalse;
+	}
+
+	// Parse 3 floats
+	int parsed = sscanf(s, "%f %f %f", &out[0], &out[1], &out[2]);
+
+	if (parsed != 3)
+	{
+		// Do NOT change behaviour — just warn and leave partially parsed values as-is
+		Com_Printf(S_COLOR_YELLOW
+			"G_SpawnVector: malformed vector '%s' for key '%s' (parsed %d/3)\n",
+			s, key, parsed);
+	}
+
 	return present;
 }
 
 qboolean G_SpawnVector4(const char* key, const char* defaultString, float* out)
 {
-	char* s;
+	char* s = NULL;
 
+	// Retrieve the string value
 	const qboolean present = G_SpawnString(key, defaultString, &s);
-	sscanf(s, "%f %f %f %f", &out[0], &out[1], &out[2], &out[3]);
+
+	// Safety: ensure s is not NULL
+	if (s == NULL)
+	{
+		out[0] = 0.0f;
+		out[1] = 0.0f;
+		out[2] = 0.0f;
+		out[3] = 0.0f;
+
+		Com_Printf(S_COLOR_YELLOW
+			"G_SpawnVector4: NULL string for key '%s'\n",
+			key);
+		return qfalse;
+	}
+
+	// Parse 4 floats
+	const int parsed = sscanf(s, "%f %f %f %f",
+		&out[0], &out[1], &out[2], &out[3]);
+
+	if (parsed != 4)
+	{
+		// Do NOT change behaviour — warn only
+		Com_Printf(S_COLOR_YELLOW
+			"G_SpawnVector4: malformed vector '%s' for key '%s' (parsed %d/4)\n",
+			s, key, parsed);
+	}
+
 	return present;
 }
 
@@ -159,15 +208,40 @@ static qboolean G_SpawnFlag(const char* key, const int flag, int* out)
 
 qboolean G_SpawnAngleHack(const char* key, const char* defaultString, float* out)
 {
-	char* s;
-	float temp = 0;
+	char* s = NULL;
+	float temp = 0.0f;
 
+	// Retrieve the string value
 	const qboolean present = G_SpawnString(key, defaultString, &s);
-	sscanf(s, "%f", &temp);
 
-	out[0] = 0;
+	// Safety: ensure s is not NULL
+	if (s == NULL)
+	{
+		out[0] = 0.0f;
+		out[1] = 0.0f;
+		out[2] = 0.0f;
+
+		Com_Printf(S_COLOR_YELLOW
+			"G_SpawnAngleHack: NULL string for key '%s'\n",
+			key);
+		return qfalse;
+	}
+
+	// Parse one float
+	const int parsed = sscanf(s, "%f", &temp);
+
+	if (parsed != 1)
+	{
+		Com_Printf(S_COLOR_YELLOW
+			"G_SpawnAngleHack: malformed angle '%s' for key '%s' (parsed %d/1)\n",
+			s, key, parsed);
+		temp = 0.0f;  // safe fallback
+	}
+
+	// AngleHack: yaw only
+	out[0] = 0.0f;
 	out[1] = temp;
-	out[2] = 0;
+	out[2] = 0.0f;
 
 	return present;
 }

@@ -35,6 +35,7 @@ extern void WP_DeactivateSaber(const gentity_t* self, qboolean clear_length = qf
 extern int PM_AnimLength(const int index, const animNumber_t anim);
 
 qboolean NPC_CheckPlayerTeamStealth();
+extern void NPC_AngerSound();
 
 static qboolean enemy_los;
 static qboolean enemy_cs;
@@ -108,8 +109,7 @@ static void NPC_BSSaberDroid_Patrol()
 		{
 			if (NPC_CheckPlayerTeamStealth())
 			{
-				//NPCInfo->behaviorState = BS_HUNT_AND_KILL;//should be automatic now
-				//NPC_AngerSound();
+				NPC_AngerSound();
 				NPC_UpdateAngles(qtrue, qtrue);
 				return;
 			}

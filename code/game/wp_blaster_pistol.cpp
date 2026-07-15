@@ -157,7 +157,7 @@ void WP_FireBryarPistol(gentity_t* ent, const qboolean alt_fire)
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -349,7 +349,7 @@ void WP_FireBryarPistolDuals(gentity_t* ent, const qboolean alt_fire, const qboo
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -542,7 +542,7 @@ void WP_FireReyPistol(gentity_t* ent, const qboolean alt_fire)
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -738,7 +738,7 @@ void WP_FireReyPistolDuals(gentity_t* ent, const qboolean alt_fire, const qboole
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -927,7 +927,7 @@ void WP_FireClonePistol(gentity_t* ent, const qboolean alt_fire)
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -1119,7 +1119,7 @@ void WP_FireClonePistolDuals(gentity_t* ent, const qboolean alt_fire, const qboo
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -1310,7 +1310,7 @@ void WP_FireMandoClonePistolDuals(gentity_t* ent, const qboolean alt_fire, const
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -1494,7 +1494,7 @@ void WP_FireSBDPistol(gentity_t* ent, const qboolean alt_fire)
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;
@@ -1680,7 +1680,7 @@ void WP_FireJawaPistol(gentity_t* ent, const qboolean alt_fire)
 	// ---------------------------------------------------------------------
 	// MISSILE CREATION
 	// ---------------------------------------------------------------------
-	gentity_t* missile = create_missile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
+	gentity_t* missile = CreateMissile(start, forward_vec, BRYAR_PISTOL_VEL, 10000, ent, alt_fire);
 	if (missile == NULL)
 	{
 		return;

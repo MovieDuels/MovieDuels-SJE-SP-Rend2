@@ -28,7 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 void WP_BotLaser(gentity_t* ent)
 //---------------------------------------------------------
 {
-	gentity_t* missile = create_missile(muzzle, forward_vec, BRYAR_PISTOL_VEL, 10000, ent);
+	gentity_t* missile = CreateMissile(muzzle, forward_vec, BRYAR_PISTOL_VEL, 10000, ent);
 
 	missile->classname = "bryar_proj";
 	missile->s.weapon = WP_BRYAR_PISTOL;

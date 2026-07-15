@@ -35,7 +35,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <qcommon/q_math.h>
 #include <qcommon/q_platform.h>
 
-gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
+gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 void Remote_Strafe();
 
 constexpr auto VELOCITY_DECAY = 0.85f;
@@ -271,7 +271,7 @@ static void Remote_Fire()
 	vectoangles(delta1, angle_to_enemy1);
 	AngleVectors(angle_to_enemy1, forward, vright, up);
 
-	gentity_t* missile = create_missile(NPC->currentOrigin, forward, 1000, 10000, NPC);
+	gentity_t* missile = CreateMissile(NPC->currentOrigin, forward, 1000, 10000, NPC);
 
 	G_PlayEffect("bryar/muzzle_flash", NPC->currentOrigin, forward);
 

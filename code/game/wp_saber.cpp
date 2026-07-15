@@ -36557,7 +36557,7 @@ constexpr auto DESTRUCTION_NPC_DAMAGE_NORMAL = 60;
 constexpr auto DESTRUCTION_NPC_DAMAGE_HARD = 90;
 constexpr auto DESTRUCTION_SIZE = 3;
 
-gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
+gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 //---------------------------------------------------------
 static void WP_FireDestruction(gentity_t* ent, const int force_level)
 //---------------------------------------------------------
@@ -36591,7 +36591,7 @@ static void WP_FireDestruction(gentity_t* ent, const int force_level)
 
 	VectorCopy(ent->client->renderInfo.eyePoint, start);
 
-	gentity_t* missile = create_missile(start, forward, vel, 10000, ent, qfalse);
+	gentity_t* missile = CreateMissile(start, forward, vel, 10000, ent, qfalse);
 
 	missile->classname = "rocket_proj";
 	missile->s.weapon = WP_CONCUSSION;
@@ -38393,7 +38393,7 @@ void WP_FireBlast(gentity_t* ent, const int force_level)
 
 	VectorCopy(ent->client->renderInfo.eyePoint, start);
 
-	gentity_t* missile = create_missile(start, forward, vel, 10000, ent, qfalse);
+	gentity_t* missile = CreateMissile(start, forward, vel, 10000, ent, qfalse);
 
 	missile->classname = "rocket_proj";
 	missile->s.weapon = WP_ROCKET_LAUNCHER;

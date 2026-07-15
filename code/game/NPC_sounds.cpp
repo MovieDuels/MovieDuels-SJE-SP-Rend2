@@ -90,30 +90,44 @@ void G_AddVoiceEvent(const gentity_t* self, const int event, const int speak_deb
 
 void NPC_PlayConfusionSound(gentity_t* self)
 {
+	// SAFETY FIX: self, self->client, or self->NPC may be NULL in edge cases
+	if (self == NULL || self->client == NULL || self->NPC == NULL)
+	{
+		Com_Printf(S_COLOR_YELLOW "NPC_PlayConfusionSound: NULL self/client/NPC\n");
+		return;
+	}
+
 	if (self->health > 0)
 	{
-		if (self->enemy || //was mad
-			!TIMER_Done(self, "enemyLastVisible") || //saw something suspicious
-			self->client->renderInfo.lookTarget == 0 //was looking at player
-			)
+		if (self->enemy ||
+			!TIMER_Done(self, "enemyLastVisible") ||
+			self->client->renderInfo.lookTarget == 0)
 		{
-			self->NPC->blockedSpeechDebounceTime = 0; //make sure we say this
+			self->NPC->blockedSpeechDebounceTime = 0;
 			G_AddVoiceEvent(self, Q_irand(EV_CONFUSE2, EV_CONFUSE3), 2000);
 		}
-		else if (self->NPC && self->NPC->investigateDebounceTime + self->NPC->pauseTime > level.time)
-			//was checking something out
+		else if (self->NPC->investigateDebounceTime + self->NPC->pauseTime > level.time)
 		{
-			self->NPC->blockedSpeechDebounceTime = 0; //make sure we say this
-			G_AddVoiceEvent(self, EV_CONFUSE1, 2000);
+			self->NPC->blockedSpeechDebounceTime = 0;
+			G_AddVoiceEvent(self, Q_irand(EV_CONFUSE1, EV_CONFUSE3), 2000);
 		}
-		//G_AddVoiceEvent( self, Q_irand(EV_CONFUSE1, EV_CONFUSE3), 2000 );
 	}
-	//reset him to be totally unaware again
+
+	// reset him to be totally unaware again
 	TIMER_Set(self, "enemyLastVisible", 0);
 	self->NPC->tempBehavior = BS_DEFAULT;
 
-	//self->NPC->behaviorState = BS_PATROL;
-	G_ClearEnemy(self); //FIXME: or just self->enemy = NULL;?
+	G_ClearEnemy(self);
 
 	self->NPC->investigateCount = 0;
+}
+
+void NPC_AngerSound()
+{
+	if (NPCInfo->investigateSoundDebounceTime)
+		return;
+
+	NPCInfo->investigateSoundDebounceTime = 1;
+
+	G_AddVoiceEvent(NPC, Q_irand(EV_ANGER1, EV_ANGER3), 2000);
 }

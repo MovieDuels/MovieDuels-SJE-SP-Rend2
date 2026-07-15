@@ -42,7 +42,7 @@ static void WP_RepeaterMainFire(gentity_t* ent, vec3_t dir)
 
 	WP_MissileTargetHint(ent, start, dir);
 
-	gentity_t* missile = create_missile(start, dir, REPEATER_VELOCITY, 10000, ent);
+	gentity_t* missile = CreateMissile(start, dir, REPEATER_VELOCITY, 10000, ent);
 
 	missile->classname = "repeater_proj";
 	missile->s.weapon = WP_REPEATER;
@@ -87,12 +87,12 @@ static void WP_RepeaterAltFire(gentity_t* ent)
 
 	if (ent->client && ent->client->NPC_class == CLASS_GALAKMECH)
 	{
-		missile = create_missile(start, ent->client->hiddenDir, ent->client->hiddenDist, 10000, ent, qtrue);
+		missile = CreateMissile(start, ent->client->hiddenDir, ent->client->hiddenDist, 10000, ent, qtrue);
 	}
 	else
 	{
 		WP_MissileTargetHint(ent, start, forward_vec);
-		missile = create_missile(start, forward_vec, REPEATER_ALT_VELOCITY, 10000, ent, qtrue);
+		missile = CreateMissile(start, forward_vec, REPEATER_ALT_VELOCITY, 10000, ent, qtrue);
 	}
 
 	missile->classname = "repeater_alt_proj";

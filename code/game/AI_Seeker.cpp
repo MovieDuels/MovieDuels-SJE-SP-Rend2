@@ -40,7 +40,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 extern void NPC_BSST_Patrol();
 extern void Boba_FireDecide();
-extern gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
+extern gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 
 void Seeker_Strafe();
 
@@ -345,7 +345,7 @@ static void Seeker_Fire()
 	// move a bit forward in the direction we shall shoot in so that the bolt doesn't poke out the other side of the seeker
 	VectorMA(NPC->currentOrigin, 15, dir, muzzle);
 
-	gentity_t* missile = create_missile(muzzle, dir, 1000, 10000, NPC);
+	gentity_t* missile = CreateMissile(muzzle, dir, 1000, 10000, NPC);
 
 	G_PlayEffect("blaster/muzzle_flash", NPC->currentOrigin, dir);
 

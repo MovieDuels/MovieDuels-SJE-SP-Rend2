@@ -26,7 +26,7 @@ extern vec3_t muzzle;
 extern vec3_t muzzle2;
 
 void WP_TraceSetStart(const gentity_t* ent, vec3_t start);
-gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
+gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 void WP_Stick(gentity_t* missile, const trace_t* trace, float fudge_distance = 0.0f);
 void WP_Explode(gentity_t* self);
 void WP_ExplosiveDie(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int means_of_death, int d_flags, int hit_loc);

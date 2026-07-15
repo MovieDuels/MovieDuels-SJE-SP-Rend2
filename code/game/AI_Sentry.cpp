@@ -38,7 +38,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <qcommon/q_math.h>
 #include <qcommon/q_platform.h>
 
-gentity_t* create_missile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
+gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 extern gitem_t* FindItemForAmmo(ammo_t ammo);
 
 constexpr auto MIN_DISTANCE = 256;
@@ -196,7 +196,7 @@ static void Sentry_Fire()
 
 	G_PlayEffect("bryar/muzzle_flash", muzzle, forward);
 
-	gentity_t* missile = create_missile(muzzle, forward, 1600, 10000, NPC);
+	gentity_t* missile = CreateMissile(muzzle, forward, 1600, 10000, NPC);
 
 	missile->classname = "bryar_proj";
 	missile->s.weapon = WP_BRYAR_PISTOL;
@@ -538,7 +538,6 @@ static void NPC_Sentry_Patrol()
 	{
 		if (NPC_CheckPlayerTeamStealth())
 		{
-			//NPC_AngerSound();
 			NPC_UpdateAngles(qtrue, qtrue);
 			return;
 		}

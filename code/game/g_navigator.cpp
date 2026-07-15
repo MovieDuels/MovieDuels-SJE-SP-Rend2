@@ -385,12 +385,12 @@ using TEntEdgeMap = ratl::map_vs<int, TEdgesPerEnt, NAV::MAX_BLOCKING_ENTS>;
 ////////////////////////////////////////////////////////////////////////////////////////
 struct SPathPoint
 {
-	CVec3 mPoint;
-	float mSpeed;
-	float mSlowingRadius;
-	float mReachedRadius;
-	float mDist;
-	float mETA;
+	CVec3 mPoint = CVec3(0, 0, 0);
+	float mSpeed = 0.0f;
+	float mSlowingRadius = 0.0f;
+	float mReachedRadius = 0.0f;
+	float mDist = 0.0f;
+	float mETA = 0.0f;
 	NAV::TNodeHandle mNode;
 };
 
@@ -424,44 +424,44 @@ struct SSteerUser
 {
 	// Constant Values In Entity
 	//---------------------------
-	float mMaxForce;
-	float mMaxSpeed;
-	float mRadius;
-	float mMass;
+	float mMaxForce = 0.0f;
+	float mMaxSpeed = 0.0f;
+	float mRadius = 0.0f;
+	float mMass = 0.0f;
 
 	// Current Values
 	//----------------
-	TNeighbors mNeighbors;
+	TNeighbors mNeighbors = TNeighbors();
 
-	CVec3 mOrientation;
-	CVec3 mPosition;
+	CVec3 mOrientation = CVec3(0, 0, 0);
+	CVec3 mPosition = CVec3(0, 0, 0);
 
-	CVec3 mVelocity;
-	float mSpeed;
+	CVec3 mVelocity = CVec3(0, 0, 0);
+	float mSpeed = 0.0f;
 
 	// Values Projected From Current Values
 	//--------------------------------------
-	CVec3 mProjectFwd;
-	CVec3 mProjectSide;
-	CVec3 mProjectPath;
+	CVec3 mProjectFwd = CVec3(0, 0, 0);
+	CVec3 mProjectSide = CVec3(0, 0, 0);
+	CVec3 mProjectPath = CVec3(0, 0, 0);
 
 	// Temporary Values
 	//------------------
-	CVec3 mDesiredVelocity;
-	float mDesiredSpeed;
-	float mDistance;
-	CVec3 mSeekLocation;
+	CVec3 mDesiredVelocity = CVec3(0, 0, 0);
+	float mDesiredSpeed = 0.0f;
+	float mDistance = 0.0f;
+	CVec3 mSeekLocation = CVec3(0, 0, 0);
 
-	int mIgnoreEntity;
+	int mIgnoreEntity = 0;
 
-	bool mBlocked;
-	int mBlockedTgtEntity;
-	CVec3 mBlockedTgtPosition;
+	bool mBlocked = false;
+	int mBlockedTgtEntity = 0;
+	CVec3 mBlockedTgtPosition = CVec3(0, 0, 0);
 
 	// Steering
 	//----------
-	CVec3 mSteering;
-	float mNewtons;
+	CVec3 mSteering = CVec3(0, 0, 0);
+	float mNewtons = 0.0f;
 };
 
 using TSteerUsers = ratl::pool_vs<SSteerUser, 4>;

@@ -42,6 +42,7 @@ extern void NPC_TempLookTarget(const gentity_t* self, int lookEntNum, int minLoo
 extern qboolean G_ExpandPointToBBox(vec3_t point, const vec3_t mins, const vec3_t maxs, int ignore, int clipmask);
 extern void NPC_AimAdjust(int change);
 extern qboolean FlyingCreature(const gentity_t* ent);
+extern void NPC_AngerSound();
 
 constexpr auto MAX_VIEW_DIST = 1024;
 constexpr auto MAX_VIEW_SPEED = 250;
@@ -225,8 +226,7 @@ static void NPC_BSGrenadier_Patrol()
 		{
 			if (NPC_CheckPlayerTeamStealth())
 			{
-				//NPCInfo->behaviorState = BS_HUNT_AND_KILL;//should be automatic now
-				//NPC_AngerSound();
+				NPC_AngerSound();
 				NPC_UpdateAngles(qtrue, qtrue);
 				return;
 			}

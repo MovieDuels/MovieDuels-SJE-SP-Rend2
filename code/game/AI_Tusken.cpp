@@ -46,6 +46,7 @@ extern qboolean G_ExpandPointToBBox(vec3_t point, const vec3_t mins, const vec3_
 extern void NPC_AimAdjust(int change);
 extern qboolean FlyingCreature(const gentity_t* ent);
 extern int PM_AnimLength(const int index, const animNumber_t anim);
+extern void NPC_AngerSound();
 
 constexpr auto MAX_VIEW_DIST = 1024;
 constexpr auto MAX_VIEW_SPEED = 250;
@@ -193,7 +194,7 @@ static void NPC_BSTusken_Patrol()
 		{
 			if (NPC_CheckPlayerTeamStealth())
 			{
-				//NPC_AngerSound();
+				NPC_AngerSound();
 				NPC_UpdateAngles(qtrue, qtrue);
 				return;
 			}

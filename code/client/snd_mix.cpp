@@ -55,49 +55,45 @@ static void S_WriteLinearBlastStereo16()
 
 static void S_TransferStereo16(unsigned long* pbuf, const int endtime)
 {
-	// snd_p points into paintbuffer (global)
-	snd_p = reinterpret_cast<int*>(paintbuffer);
+	/* snd_p points into paintbuffer (global mix buffer) */
+	snd_p = (int*)paintbuffer;
 
 	int ls_paintedtime = s_paintedtime;
 
 	while (ls_paintedtime < endtime)
 	{
-		// ------------------------------------------------------------
-		// Compute circular buffer position safely
-		// Using unsigned prevents MSVC C6297 overflow warnings.
-		// Behaviour is identical to original bitmask wrap.
-		// ------------------------------------------------------------
-		const unsigned int halfSamples = static_cast<unsigned int>(dma.samples >> 1);
-		const unsigned int mask = halfSamples - 1U;
+		/* Safe half-sample count */
+		const int halfSamples = (int)(dma.samples >> 1);
 
-		const int lpos = static_cast<int>(
-			static_cast<unsigned int>(ls_paintedtime) & mask);
+		/* Ring-buffer mask */
+		const int mask = (halfSamples - 1);
 
-		// Output pointer into DMA buffer
-		snd_out = reinterpret_cast<short*>(pbuf) + (lpos << 1);
+		/* Wrapped position */
+		const int lpos = (ls_paintedtime & mask);
 
-		// ------------------------------------------------------------
-		// Determine how many samples we can write linearly
-		// ------------------------------------------------------------
-		snd_linear_count = static_cast<int>(halfSamples) - lpos;
+		/* Compute stereo output pointer safely using ptrdiff_t */
+		const ptrdiff_t stereoOffset = ((ptrdiff_t)lpos << 1);
+		snd_out = (short*)pbuf + stereoOffset;
 
-		if (ls_paintedtime + snd_linear_count > endtime)
+		/* Remaining samples until wrap/end */
+		int remaining = (halfSamples - lpos);
+
+		if ((ls_paintedtime + remaining) > endtime)
 		{
-			snd_linear_count = endtime - ls_paintedtime;
+			remaining = (endtime - ls_paintedtime);
 		}
 
-		// Stereo = 2 channels
-		snd_linear_count <<= 1;
+		/* Convert sample count to stereo 16-bit count using ptrdiff_t */
+		const ptrdiff_t stereoCount = ((ptrdiff_t)remaining << 1);
+		snd_linear_count = (int)stereoCount;
 
-		// ------------------------------------------------------------
-		// Write samples into DMA buffer
-		// ------------------------------------------------------------
+		/* Write samples */
 		S_WriteLinearBlastStereo16();
 
-		// Advance paintbuffer pointer
+		/* Advance pointers */
 		snd_p += snd_linear_count;
 
-		// Advance painted time (divide by 2 because stereo)
+		/* Advance painted time (divide by 2 safely) */
 		ls_paintedtime += (snd_linear_count >> 1);
 	}
 }

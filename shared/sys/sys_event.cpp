@@ -34,15 +34,19 @@ EVENT LOOP
 ========================================================================
 */
 
-#define	MAX_QUED_EVENTS		256
+constexpr auto MAX_QUED_EVENTS = 256;
 #define	MASK_QUED_EVENTS	( MAX_QUED_EVENTS - 1 )
 
 static sysEvent_t eventQue[MAX_QUED_EVENTS] = {};
 static sysEvent_t* lastEvent = nullptr;
 static uint32_t eventHead = 0, eventTail = 0;
 
+// ---------------------------------------------------------
+// Return a readable name for a system event type.
+// ---------------------------------------------------------
 static const char* Sys_EventName(const sysEventType_t evType)
 {
+	// Table of known event names
 	static const char* evNames[SE_MAX] = {
 		"SE_NONE",
 		"SE_KEY",
@@ -52,10 +56,18 @@ static const char* Sys_EventName(const sysEventType_t evType)
 		"SE_CONSOLE"
 	};
 
+	// Explicit lower-bound check (fixes C33010)
+	if (evType < 0)
+	{
+		return "SE_UNKNOWN";
+	}
+
+	// Explicit upper-bound check
 	if (evType >= SE_MAX)
 	{
 		return "SE_UNKNOWN";
 	}
+
 	return evNames[evType];
 }
 

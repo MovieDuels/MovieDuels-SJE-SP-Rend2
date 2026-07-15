@@ -20864,48 +20864,6 @@ static void PM_WeaponLightsaber(void)
 	// We are in a firing state for the weapon.
 	pm->ps->weaponstate = WEAPON_FIRING;
 
-	// If we are still in weaponTime and holding block, with enough BP force a blocking pose.
-	if (pm->ps->blockPoints > BLOCKPOINTS_MISSILE)
-	{
-		if (pm->ps->weaponTime > 0 && (is_holding_block_button))
-		{
-			if (pm->ps->saberAnimLevel == SS_STAFF)
-			{
-				if (g_SerenityJediEngineMode->integer == 2)
-				{
-					PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelStaffAMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				}
-				else
-				{
-					PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelStaffMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				}
-			}
-			else if (pm->ps->saberAnimLevel == SS_DUAL)
-			{
-				if (g_SerenityJediEngineMode->integer == 2)
-				{
-					PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelDualAMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				}
-				else
-				{
-					PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelDualMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				}
-			}
-			else
-			{
-				if (g_SerenityJediEngineMode->integer == 2)
-				{
-					PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelSingleAMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				}
-				else
-				{
-					PM_SetAnim(pm, SETANIM_TORSO, PM_BlockingPoseForSaberAnimLevelSingleMD(), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-				}
-			}
-			PM_SetSaberMove(LS_READY);
-		}
-	}
-
 	// If this entity has a fireDelay, we are not actually firing yet.
 	if (pm->gent && pm->gent->client && pm->gent->client->fireDelay > 0)
 	{
