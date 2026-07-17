@@ -2651,7 +2651,7 @@ static void G_ForceSafeModelChangeState(gentity_t* ent)
 	// ----------------------------------------------------------------------
 	if (JET_Flying(ent) == qtrue)
 	{
-		jet_fly_stop(ent); 
+		jet_fly_stop(ent);
 	}
 	if (ent->client->jetPackOn)
 	{
@@ -2682,7 +2682,6 @@ static void G_ForceSafeModelChangeState(gentity_t* ent)
 	ent->client->ps.legsAnimTimer = 0;
 	ent->client->ps.torsoAnimTimer = 0;
 }
-
 
 void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 {

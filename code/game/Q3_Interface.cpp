@@ -7578,18 +7578,34 @@ GetVectorVariable
 
 int CQuake3GameInterface::GetVectorVariable(const char* name, vec3_t value)
 {
-	//Check the strings
+	// Look up the vector by name
 	const auto vvi = m_varVectors.find(name);
 
 	if (vvi != m_varVectors.end())
 	{
 		const char* str = (*vvi).second.c_str();
 
-		sscanf(str, "%f %f %f", &value[0], &value[1], &value[2]);
-		return true;
+		float x = 0.0f;
+		float y = 0.0f;
+		float z = 0.0f;
+
+		// Capture sscanf return value to satisfy MSVC C6031
+		const int parsed = sscanf(str, "%f %f %f", &x, &y, &z);
+
+		if (parsed == 3)
+		{
+			value[0] = x;
+			value[1] = y;
+			value[2] = z;
+			return qtrue;
+		}
+		else
+		{
+			return qfalse;
+		}
 	}
 
-	return false;
+	return qfalse;
 }
 
 /*
@@ -8301,49 +8317,65 @@ void CQuake3GameInterface::CenterPrint(const char* format, ...)
 // Print a debug message.
 void CQuake3GameInterface::DebugPrint(const e_DebugPrintLevel level, const char* format, ...)
 {
-	//Don't print messages they don't want to see
+	// Respect debug level filter
 	if (g_ICARUSDebug->integer < level)
+	{
 		return;
+	}
 
 	va_list argptr;
 	char text[1024];
 
 	va_start(argptr, format);
-	Q_vsnprintf(text, sizeof text, format, argptr);
+	Q_vsnprintf(text, sizeof(text), format, argptr);
 	va_end(argptr);
 
-	//Add the color formatting
 	switch (level)
 	{
 	case WL_ERROR:
-		Com_Printf(S_COLOR_RED"ERROR: %s", text);
+		Com_Printf(S_COLOR_RED "ERROR: %s", text);
 		break;
 
 	case WL_WARNING:
-		Com_Printf(S_COLOR_YELLOW"WARNING: %s", text);
+		Com_Printf(S_COLOR_YELLOW "WARNING: %s", text);
 		break;
 
 	case WL_DEBUG:
 	{
-		int entNum;
+		int entNum = 0;
 
-		sscanf(text, "%d", &entNum);
+		// FIX: capture sscanf return value to satisfy MSVC warning C6031
+		const int parsed = sscanf(text, "%d", &entNum);
+
+		if (parsed != 1)
+		{
+			Com_Printf(S_COLOR_RED "ERROR: DebugPrint could not parse entity number from '%s'\n", text);
+			return;
+		}
 
 		if (m_entFilter >= 0 && m_entFilter != entNum)
+		{
 			return;
+		}
 
-		auto buffer = text;
-		buffer += 5;
+		// Skip the "#### " prefix (entity number + space)
+		const char* buffer = text + 5;
 
 		if (entNum < 0 || entNum >= MAX_GENTITIES)
+		{
 			entNum = 0;
+		}
 
-		Com_Printf(S_COLOR_BLUE"DEBUG: %s(%d): %s\n", g_entities[entNum].script_targetname, entNum, buffer);
+		Com_Printf(S_COLOR_BLUE "DEBUG: %s(%d): %s\n",
+			g_entities[entNum].script_targetname,
+			entNum,
+			buffer);
 		break;
 	}
+
 	default:
 	case WL_VERBOSE:
-		Com_Printf(S_COLOR_GREEN"INFO: %s", text);
+		Com_Printf(S_COLOR_GREEN "INFO: %s", text);
 		break;
 	}
 }
@@ -8683,39 +8715,104 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 	switch (toSet)
 	{
 	case SET_ORIGIN:
-		sscanf(data, "%f %f %f", &vector_data[0], &vector_data[1], &vector_data[2]);
+	{
+		// Parse vector safely
+		float x = 0.0f, y = 0.0f, z = 0.0f;
+
+		const int parsed = sscanf(data, "%f %f %f", &x, &y, &z);
+
+		if (parsed != 3)
+		{
+			DebugPrint(WL_WARNING,
+				"Set: SET_ORIGIN — failed to parse origin '%s' (parsed %d components)\n",
+				data, parsed);
+			break; // behaviour-preserving: do nothing if invalid
+		}
+
+		vector_data[0] = x;
+		vector_data[1] = y;
+		vector_data[2] = z;
+
+		// Move entity
 		G_SetOrigin(ent, vector_data);
+
+		// Hack for moving spawners (behaviour preserved)
 		if (Q_strncmp("NPC_", ent->classname, 4) == 0)
 		{
-			//hack for moving spawners
 			VectorCopy(vector_data, ent->s.origin);
 		}
-		if (ent->client)
+
+		// Clear jump start positions so landing does not cause damage
+		if (ent->client != NULL)
 		{
-			//clear jump start positions so we don't take damage when we land...
-			ent->client->ps.jumpZStart = ent->client->ps.forceJumpZStart = vector_data[2];
+			ent->client->ps.jumpZStart = vector_data[2];
+			ent->client->ps.forceJumpZStart = vector_data[2];
 		}
+
 		gi.linkentity(ent);
 		break;
+	}
 
 	case SET_TELEPORT_DEST:
-		sscanf(data, "%f %f %f", &vector_data[0], &vector_data[1], &vector_data[2]);
-		if (!Q3_SetTeleportDest(entID, vector_data))
+	{
+		// Parse vector safely
+		float x = 0.0f, y = 0.0f, z = 0.0f;
+
+		const int parsed = sscanf(data, "%f %f %f", &x, &y, &z);
+
+		if (parsed != 3)
 		{
+			DebugPrint(WL_WARNING,
+				"Set: SET_TELEPORT_DEST — failed to parse teleport destination '%s' (parsed %d components)\n",
+				data, parsed);
+			break; // behaviour-preserving: do nothing if invalid
+		}
+
+		vector_data[0] = x;
+		vector_data[1] = y;
+		vector_data[2] = z;
+
+		// Attempt to set teleport destination
+		const qboolean success = Q3_SetTeleportDest(entID, vector_data);
+
+		if (success == qfalse)
+		{
+			// Behaviour preserved: fallback to MOVE_NAV task
 			Q3_TaskIDSet(ent, TID_MOVE_NAV, taskID);
 			return;
 		}
+
 		break;
+	}
 
 	case SET_COPY_ORIGIN:
 		Q3_SetCopyOrigin(entID, data);
 		break;
 
 	case SET_ANGLES:
-		//Q3_SetAngles( entID, *(vec3_t *) data);
-		sscanf(data, "%f %f %f", &vector_data[0], &vector_data[1], &vector_data[2]);
+	{
+		// Parse safely into temporary floats
+		float x = 0.0f, y = 0.0f, z = 0.0f;
+
+		const int parsed = sscanf(data, "%f %f %f", &x, &y, &z);
+
+		if (parsed != 3)
+		{
+			DebugPrint(WL_WARNING,
+				"Set: SET_ANGLES — failed to parse angles '%s' (parsed %d components)\n",
+				data, parsed);
+			break; // behaviour-preserving: do nothing if invalid
+		}
+
+		vector_data[0] = x;
+		vector_data[1] = y;
+		vector_data[2] = z;
+
+		// Behaviour preserved: apply angles
 		Q3_SetAngles(entID, vector_data);
+
 		break;
+	}
 
 	case SET_XVELOCITY:
 		float_data = atof(data);
@@ -9318,10 +9415,6 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 
 	case SET_TREASONED:
 		DebugPrint(WL_VERBOSE, "SET_TREASONED is disabled, do not use\n");
-		/*
-		G_TeamRetaliation( NULL, &g_entities[0], qfalse );
-		ffireLevel = FFIRE_LEVEL_RETALIATION;
-		*/
 		break;
 
 	case SET_UNDYING:
@@ -9600,9 +9693,29 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 		break;
 
 	case SET_SABER_ORIGIN:
-		sscanf(data, "%f %f %f", &vector_data[0], &vector_data[1], &vector_data[2]);
+	{
+		// Parse safely into temporary floats
+		float x = 0.0f, y = 0.0f, z = 0.0f;
+
+		const int parsed = sscanf(data, "%f %f %f", &x, &y, &z);
+
+		if (parsed != 3)
+		{
+			DebugPrint(WL_WARNING,
+				"Set: SET_SABER_ORIGIN — failed to parse saber origin '%s' (parsed %d components)\n",
+				data, parsed);
+			break; // behaviour-preserving: do nothing if invalid
+		}
+
+		vector_data[0] = x;
+		vector_data[1] = y;
+		vector_data[2] = z;
+
+		// Behaviour preserved: apply saber origin
 		WP_SetSaberOrigin(ent, vector_data);
+
 		break;
+	}
 
 	case SET_ADJUST_AREA_PORTALS:
 		if (!Q_stricmp("true", data))

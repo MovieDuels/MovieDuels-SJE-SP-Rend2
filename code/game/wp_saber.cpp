@@ -3145,9 +3145,9 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 	float max_dmg;
 	const saberType_t saber_type = ent->client->ps.saber[saberNum].type;
 
-	const qboolean is_holding_block_button_and_attack =((ent->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
-	const qboolean is_holding_block_button =((ent->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0)	? qtrue	: qfalse;
-	const qboolean m_blocking =((ent->client->ps.ManualBlockingFlags & (1 << PERFECTBLOCKING)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack = ((ent->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button = ((ent->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean m_blocking = ((ent->client->ps.ManualBlockingFlags & (1 << PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 
 	if (!numVictims)
 	{
@@ -6642,7 +6642,7 @@ qboolean WP_SaberBlockedBounceBlock(gentity_t* victim, gentity_t* attacker, cons
 	return qfalse;
 }
 
-qboolean WP_SaberNPCParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum,vec3_t hit_loc)
+qboolean WP_SaberNPCParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
@@ -6704,7 +6704,7 @@ qboolean WP_SaberNPCParry(gentity_t* victim, gentity_t* attacker, const int sabe
 	return qfalse;
 }
 
-qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum,	vec3_t hit_loc)
+qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
@@ -6766,7 +6766,7 @@ qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, const int saberN
 	return qfalse;
 }
 
-qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum,vec3_t hit_loc)
+qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
@@ -6828,7 +6828,7 @@ qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, const int sab
 	return qfalse;
 }
 
-qboolean WP_SaberNPCFatiguedParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum,vec3_t hit_loc)
+qboolean WP_SaberNPCFatiguedParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
@@ -6890,7 +6890,7 @@ qboolean WP_SaberNPCFatiguedParry(gentity_t* victim, gentity_t* attacker, const 
 	return qfalse;
 }
 
-qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum,vec3_t hit_loc)
+qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
@@ -6952,7 +6952,7 @@ qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, const i
 	return qfalse;
 }
 
-qboolean WP_SaberFatiguedParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum,vec3_t hit_loc)
+qboolean WP_SaberFatiguedParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
@@ -33466,7 +33466,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						&& traceEnt->client->ps.blockPoints > 5)
 					{
 						//saber can block lightning
-						const qboolean is_holding_block_button_and_attack =	((traceEnt->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+						const qboolean is_holding_block_button_and_attack = ((traceEnt->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 						//Active Blocking
 						//make them do a parry
 						const float chance_of_fizz = Q_flrand(0.0f, 1.0f);
