@@ -1807,6 +1807,7 @@ static void G_TauntSound(const gentity_t* ent, const int taunt)
 extern qboolean PM_CrouchAnim(const int anim);
 extern qboolean Block_Button_Held(const gentity_t* defender);
 extern qboolean IsHoldingReloadableGun(const gentity_t* ent);
+extern qboolean manual_saberblocking(const gentity_t* defender);
 extern void WP_ReloadGun(gentity_t* ent);
 extern void CancelReload(gentity_t* ent);
 extern qboolean NPC_IsMando(const gentity_t* self);
@@ -1814,7 +1815,7 @@ extern qboolean PM_RestAnim(int anim);
 
 static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 {
-	const qboolean is_holding_block_button = ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
+	const qboolean is_holding_block_button = ((ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK) != 0) ? qtrue : qfalse;
 	//Normal Blocking
 
 	if (!ent || !ent->client)
@@ -1828,6 +1829,11 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 	}
 
 	if (ent->client->ps.stats[STAT_HEALTH] <= 0)
+	{
+		return;
+	}
+
+	if (BG_IsAlreadyinTauntAnim(ent->client->ps.torsoAnim))
 	{
 		return;
 	}
@@ -1848,12 +1854,12 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 		return;
 	}
 
-	if (ent->client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING)
+	if (manual_saberblocking(ent))
 	{
 		return;
 	}
 
-	if (BG_IsAlreadyinTauntAnim(ent->client->ps.legsAnim))
+	if (ent->client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING)
 	{
 		return;
 	}
@@ -2623,7 +2629,7 @@ static void G_SetsaberdownorAnim(gentity_t* ent)
 	}
 	else
 	{
-		if (IsHoldingReloadableGun(ent)) //sp
+		if (IsHoldingReloadableGun(ent) && g_AllowReload->integer == 1) //sp
 		{
 			if (ent->reloadTime > 0)
 			{
@@ -2982,16 +2988,8 @@ void ClientCommand(const int clientNum)
 #endif
 	else if (Q_stricmp(cmd, "saberdown") == 0)
 	{
-		if (IsHoldingReloadableGun(ent) && g_AllowReload->integer == 1) //SP
-		{
-			ent = G_GetSelfForPlayerCmd();
-			G_SetTauntAnim(ent, TAUNT_RELOAD);
-		}
-		else
-		{
-			ent = G_GetSelfForPlayerCmd();
-			G_SetsaberdownorAnim(ent);
-		}
+		ent = G_GetSelfForPlayerCmd();
+		G_SetsaberdownorAnim(ent);
 	}
 	else if (Q_stricmp(cmd, "taunt") == 0)
 	{

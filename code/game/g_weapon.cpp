@@ -1448,6 +1448,7 @@ extern int fire_deley_time();
 extern void CG_ChangeWeapon(int num);
 extern qboolean IsHoldingReloadableGun(const gentity_t* ent);
 extern qboolean PM_PainAnim(int anim);
+extern void G_RemoveGunnerAimFlagEnt(gentity_t* ent, qboolean removeFlag);
 
 //---------------------------------------------------------
 void FireWeapon(gentity_t* ent, const qboolean alt_fire)
@@ -1504,6 +1505,11 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		G_SoundOnEnt(ent, CHAN_VOICE_ATTEN, "*pain25.wav");
 		G_Damage(ent, nullptr, nullptr, nullptr, ent->currentOrigin, 2, DAMAGE_NO_ARMOR, MOD_LAVA);
 		ent->reloadTime = level.time + fire_deley_time();
+
+		if (ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN))
+		{
+			G_RemoveGunnerAimFlagEnt(ent, qtrue);
+		}
 		return;
 	}
 

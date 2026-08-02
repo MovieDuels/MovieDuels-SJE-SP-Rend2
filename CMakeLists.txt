@@ -1,9 +1,9 @@
 #============================================================================
-# Copyright (C) 2013 - 2018, OpenJK contributors
+# Copyright (C) 2013 - 2018, MovieDuels contributors
 # 
-# This file is part of the OpenJK source code.
+# This file is part of the MovieDuels source code.
 # 
-# OpenJK is free software; you can redistribute it and/or modify it
+# MovieDuels is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation.
 # 
@@ -16,7 +16,7 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #============================================================================
 
-cmake_minimum_required(VERSION 3.5...4.3) # Support for latest version added
+cmake_minimum_required(VERSION 3.5...4.4) # Support for latest version added
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
 # For checks in subdirectories

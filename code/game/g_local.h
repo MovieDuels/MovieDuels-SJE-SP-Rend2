@@ -551,7 +551,7 @@ void respawn(gentity_t* ent);
 
 qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loaded);
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const int damage, const int means_of_death, const int d_flags, const int hit_loc);
-void AddScore(const gentity_t* ent, int score);
+void AddScore(const gentity_t* ent, const int score);
 qboolean SpotWouldTelefrag(const gentity_t* spot, team_t checkteam);
 void G_RemoveWeaponModels(gentity_t* ent);
 void G_RemoveHolsterModels(gentity_t* ent);

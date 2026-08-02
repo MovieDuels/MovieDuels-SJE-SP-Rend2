@@ -7092,100 +7092,75 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 	}
 	else
 	{
-		// Non-NPC or not in vehicle: base speed from g_speed
+		//Client sets ucmds and such for speed alterations
 		client->ps.speed = g_speed->value;
 
-		// Held clients move slower
-		if (client->ps.heldClient < ENTITYNUM_WORLD)
+		float sprintMul = 1.0f;
+
+		// ----------------------------------------------------------------------
+		// Slow movement when holding another client
+		// ----------------------------------------------------------------------
+		if (client->ps.heldClient >= 0 && client->ps.heldClient < ENTITYNUM_WORLD)
 		{
 			client->ps.speed *= 0.3f;
 		}
-		// Low health slowdowns
-		else if ((client->ps.stats[STAT_HEALTH] <= 25 &&
-			client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
-			(client->ps.stats[STAT_HEALTH] <=
-				(client->ps.stats[STAT_MAX_HEALTH] / 3) &&
+
+		// ----------------------------------------------------------------------
+		// Low-health movement penalties
+		// ----------------------------------------------------------------------
+		else if ((client->ps.stats[STAT_HEALTH] <= 25 && client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
+			(client->ps.stats[STAT_HEALTH] <= (client->ps.stats[STAT_MAX_HEALTH] / 3) &&
 				client->ps.stats[STAT_MAX_HEALTH] < 100))
 		{
 			client->ps.speed *= 0.85f;
 		}
-		else if ((client->ps.stats[STAT_HEALTH] <= 40 &&
-			client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
-			(client->ps.stats[STAT_HEALTH] <=
-				(client->ps.stats[STAT_MAX_HEALTH] / 2) &&
+		else if ((client->ps.stats[STAT_HEALTH] <= 40 && client->ps.stats[STAT_MAX_HEALTH] >= 100) ||
+			(client->ps.stats[STAT_HEALTH] <= (client->ps.stats[STAT_MAX_HEALTH] / 2) &&
 				client->ps.stats[STAT_MAX_HEALTH] < 100))
 		{
 			client->ps.speed *= 0.90f;
 		}
-		// Sprinting (unarmed / saber / weapon sprint)
-		else if (BG_SprintAnim(client->ps.legsAnim))
+
+		// ----------------------------------------------------------------------
+		// Sprint animation speed boosts
+		// ----------------------------------------------------------------------
+		else if (!(ent->client->ps.communicatingflags & (1 << CF_DASHING)) &&
+			(BG_SaberSprintAnim(ent->client->ps.legsAnim) == qtrue ||
+				BG_SprintAnim(ent->client->ps.legsAnim) == qtrue ||
+				BG_WeaponSprintAnim(ent->client->ps.legsAnim) == qtrue))
 		{
-			if (ent->client->ps.PlayerEffectFlags & (1 << PEF_SPRINTING))
+			if ((ent->client->ps.PlayerEffectFlags & (1 << PEF_SPRINTING)) != 0)
 			{
-				if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
+				if ((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
 				{
-					if (client->NPC_class == CLASS_VADER)
-					{
-						client->ps.speed *= 1.15f;
-					}
-					else if (client->NPC_class == CLASS_YODA)
-					{
-						client->ps.speed *= 1.60f;
-					}
-					else
-					{
-						client->ps.speed *= 1.50f;
-					}
+					if (client->NPC_class == CLASS_VADER) sprintMul *= 1.15f;
+					else if (client->NPC_class == CLASS_YODA) sprintMul *= 1.65f;
+					else sprintMul *= 1.60f;
 				}
 			}
-		}
-		else if (BG_SaberSprintAnim(client->ps.legsAnim))
-		{
-			if (ent->client->ps.PlayerEffectFlags & (1 << PEF_SPRINTING))
+
+			if ((ent->client->ps.PlayerEffectFlags & (1 << PEF_WEAPONSPRINTING)) != 0)
 			{
-				if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
+				if ((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
 				{
-					if (client->NPC_class == CLASS_VADER)
-					{
-						client->ps.speed *= 1.15f;
-					}
-					else if (client->NPC_class == CLASS_YODA)
-					{
-						client->ps.speed *= 1.65f;
-					}
-					else
-					{
-						client->ps.speed *= 1.60f;
-					}
+					if (client->NPC_class == CLASS_VADER) sprintMul *= 1.10f;
+					else if (client->NPC_class == CLASS_YODA) sprintMul *= 1.60f;
+					else sprintMul *= 1.50f;
 				}
 			}
+
+			client->ps.speed *= sprintMul;
 		}
-		else if (BG_WeaponSprintAnim(client->ps.legsAnim))
-		{
-			if (ent->client->ps.PlayerEffectFlags & (1 << PEF_WEAPONSPRINTING))
-			{
-				if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
-				{
-					if (client->NPC_class == CLASS_VADER)
-					{
-						client->ps.speed *= 1.10f;
-					}
-					else if (client->NPC_class == CLASS_YODA)
-					{
-						client->ps.speed *= 1.30f;
-					}
-					else
-					{
-						client->ps.speed *= 1.20f;
-					}
-				}
-			}
-		}
-		// Certain weapons slow you down
-		else if (client->ps.weapon == WP_BRYAR_PISTOL ||
+
+		// ----------------------------------------------------------------------
+		// Slow-move weapons when NOT sprinting
+		// ----------------------------------------------------------------------
+		else if ((client->ps.weapon == WP_BRYAR_PISTOL ||
 			client->ps.weapon == WP_THERMAL ||
 			client->ps.weapon == WP_DET_PACK ||
-			client->ps.weapon == WP_TRIP_MINE)
+			client->ps.weapon == WP_TRIP_MINE) &&
+			((ent->client->ps.PlayerEffectFlags & (1 << PEF_SPRINTING)) == 0) &&
+			((ent->client->ps.PlayerEffectFlags & (1 << PEF_WEAPONSPRINTING)) == 0))
 		{
 			client->ps.speed *= 0.85f;
 		}
@@ -7812,6 +7787,40 @@ static void CG_SetVaderBreathDamaged(const gentity_t* ent)
 	}
 }
 
+// ============================================================================
+// G_RemoveGunnerAimFlagEnt
+//
+// Server-side version of gunner aim flag removal.
+// Called from g_active.c when reloading or other actions should stop aiming.
+// ============================================================================
+void G_RemoveGunnerAimFlagEnt(gentity_t* ent, qboolean removeFlag)
+{
+	// ----------------------------------------------------------------------
+	// Safety: validate ent and ent->client
+	// ----------------------------------------------------------------------
+	if (ent == NULL || ent->client == NULL)
+	{
+		Com_Printf("PM_RemoveGunnerAimFlagENT ERROR: ent or ent->client is NULL\n");
+		return;
+	}
+
+	// ----------------------------------------------------------------------
+	// Only remove aiming flag when explicitly requested
+	// ----------------------------------------------------------------------
+	if (removeFlag == qtrue)
+	{
+		// Check if aiming flag is active
+		if ((ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN)) != 0)
+		{
+			// Clear aiming gun flag
+			ent->client->ps.communicatingflags &= ~(1u << CF_AIMINGGUN);
+
+			// Mirror server-side aiming state
+			ent->client->IsAiming = qfalse;
+		}
+	}
+}
+
 //// reload ////
 
 static int ReloadTime(const gentity_t* ent)
@@ -7946,8 +7955,7 @@ void WP_ReloadGun(gentity_t* ent)
 
 	if (ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN))
 	{
-		ent->client->ps.communicatingflags &= ~(1u << CF_AIMINGGUN);
-		ent->client->IsAiming = qfalse;
+		G_RemoveGunnerAimFlagEnt(ent, qtrue);
 	}
 
 	if (IsHoldingReloadableGun(ent))
@@ -8211,8 +8219,7 @@ void CancelReload(gentity_t* ent)
 
 	if (ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN))
 	{
-		ent->client->ps.communicatingflags &= ~(1u << CF_AIMINGGUN);
-		ent->client->IsAiming = qfalse;
+		G_RemoveGunnerAimFlagEnt(ent, qtrue);
 	}
 }
 
@@ -8223,8 +8230,7 @@ void cancel_firing(gentity_t* ent)
 
 	if (ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN))
 	{
-		ent->client->ps.communicatingflags &= ~(1u << CF_AIMINGGUN);
-		ent->client->IsAiming = qfalse;
+		G_RemoveGunnerAimFlagEnt(ent, qtrue);
 	}
 }
 
