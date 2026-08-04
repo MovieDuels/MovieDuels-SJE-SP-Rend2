@@ -271,6 +271,7 @@ qboolean WP_SaberFatigueDirection(gentity_t* self, vec3_t hitloc, qboolean missi
 qboolean WP_SaberBounceDirection(gentity_t* self, vec3_t hitloc, qboolean missileBlock);
 extern qboolean PM_InKataAnim(int anim);
 extern qboolean PM_StaggerAnim(int anim);
+extern qboolean PM_SaberInKillMove(int move);
 qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, qboolean missileBlock);
 extern void player_decloak(gentity_t* self);
 extern qboolean PM_DeathCinAnim(int anim);
@@ -3214,14 +3215,16 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 			// Single-hit enforcement: skip if already damaged this swing
 			if (g_SerenityJediEngineMode->integer == 2)
 			{
-				if (((victim->s.number < MAX_CLIENTS || G_ControlledByPlayer(victim)) || victim->NPC) &&
-					(ent->client->saberHitEntityBitMask & (1 << victim->s.number)))
+				if (ent->client->saberHitEntityBitMask & (1 << victim->s.number))
 				{
-					if (g_HitTracking->integer && (victim->NPC))
+					if (!PM_SaberInKata(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) && !PM_SaberInKillMove(static_cast<saberMoveName_t>(ent->client->ps.saberMove)))
 					{
-						Com_Printf(S_COLOR_RED "Single-hit enforcement: skip if already damaged this swing\n");
+						if (g_HitTracking->integer && (victim->NPC))
+						{
+							Com_Printf(S_COLOR_RED "Single-hit enforcement: skip if already damaged this swing\n");
+						}
+						continue;
 					}
-					continue;
 				}
 			}
 
@@ -4017,7 +4020,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 					}
 					if (g_SerenityJediEngineMode->integer == 2)
 					{
-						if ((victim->s.number < MAX_CLIENTS || G_ControlledByPlayer(victim)) || victim->NPC)
+						if (!PM_SaberInKata(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) && !PM_SaberInKillMove(static_cast<saberMoveName_t>(ent->client->ps.saberMove)))
 						{
 							if (g_HitTracking->integer && (victim->NPC))
 							{
@@ -12040,7 +12043,7 @@ void WP_SabersDamageTrace(gentity_t* ent, const qboolean no_effects)
 	// Reset hit tracking when a new swing begins
 	if (g_SerenityJediEngineMode->integer == 2)
 	{
-		if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) || ent->NPC)
+		if (!PM_SaberInKata(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) && !PM_SaberInKillMove(static_cast<saberMoveName_t>(ent->client->ps.saberMove)))
 		{
 			if (ent->client->ps.saberAttackSequence != ent->client->saberLastAttackSequence)
 			{

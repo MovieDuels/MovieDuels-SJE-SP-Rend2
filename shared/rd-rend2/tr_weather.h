@@ -75,7 +75,7 @@ struct windObject_t
 
 struct weatherBrushes_t
 {
-	uint8_t	numplanes;
+	uint8_t	numPlanes;
 	vec4_t	planes[64];
 };
 
@@ -115,7 +115,7 @@ struct srfWeather_t;
 void R_InitWeatherSystem();
 void R_InitWeatherForMap();
 void R_AddWeatherSurfaces();
-void R_AddWeatherBrush(uint8_t numplanes, vec4_t* planes);
+void R_AddWeatherBrush(uint8_t numPlanes, vec4_t* planes);
 void R_LoadWeatherImages();
 void R_ShutdownWeatherSystem();
 void RB_SurfaceWeather(srfWeather_t* surf);

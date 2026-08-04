@@ -12004,7 +12004,10 @@ static void PM_BeginWeaponChange(const int weapon)
 	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (pm->gent && pm->gent->client && pm->gent->client->pers.enterTime >= level.time - 500)
+	gentity_t* gent = pm->gent;
+	gclient_t* gcl = gent ? gent->client : NULL;
+
+	if (gent && gent->client && gent->client->pers.enterTime >= level.time - 500)
 	{
 		//just entered map
 		if (weapon == WP_NONE && pm->ps->weapon != weapon)
@@ -12072,9 +12075,9 @@ static void PM_BeginWeaponChange(const int weapon)
 	pm->ps->weaponstate = WEAPON_DROPPING;
 	pm->ps->weaponTime += 200;
 
-	if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_GALAKMECH)
+	if (gent && gent->client && gent->client->NPC_class == CLASS_GALAKMECH)
 	{
-		if (pm->gent->alt_fire)
+		if (gent->alt_fire)
 		{
 			//FIXME: attack delay?
 			PM_SetAnim(pm, SETANIM_TORSO, TORSO_DROPWEAP3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -12087,9 +12090,11 @@ static void PM_BeginWeaponChange(const int weapon)
 	}
 	else
 	{
-		if (!(pm->ps->eFlags & EF_HELD_BY_WAMPA) && !G_IsRidingVehicle(pm->gent))
+		if (!(pm->ps->eFlags & EF_HELD_BY_WAMPA)
+			&& (!gent || !G_IsRidingVehicle(gent))
+			&& (!gcl || !PM_InLedgeMove(gcl->ps.torsoAnim)))
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, TORSO_DROPWEAP1, SETANIM_FLAG_HOLD);
+			PM_SetAnim(pm, SETANIM_TORSO, TORSO_DROPWEAP1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 	}
 
@@ -12104,9 +12109,9 @@ static void PM_BeginWeaponChange(const int weapon)
 		}
 	}
 
-	if (pm->gent
-		&& pm->gent->client
-		&& (pm->gent->client->NPC_class == CLASS_ATST || pm->gent->client->NPC_class == CLASS_RANCOR || pm->gent->client->NPC_class == CLASS_DROIDEKA))
+	if (gent
+		&& gent->client
+		&& (gent->client->NPC_class == CLASS_ATST || gent->client->NPC_class == CLASS_RANCOR || gent->client->NPC_class == CLASS_DROIDEKA))
 	{
 		if (pm->ps->clientNum < MAX_CLIENTS)
 		{
@@ -12122,16 +12127,16 @@ static void PM_BeginWeaponChange(const int weapon)
 		if (pm->ps->weapon == WP_SABER)
 		{
 			//going to switch away from saber
-			if (pm->gent)
+			if (gent)
 			{
 				if (pm->ps->SaberActive())
 				{
-					G_SoundOnEnt(pm->gent, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.wav");
+					G_SoundOnEnt(gent, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.wav");
 				}
 			}
-			if (!G_IsRidingVehicle(pm->gent))
+			if (!G_IsRidingVehicle(gent))
 			{
-				if (!g_noIgniteTwirl->integer && !is_holding_block_button && !IsSurrendering(pm->gent)) //twirl on
+				if (!g_noIgniteTwirl->integer && !is_holding_block_button && !IsSurrendering(gent)) //twirl on
 				{
 					PM_SetSaberMove(LS_PUTAWAY);
 				}
@@ -22145,22 +22150,19 @@ static void PM_Weapon()
 			case WP_BATTLEDROID:
 			case WP_CLONECOMMANDO:
 
-				if (pm->cmd.buttons & BUTTON_ALT_ATTACK || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
+				if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4,	SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 				}
 				break;

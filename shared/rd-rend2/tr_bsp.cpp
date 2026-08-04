@@ -2648,7 +2648,7 @@ static	void R_LoadPlanes(world_t* worldData, lump_t* l) {
 	out = (cplane_t*)Hunk_Alloc(count * 2 * sizeof(*out), h_low);
 
 	worldData->planes = out;
-	worldData->numplanes = count;
+	worldData->numPlanes = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		bits = 0;

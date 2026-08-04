@@ -66,7 +66,7 @@ SV_ExpandNewlines
 Converts newlines to "\n" so a line prints nicer
 ===============
 */
-char* SV_ExpandNewlines(char* in)
+static char* SV_ExpandNewlines(char* in)
 {
 	static char string[1024];
 
@@ -114,54 +114,61 @@ void SV_AddServerCommand(client_t* client, const char* cmd)
 	}
 	client->reliableCommands[index] = CopyString(cmd);
 }
-
 /*
 =================
 SV_SendServerCommand
 
 Sends a reliable command string to be interpreted by
-the client game module: "cp", "print", "chat", etc
-A NULL client will broadcast to all clients
+the client game module: "cp", "print", "chat", etc.
+A NULL client will broadcast to all clients.
 =================
 */
 void SV_SendServerCommand(client_t* cl, const char* fmt, ...)
 {
 	va_list argptr;
-	byte message[MAX_MSGLEN]{};
 	client_t* client;
 	int j;
+
+	byte* message = static_cast<byte*>(malloc(MAX_MSGLEN));
+	if (message == nullptr)
+	{
+		Com_Printf("SV_SendServerCommand ERROR: malloc failed for %d bytes\n", MAX_MSGLEN);
+		return;
+	}
 
 	message[0] = svc_serverCommand;
 
 	va_start(argptr, fmt);
-	Q_vsnprintf(reinterpret_cast<char*>(message) + 1, sizeof(message) - 1, fmt, argptr);
+	Q_vsnprintf(reinterpret_cast<char*>(message) + 1, MAX_MSGLEN - 1, fmt, argptr);
 	va_end(argptr);
 
-	// Fix to http://aluigi.altervista.org/adv/q3msgboom-adv.txt
-	// The actual cause of the error is probably further downstream
-	// and should maybe be addressed later, but this certainly
-	// fixes the problem for now
 	if (strlen(reinterpret_cast<char*>(message) + 1) > 1022)
 	{
+		free(message);
 		return;
 	}
 
 	if (cl != nullptr)
 	{
 		SV_AddServerCommand(cl, reinterpret_cast<char*>(message));
+		free(message);
 		return;
 	}
 
-	// send the data to all relevent clients
 	for (j = 0, client = svs.clients; j < 1; j++, client++)
 	{
 		if (client->state < CS_PRIMED)
 		{
 			continue;
 		}
+
 		SV_AddServerCommand(client, reinterpret_cast<char*>(message));
 	}
+
+	free(message);
 }
+
+
 
 /*
 ==============================================================================
@@ -176,52 +183,87 @@ CONNECTIONLESS COMMANDS
 SVC_Status
 
 Responds with all the info that qplug or qspy can see about the server
-and all connected players.  Used for getting detailed information after
+and all connected players. Used for getting detailed information after
 the simple info query.
 ================
 */
-void SVC_Status(const netadr_t from)
+static void SVC_Status(const netadr_t from)
 {
-	char status[MAX_MSGLEN]{};
-	int score;
-	char infostring[MAX_INFO_STRING];
+	// ----------------------------------------------------------------------
+	// Allocate large buffers on heap to avoid MSVC C6262 (large stack frame)
+	// ----------------------------------------------------------------------
+	char* status = static_cast<char*>(malloc(MAX_MSGLEN));
+	char* infostring = static_cast<char*>(malloc(MAX_INFO_STRING));
+	char* player = static_cast<char*>(malloc(1024));
 
-	strcpy(infostring, Cvar_InfoString(CVAR_SERVERINFO));
+	if (status == nullptr || infostring == nullptr || player == nullptr)
+	{
+		Com_Printf("SVC_Status ERROR: malloc failed for status/infostring/player buffers\n");
 
-	// echo back the parameter to status. so servers can use it as a challenge
-	// to prevent timed spoofed reply packets that add ghost servers
+		if (status) free(status);
+		if (infostring) free(infostring);
+		if (player) free(player);
+
+		return;
+	}
+
+	// ----------------------------------------------------------------------
+	// Build server info string
+	// ----------------------------------------------------------------------
+	Q_strncpyz(infostring, Cvar_InfoString(CVAR_SERVERINFO), MAX_INFO_STRING);
+
+	// Echo back challenge to prevent spoofed replies
 	Info_SetValueForKey(infostring, "challenge", Cmd_Argv(1));
 
-	status[0] = 0;
+	status[0] = '\0';
 	int statusLength = 0;
 
+	// ----------------------------------------------------------------------
+	// SP: only one client (index 0)
+	// ----------------------------------------------------------------------
 	for (int i = 0; i < 1; i++)
 	{
 		client_t* cl = &svs.clients[i];
+
 		if (cl->state >= CS_CONNECTED)
 		{
-			char player[1024];
+			int score = 0;
+
 			if (cl->gentity && cl->gentity->client)
 			{
 				score = cl->gentity->client->persistant[PERS_SCORE];
 			}
-			else
-			{
-				score = 0;
-			}
-			Com_sprintf(player, sizeof(player), "%i %i \"%s\"\n", score, cl->name);
+
+			// Format player line
+			Com_sprintf(player, 1024, "%i %i \"%s\"\n", score, cl->name);
+
 			const int playerLength = strlen(player);
-			if (statusLength + playerLength >= static_cast<int>(sizeof(status)))
+
+			// Prevent overflow of status buffer
+			if (statusLength + playerLength >= MAX_MSGLEN)
 			{
-				break; // can't hold any more
+				break;
 			}
-			strcpy(status + statusLength, player);
+
+			memcpy(status + statusLength, player, playerLength);
 			statusLength += playerLength;
+			status[statusLength] = '\0';
 		}
 	}
 
+	// ----------------------------------------------------------------------
+	// Send final status response
+	// ----------------------------------------------------------------------
 	NET_OutOfBandPrint(NS_SERVER, from, "statusResponse\n%s\n%s", infostring, status);
+
+	// ----------------------------------------------------------------------
+	// Cleanup heap buffers
+	// ----------------------------------------------------------------------
+	free(status);
+	free(infostring);
+	free(player);
 }
+
 
 /*
 ================
@@ -385,7 +427,7 @@ void SV_PacketEvent(const netadr_t from, msg_t* msg)
 // Server time is used instead of realtime to avoid dropping the local client while debugging.
 // When a client is normally dropped, the client_t goes into a zombie state for a few seconds to make sure any final
 //	reliable message gets resent if necessary
-void SV_CheckTimeouts()
+static void SV_CheckTimeouts()
 {
 	client_t* cl = svs.clients;
 
@@ -420,7 +462,7 @@ void SV_CheckTimeouts()
 SV_CheckPaused
 ==================
 */
-qboolean SV_CheckPaused()
+static qboolean SV_CheckPaused()
 {
 	if (!cl_paused->integer)
 	{

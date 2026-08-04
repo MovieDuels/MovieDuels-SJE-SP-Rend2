@@ -5759,9 +5759,10 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	// -----------------------------------------------------------------
 	self->client->respawnTime = level.time + 2000;
 
-	if (g_broadsword->integer &&
-		!G_RagDollDisallowedClass(self->client->NPC_class))
+	// rww - RAGDOLL_BEGIN
+	if (g_broadsword->integer && !G_RagDollDisallowedClass(self->client->NPC_class))
 	{
+		// Clear anim timers so ragdoll can take over
 		if (self->client != NULL &&
 			(self->NPC == NULL || !g_standard_humanoid(self)))
 		{
@@ -5769,6 +5770,9 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 			PM_SetTorsoAnimTimer(self, &self->client->ps.torsoAnimTimer, -1);
 		}
 
+		// ------------------------------------------------------------
+		// NEW: Attempt to start ragdoll (server‑side authoritative)
+		// ------------------------------------------------------------
 		{
 			vec3_t forcedAngles;
 			VectorCopy(self->client->ps.viewangles, forcedAngles);
@@ -5776,19 +5780,21 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 			if (G_RagDoll(self, forcedAngles) == qtrue)
 			{
 #ifdef _DEBUG
-				Com_Printf("Debug: Ragdoll started for %s\n", self->NPC_type);
+				//Com_Printf("Debug: Ragdoll started for %s\n", self->NPC_type);
 #endif
 			}
 		}
 	}
 	else
 	{
+		// Not allowed to ragdoll: still clear timers so death anim plays correctly
 		if (self->client != NULL)
 		{
 			PM_SetLegsAnimTimer(self, &self->client->ps.legsAnimTimer, -1);
 			PM_SetTorsoAnimTimer(self, &self->client->ps.torsoAnimTimer, -1);
 		}
 	}
+	// rww - RAGDOLL_END
 
 	self->svFlags &= ~SVF_CUSTOM_GRAVITY;
 

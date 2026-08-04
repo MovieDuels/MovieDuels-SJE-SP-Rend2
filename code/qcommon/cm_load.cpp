@@ -375,7 +375,7 @@ void CMod_LoadPlanes(const lump_t* l, clipMap_t& cm)
 	if (count < 1)
 		Com_Error(ERR_DROP, "Map with no planes");
 	cm.planes = static_cast<cplane_s*>(Z_Malloc((BOX_PLANES + count) * sizeof * cm.planes, TAG_BSP, qfalse));
-	cm.numplanes = count;
+	cm.numPlanes = count;
 
 	cplane_t* out = cm.planes;
 
@@ -1028,7 +1028,7 @@ can just be stored out and get a proper clipping hull structure.
 */
 void CM_InitBoxHull()
 {
-	box_planes = &cmg.planes[cmg.numplanes];
+	box_planes = &cmg.planes[cmg.numPlanes];
 
 	box_brush = &cmg.brushes[cmg.numBrushes];
 	box_brush->numsides = 6;
@@ -1046,7 +1046,7 @@ void CM_InitBoxHull()
 
 		// brush sides
 		cbrushside_t* s = &cmg.brushsides[cmg.numBrushSides + i];
-		s->plane = cmg.planes + (cmg.numplanes + i * 2 + side);
+		s->plane = cmg.planes + (cmg.numPlanes + i * 2 + side);
 		s->shaderNum = cmg.numShaders; //not storing flags directly anymore, so be sure to point @ a valid shader
 
 		// planes

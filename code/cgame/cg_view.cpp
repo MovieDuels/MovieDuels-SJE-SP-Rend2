@@ -403,8 +403,8 @@ static void CG_CalcIdealThirdPersonViewTarget()
 			return;
 		}
 
-		if (gent->client && (gent->client->ps.pm_flags & PMF_DUCKED))
-		{
+		if (gent->client && (gent->client->ps.pm_flags & PMF_DUCKED && gent->client->ps.groundEntityNum != ENTITYNUM_NONE))
+		{// if the player is crouched and on the ground, nudge the camera down a bit so it doesn't clip into the ground
 			cameraFocusLoc[2] -= CAMERA_CROUCH_NUDGE * 4;
 		}
 
@@ -456,8 +456,8 @@ static void CG_CalcIdealThirdPersonViewTarget()
 	}
 
 	// Crouch tweak
-	if (cg.predictedPlayerState.pm_flags & PMF_DUCKED)
-	{
+	if (cg.predictedPlayerState.pm_flags & PMF_DUCKED && cg.predictedPlayerState.groundEntityNum != ENTITYNUM_NONE)
+	{ // if the player is crouched and on the ground, nudge the camera up a bit so it doesn't clip into the ground
 		vec3_t nudgepos;
 		trace_t trace;
 
@@ -1333,26 +1333,28 @@ static void CG_OffsetFirstPersonView(const qboolean first_person_saber)
 
 	delta = cg.bobfracsin * cg_bobpitch.value * speed;
 
-	if (cg.predictedPlayerState.pm_flags & PMF_DUCKED)
-	{
+	if (cg.predictedPlayerState.pm_flags & PMF_DUCKED && cg.predictedPlayerState.groundEntityNum != ENTITYNUM_NONE)
+	{// if crouching, accentuate the pitch
 		delta *= 3.0f; // crouching
 		angles[PITCH] += delta;
 		delta = cg.bobfracsin * cg_bobroll.value * speed;
 	}
 
-	if (cg.predictedPlayerState.pm_flags & PMF_DUCKED)
-	{
+	if (cg.predictedPlayerState.pm_flags & PMF_DUCKED && cg.predictedPlayerState.groundEntityNum != ENTITYNUM_NONE)
+	{ // if crouching, accentuate the roll
 		delta *= 3.0f; // crouching accentuates roll
 	}
 
-	if ((cg.snap->ps.eFlags & EF_MEDITATING) != 0)
+	if (cg.snap
+		&& ((cg.snap->ps.eFlags & EF_MEDITATING) != 0))
 	{
 		delta *= 3.0f; // meditating: same treatment as crouch
 		angles[PITCH] += delta;
 		delta = cg.bobfracsin * cg_bobroll.value * speed;
 	}
 
-	if ((cg.snap->ps.eFlags & EF_MEDITATING) != 0)
+	if (cg.snap
+		&& ((cg.snap->ps.eFlags & EF_MEDITATING) != 0))
 	{
 		delta *= 3.0f; // meditating accentuates roll
 	}

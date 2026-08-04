@@ -409,7 +409,7 @@ SV_AreaEntities_r
 
 ====================
 */
-void SV_AreaEntities_r(const worldSector_t* node, areaParms_t* ap)
+static void SV_AreaEntities_r(const worldSector_t* node, areaParms_t* ap)
 {
 	svEntity_t* next = nullptr;
 
@@ -519,7 +519,7 @@ public:
 
 static multimap<int, pair<int, list<CBBox> > > entStats;
 
-void SV_AreaEntitiesTree(worldSector_t* node, areaParms_t* ap, int level)
+static void SV_AreaEntitiesTree(worldSector_t* node, areaParms_t* ap, int level)
 {
 	svEntity_t* check, * next;
 	gentity_t* gcheck;

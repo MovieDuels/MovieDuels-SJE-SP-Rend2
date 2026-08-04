@@ -595,8 +595,7 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 		}
 		else if (CheckLineForKeyword(sSE_KEYWORD_CONFIG, psLine)
 			|| CheckLineForKeyword(sSE_KEYWORD_FILENOTES, psLine)
-			|| CheckLineForKeyword(sSE_KEYWORD_NOTES, psLine)
-			)
+			|| CheckLineForKeyword(sSE_KEYWORD_NOTES, psLine))
 		{
 			// not used ingame, but need to absorb the token
 		}
@@ -609,24 +608,21 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 		}
 		else if (CheckLineForKeyword(sSE_KEYWORD_FLAGS, psLine))
 		{
-			// FLAGS 	FLAG_CAPTION FLAG_TYPEMATIC
-			//
 			const char* psReference = GetCurrentReference_ParseOnly();
 			if (psReference[0])
 			{
 				static constexpr char sSeperators[] = " \t";
-				char sFlags[1024] = { 0 }; // 1024 chars should be enough to store 8 flag names
+				char sFlags[1024] = { 0 };
+
+				// FIX: strncpy does NOT guarantee termination → enforce it
 				strncpy(sFlags, psLine, sizeof(sFlags) - 1);
+				sFlags[sizeof(sFlags) - 1] = '\0';
+
 				char* psToken = strtok(sFlags, sSeperators);
 				while (psToken != nullptr)
 				{
-					// psToken = flag name (in caps)
-					//
-					Q_strupr(psToken); // jic
+					Q_strupr(psToken);
 					AddFlagReference(psReference, psToken);
-
-					// read next flag for this string...
-					//
 					psToken = strtok(nullptr, sSeperators);
 				}
 			}
@@ -635,6 +631,7 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 				psErrorMessage = "Error parsing file: Unexpected \"" sSE_KEYWORD_FLAGS "\"\n";
 			}
 		}
+
 		else if (CheckLineForKeyword(sSE_KEYWORD_ENDMARKER, psLine))
 		{
 			// ENDMARKER
@@ -659,9 +656,9 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 				}
 				char sThisLanguage[1024] = { 0 };
 				size_t iCharsToCopy = psWordEnd - psLine;
-				if (iCharsToCopy > sizeof(sThisLanguage) - 1)
+				if (iCharsToCopy > sizeof sThisLanguage - 1)
 				{
-					iCharsToCopy = sizeof(sThisLanguage) - 1;
+					iCharsToCopy = sizeof sThisLanguage - 1;
 				}
 				strncpy(sThisLanguage, psLine, iCharsToCopy);
 				// already declared as {0} so no need to zero-cap dest buffer
@@ -686,12 +683,12 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 				{
 					// if loading a foreign language...
 					//
-					SE_BOOL b_sentence_is_english = (!Q_stricmp(sThisLanguage, "english")) ? SE_TRUE : SE_FALSE;
+					SE_BOOL bSentenceIsEnglish = !Q_stricmp(sThisLanguage, "english") ? SE_TRUE : SE_FALSE;
 					// see whether this is the english master or not
 
 					// this check can be omitted, I'm just being extra careful here...
 					//
-					if (!b_sentence_is_english)
+					if (!bSentenceIsEnglish)
 					{
 						// basically this is just checking that an .STE file override is the same language as the .STR...
 						//
@@ -704,7 +701,7 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 
 					if (!psErrorMessage)
 					{
-						SetString(psReference, psSentence, b_sentence_is_english);
+						SetString(psReference, psSentence, bSentenceIsEnglish);
 					}
 				}
 
@@ -720,7 +717,6 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 			psErrorMessage = va("Unknown keyword at linestart: \"%s\"\n", psLine);
 		}
 	}
-
 	return psErrorMessage;
 }
 
@@ -822,27 +818,40 @@ void CStringEdPackage::SetString(const char* psLocalReference, const char* psNew
 //
 // return is either NULL for good else error message to display...
 //
+/*
+===========================
+SE_Load_Actual
+- Loads and parses a .str file.
+- Fixed MSVC C6262 by moving large sLineBuffer off the stack.
+===========================
+*/
 static const char* SE_Load_Actual(const char* psFileName, SE_BOOL bLoadDebug, SE_BOOL bSpeculativeLoad)
 {
 	const char* psErrorMessage = nullptr;
 
+	/* Large buffer moved off stack to avoid C6262 */
+	static char* sLineBuffer = nullptr;
+
+	if (!sLineBuffer)
+	{
+		sLineBuffer = static_cast<char*>(Z_Malloc(16384, TAG_TEMP_WORKSPACE, qfalse));
+		if (!sLineBuffer)
+		{
+			return "SE_Load_Actual: Failed to allocate sLineBuffer";
+		}
+	}
+
 	unsigned char* psLoadedData = SE_LoadFileData(psFileName);
 	if (psLoadedData)
 	{
-		// now parse the data...
-		//
 		const char* psParsePos = reinterpret_cast<char*>(psLoadedData);
 
 		TheStringPackage.SetupNewFileParse(psFileName, bLoadDebug);
 
-		char sLineBuffer[16384]; // should be enough for one line of text (some of them can be BIG though)
 		while (!psErrorMessage && TheStringPackage.ReadLine(psParsePos, sLineBuffer))
 		{
 			if (strlen(sLineBuffer))
 			{
-				//				__DEBUGOUT( sLineBuffer );
-				//				__DEBUGOUT( "\n" );
-
 				psErrorMessage = TheStringPackage.ParseLine(sLineBuffer);
 			}
 		}
@@ -856,11 +865,7 @@ static const char* SE_Load_Actual(const char* psFileName, SE_BOOL bLoadDebug, SE
 	}
 	else
 	{
-		if (bSpeculativeLoad)
-		{
-			// then it's ok to not find the file, so do nothing...
-		}
-		else
+		if (!bSpeculativeLoad)
 		{
 			psErrorMessage = va("Unable to load \"%s\"!", psFileName);
 		}

@@ -11431,8 +11431,32 @@ int CQuake3GameInterface::GetVector(const int entID, const char* name, vec3_t va
 	case SET_PARM14:
 	case SET_PARM15:
 	case SET_PARM16:
-		sscanf(ent->parms->parm[toGet - SET_PARM1], "%f %f %f", &value[0], &value[1], &value[2]);
-		break;
+	{
+		// Parse into temporary floats to avoid partial writes
+		float x = 0.0f;
+		float y = 0.0f;
+		float z = 0.0f;
+
+		const char* str = ent->parms->parm[toGet - SET_PARM1];
+
+		// FIX: capture sscanf return value to satisfy MSVC C6031
+		const int parsed = sscanf(str, "%f %f %f", &x, &y, &z);
+
+		if (parsed == 3)
+		{
+			value[0] = x;
+			value[1] = y;
+			value[2] = z;
+			return qtrue;
+		}
+		else
+		{
+			DebugPrint(WL_WARNING,
+				"GetVector: Failed to parse parm vector '%s' (parsed %d components)\n",
+				name, parsed);
+			return qfalse;
+		}
+	}
 
 	case SET_ORIGIN:
 		VectorCopy(ent->currentOrigin, value);
@@ -11770,25 +11794,74 @@ int CQuake3GameInterface::Evaluate(int p1Type, const char* p1, int p2Type, const
 	switch (p1Type)
 	{
 	case TK_FLOAT:
-		sscanf(p1, "%f", &f1);
-		sscanf(p2, "%f", &f2);
+	{
+		float fx = 0.0f, fy = 0.0f;
+
+		const int parsed1 = sscanf(p1, "%f", &fx);
+		const int parsed2 = sscanf(p2, "%f", &fy);
+
+		if (parsed1 != 1 || parsed2 != 1)
+		{
+			DebugPrint(WL_WARNING,
+				"Set: TK_FLOAT — failed to parse float values ('%s', '%s') parsed (%d, %d)\n",
+				p1, p2, parsed1, parsed2);
+			break; // behaviour-preserving: do nothing if invalid
+		}
+
+		f1 = fx;
+		f2 = fy;
 		break;
+	}
 
 	case TK_INT:
-		sscanf(p1, "%d", &i1);
-		sscanf(p2, "%d", &i2);
+	{
+		int ix = 0, iy = 0;
+
+		const int parsed1 = sscanf(p1, "%d", &ix);
+		const int parsed2 = sscanf(p2, "%d", &iy);
+
+		if (parsed1 != 1 || parsed2 != 1)
+		{
+			DebugPrint(WL_WARNING,
+				"Set: TK_INT — failed to parse int values ('%s', '%s') parsed (%d, %d)\n",
+				p1, p2, parsed1, parsed2);
+			break;
+		}
+
+		i1 = ix;
+		i2 = iy;
 		break;
+	}
 
 	case TK_VECTOR:
-		sscanf(p1, "%f %f %f", &v1[0], &v1[1], &v1[2]);
-		sscanf(p2, "%f %f %f", &v2[0], &v2[1], &v2[2]);
+	{
+		float x1 = 0.0f, y1 = 0.0f, z1 = 0.0f;
+		float x2 = 0.0f, y2 = 0.0f, z2 = 0.0f;
+
+		const int parsed1 = sscanf(p1, "%f %f %f", &x1, &y1, &z1);
+		const int parsed2 = sscanf(p2, "%f %f %f", &x2, &y2, &z2);
+
+		if (parsed1 != 3 || parsed2 != 3)
+		{
+			DebugPrint(WL_WARNING,
+				"Set: TK_VECTOR — failed to parse vectors ('%s', '%s') parsed (%d, %d)\n",
+				p1, p2, parsed1, parsed2);
+			break;
+		}
+
+		v1[0] = x1; v1[1] = y1; v1[2] = z1;
+		v2[0] = x2; v2[1] = y2; v2[2] = z2;
 		break;
+	}
 
 	case TK_STRING:
 	case TK_IDENTIFIER:
+	{
+		// Behaviour preserved: direct pointer assignment
 		c1 = const_cast<char*>(p1);
 		c2 = const_cast<char*>(p2);
 		break;
+	}
 
 	default:
 		DebugPrint(WL_WARNING, "Evaluate unknown type used!\n");

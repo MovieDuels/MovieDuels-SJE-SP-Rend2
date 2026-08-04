@@ -117,7 +117,7 @@ using clipMap_t = struct clipMap_s
 	int numBrushSides;
 	cbrushside_t* brushsides;
 
-	int numplanes;
+	int numPlanes;
 	cplane_t* planes;
 
 	int numNodes;
@@ -238,7 +238,7 @@ void CM_ModelBounds(clipHandle_t model, vec3_t mins, vec3_t maxs);
 
 patchCollide_s* CM_GeneratePatchCollide(int width, int height, vec3_t* points);
 void CM_TraceThroughPatchCollide(traceWork_t* tw, const patchCollide_s* pc);
-qboolean CM_PositionTestInPatchCollide(const traceWork_t* tw, const patchCollide_s* pc);
+qboolean CM_PositionTestInPatchCollide(traceWork_t* tw, const struct patchCollide_s* pc);
 void CM_ClearLevelPatches();
 
 //cm_trace.cpp

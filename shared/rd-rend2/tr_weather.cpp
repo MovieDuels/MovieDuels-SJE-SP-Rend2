@@ -258,7 +258,7 @@ namespace
 
 						// Find intersection point with the brush
 						float t = 0.0f;
-						for (int j = 0; j < currentWeatherBrush->numplanes; j++)
+						for (int j = 0; j < currentWeatherBrush->numPlanes; j++)
 						{
 							vec3_t plane_normal{};
 							float plane_dist;
@@ -286,7 +286,7 @@ namespace
 						rayPos[2] -= t;
 
 						// Now test if the intersected point is actually on the brush
-						for (int j = 0; j < currentWeatherBrush->numplanes; j++)
+						for (int j = 0; j < currentWeatherBrush->numPlanes; j++)
 						{
 							vec4_t* plane = &currentWeatherBrush->planes[j];
 							vec3_t normal = {
@@ -571,15 +571,15 @@ static qboolean WE_ParseVector(const char** text, int count, float* v) {
 	return qtrue;
 }
 
-void R_AddWeatherBrush(uint8_t numplanes, vec4_t* planes)
+void R_AddWeatherBrush(uint8_t numPlanes, vec4_t* planes)
 {
 	if (tr.weatherSystem->numWeatherBrushes >= (MAX_WEATHER_ZONES * 2))
 	{
 		ri.Printf(PRINT_WARNING, "Max weather brushes hit. Skipping new inside/outside brush\n");
 		return;
 	}
-	tr.weatherSystem->weatherBrushes[tr.weatherSystem->numWeatherBrushes].numplanes = numplanes;
-	memcpy(tr.weatherSystem->weatherBrushes[tr.weatherSystem->numWeatherBrushes].planes, planes, numplanes * sizeof(vec4_t));
+	tr.weatherSystem->weatherBrushes[tr.weatherSystem->numWeatherBrushes].numPlanes = numPlanes;
+	memcpy(tr.weatherSystem->weatherBrushes[tr.weatherSystem->numWeatherBrushes].planes, planes, numPlanes * sizeof(vec4_t));
 
 	tr.weatherSystem->numWeatherBrushes++;
 }

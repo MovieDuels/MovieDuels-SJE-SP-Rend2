@@ -495,13 +495,13 @@ int R_CullBox(vec3_t worldBounds[2]) {
 	int             i;
 	cplane_t* frust;
 	qboolean        anyClip;
-	int             r, numplanes;
+	int             r, numPlanes;
 
-	numplanes = (tr.viewParms.flags & VPF_FARPLANEFRUSTUM) ? 5 : 4;
+	numPlanes = (tr.viewParms.flags & VPF_FARPLANEFRUSTUM) ? 5 : 4;
 
 	// check against frustum planes
 	anyClip = qfalse;
-	for (i = 0; i < numplanes; i++)
+	for (i = 0; i < numPlanes; i++)
 	{
 		frust = &tr.viewParms.frustum[i];
 
@@ -543,7 +543,7 @@ int R_CullLocalPointAndRadius(const vec3_t pt, float radius)
 /*
 ** R_CullPointAndRadius
 */
-int R_CullPointAndRadiusEx(const vec3_t pt, float radius, const cplane_t* frustum, int numplanes)
+int R_CullPointAndRadiusEx(const vec3_t pt, float radius, const cplane_t* frustum, int numPlanes)
 {
 	int		i;
 	float	dist;
@@ -555,7 +555,7 @@ int R_CullPointAndRadiusEx(const vec3_t pt, float radius, const cplane_t* frustu
 	}
 
 	// check against frustum planes
-	for (i = 0; i < numplanes; i++)
+	for (i = 0; i < numPlanes; i++)
 	{
 		frust = &frustum[i];
 

@@ -238,7 +238,7 @@ Build a client snapshot structure
 =============================================================================
 */
 
-#define	MAX_SNAPSHOT_ENTITIES	1024
+constexpr auto MAX_SNAPSHOT_ENTITIES = 1024;
 using snapshotEntityNumbers_t = struct
 {
 	int numSnapshotEntities;
@@ -311,7 +311,7 @@ float sv_sightRangeForLevel[6] =
 	4096.0f //FORCE_LEVEL_5
 };
 
-qboolean SV_PlayerCanSeeEnt(const gentity_t* ent, const int sightLevel)
+static qboolean SV_PlayerCanSeeEnt(const gentity_t* ent, const int sightLevel)
 {
 	//return true if this ent is in view
 	//NOTE: this is similar to the func CG_PlayerCanSeeCent in cg_players
@@ -670,7 +670,7 @@ SV_SendMessageToClient
 Called by SV_SendClientSnapshot and SV_SendClientGameState
 =======================
 */
-#define	HEADER_RATE_BYTES	48		// include our header, IP header, and some overhead
+static constexpr int HEADER_RATE_BYTES = 16;
 
 void SV_SendMessageToClient(const msg_t* msg, client_t* client)
 {
@@ -690,7 +690,7 @@ This is just an empty message so that we can tell if
 the client dropped the gamestate that went out before
 =======================
 */
-void SV_SendClientEmptyMessage(client_t* client)
+static void SV_SendClientEmptyMessage(client_t* client)
 {
 	msg_t msg;
 	byte buffer[10];
@@ -700,44 +700,77 @@ void SV_SendClientEmptyMessage(client_t* client)
 }
 
 /*
-=======================
+=================
 SV_SendClientSnapshot
-=======================
+
+Builds and sends a snapshot to the client. Bots do not receive network
+snapshots; they query the snapshot directly.
+=================
 */
 void SV_SendClientSnapshot(client_t* client)
 {
-	byte msg_buf[MAX_MSGLEN];
-	msg_t msg;
-
-	// build the snapshot
-	SV_BuildClientSnapshot(client);
-
-	// bots need to have their snapshots build, but
-	// the query them directly without needing to be sent
-	if (client->gentity && client->gentity->svFlags & SVF_BOT)
+	// ----------------------------------------------------------------------
+	// Allocate large message buffer on heap to avoid MSVC C6262 (large stack frame)
+	// ----------------------------------------------------------------------
+	byte* msg_buf = static_cast<byte*>(malloc(MAX_MSGLEN));
+	if (msg_buf == nullptr)
 	{
+		Com_Printf("SV_SendClientSnapshot ERROR: malloc failed for %d bytes\n", MAX_MSGLEN);
 		return;
 	}
 
-	MSG_Init(&msg, msg_buf, sizeof(msg_buf));
+	msg_t msg;
+
+	// ----------------------------------------------------------------------
+	// Build the snapshot (always required, even for bots)
+	// ----------------------------------------------------------------------
+	SV_BuildClientSnapshot(client);
+
+	// ----------------------------------------------------------------------
+	// Bots do not receive network snapshots
+	// ----------------------------------------------------------------------
+	if (client->gentity && (client->gentity->svFlags & SVF_BOT))
+	{
+		free(msg_buf);
+		return;
+	}
+
+	// ----------------------------------------------------------------------
+	// Initialize message buffer
+	// ----------------------------------------------------------------------
+	MSG_Init(&msg, msg_buf, MAX_MSGLEN);
 	msg.allowoverflow = qtrue;
 
-	// (re)send any reliable server commands
+	// ----------------------------------------------------------------------
+	// (Re)send any reliable server commands
+	// ----------------------------------------------------------------------
 	SV_UpdateServerCommandsToClient(client, &msg);
 
-	// send over all the relevant entityState_t
-	// and the playerState_t
+	// ----------------------------------------------------------------------
+	// Write entityState_t and playerState_t to the snapshot
+	// ----------------------------------------------------------------------
 	SV_WriteSnapshotToClient(client, &msg);
 
-	// check for overflow
-	if (msg.overflowed)
+	// ----------------------------------------------------------------------
+	// Check for overflow
+	// ----------------------------------------------------------------------
+	if (msg.overflowed == qtrue)
 	{
 		Com_Printf("WARNING: msg overflowed for %s\n", client->name);
 		MSG_Clear(&msg);
 	}
 
+	// ----------------------------------------------------------------------
+	// Deliver snapshot to client
+	// ----------------------------------------------------------------------
 	SV_SendMessageToClient(&msg, client);
+
+	// ----------------------------------------------------------------------
+	// Cleanup heap buffer
+	// ----------------------------------------------------------------------
+	free(msg_buf);
 }
+
 
 /*
 =======================

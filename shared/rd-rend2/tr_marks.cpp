@@ -201,7 +201,7 @@ R_AddMarkFragments
 
 =================
 */
-void R_AddMarkFragments(int num_clip_points, vec3_t clip_points[2][MAX_VERTS_ON_POLY], const int numplanes, vec3_t* normals, const float* dists, const int max_points, vec3_t point_buffer, int max_fragments, markFragment_t* fragment_buffer, int* returned_points, int* returned_fragments, vec3_t mins, vec3_t maxs)
+void R_AddMarkFragments(int num_clip_points, vec3_t clip_points[2][MAX_VERTS_ON_POLY], const int numPlanes, vec3_t* normals, const float* dists, const int max_points, vec3_t point_buffer, int max_fragments, markFragment_t* fragment_buffer, int* returned_points, int* returned_fragments, vec3_t mins, vec3_t maxs)
 {
 	int pingPong, i;
 	markFragment_t* mf;
@@ -209,7 +209,7 @@ void R_AddMarkFragments(int num_clip_points, vec3_t clip_points[2][MAX_VERTS_ON_
 	// chop the surface by all the bounding planes of the to be projected polygon
 	pingPong = 0;
 
-	for (i = 0; i < numplanes; i++) {
+	for (i = 0; i < numPlanes; i++) {
 		R_ChopPolyBehindPlane(num_clip_points, clip_points[pingPong],
 			&num_clip_points, clip_points[!pingPong],
 			normals[i], dists[i], 0.5);
@@ -257,7 +257,7 @@ R_MarkFragments
 */
 int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection, const int max_points, vec3_t point_buffer, const int max_fragments, markFragment_t* fragment_buffer)
 {
-	int				numsurfaces, numplanes;
+	int				numsurfaces, numPlanes;
 	int				i, j, k, m, n;
 	surfaceType_t* surfaces[64];
 	vec3_t			mins, maxs;
@@ -313,7 +313,7 @@ int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection
 	VectorCopy(projectionDir, normals[numPoints + 1]);
 	VectorInverse(normals[numPoints + 1]);
 	dists[numPoints + 1] = DotProduct(normals[numPoints + 1], points[0]) - 20;
-	numplanes = numPoints + 2;
+	numPlanes = numPoints + 2;
 
 	numsurfaces = 0;
 	R_BoxSurfaces_r(tr.world->nodes, mins, maxs, surfaces, 64, &numsurfaces, projectionDir);
@@ -367,7 +367,7 @@ int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection
 					if (DotProduct(normal, projectionDir) < -0.1) {
 						// add the fragments of this triangle
 						R_AddMarkFragments(num_clip_points, clip_points,
-							numplanes, normals, dists,
+							numPlanes, normals, dists,
 							max_points, point_buffer,
 							max_fragments, fragment_buffer,
 							&returned_points, &returned_fragments, mins, maxs);
@@ -391,7 +391,7 @@ int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection
 					if (DotProduct(normal, projectionDir) < -0.05) {
 						// add the fragments of this triangle
 						R_AddMarkFragments(num_clip_points, clip_points,
-							numplanes, normals, dists,
+							numPlanes, normals, dists,
 							max_points, point_buffer,
 							max_fragments, fragment_buffer,
 							&returned_points, &returned_fragments, mins, maxs);
@@ -421,7 +421,7 @@ int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection
 
 				// add the fragments of this face
 				R_AddMarkFragments(3, clip_points,
-					numplanes, normals, dists,
+					numPlanes, normals, dists,
 					max_points, point_buffer,
 					max_fragments, fragment_buffer,
 					&returned_points, &returned_fragments, mins, maxs);
@@ -443,7 +443,7 @@ int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection
 
 				// add the fragments of this face
 				R_AddMarkFragments(3, clip_points,
-					numplanes, normals, dists,
+					numPlanes, normals, dists,
 					max_points, point_buffer,
 					max_fragments, fragment_buffer, &returned_points, &returned_fragments, mins, maxs);
 				if (returned_fragments == max_fragments)

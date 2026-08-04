@@ -8485,18 +8485,18 @@ void PM_TorsoAnimation()
 				case WP_CLONECOMMANDO:
 
 					if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
-					{ //alt fire
-						PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 					}
 					else
-					{ //normal fire
+					{
 						if (cg.renderingThirdPerson)
-						{ //third person
-							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 						}
 						else
-						{ // first person
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 						}
 					}
 					break;
@@ -9216,7 +9216,7 @@ void PM_TorsoAnimation()
 					{
 						if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 						{ //alt fire
-							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
 
 							if (cg.renderingThirdPerson)
 							{
@@ -9237,7 +9237,7 @@ void PM_TorsoAnimation()
 						{ //normal fire
 							if (cg.renderingThirdPerson)
 							{ //third person
-								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
 
 								if (is_walking_and_blocking == qtrue)
 								{
@@ -9263,7 +9263,8 @@ void PM_TorsoAnimation()
 						{
 							if (is_walking_and_blocking == qtrue)
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE4, SETANIM_FLAG_NORMAL);
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
+
 								PM_HandleGunnerAim(is_walking_and_blocking);
 							}
 							else
@@ -10953,6 +10954,34 @@ qboolean PM_SaberInKata(const saberMoveName_t saberMove)
 		return qtrue;
 	default:
 		break;
+	}
+	return qfalse;
+}
+
+qboolean PM_SaberInKillMove(const int move)
+{
+	switch (move)
+	{
+	case LS_A_BACK:
+	case LS_A_BACK_CR:
+	case LS_A_BACKSTAB:
+	case LS_ROLL_STAB:
+	case LS_A_JUMP_T__B_:
+	case LS_A_FLIP_STAB:
+	case LS_A_FLIP_SLASH:
+	case LS_LEAP_ATTACK:
+	case LS_STABDOWN:
+	case LS_STABDOWN_STAFF:
+	case LS_STABDOWN_DUAL:
+	case LS_A1_SPECIAL:
+	case LS_A2_SPECIAL:
+	case LS_A3_SPECIAL:
+	case LS_UPSIDE_DOWN_ATTACK:
+	case LS_PULL_ATTACK_STAB:
+	case LS_PULL_ATTACK_SWING:
+	case LS_SPINATTACK_ALORA:
+		return qtrue;
+	default:;
 	}
 	return qfalse;
 }

@@ -7098,6 +7098,15 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		float sprintMul = 1.0f;
 
 		// ----------------------------------------------------------------------
+		// Safety: ensure ent->client is valid before accessing playerState
+		// ----------------------------------------------------------------------
+		if (ent == nullptr || ent->client == nullptr)
+		{
+			// Non-player entity → skip movement speed logic
+			return;
+		}
+
+		// ----------------------------------------------------------------------
 		// Slow movement when holding another client
 		// ----------------------------------------------------------------------
 		if (client->ps.heldClient >= 0 && client->ps.heldClient < ENTITYNUM_WORLD)
@@ -7164,11 +7173,15 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 		{
 			client->ps.speed *= 0.85f;
 		}
-		// Saber attack backwards: slower based on style
-		else if (PM_SaberInAttack(client->ps.saberMove) && ucmd->forwardmove < 0)
+
+		// ----------------------------------------------------------------------
+		// Saber backwards attack speed reduction
+		// ----------------------------------------------------------------------
+		else if (PM_SaberInAttack(client->ps.saberMove) == qtrue && ucmd->forwardmove < 0)
 		{
 			switch (client->ps.saberAnimLevel)
 			{
+			case SS_TAVION:
 			case SS_FAST:
 				client->ps.speed *= 0.85f;
 				break;
@@ -7177,34 +7190,44 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			case SS_STAFF:
 				client->ps.speed *= 0.70f;
 				break;
+			case SS_DESANN:
 			case SS_STRONG:
 				client->ps.speed *= 0.55f;
 				break;
-			default:
-				break;
+			default:;
 			}
+
 			if (g_saberMoveSpeed->value != 1.0f)
 			{
 				client->ps.speed *= g_saberMoveSpeed->value;
 			}
 		}
-		// Leaping saber anim: no speed mod
-		else if (PM_LeapingSaberAnim(client->ps.legsAnim))
+
+		// ----------------------------------------------------------------------
+		// Leaping saber anim — no speed mod
+		// ----------------------------------------------------------------------
+		else if (PM_LeapingSaberAnim(client->ps.legsAnim) == qtrue)
 		{
-			// no change
+			// no speed change
 		}
-		// Spinning saber anim: slower
-		else if (PM_SpinningSaberAnim(client->ps.legsAnim))
+
+		// ----------------------------------------------------------------------
+		// Spinning saber anim
+		// ----------------------------------------------------------------------
+		else if (PM_SpinningSaberAnim(client->ps.legsAnim) == qtrue)
 		{
 			client->ps.speed *= 0.5f;
+
 			if (g_saberMoveSpeed->value != 1.0f)
 			{
 				client->ps.speed *= g_saberMoveSpeed->value;
 			}
 		}
-		// Saber attack while running: style-based slowdown
-		else if (client->ps.weapon == WP_SABER &&
-			(ucmd->buttons & BUTTON_ATTACK))
+
+		// ----------------------------------------------------------------------
+		// Saber attack while running
+		// ----------------------------------------------------------------------
+		else if (client->ps.weapon == WP_SABER && (ucmd->buttons & BUTTON_ATTACK))
 		{
 			switch (client->ps.saberAnimLevel)
 			{
@@ -7217,21 +7240,21 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			case SS_STAFF:
 				client->ps.speed *= 0.85f;
 				break;
+			case SS_DESANN:
 			case SS_STRONG:
 				client->ps.speed *= 0.70f;
 				break;
-			default:
-				break;
+			default:;
 			}
+
 			if (g_saberMoveSpeed->value != 1.0f)
 			{
 				client->ps.speed *= g_saberMoveSpeed->value;
 			}
 		}
-		// Level 3 saber transitions: slow down even in transitions
 		else if (client->ps.weapon == WP_SABER &&
 			client->ps.saberAnimLevel == FORCE_LEVEL_3 &&
-			PM_SaberInTransition(client->ps.saberMove))
+			PM_SaberInTransition(client->ps.saberMove) == qtrue)
 		{
 			if (ucmd->forwardmove < 0)
 			{

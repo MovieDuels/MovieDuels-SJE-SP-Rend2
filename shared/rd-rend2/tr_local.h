@@ -2071,7 +2071,7 @@ typedef struct {
 	int			numBModels;
 	bmodel_t* bmodels;
 
-	int			numplanes;
+	int			numPlanes;
 	cplane_t* planes;
 
 	int			numnodes;		// includes leafs
@@ -3001,7 +3001,7 @@ void R_LocalNormalToWorld(const vec3_t local, vec3_t world);
 void R_LocalPointToWorld(const vec3_t local, vec3_t world);
 int R_CullBox(vec3_t bounds[2]);
 int R_CullLocalBox(vec3_t bounds[2]);
-int R_CullPointAndRadiusEx(const vec3_t origin, float radius, const cplane_t* frustum, int numplanes);
+int R_CullPointAndRadiusEx(const vec3_t origin, float radius, const cplane_t* frustum, int numPlanes);
 int R_CullPointAndRadius(const vec3_t origin, float radius);
 int R_CullLocalPointAndRadius(const vec3_t origin, float radius);
 

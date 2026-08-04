@@ -1036,8 +1036,8 @@ static void tavion_scepter_slam()
 					G_Throw(radius_ents[i], ent_dir, throw_str);
 					if (radius_ents[i]->health > 0)
 					{
-						if (dist < half_rad
-							|| radius_ents[i]->client->ps.groundEntityNum != ENTITYNUM_NONE)
+						if (dist < half_rad	||
+							radius_ents[i]->client->ps.groundEntityNum != ENTITYNUM_NONE)
 						{
 							//within range of my fist or within ground-shaking range and not in the air
 							G_Knockdown(radius_ents[i], NPC, vec3_origin, 500, qtrue);

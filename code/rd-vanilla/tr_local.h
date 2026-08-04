@@ -732,7 +732,7 @@ using world_t = struct world_t {
 
 	bmodel_t* bmodels;
 
-	int			numplanes;
+	int			numPlanes;
 	cplane_t* planes;
 
 	int			numnodes;		// includes leafs
