@@ -79,6 +79,7 @@ uniform vec3 u_TCGen0Vector1;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
 uniform vec4 u_Color;
+uniform float u_chromaticAberrationDelta;
 
 #if defined(USE_RGBAGEN)
 uniform int u_ColorGen;
@@ -284,7 +285,15 @@ vec4 CalcColor(vec3 position, vec3 normal)
 	{
 		vec3 lightDir = normalize(vec3(-960.0, 1980.0, 96.0) - position);
 		vec3 reflected = -reflect(lightDir, normal);
-		
+
+		color.a = clamp(dot(reflected, normalize(viewer)), 0.0, 1.0);
+		color.a *= color.a;
+		color.a *= color.a;
+	}
+	else if (u_AlphaGen == AGEN_LIGHTING_SPECULAR_STATIC)
+	{
+		vec3 reflected = -reflect(u_ModelLightDir, normal);
+
 		color.a = clamp(dot(reflected, normalize(viewer)), 0.0, 1.0);
 		color.a *= color.a;
 		color.a *= color.a;
@@ -384,20 +393,32 @@ void main()
 
 	mat3 inverseModel = inverse(mat3(u_ModelMatrix));
 
-	vec3 refraction_vec = normalize(refract(ws_ViewDir, ws_Normal, etaR));
-	vec3 new_pos = (distance * refraction_vec) + wsPosition.xyz;
-	var_RefractPosR = vec4(inverseModel * new_pos, 1.0);
-	var_RefractPosR = MVP * var_RefractPosR;
-	
-	refraction_vec = normalize(refract(ws_ViewDir, ws_Normal, etaG));
-	new_pos = (distance * refraction_vec) + wsPosition.xyz;
-	var_RefractPosG = vec4(inverseModel * new_pos, 1.0);
-	var_RefractPosG = MVP * var_RefractPosG;
-	
-	refraction_vec = normalize(refract(ws_ViewDir, ws_Normal, etaB));
-	new_pos = (distance * refraction_vec) + wsPosition.xyz;
-	var_RefractPosB = vec4(inverseModel * new_pos, 1.0);
-	var_RefractPosB = MVP * var_RefractPosB;
+	if (u_chromaticAberrationDelta > 0.0)
+	{
+		vec3 refraction_vec = refract(ws_ViewDir, ws_Normal, etaG + u_chromaticAberrationDelta);
+		vec3 new_pos = (distance * refraction_vec) + wsPosition.xyz;
+		var_RefractPosR = vec4(inverseModel * new_pos, 1.0);
+		var_RefractPosR = MVP * var_RefractPosR;
+
+		refraction_vec = refract(ws_ViewDir, ws_Normal, etaG);
+		new_pos = (distance * refraction_vec) + wsPosition.xyz;
+		var_RefractPosG = vec4(inverseModel * new_pos, 1.0);
+		var_RefractPosG = MVP * var_RefractPosG;
+
+		refraction_vec = refract(ws_ViewDir, ws_Normal, etaG - u_chromaticAberrationDelta);
+		new_pos = (distance * refraction_vec) + wsPosition.xyz;
+		var_RefractPosB = vec4(inverseModel * new_pos, 1.0);
+		var_RefractPosB = MVP * var_RefractPosB;
+	}
+	else
+	{
+		vec3 refraction_vec = refract(ws_ViewDir, ws_Normal, etaG);
+		vec3 new_pos = (distance * refraction_vec) + wsPosition.xyz;
+		var_RefractPosG = vec4(inverseModel * new_pos, 1.0);
+		var_RefractPosG = MVP * var_RefractPosG;
+		var_RefractPosB = var_RefractPosG;
+		var_RefractPosR = var_RefractPosG;
+	}
 }
 
 
