@@ -78,7 +78,7 @@ void TurretPain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 
 //------------------------------------------------------------------------------------------------------------
 void turret_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const int damage, const int means_of_death,
-	int d_flags,
+	int dflags,
 	int hit_loc)
 	//------------------------------------------------------------------------------------------------------------
 {
@@ -2041,7 +2041,7 @@ void ion_cannon_think(gentity_t* self)
 }
 
 //----------------------------------------------------------------------------------------------
-void ion_cannon_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void ion_cannon_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 	//----------------------------------------------------------------------------------------------
 {
@@ -2406,7 +2406,7 @@ static void panel_turret_shoot(gentity_t* self, vec3_t org, vec3_t dir)
 }
 
 //-----------------------------------------
-void misc_panel_turret_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void misc_panel_turret_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	if (self->target3)

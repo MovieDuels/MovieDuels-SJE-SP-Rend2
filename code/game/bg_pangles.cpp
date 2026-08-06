@@ -1544,7 +1544,7 @@ qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, const qbool
 			&& !ps->torsoAnimTimer) //not in any held torso anim
 		&& !(cmd->buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK | BUTTON_FORCE_LIGHTNING | BUTTON_USE_FORCE | BUTTON_DASH
 			| BUTTON_FORCE_DRAIN | BUTTON_FORCEGRIP | BUTTON_REPULSE | BUTTON_FORCEGRASP)) //not trying to attack
-		&& !(ps->ManualBlockingFlags & 1 << HOLDINGBLOCK)
+		&& !(ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
 		&& VectorCompare(ps->velocity, vec3_origin) //not moving
 		&& !cg_usingInFrontOf) //use button wouldn't be used for anything else
 	{
@@ -2019,7 +2019,7 @@ void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, 
 	if (g_SerenityJediEngineMode->integer
 		&& gent
 		&& gent->client
-		&& ~gent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK
+		&& ~gent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCKANDATTACK
 		&& ~gent->client->ps.ManualBlockingFlags & 1 << MBF_BLOCKWALKING
 		&& gent->s.weapon == WP_SABER
 		&& pm->ps->SaberActive()

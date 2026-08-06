@@ -140,7 +140,7 @@ extern qboolean is_anim_requires_responce(const gentity_t* self);
 extern qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t push_dir);
 extern qboolean BG_InKnockDown(int anim);
 extern void ForceGrasp(gentity_t* ent);
-extern qboolean SaberAttacking(const gentity_t* self);
+extern qboolean WP_SaberAttacking(const gentity_t* self);
 extern cvar_t* com_outcast;
 extern qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc);
 qboolean jedi_evasion_roll(gentity_t* ai_ent);

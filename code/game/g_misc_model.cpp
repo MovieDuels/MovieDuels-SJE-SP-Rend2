@@ -744,7 +744,7 @@ BATTERIES -
 extern gentity_t* LaunchItem(gitem_t* item, const vec3_t origin, const vec3_t velocity, const char* target);
 
 void misc_model_cargo_die(gentity_t* self, const gentity_t* inflictor, gentity_t* attacker, const int damage,
-	const int mod, int d_flags,
+	const int mod, int dflags,
 	int hit_loc)
 {
 	vec3_t org, temp{};

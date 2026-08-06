@@ -63,7 +63,7 @@ void NPC_Interrogator_Precache()
 Interrogator_die
 -------------------------
 */
-void Interrogator_die(const gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void Interrogator_die(const gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	self->client->ps.velocity[2] = -100;

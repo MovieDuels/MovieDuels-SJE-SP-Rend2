@@ -186,7 +186,7 @@ void func_usable_pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker
 	}
 }
 
-void func_usable_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void func_usable_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	self->takedamage = qfalse;

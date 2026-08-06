@@ -222,7 +222,7 @@ static void Mark1Dead_FireBlaster()
 Mark1_die
 -------------------------
 */
-void Mark1_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags, int hit_loc)
+void Mark1_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags, int hit_loc)
 {
 	G_Sound(self, G_SoundIndex(va("sound/chars/mark1/misc/death%d.wav", Q_irand(1, 2))));
 

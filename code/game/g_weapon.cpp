@@ -250,7 +250,7 @@ void WP_Explode(gentity_t* self)
 // We need to have a dieFunc, otherwise G_Damage won't actually make us die.  I could modify G_Damage, but that entails too many changes
 //-----------------------------------------------------------------------------
 void WP_ExplosiveDie(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int means_of_death,
-	int d_flags, int hit_loc)
+	int dflags, int hit_loc)
 	//-----------------------------------------------------------------------------
 {
 	self->enemy = attacker;

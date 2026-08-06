@@ -206,7 +206,7 @@ void eweb_pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const
 }
 
 //----------------------------------------------------------
-void eweb_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags, int hit_loc)
+void eweb_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags, int hit_loc)
 {
 	vec3_t org;
 
@@ -710,7 +710,7 @@ void emplaced_blow(gentity_t* ent)
 }
 
 //----------------------------------------------------------
-void emplaced_gun_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void emplaced_gun_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	vec3_t org;

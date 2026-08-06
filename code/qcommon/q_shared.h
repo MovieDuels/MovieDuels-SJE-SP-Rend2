@@ -2226,6 +2226,7 @@ public:
 	int         npcKickBlockStartTime;
 	qboolean    IsAiming;
 	int		    saberAttackSequence;
+	int		    saberRiposteTime;
 
 #endif // !JK2_MODE
 
@@ -2511,6 +2512,7 @@ public:
 		saved_game.write<int32_t>(npcKickBlockStartTime);
 		saved_game.write<int32_t>(IsAiming);
 		saved_game.write<int32_t>(saberAttackSequence);
+		saved_game.write<int32_t>(saberRiposteTime);
 
 #endif // !JK2_MODE
 	}
@@ -2797,6 +2799,7 @@ public:
 		saved_game.read<int32_t>(npcKickBlockStartTime);
 		saved_game.read<int32_t>(IsAiming);
 		saved_game.read<int32_t>(saberAttackSequence);
+		saved_game.read<int32_t>(saberRiposteTime);
 
 #endif // !JK2_MODE
 	}
@@ -3571,11 +3574,11 @@ using ForceReload_e = enum ForceReload_e2
 
 using ManualBlockingFlag_e = enum ManualBlockingFlag_e2
 {
-	HOLDINGBLOCK,
-	HOLDINGBLOCKANDATTACK,
+	MBF_HOLDINGBLOCK,
+	MBF_HOLDINGBLOCKANDATTACK,
 	MBF_LIGHTNINGBLOCKING,
 	MBF_NPCBLOCKING,
-	PERFECTBLOCKING,
+	MBF_PERFECTBLOCKING,
 	MBF_JKAMODENPCBLOCKING,
 	MBF_NPCKICKBLOCK,
 	MBF_MELEEDODGE,

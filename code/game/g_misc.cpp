@@ -764,7 +764,7 @@ extern qboolean G_ClearViewEntity(gentity_t* ent);
 extern void G_SetViewEntity(gentity_t* self, gentity_t* view_entity);
 extern void SP_fx_runner(gentity_t* ent);
 
-void camera_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void camera_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	if (player && player->client && player->client->ps.viewEntity == self->s.number)
@@ -1936,7 +1936,7 @@ NOTE: place these half-way in the door to make it flush with the door's surface.
 "target"	thing to use when destoryed (not doors - it automatically unlocks the door it was angled at)
 "health"	default is 10
 */
-void maglock_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void maglock_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	//unlock our door if we're the last lock pointed at the door
@@ -3033,7 +3033,7 @@ static void misc_atst_setanim(gentity_t* self, const int bone, const int anim)
 	}
 }
 
-void misc_atst_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void misc_atst_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	//ATST was destroyed while you weren't in it

@@ -1815,7 +1815,7 @@ extern qboolean PM_RestAnim(int anim);
 
 static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 {
-	const qboolean is_holding_block_button = ((ent->client->ps.ManualBlockingFlags & 1 << HOLDINGBLOCK) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button = ((ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK) != 0) ? qtrue : qfalse;
 	//Normal Blocking
 
 	if (!ent || !ent->client)

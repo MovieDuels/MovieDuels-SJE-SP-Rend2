@@ -480,7 +480,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage, float radius, const gentity_t* ignore, const int mod);
 gentity_t* TossClientItems(gentity_t* self);
 void ExplodeDeath_Wait(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod,
-	int d_flags, int hit_loc);
+	int dflags, int hit_loc);
 void ExplodeDeath(gentity_t* self);
 void GoExplodeDeath(gentity_t* self, gentity_t* other, gentity_t* activator);
 void G_ApplyKnockback(gentity_t* targ, vec3_t new_dir, float knockback);
@@ -550,7 +550,7 @@ gentity_t* SelectSpawnPoint(vec3_t avoid_point, vec3_t origin, vec3_t angles);
 void respawn(gentity_t* ent);
 
 qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loaded);
-void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const int damage, const int means_of_death, const int d_flags, const int hit_loc);
+void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const int damage, const int means_of_death, const int dflags, const int hit_loc);
 void AddScore(const gentity_t* ent, const int score);
 qboolean SpotWouldTelefrag(const gentity_t* spot, team_t checkteam);
 void G_RemoveWeaponModels(gentity_t* ent);

@@ -531,14 +531,14 @@ void ExplodeDeath(gentity_t* self)
 }
 
 void ExplodeDeath_Wait(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod,
-	int d_flags, int hit_loc)
+	int dflags, int hit_loc)
 {
 	self->e_DieFunc = dieF_NULL;
 	self->nextthink = level.time + Q_irand(100, 500);
 	self->e_ThinkFunc = thinkF_ExplodeDeath;
 }
 
-void ExplodeDeath(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath, int d_flags,
+void ExplodeDeath(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath, int dflags,
 	int hit_loc)
 {
 	self->currentOrigin[2] += 16;
@@ -4486,7 +4486,7 @@ extern void WP_StopForceHealEffects(const gentity_t* self);
 extern void Boba_NoDeadFlameThrower(const gentity_t* self);
 
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
-	const int damage, const int means_of_death, const int d_flags, const int hit_loc)
+	const int damage, const int means_of_death, const int dflags, const int hit_loc)
 {
 	int      anim;
 	int      contents;
@@ -4529,7 +4529,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 		{
 			anim = G_PickDeathAnim(self, self->pos1, damage, hit_loc);
 
-			if ((d_flags & DAMAGE_DISMEMBER) || means_of_death == MOD_SABER)
+			if ((dflags & DAMAGE_DISMEMBER) || means_of_death == MOD_SABER)
 			{
 				G_DoDismemberment(self, self->pos1, means_of_death, hit_loc);
 			}
@@ -5230,11 +5230,11 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	}
 	else if (self->client->NPC_class == CLASS_MARK1)
 	{
-		Mark1_die(self, inflictor, attacker, damage, means_of_death, d_flags, hit_loc);
+		Mark1_die(self, inflictor, attacker, damage, means_of_death, dflags, hit_loc);
 	}
 	else if (self->client->NPC_class == CLASS_INTERROGATOR)
 	{
-		Interrogator_die(self, inflictor, attacker, damage, means_of_death, d_flags, hit_loc);
+		Interrogator_die(self, inflictor, attacker, damage, means_of_death, dflags, hit_loc);
 	}
 	else if (self->client->NPC_class == CLASS_GALAKMECH)
 	{
@@ -5655,7 +5655,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 		else
 		{
 			if (hit_loc == HL_HEAD
-				&& !(d_flags & DAMAGE_RADIUS)
+				&& !(dflags & DAMAGE_RADIUS)
 				&& means_of_death != MOD_REPEATER_ALT
 				&& means_of_death != MOD_FLECHETTE_ALT
 				&& means_of_death != MOD_ROCKET
@@ -5725,7 +5725,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	// -----------------------------------------------------------------
 	// 8. Dismemberment / gibs after anim selection
 	// -----------------------------------------------------------------
-	if ((d_flags & DAMAGE_DISMEMBER)
+	if ((dflags & DAMAGE_DISMEMBER)
 		&& G_DoDismemberment(self, self->pos1, means_of_death, hit_loc)
 		&& special_anim == qfalse)
 	{
@@ -9630,7 +9630,7 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 	vec3_t v{};
 	vec3_t dir;
 	int i;
-	int d_flags = DAMAGE_RADIUS;
+	int dflags = DAMAGE_RADIUS;
 
 	if (radius < 1)
 	{
@@ -9650,7 +9650,7 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 
 	if (mod == MOD_GAS)
 	{
-		d_flags |= DAMAGE_NO_KNOCKBACK;
+		dflags |= DAMAGE_NO_KNOCKBACK;
 	}
 
 	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
@@ -9756,7 +9756,7 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 				ent->splashRadius = radius; // * ( 1.0 - dist / radius );
 			}
 
-			G_Damage(ent, nullptr, attacker, dir, origin, static_cast<int>(points), d_flags, mod);
+			G_Damage(ent, nullptr, attacker, dir, origin, static_cast<int>(points), dflags, mod);
 		}
 	}
 }
@@ -9782,7 +9782,7 @@ void AddFatigueKillBonus(const gentity_t* attacker, const gentity_t* victim, con
 
 	// Compute block‑button state safely
 	const qboolean is_holding_block_button =
-		((attacker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0)
+		((attacker->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0)
 		? qtrue
 		: qfalse;
 
@@ -9861,7 +9861,7 @@ void AddFatigueHurtBonus(const gentity_t* attacker, const gentity_t* victim, con
 
 	// Compute block‑button state safely
 	const qboolean is_holding_block_button =
-		((attacker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0)
+		((attacker->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0)
 		? qtrue
 		: qfalse;
 
@@ -9940,7 +9940,7 @@ void AddFatigueHurtBonusMax(const gentity_t* attacker, const gentity_t* victim, 
 
 	// Compute block‑button state safely
 	const qboolean is_holding_block_button =
-		((attacker->client->ps.ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0)
+		((attacker->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0)
 		? qtrue
 		: qfalse;
 

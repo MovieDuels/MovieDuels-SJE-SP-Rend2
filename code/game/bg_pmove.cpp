@@ -10223,8 +10223,8 @@ static void PM_Footsteps()
 	qboolean flipping = qfalse;
 	int set_anim_flags = SETANIM_FLAG_NORMAL;
 
-	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
-	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	if (pm->gent == nullptr || pm->gent->client == nullptr)
 		return;
@@ -11573,7 +11573,7 @@ static void PM_Footsteps()
 						{
 							if (g_SerenityJediEngineMode->integer == 2) // amd mode
 							{
-								if (pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK)
+								if (pm->ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
 								{
 									PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK2, set_anim_flags);
 								}
@@ -12001,8 +12001,8 @@ extern qboolean PM_AllowedDualPistol();
 
 static void PM_BeginWeaponChange(const int weapon)
 {
-	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
-	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	gentity_t* gent = pm->gent;
 	gclient_t* gcl = gent ? gent->client : NULL;
@@ -12877,7 +12877,7 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Explicit qboolean: is the player/NPC actively blocking + attacking?
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	// Movement inputs (signed chars)
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -13078,7 +13078,7 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Active blocking (block + attack) flag
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
@@ -13306,7 +13306,7 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Active blocking: block + attack held
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)	? qtrue: qfalse;
+	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue: qfalse;
 
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
@@ -13543,7 +13543,7 @@ int PM_BlockingPoseForSaberAnimLevelSingleMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Explicit qboolean: block + attack held
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
 
 	// Movement inputs
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -13636,7 +13636,7 @@ int PM_BlockingPoseForSaberAnimLevelDualMD()
 {
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
 	//Active Blocking
 
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -13728,7 +13728,7 @@ int PM_BlockingPoseForSaberAnimLevelStaffMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Explicit qboolean: block + attack held
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
 
 	// Movement inputs
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -14141,7 +14141,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 	int parts = SETANIM_TORSO;
 	qboolean manual_blocking = qfalse;
 
-	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean is_walking_and_blocking = ((pm->cmd.buttons & BUTTON_WALKING) && (is_holding_block_button)) ? qtrue : qfalse;
 
 	if (new_move < LS_NONE || new_move >= LS_MOVE_MAX)
@@ -14226,6 +14226,18 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			//continuing with a kata, increment attack counter
 			pm->ps->saberAttackChainCount++;
 		}
+	}
+
+	// Riposte speed boost: 1.15x faster counter-attack after perfect parry
+	if (PM_SaberInAttack(new_move) && pm->ps->saberRiposteTime > pm->cmd.serverTime)
+	{
+		// 1.15x speed multiplier = reduce timer by ~13%
+		int oldTimer = pm->ps->torsoAnimTimer;
+		if (oldTimer > 50)
+		{
+			pm->ps->torsoAnimTimer = (int)(oldTimer * 0.87f);
+		}
+		pm->ps->saberRiposteTime = 0;
 	}
 
 	if (pm->ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_MAX)
@@ -17142,8 +17154,8 @@ static qboolean PM_SaberMoveOkayForKata()
 
 static qboolean PM_CanDoKata()
 {
-	const qboolean is_holding_block_button = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK ? qtrue : qfalse;
-	const qboolean is_holding_block_button_and_attack = pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
+	const qboolean is_holding_block_button = pm->ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = pm->ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCKANDATTACK ? qtrue : qfalse;
 
 	const qboolean isPlayer = (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
 
@@ -18058,7 +18070,7 @@ static void PM_CheckClearSaberBlock()
 				pm->ps->weaponTime = 0;
 				pm->ps->saberBlocked = BLOCKED_NONE;
 			}
-			else if (pm->cmd.buttons & BUTTON_ATTACK && !(pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK))
+			else if (pm->cmd.buttons & BUTTON_ATTACK && !(pm->ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK))
 			{
 				//block is done or breaking out of it with an attack
 				pm->ps->weaponTime = 0;
@@ -18081,7 +18093,7 @@ static qboolean InSaberDelayAnimation(const int move)
 
 static qboolean PM_SaberBlocking()
 {
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
 	//Active Blocking
 
 	if (g_SerenityJediEngineMode->integer)
@@ -18122,7 +18134,7 @@ static qboolean PM_SaberBlocking()
 							}
 						}
 						else if (pm->cmd.buttons & BUTTON_ATTACK && !(pm->ps->ManualBlockingFlags & 1 <<
-							HOLDINGBLOCK))
+							MBF_HOLDINGBLOCK))
 						{
 							//block is done or breaking out of it with an attack
 							pm->ps->weaponTime = 0;
@@ -19455,8 +19467,8 @@ static void PM_WeaponLightsaber(void)
 	int      anim = -1;
 	int      newmove = LS_NONE;
 
-	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
-	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 	const qboolean is_walking_and_blocking = (((pm->cmd.buttons & BUTTON_WALKING) != 0) && (is_holding_block_button)) ? qtrue : qfalse;
 
 	// Defensive: ensure pm and pm->ps exist before any dereference.
@@ -22915,7 +22927,7 @@ static void PM_AdjustAttackStates(pmove_t* pm)
 
 	if (!g_saberAutoBlocking->integer
 		&& !g_saberNewControlScheme->integer
-		&& (pm->cmd.buttons & BUTTON_FORCE_FOCUS || pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK
+		&& (pm->cmd.buttons & BUTTON_FORCE_FOCUS || pm->ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK
 			/* || pm->ps->ManualBlockingFlags & 1 << MBF_NPCBLOCKING*/))
 	{
 		pm->ps->saberBlockingTime = pm->cmd.serverTime + 100;
@@ -23966,7 +23978,7 @@ void PM_SaberFakeFlagUpdate(const int new_move)
 void PM_SaberPerfectBlockUpdate(const int new_move)
 {
 	// This is the manual blocking state.
-	const qboolean is_manual_blocking = ((pm->ps->ManualBlockingFlags & (1 << HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_manual_blocking = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 
 	// Conditions that cancel perfect block
 	if (is_manual_blocking == qfalse ||
@@ -24501,7 +24513,7 @@ void PM_CheckGrab()
 		return;
 	}
 
-	if (pm->ps->ManualBlockingFlags & 1 << HOLDINGBLOCK ||
+	if (pm->ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ||
 		pm->ps->PlayerEffectFlags & 1 << PEF_SPRINTING ||
 		pm->ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_TWELVE)
 	{

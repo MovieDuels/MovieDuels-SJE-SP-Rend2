@@ -4818,7 +4818,7 @@ void CG_NextWeapon_f()
 		return;
 	}
 
-	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << HOLDINGBLOCK)
+	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
 	{
 		return;
 	}
@@ -5099,7 +5099,7 @@ void CG_PrevWeapon_f()
 		return;
 	}
 
-	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << HOLDINGBLOCK)
+	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
 	{
 		return;
 	}
@@ -5282,7 +5282,7 @@ void CG_ChangeWeapon(const int num)
 		return;
 	}
 
-	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << HOLDINGBLOCK)
+	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
 	{
 		return;
 	}
@@ -5434,7 +5434,7 @@ void CG_Weapon_f()
 		return;
 	}
 
-	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << HOLDINGBLOCK)
+	if (cg.predictedPlayerState.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
 	{
 		return;
 	}
@@ -5532,7 +5532,7 @@ void CG_Weapon_f()
 		else if (num == cg.snap->ps.weapon)
 		{
 			//already have it up, let's try to toggle it
-			if (!in_camera && !(cg.predictedPlayerState.ManualBlockingFlags & 1 << HOLDINGBLOCK))
+			if (!in_camera && !(cg.predictedPlayerState.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK))
 			{
 				//player can't activate/deactivate saber when in a cinematic
 				//can't toggle it if not holding it and not controlling it or dead

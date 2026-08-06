@@ -29,7 +29,7 @@ void WP_TraceSetStart(const gentity_t* ent, vec3_t start);
 gentity_t* CreateMissile(vec3_t org, vec3_t dir, float vel, int life, gentity_t* owner, qboolean alt_fire = qfalse);
 void WP_Stick(gentity_t* missile, const trace_t* trace, float fudge_distance = 0.0f);
 void WP_Explode(gentity_t* self);
-void WP_ExplosiveDie(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int means_of_death, int d_flags, int hit_loc);
+void WP_ExplosiveDie(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int means_of_death, int dflags, int hit_loc);
 bool WP_MissileTargetHint(gentity_t* shooter, vec3_t start, vec3_t out);
 void ViewHeightFix(const gentity_t* ent);
 qboolean LogAccuracyHit(const gentity_t* target, const gentity_t* attacker);
@@ -112,7 +112,7 @@ void rocketThink(gentity_t* ent);
 void WP_FireRocket(gentity_t* ent, qboolean alt_fire);
 void WP_FireStunBaton(gentity_t* ent, qboolean alt_fire);
 void thermalDetonatorExplode(gentity_t* ent);
-void thermal_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void thermal_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc);
 qboolean WP_LobFire(const gentity_t* self, vec3_t start, vec3_t target, vec3_t mins, vec3_t maxs, int clipmask,
 	vec3_t velocity, qboolean trace_path, int ignore_ent_num, int enemy_num,

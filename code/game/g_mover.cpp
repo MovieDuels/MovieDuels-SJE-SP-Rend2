@@ -2121,7 +2121,7 @@ void SP_path_corner(gentity_t* self)
 	VectorCopy(self->s.origin, self->currentOrigin);
 }
 
-void func_train_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int d_flags,
+void func_train_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod, int dflags,
 	int hit_loc)
 {
 	if (self->target3)
