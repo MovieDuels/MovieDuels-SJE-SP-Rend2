@@ -7914,6 +7914,11 @@ static void CG_DrawCrosshairNames(void)
 		return;
 	}
 
+	if (cg.predictedPlayerState.communicatingflags & (1 << CF_SABERLOCKING))
+	{
+		return;
+	}
+
 	CG_ScanForCrosshairEntity(scan_all);
 
 	if (g_crosshairEntNum <= 0 || g_crosshairEntNum >= MAX_GENTITIES)
