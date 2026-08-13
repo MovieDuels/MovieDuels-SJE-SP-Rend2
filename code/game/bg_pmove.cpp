@@ -311,6 +311,11 @@ constexpr auto FORCEFALLDEBOUNCE = 100;
 
 static qboolean PM_CanForceFall()
 {
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
 	if (!PM_InRoll(pm->ps) // not rolling
 		&& !PM_InKnockDown(pm->ps) // not knocked down
 		&& !PM_InDeathAnim() // not dead
@@ -7090,6 +7095,11 @@ qboolean PM_InGetUpNoRoll(const playerState_t* ps)
 
 qboolean PM_InKnockDown(const playerState_t* ps)
 {
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
 	switch (ps->legsAnim)
 	{
 	case BOTH_KNOCKDOWN1:
@@ -8027,6 +8037,11 @@ qboolean PM_GettingUpFromKnockDown(const float standheight, const float crouchhe
 
 void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd)
 {
+	if (!pm || !pm->ps)
+	{
+		return;
+	}
+
 	switch (ps->legsAnim)
 	{
 	case BOTH_ROLL_F:
@@ -8184,6 +8199,11 @@ void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd)
 
 qboolean PM_InRollIgnoreTimer(const playerState_t* ps)
 {
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
 	switch (ps->legsAnim)
 	{
 	case BOTH_ROLL_F:
@@ -8206,6 +8226,11 @@ qboolean PM_InRollIgnoreTimer(const playerState_t* ps)
 
 qboolean PM_InRoll(const playerState_t* ps)
 {
+	if (!pm || !pm->ps)
+	{
+		return qfalse;
+	}
+
 	if (ps->legsAnimTimer && PM_InRollIgnoreTimer(ps))
 	{
 		return qtrue;
