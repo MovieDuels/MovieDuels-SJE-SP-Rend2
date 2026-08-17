@@ -2802,8 +2802,31 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 		CG_DrawMiscEnts();
 	}
 
-	// Rebuild the areamask based on the actual view origin.
-	cgi_CM_SnapPVS(cg.refdef.vieworg, cg.snap->areamask);
+	//check for opaque water
+	// this game does not have opaque water
+	if (0)
+	{
+		vec3_t	camTest;
+		VectorCopy(cg.refdef.vieworg, camTest);
+		camTest[2] += 6;
+		if (!(CG_PointContents(camTest, 0) & CONTENTS_SOLID) && !gi.inPVS(cg.refdef.vieworg, camTest))
+		{//crossed visible line into another room
+			cg.refdef.vieworg[2] -= 6;
+		}
+		else
+		{
+			VectorCopy(cg.refdef.vieworg, camTest);
+			camTest[2] -= 6;
+			if (!(CG_PointContents(camTest, 0) & CONTENTS_SOLID) && !gi.inPVS(cg.refdef.vieworg, camTest))
+			{
+				cg.refdef.vieworg[2] += 6;
+			}
+		}
+	}
+	{//actual view org and server's view org don't match and aren't same PVS, rebuild the areamask
+		//Com_Printf( S_COLOR_RED"%s != %s\n", vtos(cg.refdef.vieworg), vtos(cg.snap->ps.serverViewOrg) );
+		cgi_CM_SnapPVS(cg.refdef.vieworg, cg.snap->areamask);
+	}
 
 	// Don't draw the in‑view weapon when in camera mode or certain special cases.
 	if (in_camera == qfalse &&

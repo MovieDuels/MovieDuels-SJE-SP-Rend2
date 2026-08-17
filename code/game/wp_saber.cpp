@@ -30790,8 +30790,7 @@ void ForceGrip(gentity_t* self)
 				&& traceEnt->client->NPC_class != CLASS_SBD
 				&& traceEnt->s.weapon != WP_CONCUSSION) // so rax can't drop his
 			{
-				if (traceEnt->client->NPC_class == CLASS_BOBAFETT || traceEnt->client->NPC_class == CLASS_MANDALORIAN
-					||
+				if (traceEnt->client->NPC_class == CLASS_BOBAFETT || traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
 					traceEnt->client->NPC_class == CLASS_JANGO || traceEnt->client->NPC_class == CLASS_JANGODUAL)
 				{
 					//he doesn't drop them, just puts it away
@@ -31375,9 +31374,12 @@ static void force_shootstrike(gentity_t* self)
 	const float chance_of_fizz = Q_flrand(0.0f, 1.0f);
 	constexpr int npc_saber_num = 0;
 	constexpr int npc_blade_num = 0;
-	float dot, dist;
+	float dot;
+	float dist;
 	static gentity_t* entity_list[MAX_GENTITIES];
 	int e, num_listed_entities, i;
+
+	const int hit_loc = G_GetHitLocFromTrace(&tr, MOD_LIGHTNING_STRIKE);
 
 	if (self->health <= 0)
 	{
@@ -31399,7 +31401,9 @@ static void force_shootstrike(gentity_t* self)
 
 	// always render a shot beam, doing this the old way because I don't much feel like overriding the effect.
 
-	G_PlayEffect("env/yellow_electricity", self->client->renderInfo.handLPoint, forward);
+	G_PlayEffect("env/yellow_lightning", self->client->renderInfo.handLPoint, forward);
+	gentity_t* tent = G_TempEntity(tr.endpos, EV_LIGHTNING_STRIKE);
+	tent->svFlags |= SVF_BROADCAST;
 
 	if (self->client->ps.forcePowerLevel[FP_LIGHTNING_STRIKE] == FORCE_LEVEL_3)
 	{
@@ -31469,8 +31473,7 @@ static void force_shootstrike(gentity_t* self)
 			}
 
 			//Now check and see if we can actually hit it
-			gi.trace(&tr, self->client->renderInfo.handLPoint, vec3_origin, vec3_origin, ent_org, self->s.number,
-				MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+			gi.trace(&tr, self->client->renderInfo.handLPoint, vec3_origin, vec3_origin, ent_org, self->s.number, MASK_SHOT, static_cast<EG2_Collision>(0), 0);
 
 			if (tr.surfaceFlags & SURF_NOIMPACT)
 			{
@@ -31499,10 +31502,12 @@ static void force_shootstrike(gentity_t* self)
 					{
 						//disable cloak temporarily
 						player_decloak(traceEnt);
-						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
+						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
 					}
 
-					if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GALAKMECH)
+					if (traceEnt &&
+						traceEnt->client &&
+						traceEnt->client->NPC_class == CLASS_GALAKMECH)
 					{
 						//hehe
 						if (traceEnt->client->ps.stats[STAT_ARMOR] > 1)
@@ -31510,47 +31515,52 @@ static void force_shootstrike(gentity_t* self)
 							traceEnt->client->ps.stats[STAT_ARMOR] = 0;
 						}
 						traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-						G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
+						G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 					}
-					else if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_OBJECT)
+					else if (traceEnt &&
+						traceEnt->client &&
+						traceEnt->client->NPC_class == CLASS_OBJECT)
 					{
 						traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
 					}
 					else
 					{
-						if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_ATST ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GONK ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_INTERROGATOR ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MARK1 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MARK2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MOUSE ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_PROBE ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_PROTOCOL ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_R2D2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_R5D2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SEEKER ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SENTRY ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SBD ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_BATTLEDROID ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_DROIDEKA ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_OBJECT ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_ASSASSIN_DROID ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SABER_DROID)
+						if (traceEnt &&
+							traceEnt->client &&
+							(traceEnt->client->NPC_class == CLASS_ATST ||
+								traceEnt->client->NPC_class == CLASS_GONK ||
+								traceEnt->client->NPC_class == CLASS_INTERROGATOR ||
+								traceEnt->client->NPC_class == CLASS_MARK1 ||
+								traceEnt->client->NPC_class == CLASS_MARK2 ||
+								traceEnt->client->NPC_class == CLASS_MOUSE ||
+								traceEnt->client->NPC_class == CLASS_PROBE ||
+								traceEnt->client->NPC_class == CLASS_PROTOCOL ||
+								traceEnt->client->NPC_class == CLASS_R2D2 ||
+								traceEnt->client->NPC_class == CLASS_R5D2 ||
+								traceEnt->client->NPC_class == CLASS_SEEKER ||
+								traceEnt->client->NPC_class == CLASS_SENTRY ||
+								traceEnt->client->NPC_class == CLASS_SBD ||
+								traceEnt->client->NPC_class == CLASS_BATTLEDROID ||
+								traceEnt->client->NPC_class == CLASS_DROIDEKA ||
+								traceEnt->client->NPC_class == CLASS_ASSASSIN_DROID ||
+								traceEnt->client->NPC_class == CLASS_SABER_DROID))
 						{
 							// special droid only behaviors
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_BOBAFETT ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_JANGO ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_JANGODUAL)
+						else if (traceEnt &&
+							traceEnt->client &&
+							(traceEnt->client->NPC_class == CLASS_BOBAFETT ||
+								traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
+								traceEnt->client->NPC_class == CLASS_JANGO ||
+								traceEnt->client->NPC_class == CLASS_JANGODUAL))
 						{
 							//he doesn't drop them, just puts it away
 							if (traceEnt->health <= 50)
 							{
 								ChangeWeapon(traceEnt, WP_MELEE);
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
@@ -31564,60 +31574,60 @@ static void force_shootstrike(gentity_t* self)
 								traceEnt->client->jetPackToggleTime = level.time + Q_irand(3000, 10000);
 							}
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (traceEnt->s.weapon == WP_MELEE)
+						else if (traceEnt &&
+							traceEnt->client &&
+							traceEnt->s.weapon == WP_MELEE)
 						{
-							//they can't take that away from me, oh no...
-							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
 							if (traceEnt->health <= 50)
 							{
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
 								G_Stagger(traceEnt);
 							}
+							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (ThisGuyIsAGunner(traceEnt))
+						else if (traceEnt &&
+							traceEnt->client
+							&& (ThisGuyIsAGunner(traceEnt)))
 						{
 							if (traceEnt->health <= 50)
 							{
 								WP_DropWeapon(traceEnt, nullptr);
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
 								G_Stagger(traceEnt);
 							}
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
 						else
 						{
-							if (traceEnt->s.weapon == WP_SABER
-								&& traceEnt->client->ps.SaberActive()
-								&& !traceEnt->client->ps.saberInFlight
-								&& InFOV(self->currentOrigin, traceEnt->currentOrigin,
-									traceEnt->client->ps.viewangles,
-									20, 35)
-								&& !PM_InKnockDown(&traceEnt->client->ps)
-								&& !PM_SuperBreakLoseAnim(traceEnt->client->ps.torsoAnim)
-								&& !PM_SuperBreakWinAnim(traceEnt->client->ps.torsoAnim)
-								&& !PM_SaberInSpecialAttack(traceEnt->client->ps.torsoAnim)
-								&& !PM_InSpecialJump(traceEnt->client->ps.torsoAnim)
-								&& (traceEnt->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ||
-									traceEnt->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING ||
-									traceEnt->NPC && traceEnt->client->ps.forcePower > 20))
+							if (traceEnt != nullptr &&
+								traceEnt->client != nullptr &&
+								traceEnt->s.weapon == WP_SABER &&
+								traceEnt->client->ps.SaberActive() == qtrue &&
+								traceEnt->client->ps.saberInFlight == qfalse &&
+								InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35) == qtrue &&
+								PM_InKnockDown(&traceEnt->client->ps) == qfalse &&
+								PM_SuperBreakLoseAnim(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_SuperBreakWinAnim(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_SaberInSpecialAttack(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_InSpecialJump(traceEnt->client->ps.torsoAnim) == qfalse &&
+								((traceEnt->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0 ||
+									(traceEnt->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0 ||
+									(traceEnt->NPC != nullptr && traceEnt->client->ps.forcePower > 20)))
 							{
 								//saber can block lightning make them do a parry
 								VectorNegate(dir, forward);
 
-								//randomize direction a bit
+								//randomise direction a bit
 								MakeNormalVectors(forward, right, up);
 								VectorMA(forward, Q_irand(0, 360), right, forward);
 								VectorMA(forward, Q_irand(0, 360), up, forward);
@@ -31629,7 +31639,8 @@ static void force_shootstrike(gentity_t* self)
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzlePoint,
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].length *
 										Q_flrand(0, 1),
-										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir, end);
+										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir,
+										end);
 									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, forward);
 								}
 
@@ -31655,18 +31666,29 @@ static void force_shootstrike(gentity_t* self)
 							}
 							else
 							{
-								if (traceEnt->s.weapon == WP_SABER)
+								if (traceEnt && traceEnt->client)
 								{
-									//turn it off?
-									traceEnt->client->ps.SaberDeactivate();
-									G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.wav");
-									G_Slapdown(traceEnt, self, dir, 80, qtrue);
-									G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
+									if (traceEnt->health <= 50 && traceEnt->s.weapon == WP_SABER)
+									{
+										if (traceEnt->client->ps.SaberActive())
+										{
+											traceEnt->client->ps.SaberDeactivate();
+											G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.mp3");
+										}
+										ChangeWeapon(traceEnt, WP_MELEE);
+										G_Knockdown(traceEnt, self, dir, 80, qtrue);
+									}
+									else
+									{
+										if (traceEnt->client->ps.SaberActive())
+										{
+											traceEnt->client->ps.SaberDeactivate();
+											G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.mp3");
+										}
+										ChangeWeapon(traceEnt, WP_MELEE);
+										G_Stagger(traceEnt);
+									}
 									traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-								}
-								else
-								{
-									const int hit_loc = G_GetHitLocFromTrace(&tr, MOD_LIGHTNING_STRIKE);
 									G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 								}
 							}
@@ -31682,14 +31704,14 @@ static void force_shootstrike(gentity_t* self)
 	}
 	else if (self->client->ps.forcePowerLevel[FP_LIGHTNING_STRIKE] == FORCE_LEVEL_2)
 	{
-		constexpr float radiusmedium = 256;
+		constexpr float radius_medium = 256;
 		//arc
 		VectorCopy(self->currentOrigin, center);
 
 		for (i = 0; i < 3; i++)
 		{
-			mins[i] = center[i] - radiusmedium;
-			maxs[i] = center[i] + radiusmedium;
+			mins[i] = center[i] - radius_medium;
+			maxs[i] = center[i] + radius_medium;
 		}
 		num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
@@ -31735,7 +31757,7 @@ static void force_shootstrike(gentity_t* self)
 
 			//must be close enough
 			dist = VectorLength(v);
-			if (dist >= radiusmedium)
+			if (dist >= radius_medium)
 			{
 				continue;
 			}
@@ -31748,8 +31770,7 @@ static void force_shootstrike(gentity_t* self)
 			}
 
 			//Now check and see if we can actually hit it
-			gi.trace(&tr, self->client->renderInfo.handLPoint, vec3_origin, vec3_origin, ent_org, self->s.number,
-				MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+			gi.trace(&tr, self->client->renderInfo.handLPoint, vec3_origin, vec3_origin, ent_org, self->s.number, MASK_SHOT, static_cast<EG2_Collision>(0), 0);
 
 			if (tr.surfaceFlags & SURF_NOIMPACT)
 			{
@@ -31778,10 +31799,12 @@ static void force_shootstrike(gentity_t* self)
 					{
 						//disable cloak temporarily
 						player_decloak(traceEnt);
-						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
+						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
 					}
 
-					if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GALAKMECH)
+					if (traceEnt &&
+						traceEnt->client &&
+						traceEnt->client->NPC_class == CLASS_GALAKMECH)
 					{
 						//hehe
 						if (traceEnt->client->ps.stats[STAT_ARMOR] > 1)
@@ -31789,47 +31812,36 @@ static void force_shootstrike(gentity_t* self)
 							traceEnt->client->ps.stats[STAT_ARMOR] = 0;
 						}
 						traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-						G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
+						G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 					}
-					else if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_OBJECT)
+					else if (traceEnt &&
+						traceEnt->client &&
+						traceEnt->client->NPC_class == CLASS_OBJECT)
 					{
 						traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
 					}
 					else
 					{
-						if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_ATST ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GONK ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_INTERROGATOR ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MARK1 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MARK2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MOUSE ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_PROBE ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_PROTOCOL ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_R2D2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_R5D2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SEEKER ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SENTRY ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SBD ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_BATTLEDROID ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_DROIDEKA ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_OBJECT ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_ASSASSIN_DROID ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SABER_DROID)
+						if (traceEnt &&
+							traceEnt->client &&
+							(ThisGuyIsAGunner(traceEnt)))
 						{
 							// special droid only behaviors
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_BOBAFETT ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_JANGO ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_JANGODUAL)
+						else if (traceEnt &&
+							traceEnt->client &&
+							(traceEnt->client->NPC_class == CLASS_BOBAFETT ||
+								traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
+								traceEnt->client->NPC_class == CLASS_JANGO ||
+								traceEnt->client->NPC_class == CLASS_JANGODUAL))
 						{
 							//he doesn't drop them, just puts it away
 							if (traceEnt->health <= 50)
 							{
 								ChangeWeapon(traceEnt, WP_MELEE);
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
@@ -31843,60 +31855,60 @@ static void force_shootstrike(gentity_t* self)
 								traceEnt->client->jetPackToggleTime = level.time + Q_irand(3000, 10000);
 							}
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 2000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (traceEnt->s.weapon == WP_MELEE)
+						else if (traceEnt &&
+							traceEnt->client &&
+							traceEnt->s.weapon == WP_MELEE)
 						{
-							//they can't take that away from me, oh no...
-							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 2000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
 							if (traceEnt->health <= 50)
 							{
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
 								G_Stagger(traceEnt);
 							}
+							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 2000;
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (ThisGuyIsAGunner(traceEnt))
+						else if (traceEnt &&
+							traceEnt->client
+							&& (ThisGuyIsAGunner(traceEnt)))
 						{
 							if (traceEnt->health <= 50)
 							{
 								WP_DropWeapon(traceEnt, nullptr);
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
 								G_Stagger(traceEnt);
 							}
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 2000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
 						else
 						{
-							if (traceEnt->s.weapon == WP_SABER
-								&& traceEnt->client->ps.SaberActive()
-								&& !traceEnt->client->ps.saberInFlight
-								&& InFOV(self->currentOrigin, traceEnt->currentOrigin,
-									traceEnt->client->ps.viewangles,
-									20, 35)
-								&& !PM_InKnockDown(&traceEnt->client->ps)
-								&& !PM_SuperBreakLoseAnim(traceEnt->client->ps.torsoAnim)
-								&& !PM_SuperBreakWinAnim(traceEnt->client->ps.torsoAnim)
-								&& !PM_SaberInSpecialAttack(traceEnt->client->ps.torsoAnim)
-								&& !PM_InSpecialJump(traceEnt->client->ps.torsoAnim)
-								&& (traceEnt->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ||
-									traceEnt->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING ||
-									traceEnt->NPC && traceEnt->client->ps.forcePower > 20))
+							if (traceEnt != nullptr &&
+								traceEnt->client != nullptr &&
+								traceEnt->s.weapon == WP_SABER &&
+								traceEnt->client->ps.SaberActive() == qtrue &&
+								traceEnt->client->ps.saberInFlight == qfalse &&
+								InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35) == qtrue &&
+								PM_InKnockDown(&traceEnt->client->ps) == qfalse &&
+								PM_SuperBreakLoseAnim(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_SuperBreakWinAnim(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_SaberInSpecialAttack(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_InSpecialJump(traceEnt->client->ps.torsoAnim) == qfalse &&
+								((traceEnt->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0 ||
+									(traceEnt->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0 ||
+									(traceEnt->NPC != nullptr && traceEnt->client->ps.forcePower > 20)))
 							{
 								//saber can block lightning make them do a parry
 								VectorNegate(dir, forward);
 
-								//randomize direction a bit
+								//randomise direction a bit
 								MakeNormalVectors(forward, right, up);
 								VectorMA(forward, Q_irand(0, 360), right, forward);
 								VectorMA(forward, Q_irand(0, 360), up, forward);
@@ -31908,7 +31920,8 @@ static void force_shootstrike(gentity_t* self)
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzlePoint,
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].length *
 										Q_flrand(0, 1),
-										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir, end);
+										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir,
+										end);
 									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, forward);
 								}
 
@@ -31934,18 +31947,29 @@ static void force_shootstrike(gentity_t* self)
 							}
 							else
 							{
-								if (traceEnt->s.weapon == WP_SABER)
+								if (traceEnt && traceEnt->client)
 								{
-									//turn it off?
-									traceEnt->client->ps.SaberDeactivate();
-									G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.wav");
-									G_Slapdown(traceEnt, self, dir, 80, qtrue);
-									G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
-									traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-								}
-								else
-								{
-									const int hit_loc = G_GetHitLocFromTrace(&tr, MOD_LIGHTNING_STRIKE);
+									if (traceEnt->health <= 50 && traceEnt->s.weapon == WP_SABER)
+									{
+										if (traceEnt->client->ps.SaberActive())
+										{
+											traceEnt->client->ps.SaberDeactivate();
+											G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.mp3");
+										}
+										ChangeWeapon(traceEnt, WP_MELEE);
+										G_Knockdown(traceEnt, self, dir, 80, qtrue);
+									}
+									else
+									{
+										if (traceEnt->client->ps.SaberActive())
+										{
+											traceEnt->client->ps.SaberDeactivate();
+											G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.mp3");
+										}
+										ChangeWeapon(traceEnt, WP_MELEE);
+										G_Stagger(traceEnt);
+									}
+									traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 2000;
 									G_Damage(traceEnt, self, self, dir, tr.endpos, damage_medium, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 								}
 							}
@@ -31961,14 +31985,14 @@ static void force_shootstrike(gentity_t* self)
 	}
 	else
 	{
-		constexpr float radiuslow = 128;
+		constexpr float radius_low = 128;
 		//arc
 		VectorCopy(self->currentOrigin, center);
 
 		for (i = 0; i < 3; i++)
 		{
-			mins[i] = center[i] - radiuslow;
-			maxs[i] = center[i] + radiuslow;
+			mins[i] = center[i] - radius_low;
+			maxs[i] = center[i] + radius_low;
 		}
 		num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
@@ -32014,7 +32038,7 @@ static void force_shootstrike(gentity_t* self)
 
 			//must be close enough
 			dist = VectorLength(v);
-			if (dist >= radiuslow)
+			if (dist >= radius_low)
 			{
 				continue;
 			}
@@ -32027,8 +32051,7 @@ static void force_shootstrike(gentity_t* self)
 			}
 
 			//Now check and see if we can actually hit it
-			gi.trace(&tr, self->client->renderInfo.handLPoint, vec3_origin, vec3_origin, ent_org, self->s.number,
-				MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+			gi.trace(&tr, self->client->renderInfo.handLPoint, vec3_origin, vec3_origin, ent_org, self->s.number, MASK_SHOT, static_cast<EG2_Collision>(0), 0);
 
 			if (tr.surfaceFlags & SURF_NOIMPACT)
 			{
@@ -32057,10 +32080,12 @@ static void force_shootstrike(gentity_t* self)
 					{
 						//disable cloak temporarily
 						player_decloak(traceEnt);
-						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 10000);
+						G_AddVoiceEvent(traceEnt, Q_irand(EV_ANGER1, EV_ANGER3), 1000);
 					}
 
-					if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GALAKMECH)
+					if (traceEnt &&
+						traceEnt->client &&
+						traceEnt->client->NPC_class == CLASS_GALAKMECH)
 					{
 						//hehe
 						if (traceEnt->client->ps.stats[STAT_ARMOR] > 1)
@@ -32068,47 +32093,52 @@ static void force_shootstrike(gentity_t* self)
 							traceEnt->client->ps.stats[STAT_ARMOR] = 0;
 						}
 						traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-						G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
+						G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 					}
-					else if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_OBJECT)
+					else if (traceEnt &&
+						traceEnt->client &&
+						traceEnt->client->NPC_class == CLASS_OBJECT)
 					{
 						traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
 					}
 					else
 					{
-						if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_ATST ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_GONK ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_INTERROGATOR ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MARK1 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MARK2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MOUSE ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_PROBE ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_PROTOCOL ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_R2D2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_R5D2 ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SEEKER ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SENTRY ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SBD ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_BATTLEDROID ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_DROIDEKA ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_OBJECT ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_ASSASSIN_DROID ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_SABER_DROID)
+						if (traceEnt &&
+							traceEnt->client &&
+							(traceEnt->client->NPC_class == CLASS_ATST ||
+								traceEnt->client->NPC_class == CLASS_GONK ||
+								traceEnt->client->NPC_class == CLASS_INTERROGATOR ||
+								traceEnt->client->NPC_class == CLASS_MARK1 ||
+								traceEnt->client->NPC_class == CLASS_MARK2 ||
+								traceEnt->client->NPC_class == CLASS_MOUSE ||
+								traceEnt->client->NPC_class == CLASS_PROBE ||
+								traceEnt->client->NPC_class == CLASS_PROTOCOL ||
+								traceEnt->client->NPC_class == CLASS_R2D2 ||
+								traceEnt->client->NPC_class == CLASS_R5D2 ||
+								traceEnt->client->NPC_class == CLASS_SEEKER ||
+								traceEnt->client->NPC_class == CLASS_SENTRY ||
+								traceEnt->client->NPC_class == CLASS_SBD ||
+								traceEnt->client->NPC_class == CLASS_BATTLEDROID ||
+								traceEnt->client->NPC_class == CLASS_DROIDEKA ||
+								traceEnt->client->NPC_class == CLASS_ASSASSIN_DROID ||
+								traceEnt->client->NPC_class == CLASS_SABER_DROID))
 						{
 							// special droid only behaviors
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damage_high, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_BOBAFETT ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_JANGO ||
-							traceEnt && traceEnt->client && traceEnt->client->NPC_class == CLASS_JANGODUAL)
+						else if (traceEnt &&
+							traceEnt->client &&
+							(traceEnt->client->NPC_class == CLASS_BOBAFETT ||
+								traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
+								traceEnt->client->NPC_class == CLASS_JANGO ||
+								traceEnt->client->NPC_class == CLASS_JANGODUAL))
 						{
 							//he doesn't drop them, just puts it away
 							if (traceEnt->health <= 50)
 							{
 								ChangeWeapon(traceEnt, WP_MELEE);
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
@@ -32122,60 +32152,60 @@ static void force_shootstrike(gentity_t* self)
 								traceEnt->client->jetPackToggleTime = level.time + Q_irand(3000, 10000);
 							}
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 1000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (traceEnt->s.weapon == WP_MELEE)
+						else if (traceEnt &&
+							traceEnt->client &&
+							traceEnt->s.weapon == WP_MELEE)
 						{
-							//they can't take that away from me, oh no...
-							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 1000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
 							if (traceEnt->health <= 50)
 							{
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
 								G_Stagger(traceEnt);
 							}
+							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 1000;
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
-						else if (ThisGuyIsAGunner(traceEnt))
+						else if (traceEnt &&
+							traceEnt->client
+							&& (ThisGuyIsAGunner(traceEnt)))
 						{
 							if (traceEnt->health <= 50)
 							{
 								WP_DropWeapon(traceEnt, nullptr);
-								G_Slapdown(traceEnt, self, dir, 80, qtrue);
+								G_Knockdown(traceEnt, self, dir, 80, qtrue);
 							}
 							else
 							{
 								G_Stagger(traceEnt);
 							}
 							traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 1000;
-							G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK,
-								MOD_LIGHTNING_STRIKE);
+							G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 						}
 						else
 						{
-							if (traceEnt->client != NULL &&
+							if (traceEnt != nullptr &&
+								traceEnt->client != nullptr &&
 								traceEnt->s.weapon == WP_SABER &&
-								traceEnt->client->ps.SaberActive() &&
-								!traceEnt->client->ps.saberInFlight &&
-								InFOV(self->currentOrigin, traceEnt->currentOrigin,
-									traceEnt->client->ps.viewangles, 20, 35) &&
-								!PM_InKnockDown(&traceEnt->client->ps) &&
-								!PM_SuperBreakLoseAnim(traceEnt->client->ps.torsoAnim) &&
-								!PM_SuperBreakWinAnim(traceEnt->client->ps.torsoAnim) &&
-								!PM_SaberInSpecialAttack(traceEnt->client->ps.torsoAnim) &&
-								!PM_InSpecialJump(traceEnt->client->ps.torsoAnim) &&
+								traceEnt->client->ps.SaberActive() == qtrue &&
+								traceEnt->client->ps.saberInFlight == qfalse &&
+								InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35) == qtrue &&
+								PM_InKnockDown(&traceEnt->client->ps) == qfalse &&
+								PM_SuperBreakLoseAnim(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_SuperBreakWinAnim(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_SaberInSpecialAttack(traceEnt->client->ps.torsoAnim) == qfalse &&
+								PM_InSpecialJump(traceEnt->client->ps.torsoAnim) == qfalse &&
 								((traceEnt->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0 ||
 									(traceEnt->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0 ||
-									(traceEnt->NPC && traceEnt->client->ps.forcePower > 20)))
+									(traceEnt->NPC != nullptr && traceEnt->client->ps.forcePower > 20)))
 							{
 								//saber can block lightning make them do a parry
 								VectorNegate(dir, forward);
 
-								//randomize direction a bit
+								//randomise direction a bit
 								MakeNormalVectors(forward, right, up);
 								VectorMA(forward, Q_irand(0, 360), right, forward);
 								VectorMA(forward, Q_irand(0, 360), up, forward);
@@ -32187,7 +32217,8 @@ static void force_shootstrike(gentity_t* self)
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzlePoint,
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].length *
 										Q_flrand(0, 1),
-										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir, end);
+										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir,
+										end);
 									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, forward);
 								}
 
@@ -32213,20 +32244,29 @@ static void force_shootstrike(gentity_t* self)
 							}
 							else
 							{
-								if (traceEnt->client != NULL && traceEnt->s.weapon == WP_SABER)
+								if (traceEnt && traceEnt->client)
 								{
-									// turn it off
-									traceEnt->client->ps.SaberDeactivate();
-									G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.wav");
-									G_Slapdown(traceEnt, self, dir, 80, qtrue);
-									G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow,
-										DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE);
-
-									traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 4000;
-								}
-								else
-								{
-									const int hit_loc = G_GetHitLocFromTrace(&tr, MOD_LIGHTNING_STRIKE);
+									if (traceEnt->health <= 50 && traceEnt->s.weapon == WP_SABER)
+									{
+										if (traceEnt->client->ps.SaberActive())
+										{
+											traceEnt->client->ps.SaberDeactivate();
+											G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.mp3");
+										}
+										ChangeWeapon(traceEnt, WP_MELEE);
+										G_Knockdown(traceEnt, self, dir, 80, qtrue);
+									}
+									else
+									{
+										if (traceEnt->client->ps.SaberActive())
+										{
+											traceEnt->client->ps.SaberDeactivate();
+											G_SoundOnEnt(traceEnt, CHAN_WEAPON, "sound/weapons/saber/saberoffquick.mp3");
+										}
+										ChangeWeapon(traceEnt, WP_MELEE);
+										G_Stagger(traceEnt);
+									}
+									traceEnt->client->ps.powerups[PW_STUNNED] = level.time + 1000;
 									G_Damage(traceEnt, self, self, dir, tr.endpos, damagelow, DAMAGE_DEATH_KNOCKBACK, MOD_LIGHTNING_STRIKE, hit_loc);
 								}
 							}
@@ -32309,8 +32349,7 @@ void ForceLightningStrike(gentity_t* self)
 
 	if (self->handLBolt != -1)
 	{
-		G_PlayEffect(G_EffectIndex("force/strike_flare"), self->playerModel, self->handLBolt, self->s.number,
-			self->currentOrigin, 200, qtrue);
+		G_PlayEffect(G_EffectIndex("force/strike_flare"), self->playerModel, self->handLBolt, self->s.number, self->currentOrigin, 200, qtrue);
 	}
 
 	G_Sound(self, sound_index);
@@ -38161,8 +38200,7 @@ void ForceGrasp(gentity_t* self)
 	}
 
 	WP_ForcePowerStart(self, FP_GRASP, 10);
-	//FIXME: rule out other things?
-	//FIXME: Jedi resist, like the push and pull?
+
 	self->client->ps.forceGripEntityNum = traceEnt->s.number;
 	if (traceEnt->client)
 	{
@@ -38191,8 +38229,7 @@ void ForceGrasp(gentity_t* self)
 				&& traceEnt->client->NPC_class != CLASS_SBD
 				&& traceEnt->s.weapon != WP_CONCUSSION) // so rax can't drop his
 			{
-				if (traceEnt->client->NPC_class == CLASS_BOBAFETT || traceEnt->client->NPC_class == CLASS_MANDALORIAN
-					||
+				if (traceEnt->client->NPC_class == CLASS_BOBAFETT || traceEnt->client->NPC_class == CLASS_MANDALORIAN ||
 					traceEnt->client->NPC_class == CLASS_JANGO || traceEnt->client->NPC_class == CLASS_JANGODUAL)
 				{
 					//he doesn't drop them, just puts it away
