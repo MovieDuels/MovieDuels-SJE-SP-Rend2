@@ -71,6 +71,7 @@ cvar_t* g_spskill;
 cvar_t* debugNPCFreeze;
 cvar_t* com_rend2;
 cvar_t* r_cubeMapping;
+cvar_t* r_cubeMappingBounces;
 
 #ifndef _WIN32
 cvar_t* com_ansiColor = nullptr;
@@ -289,8 +290,8 @@ void NORETURN QDECL Com_Error(int level, const char* fmt, ...)
 	}
 
 	// if we are getting a solid stream of ERR_DROP, do an ERR_FATAL
-	const int current_time = Sys_Milliseconds();
-	if (current_time - lastErrorTime < 100)
+	const int currentTime = Sys_Milliseconds();
+	if (currentTime - lastErrorTime < 100)
 	{
 		if (++errorCount > 3)
 		{
@@ -301,7 +302,7 @@ void NORETURN QDECL Com_Error(int level, const char* fmt, ...)
 	{
 		errorCount = 0;
 	}
-	lastErrorTime = current_time;
+	lastErrorTime = currentTime;
 
 #ifdef JK2_MODE
 	SCR_UnprecacheScreenshot();
@@ -1201,7 +1202,9 @@ void Com_Init(char* commandLine)
 		g_spskill = Cvar_Get("g_spskill", "2", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 		debugNPCFreeze = Cvar_Get("d_npcfreeze", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 
-		r_cubeMapping = Cvar_Get("r_cubeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH);
+		r_cubeMapping = Cvar_Get("r_cubeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH);
+		r_cubeMappingBounces = Cvar_Get("r_cubeMappingBounces", "2", CVAR_ARCHIVE | CVAR_LATCH);
+		Cvar_CheckRange(r_cubeMappingBounces, 0, 2, qfalse);
 
 		g_trueguns = Cvar_Get("cg_trueguns", "0", 0);
 

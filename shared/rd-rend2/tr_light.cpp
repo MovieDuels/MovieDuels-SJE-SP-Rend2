@@ -374,10 +374,9 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 		VectorCopy(tr.sunDirection, ent->lightDir);
 	}
 
-	// only do min lighting when there is no hdr light data
-	if (tr.hdrLighting != qtrue)
+	// bonus items and view weapons have a fixed minimum add
+	if (r_AdvancedsurfaceSprites->integer)
 	{
-		// bonus items and view weapons have a fixed minimum add
 		if (ent->e.renderfx & RF_MINLIGHT)
 		{
 			if (ent->e.shaderRGBA[0] == 255 &&
@@ -390,10 +389,17 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 			}
 			else
 			{
-				ent->ambientLight[0] += tr.identityLight * 76; // was 96
-				ent->ambientLight[1] += tr.identityLight * 76; // was 96
-				ent->ambientLight[2] += tr.identityLight * 76; // was 96
+				ent->ambientLight[0] += tr.identityLight * 76;
+				ent->ambientLight[1] += tr.identityLight * 76;
+				ent->ambientLight[2] += tr.identityLight * 76;
 			}
+		}
+		// bonus items and view weapons have a fixed minimum add
+		else if (ent->e.renderfx & RF_MORELIGHT)
+		{
+			ent->ambientLight[0] += tr.identityLight * 96;
+			ent->ambientLight[1] += tr.identityLight * 96;
+			ent->ambientLight[2] += tr.identityLight * 96;
 		}
 		else
 		{
@@ -401,6 +407,44 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 			ent->ambientLight[0] += tr.identityLight * 8;
 			ent->ambientLight[1] += tr.identityLight * 8;
 			ent->ambientLight[2] += tr.identityLight * 8;
+		}
+	}
+	else
+	{
+		// only do min lighting when there is no hdr light data
+		if (tr.hdrLighting != qtrue)
+		{
+			if (ent->e.renderfx & RF_MINLIGHT)
+			{
+				if (ent->e.shaderRGBA[0] == 255 &&
+					ent->e.shaderRGBA[1] == 255 &&
+					ent->e.shaderRGBA[2] == 0)
+				{
+					ent->ambientLight[0] += tr.identityLight * 255;
+					ent->ambientLight[1] += tr.identityLight * 255;
+					ent->ambientLight[2] += tr.identityLight * 0;
+				}
+				else
+				{
+					ent->ambientLight[0] += tr.identityLight * 76;
+					ent->ambientLight[1] += tr.identityLight * 76;
+					ent->ambientLight[2] += tr.identityLight * 76;
+				}
+			}
+			// bonus items and view weapons have a fixed minimum add
+			else if (ent->e.renderfx & RF_MORELIGHT)
+			{
+				ent->ambientLight[0] += tr.identityLight * 96;
+				ent->ambientLight[1] += tr.identityLight * 96;
+				ent->ambientLight[2] += tr.identityLight * 96;
+			}
+			else
+			{
+				// give everything a minimum light add
+				ent->ambientLight[0] += tr.identityLight * 8;
+				ent->ambientLight[1] += tr.identityLight * 8;
+				ent->ambientLight[2] += tr.identityLight * 8;
+			}
 		}
 	}
 

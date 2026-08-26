@@ -2390,21 +2390,21 @@ Ghoul2 Insert Start
 
 void removeBoltSurface(gentity_t* self)
 {
-	gentity_t* hit_ent = &g_entities[self->cantHitEnemyCounter];
+	gentity_t* hitEnt = &g_entities[self->cantHitEnemyCounter];
 
 	// check first to be sure the bolt is still there on the model
-	if (hit_ent->ghoul2.size() > self->damage &&
-		hit_ent->ghoul2[self->damage].mModelindex != -1 &&
-		hit_ent->ghoul2[self->damage].mSlist.size() > static_cast<unsigned>(self->aimDebounceTime) &&
-		hit_ent->ghoul2[self->damage].mSlist[self->aimDebounceTime].surface != -1 &&
-		hit_ent->ghoul2[self->damage].mSlist[self->aimDebounceTime].offFlags == G2SURFACEFLAG_GENERATED)
+	if (hitEnt->ghoul2.size() > self->damage &&
+		hitEnt->ghoul2[self->damage].mModelindex != -1 &&
+		hitEnt->ghoul2[self->damage].mSlist.size() > static_cast<unsigned>(self->aimDebounceTime) &&
+		hitEnt->ghoul2[self->damage].mSlist[self->aimDebounceTime].surface != -1 &&
+		hitEnt->ghoul2[self->damage].mSlist[self->aimDebounceTime].offFlags == G2SURFACEFLAG_GENERATED)
 	{
 		// remove the bolt
-		gi.G2API_RemoveBolt(&hit_ent->ghoul2[self->damage], self->attackDebounceTime);
+		gi.G2API_RemoveBolt(&hitEnt->ghoul2[self->damage], self->attackDebounceTime);
 		// now remove a surface if there is one
 		if (self->aimDebounceTime != -1)
 		{
-			gi.G2API_RemoveSurface(&hit_ent->ghoul2[self->damage], self->aimDebounceTime);
+			gi.G2API_RemoveSurface(&hitEnt->ghoul2[self->damage], self->aimDebounceTime);
 		}
 	}
 	// we are done with this entity.

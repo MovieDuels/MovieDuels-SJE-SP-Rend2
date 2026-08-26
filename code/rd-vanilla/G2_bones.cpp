@@ -454,7 +454,7 @@ qboolean G2_Remove_Bone(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const cha
 #define DEBUG_PCJ (0)
 
 // Given a model handle, and a bone name, we want to set angles specifically for overriding
-qboolean G2_Set_Bone_Angles_Index(CGhoul2Info* ghlInfo, boneInfo_v& blist, const int index, const float* angles, const int flags, const Eorientations yaw, const Eorientations pitch, const Eorientations roll, const int blend_time, const int current_time, const vec3_t offset)
+qboolean G2_Set_Bone_Angles_Index(CGhoul2Info* ghlInfo, boneInfo_v& blist, const int index, const float* angles, const int flags, const Eorientations yaw, const Eorientations pitch, const Eorientations roll, const int blend_time, const int currentTime, const vec3_t offset)
 {
 	if (index < 0 || index >= static_cast<int>(blist.size()) || blist[index].boneNumber == -1)
 	{
@@ -464,17 +464,17 @@ qboolean G2_Set_Bone_Angles_Index(CGhoul2Info* ghlInfo, boneInfo_v& blist, const
 	// yes, so set the angles and flags correctly
 	blist[index].flags &= ~(BONE_ANGLES_TOTAL);
 	blist[index].flags |= flags;
-	blist[index].boneBlendStart = current_time;
+	blist[index].boneBlendStart = currentTime;
 	blist[index].boneBlendTime = blend_time;
 #if DEBUG_PCJ
-	OutputDebugString(va("%8x  %2d %6d   (%6.2f,%6.2f,%6.2f) %d %d %d %d\n", (int)ghlInfo, index, current_time, angles[0], angles[1], angles[2], yaw, pitch, roll, flags));
+	OutputDebugString(va("%8x  %2d %6d   (%6.2f,%6.2f,%6.2f) %d %d %d %d\n", (int)ghlInfo, index, currentTime, angles[0], angles[1], angles[2], yaw, pitch, roll, flags));
 #endif
 	G2_Generate_Matrix(ghlInfo->animModel, blist, index, angles, flags, yaw, pitch, roll, offset);
 	return qtrue;
 }
 
 // Given a model handle, and a bone name, we want to set angles specifically for overriding
-qboolean G2_Set_Bone_Angles(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const float* angles, const int flags, const Eorientations up, const Eorientations left, const Eorientations forward, const int blend_time, const int current_time, const vec3_t offset)
+qboolean G2_Set_Bone_Angles(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const float* angles, const int flags, const Eorientations up, const Eorientations left, const Eorientations forward, const int blend_time, const int currentTime, const vec3_t offset)
 {
 	int index = G2_Find_Bone(ghlInfo, blist, boneName);
 	if (index == -1)
@@ -485,7 +485,7 @@ qboolean G2_Set_Bone_Angles(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const
 	{
 		blist[index].flags &= ~(BONE_ANGLES_TOTAL);
 		blist[index].flags |= flags;
-		blist[index].boneBlendStart = current_time;
+		blist[index].boneBlendStart = currentTime;
 		blist[index].boneBlendTime = blend_time;
 
 		G2_Generate_Matrix(ghlInfo->animModel, blist, index, angles, flags, up, left, forward, offset);
@@ -495,7 +495,7 @@ qboolean G2_Set_Bone_Angles(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const
 }
 
 // Given a model handle, and a bone name, we want to set angles specifically for overriding - using a matrix directly
-qboolean G2_Set_Bone_Angles_Matrix_Index(boneInfo_v& blist, const int index, const mdxaBone_t& matrix, const int flags, const int blend_time, const int current_time)
+qboolean G2_Set_Bone_Angles_Matrix_Index(boneInfo_v& blist, const int index, const mdxaBone_t& matrix, const int flags, const int blend_time, const int currentTime)
 {
 	if (index < 0 || index >= static_cast<int>(blist.size()) || blist[index].boneNumber == -1)
 	{
@@ -506,7 +506,7 @@ qboolean G2_Set_Bone_Angles_Matrix_Index(boneInfo_v& blist, const int index, con
 	// yes, so set the angles and flags correctly
 	blist[index].flags &= ~(BONE_ANGLES_TOTAL);
 	blist[index].flags |= flags;
-	blist[index].boneBlendStart = current_time;
+	blist[index].boneBlendStart = currentTime;
 	blist[index].boneBlendTime = blend_time;
 
 	memcpy(&blist[index].matrix, &matrix, sizeof(mdxaBone_t));
@@ -515,7 +515,7 @@ qboolean G2_Set_Bone_Angles_Matrix_Index(boneInfo_v& blist, const int index, con
 }
 
 // Given a model handle, and a bone name, we want to set angles specifically for overriding - using a matrix directly
-qboolean G2_Set_Bone_Angles_Matrix(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const mdxaBone_t& matrix, const int flags, const int blend_time, const int current_time)
+qboolean G2_Set_Bone_Angles_Matrix(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const mdxaBone_t& matrix, const int flags, const int blend_time, const int currentTime)
 {
 	int	index = G2_Find_Bone(ghlInfo, blist, boneName);
 	if (index == -1)
@@ -543,7 +543,7 @@ qboolean G2_Set_Bone_Anim_Index(
 	const int endFrame,
 	const int flags,
 	const float animSpeed,
-	const int current_time,
+	const int currentTime,
 	const float set_frame,
 	const int ablend_time,
 	const int numFrames)
@@ -592,10 +592,10 @@ qboolean G2_Set_Bone_Anim_Index(
 		int frame, end_frame1, flags1;
 
 		if (G2_Get_Bone_Anim_Index(
-			blist, index, current_time,
+			blist, index, currentTime,
 			&currentFrame, &frame, &end_frame1, &flags1, &frame_anim_speed, numFrames))
 		{
-			if (blist[index].blendStart == current_time)
+			if (blist[index].blendStart == currentTime)
 			{
 				blist[index].blend_time = blend_time;
 			}
@@ -633,7 +633,7 @@ qboolean G2_Set_Bone_Anim_Index(
 				}
 
 				blist[index].blend_time = blend_time;
-				blist[index].blendStart = current_time;
+				blist[index].blendStart = currentTime;
 			}
 		}
 		else
@@ -679,11 +679,11 @@ qboolean G2_Set_Bone_Anim_Index(
 	if (set_frame != -1)
 	{
 		blist[index].startTime =
-			current_time - ((set_frame - (float)startFrame) * 50.0f / animSpeed);
+			currentTime - ((set_frame - (float)startFrame) * 50.0f / animSpeed);
 	}
 	else
 	{
-		blist[index].startTime = current_time;
+		blist[index].startTime = currentTime;
 	}
 
 	blist[index].flags &= ~BONE_ANIM_TOTAL;
@@ -693,7 +693,7 @@ qboolean G2_Set_Bone_Anim_Index(
 }
 
 // given a model, bone name, a bonelist, a start/end frame number, a anim speed and some anim flags, set up or modify an existing bone entry for a new set of anims
-qboolean G2_Set_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int startFrame, const int endFrame, const int flags, const float animSpeed, const int current_time, const float set_frame, const int blend_time)
+qboolean G2_Set_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int startFrame, const int endFrame, const int flags, const float animSpeed, const int currentTime, const float set_frame, const int blend_time)
 {
 	int modFlags = flags;
 	int index = G2_Find_Bone(ghlInfo, blist, boneName);
@@ -707,7 +707,7 @@ qboolean G2_Set_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 	// did we find it?
 	if (index != -1)
 	{
-		return G2_Set_Bone_Anim_Index(blist, index, startFrame, endFrame, flags, animSpeed, current_time, set_frame,
+		return G2_Set_Bone_Anim_Index(blist, index, startFrame, endFrame, flags, animSpeed, currentTime, set_frame,
 			blend_time, ghlInfo->aHeader->numFrames);
 	}
 	// no - lets try and add this bone in
@@ -728,11 +728,11 @@ qboolean G2_Set_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 		// start up the animation:)
 		if (set_frame != -1)
 		{
-			blist[index].startTime = current_time - (set_frame - static_cast<float>(startFrame)) * 50.0 / animSpeed;
+			blist[index].startTime = currentTime - (set_frame - static_cast<float>(startFrame)) * 50.0 / animSpeed;
 		}
 		else
 		{
-			blist[index].startTime = current_time;
+			blist[index].startTime = currentTime;
 		}
 		blist[index].flags &= ~BONE_ANIM_TOTAL;
 		blist[index].flags |= modFlags;
@@ -747,7 +747,7 @@ qboolean G2_Set_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 			{
 				sprintf(mess, "s2b[%2d] %5d  %5d  (%5d-%5d) %4.2f %4x   bt(%5d-%5d) %7.2f %5d\n",
 					index,
-					current_time,
+					currentTime,
 					bone.startTime,
 					bone.startFrame,
 					bone.endFrame,
@@ -763,7 +763,7 @@ qboolean G2_Set_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 			{
 				sprintf(mess, "s2a[%2d] %5d  %5d  (%5d-%5d) %4.2f %4x\n",
 					index,
-					current_time,
+					currentTime,
 					bone.startTime,
 					bone.startFrame,
 					bone.endFrame,
@@ -782,16 +782,16 @@ qboolean G2_Set_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 	return qfalse;
 }
 
-qboolean G2_Get_Bone_Anim_Range_Index(const boneInfo_v& blist, const int bone_index, int* startFrame, int* endFrame)
+qboolean G2_Get_Bone_Anim_Range_Index(const boneInfo_v& blist, const int boneIndex, int* startFrame, int* endFrame)
 {
-	if (bone_index != -1)
+	if (boneIndex != -1)
 	{
-		assert(bone_index >= 0 && bone_index < static_cast<int>(blist.size()));
+		assert(boneIndex >= 0 && boneIndex < static_cast<int>(blist.size()));
 		// are we an animating bone?
-		if (blist[bone_index].flags & (BONE_ANIM_OVERRIDE_LOOP | BONE_ANIM_OVERRIDE))
+		if (blist[boneIndex].flags & (BONE_ANIM_OVERRIDE_LOOP | BONE_ANIM_OVERRIDE))
 		{
-			*startFrame = blist[bone_index].startFrame;
-			*endFrame = blist[bone_index].endFrame;
+			*startFrame = blist[boneIndex].startFrame;
+			*endFrame = blist[boneIndex].endFrame;
 			return qtrue;
 		}
 	}
@@ -816,7 +816,7 @@ qboolean G2_Get_Bone_Anim_Range(const CGhoul2Info* ghlInfo, const boneInfo_v& bl
 
 // given a model, bonelist and bonename, return the current frame, startframe and endframe of the current animation
 // NOTE if we aren't running an animation, then qfalse is returned
-qboolean G2_Get_Bone_Anim_Index(boneInfo_v& blist, const int index, const int current_time, float* retcurrent_frame, int* startFrame, int* endFrame, int* flags, float* retAnimSpeed, const int numFrames)
+qboolean G2_Get_Bone_Anim_Index(boneInfo_v& blist, const int index, const int currentTime, float* retcurrent_frame, int* startFrame, int* endFrame, int* flags, float* retAnimSpeed, const int numFrames)
 {
 	// did we find it?
 	if (index >= 0 && !(index >= static_cast<int>(blist.size()) || blist[index].boneNumber == -1))
@@ -826,7 +826,7 @@ qboolean G2_Get_Bone_Anim_Index(boneInfo_v& blist, const int index, const int cu
 		{
 			int currentFrame, newFrame;
 			float lerp;
-			G2_TimingModel(blist[index], current_time, numFrames, currentFrame, newFrame, lerp);
+			G2_TimingModel(blist[index], currentTime, numFrames, currentFrame, newFrame, lerp);
 
 			if (retcurrent_frame)
 			{
@@ -876,7 +876,7 @@ qboolean G2_Get_Bone_Anim_Index(boneInfo_v& blist, const int index, const int cu
 
 // given a model, bonelist and bonename, return the current frame, startframe and endframe of the current animation
 // NOTE if we aren't running an animation, then qfalse is returned
-qboolean G2_Get_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int current_time, float* currentFrame, int* startFrame, int* endFrame, int* flags, float* retAnimSpeed)
+qboolean G2_Get_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int currentTime, float* currentFrame, int* startFrame, int* endFrame, int* flags, float* retAnimSpeed)
 {
 	const int index = G2_Find_Bone(ghlInfo, blist, boneName);
 	if (index == -1)
@@ -885,7 +885,7 @@ qboolean G2_Get_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 	}
 
 	assert(ghlInfo->aHeader);
-	if (G2_Get_Bone_Anim_Index(blist, index, current_time, currentFrame, startFrame, endFrame, flags, retAnimSpeed,
+	if (G2_Get_Bone_Anim_Index(blist, index, currentTime, currentFrame, startFrame, endFrame, flags, retAnimSpeed,
 		ghlInfo->aHeader->numFrames))
 	{
 		assert(*startFrame >= 0 && *startFrame < ghlInfo->aHeader->numFrames);
@@ -897,25 +897,25 @@ qboolean G2_Get_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const c
 }
 
 // given a model, bonelist and bonename, lets pause an anim if it's playing.
-qboolean G2_Pause_Bone_Anim_Index(boneInfo_v& blist, const int bone_index, const int current_time, const int numFrames)
+qboolean G2_Pause_Bone_Anim_Index(boneInfo_v& blist, const int boneIndex, const int currentTime, const int numFrames)
 {
-	if (bone_index >= 0 && bone_index < static_cast<int>(blist.size()))
+	if (boneIndex >= 0 && boneIndex < static_cast<int>(blist.size()))
 	{
 		// are we pausing or un pausing?
-		if (blist[bone_index].pauseTime)
+		if (blist[boneIndex].pauseTime)
 		{
 			int startFrame, endFrame, flags;
 			float currentFrame, animSpeed;
 
 			// figure out what frame we are on now
-			if (G2_Get_Bone_Anim_Index(blist, bone_index, blist[bone_index].pauseTime, &currentFrame, &startFrame,
+			if (G2_Get_Bone_Anim_Index(blist, boneIndex, blist[boneIndex].pauseTime, &currentFrame, &startFrame,
 				&endFrame, &flags, &animSpeed, numFrames))
 			{
 				// reset start time so we are actually on this frame right now
-				G2_Set_Bone_Anim_Index(blist, bone_index, startFrame, endFrame, flags, animSpeed, current_time,
+				G2_Set_Bone_Anim_Index(blist, boneIndex, startFrame, endFrame, flags, animSpeed, currentTime,
 					currentFrame, 0, numFrames);
 				// no pausing anymore
-				blist[bone_index].pauseTime = 0;
+				blist[boneIndex].pauseTime = 0;
 			}
 			else
 			{
@@ -925,7 +925,7 @@ qboolean G2_Pause_Bone_Anim_Index(boneInfo_v& blist, const int bone_index, const
 		// ahh, just pausing, the easy bit
 		else
 		{
-			blist[bone_index].pauseTime = current_time;
+			blist[boneIndex].pauseTime = currentTime;
 		}
 
 		return qtrue;
@@ -934,7 +934,7 @@ qboolean G2_Pause_Bone_Anim_Index(boneInfo_v& blist, const int bone_index, const
 	return qfalse;
 }
 
-qboolean G2_Pause_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int current_time)
+qboolean G2_Pause_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const char* boneName, const int currentTime)
 {
 	const int index = G2_Find_Bone(ghlInfo, blist, boneName);
 	if (index == -1)
@@ -942,7 +942,7 @@ qboolean G2_Pause_Bone_Anim(const CGhoul2Info* ghlInfo, boneInfo_v& blist, const
 		return qfalse;
 	}
 
-	return G2_Pause_Bone_Anim_Index(blist, index, current_time, ghlInfo->aHeader->numFrames);
+	return G2_Pause_Bone_Anim_Index(blist, index, currentTime, ghlInfo->aHeader->numFrames);
 }
 
 qboolean G2_IsPaused(const CGhoul2Info* ghlInfo, const boneInfo_v& blist, const char* boneName)
@@ -1357,7 +1357,7 @@ static qboolean G2_Set_Bone_Anim_No_BS(const CGhoul2Info& ghoul2, const mdxaHead
 		blist[index].animSpeed = animSpeed;
 		blist[index].pauseTime = 0;
 		//		blist[index].boneMap = NULL;
-		//		blist[index].lastTime = blist[index].startTime = (current_time - (((setFrame - (float)startFrame) * 50.0)/ animSpeed));
+		//		blist[index].lastTime = blist[index].startTime = (currentTime - (((setFrame - (float)startFrame) * 50.0)/ animSpeed));
 		blist[index].flags &= ~(BONE_ANIM_TOTAL);
 		blist[index].flags |= modFlags;
 
@@ -1376,7 +1376,7 @@ static qboolean G2_Set_Bone_Anim_No_BS(const CGhoul2Info& ghoul2, const mdxaHead
 		blist[index].animSpeed = animSpeed;
 		blist[index].pauseTime = 0;
 		//		blist[index].boneMap = NULL;
-		//		blist[index].lastTime = blist[index].startTime = (current_time - (((setFrame - (float)startFrame) * 50.0f)/ animSpeed));
+		//		blist[index].lastTime = blist[index].startTime = (currentTime - (((setFrame - (float)startFrame) * 50.0f)/ animSpeed));
 		blist[index].flags &= ~(BONE_ANIM_TOTAL);
 		blist[index].flags |= modFlags;
 
@@ -3187,10 +3187,10 @@ static void G2_RagGetPelvisLumbarOffsets(CGhoul2Info& ghoul2, CRagDollUpdatePara
 	//static vec3_t lumbarPos;
 
 	assert(ghoul2.animModel);
-	const int bone_index = G2_Find_Bone(&ghoul2, ghoul2.mBlist, "pelvis");
-	assert(bone_index != -1);
+	const int boneIndex = G2_Find_Bone(&ghoul2, ghoul2.mBlist, "pelvis");
+	assert(boneIndex != -1);
 
-	G2_RagGetWorldAnimMatrix(ghoul2, ghoul2.mBlist[bone_index], params, final);
+	G2_RagGetWorldAnimMatrix(ghoul2, ghoul2.mBlist[boneIndex], params, final);
 	G2API_GiveMeVectorFromMatrix(final, ORIGIN, anim_pos);
 	G2API_GiveMeVectorFromMatrix(final, POSITIVE_X, anim_dir);
 
@@ -4179,7 +4179,7 @@ static void G2_DoIK(CGhoul2Info_v& ghoul2_v, const int g2_index, CRagDollUpdateP
 }
 
 //rww - cut out the entire non-ragdoll section of this..
-void G2_Animate_Bone_List(CGhoul2Info_v& ghoul2, const int current_time, const int index, CRagDollUpdateParams* params)
+void G2_Animate_Bone_List(CGhoul2Info_v& ghoul2, const int currentTime, const int index, CRagDollUpdateParams* params)
 {
 	bool any_ik = false;
 	for (const auto& i : ghoul2[index].mBlist)
@@ -4209,7 +4209,7 @@ void G2_Animate_Bone_List(CGhoul2Info_v& ghoul2, const int current_time, const i
 		}
 		else
 		{
-			G2_RagDoll(ghoul2, 0, params, current_time);
+			G2_RagDoll(ghoul2, 0, params, currentTime);
 		}
 	}
 }

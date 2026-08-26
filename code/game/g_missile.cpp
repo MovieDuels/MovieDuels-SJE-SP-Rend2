@@ -3433,17 +3433,17 @@ static void G_RollMissile(gentity_t* ent)
 		if (trace.entityNum < ENTITYNUM_WORLD)
 		{
 			//hit another ent
-			gentity_t* hit_ent = &g_entities[trace.entityNum];
+			gentity_t* hitEnt = &g_entities[trace.entityNum];
 
-			if (hit_ent && (hit_ent->takedamage || hit_ent->contents & CONTENTS_LIGHTSABER))
+			if (hitEnt && (hitEnt->takedamage || hitEnt->contents & CONTENTS_LIGHTSABER))
 			{
 				if (g_SerenityJediEngineMode->integer)
 				{
-					G_MissileImpact_MD(hit_ent, &trace);
+					G_MissileImpact_MD(hitEnt, &trace);
 				}
 				else
 				{
-					G_MissileImpactJKA(hit_ent, &trace);
+					G_MissileImpactJKA(hitEnt, &trace);
 				}
 
 				if (ent->s.eType == ET_GENERAL)
@@ -3727,11 +3727,11 @@ void G_RunMissile(gentity_t* ent)
 			}
 
 			CCollisionRecord& coll = i;
-			const gentity_t* hit_ent = &g_entities[coll.mEntityNum];
+			const gentity_t* hitEnt = &g_entities[coll.mEntityNum];
 
 			// process collision records here...
 			// make sure we only do this once, not for all the entrance wounds we might generate
-			if (coll.mFlags & G2_FRONTFACE/* && !(hitModel)*/ && hit_ent->health)
+			if (coll.mFlags & G2_FRONTFACE/* && !(hitModel)*/ && hitEnt->health)
 			{
 				if (tr_hit_loc == HL_NONE)
 				{

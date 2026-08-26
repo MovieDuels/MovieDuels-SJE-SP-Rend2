@@ -23,63 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_allocator.h"
 #include "glext.h"
 #include <algorithm>
-#include <cstring>
-
-// SmallVector: lightweight growable array that allocates from the per-frame Allocator
-template<typename T>
-struct SmallVector
-{
-	T* data_ = nullptr;
-	int sz = 0;
-	int cap = 0;
-	Allocator* allocator = nullptr;
-
-	void init(Allocator& a, int capacity)
-	{
-		allocator = &a;
-		cap = capacity;
-		sz = 0;
-		if (cap > 0)
-			data_ = ojkAllocArray<T>(a, cap);
-		else
-			data_ = nullptr;
-	}
-
-	int size() const { return sz; }
-	int capacity() const { return cap; }
-	T* data() { return data_; }
-	const T* data() const { return data_; }
-
-	T& operator[](int i) { return data_[i]; }
-
-	bool reserve(int newCap)
-	{
-		if (newCap <= cap)
-			return true;
-		if (!allocator)
-			return false;
-		T* newData = ojkAllocArray<T>(*allocator, newCap);
-		if (!newData)
-			return false;
-		if (sz > 0 && data_)
-			memcpy(newData, data_, sizeof(T) * sz);
-		data_ = newData;
-		cap = newCap;
-		return true;
-	}
-
-	bool push_back(const T& v)
-	{
-		if (sz >= cap)
-		{
-			int newCap = cap ? cap * 2 : 8;
-			if (!reserve(newCap))
-				return false;
-		}
-		data_[sz++] = v;
-		return true;
-	}
-};
 
 backEndData_t* backEndData;
 backEndState_t	backEnd;
@@ -130,7 +73,7 @@ void GL_Bind(image_t* image) {
 /*
 ** GL_SelectTexture
 */
-void GL_SelectTexture(const int unit)
+void GL_SelectTexture(int unit)
 {
 	if (glState.currenttmu == unit)
 	{
@@ -151,7 +94,6 @@ void GL_SelectTexture(const int unit)
 void GL_BindToTMU(image_t* image, int tmu)
 {
 	int		texnum;
-	int     oldtmu = glState.currenttmu;
 
 	if (!image)
 		texnum = 0;
@@ -178,8 +120,7 @@ void GL_BindToTMU(image_t* image, int tmu)
 /*
 ** GL_Cull
 */
-void GL_Cull(int cullType)
-{
+void GL_Cull(int cullType) {
 	if (glState.faceCulling == cullType) {
 		return;
 	}
@@ -223,7 +164,7 @@ void GL_DepthRange(float min, float max)
 ** This routine is responsible for setting the most commonly changed state
 ** in Q3.
 */
-void GL_State(const uint32_t stateBits)
+void GL_State(uint32_t stateBits)
 {
 	uint32_t diff = stateBits ^ glState.glStateBits;
 
@@ -460,7 +401,7 @@ void GL_VertexAttribPointers(
 	assert(attributes != nullptr || numAttributes == 0);
 
 	uint32_t newAttribs = 0;
-	for (int i = 0; i < numAttributes; i++)
+	for (size_t i = 0; i < numAttributes; i++)
 	{
 		vertexAttribute_t& attrib = attributes[i];
 		vertexAttribute_t& currentAttrib = glState.currentVaoAttribs[attrib.index];
@@ -597,12 +538,12 @@ static void RB_Hyperspace(void) {
 	qglClearBufferfv(GL_COLOR, 0, v);
 }
 
-static void SetViewportAndScissor(void)
-{
+static void SetViewportAndScissor(void) {
 	GL_SetProjectionMatrix(backEnd.viewParms.projectionMatrix);
 
 	// set the window clipping
-	GL_SetViewportAndScissor(backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
+	GL_SetViewportAndScissor(backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
 }
 
 /*
@@ -1083,8 +1024,10 @@ SamplerBinding* SamplerBindingsWriter::Finish(Allocator& destHeap, uint32_t* num
 
 struct Pass
 {
-	SmallVector<DrawItem> drawItems;
-	SmallVector<uint32_t> sortKeys;
+	int maxDrawItems;
+	int numDrawItems;
+	DrawItem* drawItems;
+	uint32_t* sortKeys;
 };
 
 static void RB_BindTextures(size_t numBindings, const SamplerBinding* bindings)
@@ -1226,22 +1169,30 @@ static void RB_DrawItems(
 	}
 }
 
+/*
+=====================
+RB_AddDrawItem
+
+Adds a draw item to a pass, or draws immediately if no pass is provided.
+Replaces assert with a debug print to avoid hard crashes.
+=====================
+*/
 void RB_AddDrawItem(Pass* pass, uint32_t sortKey, const DrawItem& drawItem)
 {
 	// There will be no pass if we are drawing a 2D object.
 	if (pass)
 	{
-		if (!pass->sortKeys.push_back(sortKey))
+		if (pass->numDrawItems >= pass->maxDrawItems)
 		{
-			assert(!"Ran out of space for pass (allocation failed)");
+			// Replaces assert(!"Ran out of space for pass");
+#ifdef _DEBUG
+			Com_Printf(S_COLOR_RED"RB_AddDrawItem: Ran out of space for pass (max=%d)\n" S_COLOR_WHITE, pass->maxDrawItems);
+#endif
 			return;
 		}
 
-		if (!pass->drawItems.push_back(drawItem))
-		{
-			assert(!"Ran out of space for pass (allocation failed)");
-			return;
-		}
+		pass->sortKeys[pass->numDrawItems] = sortKey;
+		pass->drawItems[pass->numDrawItems++] = drawItem;
 	}
 	else
 	{
@@ -1254,8 +1205,9 @@ static Pass* RB_CreatePass(Allocator& allocator, int capacity)
 {
 	Pass* pass = ojkAlloc<Pass>(*backEndData->perFrameMemory);
 	*pass = {};
-	pass->drawItems.init(allocator, capacity);
-	pass->sortKeys.init(allocator, capacity);
+	pass->maxDrawItems = capacity;
+	pass->drawItems = ojkAllocArray<DrawItem>(allocator, pass->maxDrawItems);
+	pass->sortKeys = ojkAllocArray<uint32_t>(allocator, pass->maxDrawItems);
 	return pass;
 }
 
@@ -1279,7 +1231,10 @@ static void RB_PrepareForEntity(int entityNum, float originalTime)
 	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
 }
 
-static void RB_SubmitDrawSurfsForDepthFill(drawSurf_t* drawSurfs, int numDrawSurfs, float originalTime)
+static void RB_SubmitDrawSurfsForDepthFill(
+	drawSurf_t* drawSurfs,
+	int numDrawSurfs,
+	float originalTime)
 {
 	shader_t* oldShader = nullptr;
 	int oldEntityNum = -1;
@@ -1367,9 +1322,7 @@ static void RB_SubmitDrawSurfs(
 {
 	shader_t* oldShader = nullptr;
 	int oldEntityNum = -1;
-	int oldSort = -1;
 	int oldFogNum = -1;
-	int oldDepthRange = 0;
 	int oldDlighted = 0;
 	int oldPostRender = 0;
 	int oldCubemapIndex = -1;
@@ -1396,6 +1349,7 @@ static void RB_SubmitDrawSurfs(
 			{
 				RB_EndSurface();
 				RB_BeginSurface(shader, fogNum, cubemapIndex);
+				tess.dlightBits = dlighted;
 				oldBoneCache = ((CRenderableSurface*)drawSurf->surface)->boneCache;
 				tr.animationBoneUboOffset = RB_GetBoneUboOffset((CRenderableSurface*)drawSurf->surface);
 				tr.previousAnimationBoneUboOffset = RB_GetPreviousBoneUboOffset((CRenderableSurface*)drawSurf->surface);
@@ -1414,8 +1368,6 @@ static void RB_SubmitDrawSurfs(
 			rb_surfaceTable[*drawSurf->surface](drawSurf->surface);
 			continue;
 		}
-
-		oldSort = drawSurf->sort;
 
 		//
 		// change the tess parameters if needed
@@ -1440,6 +1392,7 @@ static void RB_SubmitDrawSurfs(
 			oldDlighted = dlighted;
 			oldPostRender = postRender;
 			oldCubemapIndex = cubemapIndex;
+			tess.dlightBits = dlighted;
 		}
 
 		if (entityNum != oldEntityNum)
@@ -1448,14 +1401,11 @@ static void RB_SubmitDrawSurfs(
 			oldEntityNum = entityNum;
 		}
 
-		qboolean isDistortionShader = (qboolean)((shader->useDistortion == qtrue) || (backEnd.currentEntity && backEnd.currentEntity->e.renderfx & RF_DISTORTION));
+		qboolean isDistortionShader = (qboolean)
+			((shader->useDistortion == qtrue) || (backEnd.currentEntity && backEnd.currentEntity->e.renderfx & RF_DISTORTION));
 
 		if (backEnd.refractionFill != isDistortionShader)
 			continue;
-
-		// ugly hack for now...
-		// find better way to pass dlightbits
-		tess.dlightBits = drawSurf->dlightBits;
 
 		// add the triangles for this surface
 		rb_surfaceTable[*drawSurf->surface](drawSurf->surface);
@@ -1472,18 +1422,20 @@ static void RB_SubmitRenderPass(
 	Pass& renderPass,
 	Allocator& allocator)
 {
-	uint32_t numDrawItems = renderPass.sortKeys.size();
-	uint32_t* drawOrder = ojkAllocArray<uint32_t>(allocator, numDrawItems);
+	uint32_t* drawOrder = ojkAllocArray<uint32_t>(
+		allocator, renderPass.numDrawItems);
+
+	uint32_t numDrawItems = renderPass.numDrawItems;
 	for (uint32_t i = 0; i < numDrawItems; ++i)
 		drawOrder[i] = i;
 
-	uint32_t* sortKeys = renderPass.sortKeys.data();
+	uint32_t* sortKeys = renderPass.sortKeys;
 	std::sort(drawOrder, drawOrder + numDrawItems, [sortKeys](uint32_t a, uint32_t b)
 		{
 			return sortKeys[a] < sortKeys[b];
 		});
 
-	RB_DrawItems(numDrawItems, renderPass.drawItems.data(), drawOrder);
+	RB_DrawItems(renderPass.numDrawItems, renderPass.drawItems, drawOrder);
 }
 
 /*
@@ -1491,8 +1443,37 @@ static void RB_SubmitRenderPass(
 RB_RenderDrawSurfList
 ==================
 */
-static void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, const int numDrawSurfs)
+static void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs)
 {
+	/*
+	merging surfaces together that share the same shader (e.g. polys, patches)
+	upload per frame data - but this might be the same between render passes?
+
+	how about:
+		tr.refdef.entities[]
+
+		and .... entityCullInfo_t tr.refdef.entityCullInfo[]
+		struct visibleEntity_t
+		{
+			uint32_t frustumMask; // bitfield of frustums which intersect
+			EntityId entityId;
+		};
+
+		foreach ghoul2 model:
+			transform bones
+
+		foreach visibleEntity:
+			upload per frame data
+
+		for polygons:
+			merge them, create new surface and upload data
+
+		for patch meshes:
+			merge them, create new surface and upload data
+
+	each surface corresponds to something which has all of its gpu data uploaded
+	*/
+
 	int estimatedNumShaderStages = (backEnd.viewParms.flags & VPF_DEPTHSHADOW) ? 1 : 4;
 
 	// Prepare memory for the current render pass
@@ -1532,7 +1513,7 @@ static void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, const int numDrawSurfs)
 			backEnd.currentEntity = &tr.worldEntity;
 			RB_BeginSurface(tr.volumetricFogCapShader, tr.world->globalFogIndex, 0);
 			vec3_t origin, left, up;
-			vec4_t color;
+			vec4_t color{};
 			VectorCopy4(tr.world->globalFog->color, color);
 
 			float depthToRenderTo = tr.world->globalFog->parms.depthForOpaque;
@@ -1589,8 +1570,7 @@ RB_SetGL2D
 
 ================
 */
-void RB_SetGL2D(void)
-{
+void	RB_SetGL2D(void) {
 	matrix_t matrix;
 	int width, height;
 
@@ -1642,8 +1622,7 @@ Stretches a raw 32 bit power of 2 bitmap image over the given screen rectangle.
 Used for cinematics.
 =============
 */
-void RE_StretchRaw(const int x, const int y, const int w, const int h, int cols, int rows, const byte* data, const int client, const qboolean dirty)
-{
+void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* data, int client, qboolean dirty) {
 	int			i, j;
 	int			start, end;
 	vec4_t quadVerts[4]{};
@@ -1712,8 +1691,7 @@ void RE_StretchRaw(const int x, const int y, const int w, const int h, int cols,
 	RB_InstantQuad2(quadVerts, texCoords);
 }
 
-void RE_UploadCinematic(const int cols, const int rows, const byte* data, const int client, const qboolean dirty)
-{
+void RE_UploadCinematic(int cols, int rows, const byte* data, int client, qboolean dirty) {
 	GL_Bind(tr.scratchImage[client]);
 
 	// if the scratchImage isn't in the format we want, specify it as a new texture
@@ -2394,7 +2372,7 @@ static void RB_UpdateSceneConstants(gpuFrame_t* frame, const trRefdef_t* refdef)
 		sceneBlock.globalFogIndex = tr.world->globalFogIndex - 1;
 	else
 		sceneBlock.globalFogIndex = -1;
-	sceneBlock.current_time = refdef->floatTime;
+	sceneBlock.currentTime = refdef->floatTime;
 	sceneBlock.frameTime = refdef->frameTime;
 	frame->time = refdef->floatTime;
 
@@ -2467,7 +2445,6 @@ static void RB_UpdateFogsConstants(gpuFrame_t* frame)
 
 		fogData->hasPlane = fog->hasSurface;
 	}
-
 	if (tr.refdef.doLAGoggles && fogsBlock.numFogs + 1 <= MAX_GPU_FOGS)
 	{
 		FogsBlock::Fog* fogData = fogsBlock.fogs + fogsBlock.numFogs;
@@ -2488,7 +2465,6 @@ static void RB_UpdateFogsConstants(gpuFrame_t* frame)
 		fogData->hasPlane = 0;
 		fogsBlock.numFogs++;
 	}
-
 	tr.fogsUboOffset = RB_AppendConstantsData(
 		frame, &fogsBlock, sizeof(fogsBlock));
 }
@@ -3186,7 +3162,7 @@ static const void* RB_PostProcess(const void* data)
 		GL_SetViewportAndScissor(0, 0, tr.smaaBlendFbo->width, tr.smaaBlendFbo->height);
 		qglClearBufferfv(GL_COLOR, 0, colorBlack);
 		GLSL_BindProgram(&tr.smaaBlendShader);
-		vec4_t subsamplesIndices;
+		vec4_t subsamplesIndices{};
 		if (r_smaa->integer == 1 || r_smaa->integer == 3)
 			VectorSet4(subsamplesIndices, 0.f, 0.f, 0.f, 0.f);
 		else if (r_smaa->integer == 2)
@@ -3226,6 +3202,8 @@ static const void* RB_PostProcess(const void* data)
 		}
 	}
 
+	float exposure = r_cameraExposure->value + tr.overbrightBits;
+
 	if (srcFbo)
 	{
 		if (r_hdr->integer && (r_toneMap->integer || r_forceToneMap->integer))
@@ -3241,22 +3219,22 @@ static const void* RB_PostProcess(const void* data)
 			GL_BindToTMU(tr.renderImage, 0);
 			GL_BindToTMU(tr.smaaBlendImage, 1);
 			GL_BindToTMU(tr.velocityImage, 2);
-			if (r_cameraExposure->value == 0.0f)
+			if (exposure == 0.0f)
 			{
 				GLSL_SetUniformVec4(&tr.smaaResolveShader, UNIFORM_COLOR, colorWhite);
 			}
 			else
 			{
-				vec4_t color;
+				vec4_t color{};
 				color[0] =
 					color[1] =
-					color[2] = pow(2, r_cameraExposure->value);
+					color[2] = pow(2, exposure);
 				color[3] = 1.0f;
 				GLSL_SetUniformVec4(&tr.smaaResolveShader, UNIFORM_COLOR, color);
 			}
 			qglDrawArrays(GL_TRIANGLES, 0, 3);
 		}
-		else if (r_cameraExposure->value == 0.0f)
+		else if (exposure == 0.0f)
 		{
 			FBO_FastBlit(srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		}
@@ -3266,7 +3244,7 @@ static const void* RB_PostProcess(const void* data)
 
 			color[0] =
 				color[1] =
-				color[2] = pow(2, r_cameraExposure->value);
+				color[2] = pow(2, exposure);
 			color[3] = 1.0f;
 
 			FBO_FastBlitFromTexture(srcFbo->colorImage[0], NULL, dstBox, color, 0);
@@ -3326,7 +3304,11 @@ static const void* RB_PostProcess(const void* data)
 	{
 		// Composite the glow/bloom texture
 		int blendFunc = 0;
-		vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		vec4_t color{};
+		color[0] =
+			color[1] =
+			color[2] = pow(2, exposure);
+		color[3] = 1.0f;
 
 		if (r_dynamicGlow->integer == 2)
 		{

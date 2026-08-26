@@ -499,9 +499,9 @@ static qboolean SV_G2API_GetAnimRange(CGhoul2Info* ghlInfo, const char* boneName
 	return re.G2API_GetAnimRange(ghlInfo, boneName, startFrame, endFrame);
 }
 
-static qboolean SV_G2API_GetAnimRangeIndex(CGhoul2Info* ghlInfo, const int bone_index, int* startFrame, int* endFrame)
+static qboolean SV_G2API_GetAnimRangeIndex(CGhoul2Info* ghlInfo, const int boneIndex, int* startFrame, int* endFrame)
 {
-	return re.G2API_GetAnimRangeIndex(ghlInfo, bone_index, startFrame, endFrame);
+	return re.G2API_GetAnimRangeIndex(ghlInfo, boneIndex, startFrame, endFrame);
 }
 
 static qboolean SV_G2API_GetBoneAnim(
@@ -620,9 +620,9 @@ static qboolean SV_G2API_PauseBoneAnim(CGhoul2Info* ghlInfo, const char* boneNam
 	return re.G2API_PauseBoneAnim(ghlInfo, boneName, acurrent_time);
 }
 
-static qboolean SV_G2API_PauseBoneAnimIndex(CGhoul2Info* ghlInfo, const int bone_index, const int acurrent_time)
+static qboolean SV_G2API_PauseBoneAnimIndex(CGhoul2Info* ghlInfo, const int boneIndex, const int acurrent_time)
 {
-	return re.G2API_PauseBoneAnimIndex(ghlInfo, bone_index, acurrent_time);
+	return re.G2API_PauseBoneAnimIndex(ghlInfo, boneIndex, acurrent_time);
 }
 
 static qhandle_t SV_G2API_PrecacheGhoul2Model(const char* fileName)
@@ -716,10 +716,13 @@ static qboolean SV_G2API_SetBoneAnglesOffset(CGhoul2Info* ghlInfo, const char* b
 	const int flags,
 	const Eorientations up, const Eorientations right,
 	const Eorientations forward, qhandle_t* model_list,
-	const int blend_time, const int current_time, const vec3_t offset)
+	const int blend_time, const int currentTime, const vec3_t offset)
 {
+	if (!re.G2API_SetBoneAnglesOffset) {
+		return qfalse;
+	}
 	return re.G2API_SetBoneAnglesOffset(ghlInfo, boneName, angles, flags, up, right, forward, model_list, blend_time,
-		current_time, offset);
+		currentTime, offset);
 }
 
 static qboolean SV_G2API_SetBoneAnglesIndex(CGhoul2Info* ghlInfo, const int index, const vec3_t angles, const int flags,

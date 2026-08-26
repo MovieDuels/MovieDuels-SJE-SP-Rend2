@@ -427,7 +427,7 @@ void RB_MDRSurfaceAnim(mdrSurface_t* surface)
 		w = v->weights;
 		for (k = 0; k < v->numWeights; k++, w++)
 		{
-			bone = bonePtr + w->bone_index;
+			bone = bonePtr + w->boneIndex;
 
 			tempVert[0] += w->boneWeight * (DotProduct(bone->matrix[0], w->offset) + bone->matrix[0][3]);
 			tempVert[1] += w->boneWeight * (DotProduct(bone->matrix[1], w->offset) + bone->matrix[1][3]);

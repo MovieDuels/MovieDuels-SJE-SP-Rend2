@@ -183,6 +183,7 @@ R_LoadLightmaps
 */
 #define	DEFAULT_LIGHTMAP_SIZE	128
 #define MAX_LIGHTMAP_PAGES 2
+
 static	void R_LoadLightmaps(world_t* worldData, lump_t* l, lump_t* surfs)
 {
 	byte* buf, * buf_p;
@@ -468,7 +469,7 @@ static	void R_LoadLightmaps(world_t* worldData, lump_t* l, lump_t* surfs)
 						}
 						color[3] = 1.0f;
 
-						R_ColorShiftLightingFloats(color, color, 1.0f / 255.0f);
+						R_ColorShiftLightingFloats(color, color, 1.0f / 255.0f, true);
 
 						ColorToRGBA16F(color, (unsigned short*)(&image[j * 8]));
 					}
@@ -935,7 +936,7 @@ static void ParseFace(const world_t* worldData, dsurface_t* ds, drawVert_t* vert
 			}
 			color[3] = verts[i].color[j][3] / 255.0f;
 
-			R_ColorShiftLightingFloats(color, cv->verts[i].vertexColors[j], scale, hdrVertColors != NULL);
+			R_ColorShiftLightingFloats(color, cv->verts[i].vertexColors[j], scale, hdrVertColors == NULL);
 		}
 	}
 
@@ -1084,7 +1085,7 @@ static void ParseMesh(const world_t* worldData, dsurface_t* ds, drawVert_t* vert
 			}
 			color[3] = verts[i].color[j][3] / 255.0f;
 
-			R_ColorShiftLightingFloats(color, points[i].vertexColors[j], scale, hdrVertColors != NULL);
+			R_ColorShiftLightingFloats(color, points[i].vertexColors[j], scale, hdrVertColors == NULL);
 		}
 	}
 
@@ -1215,7 +1216,7 @@ static void ParseTriSurf(const world_t* worldData, dsurface_t* ds, drawVert_t* v
 			}
 			color[3] = verts[i].color[j][3] / 255.0f;
 
-			R_ColorShiftLightingFloats(color, cv->verts[i].vertexColors[j], scale, hdrVertColors != NULL);
+			R_ColorShiftLightingFloats(color, cv->verts[i].vertexColors[j], scale, hdrVertColors == NULL);
 		}
 	}
 
@@ -3378,7 +3379,6 @@ static void R_MergeLeafSurfaces(world_t* worldData)
 	int numMergedSurfaces;
 	int numUnmergedSurfaces;
 	VBO_t* vbo;
-	IBO_t* ibo;
 
 	msurface_t* mergedSurf;
 
@@ -3557,7 +3557,7 @@ static void R_MergeLeafSurfaces(world_t* worldData)
 	{
 		msurface_t* surf1;
 
-		vec3_t bounds[2]{};
+		vec3_t bounds[2];
 
 		int numSurfsToMerge;
 		int numIndexes;
@@ -3600,8 +3600,6 @@ static void R_MergeLeafSurfaces(world_t* worldData)
 		}
 
 		// create ibo
-		ibo = tr.ibos[tr.numIBOs++] = (IBO_t*)Hunk_Alloc(sizeof(*ibo), h_low);
-		memset(ibo, 0, sizeof(*ibo));
 		numIboIndexes = 0;
 
 		// allocate indexes
@@ -3629,7 +3627,6 @@ static void R_MergeLeafSurfaces(world_t* worldData)
 				*outIboIndexes++ = bspSurf->indexes[k] + bspSurf->firstVert;
 				numIboIndexes++;
 			}
-			break;
 		}
 
 		vboSurf = (srfBspSurface_t*)Hunk_Alloc(sizeof(*vboSurf), h_low);
@@ -3637,7 +3634,6 @@ static void R_MergeLeafSurfaces(world_t* worldData)
 		vboSurf->surfaceType = SF_VBO_MESH;
 
 		vboSurf->vbo = vbo;
-		vboSurf->ibo = ibo;
 
 		vboSurf->numIndexes = numIndexes;
 		vboSurf->numVerts = numVerts;
@@ -3664,14 +3660,11 @@ static void R_MergeLeafSurfaces(world_t* worldData)
 		mergedSurf->cubemapIndex = surf1->cubemapIndex;
 		mergedSurf->shader = surf1->shader;
 
-		// finish up the ibo
-		qglGenBuffers(1, &ibo->indexesVBO);
-
-		R_BindIBO(ibo);
-		qglBufferData(GL_ELEMENT_ARRAY_BUFFER, numIboIndexes * sizeof(*iboIndexes), iboIndexes, GL_STATIC_DRAW);
-		R_BindNullIBO();
-
-		GL_CheckErrors();
+		vboSurf->ibo = R_CreateIBO(
+			(byte*)iboIndexes,
+			numIboIndexes * sizeof(glIndex_t),
+			VBO_USAGE_STATIC,
+			va("Merged_%i", i));
 
 		Z_Free(iboIndexes);
 
@@ -4066,16 +4059,32 @@ static void R_GenerateSurfaceSprites(const world_t* world, int worldIndex)
 			SurfaceSpriteBlock surfaceSpriteBlock = {};
 			surfaceSprite_t* ss = stage->ss;
 
-			surfaceSpriteBlock.fxGrow[0] = ss->fxGrow[0];
-			surfaceSpriteBlock.fxGrow[1] = ss->fxGrow[1];
-			surfaceSpriteBlock.fxDuration = ss->fxDuration;
-			surfaceSpriteBlock.fadeStartDistance = ss->fadeDist + 1000.f;
-			surfaceSpriteBlock.fadeEndDistance = MAX(ss->fadeDist + 5000.f, ss->fadeMax);
-			surfaceSpriteBlock.fadeScale = ss->fadeScale;
-			surfaceSpriteBlock.wind = ss->wind;
-			surfaceSpriteBlock.windIdle = ss->windIdle;
-			surfaceSpriteBlock.fxAlphaStart = ss->fxAlphaStart;
-			surfaceSpriteBlock.fxAlphaEnd = ss->fxAlphaEnd;
+			if (r_AdvancedsurfaceSprites->integer)
+			{
+				surfaceSpriteBlock.fxGrow[0] = ss->fxGrow[0];
+				surfaceSpriteBlock.fxGrow[1] = ss->fxGrow[1];
+				surfaceSpriteBlock.fxDuration = ss->fxDuration;
+				surfaceSpriteBlock.fadeStartDistance = ss->fadeDist + 1000.f;
+				surfaceSpriteBlock.fadeEndDistance = MAX(ss->fadeDist + 5000.f, ss->fadeMax);
+				surfaceSpriteBlock.fadeScale = ss->fadeScale;
+				surfaceSpriteBlock.wind = ss->wind;
+				surfaceSpriteBlock.windIdle = ss->windIdle;
+				surfaceSpriteBlock.fxAlphaStart = ss->fxAlphaStart;
+				surfaceSpriteBlock.fxAlphaEnd = ss->fxAlphaEnd;
+			}
+			else
+			{
+				surfaceSpriteBlock.fxGrow[0] = ss->fxGrow[0];
+				surfaceSpriteBlock.fxGrow[1] = ss->fxGrow[1];
+				surfaceSpriteBlock.fxDuration = ss->fxDuration;
+				surfaceSpriteBlock.fadeStartDistance = ss->fadeDist;
+				surfaceSpriteBlock.fadeEndDistance = MAX(ss->fadeDist + 250.f, ss->fadeMax);
+				surfaceSpriteBlock.fadeScale = ss->fadeScale;
+				surfaceSpriteBlock.wind = ss->wind;
+				surfaceSpriteBlock.windIdle = ss->windIdle;
+				surfaceSpriteBlock.fxAlphaStart = ss->fxAlphaStart;
+				surfaceSpriteBlock.fxAlphaEnd = ss->fxAlphaEnd;
+			}
 
 			ss->spriteUboOffset = alignedBlockSize;
 			qglBufferSubData(

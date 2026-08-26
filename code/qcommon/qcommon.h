@@ -626,6 +626,7 @@ extern cvar_t* g_spskill;
 extern cvar_t* debugNPCFreeze;
 extern cvar_t* com_rend2;
 extern cvar_t* r_cubeMapping;
+extern cvar_t* r_cubeMappingBounces;
 #ifndef _WIN32
 extern	cvar_t* com_ansiColor;
 #endif

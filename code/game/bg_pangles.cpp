@@ -435,13 +435,13 @@ static void PM_IKUpdate(gentity_t* ent)
 	}
 }
 
-void BG_G2SetBoneAngles(const centity_t* cent, const int bone_index, const vec3_t angles, const int flags,
+void BG_G2SetBoneAngles(const centity_t* cent, const int boneIndex, const vec3_t angles, const int flags,
 	const Eorientations up, const Eorientations right, const Eorientations forward,
 	qhandle_t* model_list)
 {
-	if (bone_index != -1)
+	if (boneIndex != -1)
 	{
-		gi.G2API_SetBoneAnglesIndex(&cent->gent->ghoul2[0], bone_index, angles, flags, up, right, forward, model_list,
+		gi.G2API_SetBoneAnglesIndex(&cent->gent->ghoul2[0], boneIndex, angles, flags, up, right, forward, model_list,
 			0,
 			0);
 	}

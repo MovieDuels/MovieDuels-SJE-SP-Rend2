@@ -426,12 +426,13 @@ qhandle_t RE_RegisterModel(const char* name)
 R_LoadMDXA_Server - load a Ghoul 2 animation file
 =================
 */
-static qboolean R_LoadMDXA_Server(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached) {
+static qboolean R_LoadMDXA_Server(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached)
+{
 	mdxaHeader_t* pinmodel, * mdxa;
 	int					version;
 	int					size;
 
-	pinmodel = (mdxaHeader_t*)buffer;
+	pinmodel = static_cast<mdxaHeader_t*>(buffer);
 	//
 	// read some fields from the binary, but only LittleLong() them when we know this wasn't an already-cached model...
 	//
@@ -444,7 +445,8 @@ static qboolean R_LoadMDXA_Server(model_t* mod, void* buffer, const char* mod_na
 		LL(size);
 	}
 
-	if (version != MDXA_VERSION) {
+	if (version != MDXA_VERSION)
+	{
 		return qfalse;
 	}
 
@@ -455,19 +457,15 @@ static qboolean R_LoadMDXA_Server(model_t* mod, void* buffer, const char* mod_na
 	mdxa = (mdxaHeader_t*)CModelCache->Allocate(size, buffer, mod_name, &bAlreadyFound, TAG_MODEL_GLA);
 	mod->data.gla = mdxa;
 
-	assert(bAlreadyCached == bAlreadyFound);	// I should probably eliminate 'bAlreadyFound', but wtf?
+	if (bAlreadyCached != bAlreadyFound)
+	{
+		Com_Printf(S_COLOR_YELLOW "R_LoadMDXA_Server: cache flag mismatch for %s (caller:%d cache:%d)\n", mod_name, bAlreadyCached, bAlreadyFound);
+	}
 
 	if (!bAlreadyFound)
 	{
-		// horrible new hackery, if !bAlreadyFound then we've just done a tag-morph, so we need to set the
-		//	bool reference passed into this function to true, to tell the caller NOT to do an ri.FS_Freefile since
-		//	we've hijacked that memory block...
-		//
-		// Aaaargh. Kill me now...
-		//
 		bAlreadyCached = qtrue;
 		assert(mdxa == buffer);
-		//		memcpy( mdxa, buffer, size );	// and don't do this now, since it's the same thing
 
 		LL(mdxa->ident);
 		LL(mdxa->version);
@@ -477,7 +475,8 @@ static qboolean R_LoadMDXA_Server(model_t* mod, void* buffer, const char* mod_na
 		LL(mdxa->ofsEnd);
 	}
 
-	if (mdxa->numFrames < 1) {
+	if (mdxa->numFrames < 1)
+	{
 		return qfalse;
 	}
 
@@ -494,17 +493,20 @@ static qboolean R_LoadMDXA_Server(model_t* mod, void* buffer, const char* mod_na
 R_LoadMDXM_Server - load a Ghoul 2 Mesh file
 =================
 */
-static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached) {
+extern int OldToNewRemapTable[72];
+extern int NewToOldRemapTable[53];
+
+static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached)
+{
 	int					i, l, j;
 	mdxmHeader_t* pinmodel, * mdxm;
 	mdxmLOD_t* lod;
 	mdxmSurface_t* surf;
 	int					version;
 	int					size;
-	//shader_t			*sh;
 	mdxmSurfHierarchy_t* surfInfo;
 
-	pinmodel = (mdxmHeader_t*)buffer;
+	pinmodel = static_cast<mdxmHeader_t*>(buffer);
 	//
 	// read some fields from the binary, but only LittleLong() them when we know this wasn't an already-cached model...
 	//
@@ -517,7 +519,8 @@ static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_na
 		LL(size);
 	}
 
-	if (version != MDXM_VERSION) {
+	if (version != MDXM_VERSION)
+	{
 		return qfalse;
 	}
 
@@ -529,16 +532,13 @@ static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_na
 	mod->data.glm = (mdxmData_t*)Hunk_Alloc(sizeof(mdxmData_t), h_low);
 	mod->data.glm->header = mdxm;
 
-	assert(bAlreadyCached == bAlreadyFound);	// I should probably eliminate 'bAlreadyFound', but wtf?
+	if (bAlreadyCached != bAlreadyFound)
+	{
+		Com_Printf(S_COLOR_YELLOW "R_LoadMDXM_Server: cache flag mismatch for %s (caller:%d cache:%d)\n", mod_name, bAlreadyCached, bAlreadyFound);
+	}
 
 	if (!bAlreadyFound)
 	{
-		// horrible new hackery, if !bAlreadyFound then we've just done a tag-morph, so we need to set the
-		//	bool reference passed into this function to true, to tell the caller NOT to do an ri.FS_Freefile since
-		//	we've hijacked that memory block...
-		//
-		// Aaaargh. Kill me now...
-		//
 		bAlreadyCached = qtrue;
 		assert(mdxm == buffer);
 		//		memcpy( mdxm, buffer, size );	// and don't do this now, since it's the same thing
@@ -566,7 +566,21 @@ static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_na
 		return qtrue;	// All done. Stop, go no further, do not LittleLong(), do not pass Go...
 	}
 
-	surfInfo = (mdxmSurfHierarchy_t*)((byte*)mdxm + mdxm->ofsSurfHierarchy);
+#ifndef JK2_MODE
+	bool isAnOldModelFile = false;
+	if (mdxm->numBones == 72 && strstr(mdxm->animName, "_humanoid"))
+	{
+		isAnOldModelFile = true;
+	}
+#else
+	bool isANewModelFile = false;
+	if (mdxm->numBones == 53 && strstr(mdxm->animName, "_humanoid"))
+	{
+		isANewModelFile = true;
+	}
+#endif
+
+	surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>(reinterpret_cast<byte*>(mdxm) + mdxm->ofsSurfHierarchy);
 	for (i = 0; i < mdxm->numSurfaces; i++)
 	{
 		LL(surfInfo->numChildren);
@@ -578,27 +592,23 @@ static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_na
 			LL(surfInfo->childIndexes[j]);
 		}
 
-		// We will not be using shaders on the server.
-		//sh = 0;
-		// insert it in the surface list
-
 		surfInfo->shaderIndex = 0;
 
 		CModelCache->StoreShaderRequest(mod_name, &surfInfo->shader[0], &surfInfo->shaderIndex);
 
 		// find the next surface
-		surfInfo = (mdxmSurfHierarchy_t*)((byte*)surfInfo + (intptr_t)(&((mdxmSurfHierarchy_t*)0)->childIndexes[surfInfo->numChildren]));
+		surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>(reinterpret_cast<byte*>(surfInfo) + reinterpret_cast<intptr_t>(&static_cast<mdxmSurfHierarchy_t*>(nullptr)->childIndexes[surfInfo->numChildren]));
 	}
 
 	// swap all the LOD's	(we need to do the middle part of this even for intel, because of shader reg and err-check)
-	lod = (mdxmLOD_t*)((byte*)mdxm + mdxm->ofsLODs);
+	lod = reinterpret_cast<mdxmLOD_t*>(reinterpret_cast<byte*>(mdxm) + mdxm->ofsLODs);
 	for (l = 0; l < mdxm->numLODs; l++)
 	{
-		int	triCount = 0;
+		//int	triCount = 0;
 
 		LL(lod->ofsEnd);
 		// swap all the surfaces
-		surf = (mdxmSurface_t*)((byte*)lod + sizeof(mdxmLOD_t) + (mdxm->numSurfaces * sizeof(mdxmLODSurfOffset_t)));
+		surf = reinterpret_cast<mdxmSurface_t*>(reinterpret_cast<byte*>(lod) + sizeof(mdxmLOD_t) + (mdxm->numSurfaces * sizeof(mdxmLODSurfOffset_t)));
 		for (i = 0; i < mdxm->numSurfaces; i++)
 		{
 			LL(surf->numTriangles);
@@ -609,9 +619,6 @@ static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_na
 			LL(surf->ofsHeader);
 			LL(surf->numBoneReferences);
 			LL(surf->ofsBoneReferences);
-			//			LL(surf->maxVertBoneWeights);
-
-			triCount += surf->numTriangles;
 
 			if (surf->numVerts > SHADER_MAX_VERTEXES) {
 				return qfalse;
@@ -625,12 +632,47 @@ static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_na
 
 			// register the shaders
 
+#ifndef JK2_MODE
+			if (isAnOldModelFile)
+			{
+				auto boneRef = reinterpret_cast<int*>(reinterpret_cast<byte*>(surf) + surf->ofsBoneReferences);
+				for (j = 0; j < surf->numBoneReferences; j++)
+				{
+					assert(boneRef[j] >= 0 && boneRef[j] < 72);
+					if (boneRef[j] >= 0 && boneRef[j] < 72)
+					{
+						boneRef[j] = OldToNewRemapTable[boneRef[j]];
+					}
+					else
+					{
+						boneRef[j] = 0;
+					}
+				}
+			}
+#else
+			if (isANewModelFile)
+			{
+				auto boneRef = reinterpret_cast<int*>(reinterpret_cast<byte*>(surf) + surf->ofsBoneReferences);
+				for (j = 0; j < surf->numBoneReferences; j++)
+				{
+					assert(boneRef[j] >= 0 && boneRef[j] < 53);
+					if (boneRef[j] >= 0 && boneRef[j] < 53)
+					{
+						boneRef[j] = NewToOldRemapTable[boneRef[j]];
+					}
+					else
+					{
+						boneRef[j] = 0;
+					}
+				}
+			}
+#endif
 			// find the next surface
-			surf = (mdxmSurface_t*)((byte*)surf + surf->ofsEnd);
+			surf = reinterpret_cast<mdxmSurface_t*>(reinterpret_cast<byte*>(surf) + surf->ofsEnd);
 		}
 
 		// find the next LOD
-		lod = (mdxmLOD_t*)((byte*)lod + lod->ofsEnd);
+		lod = reinterpret_cast<mdxmLOD_t*>(reinterpret_cast<byte*>(lod) + lod->ofsEnd);
 	}
 
 	return qtrue;
@@ -1278,7 +1320,7 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 	int					size;
 	shader_t* sh;
 
-	pinmodel = (mdrHeader_t*)buffer;
+	pinmodel = static_cast<mdrHeader_t*>(buffer);
 
 	pinmodel->version = LittleLong(pinmodel->version);
 	if (pinmodel->version != MDR_VERSION)
@@ -1308,12 +1350,12 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 		// mdrFrame_t is larger than mdrCompFrame_t:
 		size += pinmodel->numFrames * sizeof(frame->name);
 		// now add enough space for the uncompressed bones.
-		size += pinmodel->numFrames * pinmodel->numBones * ((sizeof(mdrBone_t) - sizeof(mdrCompBone_t)));
+		size += static_cast<unsigned long long>(pinmodel->numFrames) * pinmodel->numBones * ((sizeof(mdrBone_t) - sizeof(mdrCompBone_t)));
 	}
 
 	// simple bounds check
 	if (pinmodel->numBones < 0 ||
-		sizeof(*mdr) + pinmodel->numFrames * (sizeof(*frame) + (pinmodel->numBones - 1) * sizeof(*frame->bones)) > size)
+		sizeof(*mdr) + pinmodel->numFrames * (sizeof(*frame) + (static_cast<unsigned long long>(pinmodel->numBones) - 1) * sizeof(*frame->bones)) >(unsigned)size)
 	{
 		ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has broken structure.\n", mod_name);
 		return qfalse;
@@ -1366,7 +1408,7 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 
 			for (j = 0; j < mdr->numBones; j++)
 			{
-				for (k = 0; k < (sizeof(cframe->bones[j].Comp) / 2); k++)
+				for (k = 0; (unsigned)k < (sizeof(cframe->bones[j].Comp) / 2); k++)
 				{
 					// Do swapping for the uncompressing functions. They seem to use shorts
 					// values only, so I assume this will work. Never tested it on other
@@ -1498,7 +1540,7 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 				LL(curv->numWeights);
 
 				// simple bounds check
-				if (curv->numWeights < 0 || (byte*)(v + 1) + (curv->numWeights - 1) * sizeof(*weight) >(byte*) mdr + size)
+				if (curv->numWeights < 0 || (byte*)(v + 1) + (static_cast<unsigned long long>(curv->numWeights) - 1) * sizeof(*weight) >(byte*) mdr + size)
 				{
 					ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has broken structure.\n", mod_name);
 					return qfalse;
@@ -1518,7 +1560,7 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 				// Now copy all the weights
 				for (k = 0; k < v->numWeights; k++)
 				{
-					weight->bone_index = LittleLong(curweight->bone_index);
+					weight->boneIndex = LittleLong(curweight->boneIndex);
 					weight->boneWeight = LittleFloat(curweight->boneWeight);
 
 					weight->offset[0] = LittleFloat(curweight->offset[0]);
@@ -1585,7 +1627,7 @@ static qboolean R_LoadMDR(model_t* mod, void* buffer, int filesize, const char* 
 
 	for (i = 0; i < mdr->numTags; i++)
 	{
-		tag->bone_index = LittleLong(curtag->bone_index);
+		tag->boneIndex = LittleLong(curtag->boneIndex);
 		Q_strncpyz(tag->name, curtag->name, sizeof(tag->name));
 
 		tag++;
@@ -1757,12 +1799,12 @@ static void R_GetAnimTag(mdrHeader_t* mod, int framenum, const char* tagName, md
 			for (j = 0; j < 3; j++)
 			{
 				for (k = 0; k < 3; k++)
-					dest->axis[j][k] = frame->bones[tag->bone_index].matrix[k][j];
+					dest->axis[j][k] = frame->bones[tag->boneIndex].matrix[k][j];
 			}
 
-			dest->origin[0] = frame->bones[tag->bone_index].matrix[0][3];
-			dest->origin[1] = frame->bones[tag->bone_index].matrix[1][3];
-			dest->origin[2] = frame->bones[tag->bone_index].matrix[2][3];
+			dest->origin[0] = frame->bones[tag->boneIndex].matrix[0][3];
+			dest->origin[1] = frame->bones[tag->boneIndex].matrix[1][3];
+			dest->origin[2] = frame->bones[tag->boneIndex].matrix[2][3];
 
 			return;
 		}

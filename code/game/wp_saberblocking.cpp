@@ -64,7 +64,7 @@ extern void G_StartStasisEffect_FORCE_LEVEL_1(const gentity_t* ent, int me_flags
 extern cvar_t* d_slowmoaction;
 extern void wp_block_points_regenerate_over_ride(const gentity_t* self, int override_amt);
 extern void WP_ForcePowerRegenerate(const gentity_t* self, int override_amt);
-extern void G_Stagger(gentity_t* hit_ent);
+extern void G_Stagger(gentity_t* hitEnt);
 extern void SabBeh_SaberShouldBeDisarmedBlocker(gentity_t* blocker, int saberNum);
 extern void WP_BlockPointsRegenerate(const gentity_t* self, int override_amt);
 extern qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, int saberNum, int bladeNum, vec3_t hit_loc);

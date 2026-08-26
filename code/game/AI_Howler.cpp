@@ -56,7 +56,7 @@ extern float NPC_EntRangeFromBolt(const gentity_t* targEnt, int bolt_index);
 extern int NPC_GetEntsNearBolt(gentity_t** radius_ents, float radius, int bolt_index, vec3_t bolt_org);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_HasAnimation(const gentity_t* ent, int animation);
-
+extern cvar_t* g_SerenityJediEngineMode;
 static void Howler_Attack(float enemy_dist, qboolean howl = qfalse);
 /*
 -------------------------
@@ -275,91 +275,173 @@ static void Howler_TryDamage(const int damage, const qboolean tongue, const qboo
 	}
 }
 
+/*
+============
+Howler_Howl
+------------
+Howler sonic howl attack:
+- Finds nearby entities around the howl bolt.
+- Deals minor damage + poison to close non-howler NPCs.
+- Triggers sonic pain animations.
+- Shakes camera if player is close.
+============
+*/
 static void Howler_Howl()
 {
 	gentity_t* radius_ents[128];
-	const float radius = NPC->spawnflags & 1 ? 256 : 128;
-	const float half_rad_squared = radius / 2 * (radius / 2);
+	const float radius = (NPC->spawnflags & 1) ? 256.0f : 128.0f;
+	const float half_rad = radius * 0.5f;
+	const float half_rad_squared = half_rad * half_rad;
 	const float radius_squared = radius * radius;
 	vec3_t bolt_org;
 
+	// Sound event for AI awareness
 	AddSoundEvent(NPC, NPC->currentOrigin, 512, AEL_DANGER, qfalse, qtrue);
 
 	const int num_ents = NPC_GetEntsNearBolt(radius_ents, radius, NPC->handLBolt, bolt_org);
 
 	for (int i = 0; i < num_ents; i++)
 	{
-		if (!radius_ents[i]->inuse)
+		gentity_t* ent = radius_ents[i];
+
+		if (ent == nullptr || ent->inuse == qfalse)
 		{
 			continue;
 		}
 
-		if (radius_ents[i] == NPC)
+		if (ent == NPC)
 		{
-			//Skip the rancor ent
-			continue;
+			continue; // skip self
 		}
 
-		if (radius_ents[i]->client == nullptr)
+		if (ent->client == nullptr)
 		{
-			//must be a client
-			continue;
+			continue; // must be a client
 		}
 
-		if (radius_ents[i]->client->NPC_class == CLASS_HOWLER)
+		if (ent->client->NPC_class == CLASS_HOWLER)
 		{
-			//other howlers immune
-			continue;
+			continue; // howlers immune
 		}
 
-		const float dist_sq = DistanceSquared(radius_ents[i]->currentOrigin, bolt_org);
+		const float dist_sq = DistanceSquared(ent->currentOrigin, bolt_org);
 		if (dist_sq <= radius_squared)
 		{
+			// ------------------------------------------------------------------
+			// Close range: damage + poison + drugged vision
+			// ------------------------------------------------------------------
 			if (dist_sq < half_rad_squared)
 			{
-				//close enough to do damage, too
-				if (Q_irand(0, g_spskill->integer))
+				const int doDamage = Q_irand(0, g_spskill->integer);
+
+				if (doDamage != 0)
 				{
-					//does no damage on easy, does 1 point every other frame on medium, more often on hard
-					G_Damage(radius_ents[i], NPC, NPC, vec3_origin, NPC->currentOrigin, 1, DAMAGE_NO_KNOCKBACK,
+					// Damage victim
+					G_Damage(ent,
+						NPC,
+						NPC,
+						vec3_origin,
+						NPC->currentOrigin,
+						1,
+						DAMAGE_NO_KNOCKBACK,
 						MOD_IMPACT);
+
+					if ((g_SerenityJediEngineMode->integer > 1 && g_spskill->integer > 1) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0))
+					{
+						// Apply poison to the actual victim
+						qboolean validVictim =
+							(ent != nullptr &&
+								ent->inuse == qtrue &&
+								ent->client != nullptr) ? qtrue : qfalse;
+
+						if (validVictim == qtrue)
+						{
+							if (g_spskill->integer > 1)
+							{ // higher skill levels = more poison
+								ent->client->poisonDamage = 10;
+								ent->client->poisonTime = level.time + 1000;
+
+								// Drugged vision effect
+								gentity_t* tent = G_TempEntity(ent->currentOrigin, EV_STUNNED);
+								if (tent != nullptr)
+								{
+									tent->owner = ent;
+								}
+							}
+							else
+							{
+								ent->client->poisonDamage = 5;
+								ent->client->poisonTime = level.time + 500;
+
+								// Drugged vision effect
+								gentity_t* tent = G_TempEntity(ent->currentOrigin, EV_STUNNED);
+								if (tent != nullptr)
+								{
+									tent->owner = ent;
+								}
+							}
+						}
+					}
 				}
 			}
-			if (radius_ents[i]->health > 0
-				&& radius_ents[i]->client
-				&& radius_ents[i]->client->NPC_class != CLASS_RANCOR
-				&& radius_ents[i]->client->NPC_class != CLASS_ATST
-				&& !PM_InKnockDown(&radius_ents[i]->client->ps))
+
+			// ------------------------------------------------------------------
+			// Sonic pain animation logic
+			// ------------------------------------------------------------------
+			qboolean canAffect =
+				(ent->health > 0 &&
+					ent->client != nullptr &&
+					ent->client->NPC_class != CLASS_RANCOR &&
+					ent->client->NPC_class != CLASS_ATST &&
+					(PM_InKnockDown(&ent->client->ps) == qfalse)) ? qtrue : qfalse;
+
+			if (canAffect == qtrue)
 			{
-				if (PM_HasAnimation(radius_ents[i], BOTH_SONICPAIN_START))
+				if (PM_HasAnimation(ent, BOTH_SONICPAIN_START) == qtrue)
 				{
-					if (radius_ents[i]->client->ps.torsoAnim != BOTH_SONICPAIN_START
-						&& radius_ents[i]->client->ps.torsoAnim != BOTH_SONICPAIN_HOLD)
+					const int torsoAnim = ent->client->ps.torsoAnim;
+					const int torsoTimer = ent->client->ps.torsoAnimTimer;
+
+					qboolean inStartOrHold =
+						(torsoAnim == BOTH_SONICPAIN_START ||
+							torsoAnim == BOTH_SONICPAIN_HOLD) ? qtrue : qfalse;
+
+					if (inStartOrHold == qfalse)
 					{
-						NPC_SetAnim(radius_ents[i], SETANIM_LEGS, BOTH_SONICPAIN_START, SETANIM_FLAG_NORMAL);
-						NPC_SetAnim(radius_ents[i], SETANIM_TORSO, BOTH_SONICPAIN_START,
+						// Start sonic pain
+						NPC_SetAnim(ent, SETANIM_LEGS, BOTH_SONICPAIN_START, SETANIM_FLAG_NORMAL);
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SONICPAIN_START,
 							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						radius_ents[i]->client->ps.torsoAnimTimer += 100;
-						radius_ents[i]->client->ps.weaponTime = radius_ents[i]->client->ps.torsoAnimTimer;
+
+						ent->client->ps.torsoAnimTimer = torsoTimer + 100;
+						ent->client->ps.weaponTime = ent->client->ps.torsoAnimTimer;
 					}
-					else if (radius_ents[i]->client->ps.torsoAnimTimer <= 100)
+					else
 					{
-						//at the end of the sonic pain start or hold anim
-						NPC_SetAnim(radius_ents[i], SETANIM_LEGS, BOTH_SONICPAIN_HOLD, SETANIM_FLAG_NORMAL);
-						NPC_SetAnim(radius_ents[i], SETANIM_TORSO, BOTH_SONICPAIN_HOLD,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-						radius_ents[i]->client->ps.torsoAnimTimer += 100;
-						radius_ents[i]->client->ps.weaponTime = radius_ents[i]->client->ps.torsoAnimTimer;
+						if (torsoTimer <= 100)
+						{
+							// Transition to hold
+							NPC_SetAnim(ent, SETANIM_LEGS, BOTH_SONICPAIN_HOLD, SETANIM_FLAG_NORMAL);
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SONICPAIN_HOLD,
+								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
+							ent->client->ps.torsoAnimTimer = torsoTimer + 100;
+							ent->client->ps.weaponTime = ent->client->ps.torsoAnimTimer;
+						}
 					}
 				}
 			}
 		}
 	}
 
+	// ----------------------------------------------------------------------
+	// Camera shake for player if close to howl origin
+	// ----------------------------------------------------------------------
 	const float player_dist = NPC_EntRangeFromBolt(player, NPC->genericBolt1);
 	if (player_dist < 256.0f)
 	{
-		CGCam_Shake(1.0f * player_dist / 128.0f, 200);
+		const float shakeScale = (1.0f * player_dist) / 64.0f;
+		CGCam_Shake(shakeScale, 200);
 	}
 }
 

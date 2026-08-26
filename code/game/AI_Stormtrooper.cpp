@@ -67,7 +67,7 @@ extern void NPC_CheckEvasion();
 extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_allowgunnerbash;
 extern qboolean char_can_gun_bash(const gentity_t* self);
-extern qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t push_dir);
+extern qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t push_dir);
 extern void speaker_speech(const gentity_t* self, int speech_type, float fail_chance);
 extern void NPC_AngerSound();
 
@@ -3880,12 +3880,12 @@ void NPC_BSST_Attack(void)
 			else if (enemyInFOV == qtrue)
 			{
 				const int hit = NPC_ShotEntity(NPC->enemy, impactPos);
-				const gentity_t* hit_ent = (hit >= 0 && hit < ENTITYNUM_WORLD) ? &g_entities[hit] : nullptr;
+				const gentity_t* hitEnt = (hit >= 0 && hit < ENTITYNUM_WORLD) ? &g_entities[hit] : nullptr;
 
 				if (hit == NPC->enemy->s.number ||
-					(hit_ent != nullptr && hit_ent->client != nullptr && hit_ent->client->playerTeam == NPC->client->enemyTeam) ||
-					(hit_ent != nullptr && hit_ent->takedamage &&
-						((hit_ent->svFlags & SVF_GLASS_BRUSH) || hit_ent->health < 40 ||
+					(hitEnt != nullptr && hitEnt->client != nullptr && hitEnt->client->playerTeam == NPC->client->enemyTeam) ||
+					(hitEnt != nullptr && hitEnt->takedamage &&
+						((hitEnt->svFlags & SVF_GLASS_BRUSH) || hitEnt->health < 40 ||
 							NPC->s.weapon == WP_EMPLACED_GUN)))
 				{
 					// can hit enemy or enemy ally or will hit glass or other minor breakable (or in emplaced gun), so shoot anyway
@@ -3899,8 +3899,8 @@ void NPC_BSST_Attack(void)
 					NPC_AimAdjust(2);
 					ST_ResolveBlockedShot(hit);
 
-					if (hit_ent != nullptr && hit_ent->client != nullptr &&
-						hit_ent->client->playerTeam == NPC->client->playerTeam)
+					if (hitEnt != nullptr && hitEnt->client != nullptr &&
+						hitEnt->client->playerTeam == NPC->client->playerTeam)
 					{
 						// would hit an ally, don't fire
 						hitAlly = qtrue;

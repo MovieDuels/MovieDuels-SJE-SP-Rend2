@@ -970,7 +970,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 
 	case EV_DRUGGED:
 		DEBUGNAME("EV_DRUGGED");
-		if (cent->gent && cent->gent->owner && cent->gent->owner->s.number == 0)
+		if (!in_camera && cent->gent && cent->gent->owner && cent->gent->owner->s.number == 0)
 		{
 			// Only allow setting up the wonky vision on the player..do it for 10 seconds...must be synchronized with calcs done in cg_view.  Just search for cg.wonkyTime to find 'em.
 			cg.wonkyTime = cg.time + 10000;
@@ -979,7 +979,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 
 	case EV_STUNNED:
 		DEBUGNAME("EV_STUNNED");
-		if (cent->gent && cent->gent->owner && cent->gent->owner->s.number == 0)
+		if (!in_camera && cent->gent && cent->gent->owner && cent->gent->owner->s.number == 0)
 		{
 			// Only allow setting up the wonky vision on the player..do it for 2.5 seconds...must be synchronized with calcs done in cg_view.  Just search for cg.wonkyTime to find 'em.
 			cg.stunnedTime = cg.time + 2500;

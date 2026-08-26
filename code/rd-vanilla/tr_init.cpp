@@ -248,31 +248,6 @@ static void R_Splash()
 {
 	image_t* pImage = R_FindImageFile("menu/splash", qfalse, qfalse, qfalse, GL_CLAMP);
 
-	/*image_t* pImage;
-	int splashPick = rand() % 5;
-
-	switch (splashPick)
-	{
-	case 0:
-		pImage = R_FindImageFile("menu/splash", qfalse, qfalse, qfalse, GL_CLAMP);
-		break;
-	case 1:
-		pImage = R_FindImageFile("menu/splash2", qfalse, qfalse, qfalse, GL_CLAMP);
-		break;
-	case 2:
-		pImage = R_FindImageFile("menu/splash3", qfalse, qfalse, qfalse, GL_CLAMP);
-		break;
-	case 3:
-		pImage = R_FindImageFile("menu/splash4", qfalse, qfalse, qfalse, GL_CLAMP);
-		break;
-	case 4:
-		pImage = R_FindImageFile("menu/splash5", qfalse, qfalse, qfalse, GL_CLAMP);
-		break;
-	default:
-		pImage = R_FindImageFile("menu/splash", qfalse, qfalse, qfalse, GL_CLAMP);
-		break;
-	}*/
-
 	if (!pImage)
 	{
 		// Can't find the splash image so just clear to black
@@ -309,6 +284,16 @@ static void R_Splash()
 	if (r_com_rend2->integer != 0)
 	{
 		ri.Cvar_Set("com_rend2", "0");
+	}
+
+	qboolean forceCgShadows =
+		(r_shadows->integer == 0 ||
+			r_shadows->integer == 1 ||
+			r_shadows->integer == 3) ? qtrue : qfalse;
+
+	if (forceCgShadows == qtrue)
+	{
+		ri.Cvar_Set("cg_shadows", "2");
 	}
 
 	ri.WIN_Present(&window);
@@ -1523,6 +1508,8 @@ static consoleCommand_t	commands[] = {
 	{ "r_weather",			R_WeatherEffect_f },
 };
 
+static const size_t numCommands = ARRAY_LEN(commands);
+
 #ifdef _DEBUG
 #define MIN_PRIMITIVES -1
 #else
@@ -1728,7 +1715,7 @@ static void R_Register()
 
 // need to do this hackery so ghoul2 doesn't crash the game because of ITS hackery...
 //
-static void R_ClearStuffToStopGhoul2CrashingThings()
+static void R_ClearStuffToStopGhoul2CrashingThings(void)
 {
 	memset(&tr, 0, sizeof tr);
 }
@@ -1740,12 +1727,12 @@ R_Init
 */
 extern void R_InitWorldEffects();
 
-void R_Init()
+void R_Init(void)
 {
 	int	err;
 	int i;
 
-	ri.Printf(PRINT_ALL, "----- Loading Vanilla renderer-----\n");
+	ri.Printf(PRINT_ALL, "-----Loading SP Performance Mode-----\n");
 
 	ShaderEntryPtrs_Clear();
 
@@ -1822,7 +1809,7 @@ void R_Init()
 		ri.Cvar_Set("com_rend2", "0");
 	}
 
-	ri.Printf(PRINT_ALL, "----- Vanilla renderer loaded-----\n");
+	ri.Printf(PRINT_ALL, "-----SP Performance Mode loaded-----\n");
 }
 
 /*
@@ -1832,10 +1819,10 @@ RE_Shutdown
 */
 extern void R_ShutdownWorldEffects();
 
-void RE_Shutdown(const qboolean destroy_window, const qboolean restarting)
+void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 {
-	for (const auto& command : commands)
-		ri.Cmd_RemoveCommand(command.cmd);
+	for (size_t i = 0; i < numCommands; i++)
+		ri.Cmd_RemoveCommand(commands[i].cmd);
 
 	if (r_DynamicGlow && r_DynamicGlow->integer)
 	{
@@ -1875,22 +1862,19 @@ void RE_Shutdown(const qboolean destroy_window, const qboolean restarting)
 	if (tr.registered)
 	{
 		R_IssuePendingRenderCommands();
-		if (destroy_window)
+		if (destroyWindow)
 		{
 			R_DeleteTextures();	// only do this for vid_restart now, not during things like map load
 
 			if (restarting)
 			{
 				SaveGhoul2InfoArray();
-
-				// Hack to fix crashing when toggling fullscreen
-				memset(&glConfig, 0, sizeof glConfig);
 			}
 		}
 	}
 
 	// shut down platform specific OpenGL stuff
-	if (destroy_window) {
+	if (destroyWindow) {
 		ri.WIN_Shutdown();
 	}
 	tr.registered = qfalse;

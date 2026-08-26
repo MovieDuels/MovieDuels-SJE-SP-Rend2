@@ -98,7 +98,7 @@ struct mdxmWeight_t
 typedef struct
 #endif
 {
-	int			bone_index;		// these are indexes into the surface boneReferences, not the global bone index
+	int			boneIndex;		// these are indexes into the surface boneReferences, not the global bone index
 	float		boneWeight;		// not the global per-frame bone list
 
 	// I'm defining this '<' operator so this struct can be used with an STL <set>...

@@ -137,7 +137,7 @@ extern qboolean IsSurrendering(const gentity_t* self);
 extern qboolean IsRESPECTING(const gentity_t* self);
 extern qboolean IsCowering(const gentity_t* self);
 extern qboolean is_anim_requires_responce(const gentity_t* self);
-extern qboolean WP_AbsorbKick(gentity_t* hit_ent, const gentity_t* pusher, const vec3_t push_dir);
+extern qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t push_dir);
 extern qboolean BG_InKnockDown(int anim);
 extern void ForceGrasp(gentity_t* ent);
 extern qboolean WP_SaberAttacking(const gentity_t* self);
@@ -1036,7 +1036,7 @@ static void tavion_scepter_slam()
 					G_Throw(radius_ents[i], ent_dir, throw_str);
 					if (radius_ents[i]->health > 0)
 					{
-						if (dist < half_rad	||
+						if (dist < half_rad ||
 							radius_ents[i]->client->ps.groundEntityNum != ENTITYNUM_NONE)
 						{
 							//within range of my fist or within ground-shaking range and not in the air

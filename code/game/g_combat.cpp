@@ -97,7 +97,7 @@ extern void G_StartRoll(gentity_t* ent, int anim);
 extern void WP_ForcePowerStart(gentity_t* self, forcePowers_t force_power, int override_amt);
 extern int killPlayerTimer;
 extern qboolean jedi_is_kick_resistant(gentity_t* self);
-extern void G_MawStagger(gentity_t* hit_ent);
+extern void G_MawStagger(gentity_t* hitEnt);
 extern void NPC_TempLookTarget(const gentity_t* self, int lookEntNum, int minLookTime, int maxLookTime);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
 extern qboolean PM_HasAnimation(const gentity_t* ent, int animation);

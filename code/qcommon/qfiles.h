@@ -269,7 +269,7 @@ typedef struct {
 } mdrLOD_t;
 
 typedef struct {
-	int			bone_index;	// these are indexes into the boneReferences,
+	int			boneIndex;	// these are indexes into the boneReferences,
 	float		   boneWeight;		// not the global per-frame bone list
 	vec3_t		offset;
 } mdrWeight_t;
@@ -286,7 +286,7 @@ typedef struct {
 } mdrTriangle_t;
 
 typedef struct {
-	int                     bone_index;
+	int                     boneIndex;
 	char            name[32];
 } mdrTag_t;
 

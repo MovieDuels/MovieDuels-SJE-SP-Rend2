@@ -792,7 +792,8 @@ qhandle_t RE_RegisterModel(const char* name)
 R_LoadMD3
 =================
 */
-static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* mod_name, qboolean& b_already_cached) {
+static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* name, qboolean& bAlreadyCached)
+{
 	int j;
 	md3Header_t* pinmodel;
 	md3Surface_t* surf;
@@ -812,18 +813,18 @@ static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* mod_n
 	//
 	// read some fields from the binary, but only LittleLong() them when we know this wasn't an already-cached model...
 	//
-	version = pinmodel->version;
-	size = pinmodel->ofsEnd;
+	version = (pinmodel->version);
+	size = (pinmodel->ofsEnd);
 
-	if (!b_already_cached)
+	if (!bAlreadyCached)
 	{
 		version = LittleLong version;
 		size = LittleLong size;
 	}
 
-	if (version != MD3_VERSION) {
-		ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has wrong version (%i should be %i)\n",
-			mod_name, version, MD3_VERSION);
+	if (version != MD3_VERSION)
+	{
+		ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has wrong version (%i should be %i)\n", name, version, MD3_VERSION);
 		return qfalse;
 	}
 
@@ -831,21 +832,17 @@ static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* mod_n
 	mod->dataSize += size;
 
 	qboolean bAlreadyFound = qfalse;
-	mod->md3[lod] = static_cast<md3Header_t*>(RE_RegisterModels_Malloc(size, buffer, mod_name, &bAlreadyFound, TAG_MODEL_MD3));
+	mod->md3[lod] = static_cast<md3Header_t*>(RE_RegisterModels_Malloc(size, buffer, name, &bAlreadyFound, TAG_MODEL_MD3));
 
-	assert(b_already_cached == bAlreadyFound);
+	if (bAlreadyCached != bAlreadyFound)
+	{
+		Com_Printf(S_COLOR_YELLOW "R_LoadMD3: cache flag mismatch for %s (caller:%d cache:%d)\n", name, bAlreadyCached, bAlreadyFound);
+	}
 
 	if (!bAlreadyFound)
 	{
-		// horrible new hackery, if !bAlreadyFound then we've just done a tag-morph, so we need to set the
-		//	bool reference passed into this function to true, to tell the caller NOT to do an FS_Freefile since
-		//	we've hijacked that memory block...
-		//
-		// Aaaargh. Kill me now...
-		//
-		b_already_cached = qtrue;
+		bAlreadyCached = qtrue;
 		assert(mod->md3[lod] == buffer);
-		//		memcpy( mod->md3[lod], buffer, size );	// and don't do this now, since it's the same thing
 
 		LL(mod->md3[lod]->ident);
 		LL(mod->md3[lod]->version);
@@ -858,8 +855,9 @@ static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* mod_n
 		LL(mod->md3[lod]->ofsEnd);
 	}
 
-	if (mod->md3[lod]->numFrames < 1) {
-		ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has no frames\n", mod_name);
+	if (mod->md3[lod]->numFrames < 1)
+	{
+		ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has no frames\n", name);
 		return qfalse;
 	}
 
@@ -908,11 +906,11 @@ static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* mod_n
 
 		if (surf->numVerts > SHADER_MAX_VERTEXES) {
 			Com_Error(ERR_DROP, "R_LoadMD3: %s has more than %i verts on a surface (%i)",
-				mod_name, SHADER_MAX_VERTEXES, surf->numVerts);
+				name, SHADER_MAX_VERTEXES, surf->numVerts);
 		}
 		if (surf->numTriangles * 3 > SHADER_MAX_INDEXES) {
 			Com_Error(ERR_DROP, "R_LoadMD3: %s has more than %i triangles on a surface (%i)",
-				mod_name, SHADER_MAX_INDEXES / 3, surf->numTriangles);
+				name, SHADER_MAX_INDEXES / 3, surf->numTriangles);
 		}
 
 		// change to surface identifier
@@ -938,7 +936,7 @@ static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* mod_n
 			else {
 				shader->shaderIndex = sh->index;
 			}
-			RE_RegisterModels_StoreShaderRequest(mod_name, &shader->name[0], &shader->shaderIndex);
+			RE_RegisterModels_StoreShaderRequest(name, &shader->name[0], &shader->shaderIndex);
 		}
 
 #ifdef Q3_BIG_ENDIAN

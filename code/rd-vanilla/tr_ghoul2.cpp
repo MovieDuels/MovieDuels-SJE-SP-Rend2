@@ -945,7 +945,7 @@ Safely computes animation timing for a bone:
 */
 void G2_TimingModel(
 	boneInfo_t& bone,
-	const int current_time,
+	const int currentTime,
 	const int numFramesInFile,
 	int& currentFrame,
 	int& newFrame,
@@ -998,7 +998,7 @@ void G2_TimingModel(
 	}
 	else
 	{
-		time = (current_time - bone.startTime) / 50.0f;
+		time = (currentTime - bone.startTime) / 50.0f;
 	}
 
 	if (time < 0.0f)
@@ -2874,7 +2874,7 @@ void R_AddGhoulSurfaces(trRefEntity_t* ent)
 		return;
 	}
 
-	const int current_time = G2API_GetTime(tr.refdef.time);
+	const int currentTime = G2API_GetTime(tr.refdef.time);
 
 	// cull the entire model if merged bounding box of both frames
 	// is outside the view frustum.
@@ -2885,7 +2885,7 @@ void R_AddGhoulSurfaces(trRefEntity_t* ent)
 	}
 	HackadelicOnClient = true;
 	// are any of these models setting a new origin?
-	RootMatrix(ghoul2, current_time, ent->e.modelScale, rootMatrix);
+	RootMatrix(ghoul2, currentTime, ent->e.modelScale, rootMatrix);
 
 	// don't add third_person objects if not in a portal
 	qboolean personalModel = static_cast<qboolean>(ent->e.renderfx & RF_THIRD_PERSON && !tr.viewParms.is_portal);
@@ -2951,11 +2951,11 @@ void R_AddGhoulSurfaces(trRefEntity_t* ent)
 				const int	boltNum = ghoul2[i].mModelBoltLink >> BOLT_SHIFT & BOLT_AND;
 				mdxaBone_t bolt;
 				G2_GetBoltMatrixLow(ghoul2[boltMod], boltNum, ent->e.modelScale, bolt);
-				G2_TransformGhoulBones(ghoul2[i].mBlist, bolt, ghoul2[i], current_time);
+				G2_TransformGhoulBones(ghoul2[i].mBlist, bolt, ghoul2[i], currentTime);
 			}
 			else
 			{
-				G2_TransformGhoulBones(ghoul2[i].mBlist, rootMatrix, ghoul2[i], current_time);
+				G2_TransformGhoulBones(ghoul2[i].mBlist, rootMatrix, ghoul2[i], currentTime);
 			}
 			if (ent->e.renderfx & RF_G2MINLOD)
 			{
@@ -3512,276 +3512,65 @@ int OldToNewRemapTable[72] = {
 52// Bone71:   "face_always_":			Parent: "cranium"  (index 17)
 };
 
-/*
+int NewToOldRemapTable[53] = {
+0,  // JKA Bone 00 model_root           to JK2 Bone 00 model_root
+1,  // JKA Bone 01 pelvis               to JK2 Bone 01 pelvis
+2,  // JKA Bone 02 Motion               to JK2 Bone 02 Motion
+3,  // JKA Bone 03 lfemurYZ             to JK2 Bone 03 lfemurYZ
+4,  // JKA Bone 04 lfemurX              to JK2 Bone 04 lfemurX
+5,  // JKA Bone 05 ltibia               to JK2 Bone 05 ltibia
+6,  // JKA Bone 06 ltalus               to JK2 Bone 06 ltalus
+8,  // JKA Bone 07 rfemurYZ             to JK2 Bone 08 rfemurYZ
+9,  // JKA Bone 08 rfemurX              to JK2 Bone 09 rfemurX
+10, // JKA Bone 09 rtibia               to JK2 Bone 10 rtibia
+11, // JKA Bone 10 rtalus               to JK2 Bone 11 rtalus
+13, // JKA Bone 11 lower_lumbar         to JK2 Bone 13 lower_lumbar
+14, // JKA Bone 12 upper_lumbar         to JK2 Bone 14 upper_lumbar
+15, // JKA Bone 13 thoracic             to JK2 Bone 15 thoracic
+16, // JKA Bone 14 cervical             to JK2 Bone 16 cervical
+17, // JKA Bone 15 cranium              to JK2 Bone 17 cranium
+18, // JKA Bone 16 ceyebrow             to JK2 Bone 18 ceyebrow
+19, // JKA Bone 17 jaw                  to JK2 Bone 19 jaw
+20, // JKA Bone 18 lblip2               to JK2 Bone 20 lblip2
+21, // JKA Bone 19 leye                 to JK2 Bone 21 leye
+22, // JKA Bone 20 rblip2               to JK2 Bone 22 rblip2
+23, // JKA Bone 21 ltlip2               to JK2 Bone 23 ltlip2
+24, // JKA Bone 22 rtlip2               to JK2 Bone 24 rtlip2
+25, // JKA Bone 23 reye                 to JK2 Bone 25 reye
+26, // JKA Bone 24 rclavical            to JK2 Bone 26 rclavical
+27, // JKA Bone 25 rhumerus             to JK2 Bone 27 rhumerus
+28, // JKA Bone 26 rhumerusX            to JK2 Bone 28 rhumerusX
+29, // JKA Bone 27 rradius              to JK2 Bone 29 rradius
+30, // JKA Bone 28 rradiusX             to JK2 Bone 30 rradiusX
+31, // JKA Bone 29 rhand                to JK2 Bone 31 rhand
+36, // JKA Bone 30 r_d1_j1              to JK2 Bone 36 r_d1_j1
+37, // JKA Bone 31 r_d1_j2              to JK2 Bone 37 r_d1_j2
+39, // JKA Bone 32 r_d2_j1              to JK2 Bone 39 r_d2_j1
+40, // JKA Bone 33 r_d2_j2              to JK2 Bone 40 r_d2_j2
+45, // JKA Bone 34 r_d4_j1              to JK2 Bone 45 r_d4_j1
+46, // JKA Bone 35 r_d4_j2              to JK2 Bone 46 r_d4_j2
+48, // JKA Bone 36 rhang_tag_bone       to JK2 Bone 48 rhang_tag_bone
+49, // JKA Bone 37 lclavical            to JK2 Bone 49 lclavical
+50, // JKA Bone 38 lhumerus             to JK2 Bone 50 lhumerus
+51, // JKA Bone 39 lhumerusX            to JK2 Bone 51 lhumerusX
+52, // JKA Bone 40 lradius              to JK2 Bone 52 lradius
+53, // JKA Bone 41 lradiusX             to JK2 Bone 53 lradiusX
+54, // JKA Bone 42 lhand                to JK2 Bone 54 lhand
+59, // JKA Bone 43 l_d4_j1              to JK2 Bone 59 l_d4_j1
+60, // JKA Bone 44 l_d4_j2              to JK2 Bone 60 l_d4_j2
+65, // JKA Bone 45 l_d2_j1              to JK2 Bone 65 l_d2_j1
+66, // JKA Bone 46 l_d2_j2              to JK2 Bone 66 l_d2_j2
+68, // JKA Bone 47 l_d1_j1              to JK2 Bone 68 l_d1_j1
+69, // JKA Bone 48 l_d1_j2              to JK2 Bone 69 l_d1_j2
+3,  // JKA Bone 49 ltail                to JK2 Bone 03 lfemurYZ
+8,  // JKA Bone 50 rtail                to JK2 Bone 08 rfemurYZ
+54, // JKA Bone 51 lhang_tag_bone       to JK2 Bone 54 lhand
+71  // JKA Bone 52 face                 to JK2 Bone 71 face
+};
 
-Bone   0:   "model_root":
-			Parent: ""  (index -1)
-			#Kids:  1
-			Child 0: (index 1), name "pelvis"
-
-Bone   1:   "pelvis":
-			Parent: "model_root"  (index 0)
-			#Kids:  4
-			Child 0: (index 2), name "Motion"
-			Child 1: (index 3), name "lfemurYZ"
-			Child 2: (index 7), name "rfemurYZ"
-			Child 3: (index 11), name "lower_lumbar"
-
-Bone   2:   "Motion":
-			Parent: "pelvis"  (index 1)
-			#Kids:  0
-
-Bone   3:   "lfemurYZ":
-			Parent: "pelvis"  (index 1)
-			#Kids:  3
-			Child 0: (index 4), name "lfemurX"
-			Child 1: (index 5), name "ltibia"
-			Child 2: (index 49), name "ltail"
-
-Bone   4:   "lfemurX":
-			Parent: "lfemurYZ"  (index 3)
-			#Kids:  0
-
-Bone   5:   "ltibia":
-			Parent: "lfemurYZ"  (index 3)
-			#Kids:  1
-			Child 0: (index 6), name "ltalus"
-
-Bone   6:   "ltalus":
-			Parent: "ltibia"  (index 5)
-			#Kids:  0
-
-Bone   7:   "rfemurYZ":
-			Parent: "pelvis"  (index 1)
-			#Kids:  3
-			Child 0: (index 8), name "rfemurX"
-			Child 1: (index 9), name "rtibia"
-			Child 2: (index 50), name "rtail"
-
-Bone   8:   "rfemurX":
-			Parent: "rfemurYZ"  (index 7)
-			#Kids:  0
-
-Bone   9:   "rtibia":
-			Parent: "rfemurYZ"  (index 7)
-			#Kids:  1
-			Child 0: (index 10), name "rtalus"
-
-Bone  10:   "rtalus":
-			Parent: "rtibia"  (index 9)
-			#Kids:  0
-
-Bone  11:   "lower_lumbar":
-			Parent: "pelvis"  (index 1)
-			#Kids:  1
-			Child 0: (index 12), name "upper_lumbar"
-
-Bone  12:   "upper_lumbar":
-			Parent: "lower_lumbar"  (index 11)
-			#Kids:  1
-			Child 0: (index 13), name "thoracic"
-
-Bone  13:   "thoracic":
-			Parent: "upper_lumbar"  (index 12)
-			#Kids:  5
-			Child 0: (index 14), name "cervical"
-			Child 1: (index 24), name "rclavical"
-			Child 2: (index 25), name "rhumerus"
-			Child 3: (index 37), name "lclavical"
-			Child 4: (index 38), name "lhumerus"
-
-Bone  14:   "cervical":
-			Parent: "thoracic"  (index 13)
-			#Kids:  1
-			Child 0: (index 15), name "cranium"
-
-Bone  15:   "cranium":
-			Parent: "cervical"  (index 14)
-			#Kids:  1
-			Child 0: (index 52), name "face_always_"
-
-Bone  16:   "ceyebrow":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  17:   "jaw":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  18:   "lblip2":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  19:   "leye":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  20:   "rblip2":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  21:   "ltlip2":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  22:   "rtlip2":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  23:   "reye":
-			Parent: "face_always_"  (index 52)
-			#Kids:  0
-
-Bone  24:   "rclavical":
-			Parent: "thoracic"  (index 13)
-			#Kids:  0
-
-Bone  25:   "rhumerus":
-			Parent: "thoracic"  (index 13)
-			#Kids:  2
-			Child 0: (index 26), name "rhumerusX"
-			Child 1: (index 27), name "rradius"
-
-Bone  26:   "rhumerusX":
-			Parent: "rhumerus"  (index 25)
-			#Kids:  0
-
-Bone  27:   "rradius":
-			Parent: "rhumerus"  (index 25)
-			#Kids:  9
-			Child 0: (index 28), name "rradiusX"
-			Child 1: (index 29), name "rhand"
-			Child 2: (index 30), name "r_d1_j1"
-			Child 3: (index 31), name "r_d1_j2"
-			Child 4: (index 32), name "r_d2_j1"
-			Child 5: (index 33), name "r_d2_j2"
-			Child 6: (index 34), name "r_d4_j1"
-			Child 7: (index 35), name "r_d4_j2"
-			Child 8: (index 36), name "rhang_tag_bone"
-
-Bone  28:   "rradiusX":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  29:   "rhand":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  30:   "r_d1_j1":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  31:   "r_d1_j2":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  32:   "r_d2_j1":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  33:   "r_d2_j2":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  34:   "r_d4_j1":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  35:   "r_d4_j2":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  36:   "rhang_tag_bone":
-			Parent: "rradius"  (index 27)
-			#Kids:  0
-
-Bone  37:   "lclavical":
-			Parent: "thoracic"  (index 13)
-			#Kids:  0
-
-Bone  38:   "lhumerus":
-			Parent: "thoracic"  (index 13)
-			#Kids:  2
-			Child 0: (index 39), name "lhumerusX"
-			Child 1: (index 40), name "lradius"
-
-Bone  39:   "lhumerusX":
-			Parent: "lhumerus"  (index 38)
-			#Kids:  0
-
-Bone  40:   "lradius":
-			Parent: "lhumerus"  (index 38)
-			#Kids:  9
-			Child 0: (index 41), name "lradiusX"
-			Child 1: (index 42), name "lhand"
-			Child 2: (index 43), name "l_d4_j1"
-			Child 3: (index 44), name "l_d4_j2"
-			Child 4: (index 45), name "l_d2_j1"
-			Child 5: (index 46), name "l_d2_j2"
-			Child 6: (index 47), name "l_d1_j1"
-			Child 7: (index 48), name "l_d1_j2"
-			Child 8: (index 51), name "lhang_tag_bone"
-
-Bone  41:   "lradiusX":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  42:   "lhand":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  43:   "l_d4_j1":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  44:   "l_d4_j2":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  45:   "l_d2_j1":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  46:   "l_d2_j2":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  47:   "l_d1_j1":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  48:   "l_d1_j2":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  49:   "ltail":
-			Parent: "lfemurYZ"  (index 3)
-			#Kids:  0
-
-Bone  50:   "rtail":
-			Parent: "rfemurYZ"  (index 7)
-			#Kids:  0
-
-Bone  51:   "lhang_tag_bone":
-			Parent: "lradius"  (index 40)
-			#Kids:  0
-
-Bone  52:   "face_always_":
-			Parent: "cranium"  (index 15)
-			#Kids:  8
-			Child 0: (index 16), name "ceyebrow"
-			Child 1: (index 17), name "jaw"
-			Child 2: (index 18), name "lblip2"
-			Child 3: (index 19), name "leye"
-			Child 4: (index 20), name "rblip2"
-			Child 5: (index 21), name "ltlip2"
-			Child 6: (index 22), name "rtlip2"
-			Child 7: (index 23), name "reye"
-
-*/
-
-qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& b_already_cached) {
-	int					i, j;
+qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached)
+{
+	int					i, l, j;
 	mdxmHeader_t* pinmodel, * mdxm;
 	mdxmLOD_t* lod;
 	mdxmSurface_t* surf;
@@ -3797,28 +3586,26 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	int* boneRef;
 	mdxmLODSurfOffset_t* indexes;
 	mdxmVertexTexCoord_t* pTexCoords;
-	mdxmHierarchyOffsets_t* surf_indexes;
+	mdxmHierarchyOffsets_t* surfIndexes;
 #endif
 
 	pinmodel = static_cast<mdxmHeader_t*>(buffer);
 	//
 	// read some fields from the binary, but only LittleLong() them when we know this wasn't an already-cached model...
 	//
-	version = pinmodel->version;
-	size = pinmodel->ofsEnd;
+	version = (pinmodel->version);
+	size = (pinmodel->ofsEnd);
 
-	if (!b_already_cached)
+	if (!bAlreadyCached)
 	{
 		LL(version);
 		LL(size);
 	}
 
-	if (version != MDXM_VERSION) {
-#ifdef _DEBUG
-		Com_Error(ERR_DROP, "R_LoadMDXM: %s has wrong version (%i should be %i)\n", mod_name, version, MDXM_VERSION);
-#else
-		ri.Printf(PRINT_WARNING, "R_LoadMDXM: %s has wrong version (%i should be %i)\n", mod_name, version, MDXM_VERSION);
-#endif
+	if (version != MDXM_VERSION)
+	{
+		Com_Printf(S_COLOR_YELLOW  "R_LoadMDXM: %s has wrong version (%i should be %i)\n", mod_name, version, MDXM_VERSION);
+		return qfalse;
 	}
 
 	mod->type = MOD_MDXM;
@@ -3827,19 +3614,15 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	qboolean bAlreadyFound = qfalse;
 	mdxm = mod->mdxm = static_cast<mdxmHeader_t*>(RE_RegisterModels_Malloc(size, buffer, mod_name, &bAlreadyFound, TAG_MODEL_GLM));
 
-	assert(b_already_cached == bAlreadyFound);
+	if (bAlreadyCached != bAlreadyFound)
+	{
+		Com_Printf(S_COLOR_YELLOW "R_LoadMDXM: cache flag mismatch for %s (caller:%d cache:%d)\n", mod_name, bAlreadyCached, bAlreadyFound);
+	}
 
 	if (!bAlreadyFound)
 	{
-		// horrible new hackery, if !bAlreadyFound then we've just done a tag-morph, so we need to set the
-		//	bool reference passed into this function to true, to tell the caller NOT to do an FS_Freefile since
-		//	we've hijacked that memory block...
-		//
-		// Aaaargh. Kill me now...
-		//
-		b_already_cached = qtrue;
+		bAlreadyCached = qtrue;
 		assert(mdxm == buffer);
-		//		memcpy( mdxm, buffer, size );	// and don't do this now, since it's the same thing
 
 		LL(mdxm->ident);
 		LL(mdxm->version);
@@ -3854,23 +3637,25 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	// first up, go load in the animation file we need that has the skeletal animation info for this model
 	mdxm->animIndex = RE_RegisterModel(va("%s.gla", mdxm->animName));
 
+	char  animGLAName[MAX_QPATH];
+	char* strippedName;
+	char* slash = NULL;
 	const char* mapname = sv_mapname->string;
 
-	if (strcmp(mapname, "nomap") != 0)
+	if (strcmp(mapname, "nomap"))
 	{
-		char animGLAName[MAX_QPATH];
 		if (strrchr(mapname, '/'))	//maps in subfolders use the root name, ( presuming only one level deep!)
 		{
 			mapname = strrchr(mapname, '/') + 1;
 		}
 		//stripped name of GLA for this model
-		Q_strncpyz(animGLAName, mdxm->animName, sizeof animGLAName);
-		char* slash = strrchr(animGLAName, '/');
+		Q_strncpyz(animGLAName, mdxm->animName, sizeof(animGLAName));
+		slash = strrchr(animGLAName, '/');
 		if (slash)
 		{
 			*slash = 0;
 		}
-		char* strippedName = COM_SkipPath(animGLAName);
+		strippedName = COM_SkipPath(animGLAName);
 		if (VALIDSTRING(strippedName))
 		{
 			RE_RegisterModel(va("models/players/%s_%s/%s_%s.gla", strippedName, mapname, strippedName, mapname));
@@ -3883,6 +3668,12 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	{
 		isAnOldModelFile = true;
 	}
+#else
+	bool isANewModelFile = false;
+	if (mdxm->numBones == 53 && strstr(mdxm->animName, "_humanoid"))
+	{
+		isANewModelFile = true;
+	}
 #endif
 
 	if (!mdxm->animIndex)
@@ -3894,7 +3685,9 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	else
 	{
 		// let us mix JK2/JKA models and animations
-		if (tr.models[mdxm->animIndex]->mdxa->numBones != 53 && tr.models[mdxm->animIndex]->mdxa->numBones != 72 && mdxm->numBones != 53 &&
+		if (tr.models[mdxm->animIndex]->mdxa->numBones != 53
+			&& tr.models[mdxm->animIndex]->mdxa->numBones != 72 &&
+			mdxm->numBones != 53 &&
 			mdxm->numBones != 72)
 		{
 			assert(tr.models[mdxm->animIndex]->mdxa->numBones == mdxm->numBones);
@@ -3930,7 +3723,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 
 	surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>(reinterpret_cast<byte*>(mdxm) + mdxm->ofsSurfHierarchy);
 #ifdef Q3_BIG_ENDIAN
-	surf_indexes = (mdxmHierarchyOffsets_t*)((byte*)mdxm + sizeof(mdxmHeader_t));
+	surfIndexes = static_cast<mdxmHierarchyOffsets_t*>(reinterpret_cast<byte*>(mdxm) + sizeof(mdxmHeader_t));
 #endif
 	for (i = 0; i < mdxm->numSurfaces; i++)
 	{
@@ -3938,13 +3731,12 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 		LL(surfInfo->numChildren);
 		LL(surfInfo->parentIndex);
 
-#ifndef JK2_MODE
 		Q_strlwr(surfInfo->name);	//just in case
-		if (strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off") == 0)
+
+		if (!strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off"))
 		{
 			surfInfo->name[strlen(surfInfo->name) - 4] = 0;	//remove "_off" from name
 		}
-#endif
 
 		if (surfInfo->shader[0] == '[')
 		{
@@ -3963,8 +3755,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 
 		if (!sh)
 		{
-			surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>(reinterpret_cast<byte*>(surfInfo) + reinterpret_cast<intptr_t>(&static_cast<mdxmSurfHierarchy_t*>(nullptr)->
-				childIndexes[surfInfo->numChildren]));
+			surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>((byte*)surfInfo + (intptr_t) & static_cast<mdxmSurfHierarchy_t*>(nullptr)->childIndexes[surfInfo->numChildren]);
 			continue;
 		}
 
@@ -3980,24 +3771,23 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 
 #ifdef Q3_BIG_ENDIAN
 		// swap the surface offset
-		LL(surf_indexes->offsets[i]);
-		assert(surfInfo == (mdxmSurfHierarchy_t*)((byte*)surf_indexes + surf_indexes->offsets[i]));
+		LL(surfIndexes->offsets[i]);
+		assert(surfInfo == (mdxmSurfHierarchy_t*)((byte*)surfIndexes + surfIndexes->offsets[i]));
 #endif
 
 		// find the next surface
-		surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>(reinterpret_cast<byte*>(surfInfo) + reinterpret_cast<intptr_t>(&static_cast<mdxmSurfHierarchy_t*>(nullptr)->
-			childIndexes[surfInfo->numChildren]));
+		surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>((byte*)surfInfo + (intptr_t) & static_cast<mdxmSurfHierarchy_t*>(nullptr)->childIndexes[surfInfo->numChildren]);
 	}
 
 	// swap all the LOD's	(we need to do the middle part of this even for intel, because of shader reg and err-check)
 	lod = reinterpret_cast<mdxmLOD_t*>(reinterpret_cast<byte*>(mdxm) + mdxm->ofsLODs);
-	for (int l = 0; l < mdxm->numLODs; l++)
+	for (l = 0; l < mdxm->numLODs; l++)
 	{
 		int	triCount = 0;
 
 		LL(lod->ofsEnd);
 		// swap all the surfaces
-		surf = reinterpret_cast<mdxmSurface_t*>(reinterpret_cast<byte*>(lod) + sizeof(mdxmLOD_t) + mdxm->numSurfaces * sizeof(mdxmLODSurfOffset_t));
+		surf = reinterpret_cast<mdxmSurface_t*>(reinterpret_cast<byte*>(lod) + sizeof(mdxmLOD_t) + (mdxm->numSurfaces * sizeof(mdxmLODSurfOffset_t)));
 		for (i = 0; i < mdxm->numSurfaces; i++)
 		{
 			LL(surf->thisSurfaceIndex);
@@ -4072,13 +3862,30 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 #ifndef JK2_MODE
 			if (isAnOldModelFile)
 			{
-				int* boneRef = reinterpret_cast<int*>(reinterpret_cast<byte*>(surf) + surf->ofsBoneReferences);
+				auto boneRef = reinterpret_cast<int*>(reinterpret_cast<byte*>(surf) + surf->ofsBoneReferences);
 				for (j = 0; j < surf->numBoneReferences; j++)
 				{
 					assert(boneRef[j] >= 0 && boneRef[j] < 72);
 					if (boneRef[j] >= 0 && boneRef[j] < 72)
 					{
 						boneRef[j] = OldToNewRemapTable[boneRef[j]];
+					}
+					else
+					{
+						boneRef[j] = 0;
+					}
+				}
+			}
+#else
+			if (isANewModelFile)
+			{
+				auto boneRef = reinterpret_cast<int*>(reinterpret_cast<byte*>(surf) + surf->ofsBoneReferences);
+				for (j = 0; j < surf->numBoneReferences; j++)
+				{
+					assert(boneRef[j] >= 0 && boneRef[j] < 53);
+					if (boneRef[j] >= 0 && boneRef[j] < 53)
+					{
+						boneRef[j] = NewToOldRemapTable[boneRef[j]];
 					}
 					else
 					{
@@ -4102,10 +3909,11 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 R_LoadMDXA - load a Ghoul 2 animation file
 =================
 */
-qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& b_already_cached) {
+qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached)
+{
 	mdxaHeader_t* pinmodel, * mdxa;
-	int					version;
-	int					size;
+	int version;
+	int size;
 
 #ifdef Q3_BIG_ENDIAN
 	int					j, k, i;
@@ -4115,24 +3923,26 @@ qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	mdxaCompQuatBone_t* pCompBonePool;
 	unsigned short* pwIn;
 	mdxaIndex_t* pIndex;
+	int					tmp;
 #endif
 
 	pinmodel = static_cast<mdxaHeader_t*>(buffer);
 	//
 	// read some fields from the binary, but only LittleLong() them when we know this wasn't an already-cached model...
 	//
-	version = pinmodel->version;
-	size = pinmodel->ofsEnd;
+	version = (pinmodel->version);
+	size = (pinmodel->ofsEnd);
 
-	if (!b_already_cached)
+	if (!bAlreadyCached)
 	{
 		LL(version);
 		LL(size);
 	}
 
-	if (version != MDXA_VERSION) {
-		ri.Printf(PRINT_WARNING, "R_LoadMDXA: %s has wrong version (%i should be %i)\n",
-			mod_name, version, MDXA_VERSION);
+	if (version != MDXA_VERSION)
+	{
+		ri.Printf(PRINT_WARNING, "R_LoadMDXA: %s has wrong version (%i should be %i)\n", mod_name, version,
+			MDXA_VERSION);
 		return qfalse;
 	}
 
@@ -4140,25 +3950,20 @@ qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	mod->dataSize += size;
 
 	qboolean bAlreadyFound = qfalse;
-	mdxa = mod->mdxa = static_cast<mdxaHeader_t*>(RE_RegisterModels_Malloc(size, buffer, mod_name, &bAlreadyFound, TAG_MODEL_GLA));
+	mdxa = mod->mdxa = static_cast<mdxaHeader_t*>(RE_RegisterModels_Malloc(	size, buffer, mod_name, &bAlreadyFound, TAG_MODEL_GLA));
 
-	assert(b_already_cached == bAlreadyFound);
+	if (bAlreadyCached != bAlreadyFound)
+	{
+		Com_Printf(S_COLOR_YELLOW "R_LoadMDXA: cache flag mismatch for %s (caller:%d cache:%d)\n", mod_name, bAlreadyCached, bAlreadyFound);
+	}
 
 	if (!bAlreadyFound)
 	{
-		// horrible new hackery, if !bAlreadyFound then we've just done a tag-morph, so we need to set the
-		//	bool reference passed into this function to true, to tell the caller NOT to do an FS_Freefile since
-		//	we've hijacked that memory block...
-		//
-		// Aaaargh. Kill me now...
-		//
-		b_already_cached = qtrue;
+		bAlreadyCached = qtrue;
 		assert(mdxa == buffer);
-		//		memcpy( mdxa, buffer, size );	// and don't do this now, since it's the same thing
 
 		LL(mdxa->ident);
 		LL(mdxa->version);
-		//LF(mdxa->fScale);
 		LL(mdxa->numFrames);
 		LL(mdxa->ofsFrames);
 		LL(mdxa->numBones);
@@ -4167,14 +3972,15 @@ qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 		LL(mdxa->ofsEnd);
 	}
 
-	if (mdxa->numFrames < 1) {
+	if (mdxa->numFrames < 1)
+	{
 		ri.Printf(PRINT_WARNING, "R_LoadMDXA: %s has no frames\n", mod_name);
 		return qfalse;
 	}
 
 	if (bAlreadyFound)
 	{
-		return qtrue;	// All done, stop here, do not LittleLong() etc. Do not pass go...
+		return qtrue; // All done, stop here, do not LittleLong() etc. Do not pass go...
 	}
 
 #ifdef Q3_BIG_ENDIAN
@@ -4202,24 +4008,26 @@ qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 		}
 	}
 
-	// find the largest index, since the actual number of compressed bone pools is not stored anywhere
+	// Determine the amount of compressed bones.
+
+	// Find the largest index by iterating through all frames.
+	// It is not guaranteed that the compressed bone pool resides
+	// at the end of the file.
 	for (i = 0; i < mdxa->numFrames; i++)
 	{
 		for (j = 0; j < mdxa->numBones; j++)
 		{
-			k = (i * mdxa->numBones * 3) + (j * 3); // iOffsetToIndex
+			k = (i * mdxa->numBones * 3) + (j * 3);	// iOffsetToIndex
 			pIndex = (mdxaIndex_t*)((byte*)mdxa + mdxa->ofsFrames + k);
+			tmp = (pIndex->iIndex[2] << 16) + (pIndex->iIndex[1] << 8) + (pIndex->iIndex[0]);
 
-			// 3 byte ints, yeah...
-			int tmp = pIndex->iIndex & 0xFFFFFF00;
-			LL(tmp);
-
-			if (maxBoneIndex < tmp)
+			if (maxBoneIndex < tmp) {
 				maxBoneIndex = tmp;
+			}
 		}
 	}
 
-	// swap the compressed bones
+	// Swap the compressed bones.
 	pCompBonePool = (mdxaCompQuatBone_t*)((byte*)mdxa + mdxa->ofsCompBonePool);
 	for (i = 0; i <= maxBoneIndex; i++)
 	{

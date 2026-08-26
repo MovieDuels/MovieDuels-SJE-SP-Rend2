@@ -348,14 +348,14 @@ static void R_Splash()
 		ri.Cvar_Set("com_rend2", "1");
 	}
 
-	if (r_shadows->integer != 1)
-	{
-		ri.Cvar_Set("cg_shadows", "1");
-	}
+	qboolean forceCgShadows =
+		(r_shadows->integer == 0 ||
+			r_shadows->integer == 1 ||
+			r_shadows->integer == 3) ? qtrue : qfalse;
 
-	if (com_outcast->integer != 0)
+	if (forceCgShadows == qtrue)
 	{
-		ri.Cvar_Set("com_outcast", "0");
+		ri.Cvar_Set("cg_shadows", "2");
 	}
 
 	ri.WIN_Present(&window);
@@ -1582,7 +1582,7 @@ static void R_Register(void)
 	r_specularMapping = ri_Cvar_Get_NoComm("r_specularMapping", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable specular mapping");
 	r_deluxeMapping = ri_Cvar_Get_NoComm("r_deluxeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable reading deluxemaps when compiled with q3map2");
 	r_deluxeSpecular = ri_Cvar_Get_NoComm("r_deluxeSpecular", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable/scale the specular response from deluxemaps");
-	r_cubeMapping = ri_Cvar_Get_NoComm("r_cubeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable cubemapping");
+	r_cubeMapping = ri_Cvar_Get_NoComm("r_cubeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable cubemapping");
 	r_cubeMappingBounces = ri_Cvar_Get_NoComm("r_cubeMappingBounces", "1", CVAR_ARCHIVE | CVAR_LATCH, "Renders cubemaps multiple times to get reflections in reflections");
 	ri.Cvar_CheckRange(r_cubeMappingBounces, 0, 2, qfalse);
 	r_baseNormalX = ri_Cvar_Get_NoComm("r_baseNormalX", "1.0", CVAR_ARCHIVE | CVAR_LATCH, "");
@@ -2010,7 +2010,7 @@ static void R_InitStaticConstants()
 	// Setup default scene block
 	SceneBlock sceneBlock = {};
 	sceneBlock.globalFogIndex = -1;
-	sceneBlock.current_time = 0.1f;
+	sceneBlock.currentTime = 0.1f;
 	sceneBlock.frameTime = 0.1f;
 
 	tr.defaultSceneUboOffset = alignedBlockSize;
@@ -2073,11 +2073,19 @@ static void R_ShutdownBackEndFrameData()
 	}
 }
 
-// need to do this hackery so ghoul2 doesn't crash the game because of ITS hackery...
-//
-static void R_ClearStuffToStopGhoul2CrashingThings(void)
+static bool r_cacheGPUShaders = false;
+
+static void R_ClearTr(void)
 {
-	memset(&tr, 0, sizeof(tr));
+	if (r_cacheGPUShaders)
+	{
+		// clear all but GPU shaders in tr
+		Com_Memset(&tr, 0, (byte*)&tr.splashScreenShader - (byte*)&tr);
+		Com_Memset(&tr.staticUbo, 0, sizeof(tr) - ((byte*)&tr.staticUbo - (byte*)&tr));
+	}
+	else
+		// clear all of tr
+		Com_Memset(&tr, 0, sizeof(tr));
 }
 
 static bool r_inited = false;
@@ -2087,7 +2095,7 @@ static bool r_inited = false;
 R_Init
 ===============
 */
-void R_Init()
+void R_Init(void)
 {
 	byte* ptr;
 	int i;
@@ -2095,10 +2103,10 @@ void R_Init()
 	if (r_inited)
 		return;
 
-	ri.Printf(PRINT_ALL, "----- Loading Rend2 renderer -----\n");
+	ri.Printf(PRINT_ALL, "-----Loading SP Quality Mode-----\n");
 
 	// clear all our internal state
-	Com_Memset(&tr, 0, sizeof(tr));
+	R_ClearTr();
 	Com_Memset(&backEnd, 0, sizeof(backEnd));
 	Com_Memset(&tess, 0, sizeof(tess));
 
@@ -2176,7 +2184,9 @@ void R_Init()
 
 	FBO_Init();
 
-	GLSL_LoadGPUShaders();
+	if (!r_cacheGPUShaders)
+		GLSL_LoadGPUShaders();
+	r_cacheGPUShaders = false;
 
 	R_InitShaders(qfalse);
 
@@ -2209,7 +2219,7 @@ void R_Init()
 		ri.Cvar_Set("com_rend2", "1");
 	}
 
-	ri.Printf(PRINT_ALL, "----- Rend2 renderer loaded -----\n");
+	ri.Printf(PRINT_ALL, "-----SP Quality Mode loaded-----\n");
 }
 
 /*
@@ -2241,7 +2251,15 @@ void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 		FBO_Shutdown();
 		R_DeleteTextures();
 		R_DestroyGPUBuffers();
-		GLSL_ShutdownGPUShaders();
+
+		if (!destroyWindow && !restarting)
+		{
+			r_cacheGPUShaders = true;
+			glState.currentProgram = 0;
+			qglUseProgram(0);
+		}
+		else
+			GLSL_ShutdownGPUShaders();
 	}
 
 	if (destroyWindow && restarting && tr.registered)
@@ -2254,7 +2272,8 @@ void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 	}
 
 	// shut down platform specific OpenGL stuff
-	if (destroyWindow) {
+	if (destroyWindow)
+	{
 		ri.WIN_Shutdown();
 	}
 
@@ -2497,7 +2516,7 @@ extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const re
 #endif
 
 	re.R_InitWorldEffects = stub_R_InitWorldEffects;
-	re.R_ClearStuffToStopGhoul2CrashingThings = R_ClearStuffToStopGhoul2CrashingThings;
+	re.R_ClearStuffToStopGhoul2CrashingThings = R_ClearTr;
 	re.inPVS = R_inPVS;
 
 	re.tr_distortionAlpha = stub_get_tr_distortionAlpha;

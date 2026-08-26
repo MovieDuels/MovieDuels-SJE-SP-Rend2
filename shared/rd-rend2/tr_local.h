@@ -70,7 +70,7 @@ typedef unsigned int glIndex_t;
 #define MAX_VISCOUNTS 5
 #define MAX_VBOS      4096
 #define MAX_IBOS      4096
-#define MAX_G2_BONES  72
+#define MAX_G2_BONES  256
 #define MAX_GPU_FOGS  24
 
 #define MAX_CALC_PSHADOWS    64
@@ -748,7 +748,7 @@ struct SceneBlock
 	int	   globalFogIndex;
 	vec3_t primaryLightColor;
 	float primaryLightRadius;
-	float current_time;
+	float currentTime;
 	float frameTime;
 	float pad0[2];
 };
@@ -3040,7 +3040,7 @@ void	GL_Draw(GLenum primitiveType, int firstVertex, int numVertices, int numInst
 extern glconfig_t  glConfig;
 extern glconfigExt_t	glConfigExt;
 
-void	RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* data, int client, qboolean dirty);
+void	RE_StretchRaw(const int x, const int y, const int w, const int h, int cols, int rows, const byte* data, const int client, const qboolean dirty);
 void	RE_UploadCinematic(int cols, int rows, const byte* data, int client, qboolean dirty);
 void	RE_SetRangedFog(float range);
 #ifdef REND2_SP

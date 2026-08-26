@@ -1591,7 +1591,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 	{
 		shaderStage_t* pStage = input->xstages[stage];
 		shaderProgram_t* sp;
-		vec4_t texMatrix;
+		vec4_t texMatrix{};
 		vec4_t texOffTurb;
 		int stateBits;
 		colorGen_t forceRGBGen = CGEN_BAD;
@@ -1599,7 +1599,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		int index = 0;
 		bool useAlphaTestGE192 = false;
 		bool forceRefraction = false;
-		vec4_t disintegrationInfo;
+		vec4_t disintegrationInfo{};
 
 		if (!pStage)
 		{
@@ -1728,15 +1728,10 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 			}
 		}
 
-		float volumetricBaseValue = -1.0f;
-		if (backEnd.currentEntity->e.renderfx & RF_VOLUMETRIC)
+		if (!(backEnd.currentEntity->e.renderfx & RF_VOLUMETRIC))
 		{
-			volumetricBaseValue = backEnd.currentEntity->e.shaderRGBA[0] / 255.0f;
-		}
-		else
-		{
-			vec4_t baseColor;
-			vec4_t vertColor;
+			vec4_t baseColor{};
+			vec4_t vertColor{};
 
 #ifdef REND2_SP_GORE
 			// Fade will be set true when rendering some gore surfaces
@@ -1763,33 +1758,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 				vertColor[3] = 0.0f;
 			}
 
-			if (backEnd.currentEntity->e.hModel != NULL_HANDLE)
-			{
-				model_t* model = R_GetModelByHandle(backEnd.currentEntity->e.hModel);
-				if (model->type != MOD_BRUSH)
-				{
-					switch (forceRGBGen)
-					{
-					case CGEN_EXACT_VERTEX:
-					case CGEN_EXACT_VERTEX_LIT:
-					case CGEN_VERTEX:
-					case CGEN_VERTEX_LIT:
-						baseColor[0] =
-							baseColor[1] =
-							baseColor[2] =
-							baseColor[3] = 0.0f;
-
-						vertColor[0] =
-							vertColor[1] =
-							vertColor[2] =
-							vertColor[3] = tr.identityLight;
-						break;
-					default:
-						break;
-					}
-				}
-			}
-
 			uniformDataWriter.SetUniformVec4(UNIFORM_BASECOLOR, baseColor);
 			uniformDataWriter.SetUniformVec4(UNIFORM_VERTCOLOR, vertColor);
 		}
@@ -1806,9 +1774,22 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		if (backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2))
 			uniformDataWriter.SetUniformVec4(UNIFORM_DISINTEGRATION, disintegrationInfo);
 
+		if (backEnd.currentEntity == &backEnd.entityFlare)
+		{
+			samplerBindingsWriter.AddStaticImage(tr.renderDepthImage, TB_SHADOWMAP);
+			vec4_t center{};
+			VectorAdd(center, tess.xyz[0], center);
+			VectorAdd(center, tess.xyz[1], center);
+			VectorAdd(center, tess.xyz[2], center);
+			VectorAdd(center, tess.xyz[3], center);
+			VectorScale(center, 1.f / 4.f, center);
+			center[3] = 1.f;
+			uniformDataWriter.SetUniformVec4(UNIFORM_LIGHTORIGIN, center);
+		}
+
 		if (forceRefraction)
 		{
-			vec4_t color;
+			vec4_t color{};
 			color[0] =
 				color[1] =
 				color[2] = powf(2.0f, r_cameraExposure->value);

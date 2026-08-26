@@ -78,6 +78,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #define RF_ALPHA_DEPTH		0x1000000 //depth write on alpha model
 
+#define RF_MORELIGHT		0x2000000 // allways have some light (viewmodel, some items) | SP version which is different from MP
+
 // refdef flags
 #define RDF_NOWORLDMODEL	1		// used for player configuration screen
 #define RDF_HYPERSPACE		4		// teleportation effect

@@ -3537,7 +3537,9 @@ static qboolean CollapseStagesToGLSL(void)
 		// Move diffuse after the lightmap stages now.
 		if (stages[1].active &&
 			stages[1].bundle[0].isLightmap &&
-			stages[0].active)
+			(stages[1].stateBits & (GLS_DEPTHFUNC_BITS)) != GLS_DEPTHFUNC_EQUAL &&
+			stages[0].active &&
+			shader.numDeforms != 1)
 		{
 			int blendBits = stages[1].stateBits & (GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS);
 
@@ -3547,7 +3549,7 @@ static qboolean CollapseStagesToGLSL(void)
 				for (i = 1; i < MAX_SHADER_STAGES; i++)
 				{
 					if (!stages[i + 1].active)
-						continue;
+						break;
 
 					if (stages[i + 1].bundle[0].tcGen < TCGEN_LIGHTMAP1 ||
 						stages[i + 1].bundle[0].tcGen > TCGEN_LIGHTMAP3 ||
@@ -3604,9 +3606,9 @@ static qboolean CollapseStagesToGLSL(void)
 		numStages++;
 	}
 
-	// convert any remaining lightmap stages to a lighting pass with a white texture
-	// only do this with r_sunlightMode non-zero, as it's only for correct shadows.
-	if (r_sunlightMode->integer && shader.numDeforms != 1)
+	// convert any remaining lightmap, lightingdiffuse and vert lit stages to a lighting pass
+	// always do this, so dynamic lights work properly
+	if (shader.numDeforms != 1)
 	{
 		for (i = 0; i < MAX_SHADER_STAGES; i++)
 		{
@@ -3617,6 +3619,15 @@ static qboolean CollapseStagesToGLSL(void)
 
 			if (pStage->adjustColorsForFog)
 				continue;
+
+			switch (pStage->alphaGen)
+			{
+			case AGEN_PORTAL:
+			case AGEN_LIGHTING_SPECULAR:
+				continue;
+			default:
+				break;
+			}
 
 			if (pStage->bundle[TB_DIFFUSEMAP].tcGen >= TCGEN_LIGHTMAP
 				&& pStage->bundle[TB_DIFFUSEMAP].tcGen <= TCGEN_LIGHTMAP3
@@ -3629,21 +3640,14 @@ static qboolean CollapseStagesToGLSL(void)
 				pStage->bundle[TB_DIFFUSEMAP].isLightmap = qfalse;
 				pStage->bundle[TB_DIFFUSEMAP].tcGen = TCGEN_TEXTURE;
 			}
-		}
-	}
-
-	// convert any remaining lightingdiffuse stages to a lighting pass
-	if (shader.numDeforms != 1)
-	{
-		for (i = 0; i < MAX_SHADER_STAGES; i++)
-		{
-			shaderStage_t* pStage = &stages[i];
-
-			if (!pStage->active)
-				continue;
-
-			if (pStage->adjustColorsForFog)
-				continue;
+			else if (pStage->rgbGen == CGEN_VERTEX_LIT
+				|| pStage->rgbGen == CGEN_EXACT_VERTEX_LIT
+				|| pStage->rgbGen == CGEN_VERTEX
+				|| pStage->rgbGen == CGEN_EXACT_VERTEX)
+			{
+				pStage->glslShaderGroup = tr.lightallShader;
+				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHT_VERTEX;
+			}
 
 			if (pStage->rgbGen == CGEN_LIGHTING_DIFFUSE ||
 				pStage->rgbGen == CGEN_LIGHTING_DIFFUSE_ENTITY)

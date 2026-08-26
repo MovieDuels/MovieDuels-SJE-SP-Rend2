@@ -523,13 +523,13 @@ static qboolean Sniper_EvaluateShot(const int hit)
 		return qfalse;
 	}
 
-	const gentity_t* hit_ent = &g_entities[hit];
+	const gentity_t* hitEnt = &g_entities[hit];
 	if (hit == NPC->enemy->s.number
-		|| hit_ent && hit_ent->client && hit_ent->client->playerTeam == NPC->client->enemyTeam
-		|| hit_ent && hit_ent->takedamage && (hit_ent->svFlags & SVF_GLASS_BRUSH || hit_ent->health < 40 || NPC->s.
+		|| hitEnt && hitEnt->client && hitEnt->client->playerTeam == NPC->client->enemyTeam
+		|| hitEnt && hitEnt->takedamage && (hitEnt->svFlags & SVF_GLASS_BRUSH || hitEnt->health < 40 || NPC->s.
 			weapon
 			== WP_EMPLACED_GUN)
-		|| hit_ent && hit_ent->svFlags & SVF_GLASS_BRUSH)
+		|| hitEnt && hitEnt->svFlags & SVF_GLASS_BRUSH)
 	{
 		//can hit enemy or will hit glass, so shoot anyway
 		return qtrue;

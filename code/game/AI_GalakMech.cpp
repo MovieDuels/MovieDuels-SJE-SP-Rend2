@@ -965,10 +965,10 @@ static void NPC_BSGM_Attack()
 			else
 			{
 				const int hit = NPC_ShotEntity(NPC->enemy, impactPos);
-				const gentity_t* hit_ent = &g_entities[hit];
+				const gentity_t* hitEnt = &g_entities[hit];
 				if (hit == NPC->enemy->s.number
-					|| hit_ent && hit_ent->client && hit_ent->client->playerTeam == NPC->client->enemyTeam
-					|| hit_ent && hit_ent->takedamage)
+					|| hitEnt && hitEnt->client && hitEnt->client->playerTeam == NPC->client->enemyTeam
+					|| hitEnt && hitEnt->takedamage)
 				{
 					//can hit enemy or will hit glass or other breakable, so shoot anyway
 					enemy_cs = qtrue;
@@ -979,7 +979,7 @@ static void NPC_BSGM_Attack()
 				{
 					//Hmm, have to get around this bastard
 					NPC_AimAdjust(1); //adjust aim better longer we can see enemy
-					if (hit_ent && hit_ent->client && hit_ent->client->playerTeam == NPC->client->playerTeam)
+					if (hitEnt && hitEnt->client && hitEnt->client->playerTeam == NPC->client->playerTeam)
 					{
 						//would hit an ally, don't fire!!!
 						hitAlly = qtrue;
@@ -1029,10 +1029,10 @@ static void NPC_BSGM_Attack()
 		NPCInfo->enemyLastSeenTime = level.time;
 
 		const int hit = NPC_ShotEntity(NPC->enemy, impactPos);
-		const gentity_t* hit_ent = &g_entities[hit];
+		const gentity_t* hitEnt = &g_entities[hit];
 		if (hit == NPC->enemy->s.number
-			|| hit_ent && hit_ent->client && hit_ent->client->playerTeam == NPC->client->enemyTeam
-			|| hit_ent && hit_ent->takedamage)
+			|| hitEnt && hitEnt->client && hitEnt->client->playerTeam == NPC->client->enemyTeam
+			|| hitEnt && hitEnt->takedamage)
 		{
 			//can hit enemy or will hit glass or other breakable, so shoot anyway
 			enemy_cs = qtrue;
