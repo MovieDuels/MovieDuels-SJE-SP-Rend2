@@ -286,16 +286,6 @@ static void R_Splash()
 		ri.Cvar_Set("com_rend2", "0");
 	}
 
-	qboolean forceCgShadows =
-		(r_shadows->integer == 0 ||
-			r_shadows->integer == 1 ||
-			r_shadows->integer == 3) ? qtrue : qfalse;
-
-	if (forceCgShadows == qtrue)
-	{
-		ri.Cvar_Set("cg_shadows", "2");
-	}
-
 	ri.WIN_Present(&window);
 }
 

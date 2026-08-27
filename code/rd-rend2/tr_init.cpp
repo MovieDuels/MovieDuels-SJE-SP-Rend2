@@ -348,14 +348,22 @@ static void R_Splash()
 		ri.Cvar_Set("com_rend2", "1");
 	}
 
-	qboolean forceCgShadows =
-		(r_shadows->integer == 0 ||
-			r_shadows->integer == 1 ||
-			r_shadows->integer == 3) ? qtrue : qfalse;
-
-	if (forceCgShadows == qtrue)
+	if (r_shadows->integer == 1)
+	{
+		ri.Cvar_Set("cg_shadows", "1"); 
+	}
+	else if (r_shadows->integer == 2)
 	{
 		ri.Cvar_Set("cg_shadows", "2");
+	}
+	else
+	{// stop rend2 from using cg_shadows 3 as it doesn't work with the new shadow system, and will cause a crash if used
+		qboolean forceCgShadows = (r_shadows->integer == 3) ? qtrue : qfalse;
+
+		if (forceCgShadows == qtrue)
+		{
+			ri.Cvar_Set("cg_shadows", "2"); // maximum allowd
+		}
 	}
 
 	ri.WIN_Present(&window);

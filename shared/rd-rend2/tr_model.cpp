@@ -1750,18 +1750,43 @@ void R_Modellist_f(void) {
 R_GetTag
 ================
 */
-static mdvTag_t* R_GetTag(mdvModel_t* mod, int frame, const char* _tagName) {
+static mdvTag_t* R_GetTag(mdvModel_t* mod, int frame, const char* _tagName)
+{
 	int             i;
 	mdvTag_t* tag;
 	mdvTagName_t* tagName;
 
-	if (frame >= mod->numFrames) {
+	// clamp frame to valid range (defensive fix for negative or out-of-range frames)
+	// validate basic model data before indexing
+	if (!mod || !mod->tags || !mod->tagNames || mod->numFrames <= 0 || mod->numTags <= 0)
+	{
+		// model or tag arrays are invalid; don't crash, return not found
+		return NULL;
+	}
+
+	// clamp frame to valid range (defensive)
+	if (frame < 0)
+	{
+		// negative frames can be produced by corrupted/invalid entity state; clamp to 0
+		frame = 0;
+	}
+	if (frame >= mod->numFrames)
+	{
 		// it is possible to have a bad frame while changing models, so don't error
 		frame = mod->numFrames - 1;
 	}
 
-	tag = mod->tags + frame * mod->numTags;
+	/* compute index safely and ensure it can't overflow */
+	size_t index = (size_t)frame * (size_t)mod->numTags;
+	/* total allocated tags should be numFrames * numTags; protect against malformed counts */
+	if (index >= (size_t)mod->numFrames * (size_t)mod->numTags)
+	{
+		return NULL;
+	}
+
+	tag = &mod->tags[index];
 	tagName = mod->tagNames;
+
 	for (i = 0; i < mod->numTags; i++, tag++, tagName++)
 	{
 		if (!strcmp(tagName->name, _tagName))
