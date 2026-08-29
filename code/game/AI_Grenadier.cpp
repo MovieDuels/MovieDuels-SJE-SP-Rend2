@@ -59,8 +59,6 @@ constexpr auto REALIZE_THRESHOLD = 0.6f;
 #define CAUTIOUS_THRESHOLD	( REALIZE_THRESHOLD * 0.75 )
 extern void npc_check_speak(gentity_t* speaker_npc);
 
-qboolean NPC_CheckPlayerTeamStealth();
-
 static qboolean enemy_los;
 static qboolean enemy_cs;
 static qboolean face_enemy;

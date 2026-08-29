@@ -3493,7 +3493,7 @@ static void G_FixMins(gentity_t* ent)
 
 extern qboolean G_TuskenAttackAnimDamage(gentity_t* self);
 extern void Tusken_StaffTracenew(gentity_t* self);
-extern void Noghri_StickTracennew(gentity_t* self);
+extern void Noghri_StickTracenew(gentity_t* self);
 
 qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 {
@@ -4298,7 +4298,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		if (ent->client->ps.saberDamageDebounceTime <= level.time)
 		{
 			if (ent->s.weapon == WP_NOGHRI_STICK)
-				Noghri_StickTracennew(ent);
+				Noghri_StickTracenew(ent);
 			else if (ent->s.weapon == WP_TUSKEN_RIFLE || ent->s.weapon == WP_TUSKEN_STAFF)
 				Tusken_StaffTracenew(ent);
 

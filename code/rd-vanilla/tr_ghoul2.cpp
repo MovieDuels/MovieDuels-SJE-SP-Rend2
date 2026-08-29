@@ -945,7 +945,7 @@ Safely computes animation timing for a bone:
 */
 void G2_TimingModel(
 	boneInfo_t& bone,
-	const int currentTime,
+	const int current_time,
 	const int numFramesInFile,
 	int& currentFrame,
 	int& newFrame,
@@ -956,9 +956,6 @@ void G2_TimingModel(
 	// --------------------------------------------------------
 	if (bone.startFrame < 0 || bone.startFrame > numFramesInFile)
 	{
-#ifdef _DEBUG
-		Com_Printf("Debug: G2_TimingModel (rd-vanilla) - startFrame %d out of range (0..%d). Clamping.\n", bone.startFrame, numFramesInFile - 1);
-#endif
 		if (bone.startFrame < 0)
 		{
 			bone.startFrame = 0;
@@ -971,11 +968,6 @@ void G2_TimingModel(
 
 	if (bone.endFrame < 0 || bone.endFrame > numFramesInFile)
 	{
-#ifdef _DEBUG
-		Com_Printf(
-			"Debug: G2_TimingModel (rd-vanilla) - endFrame %d out of range (0..%d). Clamping.\n",
-			bone.endFrame, numFramesInFile - 1);
-#endif
 		if (bone.endFrame < 0)
 		{
 			bone.endFrame = 0;
@@ -998,7 +990,7 @@ void G2_TimingModel(
 	}
 	else
 	{
-		time = (currentTime - bone.startTime) / 50.0f;
+		time = (current_time - bone.startTime) / 50.0f;
 	}
 
 	if (time < 0.0f)
@@ -1036,11 +1028,6 @@ void G2_TimingModel(
 						currentFrame = static_cast<int>(endFrame);
 						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
-								currentFrame);
-#endif
 							if (currentFrame < 0)
 							{
 								currentFrame = 0;
@@ -1054,11 +1041,6 @@ void G2_TimingModel(
 						newFrame = bone.startFrame;
 						if (newFrame < 0 || newFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - newFrame %d out of range. Clamping.\n",
-								newFrame);
-#endif
 							if (newFrame < 0)
 							{
 								newFrame = 0;
@@ -1085,11 +1067,6 @@ void G2_TimingModel(
 						currentFrame = static_cast<int>(ceilf(newFrame_g));
 						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
-								currentFrame);
-#endif
 							if (currentFrame < 0)
 							{
 								currentFrame = 0;
@@ -1111,11 +1088,6 @@ void G2_TimingModel(
 
 						if (newFrame < 0 || newFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - newFrame %d out of range. Clamping.\n",
-								newFrame);
-#endif
 							if (newFrame < 0)
 							{
 								newFrame = 0;
@@ -1137,11 +1109,6 @@ void G2_TimingModel(
 						currentFrame = static_cast<int>(newFrame_g);
 						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
-								currentFrame);
-#endif
 							if (currentFrame < 0)
 							{
 								currentFrame = 0;
@@ -1155,11 +1122,6 @@ void G2_TimingModel(
 						newFrame = bone.startFrame;
 						if (newFrame < 0 || newFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - newFrame %d out of range. Clamping.\n",
-								newFrame);
-#endif
 							if (newFrame < 0)
 							{
 								newFrame = 0;
@@ -1186,11 +1148,6 @@ void G2_TimingModel(
 						currentFrame = static_cast<int>(newFrame_g);
 						if (currentFrame < 0 || currentFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
-								currentFrame);
-#endif
 							if (currentFrame < 0)
 							{
 								currentFrame = 0;
@@ -1212,11 +1169,6 @@ void G2_TimingModel(
 
 						if (newFrame < 0 || newFrame >= numFramesInFile)
 						{
-#ifdef _DEBUG
-							Com_Printf(
-								"Debug: G2_TimingModel (rd-vanilla) - newFrame %d out of range. Clamping.\n",
-								newFrame);
-#endif
 							if (newFrame < 0)
 							{
 								newFrame = 0;
@@ -1227,17 +1179,6 @@ void G2_TimingModel(
 							}
 						}
 					}
-				}
-
-				// Original "sanity check" assert replaced by a debug hint.
-				if (!((newFrame < endFrame && newFrame >= bone.startFrame) || animSize < 10))
-				{
-#ifdef _DEBUG
-					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - loop sanity condition failed "
-						"(newFrame=%d, start=%d, end=%d, animSize=%d).\n",
-						newFrame, bone.startFrame, bone.endFrame, animSize);
-#endif
 				}
 			}
 			else
@@ -1256,11 +1197,6 @@ void G2_TimingModel(
 
 					if (currentFrame < 0 || currentFrame >= numFramesInFile)
 					{
-#ifdef _DEBUG
-						Com_Printf(
-							"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
-							currentFrame);
-#endif
 						if (currentFrame < 0)
 						{
 							currentFrame = 0;
@@ -1290,11 +1226,6 @@ void G2_TimingModel(
 
 				if (currentFrame < 0 || currentFrame >= numFramesInFile)
 				{
-#ifdef _DEBUG
-					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
-						currentFrame);
-#endif
 					if (currentFrame < 0)
 					{
 						currentFrame = 0;
@@ -1306,15 +1237,6 @@ void G2_TimingModel(
 				}
 
 				newFrame = currentFrame + 1;
-
-				if (static_cast<int>(endFrame) > numFramesInFile)
-				{
-#ifdef _DEBUG
-					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - endFrame %d > numFramesInFile %d.\n",
-						static_cast<int>(endFrame), numFramesInFile);
-#endif
-				}
 
 				if (newFrame >= static_cast<int>(endFrame))
 				{
@@ -1330,11 +1252,6 @@ void G2_TimingModel(
 
 				if (newFrame < 0 || newFrame >= numFramesInFile)
 				{
-#ifdef _DEBUG
-					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - newFrame %d out of range. Clamping.\n",
-						newFrame);
-#endif
 					if (newFrame < 0)
 					{
 						newFrame = 0;
@@ -1376,11 +1293,6 @@ void G2_TimingModel(
 
 				if (currentFrame < 0 || currentFrame >= numFramesInFile)
 				{
-#ifdef _DEBUG
-					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - currentFrame %d out of range. Clamping.\n",
-						currentFrame);
-#endif
 					if (currentFrame < 0)
 					{
 						currentFrame = 0;
@@ -1393,11 +1305,6 @@ void G2_TimingModel(
 
 				if (newFrame < 0 || newFrame >= numFramesInFile)
 				{
-#ifdef _DEBUG
-					Com_Printf(
-						"Debug: G2_TimingModel (rd-vanilla) - newFrame %d out of range. Clamping.\n",
-						newFrame);
-#endif
 					if (newFrame < 0)
 					{
 						newFrame = 0;
@@ -1442,11 +1349,6 @@ void G2_TimingModel(
 	// --------------------------------------------------------
 	if (currentFrame < 0 || currentFrame >= numFramesInFile)
 	{
-#ifdef _DEBUG
-		Com_Printf(
-			"Debug: G2_TimingModel (rd-vanilla) - final currentFrame %d out of range. Clamping.\n",
-			currentFrame);
-#endif
 		if (currentFrame < 0)
 		{
 			currentFrame = 0;
@@ -1459,11 +1361,6 @@ void G2_TimingModel(
 
 	if (newFrame < 0 || newFrame >= numFramesInFile)
 	{
-#ifdef _DEBUG
-		Com_Printf(
-			"Debug: G2_TimingModel (rd-vanilla) - final newFrame %d out of range. Clamping.\n",
-			newFrame);
-#endif
 		if (newFrame < 0)
 		{
 			newFrame = 0;
@@ -1476,11 +1373,6 @@ void G2_TimingModel(
 
 	if (lerp < 0.0f || lerp > 1.0f)
 	{
-#ifdef _DEBUG
-		Com_Printf(
-			"Debug: G2_TimingModel (rd-vanilla) - final lerp %f out of range (0..1). Clamping.\n",
-			lerp);
-#endif
 		if (lerp < 0.0f)
 		{
 			lerp = 0.0f;

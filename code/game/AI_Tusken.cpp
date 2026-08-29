@@ -62,8 +62,6 @@ constexpr auto LIGHT_SCALE = 0.25f;
 constexpr auto REALIZE_THRESHOLD = 0.6f;
 #define CAUTIOUS_THRESHOLD	( REALIZE_THRESHOLD * 0.75 )
 
-qboolean NPC_CheckPlayerTeamStealth();
-
 static float enemyDist;
 
 //Local state enums

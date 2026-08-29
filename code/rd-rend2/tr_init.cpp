@@ -1578,10 +1578,10 @@ static void R_Register(void)
 	r_forceAutoExposureMin = ri_Cvar_Get_NoComm("r_forceAutoExposureMin", "-3", CVAR_CHEAT, "");
 	r_forceAutoExposureMax = ri_Cvar_Get_NoComm("r_forceAutoExposureMax", "1.0", CVAR_CHEAT, "");
 
-	r_smaa = ri_Cvar_Get_NoComm("r_smaa", "0", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable SMAA");
-	r_smaa_quality = ri_Cvar_Get_NoComm("r_smaa_quality", "2", CVAR_ARCHIVE | CVAR_LATCH, "0: LOW | 1: MEDIUM | 2: HIGH | 3: ULTRA");
+	r_smaa = ri_Cvar_Get_NoComm("r_smaa", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable SMAA");
+	r_smaa_quality = ri_Cvar_Get_NoComm("r_smaa_quality", "3", CVAR_ARCHIVE | CVAR_LATCH, "0: LOW | 1: MEDIUM | 2: HIGH | 3: ULTRA");
 
-	r_cameraExposure = ri_Cvar_Get_NoComm("r_cameraExposure", "0", CVAR_ARCHIVE | CVAR_CHEAT, "");
+	r_cameraExposure = ri_Cvar_Get_NoComm("r_cameraExposure", "0.1", CVAR_ARCHIVE | CVAR_CHEAT, "");
 
 	r_depthPrepass = ri_Cvar_Get_NoComm("r_depthPrepass", "1", CVAR_ARCHIVE, "");
 	r_ssao = ri_Cvar_Get_NoComm("r_ssao", "1", CVAR_LATCH | CVAR_ARCHIVE, "");
@@ -1604,14 +1604,14 @@ static void R_Register(void)
 	r_imageUpsampleType = ri_Cvar_Get_NoComm("r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH, "");
 	r_genNormalMaps = ri_Cvar_Get_NoComm("r_genNormalMaps", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable generating normal maps from diffuse maps");
 
-	r_forceSun = ri_Cvar_Get_NoComm("r_forceSun", "0", CVAR_ARCHIVE | CVAR_CHEAT, "");
+	r_forceSun = ri_Cvar_Get_NoComm("r_forceSun", "1", CVAR_ARCHIVE | CVAR_CHEAT, "");
 	r_forceSunMapLightScale = ri_Cvar_Get_NoComm("r_forceSunMapLightScale", "1.0", CVAR_CHEAT, "");
 	r_forceSunLightScale = ri_Cvar_Get_NoComm("r_forceSunLightScale", "1.0", CVAR_CHEAT, "");
 	r_forceSunAmbientScale = ri_Cvar_Get_NoComm("r_forceSunAmbientScale", "0.5", CVAR_CHEAT, "");
 	r_drawSunRays = ri_Cvar_Get_NoComm("r_drawSunRays", "0", CVAR_ARCHIVE | CVAR_LATCH, "");
 	r_sunlightMode = ri_Cvar_Get_NoComm("r_sunlightMode", "1", CVAR_ARCHIVE | CVAR_LATCH, "");
 
-	r_volumetricFog = ri_Cvar_Get_NoComm("r_volumetricFog", "0", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable lightgrid lighting on fog volumes");
+	r_volumetricFog = ri_Cvar_Get_NoComm("r_volumetricFog", "1", CVAR_ARCHIVE | CVAR_LATCH, "Disable/enable lightgrid lighting on fog volumes");
 	r_volumetricFogDefaultScale = ri_Cvar_Get_NoComm("r_volumetricFogDefaultScale", "1.0", CVAR_ARCHIVE | CVAR_LATCH, "Scales volumetric fog density unless scale has been explicitly defined");
 	r_volumetricFogSamples = ri_Cvar_Get_NoComm("r_volumetricFogSamples", "48", CVAR_ARCHIVE | CVAR_LATCH, "How many ray samples to take");
 	ri.Cvar_CheckRange(r_volumetricFogSamples, 16, 128, qfalse);

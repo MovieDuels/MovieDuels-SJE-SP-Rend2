@@ -68,7 +68,7 @@ void WP_FireTurboLaserMissile(gentity_t* ent, vec3_t start, vec3_t dir)
 //---------------------------------------------------------
 void WP_EmplacedFire(gentity_t* ent)
 {
-	if (!ent)   // ⭐ FIX 1: prevent NULL dereference
+	if (!ent)   // FIX 1: prevent NULL dereference
 		return;
 
 	const float damage = weaponData[WP_EMPLACED_GUN].damage * (ent->NPC ? 0.1f : 1.0f);
@@ -86,7 +86,7 @@ void WP_EmplacedFire(gentity_t* ent)
 	missile->methodOfDeath = MOD_EMPLACED;
 	missile->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
 
-	// ⭐ FIX 2: safe owner assignment
+	// FIX 2: safe owner assignment
 	if (ent->client && !(ent->client->ps.eFlags & EF_LOCKED_TO_WEAPON))
 	{
 		missile->owner = ent;

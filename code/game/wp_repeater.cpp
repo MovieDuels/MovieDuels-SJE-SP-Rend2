@@ -154,7 +154,7 @@ void WP_FireRepeater(gentity_t* ent, const qboolean alt_fire)
 	if (!ent)
 		return;
 
-	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+	if (!ent->client)   // FIX: prevent NULL client dereference
 		return;
 
 	if (alt_fire)

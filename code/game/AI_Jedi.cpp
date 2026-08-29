@@ -1109,7 +1109,7 @@ static void tavion_sith_sword_recharge()
 //END TAVION BOSS
 //======================================================================================
 
-void player_decloak(gentity_t* self)
+void player_Decloak(gentity_t* self)
 {
 	if (self && self->client)
 	{
@@ -1279,7 +1279,7 @@ void self_check_cloak(gentity_t* self)
 			self->painDebounceTime > level.time)
 		{
 			//can't be cloaked if saber is on, or dead or saber in flight or taking pain or being gripped
-			player_decloak(self);
+			player_Decloak(self);
 		}
 		else if (self->health > 0
 			&& !self->client->ps.saberInFlight
@@ -1345,7 +1345,7 @@ static void jedi_aggression_erosion(const int amt)
 		jedi_aggression(NPC, amt);
 	}
 
-	if ((g_SerenityJediEngineMode->integer > 1 && NPC->s.weapon == WP_SABER /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0) && NPCInfo->goalEntity)
+	if ((g_SerenityJediEngineMode->integer > 1 && NPC->s.weapon == WP_SABER) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0) && NPCInfo->goalEntity)
 	{
 		if (TIMER_Done(NPC, "DeactivateTime") && NPCInfo->stats.aggression < 4 && NPC->client->ps.SaberActive())
 		{
@@ -1577,7 +1577,7 @@ static qboolean jedi_clear_path_to_spot(vec3_t dest, const int impact_ent_num)
 	return qtrue;
 }
 
-qboolean npc_move_dir_clear(const int forwardmove, const int rightmove, const qboolean reset)
+qboolean NPC_MoveDirClear(const int forwardmove, const int rightmove, const qboolean reset)
 {
 	vec3_t forward, right, test_pos, angles{}, mins;
 	trace_t trace;
@@ -2538,7 +2538,7 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 	return qfalse;     // no slap action taken
 }
 
-static void jedi_combat_distance(const int enemy_dist)
+static void Jedi_CombatDistance(const int enemy_dist)
 {
 	playerState_t* ps = &NPC->client->ps;
 	gentity_t* enemy = NPC->enemy;
@@ -3719,12 +3719,12 @@ static qboolean Jedi_Strafe(const int strafe_time_min, const int strafe_time_max
 
 		if (Q_irand(0, 1))
 		{
-			if (npc_move_dir_clear(ucmd.forwardmove, -127, qfalse))
+			if (NPC_MoveDirClear(ucmd.forwardmove, -127, qfalse))
 			{
 				TIMER_Set(NPC, "strafeLeft", strafe_time);
 				strafed = qtrue;
 			}
-			else if (npc_move_dir_clear(ucmd.forwardmove, 127, qfalse))
+			else if (NPC_MoveDirClear(ucmd.forwardmove, 127, qfalse))
 			{
 				TIMER_Set(NPC, "strafeRight", strafe_time);
 				strafed = qtrue;
@@ -3732,12 +3732,12 @@ static qboolean Jedi_Strafe(const int strafe_time_min, const int strafe_time_max
 		}
 		else
 		{
-			if (npc_move_dir_clear(ucmd.forwardmove, 127, qfalse))
+			if (NPC_MoveDirClear(ucmd.forwardmove, 127, qfalse))
 			{
 				TIMER_Set(NPC, "strafeRight", strafe_time);
 				strafed = qtrue;
 			}
-			else if (npc_move_dir_clear(ucmd.forwardmove, -127, qfalse))
+			else if (NPC_MoveDirClear(ucmd.forwardmove, -127, qfalse))
 			{
 				TIMER_Set(NPC, "strafeLeft", strafe_time);
 				strafed = qtrue;
@@ -5947,7 +5947,7 @@ static evasionType_t jedi_check_evade_special_attacks()
 							if (dot > 0)
 							{
 								//I'm to his right
-								if (!npc_move_dir_clear(0, -127, qfalse))
+								if (!NPC_MoveDirClear(0, -127, qfalse))
 								{
 									//fuck, jump instead
 									do_jump = qtrue;
@@ -5974,7 +5974,7 @@ static evasionType_t jedi_check_evade_special_attacks()
 							else
 							{
 								//I'm to his left
-								if (!npc_move_dir_clear(0, 127, qfalse))
+								if (!NPC_MoveDirClear(0, 127, qfalse))
 								{
 									//fuck, jump instead
 									do_jump = qtrue;
@@ -6914,54 +6914,73 @@ static void Jedi_EvasionSaber(vec3_t enemy_movedir, const float enemy_dist, vec3
 INTERNAL AI ROUTINES
 ==========================================================================================
 */
-gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, const float min_dot)
+gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, const float minDot)
 {
-	vec3_t forward, mins{}, maxs{};
-	gentity_t* enemy = fallback;
+	// --- Early out: no client, no viewangles, no cone ---
+	if (!self || !self->client)
+	{
+		return fallback;
+	}
 
+	// --- Forward direction ---
+	vec3_t forward;
+	AngleVectors(self->client->ps.viewangles, forward, NULL, NULL);
+
+	// --- Search bounds (1024 radius cube) ---
+	vec3_t mins{};
+	vec3_t maxs{};
+
+	for (int i = 0; i < 3; i++)
+	{
+		mins[i] = self->currentOrigin[i] - 1024.0f;
+		maxs[i] = self->currentOrigin[i] + 1024.0f;
+	}
+
+	// --- Large array moved static to avoid stack bloat ---
 	static gentity_t* entity_list[MAX_GENTITIES];
 
-	int e;
-	trace_t tr;
+	const int numListed = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
 
-	if (!self->client)
+	// Track best enemy found
+	gentity_t* bestEnemy = fallback;
+	float bestDist = Q3_INFINITE;
+
+	// --- Iterate through all entities in the box ---
+	for (int e = 0; e < numListed; e++)
 	{
-		return enemy;
-	}
-
-	AngleVectors(self->client->ps.viewangles, forward, nullptr, nullptr);
-
-	for (e = 0; e < 3; e++)
-	{
-		mins[e] = self->currentOrigin[e] - 1024;
-		maxs[e] = self->currentOrigin[e] + 1024;
-	}
-
-	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
-
-	for (e = 0; e < num_listed_entities; e++)
-	{
-		constexpr float best_dist = Q3_INFINITE;
-		vec3_t dir;
 		gentity_t* check = entity_list[e];
 
+		if (!check)
+		{
+			continue;
+		}
 		if (check == self)
+		{
 			continue;
-		if (!check->inuse)
+		}
+		if (check->inuse == qfalse)
+		{
 			continue;
+		}
 		if (!check->client)
+		{
 			continue;
+		}
 		if (check->client->playerTeam != self->client->enemyTeam)
+		{
 			continue;
+		}
 		if (check->health <= 0)
+		{
 			continue;
+		}
+
+		// --- PVS check ---
 		if (gi.inPVS(check->currentOrigin, self->currentOrigin) == qfalse)
 		{
-			if ((g_SerenityJediEngineMode->integer > 1 && self->s.weapon == WP_SABER /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0))
+			if ((g_SerenityJediEngineMode->integer > 1 && self->s.weapon == WP_SABER) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0))
 			{
-				const float range = (g_npc_is_smart_range != NULL)
-					? static_cast<float>(g_npc_is_smart_range->integer)
-					: 3500.0f;
+				const float range = (g_npc_is_smart_range != NULL) ? static_cast<float>(g_npc_is_smart_range->integer) : 3500.0f;
 
 				const float dist_sq = static_cast<float>(DistanceSquared(self->currentOrigin, check->currentOrigin));
 
@@ -6986,23 +7005,43 @@ gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, c
 			}
 		}
 
+		// --- Direction + distance ---
+		vec3_t dir;
 		VectorSubtract(check->currentOrigin, self->currentOrigin, dir);
 		const float dist = VectorNormalize(dir);
 
-		if (DotProduct(dir, forward) < min_dot)
+		// --- Cone check ---
+		if (DotProduct(dir, forward) < minDot)
+		{
 			continue;
+		}
 
-		gi.trace(&tr, self->currentOrigin, vec3_origin, vec3_origin, check->currentOrigin,
-			self->s.number, MASK_SHOT, static_cast<EG2_Collision>(0), 0);
+		// --- Line of sight check ---
+		trace_t tr;
+		gi.trace(&tr,
+			self->currentOrigin,
+			vec3_origin,
+			vec3_origin,
+			check->currentOrigin,
+			self->s.number,
+			MASK_SHOT,
+			static_cast<EG2_Collision>(0),
+			0);
 
 		if (tr.fraction < 1.0f && tr.entityNum != check->s.number)
+		{
 			continue;
+		}
 
-		if (dist < best_dist)
-			enemy = check;
+		// --- Closest enemy wins ---
+		if (dist < bestDist)
+		{
+			bestDist = dist;
+			bestEnemy = check;
+		}
 	}
 
-	return enemy;
+	return bestEnemy;
 }
 
 void jedi_set_enemy_info(vec3_t enemy_dest, vec3_t enemy_dir, float* enemy_dist, vec3_t enemy_movedir,
@@ -7393,7 +7432,7 @@ static void jedi_debounce_direction_changes()
 	}
 }
 
-static void jedi_timers_apply()
+void Jedi_TimersApply()
 {
 	//use careful anim/slower movement if not already moving
 	if (!ucmd.forwardmove && !TIMER_Done(NPC, "walking"))
@@ -8208,7 +8247,7 @@ static qboolean Jedi_AttackDecide(const int enemy_dist)
 				if (DotProduct(right, dir2enemy) > 0)
 				{
 					// he's to my right, strafe left
-					if (npc_move_dir_clear(ucmd.forwardmove, -127, qfalse))
+					if (NPC_MoveDirClear(ucmd.forwardmove, -127, qfalse))
 					{
 						ucmd.rightmove = -127;
 						VectorClear(NPC->client->ps.moveDir);
@@ -8217,7 +8256,7 @@ static qboolean Jedi_AttackDecide(const int enemy_dist)
 				else
 				{
 					// he's to my left, strafe right
-					if (npc_move_dir_clear(ucmd.forwardmove, 127, qfalse))
+					if (NPC_MoveDirClear(ucmd.forwardmove, 127, qfalse))
 					{
 						ucmd.rightmove = 127;
 						VectorClear(NPC->client->ps.moveDir);
@@ -9111,7 +9150,7 @@ static void jedi_combat()
 		jedi_combat_timers_update((int)enemy_dist);
 
 		// maintain a distance from enemy appropriate for our aggression level
-		jedi_combat_distance((int)enemy_dist);
+		Jedi_CombatDistance((int)enemy_dist);
 	}
 
 	if (NPC->client->NPC_class != CLASS_BOBAFETT &&
@@ -9157,7 +9196,7 @@ static void jedi_combat()
 		NPC_CheckEvasion();
 	}
 
-	jedi_timers_apply();
+	Jedi_TimersApply();
 
 	if (TIMER_Done(NPC, "allyJediDelay"))
 	{
@@ -9315,7 +9354,7 @@ static void jedi_combat()
 
 	// Just make sure we don't strafe into walls or off cliffs
 	if (VectorCompare(NPC->client->ps.moveDir, vec3_origin) &&
-		npc_move_dir_clear(ucmd.forwardmove, ucmd.rightmove, qtrue) == qfalse)
+		NPC_MoveDirClear(ucmd.forwardmove, ucmd.rightmove, qtrue) == qfalse)
 	{
 		// uh-oh, we are going to fall or hit something
 		navInfo_t info;
@@ -9345,7 +9384,7 @@ NPC_Jedi_Pain
 -------------------------
 */
 
-void npc_jedi_pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, const int damage,
+void NPC_Jedi_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, const int damage,
 	const int mod, int hit_loc)
 {
 	if (attacker->s.weapon == WP_SABER)
@@ -10194,7 +10233,7 @@ static qboolean NPC_IsExcludedForGestures(gentity_t* NPC)
 }
 
 // Helper: return qtrue if both NPC and enemy are on the ground and NPC is in a neutral state
-static qboolean NPC_CanReactToEnemy(gentity_t* NPC, gentity_t* enemy)
+qboolean NPC_CanReactToEnemy(gentity_t* NPC, gentity_t* enemy)
 {
 	if (!NPC || !NPC->client || !enemy || !enemy->client)
 	{
@@ -10227,7 +10266,7 @@ static qboolean NPC_CanReactToEnemy(gentity_t* NPC, gentity_t* enemy)
 }
 
 // Helper: play gloat voice and optionally deactivate saber
-static void NPC_PlayGloatAndMaybeSheathe(gentity_t* NPC)
+void NPC_PlayGloatAndMaybeSheathe(gentity_t* NPC)
 {
 	if (!NPC || !NPC->client)
 	{
@@ -10242,7 +10281,7 @@ static void NPC_PlayGloatAndMaybeSheathe(gentity_t* NPC)
 	G_AddVoiceEvent(NPC, Q_irand(EV_GLOAT1, EV_GLOAT3), Q_irand(12000, 15000));
 }
 
-static void NPC_HandleSpeechDebounceAndIncrement(gentity_t* NPC)
+void NPC_HandleSpeechDebounceAndIncrement(gentity_t* NPC)
 {
 	if (!NPC || !NPC->client)
 	{
@@ -12377,7 +12416,7 @@ static qboolean jedi_in_special_move()
 						{
 							NPC->flags &= ~FL_LOCK_PLAYER_WEAPONS;
 						}
-						jedi_timers_apply();
+						Jedi_TimersApply();
 						return qtrue;
 					}
 					NPC->flags &= ~FL_LOCK_PLAYER_WEAPONS;
@@ -12618,7 +12657,7 @@ extern void NPC_BSSniper_Default();
 extern void G_UcmdMoveForDir(const gentity_t* self, usercmd_t* cmd, vec3_t dir);
 extern void npc_check_speak(gentity_t* speaker_npc);
 
-void npc_bs_jedi_default()
+void NPC_BSJedi_Default()
 {
 	if (jedi_in_special_move())
 	{

@@ -14197,7 +14197,6 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 								vec3_t splashBackDir;
 								VectorScale(axis[0], -1, splashBackDir);
 
-
 								if (cg_com_rend2.integer == 0) //rend2 is off
 								{
 									CG_SaberDoWeaponHitMarks(
@@ -17317,8 +17316,8 @@ void CG_Player(centity_t* cent)
 			}
 
 			//
-            // add the gun
-            //
+			// add the gun
+			//
 			CG_RegisterWeapon(cent->currentState.weapon);
 			weapon = &cg_weapons[cent->currentState.weapon];
 

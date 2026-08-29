@@ -565,7 +565,7 @@ using painFunc_t = enum
 	painF_func_usable_pain,
 	painF_NPC_ATST_Pain,
 	painF_NPC_ST_Pain,
-	painF_npc_jedi_pain,
+	painF_NPC_Jedi_Pain,
 	painF_NPC_Droid_Pain,
 	painF_NPC_Probe_Pain,
 	painF_NPC_MineMonster_Pain,
@@ -604,7 +604,7 @@ extern void NPC_ATST_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* atta
 	int mod, int hit_loc = HL_NONE);
 extern void NPC_ST_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, int damage,
 	int mod, int hit_loc = HL_NONE);
-extern void npc_jedi_pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, int damage,
+extern void NPC_Jedi_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, int damage,
 	int mod, int hit_loc = HL_NONE);
 extern void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, int damage,
 	int mod, int hit_loc = HL_NONE);

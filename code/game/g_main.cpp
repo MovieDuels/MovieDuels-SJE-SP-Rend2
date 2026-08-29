@@ -61,7 +61,7 @@ extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void Boba_FlyStop(gentity_t* self);
 extern void Jetpack_Off(const gentity_t* ent);
 extern qboolean jedi_saber_busy(const gentity_t* self);
-extern void player_decloak(gentity_t* self);
+extern void player_Decloak(gentity_t* self);
 extern void RemoveBarrier(gentity_t* ent);
 extern qboolean G_PointInBounds(const vec3_t point, const vec3_t mins, const vec3_t maxs);
 
@@ -2364,7 +2364,7 @@ void G_RunFrame(const int level_time)
 					{
 						//turn it off
 						ent->client->ps.cloakFuel = 0;
-						player_decloak(ent);
+						player_Decloak(ent);
 					}
 					ent->client->cloakDebReduce = level.time + CLOAK_DEFUEL_RATE;
 				}

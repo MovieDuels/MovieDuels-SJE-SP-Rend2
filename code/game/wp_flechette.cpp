@@ -38,7 +38,7 @@ extern qboolean PM_WalkingAnim(int anim);
 //---------------------------------------------------------
 static void WP_FlechetteMainFire(gentity_t* ent)
 {
-	if (!ent)                     // ⭐ FIX 1: prevent NULL dereference
+	if (!ent)                     // FIX 1: prevent NULL dereference
 		return;
 
 	vec3_t angs, start;
@@ -118,7 +118,7 @@ static void WP_FlechetteMainFire(gentity_t* ent)
 		missile->bounceCount = Q_irand(1, 2);
 		missile->s.eFlags |= EF_BOUNCE_SHRAPNEL;
 
-		if (ent->client)          // ⭐ FIX 2: safe client access
+		if (ent->client)          // FIX 2: safe client access
 			ent->client->sess.missionStats.shotsFired++;
 	}
 }

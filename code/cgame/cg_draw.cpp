@@ -7268,7 +7268,6 @@ static void CG_DrawCrosshairBackupNames()
 
 	vec3_t diff;
 	VectorSubtract(cg_entities[g_crosshairEntNum].lerpOrigin, cg.refdef.vieworg, diff);
-	const float distSq = VectorLengthSquared(diff);
 
 	centity_t* cent = &cg_entities[g_crosshairEntNum];
 
@@ -7946,7 +7945,7 @@ static void CG_DrawCrosshairNames(void)
 
 	if (!name || !name[0])
 	{
-		if (cg_drawCrosshairBackupNames.integer)
+		if (cg_drawCrosshairNames.integer && cg_drawCrosshairBackupNames.integer)
 		{
 			CG_DrawCrosshairBackupNames();
 		}
@@ -7955,7 +7954,6 @@ static void CG_DrawCrosshairNames(void)
 
 	vec3_t diff;
 	VectorSubtract(cg_entities[g_crosshairEntNum].lerpOrigin, cg.refdef.vieworg, diff);
-	const float distSq = VectorLengthSquared(diff);
 
 	centity_t* cent = &cg_entities[g_crosshairEntNum];
 
@@ -7976,7 +7974,7 @@ static void CG_DrawCrosshairNames(void)
 	int drawX = (int)(sx - (textWidth / 2));
 	int drawY = (int)(sy - 25);
 
-	vec4_t color = {1.0f, 1.0f, 1.0f, 1.0f};
+	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	if (cg_crosshairIdentifyTarget.integer)
 	{

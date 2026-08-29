@@ -2081,7 +2081,7 @@ void ItemUse_Bacta(gentity_t* ent)
 
 constexpr auto CLOAK_TOGGLE_TIME = 1000;
 extern void self_check_cloak(gentity_t* self);
-extern void player_decloak(gentity_t* self);
+extern void player_Decloak(gentity_t* self);
 
 void ItemUse_UseCloak(gentity_t* ent)
 {
@@ -2111,7 +2111,7 @@ void ItemUse_UseCloak(gentity_t* ent)
 	if (ent->client->ps.powerups[PW_CLOAKED])
 	{
 		//decloak
-		player_decloak(ent);
+		player_Decloak(ent);
 	}
 	else
 	{

@@ -101,7 +101,7 @@ extern void WP_ForcePowerDrain(const gentity_t* self, forcePowers_t force_power,
 extern void WP_BlockPointsDrain(const gentity_t* self, int fatigue);
 extern void PM_AddBlockFatigue(playerState_t* ps, int fatigue);
 extern void jedi_decloak(gentity_t* self);
-extern void player_decloak(gentity_t* self);
+extern void player_Decloak(gentity_t* self);
 extern qboolean FighterIsLanded(const Vehicle_t* p_veh, playerState_t* parent_ps);
 extern void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength);
 extern qboolean WalkCheck(const gentity_t* self);
@@ -244,7 +244,7 @@ Keeps original behaviour, but:
 - Documents intent at each step.
 ================
 */
-extern gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, float min_dot);
+extern gentity_t* jedi_find_enemy_in_cone(const gentity_t* self, gentity_t* fallback, float minDot);
 extern qboolean PM_RunningAnim(int anim);
 extern qboolean PM_WalkingOrStanding(const gentity_t* self);
 vec3_t g_crosshairWorldCoord = { 0, 0, 0 };
@@ -1570,7 +1570,7 @@ void G_StasisMissile(gentity_t* ent, gentity_t* missile)
 		}
 
 		//
-		// ⭐ Rocket / Thermal proximity + lifetime logic (fixed)
+		// Rocket / Thermal proximity + lifetime logic (fixed)
 		//
 		if (missile->s.weapon == WP_ROCKET_LAUNCHER ||
 			missile->s.weapon == WP_THERMAL)
@@ -2287,7 +2287,7 @@ void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3
 				}
 				else if (other->client->ps.powerups[PW_CLOAKED])
 				{
-					player_decloak(other);
+					player_Decloak(other);
 					jedi_decloak(other);
 
 					if (ent->methodOfDeath == MOD_DEMP2_ALT)

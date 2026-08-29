@@ -2393,6 +2393,12 @@ static int next_amplitude = 0;
 
 static int S_CheckAmplitude(channel_t* ch, const int s_oldpaintedtime)
 {
+	if (!ch->thesfx || !ch->thesfx->pSoundData || ch->thesfx->iSoundLengthInSamples <= 0)
+	{
+		// optional: log once for diagnostics
+		if (s_entityWavVol_back[ch->entnum]) return s_entityWavVol_back[ch->entnum];
+		return 0;
+	}
 	// now, is this a cycle - or have we just started a new sample - where we should update the backup table, and write this value
 	// into the new table? or should we just take the value FROM the back up table and feed it out.
 	assert(ch->startSample != START_SAMPLE_IMMEDIATE);

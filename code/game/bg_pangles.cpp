@@ -548,12 +548,51 @@ qboolean PM_AdjustAnglesToPuller(gentity_t* ent, const gentity_t* puller, usercm
 }
 
 qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolean do_move)
-{
-	if ((ent->client->ps.legsAnim == BOTH_WALL_RUN_RIGHT || ent->client->ps.legsAnim == BOTH_WALL_RUN_LEFT) && ent->
-		client->ps.legsAnimTimer > 500)
+{//Jedi Fallen order wall run code, adapted for Jedi Knight: Jedi Academy
+	// ----------------------------------------------------------------------
+	// Safety:
+	// ----------------------------------------------------------------------
+	if (!ent || !ent->client)
+	{
+		Com_Printf("PM_AdjustAngleForWallRun: NULL ent or client\n");
+		return qfalse;
+	}
+
+	// ----------------------------------------------------------------------
+	// Force‑level‑specific wall‑run tuning
+	// ----------------------------------------------------------------------
+	const int levitationLevel = ent->client->ps.forcePowerLevel[FP_LEVITATION];
+
+	// Duration threshold: how long the wall‑run stays active
+	int minWallRunTime = 500; // default (level 1)
+
+	// Forward push speed
+	float wallRunSpeedBase = 175.0f;  // default (level 1)
+	float wallRunSpeedRun = 250.0f;  // default (level 1)
+
+	if (levitationLevel == FORCE_LEVEL_2)
+	{
+		// Level 2: longer + faster
+		minWallRunTime = 300;       // longer usable window
+		wallRunSpeedBase = 225.0f;    // faster
+		wallRunSpeedRun = 300.0f;    // faster
+	}
+	else if (levitationLevel == FORCE_LEVEL_3)
+	{
+		// Level 3: even longer, same speed as level 2
+		minWallRunTime = 50;       // longest usable window
+		wallRunSpeedBase = 225.0f;    // same as level 2
+		wallRunSpeedRun = 300.0f;    // same as level 2
+	}
+
+	// ----------------------------------------------------------------------
+	// Only operate while wall‑running AND not near end of animation
+	// ----------------------------------------------------------------------
+	if ((ent->client->ps.legsAnim == BOTH_WALL_RUN_RIGHT ||
+		ent->client->ps.legsAnim == BOTH_WALL_RUN_LEFT) &&
+		ent->client->ps.legsAnimTimer > minWallRunTime)
 	{
 		//wall-running and not at end of anim
-		//stick to wall, if there is one
 		vec3_t fwd, rt, trace_to;
 		const vec3_t fwd_angles = { 0, ent->client->ps.viewangles[YAW], 0 };
 		const vec3_t maxs = { ent->maxs[0], ent->maxs[1], 24 };
@@ -565,44 +604,52 @@ qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolea
 
 		if (ent->client->ps.legsAnim == BOTH_WALL_RUN_RIGHT)
 		{
-			dist = 128;
-			yaw_adjust = -90;
+			dist = 128.0f;
+			yaw_adjust = -90.0f;
 		}
 		else
 		{
-			dist = -128;
-			yaw_adjust = 90;
+			dist = -128.0f;
+			yaw_adjust = 90.0f;
 		}
+
 		VectorMA(ent->currentOrigin, dist, rt, trace_to);
-		gi.trace(&trace, ent->currentOrigin, mins, maxs, trace_to, ent->s.number, ent->clipmask,
-			static_cast<EG2_Collision>(0), 0);
-		if (trace.fraction < 1.0f
-			&& (trace.plane.normal[2] >= 0.0f && trace.plane.normal[2] <= 0.4f))
+
+		gi.trace(&trace, ent->currentOrigin, mins, maxs, trace_to, ent->s.number, ent->clipmask, static_cast<EG2_Collision>(0), 0);
+
+		// ----------------------------------------------------------------------
+		// Check wall validity
+		// ----------------------------------------------------------------------
+		if (trace.fraction < 1.0f &&
+			(trace.plane.normal[2] >= 0.0f && trace.plane.normal[2] <= 0.4f))
 		{
 			trace_t trace2;
 			vec3_t trace_to2;
-			vec3_t wall_run_fwd, wall_run_angles = { 0 };
+			vec3_t wallRunFwd, wallRunAngles = { 0 };
 
-			wall_run_angles[YAW] = vectoyaw(trace.plane.normal) + yaw_adjust;
-			AngleVectors(wall_run_angles, wall_run_fwd, nullptr, nullptr);
+			wallRunAngles[YAW] = vectoyaw(trace.plane.normal) + yaw_adjust;
+			AngleVectors(wallRunAngles, wallRunFwd, nullptr, nullptr);
 
-			VectorMA(ent->currentOrigin, 32, wall_run_fwd, trace_to2);
-			gi.trace(&trace2, ent->currentOrigin, mins, maxs, trace_to2, ent->s.number, ent->clipmask,
-				static_cast<EG2_Collision>(0), 0);
-			if (trace2.fraction < 1.0f && DotProduct(trace2.plane.normal, wall_run_fwd) <= -0.999f)
+			VectorMA(ent->currentOrigin, 32.0f, wallRunFwd, trace_to2);
+
+			gi.trace(&trace2, ent->currentOrigin, mins, maxs, trace_to2, ent->s.number, ent->clipmask, static_cast<EG2_Collision>(0), 0);
+
+			if (trace2.fraction < 1.0f &&
+				DotProduct(trace2.plane.normal, wallRunFwd) <= -0.999f)
 			{
-				//wall we can't run on in front of us
-				trace.fraction = 1.0f; //just a way to get it to kick us off the wall below
+				trace.fraction = 1.0f; //kick off wall
 			}
 		}
-		if (trace.fraction < 1.0f
-			&& (trace.plane.normal[2] >= 0.0f && trace.plane.normal[2] <= 0.4f))
+
+		// ----------------------------------------------------------------------
+		// Valid wall found
+		// ----------------------------------------------------------------------
+		if (trace.fraction < 1.0f &&
+			(trace.plane.normal[2] >= 0.0f && trace.plane.normal[2] <= 0.4f))
 		{
 			//still a vertical wall there
-			//FIXME: don't pull around 90 turns
-			//FIXME: simulate stepping up steps here, somehow?
-			if (ent->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(ent) || !player_locked && !
-				PlayerAffectedByStasis())
+			if ((ent->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(ent)) ||
+				(!player_locked && !PlayerAffectedByStasis()))
 			{
 				if (ent->client->ps.legsAnim == BOTH_WALL_RUN_RIGHT)
 				{
@@ -613,70 +660,88 @@ qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolea
 					ucmd->rightmove = -127;
 				}
 			}
+
 			if (ucmd->upmove < 0)
 			{
 				ucmd->upmove = 0;
 			}
+
 			if (ent->NPC)
 			{
-				//invalid now
 				VectorClear(ent->client->ps.moveDir);
 			}
-			//make me face perpendicular to the wall
+
+			//face perpendicular to wall
 			ent->client->ps.viewangles[YAW] = vectoyaw(trace.plane.normal) + yaw_adjust;
+
 			if (ent->client->ps.viewEntity <= 0 || ent->client->ps.viewEntity >= ENTITYNUM_WORLD)
 			{
-				//don't clamp angles when looking through a viewEntity
 				SetClientViewAngle(ent, ent->client->ps.viewangles);
 			}
+
 			ucmd->angles[YAW] = ANGLE2SHORT(ent->client->ps.viewangles[YAW]) - ent->client->ps.delta_angles[YAW];
-			if (ent->s.number && !G_ControlledByPlayer(ent) || !player_locked && !PlayerAffectedByStasis())
+
+			// ------------------------------------------------------------------
+			// Movement: forward push + wall pull
+			// ------------------------------------------------------------------
+			if ((ent->s.number && !G_ControlledByPlayer(ent)) ||
+				(!player_locked && !PlayerAffectedByStasis()))
 			{
-				if (do_move)
+				if (do_move == qtrue)
 				{
-					//push me forward
-					float z_vel = ent->client->ps.velocity[2];
-					if (z_vel > forceJumpStrength[FORCE_LEVEL_2] / 2.0f)
+					float zVel = ent->client->ps.velocity[2];
+
+					if (zVel > forceJumpStrength[FORCE_LEVEL_2] / 2.0f)
 					{
-						z_vel = forceJumpStrength[FORCE_LEVEL_2] / 2.0f;
+						zVel = forceJumpStrength[FORCE_LEVEL_2] / 2.0f;
 					}
-					//pull me toward the wall
-					VectorScale(trace.plane.normal, -128, ent->client->ps.velocity);
-					if (ent->client->ps.legsAnimTimer > 500)
+
+					//pull toward wall
+					VectorScale(trace.plane.normal, -128.0f, ent->client->ps.velocity);
+
+					if (ent->client->ps.legsAnimTimer > minWallRunTime)
 					{
-						//not at end of anim yet, pushing forward
-						//FIXME: or MA?
-						float speed = 175;
+						//force‑level‑specific forward push
+						float speed = wallRunSpeedBase;
+
 						if (ucmd->forwardmove < 0)
 						{
-							//slower
-							speed = 100;
+							speed = wallRunSpeedBase - 75.0f;
 						}
 						else if (ucmd->forwardmove > 0)
 						{
-							speed = 250; //running speed
+							speed = wallRunSpeedRun;
 						}
+
 						VectorMA(ent->client->ps.velocity, speed, fwd, ent->client->ps.velocity);
 					}
-					ent->client->ps.velocity[2] = z_vel; //preserve z velocity
+
+					ent->client->ps.velocity[2] = zVel;
 				}
 			}
+
 			ucmd->forwardmove = 0;
 			return qtrue;
 		}
-		if (do_move)
+
+		// ----------------------------------------------------------------------
+		// Wall‑run ended → play stop animation
+		// ----------------------------------------------------------------------
+		if (do_move == qtrue)
 		{
-			//stop it
 			if (ent->client->ps.legsAnim == BOTH_WALL_RUN_RIGHT)
 			{
-				NPC_SetAnim(ent, SETANIM_BOTH, BOTH_WALL_RUN_RIGHT_STOP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				NPC_SetAnim(ent, SETANIM_BOTH, BOTH_WALL_RUN_RIGHT_STOP,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 			else if (ent->client->ps.legsAnim == BOTH_WALL_RUN_LEFT)
 			{
-				NPC_SetAnim(ent, SETANIM_BOTH, BOTH_WALL_RUN_LEFT_STOP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				NPC_SetAnim(ent, SETANIM_BOTH, BOTH_WALL_RUN_LEFT_STOP,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 		}
 	}
+
 	return qfalse;
 }
 

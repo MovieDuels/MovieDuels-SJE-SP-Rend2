@@ -1402,7 +1402,7 @@ static void NPC_BehaviorSet_Jedi(const int b_state)
 	case BS_HUNT_AND_KILL:
 	case BS_INVESTIGATE: //WTF???!!
 	case BS_DEFAULT:
-		npc_bs_jedi_default();
+		NPC_BSJedi_Default();
 		break;
 
 	case BS_FOLLOW_LEADER:
@@ -1431,7 +1431,7 @@ static void NPC_BehaviorSet_Grogu(const int b_state)
 	case BS_STAND_AND_SHOOT:
 	case BS_HUNT_AND_KILL:
 	case BS_DEFAULT:
-		npc_bs_jedi_default();
+		NPC_BSJedi_Default();
 		break;
 
 	case BS_FOLLOW_LEADER:
@@ -1734,7 +1734,7 @@ static void NPC_RunBehavior(const int team, const int b_state)
 	}
 	else if (jedi_cultist_destroyer(NPC))
 	{
-		npc_bs_jedi_default();
+		NPC_BSJedi_Default();
 	}
 	else if (NPC->client->NPC_class == CLASS_SABER_DROID)
 	{

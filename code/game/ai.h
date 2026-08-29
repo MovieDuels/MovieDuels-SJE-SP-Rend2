@@ -88,7 +88,7 @@ void NPC_BSST_Default();
 void NPC_BSST_Sleep();
 
 //AI_JEDI
-void npc_bs_jedi_default();
+void NPC_BSJedi_Default();
 void npc_bs_jedi_follow_leader();
 
 // AI_DROID

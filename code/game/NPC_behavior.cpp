@@ -363,7 +363,7 @@ void NPC_BSSleep()
 	}
 }
 
-extern qboolean npc_move_dir_clear(int forwardmove, int rightmove, qboolean reset);
+extern qboolean NPC_MoveDirClear(int forwardmove, int rightmove, qboolean reset);
 
 static bool NPC_BSFollowLeader_UpdateLeader()
 {

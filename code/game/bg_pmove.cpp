@@ -4453,7 +4453,32 @@ static qboolean PM_TryRoll()
 	int anim = -1;
 	AngleVectors(fwd_angles, fwd, right, nullptr);
 
-	if (pm->cmd.forwardmove)
+	gentity_t* npc = &g_entities[pm->ps->clientNum];
+
+	if (npc->npc_roll_start)
+	{
+		if (npc->npc_roll_direction == EVASION_ROLL_DIR_BACK)
+		{
+			// backward roll
+			anim = BOTH_ROLL_B;
+			VectorMA(pm->ps->origin, -roll_dist, fwd, traceto);
+		}
+		else if (npc->npc_roll_direction == EVASION_ROLL_DIR_RIGHT)
+		{
+			//right
+			anim = BOTH_ROLL_R;
+			VectorMA(pm->ps->origin, roll_dist, right, traceto);
+		}
+		else if (npc->npc_roll_direction == EVASION_ROLL_DIR_LEFT)
+		{
+			//left
+			anim = BOTH_ROLL_L;
+			VectorMA(pm->ps->origin, -roll_dist, right, traceto);
+		}
+		// No matter what, re-initialize the roll flag, so we dont end up with npcs rolling all around the map :)
+		npc->npc_roll_start = qfalse;
+	}
+	else if (pm->cmd.forwardmove)
 	{
 		if (pm->ps->pm_flags & PMF_BACKWARDS_RUN)
 		{
@@ -4578,6 +4603,11 @@ static qboolean pm_try_roll_md()
 			return qfalse;
 		}
 	}
+	if ((pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) && !BG_AllowThirdPersonSpecialMove(pm->ps))
+	{
+		//player can't do this in 1st person
+		return qfalse;
+	}
 
 	if (PM_InRoll(pm->ps))
 	{
@@ -4590,15 +4620,6 @@ static qboolean pm_try_roll_md()
 		PM_SaberLungeAttackMove(qtrue);
 	}
 
-	if ((pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) && !BG_AllowThirdPersonSpecialMove(pm->ps))
-	{
-		//player can't do this in 1st person
-		return qfalse;
-	}
-	if (!pm->gent)
-	{
-		return qfalse;
-	}
 	if (pm->ps->saber[0].saberFlags & SFL_NO_ROLLS)
 	{
 		return qfalse;
@@ -4610,11 +4631,14 @@ static qboolean pm_try_roll_md()
 	}
 
 	vec3_t fwd, right, traceto;
-	const vec3_t fwd_angles = { 0, pm->ps->viewangles[YAW], 0 };
+	const vec3_t fwd_angles = {
+		0, pm->ps->viewangles[YAW], 0
+	};
 	const vec3_t maxs = { pm->maxs[0], pm->maxs[1], static_cast<float>(pm->gent->client->crouchheight) };
 	const vec3_t mins = { pm->mins[0], pm->mins[1], pm->mins[2] + STEPSIZE };
 	trace_t trace;
 	int anim = -1;
+
 	AngleVectors(fwd_angles, fwd, right, nullptr);
 
 	gentity_t* npc = &g_entities[pm->ps->clientNum];
@@ -10824,8 +10848,7 @@ static void PM_Footsteps()
 				//roll!
 				rolled = PM_TryRoll();
 			}
-
-			if (PM_CrouchAnim(pm->gent->client->ps.legsAnim)
+			else if (PM_CrouchAnim(pm->gent->client->ps.legsAnim)
 				&& (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) &&
 				(g_SerenityJediEngineMode->integer && pm->cmd.buttons & BUTTON_DASH))
 			{

@@ -276,7 +276,7 @@ void WP_FireCloneRifle(gentity_t* ent, const qboolean alt_fire)
 
 	vectoangles(forward_vec, angs);
 
-	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+	if (!ent->client)   // FIX: prevent NULL client dereference
 		return;
 
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
@@ -430,7 +430,7 @@ void WP_FireCloneCommando(gentity_t* ent, const qboolean alt_fire)
 
 	vectoangles(forward_vec, angs);
 
-	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+	if (!ent->client)   // FIX: prevent NULL client dereference
 		return;
 
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
@@ -575,7 +575,7 @@ void WP_FireZ6RotaryCannon(gentity_t* ent)
 
 	vectoangles(forward_vec, angs);
 
-	if (!ent->client)   // ⭐ FIX: prevent NULL client dereference
+	if (!ent->client)   // FIX: prevent NULL client dereference
 		return;
 
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)

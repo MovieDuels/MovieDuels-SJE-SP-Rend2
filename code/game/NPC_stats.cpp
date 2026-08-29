@@ -284,7 +284,11 @@ qboolean G_ParseLiteral(const char** data, const char* string)
 //
 // NPC parameters file : ext_data/NPCs/*.npc*
 //
-constexpr auto MAX_NPC_DATA_SIZE = 0x100000;
+//constexpr auto MAX_NPC_DATA_SIZE = 0x100000; // 1 MB was running until 27/08/2026
+constexpr auto MAX_NPC_DATA_SIZE = 0x200000; // 2 MB // this will run 400 NPCs,
+//constexpr auto MAX_NPC_DATA_SIZE = 0x400000; // 4 MB  // this will run 800 NPCs, 4 MB is more than enough for any NPC data file
+//constexpr auto MAX_NPC_DATA_SIZE = 0x800000; // 8 MB Absolut max can cause a crash if exceeded, but 4 MB is more than enough for any NPC data file
+
 char NPCParms[MAX_NPC_DATA_SIZE];
 
 /*

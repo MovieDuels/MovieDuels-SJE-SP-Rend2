@@ -182,32 +182,9 @@ void NPC_BSAnimal_Default()
 		}
 	}
 
-	//	float	DistToThreat	= CurrentLocation.Dist(ThreatLocation);
-	//	float	DistFromHome	= CurrentLocation.Dist(mHome);
-
 	const bool evade_threat = level.time < NPCInfo->investigateSoundDebounceTime;
 	const bool charmed_docile = level.time < NPCInfo->confusionTime;
 	const bool charmed_approach = level.time < NPCInfo->charmedTime;
-
-	// If Not Already Evading, Test To See If We Should "Know" About The Threat
-	//--------------------------------------------------------------------------
-	/*	if (false && !EvadeThreat && PlayerSpawned && (DistToThreat<FRIGHTEN_DISTANCE))
-		{
-			CVec3	LookAim(NPC->currentAngles);
-			LookAim.AngToVec();
-			CVec3	MyPos(CurrentLocation);
-			MyPos -= ThreatLocation;
-			MyPos.SafeNorm();
-
-			float	DirectionSimilarity = MyPos.Dot(LookAim);
-
-			if (fabsf(DirectionSimilarity)<0.8f)
-			{
-				EvadeThreat = true;
-				NPCInfo->investigateSoundDebounceTime = level.time + Q_irand(0, 1000);
-				VectorCopy(ThreatLocation.v, NPCInfo->investigateGoal);
-			}
-		}*/
 
 	STEER::Activate(NPC);
 	{

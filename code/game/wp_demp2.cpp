@@ -31,7 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 //-------------------
 
 extern cvar_t* g_SerenityJediEngineMode;
-extern void player_decloak(gentity_t* self);
+extern void player_Decloak(gentity_t* self);
 //---------------------------------------------------------
 static void WP_DEMP2_MainFire(gentity_t* ent)
 //---------------------------------------------------------
@@ -177,7 +177,7 @@ void DEMP2_AltRadiusDamage(gentity_t* ent)
 			if (gent->client->ps.powerups[PW_CLOAKED])
 			{
 				//disable cloak temporarily
-				player_decloak(gent);
+				player_Decloak(gent);
 				gent->client->cloakToggleTime = level.time + Q_irand(3000, 10000);
 			}
 		}

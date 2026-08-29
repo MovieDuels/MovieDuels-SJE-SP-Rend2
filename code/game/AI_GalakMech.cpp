@@ -68,8 +68,6 @@ constexpr auto GALAK_SHIELD_HEALTH = 250;
 static vec3_t shieldMins = { -60, -60, -24 };
 static vec3_t shieldMaxs = { 60, 60, 80 };
 
-extern qboolean NPC_CheckPlayerTeamStealth();
-
 static qboolean enemy_los;
 static qboolean enemy_cs;
 static qboolean hitAlly;

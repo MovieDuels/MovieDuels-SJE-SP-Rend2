@@ -118,7 +118,7 @@ static painFunc_t NPC_PainFunc(const gentity_t* ent)
 
 	if (ent->client->ps.weapon == WP_SABER)
 	{
-		func = painF_npc_jedi_pain;
+		func = painF_NPC_Jedi_Pain;
 	}
 	else
 	{
@@ -2939,11 +2939,6 @@ extern void NPC_PrecacheAnimationCFG(const char* npc_type);
 void SP_NPC_spawner(gentity_t* self)
 {
 	float f_delay;
-
-	if (!self->fullName || !self->fullName[0])
-	{
-		self->fullName = "Humanoid Lifeform";
-	}
 
 	if (!self->count)
 	{
