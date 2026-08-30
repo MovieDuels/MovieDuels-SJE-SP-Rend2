@@ -281,6 +281,7 @@ extern cvar_t* cl_activeAction;
 
 extern cvar_t* cl_consoleKeys;
 extern cvar_t* cl_consoleUseScanCode;
+extern cvar_t* cl_com_outcast;
 
 //=================================================
 

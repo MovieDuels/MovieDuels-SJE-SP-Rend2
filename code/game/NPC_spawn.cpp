@@ -861,7 +861,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 			case WP_BLASTER:
 				NPCInfo->scriptFlags |= SCF_PILOT;
 				ST_ClearTimers(ent);
-				if ((ent->NPC->rank >= RANK_LT || ent->client->ps.weapon == WP_THERMAL) && com_outcast->integer == 1)
+				if ((ent->NPC->rank >= RANK_LT || ent->client->ps.weapon == WP_THERMAL) && (com_outcast && com_outcast->integer == 1))
 				{
 					ent->NPC->scriptFlags |= SCF_ALT_FIRE;
 				}
@@ -1164,7 +1164,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 
 			case WP_DISRUPTOR:
 				//Sniper
-				if (com_outcast->integer == 1) // PLAYING OUTCAST
+				if (com_outcast && com_outcast->integer == 1) // PLAYING OUTCAST
 				{
 					ent->NPC->scriptFlags |= SCF_ALT_FIRE;
 				}
@@ -1183,7 +1183,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				//shotgunner
 				if (!Q_stricmp("stofficeralt", ent->NPC_type))
 				{
-					if (com_outcast->integer == 1) // PLAYING OUTCAST
+					if (com_outcast && com_outcast->integer == 1) // PLAYING OUTCAST
 					{
 						ent->NPC->scriptFlags |= SCF_ALT_FIRE;
 					}
@@ -1208,14 +1208,14 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 				ST_ClearTimers(ent);
 				if (ent->NPC->rank >= RANK_COMMANDER)
 				{
-					if (com_outcast->integer == 1) // PLAYING OUTCAST
+					if (com_outcast && com_outcast->integer == 1) // PLAYING OUTCAST
 					{
 						ent->NPC->scriptFlags |= SCF_ALT_FIRE;
 					}
 				}
 				if (!Q_stricmp("rodian2", ent->NPC_type))
 				{
-					if (com_outcast->integer == 1) // PLAYING OUTCAST
+					if (com_outcast && com_outcast->integer == 1) // PLAYING OUTCAST
 					{
 						ent->NPC->scriptFlags |= SCF_ALT_FIRE;
 					}
@@ -3866,7 +3866,7 @@ void SP_NPC_Stormtrooper(gentity_t* self)
 {
 	if (self->spawnflags & 8)
 	{
-		if (com_outcast->integer == 1)
+		if (com_outcast && com_outcast->integer == 1)
 		{
 			//rocketer
 			self->NPC_type = "rockettrooper_jk2";
@@ -3879,7 +3879,7 @@ void SP_NPC_Stormtrooper(gentity_t* self)
 	}
 	else if (self->spawnflags & 4)
 	{
-		if (com_outcast->integer == 1)
+		if (com_outcast && com_outcast->integer == 1)
 		{
 			//alt-officer
 			self->NPC_type = "stofficeralt_jk2";
@@ -3892,7 +3892,7 @@ void SP_NPC_Stormtrooper(gentity_t* self)
 	}
 	else if (self->spawnflags & 2)
 	{
-		if (com_outcast->integer == 1)
+		if (com_outcast && com_outcast->integer == 1)
 		{
 			//commander
 			self->NPC_type = "stcommander_jk2";
@@ -3905,7 +3905,7 @@ void SP_NPC_Stormtrooper(gentity_t* self)
 	}
 	else if (self->spawnflags & 1)
 	{
-		if (com_outcast->integer == 1)
+		if (com_outcast && com_outcast->integer == 1)
 		{
 			//officer
 			self->NPC_type = "stofficer_jk2";
@@ -3921,7 +3921,7 @@ void SP_NPC_Stormtrooper(gentity_t* self)
 		//regular trooper
 		if (Q_irand(0, 1))
 		{
-			if (com_outcast->integer == 1)
+			if (com_outcast && com_outcast->integer == 1)
 			{
 				self->NPC_type = "StormTrooper_jk2";
 			}
@@ -3932,7 +3932,7 @@ void SP_NPC_Stormtrooper(gentity_t* self)
 		}
 		else
 		{
-			if (com_outcast->integer == 1)
+			if (com_outcast && com_outcast->integer == 1)
 			{
 				self->NPC_type = "StormTrooper2_jk2";
 			}
@@ -3979,7 +3979,7 @@ SHY - Spawner is shy
 */
 void SP_NPC_Tie_Pilot(gentity_t* self)
 {
-	if (com_outcast->integer == 1)
+	if (com_outcast && com_outcast->integer == 1)
 	{
 		self->NPC_type = "stormpilot_jk2";
 	}
@@ -4013,7 +4013,7 @@ void SP_NPC_RocketTrooper(gentity_t* self)
 		}
 		else
 		{
-			if (com_outcast->integer == 1)
+			if (com_outcast && com_outcast->integer == 1)
 			{
 				self->NPC_type = "rockettrooper2";
 			}
@@ -4312,7 +4312,7 @@ void SP_NPC_Imperial(gentity_t* self)
 	{
 		if (self->spawnflags & 1)
 		{
-			if (com_outcast->integer == 1)
+			if (com_outcast && com_outcast->integer == 1)
 			{
 				self->NPC_type = "ImpOfficer_jk2";
 			}
@@ -4323,7 +4323,7 @@ void SP_NPC_Imperial(gentity_t* self)
 		}
 		else if (self->spawnflags & 2)
 		{
-			if (com_outcast->integer == 1)
+			if (com_outcast && com_outcast->integer == 1)
 			{
 				self->NPC_type = "ImpCommander_jk2";
 			}
@@ -4334,7 +4334,7 @@ void SP_NPC_Imperial(gentity_t* self)
 		}
 		else
 		{
-			if (com_outcast->integer == 1)
+			if (com_outcast && com_outcast->integer == 1)
 			{
 				self->NPC_type = "Imperial_jk2";
 			}

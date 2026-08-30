@@ -1879,21 +1879,23 @@ int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc = HL_N
 		return BOTH_PAIN2;
 	case HL_WAIST:
 	case HL_CHEST:
-	{
 		if (!Q_irand(0, 3))
 		{
 			return BOTH_PAIN6;
 		}
-		if (!Q_irand(0, 2))
+		else if (!Q_irand(0, 2))
 		{
 			return BOTH_PAIN8;
 		}
-		if (!Q_irand(0, 1))
+		else if (!Q_irand(0, 1))
 		{
 			return BOTH_PAIN17;
 		}
-		return BOTH_PAIN18;
-	}
+		else
+		{
+			return BOTH_PAIN19;
+		}
+		break;
 	case HL_ARM_RT:
 	case HL_HAND_RT:
 		return BOTH_PAIN9;

@@ -267,7 +267,7 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 		// Huh?  Was doing a INV_MAX+1 which was wrong because then you'd actually have every inventory item including INV_MAX
 		ent->client->ps.stats[STAT_ITEMS] = (1 << INV_MAX) - (1 << INV_ELECTROBINOCULARS);
 
-		if (com_outcast->integer == 1 || com_outcast->integer == 4) //playing outcast
+		if ((com_outcast && com_outcast->integer == 1) || (com_outcast && com_outcast->integer == 4)) //playing outcast
 		{
 			ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 		}
@@ -300,7 +300,7 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 
 			if (!HeIsJedi(ent))
 			{//Gunner inventory
-				if (com_outcast->integer == 1) //playing outcast
+				if (com_outcast && com_outcast->integer == 1) //playing outcast
 				{//Outcast inventory
 					ent->client->ps.inventory[INV_CLOAK] = 1;
 				}

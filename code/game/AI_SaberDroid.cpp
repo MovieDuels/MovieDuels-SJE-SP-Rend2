@@ -35,10 +35,10 @@ extern void WP_DeactivateSaber(const gentity_t* self, qboolean clear_length = qf
 extern int PM_AnimLength(const int index, const animNumber_t anim);
 extern void NPC_AngerSound();
 
-static qboolean enemy_los;
-static qboolean enemy_cs;
-static qboolean face_enemy;
-static qboolean do_move;
+static qboolean enemyLOS;
+static qboolean enemyCS;
+static qboolean faceEnemy;
+static qboolean doMove;
 static qboolean shoot;
 static float enemyDist;
 
@@ -340,9 +340,9 @@ static void NPC_BSSaberDroid_Attack()
 		return;
 	}
 
-	enemy_los = enemy_cs = qfalse;
-	do_move = qtrue;
-	face_enemy = qfalse;
+	enemyLOS = enemyCS = qfalse;
+	doMove = qtrue;
+	faceEnemy = qfalse;
 	shoot = qfalse;
 	enemyDist = DistanceSquared(NPC->enemy->currentOrigin, NPC->currentOrigin);
 
@@ -350,33 +350,33 @@ static void NPC_BSSaberDroid_Attack()
 	if (NPC_ClearLOS(NPC->enemy))
 	{
 		NPCInfo->enemyLastSeenTime = level.time;
-		enemy_los = qtrue;
+		enemyLOS = qtrue;
 
 		if (enemyDist <= 4096 && InFOV(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 90,
 			45)) //within 64 & infront
 		{
 			VectorCopy(NPC->enemy->currentOrigin, NPCInfo->enemyLastSeenLocation);
-			enemy_cs = qtrue;
+			enemyCS = qtrue;
 		}
 	}
 
-	if (enemy_los)
+	if (enemyLOS)
 	{
 		//FIXME: no need to face enemy if we're moving to some other goal and he's too far away to shoot?
-		face_enemy = qtrue;
+		faceEnemy = qtrue;
 	}
 
 	if (!TIMER_Done(NPC, "taunting"))
 	{
-		do_move = qfalse;
+		doMove = qfalse;
 	}
-	else if (enemy_cs)
+	else if (enemyCS)
 	{
 		shoot = qtrue;
 		if (enemyDist < (NPC->maxs[0] + NPC->enemy->maxs[0] + 32) * (NPC->maxs[0] + NPC->enemy->maxs[0] + 32))
 		{
 			//close enough
-			do_move = qfalse;
+			doMove = qfalse;
 		}
 	} //this should make him chase enemy when out of range...?
 
@@ -384,24 +384,24 @@ static void NPC_BSSaberDroid_Attack()
 		&& NPC->client->ps.legsAnim != BOTH_A3__L__R) //this one is a running attack
 	{
 		//in the middle of a held, stationary anim, can't doMove
-		do_move = qfalse;
+		doMove = qfalse;
 	}
 
-	if (do_move)
+	if (doMove)
 	{
 		//doMove toward goal
-		do_move = SaberDroid_Move();
-		if (do_move)
+		doMove = SaberDroid_Move();
+		if (doMove)
 		{
 			//if we had to chase him, be sure to attack as soon as possible
 			TIMER_Set(NPC, "attackDelay", NPC->client->ps.weaponTime);
 		}
 	}
 
-	if (!face_enemy)
+	if (!faceEnemy)
 	{
 		//we want to face in the dir we're running
-		if (do_move)
+		if (doMove)
 		{
 			//don't run away and shoot
 			NPCInfo->desiredYaw = NPCInfo->lastPathAngles[YAW];

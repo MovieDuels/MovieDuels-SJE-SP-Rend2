@@ -766,9 +766,7 @@ qboolean NPC_MoveToGoal(qboolean tryStraight) //FIXME: tryStraight not even used
 #if	AI_TIMERS
 	int	startTime = GetTime(0);
 #endif//	AI_TIMERS
-
-	if (PM_InKnockDown(&NPC->client->ps) || NPC->client->ps.legsAnim >= BOTH_PAIN1 && NPC->client->ps.legsAnim <=
-		BOTH_PAIN18 && NPC->client->ps.legsAnimTimer > 0)
+	if (PM_InKnockDown(&NPC->client->ps) || ((NPC->s.legsAnim >= BOTH_PAIN1) && (NPC->s.legsAnim <= BOTH_PAIN19 && (NPC->client->ps.legsAnimTimer > 0))))
 	{
 		//If taking full body pain, don't move
 		return qtrue;

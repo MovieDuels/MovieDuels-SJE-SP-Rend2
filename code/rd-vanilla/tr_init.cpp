@@ -194,6 +194,8 @@ cvar_t* g_Weather;
 cvar_t* r_com_rend2;
 cvar_t* g_DebugSaberCombat;
 
+cvar_t* com_outcast;
+
 #if !defined(__APPLE__)
 PFNGLSTENCILOPSEPARATEPROC qglStencilOpSeparate;
 #endif
@@ -1610,11 +1612,7 @@ static void R_Register()
 
 	r_nocurves = ri.Cvar_Get("r_nocurves", "0", CVAR_CHEAT);
 	r_drawworld = ri.Cvar_Get("r_drawworld", "1", CVAR_CHEAT);
-#ifdef JK2_MODE
 	r_drawfog = ri.Cvar_Get("r_drawfog", "1", CVAR_ARCHIVE);
-#else
-	r_drawfog = ri.Cvar_Get("r_drawfog", "1", CVAR_ARCHIVE);
-#endif
 	r_lightmap = ri.Cvar_Get("r_lightmap", "0", CVAR_CHEAT);
 	r_portalOnly = ri.Cvar_Get("r_portalOnly", "0", CVAR_CHEAT);
 
@@ -1669,6 +1667,8 @@ static void R_Register()
 	broadsword_dircap = ri.Cvar_Get("broadsword_dircap", "64", 0);
 
 	r_com_rend2 = ri.Cvar_Get("com_rend2", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+
+	com_outcast = ri.Cvar_Get("com_outcast", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
 
 	g_Weather = ri.Cvar_Get("r_weather", "0", CVAR_ARCHIVE);
 

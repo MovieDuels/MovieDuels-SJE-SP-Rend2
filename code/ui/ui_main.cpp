@@ -1822,11 +1822,7 @@ static void UI_Set2DRatio()
 static cvarTable_t cvarTable[] =
 {
 	{&ui_menuFiles, "ui_menuFiles", "ui/menus.txt", nullptr, CVAR_ARCHIVE},
-#ifdef JK2_MODE
-	{ &ui_hudFiles,				"cg_hudFiles",			"ui/jk2hud.txt", nullptr, CVAR_ARCHIVE},
-#else
 	{&ui_hudFiles, "cg_hudFiles", "ui/jahud.txt", nullptr, CVAR_ARCHIVE},
-#endif
 
 	{&ui_char_anim, "ui_char_anim", "BOTH_MENUIDLE1", nullptr, 0},
 
@@ -2435,11 +2431,14 @@ static int CreateNextSaveName(char* fileName)
 	// Loop through all the save games and look for the first open name
 	for (int i = 0; i < MAX_SAVELOADFILES; i++)
 	{
-#ifdef JK2_MODE
-		Com_sprintf(fileName, MAX_SAVELOADNAME, "jkii%02d", i);
-#else
-		Com_sprintf(fileName, MAX_SAVELOADNAME, "jedi_%02d", i);
-#endif
+		if (com_outcast && com_outcast->integer == 0) //playing academy
+		{
+			Com_sprintf(fileName, MAX_SAVELOADNAME, "MovieDuels_%02d", i);
+		}
+		else if (com_outcast && com_outcast->integer == 1) //playing outcast
+		{
+			Com_sprintf(fileName, MAX_SAVELOADNAME, "MovieDuels_Outcast_%02d", i);
+		}
 
 		if (!ui.SG_GetSaveGameComment(fileName, nullptr, nullptr))
 		{
@@ -3692,11 +3691,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "load_quick") == 0)
 		{
-#ifdef JK2_MODE
-			ui.Cmd_ExecuteText(EXEC_APPEND, "load quik\n");
-#else
 			ui.Cmd_ExecuteText(EXEC_APPEND, "load quick\n");
-#endif
 		}
 		else if (Q_stricmp(name, "load_auto") == 0)
 		{
@@ -5425,8 +5420,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 29/08/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 11 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 30/08/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 12 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");

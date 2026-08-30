@@ -68,10 +68,10 @@ constexpr auto GALAK_SHIELD_HEALTH = 250;
 static vec3_t shieldMins = { -60, -60, -24 };
 static vec3_t shieldMaxs = { 60, 60, 80 };
 
-static qboolean enemy_los;
-static qboolean enemy_cs;
+static qboolean enemyLOS;
+static qboolean enemyCS;
 static qboolean hitAlly;
-static qboolean face_enemy;
+static qboolean faceEnemy;
 static qboolean AImove;
 static qboolean shoot;
 static float enemyDist;
@@ -487,7 +487,7 @@ static void GM_CheckMoveState()
 	{
 		//Did we make it?
 		if (NAV_HitNavGoal(NPC->currentOrigin, NPC->mins, NPC->maxs, NPCInfo->goalEntity->currentOrigin, 16, qfalse) ||
-			!Q3_TaskIDPending(NPC, TID_MOVE_NAV) && enemy_los && enemyDist <= 10000)
+			!Q3_TaskIDPending(NPC, TID_MOVE_NAV) && enemyLOS && enemyDist <= 10000)
 		{
 			//either hit our navgoal or our navgoal was not a crucial (scripted) one (maybe a combat point) and we're scouting and found our enemy
 			NPC_ReachedGoal();
@@ -505,7 +505,7 @@ GM_CheckFireState
 
 static void GM_CheckFireState()
 {
-	if (enemy_cs)
+	if (enemyCS)
 	{
 		//if have a clear shot, always try
 		return;
@@ -592,7 +592,7 @@ static void GM_CheckFireState()
 					NPCInfo->desiredPitch = angles[PITCH];
 
 					shoot = qtrue;
-					face_enemy = qfalse;
+					faceEnemy = qfalse;
 				}
 			}
 		}
@@ -715,9 +715,9 @@ static void NPC_BSGM_Attack()
 		return;
 	}
 
-	enemy_los = enemy_cs = qfalse;
+	enemyLOS = enemyCS = qfalse;
 	AImove = qtrue;
-	face_enemy = qfalse;
+	faceEnemy = qfalse;
 	shoot = qfalse;
 	hitAlly = qfalse;
 	VectorClear(impactPos);
@@ -944,11 +944,11 @@ static void NPC_BSGM_Attack()
 	if (NPC_ClearLOS(NPC->enemy))
 	{
 		NPCInfo->enemyLastSeenTime = level.time; //used here for aim debouncing, not always a clear LOS
-		enemy_los = qtrue;
+		enemyLOS = qtrue;
 
 		if (NPC->client->ps.weapon == WP_NONE)
 		{
-			enemy_cs = qfalse; //not true, but should stop us from firing
+			enemyCS = qfalse; //not true, but should stop us from firing
 			NPC_AimAdjust(-1); //adjust aim worse longer we have no weapon
 		}
 		else
@@ -957,7 +957,7 @@ static void NPC_BSGM_Attack()
 			if (NPC->client->ps.weapon == WP_REPEATER && NPCInfo->scriptFlags & SCF_ALT_FIRE && enemyDist <
 				MIN_LOB_DIST_SQUARED) //256
 			{
-				enemy_cs = qfalse; //not true, but should stop us from firing
+				enemyCS = qfalse; //not true, but should stop us from firing
 				hitAlly = qtrue; //us!
 			}
 			else
@@ -969,7 +969,7 @@ static void NPC_BSGM_Attack()
 					|| hitEnt && hitEnt->takedamage)
 				{
 					//can hit enemy or will hit glass or other breakable, so shoot anyway
-					enemy_cs = qtrue;
+					enemyCS = qtrue;
 					NPC_AimAdjust(2); //adjust aim better longer we have clear shot at enemy
 					VectorCopy(NPC->enemy->currentOrigin, NPCInfo->enemyLastSeenLocation);
 				}
@@ -1033,18 +1033,18 @@ static void NPC_BSGM_Attack()
 			|| hitEnt && hitEnt->takedamage)
 		{
 			//can hit enemy or will hit glass or other breakable, so shoot anyway
-			enemy_cs = qtrue;
+			enemyCS = qtrue;
 		}
 		else
 		{
-			face_enemy = qtrue;
+			faceEnemy = qtrue;
 			NPC_AimAdjust(-1); //adjust aim worse longer we cannot see enemy
 		}
 	}
 
-	if (enemy_los)
+	if (enemyLOS)
 	{
-		face_enemy = qtrue;
+		faceEnemy = qtrue;
 	}
 	else
 	{
@@ -1058,7 +1058,7 @@ static void NPC_BSGM_Attack()
 			AImove = qtrue;
 		}
 	}
-	if (enemy_cs)
+	if (enemyCS)
 	{
 		shoot = qtrue;
 	}
@@ -1103,10 +1103,10 @@ static void NPC_BSGM_Attack()
 		const qboolean clearshot = WP_LobFire(NPC, muzzle, target, mins, maxs, MASK_SHOT | CONTENTS_LIGHTSABER,
 			velocity, qtrue, NPC->s.number, NPC->enemy->s.number,
 			1500, qtrue);
-		if (VectorCompare(vec3_origin, velocity) || !clearshot && enemy_los && enemy_cs)
+		if (VectorCompare(vec3_origin, velocity) || !clearshot && enemyLOS && enemyCS)
 		{
 			//no clear lob shot and no lob shot that will hit something breakable
-			if (enemy_los && enemy_cs && TIMER_Done(NPC, "noRapid"))
+			if (enemyLOS && enemyCS && TIMER_Done(NPC, "noRapid"))
 			{
 				//have a clear straight shot, so switch to primary
 				NPCInfo->scriptFlags &= ~SCF_ALT_FIRE;
@@ -1132,7 +1132,7 @@ static void NPC_BSGM_Attack()
 			NPC->client->hiddenDist = VectorNormalize(NPC->client->hiddenDir);
 		}
 	}
-	else if (face_enemy)
+	else if (faceEnemy)
 	{
 		//face the enemy
 		NPC_FaceEnemy(qtrue);
@@ -1173,12 +1173,12 @@ static void NPC_BSGM_Attack()
 	if (!TIMER_Done(NPC, "flee"))
 	{
 		//running away
-		face_enemy = qfalse;
+		faceEnemy = qfalse;
 	}
 
 	//FIXME: check scf_face_move_dir here?
 
-	if (!face_enemy)
+	if (!faceEnemy)
 	{
 		//we want to face in the dir we're running
 		if (!AImove)

@@ -34,11 +34,7 @@ static	texModInfo_t	texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
 
 // Hash value (generated using the generateHashValueForText function) for the original
 // retail JK2/JKA shader for gfx/2d/wedge.
-#ifdef JK2_MODE
-#define RETAIL_ROCKET_WEDGE_SHADER_HASH (1193966)
-#else
-#define RETAIL_ROCKET_WEDGE_SHADER_HASH (1217042)
-#endif
+constexpr auto RETAIL_ROCKET_WEDGE_SHADER_HASH = (1217042);
 
 #ifndef JK2_MODE
 // Hash value (generated using the generateHashValueForText function) for the original

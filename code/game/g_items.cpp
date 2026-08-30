@@ -1225,7 +1225,7 @@ void FinishSpawningItem(gentity_t* ent)
 	// ====================================================
 	// Jedi Outcast branch (com_outcast > 1)
 	// ====================================================
-	if (com_outcast->integer == 1)
+	if (com_outcast && com_outcast->integer == 1)
 	{
 		trace_t tr;
 		vec3_t dest;
@@ -1856,7 +1856,6 @@ static void G_RemoveWeaponEffect(gentity_t* ent)
 }
 
 extern cvar_t* g_WeaponRemovalTime;
-extern cvar_t* com_outcast;
 void G_RunItem(gentity_t* ent)
 {
 	vec3_t origin;
@@ -1921,14 +1920,6 @@ void G_RunItem(gentity_t* ent)
 				ent->s.pos.trTime = level.time;
 			}
 		}
-		//else if (ent->flags & FL_DROPPED_ITEM /*&& g_remove_unused_weapons->integer*/ && g_WeaponRemovalTime->integer && com_outcast->integer == 3
-		//	&& ent->item
-		//	&& ent->item->giType == IT_WEAPON
-		//	&& ent->item->giTag != WP_SABER)
-		//{
-		//	//a dropped weapon item,
-		//	G_RemoveWeaponEffect(ent);
-		//}
 		return;
 	}
 

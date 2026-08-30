@@ -1059,11 +1059,7 @@ static void Item_ApplyHacks(itemDef_t* item)
 		}
 		if (!found && multiPtr->count < MAX_MULTI_CVARS)
 		{
-#ifdef JK2_MODE
-			multiPtr->cvarList[multiPtr->count] = String_Alloc("@MENUS0_VERY_HIGH");
-#else
 			multiPtr->cvarList[multiPtr->count] = String_Alloc("@MENUS_VERY_HIGH");
-#endif
 			multiPtr->cvarValue[multiPtr->count] = 44;
 			multiPtr->count++;
 			Com_Printf("Extended sound quality field to contain very high option.\n");
@@ -1085,11 +1081,7 @@ static void Item_ApplyHacks(itemDef_t* item)
 		}
 		if (!found && multiPtr->count < MAX_MULTI_CVARS)
 		{
-#ifdef JK2_MODE
-			multiPtr->cvarList[multiPtr->count] = String_Alloc("@MENUS3_ALL_VOICEOVERS");
-#else
 			multiPtr->cvarList[multiPtr->count] = String_Alloc("@MENUS_ALL_VOICEOVERS");
-#endif
 			multiPtr->cvarValue[multiPtr->count] = 1;
 			multiPtr->count++;
 			Com_Printf("Extended subtitles field to contain all voiceovers option.\n");
@@ -2973,12 +2965,7 @@ static const char* Item_Multi_Setting(const itemDef_t* item)
 			}
 		}
 	}
-
-#ifdef JK2_MODE
-	return "@MENUS1_CUSTOM";
-#else
 	return "@MENUS_CUSTOM";
-#endif
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -5443,17 +5430,9 @@ static const char* g_bindCommands[] =
 	"invprev",
 	"invuse",
 	"load auto",
-#ifdef JK2_MODE
-	"load quik",
-#else
 	"load quick",
-#endif
 	"saberAttackCycle",
-#ifdef JK2_MODE
-	"save quik*",
-#else
 	"save quick",
-#endif
 	"taunt",
 	"uimenu ingameloadmenu",
 	"uimenu ingamesavemenu",
@@ -6151,11 +6130,7 @@ static bool HasStringLanguageChanged(const itemDef_t* item)
 	}
 
 	int modificationCount;
-#ifdef JK2_MODE
-	modificationCount = sp_language->modificationCount;
-#else
 	modificationCount = se_language->modificationCount;
-#endif
 
 	return item->asset != modificationCount;
 }
@@ -6213,13 +6188,9 @@ static void Item_SetTextExtents(itemDef_t* item, int* width, int* height, const 
 		}
 
 		ToWindowCoords(&item->textRect.x, &item->textRect.y, &item->window);
-#ifdef JK2_MODE
-		if (item->text && item->text[0] == '@')
-			item->asset = sp_language->modificationCount;
-#else
+
 		if (item->text && item->text[0] == '@') //string package
 			item->asset = se_language->modificationCount; //mark language
-#endif
 	}
 }
 
@@ -6367,17 +6338,11 @@ static void Item_Text_Paint(itemDef_t* item)
 	{
 		textPtr = item->text;
 	}
-#ifdef JK2_MODE
-	if (*textPtr == '@')
-	{
-		textPtr = JK2SP_GetStringTextString(&textPtr[1]);
-	}
-#else
+
 	if (*textPtr == '@') // string reference
 	{
 		textPtr = SE_GetString(&textPtr[1]);
 	}
-#endif
 
 	// this needs to go here as it sets extents for cvar types as well
 	Item_SetTextExtents(item, &width, &height, textPtr);
@@ -7019,12 +6984,7 @@ static void BindingFromName(const char* cvar)
 				// do NOT do this or it corrupts asian text!!!					Q_strupr(keyname[0]);
 				DC->keynumToStringBuf(b2, keyname[1], sizeof keyname[1]);
 				// do NOT do this or it corrupts asian text!!!					Q_strupr(keyname[1]);
-
-#ifdef JK2_MODE
-				Q_strncpyz(sOR, ui.SP_GetStringTextString("MENUS3_KEYBIND_OR"), sizeof(sOR));
-#else
 				Q_strncpyz(sOR, SE_GetString("MENUS_KEYBIND_OR"), sizeof sOR);
-#endif
 
 				Com_sprintf(g_nameBind, sizeof g_nameBind, "%s %s %s", keyname[0], sOR, keyname[1]);
 			}
@@ -7541,14 +7501,8 @@ static void Item_YesNo_Paint(itemDef_t* item)
 	vec4_t color;
 
 	const float value = item->cvar ? DC->getCVarValue(item->cvar) : 0;
-
-#ifdef JK2_MODE
-	const char* psYes = ui.SP_GetStringTextString("MENUS0_YES");
-	const char* psNo = ui.SP_GetStringTextString("MENUS0_NO");
-#else
 	const char* psYes = SE_GetString("MENUS_YES");
 	const char* psNo = SE_GetString("MENUS_NO");
-#endif
 	const char* yesnovalue;
 
 	if (item->invertYesNo)

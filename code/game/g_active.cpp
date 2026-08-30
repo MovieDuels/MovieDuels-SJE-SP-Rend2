@@ -70,8 +70,8 @@ extern void NPC_SetLookTarget(const gentity_t* self, int entNum, int clearTime);
 extern qboolean PM_LockAngles(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_AdjustAnglesToGripper(gentity_t* gent, usercmd_t* cmd);
 extern qboolean PM_AdjustAnglesToPuller(gentity_t* ent, const gentity_t* puller, usercmd_t* ucmd, qboolean face_away);
-extern qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, qboolean do_move);
-extern qboolean PM_AdjustAngleForWallRunUp(gentity_t* ent, usercmd_t* ucmd, qboolean do_move);
+extern qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, qboolean doMove);
+extern qboolean PM_AdjustAngleForWallRunUp(gentity_t* ent, usercmd_t* ucmd, qboolean doMove);
 extern qboolean PM_AdjustAnglesForSpinningFlip(gentity_t* ent, usercmd_t* ucmd, qboolean angles_only);
 extern qboolean PM_AdjustAnglesForBackAttack(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_AdjustAnglesForSaberLock(gentity_t* ent, usercmd_t* ucmd);
@@ -79,7 +79,7 @@ extern qboolean PM_AdjustAnglesForKnockdown(gentity_t* ent, usercmd_t* ucmd, qbo
 extern qboolean PM_AdjustAnglesForDualJumpAttack(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_AdjustAnglesForLongJump(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_AdjustAnglesForGrapple(gentity_t* ent, usercmd_t* ucmd);
-extern qboolean PM_AdjustAngleForWallJump(gentity_t* ent, usercmd_t* ucmd, qboolean do_move);
+extern qboolean PM_AdjustAngleForWallJump(gentity_t* ent, usercmd_t* ucmd, qboolean doMove);
 extern qboolean PM_AdjustAnglesForBFKick(gentity_t* ent, usercmd_t* ucmd, vec3_t fwd_angs, qboolean aim_front);
 extern qboolean PM_AdjustAnglesForStabDown(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_AdjustAnglesForSpinProtect(gentity_t* ent, usercmd_t* ucmd);
@@ -936,8 +936,6 @@ void G_GetMassAndVelocityForEnt(const gentity_t* ent, float* mass, vec3_t veloci
 		}
 	}
 }
-
-extern cvar_t* com_outcast;
 
 void DoImpact(gentity_t* self, gentity_t* other, const qboolean damage_self, const trace_t* trace)
 {
@@ -2302,7 +2300,7 @@ extern void WP_SaberUpdateOldBladeData(gentity_t* ent);
 extern qboolean PM_ReloadAnim(int anim);
 extern qboolean PM_WeponRestAnim(int anim);
 void cancel_firing(gentity_t* ent);
-extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_PainAnim(const int anim);
 
 static void ClientEvents(gentity_t* ent, const int old_event_sequence)
 {

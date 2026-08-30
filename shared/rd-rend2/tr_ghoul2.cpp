@@ -3625,11 +3625,7 @@ void RB_TransformBones(const trRefEntity_t* ent, const trRefdef_t* refdef, int c
 
 		for (int bone = 0; bone < (int)bc->mBones.size(); bone++)
 		{
-#ifdef JK2_MODE
-			const mdxaBone_t& b = bc->Eval(bone);
-#else
 			const mdxaBone_t& b = bc->EvalRender(bone);
-#endif // JK2_MODE
 			Com_Memcpy(
 				bc->boneMatrices + bone,
 				&b.matrix[0][0],

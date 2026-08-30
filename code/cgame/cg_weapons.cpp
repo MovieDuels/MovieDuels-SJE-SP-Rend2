@@ -5774,7 +5774,7 @@ Caused by an EV_FIRE_WEAPON event
 ================
 */
 extern qboolean PM_RunningAnim(int anim);
-extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_PainAnim(const int anim);
 
 void CG_FireWeapon(centity_t* cent, const qboolean alt_fire)
 {

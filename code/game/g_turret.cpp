@@ -330,7 +330,7 @@ void turret_head_think(gentity_t* self)
 
 		VectorMA(org, START_DIS, fwd, org);
 
-		if (com_outcast->integer == 1) //playing outcast
+		if (com_outcast && com_outcast->integer == 1) //playing outcast
 		{
 			turret_fire_JKO(self, org, fwd);
 		}
@@ -2367,7 +2367,7 @@ static void panel_turret_shoot(gentity_t* self, vec3_t org, vec3_t dir)
 {
 	gentity_t* missile = CreateMissile(org, dir, self->speed, 10000, self);
 
-	if (com_outcast->integer == 1) //playing outcast
+	if (com_outcast && com_outcast->integer == 1) //playing outcast
 	{
 		missile->classname = "b_proj";
 		missile->s.weapon = WP_EMPLACED_GUN;
@@ -2393,7 +2393,7 @@ static void panel_turret_shoot(gentity_t* self, vec3_t org, vec3_t dir)
 
 	VectorMA(org, 32, dir, org);
 
-	if (com_outcast->integer == 1) //playing outcast
+	if (com_outcast && com_outcast->integer == 1) //playing outcast
 	{
 		org[2] -= 5;
 		G_PlayEffect("ships/imp_blastermuzzleflash", org, dir);
@@ -2586,7 +2586,7 @@ void SP_misc_panel_turret(gentity_t* self)
 
 	G_SoundIndex("sound/movers/objects/ladygun_fire");
 
-	if (com_outcast->integer == 1) //playing outcast
+	if (com_outcast && com_outcast->integer == 1) //playing outcast
 	{
 		//G_EffectIndex("ships/imp_blastermuzzleflash");
 	}
@@ -2604,7 +2604,7 @@ void SP_misc_panel_turret(gentity_t* self)
 
 	self->s.weapon = WP_TURRET;
 
-	if (com_outcast->integer == 1) //playing outcast
+	if (com_outcast && com_outcast->integer == 1) //playing outcast
 	{
 		RegisterItem(FindItemForWeapon(WP_EMPLACED_GUN));
 	}

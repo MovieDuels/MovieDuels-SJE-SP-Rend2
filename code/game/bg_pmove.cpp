@@ -141,7 +141,7 @@ qboolean PM_SpinningSaberAnim(int anim);
 qboolean PM_GettingUpFromKnockDown(float standheight, float crouchheight);
 qboolean PM_SpinningAnim(int anim);
 qboolean PM_FlippingAnim(int anim);
-qboolean PM_PainAnim(int anim);
+qboolean PM_PainAnim(const int anim);
 qboolean PM_RollingAnim(int anim);
 qboolean PM_SwimmingAnim(int anim);
 qboolean PM_InReboundJump(int anim);
@@ -8483,6 +8483,7 @@ qboolean PM_PainAnim(const int anim)
 	case BOTH_PAIN16: //#
 	case BOTH_PAIN17: //#
 	case BOTH_PAIN18: //#
+	case BOTH_PAIN19: //#
 		return qtrue;
 	default:;
 	}

@@ -22177,7 +22177,7 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 				}
 				else
 				{
-					knock_anim = PM_PickAnim(self, BOTH_PAIN1, BOTH_PAIN18);
+					knock_anim = PM_PickAnim(self, BOTH_PAIN1, BOTH_PAIN19);
 				}
 			}
 			else if (PM_CrouchAnim(self->client->ps.legsAnim))

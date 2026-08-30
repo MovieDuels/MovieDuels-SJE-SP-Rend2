@@ -82,8 +82,8 @@ static void RT_RunStormtrooperAI()
 
 void RT_FireDecide()
 {
-	qboolean enemy_los = qfalse;
-	qboolean enemy_cs = qfalse;
+	qboolean enemyLOS = qfalse;
+	qboolean enemyCS = qfalse;
 	qboolean enemy_in_fov = qfalse;
 	//qboolean move = qtrue;
 	qboolean shoot = qfalse;
@@ -136,11 +136,11 @@ void RT_FireDecide()
 		if (NPC_ClearLOS(NPC->enemy))
 		{
 			NPCInfo->enemyLastSeenTime = level.time;
-			enemy_los = qtrue;
+			enemyLOS = qtrue;
 
 			if (NPC->client->ps.weapon == WP_NONE)
 			{
-				enemy_cs = qfalse; //not true, but should stop us from firing
+				enemyCS = qfalse; //not true, but should stop us from firing
 			}
 			else
 			{
@@ -151,7 +151,7 @@ void RT_FireDecide()
 					enemy_dist <
 					MIN_ROCKET_DIST_SQUARED) //128*128
 				{
-					enemy_cs = qfalse; //not true, but should stop us from firing
+					enemyCS = qfalse; //not true, but should stop us from firing
 					hit_ally = qtrue; //us!
 					//FIXME: if too close, run away!
 				}
@@ -167,7 +167,7 @@ void RT_FireDecide()
 							|| NPC->s.weapon == WP_EMPLACED_GUN))
 					{
 						//can hit enemy or enemy ally or will hit glass or other minor breakable (or in emplaced gun), so shoot anyway
-						enemy_cs = qtrue;
+						enemyCS = qtrue;
 						//NPC_AimAdjust( 2 );//adjust aim better longer we have clear shot at enemy
 						VectorCopy(NPC->enemy->currentOrigin, NPCInfo->enemyLastSeenLocation);
 					}
@@ -188,7 +188,7 @@ void RT_FireDecide()
 				}
 				else
 				{
-					enemy_cs = qfalse; //not true, but should stop us from firing
+					enemyCS = qfalse; //not true, but should stop us from firing
 				}
 			}
 		}
@@ -204,13 +204,13 @@ void RT_FireDecide()
 		}
 		else
 		{
-			if (enemy_cs)
+			if (enemyCS)
 			{
 				shoot = qtrue;
 			}
 		}
 
-		if (!enemy_cs)
+		if (!enemyCS)
 		{
 			//if have a clear shot, always try
 			//See if we should continue to fire on their last position
@@ -339,7 +339,7 @@ void RT_FireDecide()
 			if (NPC->s.weapon == WP_ROCKET_LAUNCHER
 				|| NPC->s.weapon == WP_CONCUSSION && !(NPCInfo->scriptFlags & SCF_ALT_FIRE))
 			{
-				if (!enemy_los || !enemy_cs)
+				if (!enemyLOS || !enemyCS)
 				{
 					//cancel it
 					NPC->client->fireDelay = 0;

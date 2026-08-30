@@ -59,10 +59,10 @@ constexpr auto REALIZE_THRESHOLD = 0.6f;
 #define CAUTIOUS_THRESHOLD	( REALIZE_THRESHOLD * 0.75 )
 extern void npc_check_speak(gentity_t* speaker_npc);
 
-static qboolean enemy_los;
-static qboolean enemy_cs;
-static qboolean face_enemy;
-static qboolean do_move;
+static qboolean enemyLOS;
+static qboolean enemyCS;
+static qboolean faceEnemy;
+static qboolean doMove;
 static qboolean shoot;
 static float enemyDist;
 
@@ -339,7 +339,7 @@ static void Grenadier_CheckMoveState()
 	{
 		if (NPCInfo->goalEntity == NPC->enemy)
 		{
-			do_move = qfalse;
+			doMove = qfalse;
 			return;
 		}
 	}
@@ -352,7 +352,7 @@ static void Grenadier_CheckMoveState()
 		}
 		else
 		{
-			face_enemy = qfalse;
+			faceEnemy = qfalse;
 		}
 	}
 	/*
@@ -372,7 +372,7 @@ static void Grenadier_CheckMoveState()
 	{
 		//Did we make it?
 		if (STEER::Reached(NPC, NPCInfo->goalEntity, 16, !!FlyingCreature(NPC)) ||
-			NPCInfo->squadState == SQUAD_SCOUT && enemy_los && enemyDist <= 10000)
+			NPCInfo->squadState == SQUAD_SCOUT && enemyLOS && enemyDist <= 10000)
 		{
 			//int	newSquadState = SQUAD_STAND_AND_SHOOT;
 			//we got where we wanted to go, set timers based on why we were running
@@ -427,7 +427,7 @@ ST_CheckFireState
 
 static void Grenadier_CheckFireState()
 {
-	if (enemy_cs)
+	if (enemyCS)
 	{
 		//if have a clear shot, always try
 		return;
@@ -509,9 +509,9 @@ static void NPC_BSGrenadier_Attack()
 		return;
 	}
 
-	enemy_los = enemy_cs = qfalse;
-	do_move = qtrue;
-	face_enemy = qfalse;
+	enemyLOS = enemyCS = qfalse;
+	doMove = qtrue;
+	faceEnemy = qfalse;
 	shoot = qfalse;
 	enemyDist = DistanceSquared(NPC->enemy->currentOrigin, NPC->currentOrigin);
 
@@ -556,7 +556,7 @@ static void NPC_BSGrenadier_Attack()
 	if (NPC_ClearLOS(NPC->enemy))
 	{
 		NPCInfo->enemyLastSeenTime = level.time;
-		enemy_los = qtrue;
+		enemyLOS = qtrue;
 
 		if (NPC->client->ps.weapon == WP_MELEE)
 		{
@@ -564,7 +564,7 @@ static void NPC_BSGrenadier_Attack()
 				90, 45)) //within 64 & infront
 			{
 				VectorCopy(NPC->enemy->currentOrigin, NPCInfo->enemyLastSeenLocation);
-				enemy_cs = qtrue;
+				enemyCS = qtrue;
 			}
 		}
 		else if (InFOV(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 45, 90))
@@ -582,7 +582,7 @@ static void NPC_BSGrenadier_Attack()
 				if (enemy_horz_dist < 1048576)
 				{
 					//within 1024
-					enemy_cs = qtrue;
+					enemyCS = qtrue;
 					NPC_AimAdjust(2); //adjust aim better longer we have clear shot at enemy
 				}
 				else
@@ -604,25 +604,25 @@ static void NPC_BSGrenadier_Attack()
 	}
 	*/
 
-	if (enemy_los)
+	if (enemyLOS)
 	{
 		//FIXME: no need to face enemy if we're moving to some other goal and he's too far away to shoot?
-		face_enemy = qtrue;
+		faceEnemy = qtrue;
 	}
 
-	if (enemy_cs)
+	if (enemyCS)
 	{
 		shoot = qtrue;
 		if (NPC->client->ps.weapon == WP_THERMAL)
 		{
 			//don't chase and throw
-			do_move = qfalse;
+			doMove = qfalse;
 		}
 		else if (NPC->client->ps.weapon == WP_MELEE && enemyDist < (NPC->maxs[0] + NPC->enemy->maxs[0] + 16) * (NPC->
 			maxs[0] + NPC->enemy->maxs[0] + 16))
 		{
 			//close enough
-			do_move = qfalse;
+			doMove = qfalse;
 		}
 	} //this should make him chase enemy when out of range...?
 
@@ -632,20 +632,20 @@ static void NPC_BSGrenadier_Attack()
 	//See if we should override shooting decision with any special considerations
 	Grenadier_CheckFireState();
 
-	if (do_move)
+	if (doMove)
 	{
 		//doMove toward goal
 		if (NPCInfo->goalEntity) //&& ( NPCInfo->goalEntity != NPC->enemy || enemyDist > 10000 ) )//100 squared
 		{
-			do_move = Grenadier_Move();
+			doMove = Grenadier_Move();
 		}
 		else
 		{
-			do_move = qfalse;
+			doMove = qfalse;
 		}
 	}
 
-	if (!do_move)
+	if (!doMove)
 	{
 		if (!TIMER_Done(NPC, "duck"))
 		{
@@ -659,10 +659,10 @@ static void NPC_BSGrenadier_Attack()
 		TIMER_Set(NPC, "duck", -1);
 	}
 
-	if (!face_enemy)
+	if (!faceEnemy)
 	{
 		//we want to face in the dir we're running
-		if (do_move)
+		if (doMove)
 		{
 			//don't run away and shoot
 			NPCInfo->desiredYaw = NPCInfo->lastPathAngles[YAW];

@@ -82,7 +82,7 @@ extern void WP_ForcePowerDrain(const gentity_t* self, forcePowers_t force_power,
 extern qboolean ValidAnimFileIndex(int index);
 extern qboolean PM_ControlledByPlayer();
 extern qboolean PM_DroidMelee(int npc_class);
-extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_PainAnim(const int anim);
 extern qboolean PM_JumpingAnim(int anim);
 extern qboolean PM_FlippingAnim(int anim);
 extern qboolean PM_RollingAnim(int anim);
@@ -4400,7 +4400,7 @@ saberMoveName_t PM_CheckPullAttack()
 		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qfalse, isPlayer))
 	{
 		//FIXME: some NPC logic to do this?
-		qboolean do_move = g_saberNewControlScheme->integer ? qtrue : qfalse;
+		qboolean doMove = g_saberNewControlScheme->integer ? qtrue : qfalse;
 		//in new control scheme, can always do this, even if there's no-one to do it to
 		if (g_saberNewControlScheme->integer
 			|| g_crosshairEntNum < ENTITYNUM_WORLD) //in old control scheme, there has to be someone there
@@ -4481,10 +4481,10 @@ saberMoveName_t PM_CheckPullAttack()
 					{
 						G_Sound(pm->gent, G_SoundIndex("sound/weapons/force/pull.wav"));
 					}
-					do_move = qtrue;
+					doMove = qtrue;
 				}
 			}
-			if (do_move)
+			if (doMove)
 			{
 				if (pm->gent)
 				{

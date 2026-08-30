@@ -1447,7 +1447,7 @@ extern qboolean PM_WalkingAnim(const int anim);
 extern int fire_deley_time();
 extern void CG_ChangeWeapon(int num);
 extern qboolean IsHoldingReloadableGun(const gentity_t* ent);
-extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_PainAnim(const int anim);
 extern void G_RemoveGunnerAimFlagEnt(gentity_t* ent, qboolean removeFlag);
 
 //---------------------------------------------------------

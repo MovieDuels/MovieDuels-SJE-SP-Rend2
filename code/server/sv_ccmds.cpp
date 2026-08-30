@@ -137,7 +137,7 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 	// -------------------------------------------------
 
 	// If currently in JKO mode (non-zero) but loading a JKA map → force JKA mode
-	if (com_outcast->integer != 0)
+	if (com_outcast && com_outcast->integer != 0)
 	{
 		for (auto& jka_map : jka_maps)
 		{
@@ -150,7 +150,7 @@ static bool SV_Map_(const ForceReload_e e_force_reload)
 	}
 
 	// If not in JKO mode (1) but loading a JKO map → force JKO mode
-	if (com_outcast->integer != 1)
+	if (com_outcast && com_outcast->integer != 1)
 	{
 		for (auto& jko_map : jko_maps)
 		{

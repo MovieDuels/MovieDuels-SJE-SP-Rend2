@@ -106,7 +106,7 @@ extern qboolean FighterIsLanded(const Vehicle_t* p_veh, playerState_t* parent_ps
 extern void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength);
 extern qboolean WalkCheck(const gentity_t* self);
 extern int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit_locs);
-extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_PainAnim(const int anim);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 constexpr auto MISSILE_PRESTEP_TIME = 50;
 extern qboolean PM_InKataAnim(int anim);

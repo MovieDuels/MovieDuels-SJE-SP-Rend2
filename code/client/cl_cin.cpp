@@ -2088,7 +2088,7 @@ static void PlayCinematic(const char* arg, const char* s, const qboolean qb_in_g
 		{
 			ps_audio_file = "music/cinematic_1";
 
-			if (com_outcast->integer == 1) //playing outcast
+			if (cl_com_outcast && cl_com_outcast->integer == 1) //playing outcast
 			{
 				hCrawl = re.RegisterShaderNoMip("menu/video/tc_engl"); //outcast version of text crawl
 			}

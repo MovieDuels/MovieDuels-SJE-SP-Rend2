@@ -1370,23 +1370,29 @@ void CL_Init()
 	cl_consoleUseScanCode = Cvar_Get("cl_consoleUseScanCode", "1", CVAR_ARCHIVE);
 
 	// userinfo
-#ifdef JK2_MODE
-	Cvar_Get("name", "Kyle", CVAR_USERINFO | CVAR_ARCHIVE_ND);
-#else
-	Cvar_Get("name", "Jaden", CVAR_USERINFO | CVAR_ARCHIVE_ND);
-#endif
+	if (com_outcast && com_outcast->integer == 0) //playing academy
+	{
+		Cvar_Get("name", "Jaden", CVAR_USERINFO | CVAR_ARCHIVE_ND);
+	}
+	else if (com_outcast && com_outcast->integer == 1) //playing outcast
+	{
+		Cvar_Get("name", "Kyle", CVAR_USERINFO | CVAR_ARCHIVE_ND);
+	}
 
-#ifdef JK2_MODE
-	// this is required for savegame compatibility - not ever actually used
-	Cvar_Get("snaps", "20", CVAR_USERINFO);
-	Cvar_Get("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE);
-	Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_SAVEGAME);
-#else
-	Cvar_Get("sex", "m", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	Cvar_Get("snd", "jaden_male", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
-	//UI_SetSexandSoundForModel changes to match sounds.cfg for model
-	Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_SAVEGAME | CVAR_NORESTART);
-#endif
+	if (com_outcast && com_outcast->integer == 0) //playing academy
+	{
+		Cvar_Get("name", "Jaden", CVAR_USERINFO | CVAR_ARCHIVE_ND);
+		Cvar_Get("sex", "m", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+		Cvar_Get("snd", "jaden_male", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+		Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_SAVEGAME | CVAR_NORESTART);
+	}
+	else if (com_outcast && com_outcast->integer == 1) //playing outcast
+	{
+		Cvar_Get("name", "Kyle", CVAR_USERINFO | CVAR_ARCHIVE_ND);
+		Cvar_Get("sex", "m", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+		Cvar_Get("snd", "Kyle", CVAR_USERINFO | CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+		Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_SAVEGAME | CVAR_NORESTART);
+	}
 
 	cl_com_outcast = Cvar_Get("com_outcast", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 

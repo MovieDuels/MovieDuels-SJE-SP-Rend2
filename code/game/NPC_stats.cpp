@@ -2208,7 +2208,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 			stats->sex = SEX_MALE;
 			stats->aggression = 5;
 			stats->aim = 5;
-			if (npc->client->NPC_class == CLASS_STORMTROOPER && com_outcast->integer == 1)
+			if (npc->client->NPC_class == CLASS_STORMTROOPER && (com_outcast && com_outcast->integer == 1))
 			{
 				stats->earshot = 1024;
 			}
@@ -2222,7 +2222,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 			stats->move = 5;
 			stats->reactions = 5;
 			stats->vfov = 120;
-			if (npc->client->NPC_class == CLASS_STORMTROOPER && com_outcast->integer == 1)
+			if (npc->client->NPC_class == CLASS_STORMTROOPER && (com_outcast && com_outcast->integer == 1))
 			{
 				stats->vigilance = 0.5f;
 			}
@@ -2230,7 +2230,7 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 			{
 				stats->vigilance = 1.0f;
 			}
-			if (npc->client->NPC_class == CLASS_STORMTROOPER && com_outcast->integer == 1)
+			if (npc->client->NPC_class == CLASS_STORMTROOPER && (com_outcast && com_outcast->integer == 1))
 			{
 				stats->visrange = 1024;
 			}

@@ -1195,7 +1195,7 @@ static qboolean NPC_FindEnemy(const qboolean checkAlerts)
 		isOfficerWithFlechette = qtrue;
 	}
 
-	if (com_outcast->integer == 0)
+	if (com_outcast && com_outcast->integer == 0)
 	{
 		// 1. Force acquisition of the player if visible (except excluded officers)
 		if (!isOfficerWithFlechette)

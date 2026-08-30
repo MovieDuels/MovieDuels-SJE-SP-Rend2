@@ -114,7 +114,7 @@ extern qboolean PM_StabDownAnim(int anim);
 extern qboolean PM_SuperBreakLoseAnim(int anim);
 extern qboolean PM_SaberInKata(saberMoveName_t saberMove);
 extern qboolean PM_InRollIgnoreTimer(const playerState_t* ps);
-extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_PainAnim(const int anim);
 extern qboolean G_CanKickEntity(const gentity_t* self, const gentity_t* target);
 extern saberMoveName_t G_PickAutoKick(const gentity_t* self, const gentity_t* enemy, qboolean store_move);
 extern saberMoveName_t g_pick_auto_multi_kick(gentity_t* self, qboolean allow_singles, qboolean store_move);
@@ -141,7 +141,6 @@ extern qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const 
 extern qboolean BG_InKnockDown(int anim);
 extern void ForceGrasp(gentity_t* ent);
 extern qboolean WP_SaberAttacking(const gentity_t* self);
-extern cvar_t* com_outcast;
 extern qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc);
 qboolean jedi_evasion_roll(gentity_t* ai_ent);
 extern qboolean NPC_IsOversized(const gentity_t* self);
@@ -7128,7 +7127,7 @@ void jedi_set_enemy_info(vec3_t enemy_dest, vec3_t enemy_dir, float* enemy_dist,
 	}
 }
 
-void npc_evasion_saber()
+void NPC_EvasionSaber()
 {
 	if (ucmd.upmove <= 0 //not jumping
 		&& (!ucmd.upmove || !ucmd.rightmove)) //either just ducking or just strafing (i.e.: not rolling

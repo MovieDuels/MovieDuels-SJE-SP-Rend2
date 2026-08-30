@@ -394,7 +394,7 @@ static void NPC_ChoosePainAnimation(gentity_t* self, const gentity_t* other, con
 
 			if (pain_anim == -1)
 			{
-				pain_anim = PM_PickAnim(self, BOTH_PAIN1, BOTH_PAIN18);
+				pain_anim = PM_PickAnim(self, BOTH_PAIN1, BOTH_PAIN19);
 			}
 			if (self->client->ps.saberStylesKnown & 1 << SS_FAST)
 			{

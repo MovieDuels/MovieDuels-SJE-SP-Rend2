@@ -2803,7 +2803,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 				{
 					if (HeIsJedi(ent))
 					{// jedi inventory
-						if (com_outcast->integer == 1) //playing outcast
+						if (com_outcast && com_outcast->integer == 1) //playing outcast
 						{//Outcast inventory
 							ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							ent->client->ps.inventory[INV_CLOAK] = 1;
@@ -2889,7 +2889,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 							}
 							ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
 
-							if (com_outcast->integer == 1) //playing outcast
+							if (com_outcast && com_outcast->integer == 1) //playing outcast
 							{//Outcast inventory
 								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							}
@@ -2900,7 +2900,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 						}
 						else
 						{
-							if (com_outcast->integer == 1) //playing outcast
+							if (com_outcast && com_outcast->integer == 1) //playing outcast
 							{//Outcast inventory
 								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							}
@@ -2919,7 +2919,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 				}
 				else
 				{
-					if (com_outcast->integer == 1) //playing outcast
+					if (com_outcast && com_outcast->integer == 1) //playing outcast
 					{
 						ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 					}
@@ -2995,7 +2995,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 				{
 					if (HeIsJedi(ent))
 					{// jedi inventory
-						if (com_outcast->integer == 1) //playing outcast
+						if (com_outcast && com_outcast->integer == 1) //playing outcast
 						{//Outcast inventory
 							ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							ent->client->ps.inventory[INV_CLOAK] = 1;
@@ -3081,7 +3081,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 							}
 							ent->flags |= FL_SABERDAMAGE_RESIST; //Partially resistant to sabers
 
-							if (com_outcast->integer == 1) //playing outcast
+							if (com_outcast && com_outcast->integer == 1) //playing outcast
 							{//Outcast inventory
 								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							}
@@ -3092,7 +3092,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 						}
 						else
 						{
-							if (com_outcast->integer == 1) //playing outcast
+							if (com_outcast && com_outcast->integer == 1) //playing outcast
 							{//Outcast inventory
 								ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 							}
@@ -3111,7 +3111,7 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 				}
 				else
 				{
-					if (com_outcast->integer == 1) //playing outcast
+					if (com_outcast && com_outcast->integer == 1) //playing outcast
 					{
 						ent->client->ps.inventory[INV_LIGHTAMP_GOGGLES] = 1;
 					}
@@ -3384,7 +3384,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 
 		// give default weapons
 		// these are precached in g_items, ClearRegisteredItems()
-		if (com_outcast->integer == 0) // playing academy
+		if (com_outcast && com_outcast->integer == 0) // playing academy
 		{
 			for (char& weapon : client->ps.weapons)
 			{
@@ -3403,7 +3403,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				client->ps.inventory[INV_BACTA_CANISTER] = 1;
 			}
 		}
-		else if (com_outcast->integer == 1) // playing outcast
+		else if (com_outcast && com_outcast->integer == 1) // playing outcast
 		{
 			client->ps.weapons[WP_MELEE] = 1;
 			client->ps.weapons[WP_BRYAR_PISTOL] = 1;

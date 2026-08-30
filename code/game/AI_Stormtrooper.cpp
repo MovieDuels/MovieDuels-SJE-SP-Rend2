@@ -58,7 +58,7 @@ extern qboolean Q3_TaskIDPending(const gentity_t* ent, taskID_t taskType);
 extern int GetTime(int lastTime);
 extern void NPC_AimAdjust(int change);
 extern qboolean FlyingCreature(const gentity_t* ent);
-extern void npc_evasion_saber();
+extern void NPC_EvasionSaber();
 extern qboolean RT_Flying(const gentity_t* self);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
@@ -98,12 +98,12 @@ constexpr auto REALIZE_THRESHOLD = 0.6f;
 
 qboolean NPC_CheckPlayerTeamStealth();
 
-static qboolean enemy_los;
-static qboolean enemy_cs;
+static qboolean enemyLOS;
+static qboolean enemyCS;
 static qboolean enemyInFOV;
 static qboolean hitAlly;
-static qboolean face_enemy;
-static qboolean do_move;
+static qboolean faceEnemy;
+static qboolean doMove;
 static qboolean shoot;
 static float enemyDist;
 static vec3_t impactPos;
@@ -2098,7 +2098,7 @@ static void ST_CheckMoveState()
 	if (Q3_TaskIDPending(NPC, TID_MOVE_NAV))
 	{
 		//moving toward a goal that a script is waiting on, so don't stop for anything!
-		do_move = qtrue;
+		doMove = qtrue;
 	}
 	else if (NPC->client->NPC_class == CLASS_ROCKETTROOPER
 		&& NPC->client->ps.groundEntityNum == ENTITYNUM_NONE)
@@ -2108,7 +2108,7 @@ static void ST_CheckMoveState()
 	}
 	//	else if ( NPC->NPC->scriptFlags&SCF_NO_GROUPS )
 	{
-		do_move = qtrue;
+		doMove = qtrue;
 	}
 	//See if we're a scout
 
@@ -2117,7 +2117,7 @@ static void ST_CheckMoveState()
 	{
 		//Did we make it?
 		if (STEER::Reached(NPC, NPCInfo->goalEntity, 16, !!FlyingCreature(NPC)) ||
-			enemy_los && NPCInfo->aiFlags & NPCAI_STOP_AT_LOS && !Q3_TaskIDPending(NPC, TID_MOVE_NAV)
+			enemyLOS && NPCInfo->aiFlags & NPCAI_STOP_AT_LOS && !Q3_TaskIDPending(NPC, TID_MOVE_NAV)
 			)
 		{
 			//either hit our navgoal or our navgoal was not a crucial (scripted) one (maybe a combat point) and we're scouting and found our enemy
@@ -2218,7 +2218,7 @@ ST_CheckFireState
 
 static void ST_CheckFireState()
 {
-	if (enemy_cs)
+	if (enemyCS)
 	{
 		//if have a clear shot, always try
 		return;
@@ -2356,7 +2356,7 @@ static void ST_CheckFireState()
 					NPCInfo->desiredPitch = angles[PITCH];
 
 					shoot = qtrue;
-					face_enemy = qfalse;
+					faceEnemy = qfalse;
 				}
 			}
 		}
@@ -3622,32 +3622,24 @@ static void Melee_GrabEnemy()
 
 void NPC_BSST_Attack(void)
 {
-	if (NPC == nullptr || NPCInfo == nullptr)
-	{
-		return;
-	}
-
-	// Don't do anything if we're hurt
+	//Don't do anything if we're hurt
 	if (NPC->painDebounceTime > level.time)
 	{
 		NPC_UpdateAngles(qtrue, qtrue);
 
-		if (NPC->client != nullptr &&
-			NPC->client->ps.torsoAnim == BOTH_KYLE_GRAB)
+		if (NPC->client->ps.torsoAnim == BOTH_KYLE_GRAB)
 		{
-			// see if we grabbed enemy
+			//see if we grabbed enemy
 			if (NPC->client->ps.torsoAnimTimer <= 200)
 			{
-				if (Melee_CanDoGrab() == qtrue &&
-					NPC_EnemyRangeFromBolt(0) <= 88.0f)
+				if (Melee_CanDoGrab()
+					&& NPC_EnemyRangeFromBolt(0) <= 88.0f)
 				{
-					// grab him!
+					//grab him!
 					Melee_GrabEnemy();
 					return;
 				}
-
-				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_KYLE_MISS,
-					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_KYLE_MISS, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				NPC->client->ps.weaponTime = NPC->client->ps.torsoAnimTimer;
 				return;
 			}
@@ -3655,24 +3647,23 @@ void NPC_BSST_Attack(void)
 		else
 		{
 			ST_Speech(NPC, SPEECH_COVER, 0);
+
 			NPC_CheckEvasion();
 		}
 		return;
 	}
-
-	// Danger / flee check
-	if (in_camera == qfalse &&
-		TIMER_Done(NPC, "flee") == qtrue &&
-		NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)) == qtrue)
+	if (!in_camera && (TIMER_Done(NPC, "flee") &&
+		NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER))))
 	{
 		ST_Speech(NPC, SPEECH_COVER, 0);
 		NPC_CheckEvasion();
 	}
 
-	// If we don't have an enemy, just idle
+	//If we don't have an enemy, just idle
 	if (NPC_CheckEnemyExt() == qfalse)
 	{
-		if (NPC->client != nullptr && NPC->client->playerTeam == TEAM_PLAYER)
+		NPC->enemy = nullptr;
+		if (NPC->client->playerTeam == TEAM_PLAYER)
 		{
 			NPC_BSPatrol();
 		}
@@ -3683,17 +3674,17 @@ void NPC_BSST_Attack(void)
 		return;
 	}
 
-	// Periodically drop enemy if we can't see them anymore
-	if (TIMER_Done(NPC, "sje_check_enemy") == qtrue)
+	// now if this timer is done and the enemy is no longer in our line of sight, try to get a new enemy later
+	if (TIMER_Done(NPC, "sje_check_enemy"))
 	{
 		TIMER_Set(NPC, "sje_check_enemy", Q_irand(5000, 10000));
 
-		if (NPC->enemy != nullptr && NPC->health > 0 && NPC_ClearLOS(NPC->enemy) == qfalse)
+		if (NPC->enemy && !NPC_ClearLOS(NPC->enemy) && NPC->health > 0)
 		{
-			if (NPC->client != nullptr)
+			// if enemy cant be seen, try getting one later
+			if (NPC->client)
 			{
 				NPC->enemy = nullptr;
-
 				if (NPC->client->playerTeam == TEAM_PLAYER)
 				{
 					NPC_BSPatrol();
@@ -3704,18 +3695,17 @@ void NPC_BSST_Attack(void)
 				}
 				return;
 			}
-
-			if (NPC->client != nullptr)
+			if (NPC->client)
 			{
 				// guardians have a different way to find enemies. He tries to find the quest player and his allies
 				for (int sje_it = 0; sje_it < level.maxclients; sje_it++)
 				{
 					gentity_t* allied_player = &g_entities[sje_it];
 
-					if (allied_player != nullptr &&
-						allied_player->client != nullptr &&
-						NPC_ClearLOS(allied_player) == qtrue)
+					if (allied_player && allied_player->client &&
+						NPC_ClearLOS(allied_player))
 					{
+						// the quest player or one of his allies. If one of them is in line of sight, choose him as enemy
 						NPC->enemy = allied_player;
 					}
 				}
@@ -3723,409 +3713,1221 @@ void NPC_BSST_Attack(void)
 		}
 	}
 
-	// Get our group info
-	if (TIMER_Done(NPC, "interrogating") == qtrue)
+	//Get our group info
+	if (TIMER_Done(NPC, "interrogating"))
 	{
-		AI_GetGroup(NPC);
+		AI_GetGroup(NPC); //, 45, 512, NPC->enemy );
 	}
 	else
 	{
 		ST_Speech(NPC, SPEECH_YELL, 0);
 	}
 
-	if (NPCInfo->group != nullptr)
+	if (NPCInfo->group)
 	{
-		// I belong to a squad of guys - we should *always* have a group
-		if (NPCInfo->group->processed == qfalse)
+		//I belong to a squad of guys - we should *always* have a group
+		if (!NPCInfo->group->processed)
 		{
-#if AI_TIMERS
-			int startTime = GetTime(0);
-#endif
+			//I'm the first ent in my group, I'll make the command decisions
+#if	AI_TIMERS
+			int	startTime = GetTime(0);
+#endif//	AI_TIMERS
 			ST_Commander();
-#if AI_TIMERS
+#if	AI_TIMERS
 			int commTime = GetTime(startTime);
 			if (commTime > 20)
 			{
-				gi.Printf(S_COLOR_RED "ERROR: Commander time: %d\n", commTime);
+				gi.Printf(S_COLOR_RED"ERROR: Commander time: %d\n", commTime);
 			}
 			else if (commTime > 10)
 			{
-				gi.Printf(S_COLOR_YELLOW "WARNING: Commander time: %d\n", commTime);
+				gi.Printf(S_COLOR_YELLOW"WARNING: Commander time: %d\n", commTime);
 			}
 			else if (commTime > 2)
 			{
-				gi.Printf(S_COLOR_GREEN "Commander time: %d\n", commTime);
+				gi.Printf(S_COLOR_GREEN"Commander time: %d\n", commTime);
 			}
-#endif
+#endif//	AI_TIMERS
 		}
 	}
-	else if (TIMER_Done(NPC, "flee") == qtrue &&
-		NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)) == qtrue)
+	else if (TIMER_Done(NPC, "flee") && NPC_CheckForDanger(NPC_CheckAlertEvents(qtrue, qtrue, -1, qfalse, AEL_DANGER)))
 	{
-		// not already fleeing, and going to run
+		//not already fleeing, and going to run
 		ST_Speech(NPC, SPEECH_COVER, 0);
 		NPC_UpdateAngles(qtrue, qtrue);
 		return;
 	}
 
-	if (NPC->enemy == nullptr)
+	if (!NPC->enemy)
 	{
-		// somehow we lost our enemy
-		NPC_BSST_Patrol();
-		return;
-	}
-	if (NPC->enemy->inuse == qfalse || NPC->enemy->client == nullptr)
-	{
-		G_ClearEnemy(NPC);
-		NPC_BSST_Patrol();
+		//WTF?  somehow we lost our enemy?
+		NPC_BSST_Patrol(); //FIXME: or patrol?
 		return;
 	}
 
-	if (NPCInfo->goalEntity != nullptr && NPCInfo->goalEntity != NPC->enemy)
+	if (NPCInfo->goalEntity && NPCInfo->goalEntity != NPC->enemy)
 	{
 		NPCInfo->goalEntity = UpdateGoal();
 	}
 
-	enemy_los = qfalse;
-	enemy_cs = qfalse;
-	enemyInFOV = qfalse;
-	do_move = qtrue;
-	face_enemy = qfalse;
+	enemyLOS = enemyCS = enemyInFOV = qfalse;
+	doMove = qtrue;
+	faceEnemy = qfalse;
 	shoot = qfalse;
 	hitAlly = qfalse;
 	VectorClear(impactPos);
-
-	if (NPC->enemy == nullptr || NPC->enemy->inuse == qfalse || NPC->enemy->client == nullptr)
-	{
-		G_ClearEnemy(NPC);
-		NPC_BSST_Patrol();
-		return;
-	}
-
 	enemyDist = DistanceSquared(NPC->currentOrigin, NPC->enemy->currentOrigin);
 
 	vec3_t enemy_dir, shoot_dir;
 	VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, enemy_dir);
 	VectorNormalize(enemy_dir);
-
-	if (NPC->client != nullptr)
-	{
-		AngleVectors(NPC->client->ps.viewangles, shoot_dir, nullptr, nullptr);
-	}
-	else
-	{
-		VectorClear(shoot_dir);
-	}
-
+	AngleVectors(NPC->client->ps.viewangles, shoot_dir, nullptr, nullptr);
 	const float dot = DotProduct(enemy_dir, shoot_dir);
-	if (dot > 0.5f || enemyDist * (1.0f - dot) < 10000.0f)
+
+	if (dot > 0.5f || enemyDist * (1.0f - dot) < 10000)
 	{
-		// enemy is in front of me or they're very close and not behind me
+		//enemy is in front of me or they're very close and not behind me
 		enemyInFOV = qtrue;
 	}
 
-	// Weapon distance handling (only valid if we have a client)
-	if (NPC->client != nullptr)
+	if (enemyDist < MIN_ROCKET_DIST_SQUARED) //128
 	{
-		if (enemyDist < MIN_ROCKET_DIST_SQUARED)
+		//enemy within 128
+		if ((NPC->client->ps.weapon == WP_FLECHETTE || NPC->client->ps.weapon == WP_REPEATER) &&
+			NPCInfo->scriptFlags & SCF_ALT_FIRE)
 		{
-			// enemy within 128
-			if ((NPC->client->ps.weapon == WP_FLECHETTE || NPC->client->ps.weapon == WP_REPEATER) &&
-				(NPCInfo->scriptFlags & SCF_ALT_FIRE))
-			{
-				// shooting an explosive, but enemy too close, switch to primary fire
-				NPCInfo->scriptFlags &= ~SCF_ALT_FIRE;
-			}
+			//shooting an explosive, but enemy too close, switch to primary fire
+			NPCInfo->scriptFlags &= ~SCF_ALT_FIRE;
 		}
-		else if (enemyDist > 65536.0f)
+	}
+	else if (enemyDist > 65536) //256 squared
+	{
+		if (NPC->client->ps.weapon == WP_DISRUPTOR)
 		{
-			if (NPC->client->ps.weapon == WP_DISRUPTOR)
+			//sniping...
+			if (!(NPCInfo->scriptFlags & SCF_ALT_FIRE))
 			{
-				// sniping...
-				if ((NPCInfo->scriptFlags & SCF_ALT_FIRE) == 0)
-				{
-					NPCInfo->scriptFlags |= SCF_ALT_FIRE;
-					NPC_ChangeWeapon(NPC->client->ps.weapon);
-					NPC_UpdateAngles(qtrue, qtrue);
-					return;
-				}
+				//use primary fire
+				NPCInfo->scriptFlags |= SCF_ALT_FIRE;
+				//reset fire-timing variables
+				NPC_ChangeWeapon(WP_DISRUPTOR);
+				NPC_UpdateAngles(qtrue, qtrue);
+				return;
 			}
 		}
 	}
 
-	// Can we see our target?
-	if (NPC_ClearLOS(NPC->enemy) == qtrue)
+	//can we see our target?
+	if (NPC_ClearLOS(NPC->enemy))
 	{
 		AI_GroupUpdateEnemyLastSeen(NPCInfo->group, NPC->enemy->currentOrigin);
 		NPCInfo->enemyLastSeenTime = level.time;
-		enemy_los = qtrue;
+		enemyLOS = qtrue;
 
-		if (NPC->client == nullptr || NPC->client->ps.weapon == WP_NONE)
+		if (NPC->client->ps.weapon == WP_NONE)
 		{
-			enemy_cs = qfalse;
-			NPC_AimAdjust(-1);
+			enemyCS = qfalse; //not true, but should stop us from firing
+			NPC_AimAdjust(-1); //adjust aim worse longer we have no weapon
 		}
 		else
 		{
-			// can we shoot our target?
+			//can we shoot our target?
 			if (enemyDist < MIN_ROCKET_DIST_SQUARED &&
 				level.time - NPC->lastMoveTime < 5000 &&
-				(NPC->client->ps.weapon == WP_ROCKET_LAUNCHER ||
-					(NPC->client->ps.weapon == WP_CONCUSSION && (NPCInfo->scriptFlags & SCF_ALT_FIRE) == 0) ||
-					(NPC->client->ps.weapon == WP_FLECHETTE && (NPCInfo->scriptFlags & SCF_ALT_FIRE))))
+				(NPC->client->ps.weapon == WP_ROCKET_LAUNCHER
+					|| NPC->client->ps.weapon == WP_CONCUSSION && !(NPCInfo->scriptFlags & SCF_ALT_FIRE)
+					|| NPC->client->ps.weapon == WP_FLECHETTE && NPCInfo->scriptFlags & SCF_ALT_FIRE))
 			{
-				enemy_cs = qfalse;
-				hitAlly = qtrue; // us!
+				enemyCS = qfalse; //not true, but should stop us from firing
+				hitAlly = qtrue; //us!
 			}
-			else if (enemyInFOV == qtrue)
+			else if (enemyInFOV)
 			{
+				//if enemy is FOV, go ahead and check for shooting
 				const int hit = NPC_ShotEntity(NPC->enemy, impactPos);
-				const gentity_t* hitEnt = (hit >= 0 && hit < ENTITYNUM_WORLD) ? &g_entities[hit] : nullptr;
+				const gentity_t* hitEnt = &g_entities[hit];
 
-				if (hit == NPC->enemy->s.number ||
-					(hitEnt != nullptr && hitEnt->client != nullptr && hitEnt->client->playerTeam == NPC->client->enemyTeam) ||
-					(hitEnt != nullptr && hitEnt->takedamage &&
-						((hitEnt->svFlags & SVF_GLASS_BRUSH) || hitEnt->health < 40 ||
-							NPC->s.weapon == WP_EMPLACED_GUN)))
+				if (hit == NPC->enemy->s.number
+					|| hitEnt && hitEnt->client && hitEnt->client->playerTeam == NPC->client->enemyTeam
+					|| hitEnt && hitEnt->takedamage && (hitEnt->svFlags & SVF_GLASS_BRUSH || hitEnt->health < 40 ||
+						NPC
+						->s.weapon == WP_EMPLACED_GUN))
 				{
-					// can hit enemy or enemy ally or will hit glass or other minor breakable (or in emplaced gun), so shoot anyway
+					//can hit enemy or enemy ally or will hit glass or other minor breakable (or in emplaced gun), so shoot anyway
 					AI_GroupUpdateClearShotTime(NPCInfo->group);
-					enemy_cs = qtrue;
-					NPC_AimAdjust(2);
+					enemyCS = qtrue;
+					NPC_AimAdjust(2); //adjust aim better longer we have clear shot at enemy
 					VectorCopy(NPC->enemy->currentOrigin, NPCInfo->enemyLastSeenLocation);
 				}
 				else
 				{
-					NPC_AimAdjust(2);
+					//Hmm, have to get around this bastard
+					NPC_AimAdjust(1); //adjust aim better longer we can see enemy
 					ST_ResolveBlockedShot(hit);
-
-					if (hitEnt != nullptr && hitEnt->client != nullptr &&
-						hitEnt->client->playerTeam == NPC->client->playerTeam)
+					if (hitEnt && hitEnt->client && hitEnt->client->playerTeam == NPC->client->playerTeam)
 					{
-						// would hit an ally, don't fire
+						//would hit an ally, don't fire!!!
 						hitAlly = qtrue;
+					}
+					else
+					{
+						//Check and see where our shot *would* hit... if it's not close to the enemy (within 256?), then don't fire
 					}
 				}
 			}
 			else
 			{
-				enemy_cs = qfalse;
+				enemyCS = qfalse; //not true, but should stop us from firing
 			}
 		}
 	}
 	else if (gi.inPVS(NPC->enemy->currentOrigin, NPC->currentOrigin))
 	{
 		NPCInfo->enemyLastSeenTime = level.time;
-		face_enemy = qtrue;
-		NPC_AimAdjust(-1);
+		faceEnemy = qtrue;
+		NPC_AimAdjust(-1); //adjust aim worse longer we cannot see enemy
 	}
 
-	if (NPC->client == nullptr || NPC->client->ps.weapon == WP_NONE)
+	if (NPC->client->ps.weapon == WP_NONE)
 	{
-		face_enemy = qfalse;
+		faceEnemy = qfalse;
 		shoot = qfalse;
 	}
 	else
 	{
-		if (enemy_los == qtrue)
+		if (enemyLOS)
 		{
-			face_enemy = qtrue;
+			//FIXME: no need to face enemy if we're moving to some other goal and he's too far away to shoot?
+			faceEnemy = qtrue;
 		}
-		if (enemy_cs == qtrue)
+		if (enemyCS)
 		{
 			shoot = qtrue;
 		}
 	}
 
-	// Check for movement to take care of
+	//Check for movement to take care of
 	ST_CheckMoveState();
 
-	// See if we should override shooting decision with any special considerations
+	//See if we should override shooting decision with any special considerations
 	ST_CheckFireState();
 
-	if (face_enemy == qtrue)
+	if (faceEnemy)
 	{
+		//face the enemy
 		NPC_FaceEnemy(qtrue);
 	}
 
-	if ((NPCInfo->scriptFlags & SCF_CHASE_ENEMIES) == 0)
+	if (!(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
 	{
-		// not supposed to chase my enemies
+		//not supposed to chase my enemies
 		if (NPCInfo->goalEntity == NPC->enemy)
 		{
-			do_move = qfalse;
+			//goal is my entity, so don't doMove
+			doMove = qfalse;
 		}
 	}
-	else if (NPC->NPC != nullptr && (NPC->NPC->scriptFlags & SCF_NO_GROUPS))
+	else if (NPC->NPC->scriptFlags & SCF_NO_GROUPS)
 	{
-		NPCInfo->goalEntity = (enemy_los == qtrue) ? nullptr : NPC->enemy;
+		NPCInfo->goalEntity = enemyLOS ? nullptr : NPC->enemy;
 	}
 
-	if (NPC->client != nullptr && NPC->client->fireDelay && NPC->s.weapon == WP_ROCKET_LAUNCHER)
+	if (NPC->client->fireDelay && NPC->s.weapon == WP_ROCKET_LAUNCHER)
 	{
-		do_move = qfalse;
+		doMove = qfalse;
 	}
 
 	if (!ucmd.rightmove)
 	{
-		// only if not already strafing
-		if (TIMER_Done(NPC, "strafeLeft") == qfalse)
+		//only if not already strafing for some strange reason...?
+		if (!TIMER_Done(NPC, "strafeLeft"))
 		{
 			ucmd.rightmove = -127;
-			if (NPC->client != nullptr)
-			{
-				VectorClear(NPC->client->ps.moveDir);
-			}
-			do_move = qfalse;
+			//re-check the duck as we might want to be rolling
+			VectorClear(NPC->client->ps.moveDir);
+			doMove = qfalse;
 		}
-		else if (TIMER_Done(NPC, "strafeRight") == qfalse)
+		else if (!TIMER_Done(NPC, "strafeRight"))
 		{
 			ucmd.rightmove = 127;
-			if (NPC->client != nullptr)
-			{
-				VectorClear(NPC->client->ps.moveDir);
-			}
-			do_move = qfalse;
+			VectorClear(NPC->client->ps.moveDir);
+			doMove = qfalse;
 		}
 	}
 
-	if (NPC->client != nullptr &&
-		NPC->client->ps.legsAnim == BOTH_GUARD_LOOKAROUND1)
+	if (NPC->client->ps.legsAnim == BOTH_GUARD_LOOKAROUND1)
 	{
-		do_move = qfalse;
+		//don't doMove when doing silly look around thing
+		doMove = qfalse;
 	}
-
-	if (do_move == qtrue)
+	if (doMove)
 	{
-		if (NPCInfo->goalEntity != nullptr)
+		//doMove toward goal
+		if (NPCInfo->goalEntity)
 		{
-			do_move = ST_Move();
+			doMove = ST_Move();
 
-			if ((NPC->client == nullptr ||
-				NPC->client->NPC_class != CLASS_ROCKETTROOPER ||
-				NPC->s.weapon != WP_ROCKET_LAUNCHER ||
-				enemyDist < MIN_ROCKET_DIST_SQUARED) &&
-				ucmd.forwardmove <= -32)
+			if ((NPC->client->NPC_class != CLASS_ROCKETTROOPER || NPC->s.weapon != WP_ROCKET_LAUNCHER || enemyDist <
+				MIN_ROCKET_DIST_SQUARED)
+				//rockettroopers who use rocket launchers turn around and run if you get too close (closer than 128)
+				&& ucmd.forwardmove <= -32)
 			{
-				// moving backwards at least 45 degrees
-				if (NPCInfo->goalEntity != nullptr &&
-					DistanceSquared(NPCInfo->goalEntity->currentOrigin, NPC->currentOrigin) >
+				//moving backwards at least 45 degrees
+				if (NPCInfo->goalEntity
+					&& DistanceSquared(NPCInfo->goalEntity->currentOrigin, NPC->currentOrigin) >
 					MIN_TURN_AROUND_DIST_SQ)
 				{
-					if (TIMER_Done(NPC, "runBackwardsDebounce") == qtrue)
+					//don't stop running backwards if your goal is less than 100 away
+					if (TIMER_Done(NPC, "runBackwardsDebounce"))
 					{
-						if (TIMER_Exists(NPC, "runningBackwards") == qfalse)
+						//not already waiting for next run backwards
+						if (!TIMER_Exists(NPC, "runningBackwards"))
 						{
-							TIMER_Set(NPC, "runningBackwards", Q_irand(500, 1000));
+							//start running backwards
+							TIMER_Set(NPC, "runningBackwards", Q_irand(500, 1000)); //Q_irand( 2000, 3500 ) );
 						}
 						else if (TIMER_Done2(NPC, "runningBackwards", qtrue))
 						{
+							//done running backwards
 							TIMER_Set(NPC, "runBackwardsDebounce", Q_irand(3000, 5000));
 						}
 					}
 				}
 			}
+			else
+			{
+				//not running backwards
+				//TIMER_Remove( NPC, "runningBackwards" );
+			}
 		}
 		else
 		{
-			do_move = qfalse;
+			doMove = qfalse;
 		}
 	}
 
-	if (do_move == qfalse)
+	if (!doMove)
 	{
-		// Safety: NPC->client may be NULL for some entity types
-		if (NPC->client != nullptr)
+		if (NPC->client->NPC_class != CLASS_ASSASSIN_DROID && NPC->client->NPC_class != CLASS_DROIDEKA)
 		{
-			if (NPC->client->NPC_class != CLASS_ASSASSIN_DROID &&
-				NPC->client->NPC_class != CLASS_DROIDEKA)
+			if (!TIMER_Done(NPC, "duck"))
 			{
-				if (TIMER_Done(NPC, "duck") == qfalse)
-				{
-					ucmd.upmove = -127;
-				}
+				ucmd.upmove = -127;
 			}
 		}
 	}
 	else
 	{
+		//stop ducking!
 		TIMER_Set(NPC, "duck", -1);
 	}
 
-	// SLAP (generic gunner bash)
-	if (NPC->client != nullptr &&
-		Q_irand(0, 3) == 0 &&
-		g_SerenityJediEngineMode->integer > 0 &&
-		g_allowgunnerbash->integer > 0 &&
-		char_can_gun_bash(NPC) &&
-		NPC->client->NPC_class != CLASS_SBD &&
-		PM_InKnockDown(&NPC->client->ps) == qfalse)
+	if (g_allowgunnerbash->integer)
 	{
-		if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 ||
-			NPC->client->ps.torsoAnim == BOTH_A7_HILT)
+		// slap
+		if (NPC->client->NPC_class == CLASS_STORMCOMMANDO
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !PM_InKnockDown(&NPC->client->ps))
 		{
-			shoot = qfalse;
-
-			if (TIMER_Done(NPC, "smackTime") == qtrue &&
-				!NPCInfo->blockedDebounceTime)
+			if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+				//within 80 and in front
 			{
-				if (enemyDist < MELEE_DIST_SQUARED &&
-					!NPC->client->ps.weaponTime &&
-					PM_InKnockDown(&NPC->client->ps) == qfalse &&
-					InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
-						NPC->client->ps.viewangles, 0.3f))
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "slapattackDelay"))
 				{
-					vec3_t smack_dir;
-					VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
-					smack_dir[2] += 30.0f;
-					VectorNormalize(smack_dir);
-
-					G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-					G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
-						(g_spskill->integer + 1) * Q_irand(2, 5),
-						DAMAGE_NO_KNOCKBACK, MOD_MELEE);
-					WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
-
-					NPCInfo->blockedDebounceTime = 1;
+					//animate me
+					constexpr int swing_anim = BOTH_TUSKENLUNGE1;
+					G_Sound(NPC->enemy, G_SoundIndex("sound/chars/stofficer1/misc/victory1.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+					//delay the hurt until the proper point in the anim
+					TIMER_Set(NPC, "smackTime", 300);
+					NPCInfo->blockedDebounceTime = 0;
 				}
 			}
 		}
-		else
+
+		// SLAP
+		if ((NPC->client->NPC_class == CLASS_STORMTROOPER || NPC->client->NPC_class == CLASS_REBEL)
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !PM_InKnockDown(&NPC->client->ps))
 		{
-			if (enemyDist < MELEE_DIST_SQUARED &&
-				!NPC->client->ps.weaponTime &&
-				PM_InKnockDown(&NPC->client->ps) == qfalse &&
-				InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
-					NPC->client->ps.viewangles, 0.3f))
+			if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 || NPC->client->ps.torsoAnim == BOTH_A7_HILT)
 			{
-				if (TIMER_Done(NPC, "slapattackDelay") == qtrue)
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
 				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						int swing_anim;
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							swing_anim = BOTH_TUSKENATTACK2;
+						}
+						else
+						{
+							swing_anim = BOTH_A7_HILT;
+						}
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+
+		if ((NPC->client->NPC_class == CLASS_STORMTROOPER || NPC->client->NPC_class == CLASS_REBEL)
+			&& NPC->client->playerTeam == TEAM_PLAYER
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 || NPC->client->ps.torsoAnim == BOTH_A7_HILT)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						int swing_anim;
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							swing_anim = BOTH_TUSKENATTACK2;
+						}
+						else
+						{
+							swing_anim = BOTH_A7_HILT;
+						}
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		if (NPC->client->NPC_class == CLASS_CLONETROOPER
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK1)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						constexpr int swing_anim = BOTH_TUSKENATTACK1;
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+
+		// SLAP
+		if (NPC->client->NPC_class == CLASS_CLONETROOPER
+			&& NPC->client->playerTeam == TEAM_PLAYER
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK1)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						constexpr int swing_anim = BOTH_TUSKENATTACK1;
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+		if (NPC->client->NPC_class == CLASS_SBD
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						int swing_anim;
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							swing_anim = BOTH_A7_SLAP_R;
+						}
+						else
+						{
+							swing_anim = BOTH_A7_SLAP_L;
+						}
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+		if (NPC->client->NPC_class == CLASS_SBD
+			&& NPC->client->playerTeam == TEAM_PLAYER
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						int swing_anim;
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							swing_anim = BOTH_A7_SLAP_R;
+						}
+						else
+						{
+							swing_anim = BOTH_A7_SLAP_L;
+						}
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+		if (NPC->client->NPC_class == CLASS_NOGHRI
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 || NPC->client->ps.torsoAnim == BOTH_A7_HILT)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						int swing_anim;
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							swing_anim = BOTH_TUSKENATTACK2;
+						}
+						else
+						{
+							swing_anim = BOTH_A7_HILT;
+						}
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+		if (NPC->client->NPC_class == CLASS_NOGHRI
+			&& NPC->client->playerTeam == TEAM_PLAYER
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_TUSKENATTACK2 || NPC->client->ps.torsoAnim == BOTH_A7_HILT)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(2, 5), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+			else
+			{
+				if (enemyDist < MELEE_DIST_SQUARED
+					&& !NPC->client->ps.weaponTime //not firing
+					&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+					&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					//within 80 and in front
+				{
+					//enemy within 80, if very close, use melee attack to slap away
+					if (TIMER_Done(NPC, "slapattackDelay"))
+					{
+						//animate me
+						int swing_anim;
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							swing_anim = BOTH_TUSKENATTACK2;
+						}
+						else
+						{
+							swing_anim = BOTH_A7_HILT;
+						}
+						G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
+						NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (NPC->health > BLOCKPOINTS_THIRTY)
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(10000, 15000));
+						}
+						else
+						{
+							TIMER_Set(NPC, "slapattackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(5000, 10000));
+						}
+						//delay the hurt until the proper point in the anim
+						TIMER_Set(NPC, "smackTime", 300);
+						NPCInfo->blockedDebounceTime = 0;
+					}
+				}
+			}
+		}
+
+		//slap end
+		//==
+		if (NPC->client->NPC_class == CLASS_IMPERIAL ||
+			NPC->client->NPC_class == CLASS_REELO ||
+			NPC->client->NPC_class == CLASS_SABOTEUR
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !NPC->client->ps.weaponTime
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_A7_KICK_F
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_F2
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_B2
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_B)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex("sound/chars/%s/misc/pain0%d"));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(1, 3), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+		}
+
+		//slap
+		if (NPC->client->NPC_class == CLASS_IMPERIAL ||
+			NPC->client->NPC_class == CLASS_REELO ||
+			NPC->client->NPC_class == CLASS_SABOTEUR
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !NPC->client->ps.weaponTime
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+				//within 80 and in front
+			{
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "attackDelay"))
+				{
+					//animate me
+					const int swing_anim = Q_irand(BOTH_A7_KICK_F, BOTH_A7_KICK_F2);
+					G_Sound(NPC->enemy, G_SoundIndex("sound/weapons/melee/kick2.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "attackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+					//delay the hurt until the proper point in the anim
+					TIMER_Set(NPC, "smackTime", 300);
+					NPCInfo->blockedDebounceTime = 0;
+				}
+			}
+			else if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& !InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, -0.25f))
+				//within 80 and generally behind
+			{
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "attackDelay"))
+				{
+					//animate me
+					const int swing_anim = Q_irand(BOTH_A7_KICK_B2, BOTH_A7_KICK_B);
+					G_Sound(NPC->enemy, G_SoundIndex("sound/weapons/melee/kick1.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "attackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+					//delay the hurt until the proper point in the anim
+					TIMER_Set(NPC, "smackTime", 300);
+					NPCInfo->blockedDebounceTime = 0;
+				}
+			}
+		}
+		//===================================================
+		if (NPC->client->NPC_class == CLASS_TRANDOSHAN ||
+			NPC->client->NPC_class == CLASS_WEEQUAY ||
+			NPC->client->NPC_class == CLASS_RODIAN
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !NPC->client->ps.weaponTime
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_MELEE_L
+				|| NPC->client->ps.torsoAnim == BOTH_MELEE_R
+				|| NPC->client->ps.torsoAnim == BOTH_MELEEUP
+				|| NPC->client->ps.torsoAnim == BOTH_MELEE3)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 10;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex("sound/chars/%s/misc/pain0%d"));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin, (g_spskill->integer + 1) * 1,
+							DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+		}
+
+		//slap
+		if (NPC->client->NPC_class == CLASS_TRANDOSHAN ||
+			NPC->client->NPC_class == CLASS_WEEQUAY ||
+			NPC->client->NPC_class == CLASS_RODIAN
+			&& NPC->client->playerTeam == TEAM_ENEMY
+			&& !NPC->client->ps.weaponTime
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+				//within 80 and in front
+			{
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "attackDelay"))
+				{
+					//animate me
 					int swing_anim;
-
-					if (NPC->health > BLOCKPOINTS_HALF)
+					if (NPC->health > 50)
 					{
-						swing_anim = BOTH_TUSKENATTACK2;
+						swing_anim = Q_irand(BOTH_MELEEUP, BOTH_MELEE3); //kick
 					}
 					else
 					{
-						swing_anim = BOTH_A7_HILT;
+						swing_anim = Q_irand(BOTH_MELEE_R, BOTH_MELEE_L); //kick
 					}
+					G_Sound(NPC->enemy, G_SoundIndex("sound/weapons/melee/kick2.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "attackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+					//delay the hurt until the proper point in the anim
+					TIMER_Set(NPC, "smackTime", 300);
+					NPCInfo->blockedDebounceTime = 0;
+				}
+			}
+		}
 
-					G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
-					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-
-					if (NPC->health > BLOCKPOINTS_HALF)
+		if (NPC->client->NPC_class == CLASS_BESPIN_COP ||
+			NPC->client->NPC_class == CLASS_JAN ||
+			NPC->client->NPC_class == CLASS_PRISONER ||
+			NPC->client->NPC_class == CLASS_REBEL ||
+			NPC->client->NPC_class == CLASS_WOOKIE
+			&& NPC->client->playerTeam == TEAM_PLAYER
+			&& !PM_InKnockDown(&NPC->client->ps)) //not knocked down ) )
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_A7_KICK_F
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_F2
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_B2
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_B)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
 					{
-						TIMER_Set(NPC, "slapattackDelay",
-							NPC->client->ps.torsoAnimTimer + Q_irand(12000, 18000));
-					}
-					else
-					{
-						TIMER_Set(NPC, "slapattackDelay",
-							NPC->client->ps.torsoAnimTimer + Q_irand(6000, 12000));
-					}
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex("sound/chars/%s/misc/pain0%d"));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(5, 10), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
 
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+		}
+
+		//slap
+		if (NPC->client->NPC_class == CLASS_BESPIN_COP ||
+			NPC->client->NPC_class == CLASS_JAN ||
+			NPC->client->NPC_class == CLASS_PRISONER ||
+			NPC->client->NPC_class == CLASS_REBEL ||
+			NPC->client->NPC_class == CLASS_WOOKIE
+			&& NPC->client->playerTeam == TEAM_PLAYER
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+				//within 80 and in front
+			{
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "attackDelay"))
+				{
+					//animate me
+					const int swing_anim = Q_irand(BOTH_A7_KICK_F, BOTH_A7_KICK_F2);
+					G_Sound(NPC->enemy, G_SoundIndex("sound/weapons/melee/kick3.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "attackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+					//delay the hurt until the proper point in the anim
+					TIMER_Set(NPC, "smackTime", 300);
+					NPCInfo->blockedDebounceTime = 0;
+				}
+			}
+			else if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& !InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, -0.25f))
+				//within 80 and generally behind
+			{
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "attackDelay"))
+				{
+					//animate me
+					const int swing_anim = Q_irand(BOTH_A7_KICK_B2, BOTH_A7_KICK_B);
+					G_Sound(NPC->enemy, G_SoundIndex("sound/weapons/melee/kick1.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "attackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+					//delay the hurt until the proper point in the anim
+					TIMER_Set(NPC, "smackTime", 300);
+					NPCInfo->blockedDebounceTime = 0;
+				}
+			}
+		}
+
+		if (NPC->client->NPC_class == CLASS_BESPIN_COP ||
+			NPC->client->NPC_class == CLASS_JAN ||
+			NPC->client->NPC_class == CLASS_PRISONER ||
+			NPC->client->NPC_class == CLASS_REBEL ||
+			NPC->client->NPC_class == CLASS_WOOKIE
+			&& !PM_InKnockDown(&NPC->client->ps)) //not knocked down ) )
+		{
+			if (NPC->client->ps.torsoAnim == BOTH_A7_KICK_F
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_F2
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_B2
+				|| NPC->client->ps.torsoAnim == BOTH_A7_KICK_B)
+			{
+				shoot = qfalse;
+				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
+				{
+					//time to smack
+					//recheck enemyDist and InFront
+					if (enemyDist < MELEE_DIST_SQUARED
+						&& !NPC->client->ps.weaponTime //not firing
+						&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+						&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+					{
+						vec3_t smack_dir;
+						VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+						smack_dir[2] += 30;
+						VectorNormalize(smack_dir);
+						//hurt them
+						G_Sound(NPC->enemy, G_SoundIndex("sound/chars/%s/misc/pain0%d"));
+						G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+							(g_spskill->integer + 1) * Q_irand(5, 10), DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+						WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
+						//done with the damage
+						NPCInfo->blockedDebounceTime = 1;
+					}
+				}
+			}
+		}
+
+		//slap
+		if (NPC->client->NPC_class == CLASS_BESPIN_COP ||
+			NPC->client->NPC_class == CLASS_JAN ||
+			NPC->client->NPC_class == CLASS_PRISONER ||
+			NPC->client->NPC_class == CLASS_REBEL ||
+			NPC->client->NPC_class == CLASS_WOOKIE
+			&& !PM_InKnockDown(&NPC->client->ps))
+		{
+			if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.3f))
+				//within 80 and in front
+			{
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "attackDelay"))
+				{
+					//animate me
+					const int swing_anim = Q_irand(BOTH_A7_KICK_F, BOTH_A7_KICK_F2);
+					G_Sound(NPC->enemy, G_SoundIndex("sound/weapons/melee/kick3.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "attackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+					//delay the hurt until the proper point in the anim
+					TIMER_Set(NPC, "smackTime", 300);
+					NPCInfo->blockedDebounceTime = 0;
+				}
+			}
+			else if (enemyDist < MELEE_DIST_SQUARED
+				&& !NPC->client->ps.weaponTime //not firing
+				&& !PM_InKnockDown(&NPC->client->ps) //not knocked down
+				&& !InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, -0.25f))
+				//within 80 and generally behind
+			{
+				//enemy within 80, if very close, use melee attack to slap away
+				if (TIMER_Done(NPC, "attackDelay"))
+				{
+					//animate me
+					const int swing_anim = Q_irand(BOTH_A7_KICK_B2, BOTH_A7_KICK_B);
+					G_Sound(NPC->enemy, G_SoundIndex("sound/weapons/melee/kick1.mp3"));
+					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					TIMER_Set(NPC, "attackDelay", NPC->client->ps.torsoAnimTimer + Q_irand(15000, 20000));
+					//delay the hurt until the proper point in the anim
 					TIMER_Set(NPC, "smackTime", 300);
 					NPCInfo->blockedDebounceTime = 0;
 				}
@@ -4133,113 +4935,38 @@ void NPC_BSST_Attack(void)
 		}
 	}
 
-	// SBD slap
-	if (NPC->client != nullptr &&
-		g_SerenityJediEngineMode->integer > 0 &&
-		g_allowgunnerbash->integer > 0 &&
-		NPC->client->NPC_class == CLASS_SBD &&
-		PM_InKnockDown(&NPC->client->ps) == qfalse)
+	if (NPC->client->NPC_class == CLASS_REBORN //cultist using a gun
+		&& NPCInfo->rank >= RANK_LT_COMM //commando or better
+		&& NPC->enemy->s.weapon == WP_SABER) //fighting a saber-user
 	{
-		if (NPC->client->ps.torsoAnim == BOTH_SLAP_R ||
-			NPC->client->ps.torsoAnim == BOTH_SLAP_L)
-		{
-			shoot = qfalse;
-
-			if (TIMER_Done(NPC, "smackTime") == qtrue &&
-				!NPCInfo->blockedDebounceTime)
-			{
-				if (enemyDist < MELEE_DIST_SQUARED &&
-					!NPC->client->ps.weaponTime &&
-					PM_InKnockDown(&NPC->client->ps) == qfalse &&
-					InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
-						NPC->client->ps.viewangles, 0.3f))
-				{
-					vec3_t smack_dir;
-					VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smack_dir);
-					smack_dir[2] += 30.0f;
-					VectorNormalize(smack_dir);
-
-					G_Sound(NPC->enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-					G_Damage(NPC->enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
-						(g_spskill->integer + 1) * Q_irand(2, 5),
-						DAMAGE_NO_KNOCKBACK, MOD_MELEE);
-					WP_AbsorbKick(NPC->enemy, NPC, smack_dir);
-
-					NPCInfo->blockedDebounceTime = 1;
-				}
-			}
-		}
-		else
-		{
-			if (enemyDist < MELEE_DIST_SQUARED &&
-				!NPC->client->ps.weaponTime &&
-				PM_InKnockDown(&NPC->client->ps) == qfalse &&
-				InFront(NPC->enemy->currentOrigin, NPC->currentOrigin,
-					NPC->client->ps.viewangles, 0.3f))
-			{
-				if (TIMER_Done(NPC, "slapattackDelay") == qtrue)
-				{
-					int swing_anim;
-
-					if (NPC->health > BLOCKPOINTS_THIRTY)
-					{
-						swing_anim = BOTH_SLAP_R;
-					}
-					else
-					{
-						swing_anim = BOTH_SLAP_L;
-					}
-
-					G_AddVoiceEvent(NPC, Q_irand(EV_OUTFLANK1, EV_OUTFLANK2), 2000);
-					NPC_SetAnim(NPC, SETANIM_BOTH, swing_anim,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-
-					if (NPC->health > BLOCKPOINTS_THIRTY)
-					{
-						TIMER_Set(NPC, "slapattackDelay",
-							NPC->client->ps.torsoAnimTimer + Q_irand(12000, 18000));
-					}
-					else
-					{
-						TIMER_Set(NPC, "slapattackDelay",
-							NPC->client->ps.torsoAnimTimer + Q_irand(6000, 12000));
-					}
-
-					TIMER_Set(NPC, "smackTime", 300);
-					NPCInfo->blockedDebounceTime = 0;
-				}
-			}
-		}
+		//commando saboteur vs. jedi/reborn
+		//see if we need to avoid their saber
+		NPC_EvasionSaber();
 	}
 
-	// Reborn gunners vs saber users (NULL-safe)
-	if (NPC->client != nullptr &&
-		NPC->enemy != nullptr &&
-		NPC->client->NPC_class == CLASS_REBORN &&
-		NPCInfo->rank >= RANK_LT_COMM &&
-		NPC->enemy->s.weapon == WP_SABER)
+	if ( //!TIMER_Done( NPC, "flee" ) ||
+		doMove && !TIMER_Done(NPC, "runBackwardsDebounce"))
 	{
-		npc_evasion_saber();
+		//running away
+		faceEnemy = qfalse;
 	}
 
-	if (do_move == qtrue && TIMER_Done(NPC, "runBackwardsDebounce") == qfalse)
-	{
-		face_enemy = qfalse;
-	}
+	//FIXME: check scf_face_move_dir here?
 
-	if (face_enemy == qfalse)
+	if (!faceEnemy)
 	{
-		if (do_move == qfalse && NPC->client != nullptr)
+		//we want to face in the dir we're running
+		if (!doMove)
 		{
+			//if we haven't moved, we should look in the direction we last looked?
 			VectorCopy(NPC->client->ps.viewangles, NPCInfo->lastPathAngles);
 		}
-
 		NPCInfo->desiredYaw = NPCInfo->lastPathAngles[YAW];
-		NPCInfo->desiredPitch = 0.0f;
+		NPCInfo->desiredPitch = 0;
 		NPC_UpdateAngles(qtrue, qtrue);
-
-		if (do_move == qtrue)
+		if (doMove)
 		{
+			//don't run away and shoot
 			shoot = qfalse;
 		}
 	}
@@ -4249,164 +4976,206 @@ void NPC_BSST_Attack(void)
 		shoot = qfalse;
 	}
 
-	if (NPC->enemy != nullptr && NPC->enemy->enemy != nullptr)
+	if (NPC->enemy && NPC->enemy->enemy)
 	{
-		if (NPC->enemy->s.weapon == WP_SABER &&
-			NPC->enemy->enemy->s.weapon == WP_SABER)
+		if (NPC->enemy->s.weapon == WP_SABER && NPC->enemy->enemy->s.weapon == WP_SABER)
 		{
-			// don't shoot at an enemy jedi who is fighting another jedi
+			//don't shoot at an enemy jedi who is fighting another jedi, for fear of injuring one or causing rogue blaster deflections (a la Obi Wan/Vader duel at end of ANH)
 			shoot = qfalse;
 		}
 	}
-
-	if (NPC->client != nullptr && NPC->client->fireDelay)
+	//FIXME: don't shoot right away!
+	if (NPC->client->fireDelay)
 	{
 		if (NPC->client->NPC_class == CLASS_SABOTEUR)
 		{
 			Saboteur_Decloak(NPC);
 		}
-
-		if (NPC->s.weapon == WP_ROCKET_LAUNCHER ||
-			(NPC->s.weapon == WP_CONCUSSION && (NPCInfo->scriptFlags & SCF_ALT_FIRE) == 0))
+		if (NPC->s.weapon == WP_ROCKET_LAUNCHER
+			|| NPC->s.weapon == WP_CONCUSSION && !(NPCInfo->scriptFlags & SCF_ALT_FIRE))
 		{
-			if (enemy_los == qfalse || enemy_cs == qfalse)
+			if (!enemyLOS || !enemyCS)
 			{
+				//cancel it
 				NPC->client->fireDelay = 0;
 			}
 			else
 			{
+				//delay our next attempt
 				TIMER_Set(NPC, "attackDelay", Q_irand(3000, 5000));
 			}
 		}
 	}
-	else if (shoot == qtrue)
+	else if (shoot)
 	{
-		if (NPC->client != nullptr && NPC->client->NPC_class == CLASS_SABOTEUR)
+		//try to shoot if it's time
+		if (NPC->client->NPC_class == CLASS_SABOTEUR)
 		{
 			Saboteur_Decloak(NPC);
 		}
-
-		if (TIMER_Done(NPC, "attackDelay") == qtrue)
+		if (TIMER_Done(NPC, "attackDelay"))
 		{
-			if ((NPCInfo->scriptFlags & SCF_FIRE_WEAPON) == 0)
+			if (!(NPCInfo->scriptFlags & SCF_FIRE_WEAPON)) // we've already fired, no need to do it again here
 			{
 				WeaponThink();
 			}
-
+			//NASTY
 			if (NPC->s.weapon == WP_ROCKET_LAUNCHER)
 			{
-				if ((ucmd.buttons & BUTTON_ATTACK) &&
-					do_move == qfalse &&
-					g_spskill->integer > 1 &&
-					Q_irand(0, 3) == 0)
+				if (ucmd.buttons & BUTTON_ATTACK
+					&& !doMove
+					&& g_spskill->integer > 1
+					&& !Q_irand(0, 3))
 				{
+					//every now and then, shoot a homing rocket
 					ucmd.buttons &= ~BUTTON_ATTACK;
 					ucmd.buttons |= BUTTON_ALT_ATTACK;
 					NPC->client->fireDelay = Q_irand(1000, 2500);
 				}
 			}
-			else if (NPC->s.weapon == WP_NOGHRI_STICK &&
-				enemyDist < 48.0f * 48.0f)
+			else if (NPC->s.weapon == WP_NOGHRI_STICK
+				&& enemyDist < 48 * 48) //?
 			{
 				ucmd.buttons &= ~BUTTON_ATTACK;
 				ucmd.buttons |= BUTTON_ALT_ATTACK;
-				if (NPC->client != nullptr)
-				{
-					NPC->client->fireDelay = Q_irand(1500, 2000);
-				}
+				NPC->client->fireDelay = Q_irand(1500, 2000);
 			}
 		}
 	}
 	else
 	{
-		if (NPC->attackDebounceTime < level.time &&
-			NPC->client != nullptr &&
-			NPC->client->NPC_class == CLASS_SABOTEUR)
+		if (NPC->attackDebounceTime < level.time)
 		{
-			Saboteur_Cloak(NPC);
+			if (NPC->client->NPC_class == CLASS_SABOTEUR)
+			{
+				Saboteur_Cloak(NPC);
+			}
 		}
 	}
 }
 
 //===========Enhanced AI====================
-
-extern qboolean NPC_CanReactToEnemy(gentity_t* NPC, gentity_t* enemy);
-extern qboolean IsSurrendering(const gentity_t* self);
-extern void NPC_PlayGloatAndMaybeSheathe(gentity_t* NPC);
-extern qboolean IsCowering(const gentity_t* self);
-extern void NPC_HandleSpeechDebounceAndIncrement(gentity_t* NPC);
 extern qboolean NPC_MoveDirClear(int forwardmove, int rightmove, qboolean reset);
 extern void Jedi_TimersApply();
 
-static void Gunner_HoldPosition()
+static void Gunner_HoldPosition(void)
 {
+	// Safety: ensure NPCInfo exists
+	if (NPCInfo == nullptr)
+	{
+		return;
+	}
+
+	// Stop active movement toward any goal
 	NPCInfo->goalEntity = nullptr;
+
+	// Holding position means no active combat movement
+	NPCInfo->combatMove = qfalse;
 }
 
 static qboolean Gunner_Move(gentity_t* goal, const qboolean retreat)
 {
-	const qboolean moved = NPC_MoveToGoal(qtrue);
-	navInfo_t info;
+	// Safety: ensure NPC, NPCInfo, and client exist
+	if (NPC == nullptr || NPCInfo == nullptr || NPC->client == nullptr)
+	{
+		return qfalse;
+	}
 
+	// Safety: ensure goal exists
+	if (goal == nullptr)
+	{
+		return qfalse;
+	}
+
+	// Attempt to move toward goal using NAV system
+	const qboolean moved = (NPC_MoveToGoal(qtrue) == qtrue) ? qtrue : qfalse;
+
+	// Mark that we are performing combat movement
 	NPCInfo->combatMove = qtrue;
 	NPCInfo->goalEntity = goal;
 
-	if (retreat)
+	// Retreat: invert movement direction
+	if (retreat == qtrue)
 	{
-		ucmd.forwardmove *= -1;
-		ucmd.rightmove *= -1;
-		VectorScale(NPC->client->ps.moveDir, -1, NPC->client->ps.moveDir);
+		// Reverse forward/right movement safely
+		ucmd.forwardmove = -ucmd.forwardmove;
+		ucmd.rightmove = -ucmd.rightmove;
+
+		// Reverse actual movement direction vector
+		VectorScale(NPC->client->ps.moveDir, -1.0f, NPC->client->ps.moveDir);
 	}
 
-	//Get the move info
+	// Retrieve last navigation info
+	navInfo_t info;
 	NAV_GetLastMove(info);
 
-	//If we hit our target, then stop and fire!
-	if (info.flags & NIF_COLLISION && info.blocker == NPC->enemy)
+	if (d_combatinfo->integer)
 	{
-		Gunner_HoldPosition();
+		gi.Printf("Attempt to move toward enemy\n");
 	}
 
-	//If our move failed, then reset
+	// If we collided with our enemy, stop and hold position
+	const qboolean collidedWithEnemy =
+		((info.flags & NIF_COLLISION) != 0 && info.blocker == NPC->enemy) ?
+		qtrue : qfalse;
+
+	if (collidedWithEnemy == qtrue)
+	{
+		Gunner_HoldPosition();
+		return moved;
+	}
+
+	// If movement failed, reset goal and combat movement
 	if (moved == qfalse)
 	{
 		Gunner_HoldPosition();
+		return qfalse;
 	}
-	return moved;
+	ST_Move();
+	// Movement succeeded
+	return qtrue;
 }
 
 static void Gunner_FaceEnemy(const qboolean do_pitch)
 {
-	vec3_t enemy_eyes, eyes, angles;
-
-	if (!NPC || !NPC->client || !NPC->enemy || !NPC->enemy->client || !NPCInfo)
+	// Safety: ensure NPC, NPCInfo, and enemy exist
+	if (NPC == nullptr || NPCInfo == nullptr || NPC->client == nullptr ||
+		NPC->enemy == nullptr || NPC->enemy->client == nullptr)
 	{
 		return;
 	}
-	// Get eye positions
+
+	vec3_t eyes;
+	vec3_t enemy_eyes;
+	vec3_t angles;
+
+	// Get eye positions for NPC and enemy
 	CalcEntitySpot(NPC, SPOT_HEAD, eyes);
 	CalcEntitySpot(NPC->enemy, SPOT_HEAD, enemy_eyes);
 
-	// Default: face towards enemy
+	// Default: face directly toward enemy
 	GetAnglesForDirection(eyes, enemy_eyes, angles);
 
-	if (NPC->client->ps.legsAnim == BOTH_A7_KICK_R)
+	// Special kick animations modify facing behaviour
+	const int legsAnim = NPC->client->ps.legsAnim;
+
+	if (legsAnim == BOTH_A7_KICK_R)
 	{
-		//keep enemy to right
+		// Keep enemy to the right (no angle modification needed)
 	}
-	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_L)
+	else if (legsAnim == BOTH_A7_KICK_L)
 	{
-		//keep enemy to left
+		// Keep enemy to the left (no angle modification needed)
 	}
-	else if (NPC->client->ps.legsAnim == BOTH_A7_KICK_RL
-		|| NPC->client->ps.legsAnim == BOTH_A7_KICK_BF
-		|| NPC->client->ps.legsAnim == BOTH_A7_KICK_S)
+	else if (legsAnim == BOTH_A7_KICK_RL ||
+		legsAnim == BOTH_A7_KICK_BF ||
+		legsAnim == BOTH_A7_KICK_S)
 	{
-		// keep enemy in front
+		// Keep enemy in front (default behaviour already does this)
 	}
 	else
 	{
-		//point towards him
+		// Normal case: point directly toward enemy
 		GetAnglesForDirection(eyes, enemy_eyes, angles);
 	}
 
@@ -4414,22 +5183,24 @@ static void Gunner_FaceEnemy(const qboolean do_pitch)
 	NPCInfo->desiredYaw = AngleNormalize360(angles[YAW]);
 
 	// Apply pitch if requested
-	if (do_pitch)
+	if (do_pitch == qtrue)
 	{
 		NPCInfo->desiredPitch = AngleNormalize360(angles[PITCH]);
 
-		if (NPC->client->ps.saberInFlight)
+		// Slight downward tilt when saber is in flight
+		if (NPC->client->ps.saberInFlight == qtrue)
 		{
-			NPCInfo->desiredPitch = AngleNormalize360(NPCInfo->desiredPitch + 10.0f);
+			NPCInfo->desiredPitch =
+				AngleNormalize360(NPCInfo->desiredPitch + 10.0f);
 		}
 	}
 }
 
 static float GunnerDistanceToEnemy(gentity_t* self)
 {
-	if (!self || !self->enemy)
+	if (self == nullptr || self->enemy == nullptr)
 	{
-		return 99999.0f;
+		return 99999.0f; // treat as extremely far away
 	}
 
 	vec3_t diff;
@@ -4445,16 +5216,22 @@ static qboolean GunnerInAttackRange(gentity_t* self, float minDist, float maxDis
 
 static qboolean GunnerShouldAttack(gentity_t* self)
 {
-	if (!self || !self->enemy)
+	// Safety: ensure NPC, NPCInfo, and enemy exist
+	if (self == nullptr || self->enemy == nullptr || NPC == nullptr || NPCInfo == nullptr)
 	{
 		return qfalse;
 	}
-	const qboolean hasLOS = (NPC_ClearLOS(NPC->enemy) == qtrue) ? qtrue : qfalse;
 
-	// If too far away, move toward the enemy
-	if (NPC->enemy)
+	// Check line of sight to enemy
+	const qboolean hasLOS =
+		(NPC_ClearLOS(self->enemy) == qtrue) ? qtrue : qfalse;
+
+	// If too far away, move toward the enemy (closing gap behaviour)
+	const qboolean enemyExists = (self->enemy != nullptr) ? qtrue : qfalse;
+
+	if (enemyExists == qtrue)
 	{
-		float dist = GunnerDistanceToEnemy(NPC);
+		const float dist = GunnerDistanceToEnemy(self);
 
 		if (dist > 192.0f)
 		{
@@ -4468,123 +5245,217 @@ static qboolean GunnerShouldAttack(gentity_t* self)
 	}
 
 	// Must be on the ground
-	if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
+	const qboolean selfOnGround =
+		(self->client->ps.groundEntityNum != ENTITYNUM_NONE) ? qtrue : qfalse;
+
+	if (selfOnGround == qfalse)
 	{
 		return qfalse;
 	}
 
-	// Enemy must also be on the ground (prevents weird mid-air combos)
-	if (self->enemy->client &&
-		self->enemy->client->ps.groundEntityNum == ENTITYNUM_NONE)
+	// Enemy must also be on the ground
+	const qboolean enemyHasClient =
+		(self->enemy->client != nullptr) ? qtrue : qfalse;
+
+	if (enemyHasClient == qtrue)
+	{
+		const qboolean enemyOnGround =
+			(self->enemy->client->ps.groundEntityNum != ENTITYNUM_NONE) ? qtrue : qfalse;
+
+		if (enemyOnGround == qfalse)
+		{
+			return qfalse;
+		}
+	}
+
+	// Must have line of sight
+	if (hasLOS == qfalse)
 	{
 		return qfalse;
 	}
 
-	// Must have line of sight and be facing the enemy
-	if (!hasLOS)
+	// Must be within preferred attack range
+	// (tight enough to hit, far enough to avoid clipping)
+	const qboolean inRange =
+		(GunnerInAttackRange(self, 64.0f, 192.0f) == qtrue) ? qtrue : qfalse;
+
+	if (inRange == qfalse)
 	{
 		return qfalse;
 	}
 
-	// Preferredrange
-	// (tight enough to hit, far enough to not clip)
-	if (!GunnerInAttackRange(self, 64.0f, 192.0f))
-	{
-		return qfalse;
-	}
-
+	// All conditions satisfied: attack allowed
 	return qtrue;
 }
 
-static void Enhanced_Gunner_SetEnemyInfo(vec3_t enemy_dest, vec3_t enemy_dir, float* enemy_dist, vec3_t enemy_movedir, float* enemy_movespeed, int prediction)
+static void Enhanced_Gunner_SetEnemyInfo(vec3_t enemy_dest,
+	vec3_t enemy_dir,
+	float* enemy_dist,
+	vec3_t enemy_movedir,
+	float* enemy_movespeed,
+	const int prediction)
 {
-	if (!NPC || !NPC->enemy)
-	{//no valid enemy
+	// Safety: ensure NPC, NPCInfo, and enemy exist
+	if (NPC == nullptr || NPCInfo == nullptr || NPC->enemy == nullptr)
+	{
 		return;
 	}
-	if (!NPC->enemy->client)
+
+	// Safety: ensure output pointers are valid
+	if (enemy_dist == nullptr || enemy_movespeed == nullptr)
 	{
+		return;
+	}
+
+	// Case 1: Enemy has no client (non-player entity)
+	if (NPC->enemy->client == nullptr)
+	{
+		// Enemy is static or non-client; no velocity
 		VectorClear(enemy_movedir);
-		*enemy_movespeed = 0;
+		*enemy_movespeed = 0.0f;
+
+		// Copy enemy origin and raise to head height
 		VectorCopy(NPC->enemy->currentOrigin, enemy_dest);
-		enemy_dest[2] += NPC->enemy->mins[2] + 24;//get it's origin to a height I can work with
+		enemy_dest[2] += NPC->enemy->mins[2] + 24.0f;
+
+		// Direction from NPC to predicted enemy position
 		VectorSubtract(enemy_dest, NPC->currentOrigin, enemy_dir);
+
+		// Normalize direction and compute distance
 		*enemy_dist = VectorNormalize(enemy_dir);
+		return;
 	}
-	else
-	{//see where enemy is headed
-		VectorCopy(NPC->enemy->client->ps.velocity, enemy_movedir);
-		*enemy_movespeed = VectorNormalize(enemy_movedir);
-		//figure out where he'll be, say, 3 frames from now
-		VectorMA(NPC->enemy->currentOrigin, *enemy_movespeed * 0.001 * prediction, enemy_movedir, enemy_dest);
-		//figure out what dir the enemy's estimated position is from me and how far from the tip of my weapon he is
-		VectorSubtract(enemy_dest, NPC->currentOrigin, enemy_dir);
-		*enemy_dist = VectorNormalize(enemy_dir) - (NPC->client->renderInfo.muzzlePoint[0] + NPC->maxs[0] * 1.5 + 16);
-	}
+
+	// Case 2: Enemy has a client (player or NPC)
+	// Copy enemy velocity
+	VectorCopy(NPC->enemy->client->ps.velocity, enemy_movedir);
+
+	// Normalize velocity to get movement direction and speed
+	*enemy_movespeed = VectorNormalize(enemy_movedir);
+
+	// Predict enemy position: velocity * (prediction ms)
+	// Convert prediction ms to seconds: prediction * 0.001f
+	const float timeScale = (*enemy_movespeed) * 0.001f * static_cast<float>(prediction);
+	VectorMA(NPC->enemy->currentOrigin, timeScale, enemy_movedir, enemy_dest);
+
+	// Compute direction from NPC to predicted enemy position
+	VectorSubtract(enemy_dest, NPC->currentOrigin, enemy_dir);
+
+	// Compute distance minus muzzle offset (weapon tip)
+	const float muzzleOffset =
+		(NPC->client->renderInfo.muzzlePoint[0] +
+			NPC->maxs[0] * 1.5f +
+			16.0f);
+
+	*enemy_dist = VectorNormalize(enemy_dir) - muzzleOffset;
 }
 
-static qboolean Gunner_Strafe(int strafeTimeMin, int strafeTimeMax, int nextStrafeTimeMin, int nextStrafeTimeMax, qboolean walking)
+static qboolean Gunner_Strafe(const int strafeTimeMin,
+	const int strafeTimeMax,
+	const int nextStrafeTimeMin,
+	const int nextStrafeTimeMax,
+	const qboolean walking)
 {
-	if (TIMER_Done(NPC, "strafeLeft") && TIMER_Done(NPC, "strafeRight"))
+	// Safety: ensure NPC and NPCInfo exist
+	if (NPC == nullptr || NPCInfo == nullptr)
 	{
-		qboolean strafed = qfalse;
-		int	strafeTime = Q_irand(strafeTimeMin, strafeTimeMax);
+		return qfalse;
+	}
 
-		if (Q_irand(0, 1))
-		{
-			if (NPC_MoveDirClear(ucmd.forwardmove, -127, qfalse))
-			{
-				TIMER_Set(NPC, "strafeLeft", strafeTime);
-				strafed = qtrue;
-			}
-			else if (NPC_MoveDirClear(ucmd.forwardmove, 127, qfalse))
-			{
-				TIMER_Set(NPC, "strafeRight", strafeTime);
-				strafed = qtrue;
-			}
-		}
-		else
-		{
-			if (NPC_MoveDirClear(ucmd.forwardmove, 127, qfalse))
-			{
-				TIMER_Set(NPC, "strafeRight", strafeTime);
-				strafed = qtrue;
-			}
-			else if (NPC_MoveDirClear(ucmd.forwardmove, -127, qfalse))
-			{
-				TIMER_Set(NPC, "strafeLeft", strafeTime);
-				strafed = qtrue;
-			}
-		}
+	// Both strafe timers must be done before starting a new strafe
+	const qboolean leftDone = (TIMER_Done(NPC, "strafeLeft") == qtrue) ? qtrue : qfalse;
+	const qboolean rightDone = (TIMER_Done(NPC, "strafeRight") == qtrue) ? qtrue : qfalse;
 
-		if (strafed)
+	if (leftDone == qfalse || rightDone == qfalse)
+	{
+		return qfalse;
+	}
+
+	qboolean strafed = qfalse;
+	const int strafeTime = Q_irand(strafeTimeMin, strafeTimeMax);
+
+	// Randomly choose left or right bias
+	const qboolean chooseLeftFirst = (Q_irand(0, 1) == 1) ? qtrue : qfalse;
+
+	if (chooseLeftFirst == qtrue)
+	{
+		// Try left first
+		if (NPC_MoveDirClear(ucmd.forwardmove, -127, qfalse) == qtrue)
 		{
-			TIMER_Set(NPC, "noStrafe", strafeTime + Q_irand(nextStrafeTimeMin, nextStrafeTimeMax));
-			if (walking)
-			{//should be a slow strafe
-				TIMER_Set(NPC, "walking", strafeTime);
-			}
-			return qtrue;
+			TIMER_Set(NPC, "strafeLeft", strafeTime);
+			strafed = qtrue;
+		}
+		else if (NPC_MoveDirClear(ucmd.forwardmove, 127, qfalse) == qtrue)
+		{
+			TIMER_Set(NPC, "strafeRight", strafeTime);
+			strafed = qtrue;
 		}
 	}
+	else
+	{
+		// Try right first
+		if (NPC_MoveDirClear(ucmd.forwardmove, 127, qfalse) == qtrue)
+		{
+			TIMER_Set(NPC, "strafeRight", strafeTime);
+			strafed = qtrue;
+		}
+		else if (NPC_MoveDirClear(ucmd.forwardmove, -127, qfalse) == qtrue)
+		{
+			TIMER_Set(NPC, "strafeLeft", strafeTime);
+			strafed = qtrue;
+		}
+	}
+
+	// If we successfully started a strafe
+	if (strafed == qtrue)
+	{
+		// Set cooldown before next strafe attempt
+		const int nextStrafeDelay = strafeTime + Q_irand(nextStrafeTimeMin, nextStrafeTimeMax);
+		TIMER_Set(NPC, "noStrafe", nextStrafeDelay);
+
+		// If walking flag is set, apply slow strafe timer
+		if (walking == qtrue)
+		{
+			TIMER_Set(NPC, "walking", strafeTime);
+		}
+
+		return qtrue;
+	}
+
 	return qfalse;
 }
 
-static void Gunner_CombatTimersUpdate(int enemy_dist)
+static void Gunner_CombatTimersUpdate(const int enemy_dist)
 {
-	if (TIMER_Done(NPC, "roamTime"))
+	// Safety: ensure NPC, NPCInfo, and enemy exist
+	if (NPC == nullptr || NPCInfo == nullptr)
 	{
+		return;
+	}
+
+	// Handle roam/aggression timer
+	if (TIMER_Done(NPC, "roamTime") == qtrue)
+	{
+		// Reset roam timer
 		TIMER_Set(NPC, "roamTime", Q_irand(2000, 5000));
 
-		//okay, now mess with agression
-		if (NPC->enemy && NPC->enemy->client)
+		// Adjust aggression based on enemy weapon and behaviour
+		const qboolean hasEnemy = (NPC->enemy != nullptr) ? qtrue : qfalse;
+		const qboolean enemyHasClient =
+			(hasEnemy == qtrue && NPC->enemy->client != nullptr) ? qtrue : qfalse;
+
+		if (hasEnemy == qtrue && enemyHasClient == qtrue)
 		{
 			switch (NPC->enemy->client->ps.weapon)
 			{
 			case WP_SABER:
-				//If enemy has a lightsaber, always close in
-				if (!NPC->enemy->client->ps.SaberActive())
-				{//fool!  Standing around unarmed, charge!
+			{
+				// If enemy saber is NOT active, charge harder
+				const qboolean saberActive =
+					(NPC->enemy->client->ps.SaberActive() == qtrue) ? qtrue : qfalse;
+
+				if (saberActive == qfalse)
+				{
 					ST_AggressionAdjust(NPC, 2);
 				}
 				else
@@ -4592,6 +5463,8 @@ static void Gunner_CombatTimersUpdate(int enemy_dist)
 					ST_AggressionAdjust(NPC, 1);
 				}
 				break;
+			}
+
 			case WP_BLASTER:
 			case WP_BRYAR_PISTOL:
 			case WP_DISRUPTOR:
@@ -4600,86 +5473,247 @@ static void Gunner_CombatTimersUpdate(int enemy_dist)
 			case WP_DEMP2:
 			case WP_FLECHETTE:
 			case WP_ROCKET_LAUNCHER:
-				//if he has a blaster, move in when:
-				//They're not shooting at me
-				if (NPC->enemy->attackDebounceTime < level.time)
-				{//does this apply to players?
+			{
+				// If enemy is not shooting at us, increase aggression
+				const qboolean enemyNotShooting =
+					(NPC->enemy->attackDebounceTime < level.time) ? qtrue : qfalse;
+
+				if (enemyNotShooting == qtrue)
+				{
 					ST_AggressionAdjust(NPC, 1);
 				}
-				//He's closer than a dist that gives us time to deflect
+
+				// If enemy is close enough that we can deflect, increase aggression
 				if (enemy_dist < 256)
 				{
 					ST_AggressionAdjust(NPC, 1);
 				}
 				break;
+			}
+
 			default:
 				break;
 			}
 		}
 	}
 
-	if (TIMER_Done(NPC, "noStrafe") && TIMER_Done(NPC, "strafeLeft") && TIMER_Done(NPC, "strafeRight"))
+	// Handle strafing timers
+	const qboolean noStrafeDone = (TIMER_Done(NPC, "noStrafe") == qtrue) ? qtrue : qfalse;
+	const qboolean leftDone = (TIMER_Done(NPC, "strafeLeft") == qtrue) ? qtrue : qfalse;
+	const qboolean rightDone = (TIMER_Done(NPC, "strafeRight") == qtrue) ? qtrue : qfalse;
+
+	if (noStrafeDone == qtrue && leftDone == qtrue && rightDone == qtrue)
 	{
-		if (!Q_irand(0, 4))
-		{//start a strafe
-			if (Gunner_Strafe(1000, 3000, 0, 4000, qtrue))
+		// 1 in 5 chance to start strafing
+		const qboolean startStrafe = (Q_irand(0, 4) == 0) ? qtrue : qfalse;
+
+		if (startStrafe == qtrue)
+		{
+			// Attempt to initiate a strafe
+			const qboolean strafed =
+				(Gunner_Strafe(1000, 3000, 0, 4000, qtrue) == qtrue) ? qtrue : qfalse;
+
+			if (strafed == qtrue)
 			{
-				if (d_JediAI->integer)
+				if (d_combatinfo->integer)
 				{
 					gi.Printf("off strafe\n");
 				}
 			}
 		}
 		else
-		{//postpone any strafing for a while
+		{
+			// Postpone strafing
 			TIMER_Set(NPC, "noStrafe", Q_irand(1000, 3000));
+		}
+	}
+}
+
+static qboolean Gunner_CheckCombatMove(void)
+{
+	// Safety: ensure NPC, NPCInfo, and enemy exist
+	if (NPC == nullptr || NPCInfo == nullptr)
+	{
+		return qfalse;
+	}
+
+	// Case 1: goalEntity is the enemy OR combatMove flag is set
+	const qboolean hasGoalEntity = (NPCInfo->goalEntity != nullptr) ? qtrue : qfalse;
+	const qboolean hasEnemy = (NPC->enemy != nullptr) ? qtrue : qfalse;
+
+	if (hasGoalEntity == qtrue || hasEnemy == qtrue)
+	{
+		if (NPCInfo->goalEntity == NPC->enemy)
+		{
+			return qtrue;
+		}
+	}
+
+	if (NPCInfo->combatMove == qtrue)
+	{
+		return qtrue;
+	}
+
+	// Case 2: goalEntity exists AND watchTarget exists AND they differ
+	const qboolean hasWatchTarget = (NPCInfo->watchTarget != nullptr) ? qtrue : qfalse;
+
+	if (hasGoalEntity == qtrue && hasWatchTarget == qtrue)
+	{
+		if (NPCInfo->goalEntity != NPCInfo->watchTarget)
+		{
+			return qtrue;
+		}
+	}
+
+	// Default: no combat movement
+	return qfalse;
+}
+
+static void Gunner_CombatDistance(const float enemy_dist)
+{
+	// Safety: ensure NPC, NPCInfo, and enemy exist
+	if (NPC == nullptr || NPCInfo == nullptr || NPC->enemy == nullptr)
+	{
+		return;
+	}
+
+	// Far range: > 256 units
+	if (enemy_dist > 256.0f)
+	{
+		// Very far: > 384 units
+		if (enemy_dist > 384.0f)
+		{
+			// Only move if combatMove or goalEntity conditions allow it
+			const qboolean canCombatMove = (Gunner_CheckCombatMove() == qtrue) ? qtrue : qfalse;
+
+			if (canCombatMove == qtrue)
+			{
+				// Advance toward enemy (no retreat)
+				Gunner_Move(NPC->enemy, qfalse);
+				if (d_combatinfo->integer)
+				{
+					gi.Printf("Advance toward enemy\n");
+				}
+			}
+		}
+
+		return;
+	}
+
+	// Mid/close range: <= 256 units
+	// If we are in attack range and conditions allow attacking
+	if (GunnerShouldAttack(NPC) == qtrue)
+	{
+		// Face enemy and fire
+		Gunner_FaceEnemy(qtrue);
+		WeaponThink();
+		if (d_combatinfo->integer)
+		{
+			gi.Printf("GunnerShouldAttacks\n");
+		}
+		return;
+	}
+
+	// Not close enough to attack, but not far enough to be safe
+	// Decide based on aggression level
+	const int aggression = NPCInfo->stats.aggression;
+
+	if (aggression < 4)
+	{
+		// Low aggression: retreat / defend
+		Gunner_Move(NPC->enemy, qtrue);
+		if (d_combatinfo->integer)
+		{
+			gi.Printf("Low aggression: retreat\n");
+		}
+	}
+	else if (aggression > 5)
+	{
+		// High aggression: advance / close distance
+		Gunner_Move(NPC->enemy, qfalse);
+		if (d_combatinfo->integer)
+		{
+			gi.Printf("High aggression: advance\n");
 		}
 	}
 }
 
 static void Enhanced_Gunner_Combat(void)
 {
-	vec3_t	enemy_dir, enemy_movedir, enemy_dest;
-	float	enemy_dist, enemy_movespeed;
-	trace_t	trace;
-
-	// Must have an enemy
-	if (!NPC->enemy || NPC->enemy->health <= 0)
+	// Safety: ensure NPC, NPCInfo, and client exist
+	if (NPC == nullptr || NPCInfo == nullptr || NPC->client == nullptr)
 	{
 		return;
 	}
 
-	//See where enemy will be 300 ms from now
-	Enhanced_Gunner_SetEnemyInfo(enemy_dest, enemy_dir, &enemy_dist, enemy_movedir, &enemy_movespeed, 300);
+	// Must have a valid enemy
+	if (NPC->enemy == nullptr || NPC->enemy->health <= 0)
+	{
+		return;
+	}
 
-	//every few seconds, decide if we should we advance or retreat?
+	vec3_t enemy_dir;
+	vec3_t enemy_movedir;
+	vec3_t enemy_dest;
+	float enemy_dist = 0.0f;
+	float enemy_movespeed = 0.0f;
+	trace_t trace;
+
+	// Predict enemy position 300ms into the future
+	Enhanced_Gunner_SetEnemyInfo(
+		enemy_dest,
+		enemy_dir,
+		&enemy_dist,
+		enemy_movedir,
+		&enemy_movespeed,
+		300);
+
+	// Update aggression, strafing, and roam timers
 	Gunner_CombatTimersUpdate(enemy_dist);
 
-	NPC_BSST_Attack();
+	// Core combat distance logic (advance, retreat, attack)
+	Gunner_CombatDistance(enemy_dist);
 
-	//Update our seen enemy position
-	if (!NPC->enemy->client || (NPC->enemy->client->ps.groundEntityNum != ENTITYNUM_NONE && NPC->client->ps.groundEntityNum != ENTITYNUM_NONE))
+	// Update last seen enemy position
+	const qboolean enemyHasClient = (NPC->enemy->client != nullptr) ? qtrue : qfalse;
+	const qboolean bothOnGround =
+		(enemyHasClient == qtrue &&
+			NPC->enemy->client->ps.groundEntityNum != ENTITYNUM_NONE &&
+			NPC->client->ps.groundEntityNum != ENTITYNUM_NONE) ? qtrue : qfalse;
+
+	if (enemyHasClient == qfalse || bothOnGround == qtrue)
 	{
 		VectorCopy(NPC->enemy->currentOrigin, NPCInfo->enemyLastSeenLocation);
 	}
+
 	NPCInfo->enemyLastSeenTime = level.time;
 
+	// Update facing angles
 	NPC_UpdateAngles(qtrue, qtrue);
 
-	//apply strafing/walking timers, etc.
+	// Apply strafing/walking timers
 	Jedi_TimersApply();
 
-	//Just make sure we don't strafe into walls or off cliffs
-	if (!NPC_MoveDirClear(ucmd.forwardmove, ucmd.rightmove, qtrue))
-	{//uh-oh, we are going to fall or hit something
-		navInfo_t	info;
-		//Get the move info
+	// Ensure movement direction is safe (no cliffs or walls)
+	const qboolean moveDirClear =
+		(NPC_MoveDirClear(ucmd.forwardmove, ucmd.rightmove, qtrue) == qtrue) ?
+		qtrue : qfalse;
+
+	if (moveDirClear == qfalse)
+	{
+		navInfo_t info;
 		NAV_GetLastMove(info);
-		if (!(info.flags & NIF_MACRO_NAV))
-		{//micro-navigation told us to step off a ledge, try using macronav for now
+
+		// If micro-nav failed, try macro-nav
+		const qboolean usingMacroNav =
+			((info.flags & NIF_MACRO_NAV) != 0) ? qtrue : qfalse;
+
+		if (usingMacroNav == qfalse)
+		{
 			NPC_MoveToGoal(qfalse);
 		}
-		//reset the timers.
+
+		// Reset strafing timers
 		TIMER_Set(NPC, "strafeLeft", 0);
 		TIMER_Set(NPC, "strafeRight", 0);
 	}
@@ -4687,8 +5721,8 @@ static void Enhanced_Gunner_Combat(void)
 
 static void Enhanced_Attack(void)
 {
-	// ensure NPC and its client exist before any dereference
-	if (NPC == nullptr || NPC->client == nullptr)
+	// Safety: ensure NPC, NPCInfo, and client exist before any dereference
+	if (NPC == nullptr || NPCInfo == nullptr || NPC->client == nullptr)
 	{
 		return;
 	}
@@ -4696,8 +5730,9 @@ static void Enhanced_Attack(void)
 	// If in pain animation, do not attack
 	if (NPC->painDebounceTime > level.time)
 	{
-		if (Q_irand(0, 1))
+		if (Q_irand(0, 1) == 1)
 		{
+			// Face enemy while in pain, if possible
 			Gunner_FaceEnemy(qtrue);
 		}
 
@@ -4705,50 +5740,35 @@ static void Enhanced_Attack(void)
 		return;
 	}
 
-	if (NPC->enemy)
+	// Handle simple gloat walk toward fallen enemy (non‑player team)
+	if (NPC->enemy != nullptr)
 	{
-		// Enemy is dead, and we killed them
-		if (NPC->enemy->health <= 0 &&
-			NPC->enemy->enemy == NPC &&
-			(NPC->client->playerTeam != TEAM_PLAYER ||
-				((NPC->spawnflags & 1) && NPC->enemy == player)))
+		const qboolean enemyDead = (NPC->enemy->health <= 0) ? qtrue : qfalse;
+		const qboolean weKilledEnemy = (NPC->enemy->enemy == NPC) ? qtrue : qfalse;
+		const qboolean isGoodGuy = (NPC->client->playerTeam == TEAM_PLAYER) ? qtrue : qfalse;
+
+		if (enemyDead == qtrue && weKilledEnemy == qtrue && isGoodGuy == qfalse)
 		{
 			// Keep looking for other enemies
 			NPCInfo->enemyCheckDebounceTime = 0;
 
-			// Non-saber users that may gloat
-			if (NPC->client->NPC_class == CLASS_REELO ||
-				NPC->client->NPC_class == CLASS_IMPERIAL)
+			// If still in gloat time, walk toward the corpse if allowed to chase
+			if (TIMER_Done(NPC, "gloatTime") == qfalse)
 			{
-				if (NPCInfo->walkDebounceTime < level.time && NPCInfo->walkDebounceTime >= 0)
-				{
-					TIMER_Set(NPC, "gloatTime", 10000);
-					NPCInfo->walkDebounceTime = -1;
-				}
+				const float distSq = DistanceHorizontalSquared(
+					NPC->client->renderInfo.eyePoint,
+					NPC->enemy->currentOrigin);
 
-				if (!TIMER_Done(NPC, "gloatTime"))
+				if (distSq > 4096.0f &&
+					(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
 				{
-					// Walk toward the fallen enemy if allowed to chase
-					if (DistanceHorizontalSquared(NPC->client->renderInfo.eyePoint,
-						NPC->enemy->currentOrigin) > 4096 &&
-						(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
-					{
-						NPCInfo->goalEntity = NPC->enemy;
-						Gunner_Move(NPC->enemy, qfalse);
-						ucmd.buttons |= BUTTON_WALKING;
-					}
-					else
-					{
-						TIMER_Set(NPC, "gloatTime", 0);
-					}
+					NPCInfo->goalEntity = NPC->enemy;
+					Gunner_Move(NPC->enemy, qfalse);
+					ucmd.buttons |= BUTTON_WALKING;
 				}
-				else if (NPCInfo->walkDebounceTime == -1)
+				else
 				{
-					NPCInfo->walkDebounceTime = -2;
-					G_AddVoiceEvent(NPC, Q_irand(EV_VICTORY1, EV_VICTORY3), 3000);
-					groupSpeechDebounceTime[NPC->client->playerTeam] = level.time + 3000;
-					NPCInfo->desiredPitch = 0;
-					NPCInfo->goalEntity = nullptr;
+					// Reached the fallen enemy; original code did nothing here
 				}
 
 				Gunner_FaceEnemy(qtrue);
@@ -4758,150 +5778,53 @@ static void Enhanced_Attack(void)
 		}
 	}
 
-	// If we do not have a valid enemy, handle special cases and idle
-	if (NPC->enemy &&
-		NPC->enemy->s.weapon == WP_TURRET &&
-		!Q_stricmp("PAS", NPC->enemy->classname))
-	{
-		if (NPC->enemy->count <= 0)
-		{
-			// Turret is out of ammo
-			if (NPC->enemy->activator && NPC_ValidEnemy(NPC->enemy->activator))
-			{
-				gentity_t* turretOwner = NPC->enemy->activator;
-				G_ClearEnemy(NPC);
-				G_SetEnemy(NPC, turretOwner);
-			}
-			else
-			{
-				G_ClearEnemy(NPC);
-			}
-		}
-	}
-	else if (NPC->enemy &&
-		NPC->enemy->NPC &&
-		(NPC->enemy->NPC->charmedTime > level.time))
-	{
-		// Enemy was charmed
-		if (OnSameTeam(NPC, NPC->enemy))
-		{
-			// Now on our team
-			G_ClearEnemy(NPC);
-		}
-	}
-
-	if (NPC->client->playerTeam == TEAM_ENEMY &&
-		NPC->client->enemyTeam == TEAM_PLAYER &&
-		NPC->enemy &&
-		NPC->enemy->client &&
-		NPC->enemy->client->playerTeam != NPC->client->enemyTeam &&
-		OnSameTeam(NPC, NPC->enemy) &&
-		!(NPC->svFlags & SVF_LOCKEDENEMY))
-	{
-		// An evil Jedi somehow got another evil NPC as an enemy; likely charm expired
-		if (!NPC_ValidEnemy(NPC->enemy))
-		{
-			G_ClearEnemy(NPC);
-		}
-	}
-
+	// Refresh enemy tracking
 	NPC_CheckEnemy(qtrue, qtrue);
 
-	// Always face enemy if we have one
+	// Always allow combat movement when attacking
 	NPCInfo->combatMove = qtrue;
 
-	// Track the enemy and attempt to kill them
+	// Core gunner combat logic (movement, strafing, firing decisions)
 	Enhanced_Gunner_Combat();
 
-	if (!(NPCInfo->scriptFlags & SCF_CHASE_ENEMIES))
-	{
-		// Do not move when not allowed to chase
-		ucmd.forwardmove = 0;
-		ucmd.rightmove = 0;
-
-		if (ucmd.upmove > 0)
-		{
-			ucmd.upmove = 0;
-		}
-
-		NPC->client->ps.forceJumpCharge = 0;
-		VectorClear(NPC->client->ps.moveDir);
-	}
-
-	// While in the air, clear movement to avoid jump issues
-	if (NPC->client->ps.groundEntityNum == ENTITYNUM_NONE)
-	{
-		ucmd.forwardmove = 0;
-		ucmd.rightmove = 0;
-		VectorClear(NPC->client->ps.moveDir);
-	}
-
-	if (!TIMER_Done(NPC, "duck"))
+	// Duck timer: force crouch while active
+	if (TIMER_Done(NPC, "duck") == qfalse)
 	{
 		ucmd.upmove = -127;
 	}
 
-	if (NPCInfo->scriptFlags & SCF_DONT_FIRE)
+	// Script flag: do not fire
+	if ((NPCInfo->scriptFlags & SCF_DONT_FIRE) != 0)
 	{
-		// Not allowed to fire, so clear the attack buttons
 		ucmd.buttons &= ~(BUTTON_ATTACK | BUTTON_ALT_ATTACK | BUTTON_FORCE_FOCUS);
 	}
 
-	if (NPCInfo->scriptFlags & SCF_NO_ACROBATICS)
+	// Script flag: no acrobatics
+	if ((NPCInfo->scriptFlags & SCF_NO_ACROBATICS) != 0)
 	{
 		ucmd.upmove = 0;
 		NPC->client->ps.forceJumpCharge = 0;
 	}
 
-	// Enemy attack vocalization (anger noises)
-	if ((ucmd.buttons & BUTTON_ATTACK) && NPC->client->playerTeam == TEAM_ENEMY)
+	// Enemy attack vocalization (anger noises) for TEAM_ENEMY
+	if ((ucmd.buttons & BUTTON_ATTACK) != 0 &&
+		NPC->client->playerTeam == TEAM_ENEMY)
 	{
-		if (Q_irand(0, NPC->max_health + 10) > NPC->health && !Q_irand(0, 3))
-		{// More hurt = more likely to play anger sound
+		const int angerRoll = Q_irand(0, NPC->max_health + 10);
+		const qboolean moreHurt = (angerRoll > NPC->health) ? qtrue : qfalse;
+		const qboolean playSound = (Q_irand(0, 3) == 0) ? qtrue : qfalse;
+
+		if (moreHurt == qtrue && playSound == qtrue)
+		{
 			G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 10000);
 		}
 	}
 
-	if (NPC->enemy && NPC->enemy->s.number < MAX_CLIENTS)
-	{
-		gentity_t* enemy = NPC->enemy;
-
-		if (NPC_CanReactToEnemy(NPC, enemy) && IsSurrendering(enemy))
-		{
-			// Enemy is surrendering: gloat and sheathe saber if needed
-			NPC_PlayGloatAndMaybeSheathe(NPC);
-			return;
-		}
-		else if (NPC_CanReactToEnemy(NPC, enemy) && IsCowering(enemy))
-		{
-			// Enemy is cowering: gloat and sheathe saber if needed
-			NPC_PlayGloatAndMaybeSheathe(NPC);
-			return;
-		}
-		else if (NPC_CanReactToEnemy(NPC, enemy) &&
-			(enemy->client->ps.communicatingflags & (1 << CF_RESPECTING)))
-		{
-			// Enemy is showing respect: NPC bows or handsignal and may speak
-			NPC_SetAnim(NPC, SETANIM_TORSO, TORSO_HANDSIGNAL3,
-				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-
-			NPC_HandleSpeechDebounceAndIncrement(NPC);
-		}
-		else if (NPC_CanReactToEnemy(NPC, enemy) &&
-			(enemy->client->ps.communicatingflags & (1 << CF_GESTURING)))
-		{
-			// Enemy gestured: return gesture or taunt depending on saber and saber level
-			NPC_SetAnim(NPC, SETANIM_TORSO, TORSO_HANDSIGNAL3,
-				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-			NPC_HandleSpeechDebounceAndIncrement(NPC);
-		}
-	}
-
 	// If NAV is not moving us but ucmds are, set movement speed manually
-	if (VectorCompare(NPC->client->ps.moveDir, vec3_origin) &&
-		(ucmd.forwardmove || ucmd.rightmove))
+	if (VectorCompare(NPC->client->ps.moveDir, vec3_origin) == qtrue &&
+		(ucmd.forwardmove != 0 || ucmd.rightmove != 0))
 	{
-		if (ucmd.buttons & BUTTON_WALKING)
+		if ((ucmd.buttons & BUTTON_WALKING) != 0)
 		{
 			NPC->client->ps.speed = NPCInfo->stats.walkSpeed;
 		}
@@ -4912,74 +5835,115 @@ static void Enhanced_Attack(void)
 	}
 }
 
-static void NPC_BSST_AttackAdvanced()
+static void NPC_BSST_AttackAdvanced(void)
 {
-	if (!in_camera)
+	// Thin wrapper around Enhanced_Attack with evasion and post‑kill enemy swap
+
+	if (NPC == nullptr || NPCInfo == nullptr)
+	{
+		return;
+	}
+
+	// Camera‑safe evasion check
+	if (in_camera == qfalse)
 	{
 		NPC_CheckEvasion();
 	}
 
+	// Main enhanced combat
 	Enhanced_Attack();
 
+	// Speech handling
 	npc_check_speak(NPC);
 
-	if ((!ucmd.buttons && NPC->enemy && NPC->enemy->health <= 0) && NPCInfo->enemyCheckDebounceTime < level.time)
+	// After killing an enemy and not pressing attack, try to pick a new one
+	if (ucmd.buttons == 0 &&
+		NPC->enemy != nullptr &&
+		NPC->enemy->health <= 0 &&
+		NPCInfo->enemyCheckDebounceTime < level.time)
 	{
-		gentity_t* sav_enemy = NPC->enemy;
+		gentity_t* const sav_enemy = NPC->enemy;
 		NPC->enemy = nullptr;
-		gentity_t* new_enemy = NPC_CheckEnemy(static_cast<qboolean>(NPCInfo->confusionTime < level.time), qfalse, qfalse);
+
+		// Confusion/insanity gate for enemy search
+		const qboolean canSearch = (NPCInfo->confusionTime < level.time) ? qtrue : qfalse;
+
+		gentity_t* const new_enemy = NPC_CheckEnemy(canSearch, qfalse, qfalse);
+
+		// Restore current enemy pointer
 		NPC->enemy = sav_enemy;
-		if (new_enemy && new_enemy != sav_enemy)
-		{//picked up a new enemy!
+
+		if (new_enemy != nullptr && new_enemy != sav_enemy)
+		{
+			// Picked up a new enemy
 			NPC->lastEnemy = NPC->enemy;
 			G_SetEnemy(NPC, new_enemy);
 		}
+
+		// Debounce enemy re‑check
 		NPCInfo->enemyCheckDebounceTime = level.time + Q_irand(1000, 3000);
 	}
 }
 
 extern qboolean G_TuskenAttackAnimDamage(gentity_t* self);
 
-static qboolean NPC_CanUseAdvancedFighting()
+static qboolean NPC_CanUseAdvancedFighting(void)
 {
-	// Must have an enemy
-	if (!NPC->enemy || NPC->enemy->health <= 0)
+	// Safety: ensure NPC and enemy exist
+	if (NPC == nullptr || NPC->enemy == nullptr)
 	{
 		return qfalse;
 	}
 
-	if (NPC->s.weapon == WP_TUSKEN_RIFLE) // any other guns to check for?
+	// Enemy must be alive
+	if (NPC->enemy->health <= 0)
+	{
+		return qfalse;
+	}
+	// npc cannot be knocked down
+	if (PM_InKnockDown(&NPC->client->ps))
+	{
+		return qfalse;
+	}
+	// Tusken rifle users never use advanced fighting
+	if (NPC->s.weapon == WP_TUSKEN_RIFLE)
 	{
 		return qfalse;
 	}
 
+	// Distance to enemy
 	const float dist = GunnerDistanceToEnemy(NPC);
-	float max_view_dist = NPCInfo->stats.visrange;
-	const float bounds_min = NPC->maxs[0] + NPC->enemy->maxs[0];
-	const float lunge_range = bounds_min + 65.0f;
-	const float melee_range = dist < lunge_range;
-	const qboolean hasLOS = (NPC_ClearLOS(NPC->enemy) == qtrue) ? qtrue : qfalse;
-	const qboolean npcLowHealth = (NPC->health < 25) ? qtrue : qfalse;
-	qboolean useAdvanced = qfalse;
+
+	// Clamp view distance to sane limits
+	float max_view_dist = NPCInfo->stats.visrange * 0.5f;// half of the NPC's vision range
 
 	if (max_view_dist < 640.0f)
 	{
 		max_view_dist = 640.0f;
 	}
-	if (max_view_dist > 4096.0f)
+	else if (max_view_dist > 4096.0f)
 	{
 		max_view_dist = 4096.0f;
 	}
 
+	// Compute melee/lunge range
+	const float bounds_min = NPC->maxs[0] + NPC->enemy->maxs[0];
+	const float lunge_range = bounds_min + 120.0f;
+	const qboolean meleeRange = (dist < lunge_range) ? qtrue : qfalse;
+
+	// LOS and health checks
+	const qboolean hasLOS = (NPC_CheckPlayerTeamStealth() == qtrue) ? qtrue : qfalse;
+	const qboolean npcLowHealth = (NPC->health < 25) ? qtrue : qfalse;
+
+	// Decide if advanced fighting is allowed
+	qboolean useAdvanced = qfalse;
+
 	if (npcLowHealth == qfalse && hasLOS == qtrue)
 	{
-		if (dist > melee_range && dist < max_view_dist)
+		// Must be outside melee range and within view distance
+		if (meleeRange == qfalse && dist < max_view_dist)
 		{
 			useAdvanced = qtrue;
-		}
-		else
-		{
-			useAdvanced = qfalse;
 		}
 	}
 
@@ -4988,6 +5952,7 @@ static qboolean NPC_CanUseAdvancedFighting()
 		return qfalse;
 	}
 
+	// Allowed classes for enhanced combat
 	switch (NPC->client->NPC_class)
 	{
 	case CLASS_BESPIN_COP:
@@ -5048,17 +6013,29 @@ void NPC_BSST_Default()
 				{
 					NPC_CheckGetNewWeapon();
 					NPC_BSST_AttackAdvanced();
+					if (d_combatinfo->integer)
+					{
+						gi.Printf("Using Advanced Tactics\n");
+					}
 				}
 				else
 				{
 					NPC_CheckGetNewWeapon();
 					NPC_BSST_Attack();
+					if (d_combatinfo->integer)
+					{
+						gi.Printf("Using Normal Tactics\n");
+					}
 				}
 			}
 			else
 			{
 				NPC_CheckGetNewWeapon();
 				NPC_BSST_Attack();
+				if (d_combatinfo->integer)
+				{
+					gi.Printf("Using Basic Tactics\n");
+				}
 			}
 
 			npc_check_speak(NPC);

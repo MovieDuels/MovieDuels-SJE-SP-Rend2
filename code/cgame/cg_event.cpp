@@ -37,7 +37,7 @@ extern qboolean PM_ReloadAnim(int anim);
 extern qboolean PM_WeponRestAnim(int anim);
 extern void CG_StrikeBolt(const centity_t* cent, vec3_t origin);
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
-extern qboolean PM_PainAnim(int anim);
+extern qboolean PM_PainAnim(const int anim);
 
 //==========================================================================
 
