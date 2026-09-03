@@ -4380,7 +4380,7 @@ the text buffer to static storage, eliminating MSVC warning C6262.
 static qboolean UI_ParseAnimationFile(const char* af_filename)
 {
 	/* FIX: move 80 KB buffer off the stack */
-	static char text[80000];
+	static char text[120000];
 
 	const char* text_p;
 	animation_t* animations =
@@ -5420,8 +5420,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 30/08/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 12 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 03/09/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 01 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");

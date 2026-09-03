@@ -1477,6 +1477,7 @@ qboolean PM_AdjustAnglesForStabDown(gentity_t* ent, usercmd_t* ucmd)
 		switch (ent->client->ps.legsAnim)
 		{
 		case BOTH_STABDOWN:
+		case BOTH_STABDOWN_WINDU:
 			if (elapsed_time >= 300 && elapsed_time < 900)
 			{
 				//push forward?
@@ -1545,7 +1546,7 @@ qboolean PM_AdjustAnglesForStabDown(gentity_t* ent, usercmd_t* ucmd)
 
 qboolean PM_AdjustAnglesForSpinProtect(gentity_t* ent, usercmd_t* ucmd)
 {
-	if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
+	if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT || ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
 	{
 		//in the dual spin thing
 		if (ent->client->ps.torsoAnimTimer)

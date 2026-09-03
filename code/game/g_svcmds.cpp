@@ -47,6 +47,7 @@ extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_RealisticBlockingMode;
 extern void G_SetWeapon(gentity_t* self, int wp);
 extern stringID_table_t WPTable[];
+extern cvar_t* g_ActivateAnimationStyle;
 
 extern cvar_t* g_char_model;
 extern cvar_t* g_char_skin_head;
@@ -955,6 +956,47 @@ static void Svcmd_PlayerFaction_f()
 	}
 }
 
+static void Svcmd_PlayerAnimationStyle_f(void)
+{
+	const char* cmd2 = gi.argv(1);
+
+	if (!g_entities[0].client)
+	{
+		gi.Printf(S_COLOR_RED "Player client not available.\n");
+		return;
+	}
+	if (!cmd2 || !cmd2[0])
+	{
+		gi.Printf(S_COLOR_YELLOW "'player animationstyle' - change player animation style, requires an animation style name!\n");
+		gi.Printf(S_COLOR_YELLOW "Current animation style is: %s\n",GetStringForID(AnimationstylesTable, g_entities[0].client->animationstyle));
+
+		gi.Printf(S_COLOR_YELLOW "Valid animation style names are:\n");
+		for (int n = CS_DEFAULT; n < CS_NUM_ANIMATION_STYLES; n++)
+		{
+			gi.Printf(S_COLOR_YELLOW "%s\n", GetStringForID(AnimationstylesTable, n));
+		}
+		return;
+	}
+
+	const Animationstyles_t animationstyle =static_cast<Animationstyles_t>(GetIDForString(AnimationstylesTable, cmd2));
+
+	if (animationstyle == static_cast<Animationstyles_t>(-1))
+	{
+		gi.Printf(S_COLOR_RED "'player animationstyle' unrecognized animation style name %s!\n", cmd2);
+		gi.Printf(S_COLOR_RED "Current animation style is: %s\n",GetStringForID(AnimationstylesTable, g_entities[0].client->animationstyle));
+
+		gi.Printf(S_COLOR_RED "Valid animation style names are:\n");
+		for (int n = CS_DEFAULT; n < CS_NUM_ANIMATION_STYLES; n++)
+		{
+			gi.Printf(S_COLOR_RED "%s\n", GetStringForID(AnimationstylesTable, n));
+		}
+		return;
+	}
+
+	g_entities[0].client->animationstyle = animationstyle;
+}
+
+
 static void Svcmd_Control_f()
 {
 	const char* cmd2 = gi.argv(1);
@@ -1309,6 +1351,8 @@ static svcmd_t svcmds[] = {
 	{"difficulty", Svcmd_Difficulty_f, CMD_NONE},
 
 	{"scale", Svcmd_Scale_f, CMD_NONE},
+
+	{"animationstyle", Svcmd_PlayerAnimationStyle_f, CMD_NONE},
 };
 static constexpr size_t numsvcmds = std::size(svcmds);
 

@@ -2227,6 +2227,7 @@ public:
 	qboolean    IsAiming;
 	int		    saberAttackSequence;
 	int		    saberRiposteTime;
+	int         SaberSmashHitCount;
 
 #endif // !JK2_MODE
 
@@ -2513,6 +2514,7 @@ public:
 		saved_game.write<int32_t>(IsAiming);
 		saved_game.write<int32_t>(saberAttackSequence);
 		saved_game.write<int32_t>(saberRiposteTime);
+		saved_game.write<int32_t>(SaberSmashHitCount);
 
 #endif // !JK2_MODE
 	}
@@ -2800,6 +2802,7 @@ public:
 		saved_game.read<int32_t>(IsAiming);
 		saved_game.read<int32_t>(saberAttackSequence);
 		saved_game.read<int32_t>(saberRiposteTime);
+		saved_game.read<int32_t>(SaberSmashHitCount);
 
 #endif // !JK2_MODE
 	}
@@ -3127,6 +3130,7 @@ using entityState_t = struct entityState_s
 	//drawing progress bar (is there a less bandwidth-eating way to do
 	//this without a lot of hassle?)
 	int			hackingBaseTime;
+	int			SaberSmashHitCount;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -3249,6 +3253,7 @@ using entityState_t = struct entityState_s
 
 		saved_game.write<int32_t>(hackingTime);
 		saved_game.write<int32_t>(hackingBaseTime);
+		saved_game.write<int32_t>(SaberSmashHitCount);
 #endif // !JK2_MODE
 	}
 
@@ -3373,6 +3378,7 @@ using entityState_t = struct entityState_s
 
 		saved_game.read<int32_t>(hackingTime);
 		saved_game.read<int32_t>(hackingBaseTime);
+		saved_game.read<int32_t>(SaberSmashHitCount);
 #endif // !JK2_MODE
 	}
 };

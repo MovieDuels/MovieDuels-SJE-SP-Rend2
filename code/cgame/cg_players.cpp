@@ -693,6 +693,10 @@ void CG_NewClientinfo(const int clientNum)
 	v = Info_ValueForKey(configstring, "f");
 	ci->faction = static_cast<faction_t>(atoi(v));
 
+	// animationstyle
+	v = Info_ValueForKey(configstring, "animationstyle");
+	ci->animationstyle = static_cast<Animationstyles_t>(atoi(v));
+
 	// legsModel
 	v = Info_ValueForKey(configstring, "legsModel");
 

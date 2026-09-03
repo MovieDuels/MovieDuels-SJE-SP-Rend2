@@ -126,7 +126,6 @@ public:
 
 	char name[MAX_QPATH];
 	team_t team;
-	faction_t faction;
 
 	int score; // updated by score servercmds
 
@@ -149,6 +148,8 @@ public:
 	char* customCombatSoundDir;
 	char* customExtraSoundDir;
 	char* customJediSoundDir;
+	faction_t faction;
+	Animationstyles_t animationstyle;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -170,6 +171,8 @@ public:
 		saved_game.write<int32_t>(customCombatSoundDir);
 		saved_game.write<int32_t>(customExtraSoundDir);
 		saved_game.write<int32_t>(customJediSoundDir);
+		saved_game.write<int32_t>(faction);
+		saved_game.write<int32_t>(animationstyle);
 	}
 
 	void sg_import(
@@ -192,6 +195,8 @@ public:
 		saved_game.read<int32_t>(customCombatSoundDir);
 		saved_game.read<int32_t>(customExtraSoundDir);
 		saved_game.read<int32_t>(customJediSoundDir);
+		saved_game.read<int32_t>(faction);
+		saved_game.read<int32_t>(animationstyle);
 	}
 }; // clientInfo_t
 
@@ -898,6 +903,7 @@ public:
 	// Tracks which entities have been hit in the current saber swing
 	int			saberHitEntityBitMask;
 	int			saberLastAttackSequence;
+	Animationstyles_t animationstyle;
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -1024,6 +1030,7 @@ public:
 		saved_game.write<int32_t>(IsAiming);
 		saved_game.write<int32_t>(saberHitEntityBitMask);
 		saved_game.write<int32_t>(saberLastAttackSequence);
+		saved_game.write<int32_t>(animationstyle);
 	}
 
 	void sg_import(
@@ -1151,6 +1158,7 @@ public:
 		saved_game.read<int32_t>(IsAiming);
 		saved_game.read<int32_t>(saberHitEntityBitMask);
 		saved_game.read<int32_t>(saberLastAttackSequence);
+		saved_game.read<int32_t>(animationstyle);
 	}
 }; // GClientBase
 

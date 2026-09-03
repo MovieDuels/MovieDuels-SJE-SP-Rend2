@@ -703,6 +703,8 @@ stringID_table_t setTable[] =
 
 	ENUM2STRING(SET_ENDLESS_ST),
 
+	ENUM2STRING(SET_ANIMATION_STYLE),
+
 	{"", SET_}
 };
 
@@ -5909,6 +5911,45 @@ static void Q3_SetEndlessST(const int entID, const qboolean endlessst)
 	}
 }
 
+static void Q3_setAnimationStyle(const int entID, float* value)
+{
+	// validate entity id
+	if (entID < 0 || entID >= MAX_GENTITIES)
+	{
+		Quake3Game()->DebugPrint(IGameInterface::WL_WARNING, "Q3_setAnimationStyle: invalid entID %d\n", entID);
+		return;
+	}
+
+	gentity_t* ent = &g_entities[entID];
+
+	// ensure the entity is actually in use
+	if (!ent || !ent->inuse)
+	{
+		Quake3Game()->DebugPrint(IGameInterface::WL_WARNING, "Q3_setAnimationStyle: ent %d not in use\n", entID);
+		return;
+	}
+
+	if (!value)
+	{
+		Quake3Game()->DebugPrint(IGameInterface::WL_WARNING, "Q3_setAnimationStyle: null value for ent %d\n", entID);
+		return;
+	}
+
+	// convert float to nearest integer and clamp to valid range
+	int v = (int)floorf(*value + 0.5f);
+	if (v < 0)
+	{
+		v = 0;
+	}
+	if (v >= CS_NUM_ANIMATION_STYLES)
+	{
+		v = CS_DEFAULT;
+	}
+
+	// set the cvar (use va or Com_sprintf depending on engine utils)
+	gi.cvar_set("g_animationstyle", va("%d", v));
+}
+
 /*
 ============
 Q3_SetForceInvincible
@@ -10434,6 +10475,22 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 		else
 			Q3_SetEndlessST(entID, qfalse);
 		break;
+
+	case SET_ANIMATION_STYLE:
+	{
+		if (type_name && !Q_stricmp(type_name, "value") && data && data[0])
+		{
+			// parse value and pass pointer to Q3_setAnimationStyle
+			float v = static_cast<float>(strtof(data, nullptr));
+			Q3_setAnimationStyle(entID, &v);
+		}
+		else
+		{
+			// no value provided
+			Q3_setAnimationStyle(entID, nullptr);
+		}
+	}
+	break;
 
 	default:
 		SetVar(taskID, entID, type_name, data);

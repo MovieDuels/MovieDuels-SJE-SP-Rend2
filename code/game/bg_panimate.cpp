@@ -130,6 +130,8 @@ extern qboolean PM_WindAnim(int anim);
 extern cvar_t* g_SerenityJediEngineMode;
 qboolean PM_StandingAtReadyAnim(int anim);
 extern qboolean PM_InKataAnim(int anim);
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
 
 // Okay, here lies the much-dreaded Pat-created FSM movement chart...  Heretic II strikes again!
 // Why am I inflicting this on you?  Well, it's better than hardcoded states.
@@ -239,19 +241,24 @@ saber_moveData_t saberMoveData[LS_MOVE_MAX] = {
 	{"StfKickLeftAir", BOTH_A7_KICK_L_AIR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},
 	// LS_KICK_L_AIR
 	{"StabDown", BOTH_STABDOWN, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200}, // LS_STABDOWN
-	{"StabDownStf", BOTH_STABDOWN_STAFF, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},
-	// LS_STABDOWN_STAFF
-	{"StabDownDual", BOTH_STABDOWN_DUAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},
-	// LS_STABDOWN_DUAL
-	{"dualspinprot", BOTH_A6_SABERPROTECT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500},
-	// LS_DUAL_SPIN_PROTECT
+	{"StabDownStf", BOTH_STABDOWN_STAFF, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},// LS_STABDOWN_STAFF
+	{"StabDownDual", BOTH_STABDOWN_DUAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},// LS_STABDOWN_DUAL
+	{"StabDownWindu", BOTH_STABDOWN_WINDU, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},// LS_STABDOWN_WINDU
+
+	{"dualspinprot", BOTH_A6_SABERPROTECT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500},// LS_DUAL_SPIN_PROTECT
+	{"dualspinprot", BOTH_A6_SABERPROTECT_GRIEVOUS, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500},// LS_DUAL_SPIN_PROTECT_GRIEVOUS
+
 	{"StfSoulCal", BOTH_A7_SOULCAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500},
 	// LS_STAFF_SOULCAL
+
 	{"specialfast", BOTH_A1_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A1_SPECIAL
+	{"specialyoda", BOTH_A1_SPECIAL_YODA, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 }, // LS_A1_SPECIAL_YODA
 	{"specialmed", BOTH_A2_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A2_SPECIAL
+	{"specialanakin", BOTH_A2_SPECIAL_ANAKIN, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A2_SPECIAL_ANAKIN
+	{"specialkotor", BOTH_A2_SPECIAL_KOTOR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A2_SPECIAL_KOTOR
 	{"specialstr", BOTH_A3_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A3_SPECIAL
-	{"upsidedwnatk", BOTH_FLIP_ATTACK7, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
-	// LS_UPSIDE_DOWN_ATTACK
+
+	{"upsidedwnatk", BOTH_FLIP_ATTACK7, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},// LS_UPSIDE_DOWN_ATTACK
 	{"pullatkstab", BOTH_PULL_IMPALE_STAB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
 	// LS_PULL_ATTACK_STAB
 	{"grapplefire", BOTH_GRAPPLE_FIRE, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
@@ -933,6 +940,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 		}
 		break;
 	case BOTH_STABDOWN:
+	case BOTH_STABDOWN_WINDU:
 		if (ps->torsoAnimTimer <= 900)
 		{
 			//end of anim
@@ -954,6 +962,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 		}
 		break;
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 		if (ps->torsoAnimTimer < 650)
 		{
 			//end of anim
@@ -975,6 +984,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	}
 	return FORCE_LEVEL_3;
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	{
 		if (ps->torsoAnimTimer < 600)
 		{
@@ -989,6 +999,8 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	}
 	return FORCE_LEVEL_3;
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	{
 		if (ps->torsoAnimTimer < 300)
 		{
@@ -1287,12 +1299,17 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	case BOTH_A7_KICK_R_AIR:
 	case BOTH_A7_KICK_L_AIR:
 	case BOTH_STABDOWN:
+	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
@@ -1423,12 +1440,17 @@ qboolean PM_SaberInDamageMove(const int move)
 	case LS_TAUNTAUN_ATTACK_RIGHT:
 	case LS_TAUNTAUN_ATTACK_LEFT:
 	case LS_STABDOWN:
+	case LS_STABDOWN_WINDU:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
 	case LS_DUAL_SPIN_PROTECT:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
 	case LS_A1_SPECIAL:
+	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
@@ -1474,12 +1496,17 @@ qboolean PM_SaberDoDamageAnim(const int anim)
 	case BOTH_VT_ATR_S:
 	case BOTH_VT_ATL_S:
 	case BOTH_STABDOWN:
+	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
@@ -1604,12 +1631,17 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 	case BOTH_A7_KICK_R_AIR:
 	case BOTH_A7_KICK_L_AIR:
 	case BOTH_STABDOWN:
+	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
@@ -1744,12 +1776,17 @@ qboolean pm_saber_innonblockable_attack(const int anim)
 	case BOTH_SPINATTACK7:
 	case BOTH_FORCELONGLEAP_ATTACK:
 	case BOTH_STABDOWN:
+	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
@@ -1838,10 +1875,15 @@ qboolean PM_SaberInAttack(const int move)
 	case LS_STABDOWN:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
+	case LS_STABDOWN_WINDU:
 	case LS_DUAL_SPIN_PROTECT:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
 	case LS_A1_SPECIAL:
+	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
@@ -2096,10 +2138,15 @@ qboolean PM_SaberInSpecial(const int move)
 	case LS_STABDOWN:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
+	case LS_STABDOWN_WINDU:
 	case LS_DUAL_SPIN_PROTECT:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
 	case LS_A1_SPECIAL:
+	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
@@ -2181,10 +2228,15 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 		case LS_STABDOWN:
 		case LS_STABDOWN_STAFF:
 		case LS_STABDOWN_DUAL:
+		case LS_STABDOWN_WINDU:
 		case LS_DUAL_SPIN_PROTECT:
+		case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 		case LS_STAFF_SOULCAL:
 		case LS_A1_SPECIAL:
+		case LS_A1_SPECIAL_YODA:
 		case LS_A2_SPECIAL:
+		case LS_A2_SPECIAL_ANAKIN:
+		case LS_A2_SPECIAL_KOTOR:
 		case LS_A3_SPECIAL:
 		case LS_UPSIDE_DOWN_ATTACK:
 		case LS_PULL_ATTACK_STAB:
@@ -2266,12 +2318,17 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 	case BOTH_A7_KICK_BF:
 	case BOTH_A7_KICK_RL:
 	case BOTH_STABDOWN:
+	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
@@ -4239,18 +4296,23 @@ qboolean PM_CheckBackflipAttackMove()
 	return qfalse;
 }
 
+// Check if the dual-saber spin protect kata should be triggered.
+// Returns the saber move to play, or LS_NONE if no valid kata is available.
 static saberMoveName_t PM_CheckDualSpinProtect()
 {
-	if (pm->ps->clientNum < MAX_CLIENTS && PM_InSecondaryStyle())
-	{
-		return LS_NONE;
-	}
-	if (!pm->ps->saber[0].Active() || !pm->ps->saber[1].Active())
+	// Players in secondary style cannot use this kata
+	if ((pm->ps->clientNum < MAX_CLIENTS && PM_InSecondaryStyle() == qtrue))
 	{
 		return LS_NONE;
 	}
 
-	//see if we have an overridden (or cancelled) kata move
+	// Both sabers must be active
+	if (pm->ps->saber[0].Active() == qfalse || pm->ps->saber[1].Active() == qfalse)
+	{
+		return LS_NONE;
+	}
+
+	// Check for overridden (or cancelled) kata move on primary saber
 	if (pm->ps->saber[0].kataMove != LS_INVALID)
 	{
 		if (pm->ps->saber[0].kataMove != LS_NONE)
@@ -4258,7 +4320,9 @@ static saberMoveName_t PM_CheckDualSpinProtect()
 			return static_cast<saberMoveName_t>(pm->ps->saber[0].kataMove);
 		}
 	}
-	if (pm->ps->dualSabers)
+
+	// Check for overridden (or cancelled) kata move on secondary saber if dualSabers
+	if (pm->ps->dualSabers == qtrue)
 	{
 		if (pm->ps->saber[1].kataMove != LS_INVALID)
 		{
@@ -4268,33 +4332,71 @@ static saberMoveName_t PM_CheckDualSpinProtect()
 			}
 		}
 	}
-	//no overrides, cancelled?
+
+	// No overrides: if either saber explicitly cancelled kata, do nothing
 	if (pm->ps->saber[0].kataMove == LS_NONE)
 	{
 		return LS_NONE;
 	}
-	if (pm->ps->dualSabers)
+	if (pm->ps->dualSabers == qtrue)
 	{
 		if (pm->ps->saber[1].kataMove == LS_NONE)
 		{
 			return LS_NONE;
 		}
 	}
-	//do normal checks
-	const qboolean isPlayer = (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) ? qtrue : qfalse;
-	if (pm->ps->saberMove == LS_READY //ready
-		&& pm->ps->saberAnimLevel == SS_DUAL //using dual saber style
-		&& pm->ps->saber[0].Active() && pm->ps->saber[1].Active() //both sabers on
-		&& G_TryingKataAttack(&pm->cmd)
-		&& G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue, isPlayer)
-		&& pm->cmd.buttons & BUTTON_ATTACK)
+
+	// Normal checks: only allow when in dual-saber ready state and trying a kata
+	const qboolean isPlayer = ((pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer() == qtrue) ? qtrue : qfalse);
+
+	if (pm->ps->saberMove == LS_READY &&                         // ready
+		pm->ps->saberAnimLevel == SS_DUAL &&                      // using dual saber style
+		pm->ps->saber[0].Active() == qtrue &&                     // primary saber on
+		pm->ps->saber[1].Active() == qtrue &&                     // secondary saber on
+		G_TryingKataAttack(&pm->cmd) == qtrue &&                  // input is trying kata
+		G_EnoughPowerForSpecialMove(pm->ps->forcePower,
+			SABER_ALT_ATTACK_POWER,
+			qtrue,
+			isPlayer) == qtrue &&
+		(pm->cmd.buttons & BUTTON_ATTACK))
 	{
-		if (pm->gent)
+		// Drain power for the special move if we have a valid gent/client
+		if (pm->gent != nullptr)
 		{
 			G_DrainPowerForSpecialMove(pm->gent, FP_PUSH, SABER_ALT_ATTACK_POWER, qtrue);
 		}
-		return LS_DUAL_SPIN_PROTECT;
+
+		// Decide which dual spin protect variant to use based on animation style and saber type
+		if (g_ActivateAnimationStyle != nullptr && g_ActivateAnimationStyle->integer == 1)
+		{
+			const qboolean grievousStyleActive =
+				((pm->gent != nullptr && pm->gent->client != nullptr &&
+					pm->gent->client->animationstyle == CS_GRIEVOUS) ? qtrue : qfalse);
+
+			const qboolean globalGrievousStyle =
+				((g_AnimationStyle != nullptr && g_AnimationStyle->integer == 11) ? qtrue : qfalse);
+
+			const qboolean grievousSaberType =
+				((pm->ps->saber[0].type == SABER_GRIE || pm->ps->saber[0].type == SABER_GRIE4) ? qtrue : qfalse);
+
+			if (grievousStyleActive == qtrue ||
+				globalGrievousStyle == qtrue ||
+				grievousSaberType == qtrue)
+			{
+				return LS_DUAL_SPIN_PROTECT_GRIEVOUS;
+			}
+			else
+			{
+				return LS_DUAL_SPIN_PROTECT;
+			}
+		}
+		else
+		{
+			return LS_DUAL_SPIN_PROTECT;
+		}
 	}
+
+	// No valid kata: stay in normal state
 	return LS_NONE;
 }
 
@@ -9148,12 +9250,10 @@ void PM_TorsoAnimation()
 
 							if (is_walking_and_blocking == qtrue)
 							{
-
 								PM_HandleGunnerAim(is_walking_and_blocking);
 							}
 							else
 							{
-
 								if (pm->ps->communicatingflags & (1u << CF_AIMINGGUN))
 								{
 									PM_RemoveGunnerAimFlag(qtrue);
@@ -10505,9 +10605,14 @@ qboolean PM_ForceUsingSaberAnim(const int anim)
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_STABDOWN_WINDU:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case BOTH_ARIAL_LEFT:
 	case BOTH_ARIAL_RIGHT:
@@ -10636,6 +10741,7 @@ qboolean PM_LockedAnim(const int anim)
 	case BOTH_PLAYER_PA_3:
 	case BOTH_PLAYER_PA_3_FLY:
 	case BOTH_TAVION_SCEPTERGROUND:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_TAVION_SWORDPOWER:
 	case BOTH_SCEPTER_START:
 	case BOTH_SCEPTER_HOLD:
@@ -10947,10 +11053,15 @@ qboolean PM_SaberInKata(const saberMoveName_t saberMove)
 	switch (saberMove)
 	{
 	case LS_A1_SPECIAL:
+	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
 	case LS_DUAL_SPIN_PROTECT:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
+	case LS_STABDOWN_WINDU:
 		return qtrue;
 	default:
 		break;
@@ -10973,8 +11084,12 @@ qboolean PM_SaberInKillMove(const int move)
 	case LS_STABDOWN:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
+	case LS_STABDOWN_WINDU:
 	case LS_A1_SPECIAL:
+	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
@@ -11042,12 +11157,18 @@ qboolean PM_InKataAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
+	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case LS_DUAL_SPIN_PROTECT:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
+	case BOTH_STABDOWN_WINDU:
 		return qtrue;
 	default:;
 	}

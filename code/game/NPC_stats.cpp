@@ -156,6 +156,69 @@ stringID_table_t FactionTable[] =
 	{"", -1}
 };
 
+stringID_table_t AnimationstylesTable[] =
+{
+	{"default", CS_DEFAULT},
+	ENUM2STRING(CS_DEFAULT),
+	{"anakin",CS_ANAKIN},
+	ENUM2STRING(CS_ANAKIN),
+	{"battle_droid",CS_BATTLEDROID},
+	ENUM2STRING(CS_BATTLEDROID),
+	{"ben_kenobi",CS_BENKENOBI},
+	ENUM2STRING(CS_BENKENOBI),
+	{"cal_kestis",CS_CAL_KESTIS},
+	ENUM2STRING(CS_CAL_KESTIS),
+	{"clone_trooper",CS_CLONETROOPER},
+	ENUM2STRING(CS_CLONETROOPER),
+	{"droideka",CS_DROIDEKA},
+	ENUM2STRING(CS_DROIDEKA),
+	{"darkforces2",CS_DARKFORCES2},
+	ENUM2STRING(CS_DARKFORCES2),
+	{"count_dooku",CS_COUNT_DOOKU},
+	ENUM2STRING(CS_COUNT_DOOKU),
+	{"galen_marek",CS_GALEN_MAREK},
+	ENUM2STRING(CS_GALEN_MAREK),
+	{"qui_gon_jinn",CS_QUI_GON_JINN},
+	ENUM2STRING(CS_QUI_GON_JINN),
+	{"grievous",CS_GRIEVOUS},
+	ENUM2STRING(CS_GRIEVOUS),
+	{"jabba",CS_JABBA},
+	ENUM2STRING(CS_JABBA),
+	{"jango", CS_JANGO},
+	ENUM2STRING(CS_JANGO),
+	{"kotor",CS_KOTOR},
+	ENUM2STRING(CS_KOTOR),
+	{"luke_skywalker", CS_LUKE_SKYWALKER},
+	ENUM2STRING(CS_LUKE_SKYWALKER),
+	{"mace_windu", CS_MACE_WINDU},
+	ENUM2STRING(CS_MACE_WINDU),
+	{"maul",CS_MAUL},
+	ENUM2STRING(CS_MAUL),
+	{"movie_duels",CS_MOVIEDUELS},
+	ENUM2STRING(CS_MOVIEDUELS),
+	{"melee", CS_MELEE},
+	ENUM2STRING(CS_MELEE),
+	{"obiwan", CS_OBIWAN},
+	ENUM2STRING(CS_OBIWAN),
+	{"obiwan_ep3",CS_OBIWAN_EP3},
+	ENUM2STRING(CS_OBIWAN_EP3),
+	{"palpatine",CS_PALPATINE},
+	ENUM2STRING(CS_PALPATINE),
+	{"rebels",CS_REBELS},
+	ENUM2STRING(CS_REBELS),
+	{"kylo_ren",CS_KYLO_REN},
+	ENUM2STRING(CS_KYLO_REN),
+	{"rey",CS_REY},
+	ENUM2STRING(CS_REY),
+	{"sbd",CS_SBD},
+	ENUM2STRING(CS_SBD),
+	{"vader",CS_VADER},
+	ENUM2STRING(CS_VADER),
+	{"yoda", CS_YODA},
+	ENUM2STRING(CS_YODA),
+	{"", -1}
+};
+
 // this list was made using the model directories, this MUST be in the same order as the CLASS_ enum in teams.h
 stringID_table_t ClassTable[] =
 {
@@ -1794,6 +1857,7 @@ void CG_NPC_Precache(gentity_t* spawner)
 	qboolean md3_model = qfalse;
 	char player_model[MAX_QPATH] = { 0 };
 	char customSkin[MAX_QPATH];
+	Animationstyles_t animationstyle;
 
 	if (!Q_stricmp("random", spawner->NPC_type))
 	{
@@ -1957,6 +2021,16 @@ void CG_NPC_Precache(gentity_t* spawner)
 				continue;
 			}
 			enemyfaction = static_cast<faction_t>(GetIDForString(FactionTable, value));
+			continue;
+		}
+
+		if (!Q_stricmp(token, "animationstyle"))
+		{
+			if (COM_ParseString(&p, &value))
+			{
+				continue;
+			}
+			animationstyle = static_cast<Animationstyles_t>(GetIDForString(AnimationstylesTable, token));
 			continue;
 		}
 
@@ -3442,6 +3516,16 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 					continue;
 				}
 				npc->client->enemyfaction = static_cast<faction_t>(GetIDForString(FactionTable, value));
+				continue;
+			}
+
+			if (!Q_stricmp(token, "animationstyle"))
+			{
+				if (COM_ParseString(&p, &value))
+				{
+					continue;
+				}
+				npc->client->animationstyle = static_cast<Animationstyles_t>(GetIDForString(AnimationstylesTable, value));
 				continue;
 			}
 

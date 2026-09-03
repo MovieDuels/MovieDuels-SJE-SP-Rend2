@@ -1993,6 +1993,11 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 	{
 		client->timeResidual -= 1000;
 
+		if (ent->client->ps.SaberSmashHitCount >= 1)
+		{ // reset the saber smash hit count every second, so that it doesn't carry over to the next second and cause a "smash" to happen when it shouldn't
+			ent->client->ps.SaberSmashHitCount = 0;
+		}
+
 		// -----------------------------------------------------
 		// WEAPON USAGE STATS
 		// -----------------------------------------------------
@@ -5476,7 +5481,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		//pull back the view
 		G_CamPullBackForLegsAnim(ent);
 	}
-	else if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
+	else if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT || ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
 	{
 		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 		if (ent->NPC)
@@ -5486,8 +5491,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 		if (!ent->s.number)
 		{
-			float anim_length = PM_AnimLength(ent->client->clientInfo.animFileIndex,
-				static_cast<animNumber_t>(ent->client->ps.torsoAnim));
+			float anim_length = PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.torsoAnim));
 			float elapsed_time = anim_length - ent->client->ps.torsoAnimTimer;
 			float back_dist = 0;
 			if (elapsed_time <= 300.0f)
@@ -5512,6 +5516,49 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 		overridAngles = PM_AdjustAnglesForSpinProtect(ent, ucmd) ? qtrue : overridAngles;
 	}
+	else if (ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR)
+	{
+		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
+		if (ent->NPC)
+		{
+			VectorClear(ent->client->ps.moveDir);
+			ent->client->ps.forceJumpCharge = 0;
+		}
+		if (!ent->s.number)
+		{
+			float anim_length = PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.torsoAnim));
+			float elapsed_time = anim_length - ent->client->ps.torsoAnimTimer;
+			float back_dist = 0;
+			if (elapsed_time <= 300.0f)
+			{
+				//starting anim
+				back_dist = elapsed_time / 300.0f * 45.0f;
+			}
+			else if (ent->client->ps.torsoAnimTimer <= 300.0f)
+			{
+				//ending anim
+				back_dist = ent->client->ps.torsoAnimTimer / 300.0f * 45.0f;
+			}
+			else
+			{
+				//in middle of anim
+				back_dist = 45.0f;
+			}
+			//back off and look down
+			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_3RD_PERSON_POF;
+			cg.overrides.thirdPersonRange = cg_thirdPersonRange.value + back_dist;
+			cg.overrides.thirdPersonPitchOffset = cg_thirdPersonPitchOffset.value + back_dist / 2.0f;
+		}
+	}
+	else if (ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA || ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN)
+	{
+		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
+		if (ent->NPC)
+		{
+			VectorClear(ent->client->ps.moveDir);
+			ent->client->ps.forceJumpCharge = 0;
+		}
+	}
 	else if (ent->client->ps.legsAnim == BOTH_A3_SPECIAL)
 	{
 		//push forward
@@ -5534,19 +5581,19 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		ucmd->forwardmove = 0;
 		if (ent->client->ps.legsAnimTimer > 200.0f)
 		{
-			float anim_length = PM_AnimLength(ent->client->clientInfo.animFileIndex,
-				static_cast<animNumber_t>(ent->client->ps.torsoAnim));
+			float anim_length = PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.torsoAnim));
 			float elapsed_time = anim_length - ent->client->ps.torsoAnimTimer;
-			if (elapsed_time < 750
-				|| elapsed_time >= 1650 && elapsed_time < 2400)
+
+			if (elapsed_time < 750 || elapsed_time >= 1650 && elapsed_time < 2400)
 			{
 				//push forward
 				ucmd->forwardmove = 64;
 				ent->client->ps.speed = 200.0f;
 			}
 		}
-	} //FIXME: fast special?
+	}
 	else if (ent->client->ps.legsAnim == BOTH_A1_SPECIAL
+		|| ent->client->ps.legsAnim == BOTH_A1_SPECIAL_YODA
 		&& (ucmd->forwardmove || ucmd->rightmove || VectorCompare(ent->client->ps.moveDir, vec3_origin) && ent->client
 			->ps.speed > 0))
 	{

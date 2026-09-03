@@ -188,6 +188,8 @@ extern qboolean PM_SaberInbackblock(const int move);
 extern qboolean PM_IsInBlockingAnim(const int move);
 extern cvar_t* g_HitTracking;
 extern void PM_RemoveGunnerAimFlag(qboolean removeFlag);
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
 
 constexpr auto FLY_NONE = 0;
 constexpr auto FLY_NORMAL = 1;
@@ -4341,12 +4343,16 @@ static int PM_GetLandingAnim()
 	case BOTH_A7_SLAP_R:
 	case BOTH_A7_SLAP_L:
 	case BOTH_STABDOWN:
+	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
 	case BOTH_A1_SPECIAL:
 	case BOTH_A2_SPECIAL:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
@@ -12926,7 +12932,7 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Explicit qboolean: is the player/NPC actively blocking + attacking?
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	// Movement inputs (signed chars)
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -13127,7 +13133,7 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Active blocking (block + attack) flag
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
@@ -13355,7 +13361,7 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Active blocking: block + attack held
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue: qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	const signed char forwardmove = pm->cmd.forwardmove;
 	const signed char rightmove = pm->cmd.rightmove;
@@ -13592,7 +13598,7 @@ int PM_BlockingPoseForSaberAnimLevelSingleMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Explicit qboolean: block + attack held
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	// Movement inputs
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -13685,7 +13691,7 @@ int PM_BlockingPoseForSaberAnimLevelDualMD()
 {
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 	//Active Blocking
 
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -13777,7 +13783,7 @@ int PM_BlockingPoseForSaberAnimLevelStaffMD(void)
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
 	// Explicit qboolean: block + attack held
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
 	// Movement inputs
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -14928,10 +14934,15 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 				|| new_move == LS_STABDOWN
 				|| new_move == LS_STABDOWN_STAFF
 				|| new_move == LS_STABDOWN_DUAL
+				|| new_move == LS_STABDOWN_WINDU
 				|| new_move == LS_DUAL_SPIN_PROTECT
+				|| new_move == LS_DUAL_SPIN_PROTECT_GRIEVOUS
 				|| new_move == LS_STAFF_SOULCAL
 				|| new_move == LS_A1_SPECIAL
+				|| new_move == LS_A1_SPECIAL_YODA
 				|| new_move == LS_A2_SPECIAL
+				|| new_move == LS_A2_SPECIAL_ANAKIN
+				|| new_move == LS_A2_SPECIAL_KOTOR
 				|| new_move == LS_A3_SPECIAL
 				|| new_move == LS_UPSIDE_DOWN_ATTACK
 				|| new_move == LS_PULL_ATTACK_STAB
@@ -15092,67 +15103,45 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 
 		//Some special attacks can be started when sabers are off, make sure we turn them on, first!
 		switch (new_move)
-		{
-			//make sure the saber is on!
+		{//make sure the saber is on!
+		case LS_A_LUNGE:
 		case LS_ROLL_STAB:
 			if (PM_InSecondaryStyle())
-			{
-				//staff as medium or dual as fast
+			{//staff as medium or dual as fast
 				if (pm->ps->dualSabers)
-				{
-					//only force on the first saber
+				{//only force on the first saber
 					pm->ps->saber[0].Activate();
 				}
 				else if (pm->ps->saber[0].numBlades > 1)
-				{
-					//only force on the first saber's first blade
+				{//only force on the first saber's first blade
 					pm->ps->SaberBladeActivate(0, 0);
 				}
 			}
 			else
-			{
-				//turn on all blades on all sabers
+			{//turn on all blades on all sabers
 				pm->ps->SaberActivate();
-			}
-			break;
-		case LS_SPINATTACK_DUAL:
-		case LS_DUAL_SPIN_PROTECT:
-			if (pm->ps->dualSabers)
-			{
-				//force on
-				if (pm->gent->weaponModel[1] == -1)
-				{
-					G_RemoveHolsterModels(pm->gent);
-					WP_SaberAddG2SaberModels(pm->gent, qtrue);
-				}
-				pm->ps->saber[0].Activate();
-				pm->ps->saber[1].Activate();
-			}
-			else
-			{
-				//turn on all blades on all sabers
-				pm->ps->SaberActivate();
-			}
-			break;
-		case LS_A_LUNGE:
-		case LS_A1_SPECIAL:
-			if (pm->ps->dualSabers)
-			{
-				//only force on the first saber
-				pm->ps->saber[0].Activate();
-			}
-			else
-			{
-				//turn on all blades on all sabers
-				pm->ps->saber[0].Activate();
 			}
 			break;
 		case LS_SPINATTACK_ALORA:
+		case LS_SPINATTACK_DUAL:
 		case LS_SPINATTACK:
+		case LS_A1_SPECIAL:
+		case LS_A1_SPECIAL_YODA:
 		case LS_A2_SPECIAL:
+		case LS_A2_SPECIAL_ANAKIN:
+		case LS_A2_SPECIAL_KOTOR:
 		case LS_A3_SPECIAL:
+		case LS_DUAL_SPIN_PROTECT:
+		case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 		case LS_STAFF_SOULCAL:
+		case LS_STABDOWN_WINDU:
+			//FIXME: probably more...
 			pm->ps->SaberActivate();
+			if (pm->ps->dualSabers && pm->gent->weaponModel[1] == -1)
+			{
+				G_RemoveHolsterModels(pm->gent);
+				WP_SaberAddG2SaberModels(pm->gent, qtrue);
+			}
 			break;
 		default:
 			break;
@@ -18142,7 +18131,7 @@ static qboolean InSaberDelayAnimation(const int move)
 
 static qboolean PM_SaberBlocking()
 {
-	const qboolean is_holding_block_button_and_attack =((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0)	? qtrue	: qfalse;
+	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 	//Active Blocking
 
 	if (g_SerenityJediEngineMode->integer)
@@ -19506,6 +19495,193 @@ saberMoveName_t PM_DoAI_Fake(const int curmove)
 	return transitionMove[saberMoveData[curmove].endQuad][new_quad];
 }
 
+/*
+=================
+Kata Animationstyles
+=================
+*/
+static void PM_KataAnimationStyle(void)
+{
+	// Safety
+	if (pm == nullptr ||
+		pm->ps == nullptr ||
+		pm->gent == nullptr ||
+		pm->gent->client == nullptr)
+	{
+		return;
+	}
+
+	saberMoveName_t override_move = LS_INVALID;
+
+	//see if we have an overridden (or cancelled) kata move
+	if (pm->ps->saber[0].kataMove != LS_INVALID)
+	{
+		if (pm->ps->saber[0].kataMove != LS_NONE)
+		{
+			override_move = static_cast<saberMoveName_t>(pm->ps->saber[0].kataMove);
+		}
+	}
+	if (override_move == LS_INVALID)
+	{//not overridden by first saber, check second
+		if (pm->ps->dualSabers)
+		{
+			if (pm->ps->saber[1].kataMove != LS_INVALID)
+			{
+				if (pm->ps->saber[1].kataMove != LS_NONE)
+				{
+					override_move = static_cast<saberMoveName_t>(pm->ps->saber[1].kataMove);
+				}
+			}
+		}
+	}
+	//no overrides, cancelled?
+	if (override_move == LS_INVALID)
+	{
+		if (pm->ps->saber[0].kataMove == LS_NONE)
+		{
+			override_move = LS_NONE;
+		}
+		else if (pm->ps->dualSabers)
+		{
+			if (pm->ps->saber[1].kataMove == LS_NONE)
+			{
+				override_move = LS_NONE;
+			}
+		}
+	}
+
+	if (override_move == LS_INVALID)
+	{
+		switch (pm->ps->saberAnimLevel)
+		{
+		case SS_FAST:
+			if (pm->ps->dualSabers && pm->ps->saber[1].Active())
+			{
+				PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
+			}
+			else
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if ((pm->gent->client->animationstyle == CS_YODA) || (g_AnimationStyle && g_AnimationStyle->integer == 28) || (pm->ps->saber[0].type == SABER_YODA))
+					{
+						PM_SetSaberMove(LS_A1_SPECIAL_YODA);
+					}
+					else if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+					{
+						PM_SetSaberMove(LS_STABDOWN_WINDU);
+					}
+					else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+					{
+						PM_SetSaberMove(LS_STABDOWN_WINDU);
+					}
+					else
+					{
+						PM_SetSaberMove(LS_A1_SPECIAL);
+					}
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A1_SPECIAL);
+				}
+			}
+			break;
+		case SS_TAVION:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if ((pm->gent->client->animationstyle == CS_YODA) || (g_AnimationStyle && g_AnimationStyle->integer == 28) || (pm->ps->saber[0].type == SABER_YODA))
+				{
+					PM_SetSaberMove(LS_A1_SPECIAL_YODA);
+				}
+				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+				{
+					PM_SetSaberMove(LS_STABDOWN_WINDU);
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A1_SPECIAL);
+				}
+			}
+			else
+			{
+				PM_SetSaberMove(LS_A1_SPECIAL);
+			}
+			break;
+		case SS_MEDIUM:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if ((pm->gent->client->animationstyle == CS_ANAKIN) || (g_AnimationStyle && g_AnimationStyle->integer == 1) || (pm->ps->saber[0].type == SABER_ANAKIN))
+				{
+					PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN);
+				}
+				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+				{
+					PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN);
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A2_SPECIAL);
+				}
+			}
+			else
+			{
+				PM_SetSaberMove(LS_A2_SPECIAL);
+			}
+			break;
+		case SS_STRONG:
+			PM_SetSaberMove(LS_A3_SPECIAL);
+			break;
+		case SS_DESANN:
+			PM_SetSaberMove(LS_A3_SPECIAL);
+			break;
+		case SS_DUAL:
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if ((pm->gent->client->animationstyle == CS_GRIEVOUS) || (g_AnimationStyle && g_AnimationStyle->integer == 11) || (pm->ps->saber[0].type == SABER_GRIE) || (pm->ps->saber[0].type == SABER_GRIE4))
+				{
+					PM_SetSaberMove(LS_DUAL_SPIN_PROTECT_GRIEVOUS);
+				}
+				else if ((pm->gent->client->animationstyle == CS_KOTOR) || (g_AnimationStyle && g_AnimationStyle->integer == 14) || (pm->ps->saber[0].type == SABER_WINDU))
+				{
+					PM_SetSaberMove(LS_A2_SPECIAL_KOTOR);
+				}
+				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+				{
+					PM_SetSaberMove(LS_A2_SPECIAL_KOTOR);
+				}
+				else
+				{
+					PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
+				}
+			}
+			else
+			{
+				PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
+			}
+		}
+		break;
+		case SS_STAFF:
+			PM_SetSaberMove(LS_STAFF_SOULCAL);
+			break;
+		default:;
+		}
+		pm->ps->weaponstate = WEAPON_FIRING;
+		G_DrainPowerForSpecialMove(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER, qtrue);
+	}
+	else if (override_move != LS_NONE)
+	{
+		PM_SetSaberMove(override_move);
+		pm->ps->weaponstate = WEAPON_FIRING;
+		G_DrainPowerForSpecialMove(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER, qtrue);
+	}
+	if (override_move != LS_NONE)
+	{
+		//not cancelled
+		return;
+	}
+}
+
 static void PM_WeaponLightsaber(void)
 {
 	// ----------------------------------------------------------------------
@@ -20125,94 +20301,7 @@ static void PM_WeaponLightsaber(void)
 	// *********************************************************
 	if (PM_CanDoKata())
 	{
-		saberMoveName_t override_move = LS_INVALID;
-
-		//see if we have an overridden (or cancelled) kata move
-		if (pm->ps->saber[0].kataMove != LS_INVALID)
-		{
-			if (pm->ps->saber[0].kataMove != LS_NONE)
-			{
-				override_move = static_cast<saberMoveName_t>(pm->ps->saber[0].kataMove);
-			}
-		}
-		if (override_move == LS_INVALID)
-		{
-			//not overridden by first saber, check second
-			if (pm->ps->dualSabers)
-			{
-				if (pm->ps->saber[1].kataMove != LS_INVALID)
-				{
-					if (pm->ps->saber[1].kataMove != LS_NONE)
-					{
-						override_move = static_cast<saberMoveName_t>(pm->ps->saber[1].kataMove);
-					}
-				}
-			}
-		}
-		//no overrides, cancelled?
-		if (override_move == LS_INVALID)
-		{
-			if (pm->ps->saber[0].kataMove == LS_NONE)
-			{
-				override_move = LS_NONE;
-			}
-			else if (pm->ps->dualSabers)
-			{
-				if (pm->ps->saber[1].kataMove == LS_NONE)
-				{
-					override_move = LS_NONE;
-				}
-			}
-		}
-
-		if (override_move == LS_INVALID)
-		{
-			switch (pm->ps->saberAnimLevel)
-			{
-			case SS_FAST:
-				if (pm->ps->dualSabers && pm->ps->saber[1].Active())
-				{
-					PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
-				}
-				else
-				{
-					PM_SetSaberMove(LS_A1_SPECIAL);
-				}
-				break;
-			case SS_TAVION:
-				PM_SetSaberMove(LS_A1_SPECIAL);
-				break;
-			case SS_MEDIUM:
-				PM_SetSaberMove(LS_A2_SPECIAL);
-				break;
-			case SS_STRONG:
-				PM_SetSaberMove(LS_A3_SPECIAL);
-				break;
-			case SS_DESANN:
-				PM_SetSaberMove(LS_A3_SPECIAL);
-				break;
-			case SS_DUAL:
-				PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
-				break;
-			case SS_STAFF:
-				PM_SetSaberMove(LS_STAFF_SOULCAL);
-				break;
-			default:;
-			}
-			pm->ps->weaponstate = WEAPON_FIRING;
-			G_DrainPowerForSpecialMove(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER, qtrue);
-		}
-		else if (override_move != LS_NONE)
-		{
-			PM_SetSaberMove(override_move);
-			pm->ps->weaponstate = WEAPON_FIRING;
-			G_DrainPowerForSpecialMove(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER, qtrue);
-		}
-		if (override_move != LS_NONE)
-		{
-			//not cancelled
-			return;
-		}
+		PM_KataAnimationStyle();
 	}
 
 	if ((pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) &&
@@ -22213,17 +22302,17 @@ static void PM_Weapon()
 
 				if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4,	SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP,SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
 					}
 				}
 				break;

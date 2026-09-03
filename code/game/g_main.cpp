@@ -333,6 +333,8 @@ cvar_t* g_npc_is_smart_range;
 
 cvar_t* g_jkoeffects;
 cvar_t* g_HitTracking;
+cvar_t* g_ActivateAnimationStyle;
+cvar_t* g_AnimationStyle;
 
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
@@ -955,6 +957,10 @@ static void G_InitCvars()
 	g_jkoeffects = gi.cvar("cg_outcastpusheffect", "1", CVAR_ARCHIVE);
 
 	g_HitTracking = gi.cvar("g_HitTracking", "0", CVAR_ARCHIVE);
+
+	g_ActivateAnimationStyle = gi.cvar("g_activateanimationstyle", "0", CVAR_ARCHIVE);
+
+	g_AnimationStyle = gi.cvar("g_animationstyle", "0", CVAR_ARCHIVE); //Alternate animationstyle
 }
 
 /*

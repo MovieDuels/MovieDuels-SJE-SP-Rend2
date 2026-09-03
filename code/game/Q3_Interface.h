@@ -665,6 +665,8 @@ using setType_t = enum //# setType_e
 
 	SET_ENDLESS_ST,
 
+	SET_ANIMATION_STYLE,
+
 	SET_
 };
 

@@ -5038,7 +5038,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 					&& !attacker->client->ps.saberInFlight
 					&& (d_slowmodeath->integer > 2 || last_in_group == qtrue))
 				{
-					if (attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
+					if (attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT|| attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
 					{
 						G_StartMatrixEffect(self, MEF_NO_RANGEVAR | MEF_NO_VERTBOB);
 					}
@@ -5060,7 +5060,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 						|| holding_saber == qtrue
 						|| self->client->NPC_class == CLASS_WAMPA))
 				{
-					if (attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
+					if (attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT|| attacker->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
 					{
 						G_StartMatrixEffect(self, MEF_NO_RANGEVAR | MEF_NO_VERTBOB);
 					}

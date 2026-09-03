@@ -525,6 +525,8 @@ void PlayerStateToEntityState(playerState_t* ps, entityState_t* s)
 	s->hackingTime = ps->hackingTime;
 	s->hackingBaseTime = ps->hackingBaseTime;
 
+	s->SaberSmashHitCount = ps->SaberSmashHitCount;
+
 	s->PlayerEffectFlags = ps->PlayerEffectFlags;
 	s->userInt3 = ps->userInt3;
 
