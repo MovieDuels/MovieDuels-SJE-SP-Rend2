@@ -7624,7 +7624,6 @@ static void WP_SaberRadiusDamage(gentity_t* ent, vec3_t point, const float radiu
 Saber Slam Trace and Radius Damage
 ---------------------------------------------------------
 */
-
 static qboolean WP_GetSaberBoltOrigin(gentity_t* ent, int saberNum, const char** boltNames, int boltCount, vec3_t outOrigin)
 {
 	if (ent == nullptr)
@@ -7649,18 +7648,17 @@ static qboolean WP_GetSaberBoltOrigin(gentity_t* ent, int saberNum, const char**
 		return qfalse;
 	}
 
-	// Default candidate bolt names (blade-first, then weapon/saber tags).
+	// ----------------------------------------------------------------------
+	// Bolt name candidates
+	// ----------------------------------------------------------------------
 	const char* defaultNames[] =
 	{
-		"blade1",
-		"tag_blade1",
 		"*blade1",
-		"blade_tip",
-		"tag_blade_tip",
-		"*weapon_l",
-		"*weapon",
-		"tag_weapon",
-		"tag_saber"
+		"*blade2",
+		"blade1",
+		"blade2",
+		"tag_blade1",
+		"tag_blade2"
 	};
 
 	const char** names = boltNames;
@@ -7672,6 +7670,9 @@ static qboolean WP_GetSaberBoltOrigin(gentity_t* ent, int saberNum, const char**
 		namesCount = (int)(sizeof(defaultNames) / sizeof(defaultNames[0]));
 	}
 
+	// ----------------------------------------------------------------------
+	// Try each bolt name until one succeeds
+	// ----------------------------------------------------------------------
 	int boltIndex = -1;
 
 	for (int i = 0; i < namesCount; i++)
@@ -7682,6 +7683,7 @@ static qboolean WP_GetSaberBoltOrigin(gentity_t* ent, int saberNum, const char**
 		}
 
 		boltIndex = gi.G2API_AddBolt(&ent->ghoul2[modelIndex], names[i]);
+
 		if (boltIndex != -1)
 		{
 			break;
@@ -7693,6 +7695,9 @@ static qboolean WP_GetSaberBoltOrigin(gentity_t* ent, int saberNum, const char**
 		return qfalse;
 	}
 
+	// ----------------------------------------------------------------------
+	// Compute bolt matrix
+	// ----------------------------------------------------------------------
 	mdxaBone_t boltMatrix;
 	vec3_t angles = { 0.0f, ent->currentAngles[YAW], 0.0f };
 	vec3_t tmpOrigin;
@@ -7708,6 +7713,7 @@ static qboolean WP_GetSaberBoltOrigin(gentity_t* ent, int saberNum, const char**
 		nullptr,
 		ent->s.modelScale);
 
+	// Convert matrix to world-space origin
 	gi.G2API_GiveMeVectorFromMatrix(boltMatrix, ORIGIN, tmpOrigin);
 	VectorCopy(tmpOrigin, outOrigin);
 
@@ -7726,23 +7732,19 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 		return;
 	}
 
+	// ----------------------------------------------------------------------
+	// Bolt name candidates
+	// ----------------------------------------------------------------------
+
 	const char* bladeCandidates[] =
 	{
-		"blade1",
-		"tag_blade1",
 		"*blade1",
-		"blade_tip",
-		"tag_blade_tip",
-		"*weapon_l",
-		"*weapon",
-		"tag_weapon",
-		"tag_saber",
-		"*l_hand",
-		"*l_hand_cap_l_arm"
+		"*blade2"
 	};
 
 	vec3_t bladeOrigin;
 
+	// Try secondary saber first, then primary
 	if (WP_GetSaberBoltOrigin(owner, 1, bladeCandidates, (int)(sizeof(bladeCandidates) / sizeof(bladeCandidates[0])), bladeOrigin) == qfalse)
 	{
 		if (WP_GetSaberBoltOrigin(owner, 0, bladeCandidates, (int)(sizeof(bladeCandidates) / sizeof(bladeCandidates[0])), bladeOrigin) == qfalse)
@@ -7752,6 +7754,9 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 		}
 	}
 
+	// ----------------------------------------------------------------------
+	// Prepare trace downward from blade tip
+	// ----------------------------------------------------------------------
 	trace_t trace;
 	gentity_t* radiusEnts[128];
 
@@ -7765,7 +7770,7 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 	// Trace down from blade tip (deep enough to guarantee floor impact).
 	vec3_t bottom;
 	VectorCopy(bladeOrigin, bottom);
-	bottom[2] -= 512.0f;
+	bottom[2] -= 512.0f; // deep enough to guarantee floor impact
 
 	gi.trace(&trace,
 		bladeOrigin,
@@ -7777,17 +7782,22 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 		G2_RETURNONHIT,
 		10);
 
-	G_PlayEffect(G_EffectIndex("SaberSmash/SaberSmash.efx"), trace.endpos, trace.plane.normal);
-	G_SoundOnEnt(owner, CHAN_WEAPON, "sound/SaberSmash/SaberSmash.mp3");
+	// ----------------------------------------------------------------------
+	// Play effect + sound at impact point
+	// ----------------------------------------------------------------------
+	G_PlayEffect(G_EffectIndex("scepter/slam.efx"), trace.endpos, trace.plane.normal);
 
-	// Setup the bbox to search in
+	// ----------------------------------------------------------------------
+	// Radius search setup
+	// ----------------------------------------------------------------------
 	for (int i = 0; i < 3; i++)
 	{
 		mins[i] = trace.endpos[i] - radius;
 		maxs[i] = trace.endpos[i] + radius;
 	}
-
-	// Get entities in box (SP version returns gentity_t*)
+	// ----------------------------------------------------------------------
+	// Find entities in radius
+	// ----------------------------------------------------------------------
 	const int numEnts = gi.EntitiesInBox(mins, maxs, radiusEnts, 128);
 
 	for (int i = 0; i < numEnts; i++)
@@ -7809,7 +7819,9 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 			continue;
 		}
 
+		// ------------------------------------------------------------------
 		// Breakables
+		// ------------------------------------------------------------------
 		if (ent->client == nullptr)
 		{
 			if (G_EntIsBreakable(ent->s.number, owner) == qtrue)
@@ -7819,14 +7831,20 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 			continue;
 		}
 
-		// Held actors cannot be thrown
+		// ------------------------------------------------------------------
+		// Held entities cannot be thrown
+		// ------------------------------------------------------------------
 		if ((ent->client->ps.eFlags & EF_HELD_BY_RANCOR) != 0 ||
 			(ent->client->ps.eFlags & EF_HELD_BY_WAMPA) != 0)
 		{
 			continue;
 		}
 
+		// ------------------------------------------------------------------
+		// Compute distance from slam point
+		// ------------------------------------------------------------------
 		VectorSubtract(ent->currentOrigin, trace.endpos, entDir);
+
 		const float dist = VectorNormalize(entDir);
 
 		if (dist > radius)
@@ -7834,20 +7852,23 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 			continue;
 		}
 
+		// ------------------------------------------------------------------
 		// Inner radius damage
+		// ------------------------------------------------------------------
 		if (dist < halfRad)
 		{
 			G_Damage(ent, owner, owner, vec3_origin, ent->currentOrigin, Q_irand(20, 30), DAMAGE_NO_KNOCKBACK, MOD_EXPLOSIVE_SPLASH);
 		}
 
-		// Throw + knockdown
+		// ------------------------------------------------------------------
+		// Throw + knockdown (non-heavy NPCs)
+		// ------------------------------------------------------------------
 		if (ent->client != nullptr &&
 			ent->client->NPC_class != CLASS_RANCOR &&
 			ent->client->NPC_class != CLASS_ATST)
 		{
-			float throwStr;
+			float throwStr = 10.0f + (radius - dist) * 0.25f;
 
-			throwStr = 10.0f + (radius - dist) * 0.25f;
 			if (throwStr > 85.0f)
 			{
 				throwStr = 85.0f;
@@ -7867,8 +7888,6 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 				}
 			}
 		}
-		// reset after firing so subsequent hits require two hits again
-		ent->client->ps.SaberSmashHitCount = 0;
 	}
 }
 
@@ -7888,7 +7907,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 	vec3_t mp1, mp2, md1, md2, base_old, base_new, end_old, end_new;
 	float base_damage;
 	int base_d_flags = 0;
-	qboolean hit_wall = qfalse;
+	qboolean saber_hit_wall = qfalse;
 	qboolean broken_parry = qfalse;
 
 	for (int& ven : victimEntityNum)
@@ -8356,7 +8375,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 
 	if (VectorCompare2(base_old, base_new) && VectorCompare2(end_old, end_new))
 	{
-		hit_wall = WP_SaberDamageForTrace(ent->s.number, mp2, end_new, base_damage * 4, md2, qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum, bladeNum);
+		saber_hit_wall = WP_SaberDamageForTrace(ent->s.number, mp2, end_new, base_damage * 4, md2, qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum, bladeNum);
 	}
 	else
 	{
@@ -8366,7 +8385,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 		vec3_t ma1, ma2, md2_ang{}, cur_base2;
 		int xx;
 		//do the trace at the base first
-		hit_wall = WP_SaberDamageForTrace(ent->s.number, base_old, base_new, base_damage, md2,
+		saber_hit_wall = WP_SaberDamageForTrace(ent->s.number, base_old, base_new, base_damage, md2,
 			qfalse, ent->client->ps.saber[saberNum].type, qtrue, saberNum,
 			bladeNum);
 
@@ -8453,7 +8472,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 				VectorMA(cur_base2, step, curMD2, blade_point_new);
 				if (WP_SaberDamageForTrace(ent->s.number, blade_point_old, blade_point_new, base_damage, curMD2, qfalse, ent->client->ps.saber[saberNum].type, qtrue, saberNum, bladeNum))
 				{
-					hit_wall = qtrue;
+					saber_hit_wall = qtrue;
 				}
 
 				//if hit a saber, shorten rest of traces to match
@@ -8474,12 +8493,12 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 					AngleVectors(md2_ang, curMD2, nullptr, nullptr);
 					hit_saber = qtrue;
 				}
-				if (hit_wall)
+				if (saber_hit_wall)
 				{
 					break;
 				}
 			}
-			if (hit_wall || hit_saber)
+			if (saber_hit_wall || hit_saber)
 			{
 				break;
 			}
@@ -8508,7 +8527,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 			qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum,
 			bladeNum))
 		{
-			hit_wall = qtrue;
+			saber_hit_wall = qtrue;
 		}
 	}
 
@@ -8601,11 +8620,21 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 				}
 
 				if (ent->client->ps.torsoAnim == BOTH_A1_SPECIAL
-					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL
+					|| ent->client->ps.torsoAnim == BOTH_A3_SPECIAL
+					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+					///////////////////////////////////////
+					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR
-					|| ent->client->ps.torsoAnim == BOTH_A3_SPECIAL)
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
+					////////////////////////////////////////
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
+					////////////////////////////////////////
+					|| ent->client->ps.torsoAnim == BOTH_A7_SOULCAL
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 				{
 					//parry/block/break-parry bonus for single-style kata moves
 					ent_power_level++;
@@ -8660,11 +8689,21 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 				}
 
 				if (hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL
+					|| hit_owner->client->ps.torsoAnim == BOTH_A3_SPECIAL
+					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+					///////////////////////////////////////
+					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR
-					|| hit_owner->client->ps.torsoAnim == BOTH_A3_SPECIAL)
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
+					////////////////////////////////////////
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
+					////////////////////////////////////////
+					|| hit_owner->client->ps.torsoAnim == BOTH_A7_SOULCAL
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 				{
 					//parry/block/break-parry bonus for single-style kata moves
 					hit_owner_power_level++;
@@ -9200,7 +9239,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 	}
 	else
 	{
-		if (hit_wall
+		if (saber_hit_wall
 			&& (ent->client->ps.saber[saberNum].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer)
 			&& (PM_SaberInAttackPure(ent->client->ps.saberMove) || ent->client->ps.saberMove == LS_A_JUMP_T__B_))
 		{
@@ -9242,32 +9281,27 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 					ent->client->ps.saber[saberNum].splashKnockback2);
 			}
 		}
-		else if (hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR)
-		{
-			ent->client->ps.SaberSmashHitCount++;
-
-			if (ent->client->ps.SaberSmashHitCount == 2)
-			{
-				G_PlayerSaberSmash(ent);
-				// reset after firing so subsequent hits require two hits again
-				ent->client->ps.SaberSmashHitCount = 0;
-			}
-		}
-		else if (hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU)
+		else if (saber_hit_wall &&
+			(ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF))
 		{
 			G_PlayerSaberSmash(ent);
-			// ensure count is cleared when this instant-smash anim fires
-			ent->client->ps.SaberSmashHitCount = 0;
 		}
-
-		// Ensure the smash count is reset whenever the player is no longer in the special anim.
-		// This must be checked outside/after the if/else chain so earlier branches (bounce/reflect)
-		// don't prevent it from resetting.
-		if (ent->client->ps.torsoAnim != BOTH_A2_SPECIAL_KOTOR)
+		else if (saber_hit_wall &&
+			ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL)
 		{
-			ent->client->ps.SaberSmashHitCount = 0;
+			if (!ent->client->ps.saberSmashTriggered && !BG_SaberInPartialDamageMove(ent))
+			{
+				G_PlayerSaberSmash(ent);
+				ent->client->ps.saberSmashTriggered = qtrue;
+			}
+		}
+		else
+		{
+			// reset when animation ends/changes
+			if (ent->client->ps.torsoAnim != BOTH_SMASHDOWN_DUAL)
+			{
+				ent->client->ps.saberSmashTriggered = qfalse;
+			}
 		}
 	}
 
@@ -9284,7 +9318,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 		WP_SaberHitSound(ent, saberNum, bladeNum);
 	}
 
-	if (hit_wall)
+	if (saber_hit_wall)
 	{
 		//just so Jedi knows that he hit a wall
 		ent->client->ps.saberEventFlags |= SEF_HITWALL;
@@ -9623,7 +9657,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 	vec3_t end_new;
 	float base_damage;
 	int base_d_flags = 0;
-	qboolean hit_wall = qfalse;
+	qboolean saber_hit_wall = qfalse;
 	qboolean broken_parry = qfalse;
 	qboolean saber_in_special = PM_SaberInSpecialAttack(ent->client->ps.torsoAnim);
 
@@ -10131,7 +10165,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 
 	if (VectorCompare2(base_old, base_new) && VectorCompare2(end_old, end_new))
 	{
-		hit_wall = WP_SaberDamageForTrace(ent->s.number, mp2, end_new, base_damage * 4, md2, qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum, bladeNum);
+		saber_hit_wall = WP_SaberDamageForTrace(ent->s.number, mp2, end_new, base_damage * 4, md2, qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum, bladeNum);
 	}
 	else
 	{
@@ -10144,7 +10178,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 		vec3_t cur_base2;
 		int xx;
 		//do the trace at the base first
-		hit_wall = WP_SaberDamageForTrace(ent->s.number, base_old, base_new, base_damage, md2,
+		saber_hit_wall = WP_SaberDamageForTrace(ent->s.number, base_old, base_new, base_damage, md2,
 			qfalse, ent->client->ps.saber[saberNum].type, qtrue, saberNum,
 			bladeNum);
 
@@ -10233,7 +10267,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					qfalse, ent->client->ps.saber[saberNum].type, qtrue, saberNum,
 					bladeNum))
 				{
-					hit_wall = qtrue;
+					saber_hit_wall = qtrue;
 				}
 
 				//if hit a saber, shorten rest of traces to match
@@ -10254,12 +10288,12 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					AngleVectors(md2_ang, cur_md2, nullptr, nullptr);
 					hit_saber = qtrue;
 				}
-				if (hit_wall)
+				if (saber_hit_wall)
 				{
 					break;
 				}
 			}
-			if (hit_wall || hit_saber)
+			if (saber_hit_wall || hit_saber)
 			{
 				break;
 			}
@@ -10289,7 +10323,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 			ent->client->ps.saber[saberNum].type,
 			qfalse, saberNum, bladeNum))
 		{
-			hit_wall = qtrue;
+			saber_hit_wall = qtrue;
 		}
 	}
 
@@ -10380,14 +10414,21 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 				}
 
 				if (ent->client->ps.torsoAnim == BOTH_A1_SPECIAL
-					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR
 					|| ent->client->ps.torsoAnim == BOTH_A3_SPECIAL
+					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+					///////////////////////////////////////
+					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
+					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
+					////////////////////////////////////////
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
+					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A7_SOULCAL
-					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT
-					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 				{
 					//parry/block/break-parry bonus for single-style kata moves
 					ent_power_level++;
@@ -10433,14 +10474,21 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 				}
 
 				if (hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR
 					|| hit_owner->client->ps.torsoAnim == BOTH_A3_SPECIAL
+					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+					///////////////////////////////////////
+					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
+					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
+					////////////////////////////////////////
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
+					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A7_SOULCAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT
-					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 				{
 					//parry/block/break-parry bonus for single-style kata moves
 					hit_owner_power_level++;
@@ -10870,7 +10918,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 	}
 	else
 	{
-		if (hit_wall
+		if (saber_hit_wall
 			&& (ent->client->ps.saber[saberNum].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer)
 			&& (PM_SaberInAttackPure(ent->client->ps.saberMove) || ent->client->ps.saberMove == LS_A_JUMP_T__B_))
 		{
@@ -10912,7 +10960,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					ent->client->ps.saber[saberNum].splashKnockback2);
 			}
 		}
-		else if (hit_wall &&
+		else if (saber_hit_wall &&
 			!PM_SaberInAttackPure(ent->client->ps.saberMove) &&
 			!PM_CrouchAnim(ent->client->ps.legsAnim) &&
 			!PM_WalkingAnim(ent->client->ps.legsAnim) &&
@@ -10958,32 +11006,27 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					ent->client->ps.saber[saberNum].splashKnockback2);
 			}
 		}
-		else if (hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR)
-		{
-			ent->client->ps.SaberSmashHitCount++;
-
-			if (ent->client->ps.SaberSmashHitCount == 2)
-			{
-				G_PlayerSaberSmash(ent);
-				// reset after firing so subsequent hits require two hits again
-				ent->client->ps.SaberSmashHitCount = 0;
-			}
-		}
-		else if (hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU)
+		else if (saber_hit_wall &&
+			(ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF))
 		{
 			G_PlayerSaberSmash(ent);
-			// ensure count is cleared when this instant-smash anim fires
-			ent->client->ps.SaberSmashHitCount = 0;
 		}
-
-		// Ensure the smash count is reset whenever the player is no longer in the special anim.
-		// This must be checked outside/after the if/else chain so earlier branches (bounce/reflect)
-		// don't prevent it from resetting.
-		if (ent->client->ps.torsoAnim != BOTH_A2_SPECIAL_KOTOR)
+		else if (saber_hit_wall &&
+			ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL)
 		{
-			ent->client->ps.SaberSmashHitCount = 0;
+			if (!ent->client->ps.saberSmashTriggered && !BG_SaberInPartialDamageMove(ent))
+			{
+				G_PlayerSaberSmash(ent);
+				ent->client->ps.saberSmashTriggered = qtrue;
+			}
+		}
+		else
+		{
+			// reset when animation ends/changes
+			if (ent->client->ps.torsoAnim != BOTH_SMASHDOWN_DUAL)
+			{
+				ent->client->ps.saberSmashTriggered = qfalse;
+			}
 		}
 	}
 
@@ -11014,7 +11057,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 		}
 	}
 
-	if (hit_wall)
+	if (saber_hit_wall)
 	{
 		//just so Jedi knows that he hit a wall
 		ent->client->ps.saberEventFlags |= SEF_HITWALL;
@@ -11039,7 +11082,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 	vec3_t end_new;
 	float base_damage;
 	int base_d_flags = 0;
-	qboolean hit_wall = qfalse;
+	qboolean saber_hit_wall = qfalse;
 	qboolean broken_parry = qfalse;
 	qboolean saber_in_special = PM_SaberInSpecialAttack(ent->client->ps.torsoAnim);
 
@@ -11541,7 +11584,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 
 	if (VectorCompare2(base_old, base_new) && VectorCompare2(end_old, end_new))
 	{
-		hit_wall = WP_SaberDamageForTrace(ent->s.number, mp2, end_new, base_damage * 4, md2, qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum, bladeNum);
+		saber_hit_wall = WP_SaberDamageForTrace(ent->s.number, mp2, end_new, base_damage * 4, md2, qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum, bladeNum);
 	}
 	else
 	{
@@ -11551,7 +11594,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 		vec3_t ma1, ma2, md2_ang{}, cur_base2;
 		int xx;
 		//do the trace at the base first
-		hit_wall = WP_SaberDamageForTrace(ent->s.number, base_old, base_new, base_damage, md2,
+		saber_hit_wall = WP_SaberDamageForTrace(ent->s.number, base_old, base_new, base_damage, md2,
 			qfalse, ent->client->ps.saber[saberNum].type, qtrue, saberNum,
 			bladeNum);
 
@@ -11642,7 +11685,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					qfalse, ent->client->ps.saber[saberNum].type, qtrue, saberNum,
 					bladeNum))
 				{
-					hit_wall = qtrue;
+					saber_hit_wall = qtrue;
 				}
 
 				//if hit a saber, shorten rest of traces to match
@@ -11663,12 +11706,12 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					AngleVectors(md2_ang, cur_md2, nullptr, nullptr);
 					hit_saber = qtrue;
 				}
-				if (hit_wall)
+				if (saber_hit_wall)
 				{
 					break;
 				}
 			}
-			if (hit_wall || hit_saber)
+			if (saber_hit_wall || hit_saber)
 			{
 				break;
 			}
@@ -11698,7 +11741,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 			qfalse, ent->client->ps.saber[saberNum].type, qfalse, saberNum,
 			bladeNum))
 		{
-			hit_wall = qtrue;
+			saber_hit_wall = qtrue;
 		}
 	}
 
@@ -11789,14 +11832,21 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 				}
 
 				if (ent->client->ps.torsoAnim == BOTH_A1_SPECIAL
-					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR
 					|| ent->client->ps.torsoAnim == BOTH_A3_SPECIAL
+					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+					///////////////////////////////////////
+					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
+					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
+					////////////////////////////////////////
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
+					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A7_SOULCAL
-					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT
-					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 				{
 					//parry/block/break-parry bonus for single-style kata moves
 					ent_power_level++;
@@ -11842,14 +11892,21 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 				}
 
 				if (hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR
 					|| hit_owner->client->ps.torsoAnim == BOTH_A3_SPECIAL
+					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+					///////////////////////////////////////
+					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
+					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
+					////////////////////////////////////////
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
+					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A7_SOULCAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT
-					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 				{
 					//parry/block/break-parry bonus for single-style kata moves
 					hit_owner_power_level++;
@@ -12279,7 +12336,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 	}
 	else
 	{
-		if (hit_wall
+		if (saber_hit_wall
 			&& (ent->client->ps.saber[saberNum].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer)
 			&& (PM_SaberInAttackPure(ent->client->ps.saberMove) || ent->client->ps.saberMove == LS_A_JUMP_T__B_))
 		{
@@ -12321,7 +12378,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					ent->client->ps.saber[saberNum].splashKnockback2);
 			}
 		}
-		else if (hit_wall &&
+		else if (saber_hit_wall &&
 			!PM_SaberInAttackPure(ent->client->ps.saberMove) &&
 			!PM_CrouchAnim(ent->client->ps.legsAnim) &&
 			!PM_WalkingAnim(ent->client->ps.legsAnim) &&
@@ -12367,32 +12424,27 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					ent->client->ps.saber[saberNum].splashKnockback2);
 			}
 		}
-		else if (hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR)
-		{
-			ent->client->ps.SaberSmashHitCount++;
-
-			if (ent->client->ps.SaberSmashHitCount == 2)
-			{
-				G_PlayerSaberSmash(ent);
-				// reset after firing so subsequent hits require two hits again
-				ent->client->ps.SaberSmashHitCount = 0;
-			}
-		}
-		else if (hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU)
+		else if (saber_hit_wall &&
+			(ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF))
 		{
 			G_PlayerSaberSmash(ent);
-			// ensure count is cleared when this instant-smash anim fires
-			ent->client->ps.SaberSmashHitCount = 0;
 		}
-
-		// Ensure the smash count is reset whenever the player is no longer in the special anim.
-		// This must be checked outside/after the if/else chain so earlier branches (bounce/reflect)
-		// don't prevent it from resetting.
-		if (ent->client->ps.torsoAnim != BOTH_A2_SPECIAL_KOTOR)
+		else if (saber_hit_wall &&
+			ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL)
 		{
-			ent->client->ps.SaberSmashHitCount = 0;
+			if (!ent->client->ps.saberSmashTriggered && !BG_SaberInPartialDamageMove(ent))
+			{
+				G_PlayerSaberSmash(ent);
+				ent->client->ps.saberSmashTriggered = qtrue;
+			}
+		}
+		else
+		{
+			// reset when animation ends/changes
+			if (ent->client->ps.torsoAnim != BOTH_SMASHDOWN_DUAL)
+			{
+				ent->client->ps.saberSmashTriggered = qfalse;
+			}
 		}
 	}
 
@@ -12423,7 +12475,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 		}
 	}
 
-	if (hit_wall)
+	if (saber_hit_wall)
 	{
 		//just so Jedi knows that he hit a wall
 		ent->client->ps.saberEventFlags |= SEF_HITWALL;
@@ -14958,11 +15010,21 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 			return;
 		}
 		if (self->client->ps.torsoAnim == BOTH_A1_SPECIAL
-			|| self->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 			|| self->client->ps.torsoAnim == BOTH_A2_SPECIAL
+			|| self->client->ps.torsoAnim == BOTH_A3_SPECIAL
+			//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+			///////////////////////////////////////
+			|| self->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
 			|| self->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-			|| self->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR
-			|| self->client->ps.torsoAnim == BOTH_A3_SPECIAL)
+			|| self->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+			|| self->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
+			////////////////////////////////////////
+			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
+			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
+			////////////////////////////////////////
+			|| self->client->ps.torsoAnim == BOTH_A7_SOULCAL
+			|| self->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 		{
 			//don't throw in these anims!
 			return;
@@ -43122,20 +43184,28 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 			case BOTH_JUMPATTACK7: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
 			case BOTH_SPINATTACK6: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
 			case BOTH_SPINATTACK7: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
-			case BOTH_FORCELONGLEAP_ATTACK: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+			case BOTH_FORCELONGLEAP_ATTACK: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.80);
 			case BOTH_STABDOWN: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-			case BOTH_STABDOWN_WINDU: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
 			case BOTH_STABDOWN_STAFF: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
 			case BOTH_STABDOWN_DUAL: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
 			case BOTH_A6_SABERPROTECT: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
-			case BOTH_A6_SABERPROTECT_GRIEVOUS: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
 			case BOTH_A7_SOULCAL: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_A1_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-			case BOTH_A1_SPECIAL_YODA: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+			case BOTH_A1_SPECIAL: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
 			case BOTH_A2_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-			case BOTH_A2_SPECIAL_ANAKIN: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-			case BOTH_A2_SPECIAL_KOTOR: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
 			case BOTH_A3_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+
+				//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+				///////////////////////////////////////
+			case BOTH_A1_SPECIAL_YODA: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+			case BOTH_A2_SPECIAL_ANAKIN: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+			case BOTH_A6_SABERPROTECT_GRIEVOUS: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+			case BOTH_STABDOWN_WINDU: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+				///////////////////////////////////////////
+			case BOTH_SMASHDOWN_DUAL: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+			case BOTH_SMASHDOWN_STAFF: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+			case BOTH_SMASHDOWN_MEDIUM: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.80);
+				//////////////////////////////////////////
+
 			case BOTH_FLIP_ATTACK7: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.90);
 			case BOTH_PULL_IMPALE_STAB: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
 			case BOTH_PULL_IMPALE_SWING: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);

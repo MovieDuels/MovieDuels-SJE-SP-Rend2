@@ -917,7 +917,7 @@ static void tavion_scepter_damage()
 	}
 }
 
-static void tavion_scepter_slam()
+static void Tavion_ScepterSlam()
 {
 	if (!NPC->ghoul2.size()
 		|| NPC->weaponModel[1] <= 0)
@@ -12242,7 +12242,7 @@ static qboolean jedi_in_special_move()
 		if (NPC->client->ps.torsoAnimTimer <= 1200
 			&& !NPC->count)
 		{
-			tavion_scepter_slam();
+			Tavion_ScepterSlam();
 			NPC->count = 1;
 		}
 		NPC_UpdateAngles(qtrue, qtrue);

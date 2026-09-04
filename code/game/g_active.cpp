@@ -1993,11 +1993,6 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 	{
 		client->timeResidual -= 1000;
 
-		if (ent->client->ps.SaberSmashHitCount >= 1)
-		{ // reset the saber smash hit count every second, so that it doesn't carry over to the next second and cause a "smash" to happen when it shouldn't
-			ent->client->ps.SaberSmashHitCount = 0;
-		}
-
 		// -----------------------------------------------------
 		// WEAPON USAGE STATS
 		// -----------------------------------------------------
@@ -5516,7 +5511,10 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 		overridAngles = PM_AdjustAnglesForSpinProtect(ent, ucmd) ? qtrue : overridAngles;
 	}
-	else if (ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_KOTOR)
+	else if (ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU ||
+		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM ||
+		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL ||
+		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF)
 	{
 		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 		if (ent->NPC)
@@ -5592,14 +5590,11 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			}
 		}
 	}
-	else if (ent->client->ps.legsAnim == BOTH_A1_SPECIAL
-		|| ent->client->ps.legsAnim == BOTH_A1_SPECIAL_YODA
-		&& (ucmd->forwardmove || ucmd->rightmove || VectorCompare(ent->client->ps.moveDir, vec3_origin) && ent->client
-			->ps.speed > 0))
-	{
-		//moving during full-body fast special
-		ent->client->ps.legsAnimTimer = 0; //don't hold this legsAnim, allow them to run
-		//FIXME: just add this to the list of overridable special moves in PM_Footsteps?
+	else if ((ent->client->ps.legsAnim == BOTH_A1_SPECIAL || ent->client->ps.legsAnim == BOTH_A1_SPECIAL_YODA)
+		&& (ucmd->forwardmove || ucmd->rightmove || VectorCompare(ent->client->ps.moveDir, vec3_origin) &&
+			ent->client->ps.speed > 0))
+	{//moving during full-body fast special
+		ent->client->ps.legsAnimTimer = 0;
 	}
 	else if (ent->client->ps.legsAnim == BOTH_FLIP_LAND)
 	{

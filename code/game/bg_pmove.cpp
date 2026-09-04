@@ -4343,17 +4343,27 @@ static int PM_GetLandingAnim()
 	case BOTH_A7_SLAP_R:
 	case BOTH_A7_SLAP_L:
 	case BOTH_STABDOWN:
-	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
+
 	case BOTH_A1_SPECIAL:
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
 	case BOTH_GRAPPLE_FIRE:
@@ -14934,16 +14944,25 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 				|| new_move == LS_STABDOWN
 				|| new_move == LS_STABDOWN_STAFF
 				|| new_move == LS_STABDOWN_DUAL
-				|| new_move == LS_STABDOWN_WINDU
 				|| new_move == LS_DUAL_SPIN_PROTECT
-				|| new_move == LS_DUAL_SPIN_PROTECT_GRIEVOUS
 				|| new_move == LS_STAFF_SOULCAL
+
 				|| new_move == LS_A1_SPECIAL
-				|| new_move == LS_A1_SPECIAL_YODA
 				|| new_move == LS_A2_SPECIAL
-				|| new_move == LS_A2_SPECIAL_ANAKIN
-				|| new_move == LS_A2_SPECIAL_KOTOR
 				|| new_move == LS_A3_SPECIAL
+
+				//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+				///////////////////////////////////////
+				|| new_move == LS_A1_SPECIAL_YODA
+				|| new_move == LS_A2_SPECIAL_ANAKIN
+				|| new_move == LS_DUAL_SPIN_PROTECT_GRIEVOUS
+				|| new_move == LS_STABDOWN_WINDU
+				///////////////////////////////////////////
+				|| new_move == LS_SMASHDOWN_DUAL
+				|| new_move == LS_SMASHDOWN_MEDIUM
+				|| new_move == LS_SMASHDOWN_STAFF
+				//////////////////////////////////////////
+
 				|| new_move == LS_UPSIDE_DOWN_ATTACK
 				|| new_move == LS_PULL_ATTACK_STAB
 				|| new_move == LS_GRAPPLE_FIRE
@@ -15125,16 +15144,25 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case LS_SPINATTACK_ALORA:
 		case LS_SPINATTACK_DUAL:
 		case LS_SPINATTACK:
+
 		case LS_A1_SPECIAL:
-		case LS_A1_SPECIAL_YODA:
 		case LS_A2_SPECIAL:
-		case LS_A2_SPECIAL_ANAKIN:
-		case LS_A2_SPECIAL_KOTOR:
 		case LS_A3_SPECIAL:
-		case LS_DUAL_SPIN_PROTECT:
+
+			//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+			///////////////////////////////////////
+		case LS_A1_SPECIAL_YODA:
+		case LS_A2_SPECIAL_ANAKIN:
 		case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
-		case LS_STAFF_SOULCAL:
 		case LS_STABDOWN_WINDU:
+			///////////////////////////////////////////
+		case LS_SMASHDOWN_DUAL:
+		case LS_SMASHDOWN_MEDIUM:
+		case LS_SMASHDOWN_STAFF:
+			//////////////////////////////////////////
+
+		case LS_DUAL_SPIN_PROTECT:
+		case LS_STAFF_SOULCAL:
 			//FIXME: probably more...
 			pm->ps->SaberActivate();
 			if (pm->ps->dualSabers && pm->gent->weaponModel[1] == -1)
@@ -19593,6 +19621,10 @@ static void PM_KataAnimationStyle(void)
 				{
 					PM_SetSaberMove(LS_A1_SPECIAL_YODA);
 				}
+				else if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+				{
+					PM_SetSaberMove(LS_STABDOWN_WINDU);
+				}
 				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
 				{
 					PM_SetSaberMove(LS_STABDOWN_WINDU);
@@ -19614,9 +19646,13 @@ static void PM_KataAnimationStyle(void)
 				{
 					PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN);
 				}
+				else if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
+				}
 				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
 				{
-					PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN);
+					PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
 				}
 				else
 				{
@@ -19629,7 +19665,18 @@ static void PM_KataAnimationStyle(void)
 			}
 			break;
 		case SS_STRONG:
-			PM_SetSaberMove(LS_A3_SPECIAL);
+			if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+			{
+				PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
+			}
+			else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+			{
+				PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
+			}
+			else 
+			{
+				PM_SetSaberMove(LS_A3_SPECIAL);
+			}
 			break;
 		case SS_DESANN:
 			PM_SetSaberMove(LS_A3_SPECIAL);
@@ -19644,11 +19691,11 @@ static void PM_KataAnimationStyle(void)
 				}
 				else if ((pm->gent->client->animationstyle == CS_KOTOR) || (g_AnimationStyle && g_AnimationStyle->integer == 14) || (pm->ps->saber[0].type == SABER_WINDU))
 				{
-					PM_SetSaberMove(LS_A2_SPECIAL_KOTOR);
+					PM_SetSaberMove(LS_SMASHDOWN_DUAL);
 				}
 				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
 				{
-					PM_SetSaberMove(LS_A2_SPECIAL_KOTOR);
+					PM_SetSaberMove(LS_SMASHDOWN_DUAL);
 				}
 				else
 				{
@@ -19662,7 +19709,14 @@ static void PM_KataAnimationStyle(void)
 		}
 		break;
 		case SS_STAFF:
-			PM_SetSaberMove(LS_STAFF_SOULCAL);
+			if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+			{
+				PM_SetSaberMove(LS_SMASHDOWN_STAFF);
+			}
+			else
+			{
+				PM_SetSaberMove(LS_STAFF_SOULCAL);
+			}
 			break;
 		default:;
 		}

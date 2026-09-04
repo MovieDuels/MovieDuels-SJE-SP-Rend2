@@ -1945,11 +1945,18 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	BOTH_YODA_SPECIAL,
 
 	BOTH_A1_SPECIAL,
-	BOTH_A1_SPECIAL_YODA,
 	BOTH_A2_SPECIAL,
-	BOTH_A2_SPECIAL_ANAKIN,
-	BOTH_A2_SPECIAL_KOTOR,
 	BOTH_A3_SPECIAL,
+
+	//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+	///////////////////////////////////////
+	BOTH_A1_SPECIAL_YODA,
+	BOTH_A2_SPECIAL_ANAKIN,
+	///////////////////////////////////////////
+	BOTH_SMASHDOWN_DUAL,
+	BOTH_SMASHDOWN_MEDIUM,
+	BOTH_SMASHDOWN_STAFF,
+	//////////////////////////////////////////
 
 	BOTH_ROLL_STAB,
 

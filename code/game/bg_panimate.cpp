@@ -243,206 +243,213 @@ saber_moveData_t saberMoveData[LS_MOVE_MAX] = {
 	{"StabDown", BOTH_STABDOWN, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200}, // LS_STABDOWN
 	{"StabDownStf", BOTH_STABDOWN_STAFF, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},// LS_STABDOWN_STAFF
 	{"StabDownDual", BOTH_STABDOWN_DUAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},// LS_STABDOWN_DUAL
-	{"StabDownWindu", BOTH_STABDOWN_WINDU, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200},// LS_STABDOWN_WINDU
 
 	{"dualspinprot", BOTH_A6_SABERPROTECT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500},// LS_DUAL_SPIN_PROTECT
-	{"dualspinprot", BOTH_A6_SABERPROTECT_GRIEVOUS, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500},// LS_DUAL_SPIN_PROTECT_GRIEVOUS
 
 	{"StfSoulCal", BOTH_A7_SOULCAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500},
 	// LS_STAFF_SOULCAL
 
 	{"specialfast", BOTH_A1_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A1_SPECIAL
-	{"specialyoda", BOTH_A1_SPECIAL_YODA, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 }, // LS_A1_SPECIAL_YODA
 	{"specialmed", BOTH_A2_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A2_SPECIAL
-	{"specialanakin", BOTH_A2_SPECIAL_ANAKIN, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A2_SPECIAL_ANAKIN
-	{"specialkotor", BOTH_A2_SPECIAL_KOTOR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A2_SPECIAL_KOTOR
 	{"specialstr", BOTH_A3_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000}, // LS_A3_SPECIAL
 
-	{"upsidedwnatk", BOTH_FLIP_ATTACK7, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},// LS_UPSIDE_DOWN_ATTACK
-	{"pullatkstab", BOTH_PULL_IMPALE_STAB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
-	// LS_PULL_ATTACK_STAB
-	{"grapplefire", BOTH_GRAPPLE_FIRE, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
-	// LS_GRAPPLE_FIRE
-	{"pullatkswing", BOTH_PULL_IMPALE_SWING, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
-	// LS_PULL_ATTACK_SWING
-	{"AloraSpinAtk", BOTH_ALORA_SPIN_SLASH, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
-	// LS_SPINATTACK_ALORA
-	{"Dual FB Atk", BOTH_A6_FB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_DUAL_FB
-	{"Dual LR Atk", BOTH_A6_LR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_DUAL_LR
-	{"StfHiltBash", BOTH_A7_HILT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_HILT_BASH
-	{"StfslapRight", BOTH_SLAP_R, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200}, // LS_SLAP_R
-	{"StfslapLeft", BOTH_SLAP_L, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200}, // LS_SLAP_L
+	//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+	///////////////////////////////////////
+	{ "specialyoda", BOTH_A1_SPECIAL_YODA, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },          // LS_A1_SPECIAL_YODA
+	{ "specialanakin", BOTH_A2_SPECIAL_ANAKIN, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },      // LS_A2_SPECIAL_ANAKIN
+	{ "dualspinprot", BOTH_A6_SABERPROTECT_GRIEVOUS, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500 }, // LS_DUAL_SPIN_PROTECT_GRIEVOUS
+	{ "StabDownWindu", BOTH_STABDOWN_WINDU, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200 },          // LS_STABDOWN_WINDU
+	///////////////////////////////////////////
+   { "specialkotor", BOTH_SMASHDOWN_DUAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },          // LS_SMASHDOWN_DUAL
+   { "specialkotor", BOTH_SMASHDOWN_MEDIUM, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },        // LS_SMASHDOWN_MEDIUM
+   { "specialkotor", BOTH_SMASHDOWN_STAFF, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },         // LS_SMASHDOWN_STAFF
+   //////////////////////////////////////////
 
-	//starts
-	{"TL2BR St", BOTH_S1_S1_TL, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_TL2BR, LS_A_TL2BR, 200}, // LS_S_TL2BR
-	{"L2R St", BOTH_S1_S1__L, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_L2R, LS_A_L2R, 200}, // LS_S_L2R
-	{"BL2TR St", BOTH_S1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_BL2TR, LS_A_BL2TR, 200}, // LS_S_BL2TR
-	{"BR2TL St", BOTH_S1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_BR2TL, LS_A_BR2TL, 200}, // LS_S_BR2TL
-	{"R2L St", BOTH_S1_S1__R, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_R2L, LS_A_R2L, 200}, // LS_S_R2L
-	{"TR2BL St", BOTH_S1_S1_TR, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_TR2BL, LS_A_TR2BL, 200}, // LS_S_TR2BL
-	{"T2B St", BOTH_S1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_T2B, LS_A_T2B, 200}, // LS_S_T2B
+   {"upsidedwnatk", BOTH_FLIP_ATTACK7, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},// LS_UPSIDE_DOWN_ATTACK
+   {"pullatkstab", BOTH_PULL_IMPALE_STAB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
+   // LS_PULL_ATTACK_STAB
+   {"grapplefire", BOTH_GRAPPLE_FIRE, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
+   // LS_GRAPPLE_FIRE
+   {"pullatkswing", BOTH_PULL_IMPALE_SWING, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
+   // LS_PULL_ATTACK_SWING
+   {"AloraSpinAtk", BOTH_ALORA_SPIN_SLASH, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200},
+   // LS_SPINATTACK_ALORA
+   {"Dual FB Atk", BOTH_A6_FB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_DUAL_FB
+   {"Dual LR Atk", BOTH_A6_LR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_DUAL_LR
+   {"StfHiltBash", BOTH_A7_HILT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_HILT_BASH
+   {"StfslapRight", BOTH_SLAP_R, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200}, // LS_SLAP_R
+   {"StfslapLeft", BOTH_SLAP_L, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200}, // LS_SLAP_L
 
-	//returns
-	{"TL2BR Ret", BOTH_R1_BR_S1, Q_BR, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_TL2BR
-	{"L2R Ret", BOTH_R1__R_S1, Q_R, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_L2R
-	{"BL2TR Ret", BOTH_R1_TR_S1, Q_TR, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_BL2TR
-	{"BR2TL Ret", BOTH_R1_TL_S1, Q_TL, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_BR2TL
-	{"R2L Ret", BOTH_R1__L_S1, Q_L, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_R2L
-	{"TR2BL Ret", BOTH_R1_BL_S1, Q_BL, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_TR2BL
-	{"T2B Ret", BOTH_R1_B__S1, Q_B, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_T2B
+   //starts
+   {"TL2BR St", BOTH_S1_S1_TL, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_TL2BR, LS_A_TL2BR, 200}, // LS_S_TL2BR
+   {"L2R St", BOTH_S1_S1__L, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_L2R, LS_A_L2R, 200}, // LS_S_L2R
+   {"BL2TR St", BOTH_S1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_BL2TR, LS_A_BL2TR, 200}, // LS_S_BL2TR
+   {"BR2TL St", BOTH_S1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_BR2TL, LS_A_BR2TL, 200}, // LS_S_BR2TL
+   {"R2L St", BOTH_S1_S1__R, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_R2L, LS_A_R2L, 200}, // LS_S_R2L
+   {"TR2BL St", BOTH_S1_S1_TR, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_TR2BL, LS_A_TR2BL, 200}, // LS_S_TR2BL
+   {"T2B St", BOTH_S1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_T2B, LS_A_T2B, 200}, // LS_S_T2B
 
-	//Transitions
-	{"BR2R Trans", BOTH_T1_BR__R, Q_BR, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
-	//# Fast arc bottom right to right
-	{"BR2TR Trans", BOTH_T1_BR_TR, Q_BR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
-	//# Fast arc bottom right to top right		(use: BOTH_T1_TR_BR)
-	{"BR2T Trans", BOTH_T1_BR_T_, Q_BR, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
-	//# Fast arc bottom right to top			(use: BOTH_T1_T__BR)
-	{"BR2TL Trans", BOTH_T1_BR_TL, Q_BR, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
-	//# Fast weak spin bottom right to top left
-	{"BR2L Trans", BOTH_T1_BR__L, Q_BR, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
-	//# Fast weak spin bottom right to left
-	{"BR2BL Trans", BOTH_T1_BR_BL, Q_BR, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
-	//# Fast weak spin bottom right to bottom left
-	{"R2BR Trans", BOTH_T1__R_BR, Q_R, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
-	//# Fast arc right to bottom right			(use: BOTH_T1_BR__R)
-	{"R2TR Trans", BOTH_T1__R_TR, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
-	//# Fast arc right to top right
-	{"R2T Trans", BOTH_T1__R_T_, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
-	//# Fast ar right to top				(use: BOTH_T1_T___R)
-	{"R2TL Trans", BOTH_T1__R_TL, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
-	//# Fast arc right to top left
-	{"R2L Trans", BOTH_T1__R__L, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
-	//# Fast weak spin right to left
-	{"R2BL Trans", BOTH_T1__R_BL, Q_R, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
-	//# Fast weak spin right to bottom left
-	{"TR2BR Trans", BOTH_T1_TR_BR, Q_TR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
-	//# Fast arc top right to bottom right
-	{"TR2R Trans", BOTH_T1_TR__R, Q_TR, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
-	//# Fast arc top right to right			(use: BOTH_T1__R_TR)
-	{"TR2T Trans", BOTH_T1_TR_T_, Q_TR, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
-	//# Fast arc top right to top				(use: BOTH_T1_T__TR)
-	{"TR2TL Trans", BOTH_T1_TR_TL, Q_TR, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
-	//# Fast arc top right to top left
-	{"TR2L Trans", BOTH_T1_TR__L, Q_TR, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
-	//# Fast arc top right to left
-	{"TR2BL Trans", BOTH_T1_TR_BL, Q_TR, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
-	//# Fast weak spin top right to bottom left
-	{"T2BR Trans", BOTH_T1_T__BR, Q_T, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
-	//# Fast arc top to bottom right
-	{"T2R Trans", BOTH_T1_T___R, Q_T, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
-	//# Fast arc top to right
-	{"T2TR Trans", BOTH_T1_T__TR, Q_T, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
-	//# Fast arc top to top right
-	{"T2TL Trans", BOTH_T1_T__TL, Q_T, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
-	//# Fast arc top to top left
-	{"T2L Trans", BOTH_T1_T___L, Q_T, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150}, //# Fast arc top to left
-	{"T2BL Trans", BOTH_T1_T__BL, Q_T, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
-	//# Fast arc top to bottom left
-	{"TL2BR Trans", BOTH_T1_TL_BR, Q_TL, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
-	//# Fast weak spin top left to bottom right
-	{"TL2R Trans", BOTH_T1_TL__R, Q_TL, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
-	//# Fast arc top left to right			(use: BOTH_T1__R_TL)
-	{"TL2TR Trans", BOTH_T1_TL_TR, Q_TL, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
-	//# Fast arc top left to top right			(use: BOTH_T1_TR_TL)
-	{"TL2T Trans", BOTH_T1_TL_T_, Q_TL, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
-	//# Fast arc top left to top				(use: BOTH_T1_T__TL)
-	{"TL2L Trans", BOTH_T1_TL__L, Q_TL, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
-	//# Fast arc top left to left				(use: BOTH_T1__L_TL)
-	{"TL2BL Trans", BOTH_T1_TL_BL, Q_TL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
-	//# Fast arc top left to bottom left
-	{"L2BR Trans", BOTH_T1__L_BR, Q_L, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
-	//# Fast weak spin left to bottom right
-	{"L2R Trans", BOTH_T1__L__R, Q_L, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
-	//# Fast weak spin left to right
-	{"L2TR Trans", BOTH_T1__L_TR, Q_L, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
-	//# Fast arc left to top right			(use: BOTH_T1_TR__L)
-	{"L2T Trans", BOTH_T1__L_T_, Q_L, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
-	//# Fast arc left to top				(use: BOTH_T1_T___L)
-	{"L2TL Trans", BOTH_T1__L_TL, Q_L, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
-	//# Fast arc left to top left
-	{"L2BL Trans", BOTH_T1__L_BL, Q_L, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
-	//# Fast arc left to bottom left			(use: BOTH_T1_BL__L)
-	{"BL2BR Trans", BOTH_T1_BL_BR, Q_BL, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
-	//# Fast weak spin bottom left to bottom right
-	{"BL2R Trans", BOTH_T1_BL__R, Q_BL, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
-	//# Fast weak spin bottom left to right
-	{"BL2TR Trans", BOTH_T1_BL_TR, Q_BL, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
-	//# Fast weak spin bottom left to top right
-	{"BL2T Trans", BOTH_T1_BL_T_, Q_BL, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
-	//# Fast arc bottom left to top			(use: BOTH_T1_T__BL)
-	{"BL2TL Trans", BOTH_T1_BL_TL, Q_BL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
-	//# Fast arc bottom left to top left		(use: BOTH_T1_TL_BL)
-	{"BL2L Trans", BOTH_T1_BL__L, Q_BL, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
-	//# Fast arc bottom left to left
+   //returns
+   {"TL2BR Ret", BOTH_R1_BR_S1, Q_BR, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_TL2BR
+   {"L2R Ret", BOTH_R1__R_S1, Q_R, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_L2R
+   {"BL2TR Ret", BOTH_R1_TR_S1, Q_TR, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_BL2TR
+   {"BR2TL Ret", BOTH_R1_TL_S1, Q_TL, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_BR2TL
+   {"R2L Ret", BOTH_R1__L_S1, Q_L, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_R2L
+   {"TR2BL Ret", BOTH_R1_BL_S1, Q_BL, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_TR2BL
+   {"T2B Ret", BOTH_R1_B__S1, Q_B, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_R_T2B
 
-	//Bounces
-	{"Bounce BR", BOTH_B1_BR___, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_T1_BR_TR, 150},
-	{"Bounce R", BOTH_B1__R___, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_T1__R__L, 150},
-	{"Bounce TR", BOTH_B1_TR___, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_TR_TL, 150},
-	{"Bounce T", BOTH_B1_T____, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150},
-	{"Bounce TL", BOTH_B1_TL___, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_T1_TL_TR, 150},
-	{"Bounce L", BOTH_B1__L___, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_T1__L__R, 150},
-	{"Bounce BL", BOTH_B1_BL___, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_T1_BL_TR, 150},
+   //Transitions
+   {"BR2R Trans", BOTH_T1_BR__R, Q_BR, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
+   //# Fast arc bottom right to right
+   {"BR2TR Trans", BOTH_T1_BR_TR, Q_BR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
+   //# Fast arc bottom right to top right		(use: BOTH_T1_TR_BR)
+   {"BR2T Trans", BOTH_T1_BR_T_, Q_BR, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
+   //# Fast arc bottom right to top			(use: BOTH_T1_T__BR)
+   {"BR2TL Trans", BOTH_T1_BR_TL, Q_BR, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
+   //# Fast weak spin bottom right to top left
+   {"BR2L Trans", BOTH_T1_BR__L, Q_BR, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
+   //# Fast weak spin bottom right to left
+   {"BR2BL Trans", BOTH_T1_BR_BL, Q_BR, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
+   //# Fast weak spin bottom right to bottom left
+   {"R2BR Trans", BOTH_T1__R_BR, Q_R, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
+   //# Fast arc right to bottom right			(use: BOTH_T1_BR__R)
+   {"R2TR Trans", BOTH_T1__R_TR, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
+   //# Fast arc right to top right
+   {"R2T Trans", BOTH_T1__R_T_, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
+   //# Fast ar right to top				(use: BOTH_T1_T___R)
+   {"R2TL Trans", BOTH_T1__R_TL, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
+   //# Fast arc right to top left
+   {"R2L Trans", BOTH_T1__R__L, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
+   //# Fast weak spin right to left
+   {"R2BL Trans", BOTH_T1__R_BL, Q_R, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
+   //# Fast weak spin right to bottom left
+   {"TR2BR Trans", BOTH_T1_TR_BR, Q_TR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
+   //# Fast arc top right to bottom right
+   {"TR2R Trans", BOTH_T1_TR__R, Q_TR, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
+   //# Fast arc top right to right			(use: BOTH_T1__R_TR)
+   {"TR2T Trans", BOTH_T1_TR_T_, Q_TR, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
+   //# Fast arc top right to top				(use: BOTH_T1_T__TR)
+   {"TR2TL Trans", BOTH_T1_TR_TL, Q_TR, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
+   //# Fast arc top right to top left
+   {"TR2L Trans", BOTH_T1_TR__L, Q_TR, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
+   //# Fast arc top right to left
+   {"TR2BL Trans", BOTH_T1_TR_BL, Q_TR, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
+   //# Fast weak spin top right to bottom left
+   {"T2BR Trans", BOTH_T1_T__BR, Q_T, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
+   //# Fast arc top to bottom right
+   {"T2R Trans", BOTH_T1_T___R, Q_T, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
+   //# Fast arc top to right
+   {"T2TR Trans", BOTH_T1_T__TR, Q_T, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
+   //# Fast arc top to top right
+   {"T2TL Trans", BOTH_T1_T__TL, Q_T, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
+   //# Fast arc top to top left
+   {"T2L Trans", BOTH_T1_T___L, Q_T, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150}, //# Fast arc top to left
+   {"T2BL Trans", BOTH_T1_T__BL, Q_T, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
+   //# Fast arc top to bottom left
+   {"TL2BR Trans", BOTH_T1_TL_BR, Q_TL, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
+   //# Fast weak spin top left to bottom right
+   {"TL2R Trans", BOTH_T1_TL__R, Q_TL, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
+   //# Fast arc top left to right			(use: BOTH_T1__R_TL)
+   {"TL2TR Trans", BOTH_T1_TL_TR, Q_TL, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
+   //# Fast arc top left to top right			(use: BOTH_T1_TR_TL)
+   {"TL2T Trans", BOTH_T1_TL_T_, Q_TL, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
+   //# Fast arc top left to top				(use: BOTH_T1_T__TL)
+   {"TL2L Trans", BOTH_T1_TL__L, Q_TL, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
+   //# Fast arc top left to left				(use: BOTH_T1__L_TL)
+   {"TL2BL Trans", BOTH_T1_TL_BL, Q_TL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
+   //# Fast arc top left to bottom left
+   {"L2BR Trans", BOTH_T1__L_BR, Q_L, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
+   //# Fast weak spin left to bottom right
+   {"L2R Trans", BOTH_T1__L__R, Q_L, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
+   //# Fast weak spin left to right
+   {"L2TR Trans", BOTH_T1__L_TR, Q_L, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
+   //# Fast arc left to top right			(use: BOTH_T1_TR__L)
+   {"L2T Trans", BOTH_T1__L_T_, Q_L, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
+   //# Fast arc left to top				(use: BOTH_T1_T___L)
+   {"L2TL Trans", BOTH_T1__L_TL, Q_L, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
+   //# Fast arc left to top left
+   {"L2BL Trans", BOTH_T1__L_BL, Q_L, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150},
+   //# Fast arc left to bottom left			(use: BOTH_T1_BL__L)
+   {"BL2BR Trans", BOTH_T1_BL_BR, Q_BL, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150},
+   //# Fast weak spin bottom left to bottom right
+   {"BL2R Trans", BOTH_T1_BL__R, Q_BL, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150},
+   //# Fast weak spin bottom left to right
+   {"BL2TR Trans", BOTH_T1_BL_TR, Q_BL, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150},
+   //# Fast weak spin bottom left to top right
+   {"BL2T Trans", BOTH_T1_BL_T_, Q_BL, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150},
+   //# Fast arc bottom left to top			(use: BOTH_T1_T__BL)
+   {"BL2TL Trans", BOTH_T1_BL_TL, Q_BL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150},
+   //# Fast arc bottom left to top left		(use: BOTH_T1_TL_BL)
+   {"BL2L Trans", BOTH_T1_BL__L, Q_BL, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150},
+   //# Fast arc bottom left to left
 
-	//Deflected attacks (like bounces, but slide off enemy saber, not straight back)
-	{"Deflect BR", BOTH_D1_BR___, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_T1_BR_TR, 150},
-	{"Deflect R", BOTH_D1__R___, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_T1__R__L, 150},
-	{"Deflect TR", BOTH_D1_TR___, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_TR_TL, 150},
-	{"Deflect T", BOTH_B1_T____, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150},
-	{"Deflect TL", BOTH_D1_TL___, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_T1_TL_TR, 150},
-	{"Deflect L", BOTH_D1__L___, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_T1__L__R, 150},
-	{"Deflect BL", BOTH_D1_BL___, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_T1_BL_TR, 150},
-	{"Deflect B", BOTH_D1_B____, Q_B, Q_B, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150},
+   //Bounces
+   {"Bounce BR", BOTH_B1_BR___, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_T1_BR_TR, 150},
+   {"Bounce R", BOTH_B1__R___, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_T1__R__L, 150},
+   {"Bounce TR", BOTH_B1_TR___, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_TR_TL, 150},
+   {"Bounce T", BOTH_B1_T____, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150},
+   {"Bounce TL", BOTH_B1_TL___, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_T1_TL_TR, 150},
+   {"Bounce L", BOTH_B1__L___, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_T1__L__R, 150},
+   {"Bounce BL", BOTH_B1_BL___, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_T1_BL_TR, 150},
 
-	//Reflected attacks
-	{"Reflected BR", BOTH_V1_BR_S1, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_BR
-	{"Reflected R", BOTH_V1__R_S1, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1__R
-	{"Reflected TR", BOTH_V1_TR_S1, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_TR
-	{"Reflected T", BOTH_V1_T__S1, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_T_
-	{"Reflected TL", BOTH_V1_TL_S1, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_TL
-	{"Reflected L", BOTH_V1__L_S1, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1__L
-	{"Reflected BL", BOTH_V1_BL_S1, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_BL
-	{"Reflected B", BOTH_V1_B__S1, Q_B, Q_B, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_B_
+   //Deflected attacks (like bounces, but slide off enemy saber, not straight back)
+   {"Deflect BR", BOTH_D1_BR___, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_T1_BR_TR, 150},
+   {"Deflect R", BOTH_D1__R___, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_T1__R__L, 150},
+   {"Deflect TR", BOTH_D1_TR___, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_TR_TL, 150},
+   {"Deflect T", BOTH_B1_T____, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150},
+   {"Deflect TL", BOTH_D1_TL___, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_T1_TL_TR, 150},
+   {"Deflect L", BOTH_D1__L___, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_T1__L__R, 150},
+   {"Deflect BL", BOTH_D1_BL___, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_T1_BL_TR, 150},
+   {"Deflect B", BOTH_D1_B____, Q_B, Q_B, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150},
 
-	// Broken parries
-	{"BParry Top", BOTH_H1_S1_T_, Q_T, Q_B, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_UP,
-	{"BParry UR", BOTH_H1_S1_TR, Q_TR, Q_BL, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_UR,
-	{"BParry UL", BOTH_H1_S1_TL, Q_TL, Q_BR, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_UL,
-	{"BParry LR", BOTH_H1_S1_BR, Q_BL, Q_TR, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_LR,
-	{"BParry Bot", BOTH_H1_S1_B_, Q_B, Q_T, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_LL
-	{"BParry LL", BOTH_H1_S1_BL, Q_BR, Q_TL, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_LL
+   //Reflected attacks
+   {"Reflected BR", BOTH_V1_BR_S1, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_BR
+   {"Reflected R", BOTH_V1__R_S1, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1__R
+   {"Reflected TR", BOTH_V1_TR_S1, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_TR
+   {"Reflected T", BOTH_V1_T__S1, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_T_
+   {"Reflected TL", BOTH_V1_TL_S1, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_TL
+   {"Reflected L", BOTH_V1__L_S1, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1__L
+   {"Reflected BL", BOTH_V1_BL_S1, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_BL
+   {"Reflected B", BOTH_V1_B__S1, Q_B, Q_B, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150}, //	LS_V1_B_
 
-	// Knockaways
-	{"Knock Top", BOTH_K1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_T__BR, 150}, // LS_K1_T_,
-	{"Knock UR", BOTH_K1_S1_TR, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_TR__R, 150}, // LS_K1_TR,
-	{"Knock UR_MD", BOTH_K1_S1_TR_MD, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_TR__R, 150},
-	// LS_K1_TR_MD,
-	{"Knock UR_PB", BOTH_K1_S1_TR_PB, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_TR__R, 150},
-	// LS_K1_TR_PB,
-	{"Knock UL", BOTH_K1_S1_TL, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_T1_TL__L, 150}, // LS_K1_TL,
-	{"Knock UL_MD", BOTH_K1_S1_TL_MD, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_T1_TL__L, 150},
-	// LS_K1_TL_MD,
-	{"Knock UL_PB", BOTH_K1_S1_TL_PB, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_T1_TL__L, 150},
-	// LS_K1_TL_PB,
-	{"Knock LR", BOTH_K1_S1_BR, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_T1_BL_TL, 150}, // LS_K1_BR,
-	{"Knock LL", BOTH_K1_S1_BL, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_T1_BR_TR, 150}, // LS_K1_BL
+   // Broken parries
+   {"BParry Top", BOTH_H1_S1_T_, Q_T, Q_B, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_UP,
+   {"BParry UR", BOTH_H1_S1_TR, Q_TR, Q_BL, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_UR,
+   {"BParry UL", BOTH_H1_S1_TL, Q_TL, Q_BR, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_UL,
+   {"BParry LR", BOTH_H1_S1_BR, Q_BL, Q_TR, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_LR,
+   {"BParry Bot", BOTH_H1_S1_B_, Q_B, Q_T, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_LL
+   {"BParry LL", BOTH_H1_S1_BL, Q_BR, Q_TL, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150}, // LS_PARRY_LL
 
-	// Parry
-	{"Parry Top", BOTH_P1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_T2B, 150}, // LS_PARRY_UP,
-	{"Parry UR", BOTH_P1_S1_TR, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_TR2BL, 150}, // LS_PARRY_UR,
-	{"Parry UL", BOTH_P1_S1_TL, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_A_TL2BR, 150}, // LS_PARRY_UL,
-	{"Parry LR", BOTH_P1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_A_BR2TL, 150}, // LS_PARRY_LR,
-	{"Parry LL", BOTH_P1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_A_BL2TR, 150}, // LS_PARRY_LL
-	{"parry B", BOTH_P1_S1_B_, Q_R, Q_B, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_R_T2B, 150}, // LS_PARRY_B
+   // Knockaways
+   {"Knock Top", BOTH_K1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_T__BR, 150}, // LS_K1_T_,
+   {"Knock UR", BOTH_K1_S1_TR, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_TR__R, 150}, // LS_K1_TR,
+   {"Knock UR_MD", BOTH_K1_S1_TR_MD, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_TR__R, 150},
+   // LS_K1_TR_MD,
+   {"Knock UR_PB", BOTH_K1_S1_TR_PB, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_TR__R, 150},
+   // LS_K1_TR_PB,
+   {"Knock UL", BOTH_K1_S1_TL, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_T1_TL__L, 150}, // LS_K1_TL,
+   {"Knock UL_MD", BOTH_K1_S1_TL_MD, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_T1_TL__L, 150},
+   // LS_K1_TL_MD,
+   {"Knock UL_PB", BOTH_K1_S1_TL_PB, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_T1_TL__L, 150},
+   // LS_K1_TL_PB,
+   {"Knock LR", BOTH_K1_S1_BR, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_T1_BL_TL, 150}, // LS_K1_BR,
+   {"Knock LL", BOTH_K1_S1_BL, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_T1_BR_TR, 150}, // LS_K1_BL
 
-	// Reflecting a missile
-	{"Reflect Top", BOTH_P1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_T2B, 150}, // LS_PARRY_UP,
-	{"Reflect UR", BOTH_P1_S1_TR, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_TR2BL, 150}, // LS_PARRY_UR,
-	{"Reflect UL", BOTH_P1_S1_TL, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_A_TL2BR, 150}, // LS_PARRY_UL,
-	{"Reflect LR", BOTH_P1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_A_BR2TL, 150}, // LS_PARRY_LR,
-	{"Reflect LL", BOTH_P1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_A_BL2TR, 150}, // LS_PARRY_LL
-	{"Reflect B", BOTH_P1_S1_B_, Q_R, Q_B, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_R_T2B, 150}, // LS_PARRY_B
+   // Parry
+   {"Parry Top", BOTH_P1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_T2B, 150}, // LS_PARRY_UP,
+   {"Parry UR", BOTH_P1_S1_TR, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_TR2BL, 150}, // LS_PARRY_UR,
+   {"Parry UL", BOTH_P1_S1_TL, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_A_TL2BR, 150}, // LS_PARRY_UL,
+   {"Parry LR", BOTH_P1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_A_BR2TL, 150}, // LS_PARRY_LR,
+   {"Parry LL", BOTH_P1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_A_BL2TR, 150}, // LS_PARRY_LL
+   {"parry B", BOTH_P1_S1_B_, Q_R, Q_B, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_R_T2B, 150}, // LS_PARRY_B
+
+   // Reflecting a missile
+   {"Reflect Top", BOTH_P1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_T2B, 150}, // LS_PARRY_UP,
+   {"Reflect UR", BOTH_P1_S1_TR, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_TR2BL, 150}, // LS_PARRY_UR,
+   {"Reflect UL", BOTH_P1_S1_TL, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_A_TL2BR, 150}, // LS_PARRY_UL,
+   {"Reflect LR", BOTH_P1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_A_BR2TL, 150}, // LS_PARRY_LR,
+   {"Reflect LL", BOTH_P1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_A_BL2TR, 150}, // LS_PARRY_LL
+   {"Reflect B", BOTH_P1_S1_B_, Q_R, Q_B, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_R_T2B, 150}, // LS_PARRY_B
 };
 
 saberMoveName_t transitionMove[Q_NUM_QUADS][Q_NUM_QUADS] =
@@ -941,6 +948,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 		break;
 	case BOTH_STABDOWN:
 	case BOTH_STABDOWN_WINDU:
+	case BOTH_SMASHDOWN_MEDIUM:
 		if (ps->torsoAnimTimer <= 900)
 		{
 			//end of anim
@@ -1000,7 +1008,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	return FORCE_LEVEL_3;
 	case BOTH_A2_SPECIAL:
 	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
+	case BOTH_SMASHDOWN_DUAL:
 	{
 		if (ps->torsoAnimTimer < 300)
 		{
@@ -1299,18 +1307,27 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	case BOTH_A7_KICK_R_AIR:
 	case BOTH_A7_KICK_L_AIR:
 	case BOTH_STABDOWN:
-	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
+
 	case BOTH_A1_SPECIAL:
-	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
@@ -1440,18 +1457,27 @@ qboolean PM_SaberInDamageMove(const int move)
 	case LS_TAUNTAUN_ATTACK_RIGHT:
 	case LS_TAUNTAUN_ATTACK_LEFT:
 	case LS_STABDOWN:
-	case LS_STABDOWN_WINDU:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
 	case LS_DUAL_SPIN_PROTECT:
-	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
+
 	case LS_A1_SPECIAL:
-	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
-	case LS_A2_SPECIAL_ANAKIN:
-	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case LS_A1_SPECIAL_YODA:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
+	case LS_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case LS_SMASHDOWN_DUAL:
+	case LS_SMASHDOWN_MEDIUM:
+	case LS_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
 	case LS_GRAPPLE_FIRE:
@@ -1496,18 +1522,27 @@ qboolean PM_SaberDoDamageAnim(const int anim)
 	case BOTH_VT_ATR_S:
 	case BOTH_VT_ATL_S:
 	case BOTH_STABDOWN:
-	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
+
 	case BOTH_A1_SPECIAL:
-	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
@@ -1631,18 +1666,27 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 	case BOTH_A7_KICK_R_AIR:
 	case BOTH_A7_KICK_L_AIR:
 	case BOTH_STABDOWN:
-	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
+
 	case BOTH_A1_SPECIAL:
-	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
@@ -1776,18 +1820,27 @@ qboolean pm_saber_innonblockable_attack(const int anim)
 	case BOTH_SPINATTACK7:
 	case BOTH_FORCELONGLEAP_ATTACK:
 	case BOTH_STABDOWN:
-	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
+
 	case BOTH_A1_SPECIAL:
-	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
@@ -1875,16 +1928,25 @@ qboolean PM_SaberInAttack(const int move)
 	case LS_STABDOWN:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
-	case LS_STABDOWN_WINDU:
 	case LS_DUAL_SPIN_PROTECT:
-	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
+
 	case LS_A1_SPECIAL:
-	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
-	case LS_A2_SPECIAL_ANAKIN:
-	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case LS_A1_SPECIAL_YODA:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
+	case LS_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case LS_SMASHDOWN_DUAL:
+	case LS_SMASHDOWN_MEDIUM:
+	case LS_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
 	case LS_GRAPPLE_FIRE:
@@ -2138,16 +2200,25 @@ qboolean PM_SaberInSpecial(const int move)
 	case LS_STABDOWN:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
-	case LS_STABDOWN_WINDU:
 	case LS_DUAL_SPIN_PROTECT:
-	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 	case LS_STAFF_SOULCAL:
+
 	case LS_A1_SPECIAL:
-	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
-	case LS_A2_SPECIAL_ANAKIN:
-	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case LS_A1_SPECIAL_YODA:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
+	case LS_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case LS_SMASHDOWN_DUAL:
+	case LS_SMASHDOWN_MEDIUM:
+	case LS_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
 	case LS_GRAPPLE_FIRE:
@@ -2228,16 +2299,25 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 		case LS_STABDOWN:
 		case LS_STABDOWN_STAFF:
 		case LS_STABDOWN_DUAL:
-		case LS_STABDOWN_WINDU:
 		case LS_DUAL_SPIN_PROTECT:
-		case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
 		case LS_STAFF_SOULCAL:
+
 		case LS_A1_SPECIAL:
-		case LS_A1_SPECIAL_YODA:
 		case LS_A2_SPECIAL:
-		case LS_A2_SPECIAL_ANAKIN:
-		case LS_A2_SPECIAL_KOTOR:
 		case LS_A3_SPECIAL:
+
+			//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+			///////////////////////////////////////
+		case LS_A1_SPECIAL_YODA:
+		case LS_A2_SPECIAL_ANAKIN:
+		case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
+		case LS_STABDOWN_WINDU:
+			///////////////////////////////////////////
+		case LS_SMASHDOWN_DUAL:
+		case LS_SMASHDOWN_MEDIUM:
+		case LS_SMASHDOWN_STAFF:
+			//////////////////////////////////////////
+
 		case LS_UPSIDE_DOWN_ATTACK:
 		case LS_PULL_ATTACK_STAB:
 		case LS_GRAPPLE_FIRE:
@@ -2318,18 +2398,27 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 	case BOTH_A7_KICK_BF:
 	case BOTH_A7_KICK_RL:
 	case BOTH_STABDOWN:
-	case BOTH_STABDOWN_WINDU:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
+
 	case BOTH_A1_SPECIAL:
-	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case BOTH_FLIP_ATTACK7:
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
@@ -10605,15 +10694,24 @@ qboolean PM_ForceUsingSaberAnim(const int anim)
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_PULL_IMPALE_SWING:
 	case BOTH_A6_SABERPROTECT:
+	case BOTH_A7_SOULCAL:
+
+	case BOTH_A1_SPECIAL:
+	case BOTH_A2_SPECIAL:
+	case BOTH_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
 	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_STABDOWN_WINDU:
-	case BOTH_A7_SOULCAL:
-	case BOTH_A1_SPECIAL:
-	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
-	case BOTH_A3_SPECIAL:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case BOTH_ARIAL_LEFT:
 	case BOTH_ARIAL_RIGHT:
 	case BOTH_CARTWHEEL_LEFT:
@@ -10741,7 +10839,7 @@ qboolean PM_LockedAnim(const int anim)
 	case BOTH_PLAYER_PA_3:
 	case BOTH_PLAYER_PA_3_FLY:
 	case BOTH_TAVION_SCEPTERGROUND:
-	case BOTH_A2_SPECIAL_KOTOR:
+	case BOTH_SMASHDOWN_DUAL:
 	case BOTH_TAVION_SWORDPOWER:
 	case BOTH_SCEPTER_START:
 	case BOTH_SCEPTER_HOLD:
@@ -11053,15 +11151,23 @@ qboolean PM_SaberInKata(const saberMoveName_t saberMove)
 	switch (saberMove)
 	{
 	case LS_A1_SPECIAL:
-	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
-	case LS_A2_SPECIAL_ANAKIN:
-	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
-	case LS_DUAL_SPIN_PROTECT:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case LS_A1_SPECIAL_YODA:
+	case LS_A2_SPECIAL_ANAKIN:
 	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
-	case LS_STAFF_SOULCAL:
 	case LS_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case LS_SMASHDOWN_DUAL:
+	case LS_SMASHDOWN_MEDIUM:
+	case LS_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
+	case LS_DUAL_SPIN_PROTECT:
+	case LS_STAFF_SOULCAL:
 		return qtrue;
 	default:
 		break;
@@ -11084,13 +11190,23 @@ qboolean PM_SaberInKillMove(const int move)
 	case LS_STABDOWN:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:
-	case LS_STABDOWN_WINDU:
+
 	case LS_A1_SPECIAL:
-	case LS_A1_SPECIAL_YODA:
 	case LS_A2_SPECIAL:
-	case LS_A2_SPECIAL_ANAKIN:
-	case LS_A2_SPECIAL_KOTOR:
 	case LS_A3_SPECIAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case LS_A1_SPECIAL_YODA:
+	case LS_A2_SPECIAL_ANAKIN:
+	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
+	case LS_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case LS_SMASHDOWN_DUAL:
+	case LS_SMASHDOWN_MEDIUM:
+	case LS_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
+
 	case LS_UPSIDE_DOWN_ATTACK:
 	case LS_PULL_ATTACK_STAB:
 	case LS_PULL_ATTACK_SWING:
@@ -11157,18 +11273,23 @@ qboolean PM_InKataAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_A7_SOULCAL:
+
 	case BOTH_A1_SPECIAL:
-	case BOTH_A1_SPECIAL_YODA:
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A2_SPECIAL_KOTOR:
 	case BOTH_A3_SPECIAL:
-	case LS_DUAL_SPIN_PROTECT:
-	case LS_DUAL_SPIN_PROTECT_GRIEVOUS:
-	case LS_STAFF_SOULCAL:
+
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:
+	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:
 	case BOTH_STABDOWN_WINDU:
+		///////////////////////////////////////////
+	case BOTH_SMASHDOWN_DUAL:
+	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_STAFF:
+		//////////////////////////////////////////
 		return qtrue;
 	default:;
 	}
