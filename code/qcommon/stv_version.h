@@ -25,10 +25,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../win32/AutoVersion.h"
 
 #ifdef _DEBUG
-#define	Q3_VERSION		"(debug)MovieDuels-SP: " VERSION_STRING_DOTTED // build date
+#define	Q3_VERSION		"(debug)MovieDuels-SP-Default: " VERSION_STRING_DOTTED // build date
 #elif defined FINAL_BUILD
-#define	Q3_VERSION		"MovieDuels-SP: " VERSION_STRING_DOTTED
+#define	Q3_VERSION		"MovieDuels-SP-Default: " VERSION_STRING_DOTTED
 #else
-#define	Q3_VERSION		"(internal)MovieDuels-SP: " VERSION_STRING_DOTTED
+#define	Q3_VERSION		"(internal)MovieDuels-SP-Default: " VERSION_STRING_DOTTED
 #endif
 // end
