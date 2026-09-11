@@ -1364,7 +1364,7 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 		}
 
 		// Get The Cinematic GLA Name
-		//----------------------------
+//--------------------------------------------
 		if (G_StandardHumanoid(skeletonName))
 		{
 			const char* map_name = strrchr(level.mapname, '/');
@@ -1376,30 +1376,50 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 			{
 				map_name = level.mapname;
 			}
+
 			char skeletonMapName[MAX_QPATH];
 			Com_sprintf(skeletonMapName, MAX_QPATH, "_humanoid_%s", map_name);
-			const int normalGLAIndex = gi.G2API_PrecacheGhoul2Model(va("models/players/%s/_humanoid.gla", skeletonName));
-			//double check this always comes first!
 
-			// Make Sure To Precache The GLAs (both regular and cinematic), And Remember Their Indicies
-			//------------------------------------------------------------------------------------------
+			// Precache the normal humanoid GLA
+			const int normalGLAIndex =
+				gi.G2API_PrecacheGhoul2Model(va("models/players/%s/_humanoid.gla", skeletonName));
 
+			// Parse base animation + event files
 			G_ParseAnimationFile(0, skeletonName, file_index);
-			G_ParseAnimationEvtFile(0, skeletonName, file_index, normalGLAIndex, false);
+			G_ParseAnimationEvtFile(0, skeletonName, file_index, normalGLAIndex, qfalse);
 
-			const int cineGLAIndex = gi.G2API_PrecacheGhoul2Model(va("models/players/%s/%s.gla", skeletonMapName, skeletonMapName));
+			// Precache the map‑specific cinematic GLA
+			const int cineGLAIndex =
+				gi.G2API_PrecacheGhoul2Model(va("models/players/%s/%s.gla", skeletonMapName, skeletonMapName));
+
 			if (cineGLAIndex)
 			{
+#ifdef _DEBUG
 				if (cineGLAIndex != normalGLAIndex + 1)
 				{
-#ifdef _DEBUG
-					Com_Printf("Warning: cineGLAIndex (%d) != normalGLAIndex+1 (%d)\n", cineGLAIndex, normalGLAIndex + 1);
-#endif
+					Com_Printf("Warning: cineGLAIndex (%d) != normalGLAIndex+1 (%d)\n",
+						cineGLAIndex, normalGLAIndex + 1);
 				}
+#endif
+
 				G_ParseAnimationFile(1, skeletonMapName, file_index);
-				G_ParseAnimationEvtFile(1, skeletonMapName, file_index, cineGLAIndex, false);
+				G_ParseAnimationEvtFile(1, skeletonMapName, file_index, cineGLAIndex, qfalse);
+			}
+
+			// ------------------------------------------------------------------
+			// NEW: Load _humanoid_cutscenes.gla if present
+			// ------------------------------------------------------------------
+			const int cutsceneGLAIndex =
+				gi.G2API_PrecacheGhoul2Model("models/players/_humanoid/_humanoid_cutscenes.gla");
+
+			if (cutsceneGLAIndex)
+			{
+				// Slot 2 is safe: 0 = base, 1 = map‑cine, 2 = cutscene‑cine
+				G_ParseAnimationFile(2, "_humanoid_cutscenes", file_index);
+				G_ParseAnimationEvtFile(2, "_humanoid_cutscenes", file_index, cutsceneGLAIndex, qfalse);
 			}
 		}
+
 		else
 		{
 			// non-humanoid...

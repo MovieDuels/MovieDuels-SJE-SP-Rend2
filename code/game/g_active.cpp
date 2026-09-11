@@ -5476,7 +5476,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		//pull back the view
 		G_CamPullBackForLegsAnim(ent);
 	}
-	else if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT || ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
+	else if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT || ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV)
 	{
 		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 		if (ent->NPC)
@@ -5548,7 +5548,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			cg.overrides.thirdPersonPitchOffset = cg_thirdPersonPitchOffset.value + back_dist / 2.0f;
 		}
 	}
-	else if (ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA || ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN)
+	else if (ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA || ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI)
 	{
 		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 		if (ent->NPC)

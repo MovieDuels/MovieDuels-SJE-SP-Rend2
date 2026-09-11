@@ -287,89 +287,89 @@ animFlags_t PM_Animationstyletable(const pmove_t* pm)
 
 	// ANAKIN
 	if (((pm->gent->client->animationstyle == CS_ANAKIN) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 1)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_ANAKIN) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 1)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_ANAKIN) ? qtrue : qfalse)*/)
 	{
 		isAnakin = qtrue;
 	}
 
 	// BEN KENOBI
 	if (((pm->gent->client->animationstyle == CS_BENKENOBI) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 3)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_KENOBI) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 3)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KENOBI) ? qtrue : qfalse)*/)
 	{
 		isBenKenobi = qtrue;
 	}
 
 	// CAL KESTIS
 	if (((pm->gent->client->animationstyle == CS_CAL_KESTIS) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 4)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_KESTIS) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 4)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KESTIS) ? qtrue : qfalse)*/)
 	{
 		isCalKestis = qtrue;
 	}
 
 	// DARK FORCES 2
 	if (((pm->gent->client->animationstyle == CS_DARKFORCES2) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 7)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_DARKFORCES) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 7)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_DARKFORCES) ? qtrue : qfalse)*/)
 	{
 		isDarkForces2 = qtrue;
 	}
 
 	// COUNT DOOKU
 	if (((pm->gent->client->animationstyle == CS_COUNT_DOOKU) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 8)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_DOOKU) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 8)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_DOOKU) ? qtrue : qfalse)*/)
 	{
 		isCountDooku = qtrue;
 	}
 
 	// GALEN MAREK
 	if (((pm->gent->client->animationstyle == CS_GALEN_MAREK) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 9)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_GALEN) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 9)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_GALEN) ? qtrue : qfalse)*/)
 	{
 		isGalenMarek = qtrue;
 	}
 
 	// QUI-GON JINN
 	if (((pm->gent->client->animationstyle == CS_QUI_GON_JINN) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 10)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_QUIGON) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 10)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_QUIGON) ? qtrue : qfalse)*/)
 	{
 		isQuiGonJinn = qtrue;
 	}
 
 	// GENERAL GRIEVOUS
 	if (((pm->gent->client->animationstyle == CS_GRIEVOUS) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 11)) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 11)) ? qtrue : qfalse)/* ||
 		((pm->ps->saber[0].type == SABER_DUAL_GRIE) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_DUAL_GRIE4) ? qtrue : qfalse))
+		((pm->ps->saber[0].type == SABER_DUAL_GRIE4) ? qtrue : qfalse)*/)
 	{
 		isGrievous = qtrue;
 	}
 
 	// KOTOR
 	if (((pm->gent->client->animationstyle == CS_KOTOR) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 14)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_KOTOR) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 14)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KOTOR) ? qtrue : qfalse)*/)
 	{
 		isKotor = qtrue;
 	}
 
 	// LUKE SKYWALKER
 	if (((pm->gent->client->animationstyle == CS_LUKE_SKYWALKER) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 15)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_LUKE) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 15)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_LUKE) ? qtrue : qfalse)*/)
 	{
 		isLukeSkywalker = qtrue;
 	}
 
 	// MACE WINDU
 	if (((pm->gent->client->animationstyle == CS_MACE_WINDU) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 16)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_WINDU) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 16)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_WINDU) ? qtrue : qfalse)*/)
 	{
 		isMaceWindu = qtrue;
 	}
@@ -377,24 +377,24 @@ animFlags_t PM_Animationstyletable(const pmove_t* pm)
 	// DARTH MAUL
 	if (((pm->gent->client->animationstyle == CS_MAUL) ? qtrue : qfalse) ||
 		((g_AnimationStyle && (g_AnimationStyle->integer == 17)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_MAUL) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_STAFF_MAUL) ? qtrue : qfalse))
+		((pm->ps->saber[0].type == SABER_SINGLE_MAUL) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_STAFF_MAUL) ? qtrue : qfalse)*/)
 	{
 		isMaul = qtrue;
 	}
 
 	// MOVIE DUELS
 	if (((pm->gent->client->animationstyle == CS_MOVIEDUELS) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 18)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_MOVIEDUELS) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 18)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_MOVIEDUELS) ? qtrue : qfalse)*/)
 	{
 		isMovieDuels = qtrue;
 	}
 
 	// OBI-WAN
 	if (((pm->gent->client->animationstyle == CS_OBIWAN) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 20)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_OBIWAN) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 20)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_OBIWAN) ? qtrue : qfalse)*/)
 	{
 		isObiWan = qtrue;
 	}
@@ -408,40 +408,40 @@ animFlags_t PM_Animationstyletable(const pmove_t* pm)
 
 	// PALPATINE
 	if (((pm->gent->client->animationstyle == CS_PALPATINE) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 22)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_PALP) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 22)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_PALP) ? qtrue : qfalse)*/)
 	{
 		isPalpatine = qtrue;
 	}
 
 	// KYLO REN
 	if (((pm->gent->client->animationstyle == CS_KYLO_REN) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 24)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_KYLO_REN) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 24)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KYLO_REN) ? qtrue : qfalse)*/)
 	{
 		isKyloRen = qtrue;
 	}
 
 	// REY
 	if (((pm->gent->client->animationstyle == CS_REY) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 25)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_REY) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 25)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_REY) ? qtrue : qfalse)*/)
 	{
 		isRey = qtrue;
 	}
 
 	// VADER
 	if (((pm->gent->client->animationstyle == CS_VADER) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 27)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_VADER) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 27)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_VADER) ? qtrue : qfalse)*/)
 	{
 		isVader = qtrue;
 	}
 
 	// YODA
 	if (((pm->gent->client->animationstyle == CS_YODA) ? qtrue : qfalse) ||
-		((g_AnimationStyle && (g_AnimationStyle->integer == 28)) ? qtrue : qfalse) ||
-		((pm->ps->saber[0].type == SABER_SINGLE_YODA) ? qtrue : qfalse))
+		((g_AnimationStyle && (g_AnimationStyle->integer == 28)) ? qtrue : qfalse)/* ||
+		((pm->ps->saber[0].type == SABER_SINGLE_YODA) ? qtrue : qfalse)*/)
 	{
 		isYoda = qtrue;
 	}
@@ -4590,8 +4590,8 @@ static int PM_GetLandingAnim()
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
@@ -9146,8 +9146,8 @@ qboolean PM_RunningAnim(const int anim)
 	case BOTH_RUN2_ANI:
 	case BOTH_RUN_DUAL_ANI:
 	case BOTH_RUN_STAFF_ANI:
-	case BOTH_SPRINT_ANI_LIGHTSABER:
-	case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
+	case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
 		return qtrue;
 	default:;
 	}
@@ -9209,8 +9209,8 @@ static qboolean PM_NotWalkingAnim(const int anim)
 	case BOTH_RUN2_ANI:
 	case BOTH_RUN_DUAL_ANI:
 	case BOTH_RUN_STAFF_ANI:
-	case BOTH_SPRINT_ANI_LIGHTSABER:
-	case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
+	case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
 		return qtrue;
 	default:;
 	}
@@ -10567,7 +10567,7 @@ static int PM_GetSprintAnim(const pmove_t* pm)
 		{
 			if (flags.isAnakin == qtrue)
 			{
-				return BOTH_SPRINT_ANI_STAFF_LIGHTSABER;
+				return BOTH_SPRINT_STAFF_LIGHTSABER_ANI;
 			}
 			else
 			{
@@ -10584,7 +10584,7 @@ static int PM_GetSprintAnim(const pmove_t* pm)
 		{
 			if (flags.isAnakin == qtrue)
 			{
-				return BOTH_SPRINT_ANI_LIGHTSABER;
+				return BOTH_SPRINT_SINGLE_LIGHTSABER_ANI;
 			}
 			else
 			{
@@ -15321,8 +15321,8 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_RUN2_ANI:
 		case BOTH_RUN_DUAL_ANI:
 		case BOTH_RUN_STAFF_ANI:
-		case BOTH_SPRINT_ANI_LIGHTSABER:
-		case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
+		case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
+		case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
 			anim = pm->ps->legsAnim;
 			break;
 		default:;
@@ -20825,8 +20825,8 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_RUN2_ANI:
 				case BOTH_RUN_DUAL_ANI:
 				case BOTH_RUN_STAFF_ANI:
-				case BOTH_SPRINT_ANI_LIGHTSABER:
-				case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
+				case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
+				case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
 					PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
 					break;
 				default:;
@@ -21517,8 +21517,8 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_RUN2_ANI:
 					case BOTH_RUN_DUAL_ANI:
 					case BOTH_RUN_STAFF_ANI:
-					case BOTH_SPRINT_ANI_LIGHTSABER:
-					case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
+					case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
+					case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
 						// Use the current legs anim as the attack anim.
 						anim = pm->ps->legsAnim;
 						break;
@@ -24915,11 +24915,11 @@ static qboolean PM_SaberInFullDamageMove(const playerState_t* ps)
 			if (torso_anim_point >= 0.10f && torso_anim_point <= 0.90f) { return qtrue; }
 			break;
 
-		case BOTH_A2_SPECIAL_ANAKIN:
+		case BOTH_A2_SPECIAL_ANI:
 			if (torso_anim_point >= 0.10f && torso_anim_point <= 0.90f) { return qtrue; }
 			break;
 
-		case BOTH_A6_SABERPROTECT_GRIEVOUS:
+		case BOTH_A6_SABERPROTECT_GRIEV:
 			if (torso_anim_point >= 0.10f && torso_anim_point <= 0.90f) { return qtrue; }
 			break;
 

@@ -256,8 +256,8 @@ saber_moveData_t saberMoveData[LS_MOVE_MAX] = {
 	//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 	///////////////////////////////////////
 	{ "specialyoda", BOTH_A1_SPECIAL_YODA, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },          // LS_A1_SPECIAL_YODA
-	{ "specialanakin", BOTH_A2_SPECIAL_ANAKIN, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },      // LS_A2_SPECIAL_ANAKIN
-	{ "dualspinprot", BOTH_A6_SABERPROTECT_GRIEVOUS, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500 }, // LS_DUAL_SPIN_PROTECT_GRIEVOUS
+	{ "specialanakin", BOTH_A2_SPECIAL_ANI, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },      // LS_A2_SPECIAL_ANAKIN
+	{ "dualspinprot", BOTH_A6_SABERPROTECT_GRIEV, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500 }, // LS_DUAL_SPIN_PROTECT_GRIEVOUS
 	{ "StabDownWindu", BOTH_STABDOWN_WINDU, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200 },          // LS_STABDOWN_WINDU
 	///////////////////////////////////////////
    { "specialkotor", BOTH_SMASHDOWN_DUAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000 },          // LS_SMASHDOWN_DUAL
@@ -970,7 +970,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 		}
 		break;
 	case BOTH_A6_SABERPROTECT:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 		if (ps->torsoAnimTimer < 650)
 		{
 			//end of anim
@@ -1007,7 +1007,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	}
 	return FORCE_LEVEL_3;
 	case BOTH_A2_SPECIAL:
-	case BOTH_A2_SPECIAL_ANAKIN:
+	case BOTH_A2_SPECIAL_ANI:
 	case BOTH_SMASHDOWN_DUAL:
 	{
 		if (ps->torsoAnimTimer < 300)
@@ -1319,8 +1319,8 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
@@ -1534,8 +1534,8 @@ qboolean PM_SaberDoDamageAnim(const int anim)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
@@ -1678,8 +1678,8 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
@@ -1832,8 +1832,8 @@ qboolean PM_SaberInnonblockableAttack(const int anim)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
@@ -2410,8 +2410,8 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
@@ -4466,7 +4466,10 @@ static saberMoveName_t PM_CheckDualSpinProtect()
 				((g_AnimationStyle != nullptr && g_AnimationStyle->integer == 11) ? qtrue : qfalse);
 
 			const qboolean grievousSaberType =
-				((pm->ps->saber[0].type == SABER_DUAL_GRIE || pm->ps->saber[0].type == SABER_DUAL_GRIE4) ? qtrue : qfalse);
+				((pm->ps->saber[0].type == SABER_DUAL_GRIE ||
+					pm->ps->saber[0].type == SABER_DUAL_GRIE4 ||
+					pm->ps->saber[0].type == SABER_GRIE ||
+					pm->ps->saber[0].type == SABER_GRIE4) ? qtrue : qfalse);
 
 			if (grievousStyleActive == qtrue ||
 				globalGrievousStyle == qtrue ||
@@ -6786,8 +6789,8 @@ qboolean BG_SaberSprintAnim(const int anim)
 	case BOTH_SPRINT_STAFF_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER:
 		//ANAKIN
-	case BOTH_SPRINT_ANI_LIGHTSABER:
-	case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
+	case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
 		return qtrue;
 	default:;
 	}
@@ -7226,14 +7229,14 @@ static void PM_TorsoAnimLightsaber()
 			pm->ps->saberMove = LS_READY;
 		}
 		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_SPRINT_ANI_LIGHTSABER)
+		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_ANI)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_ANI_LIGHTSABER, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
 		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_ANI_STAFF_LIGHTSABER)
+		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER_ANI)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_ANI_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER)
@@ -8251,13 +8254,13 @@ void PM_TorsoAnimation()
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER, SETANIM_FLAG_NORMAL);
 		}
 		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_SPRINT_ANI_LIGHTSABER && !weaponBusy)
+		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_ANI && !weaponBusy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_ANI_LIGHTSABER, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
 		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_ANI_STAFF_LIGHTSABER && !weaponBusy)
+		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER_ANI && !weaponBusy)
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_ANI_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER && !weaponBusy)
 		{
@@ -10828,8 +10831,8 @@ qboolean PM_ForceUsingSaberAnim(const int anim)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
@@ -11407,8 +11410,8 @@ qboolean PM_InKataAnim(const int anim)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:
-	case BOTH_A2_SPECIAL_ANAKIN:
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:
+	case BOTH_A2_SPECIAL_ANI:
+	case BOTH_A6_SABERPROTECT_GRIEV:
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:

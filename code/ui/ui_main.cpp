@@ -4380,11 +4380,10 @@ the text buffer to static storage, eliminating MSVC warning C6262.
 static qboolean UI_ParseAnimationFile(const char* af_filename)
 {
 	/* FIX: move 80 KB buffer off the stack */
-	static char text[120000];
+	static char text[180000]; // i increased from 80 KB to 180 KB to allow for larger animation.cfg files
 
 	const char* text_p;
-	animation_t* animations =
-		ui_knownAnimFileSets[ui_numKnownAnimFileSets].animations;
+	animation_t* animations =ui_knownAnimFileSets[ui_numKnownAnimFileSets].animations;
 
 	/* Load animation.cfg into buffer */
 	const int len = re.GetAnimationCFG(af_filename, text, sizeof(text));
@@ -5421,7 +5420,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
 	Com_Printf("--------------------- Build Date 11/09/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 05 ----------------------------\n");
+	Com_Printf("--------------------------- Build 06 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");

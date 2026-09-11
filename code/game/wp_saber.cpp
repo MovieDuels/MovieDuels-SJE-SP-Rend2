@@ -8625,8 +8625,8 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 					///////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV
 					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
@@ -8694,8 +8694,8 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 					///////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV
 					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
@@ -10402,8 +10402,8 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 					///////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV
 					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
@@ -10462,8 +10462,8 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 					///////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV
 					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
@@ -11809,8 +11809,8 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 					///////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
-					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| ent->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI
+					|| ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV
 					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
@@ -11869,8 +11869,8 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 					///////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
-					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+					|| hit_owner->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI
+					|| hit_owner->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV
 					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
@@ -14971,8 +14971,8 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 			//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 			///////////////////////////////////////
 			|| self->client->ps.torsoAnim == BOTH_A1_SPECIAL_YODA
-			|| self->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANAKIN
-			|| self->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS
+			|| self->client->ps.torsoAnim == BOTH_A2_SPECIAL_ANI
+			|| self->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV
 			|| self->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 			////////////////////////////////////////
 			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
@@ -43176,8 +43176,8 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 		///////////////////////////////////////
 	case BOTH_A1_SPECIAL_YODA:         return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
-	case BOTH_A2_SPECIAL_ANAKIN:       return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
-	case BOTH_A6_SABERPROTECT_GRIEVOUS:return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+	case BOTH_A2_SPECIAL_ANI:       return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+	case BOTH_A6_SABERPROTECT_GRIEV:return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
 	case BOTH_STABDOWN_WINDU:          return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
 	default:;
 		break;

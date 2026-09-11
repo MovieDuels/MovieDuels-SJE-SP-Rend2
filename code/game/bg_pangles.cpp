@@ -1546,7 +1546,7 @@ qboolean PM_AdjustAnglesForStabDown(gentity_t* ent, usercmd_t* ucmd)
 
 qboolean PM_AdjustAnglesForSpinProtect(gentity_t* ent, usercmd_t* ucmd)
 {
-	if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT || ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEVOUS)
+	if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT || ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV)
 	{
 		//in the dual spin thing
 		if (ent->client->ps.torsoAnimTimer)

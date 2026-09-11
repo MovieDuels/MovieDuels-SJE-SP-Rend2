@@ -13845,11 +13845,22 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		case SABER_THIN:
 		case SABER_SFX:
 		case SABER_CUSTOMSFX:
+			//Old saber names for compatibility with old saves
+		case SABER_GRIE:
+		case SABER_GRIE4:
+		case SABER_BACKHAND:
+		case SABER_YODA:
+		case SABER_DOOKU:
+		case SABER_PALP:
+		case SABER_ANAKIN:
+		case SABER_OBIWAN:
+		case SABER_ASBACKHAND:
 			break;
 		case SABER_STAFF:
 			// custom added sabers for specific models
 		case SABER_STAFF_MAUL:
 		case SABER_STAFF_ELECTROSTAFF:
+		case SABER_ELECTROSTAFF:
 			//Misc added sabers
 		case SABER_STAFF_UNSTABLE:
 		case SABER_STAFF_THIN:
@@ -14450,7 +14461,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 						}
 						else if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE
 							|| cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE
-							|| cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+							|| cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF
+							|| cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN
+							|| cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 						{
 							fx->mShader = cgs.media.unstableBlurShader;
 							duration = saber_trail->duration / (PM_InKataAnim(cg.snap->ps.torsoAnim) ? 20.0f : 5.0f);
@@ -14564,7 +14577,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		{
 			if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 				cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-				cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+				cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+				cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+				cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 			{
 				CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 					client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14731,7 +14746,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 			{
 				if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 					cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-					cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+					cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+					cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+					cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 				{
 					CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 						client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14753,7 +14770,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 1:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14773,7 +14792,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 2:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14793,7 +14814,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 3:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14813,7 +14836,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 4:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14833,7 +14858,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 5:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14853,7 +14880,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 6:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14873,7 +14902,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 7:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14893,7 +14924,9 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 8:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_SINGLE_KYLO_REN ||
+						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
