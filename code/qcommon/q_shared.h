@@ -835,9 +835,9 @@ using forcePowers_t = enum forcePowers_e
 using saberType_t = enum saberType_e
 {
 	SABER_NONE = 0,
-	SABER_SINGLE,
-	SABER_SINGLE_CLASSIC,
-	SABER_STAFF,
+	SABER_SINGLE, //Base Jka
+	SABER_STAFF,  //Base Jka
+	//Custom Jka Sabers
 	SABER_DAGGER,
 	SABER_BROAD,
 	SABER_PRONG,
@@ -847,7 +847,35 @@ using saberType_t = enum saberType_e
 	SABER_LANCE,
 	SABER_STAR,
 	SABER_TRIDENT,
-	SABER_SITH_SWORD,
+	SABER_SITH_SWORD,// Tavion sword
+	// custom Added sabers for specific animations
+	SABER_SINGLE_ANAKIN,
+	SABER_SINGLE_KENOBI,
+	SABER_SINGLE_KESTIS,
+	SABER_SINGLE_DARKFORCES,
+	SABER_SINGLE_DOOKU,
+	SABER_SINGLE_GALEN,
+	SABER_SINGLE_QUIGON,
+	SABER_DUAL_GRIE,
+	SABER_DUAL_GRIE4,
+	SABER_SINGLE_KOTOR,
+	SABER_SINGLE_LUKE,
+	SABER_SINGLE_WINDU,
+	SABER_SINGLE_MAUL,
+	SABER_STAFF_MAUL,
+	SABER_SINGLE_MOVIEDUELS,
+	SABER_SINGLE_OBIWAN,
+	SABER_SINGLE_PALP,
+	SABER_SINGLE_KYLO_REN,
+	SABER_SINGLE_REY,
+	SABER_SINGLE_VADER,
+	SABER_SINGLE_YODA,
+	// custom added sabers for specific models
+	SABER_SINGLE_BACKHAND,
+	SABER_SINGLE_ASBACKHAND,
+	SABER_STAFF_ELECTROSTAFF,
+	//Misc added sabers
+	SABER_SINGLE_CLASSIC,
 	SABER_UNSTABLE,
 	SABER_STAFF_UNSTABLE,
 	SABER_THIN,
@@ -855,21 +883,6 @@ using saberType_t = enum saberType_e
 	SABER_SFX,
 	SABER_STAFF_SFX,
 	SABER_CUSTOMSFX,
-	SABER_BACKHAND,
-	SABER_YODA,
-	SABER_DOOKU,
-	SABER_PALP,
-	SABER_ANAKIN,
-	SABER_GRIE,
-	SABER_GRIE4,
-	SABER_OBIWAN,
-	SABER_ASBACKHAND,
-	SABER_STAFF_MAUL,
-	SABER_ELECTROSTAFF,
-	SABER_WINDU,
-	SABER_VADER,
-	SABER_KENOBI,
-	SABER_REY,
 	NUM_SABERS
 };
 
@@ -2221,6 +2234,7 @@ public:
 	//drawing progress bar (is there a less bandwidth-eating way to do
 	//this without a lot of hassle?)
 	int			hackingBaseTime;
+
 	int         saberstuckinwalltimer;
 	int         saberDisarmProtectTime;
 	int         npcKickBlockStartTime;
@@ -2228,6 +2242,9 @@ public:
 	int		    saberAttackSequence;
 	int		    saberRiposteTime;
 	int         saberSmashTriggered;
+	int         SaberSmashStartTime;
+	int         SaberSmashLastStartTime;
+	int         Smash_Count;
 
 #endif // !JK2_MODE
 
@@ -2515,6 +2532,9 @@ public:
 		saved_game.write<int32_t>(saberAttackSequence);
 		saved_game.write<int32_t>(saberRiposteTime);
 		saved_game.write<int32_t>(saberSmashTriggered);
+		saved_game.write<int32_t>(SaberSmashStartTime);
+		saved_game.write<int32_t>(SaberSmashLastStartTime);
+		saved_game.write<int32_t>(Smash_Count);
 
 #endif // !JK2_MODE
 	}
@@ -2803,6 +2823,9 @@ public:
 		saved_game.read<int32_t>(saberAttackSequence);
 		saved_game.read<int32_t>(saberRiposteTime);
 		saved_game.read<int32_t>(saberSmashTriggered);
+		saved_game.read<int32_t>(SaberSmashStartTime);
+		saved_game.read<int32_t>(SaberSmashLastStartTime);
+		saved_game.read<int32_t>(Smash_Count);
 
 #endif // !JK2_MODE
 	}
@@ -3131,6 +3154,11 @@ using entityState_t = struct entityState_s
 	//this without a lot of hassle?)
 	int			hackingBaseTime;
 
+	int saberSmashTriggered;
+	int SaberSmashStartTime;
+	int SaberSmashLastStartTime;
+	int Smash_Count;
+
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
 	{
@@ -3252,6 +3280,11 @@ using entityState_t = struct entityState_s
 
 		saved_game.write<int32_t>(hackingTime);
 		saved_game.write<int32_t>(hackingBaseTime);
+
+		saved_game.write<int32_t>(saberSmashTriggered);
+		saved_game.write<int32_t>(SaberSmashStartTime);
+		saved_game.write<int32_t>(SaberSmashLastStartTime);
+		saved_game.write<int32_t>(Smash_Count);
 #endif // !JK2_MODE
 	}
 
@@ -3376,6 +3409,11 @@ using entityState_t = struct entityState_s
 
 		saved_game.read<int32_t>(hackingTime);
 		saved_game.read<int32_t>(hackingBaseTime);
+
+		saved_game.read<int32_t>(saberSmashTriggered);
+		saved_game.read<int32_t>(SaberSmashStartTime);
+		saved_game.read<int32_t>(SaberSmashLastStartTime);
+		saved_game.read<int32_t>(Smash_Count);
 #endif // !JK2_MODE
 	}
 };
@@ -3604,6 +3642,7 @@ using communicatingflags_e = enum communicatingflags_e2
 	CF_SABERLOCKING,
 	CF_SABERLOCK_ADVANCE,
 	CF_AIMINGGUN,
+	CF_SABERSMASHING,
 };
 
 using PlayerEffectFlags_e = enum PlayerEffectFlags_e2

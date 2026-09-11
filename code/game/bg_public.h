@@ -684,6 +684,10 @@ using entity_event_t = enum
 	EV_JEDISPAWN,
 
 	EV_LOCALTIMER,
+
+	EV_SLAMTIMER,
+
+	EV_DASHTIMER,
 };
 
 class animation_t

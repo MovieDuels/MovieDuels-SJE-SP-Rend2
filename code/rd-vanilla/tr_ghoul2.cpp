@@ -3842,7 +3842,7 @@ qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	mod->dataSize += size;
 
 	qboolean bAlreadyFound = qfalse;
-	mdxa = mod->mdxa = static_cast<mdxaHeader_t*>(RE_RegisterModels_Malloc(	size, buffer, mod_name, &bAlreadyFound, TAG_MODEL_GLA));
+	mdxa = mod->mdxa = static_cast<mdxaHeader_t*>(RE_RegisterModels_Malloc(size, buffer, mod_name, &bAlreadyFound, TAG_MODEL_GLA));
 
 	if (bAlreadyCached != bAlreadyFound)
 	{

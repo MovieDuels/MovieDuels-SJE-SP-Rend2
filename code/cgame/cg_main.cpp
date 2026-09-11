@@ -520,6 +520,8 @@ vmCvar_t cg_com_rend2;
 
 vmCvar_t cg_textprintscale;
 
+vmCvar_t cg_DrawCoolDown;
+
 using cvarTable_t = struct
 {
 	vmCvar_t* vmCvar;
@@ -748,6 +750,8 @@ static cvarTable_t cvarTable[] = {
 	{ &cg_com_rend2, "com_rend2", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
 	{ &cg_textprintscale, "cg_textprintscale", "0.5f", CVAR_ARCHIVE },
+
+	{ &cg_DrawCoolDown, "g_drawcooldown", "0", CVAR_ARCHIVE },
 };
 
 static constexpr size_t cvarTableSize = std::size(cvarTable);

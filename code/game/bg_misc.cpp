@@ -528,6 +528,11 @@ void PlayerStateToEntityState(playerState_t* ps, entityState_t* s)
 	s->PlayerEffectFlags = ps->PlayerEffectFlags;
 	s->userInt3 = ps->userInt3;
 
+	s->saberSmashTriggered = ps->saberSmashTriggered;
+	s->SaberSmashStartTime = ps->SaberSmashStartTime;
+	s->SaberSmashLastStartTime = ps->SaberSmashLastStartTime;
+	s->Smash_Count = ps->Smash_Count;
+
 	s->powerups = 0;
 	for (int i = 0; i < MAX_POWERUPS; i++)
 	{

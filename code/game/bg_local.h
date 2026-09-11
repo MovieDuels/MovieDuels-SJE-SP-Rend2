@@ -36,26 +36,26 @@ constexpr auto OVERCLIP = 1.001f;
 // any differences when running on client or server
 using pml_t = struct
 {
-    // movement orientation
-    vec3_t forward = { 0.0f, 0.0f, 0.0f };
-    vec3_t right = { 0.0f, 0.0f, 0.0f };
-    vec3_t up = { 0.0f, 0.0f, 0.0f };
+	// movement orientation
+	vec3_t forward = { 0.0f, 0.0f, 0.0f };
+	vec3_t right = { 0.0f, 0.0f, 0.0f };
+	vec3_t up = { 0.0f, 0.0f, 0.0f };
 
-    // frame timing
-    float frametime = 0.0f;
-    int   msec = 0;
+	// frame timing
+	float frametime = 0.0f;
+	int   msec = 0;
 
-    // movement state
-    qboolean walking = qfalse;
-    qboolean groundPlane = qfalse;
-    trace_t  groundTrace = {};
+	// movement state
+	qboolean walking = qfalse;
+	qboolean groundPlane = qfalse;
+	trace_t  groundTrace = {};
 
-    float impactSpeed = 0.0f;
+	float impactSpeed = 0.0f;
 
-    // previous frame state (explicitly initialized to avoid C26495)
-    vec3_t previous_origin = { 0.0f, 0.0f, 0.0f };
-    vec3_t previous_velocity = { 0.0f, 0.0f, 0.0f };
-    int    previous_waterlevel = 0;
+	// previous frame state (explicitly initialized to avoid C26495)
+	vec3_t previous_origin = { 0.0f, 0.0f, 0.0f };
+	vec3_t previous_velocity = { 0.0f, 0.0f, 0.0f };
+	int    previous_waterlevel = 0;
 };
 
 extern pmove_t* pm;

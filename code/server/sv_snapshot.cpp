@@ -771,7 +771,6 @@ void SV_SendClientSnapshot(client_t* client)
 	free(msg_buf);
 }
 
-
 /*
 =======================
 SV_SendClientMessages

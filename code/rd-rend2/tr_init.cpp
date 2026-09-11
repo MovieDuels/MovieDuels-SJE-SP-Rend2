@@ -350,7 +350,7 @@ static void R_Splash()
 
 	if (r_shadows->integer == 1)
 	{
-		ri.Cvar_Set("cg_shadows", "1"); 
+		ri.Cvar_Set("cg_shadows", "1");
 	}
 	else if (r_shadows->integer == 2)
 	{

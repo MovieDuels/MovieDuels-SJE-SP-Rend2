@@ -329,11 +329,45 @@ static void CG_LocalTimingBar(const int start_time, const int duration)
 {
 	cg_genericTimerBar = start_time + duration;
 	cg_genericTimerDur = duration;
-
+	//yellow generic timing bar
 	cg_genericTimerColor[0] = 1.0f;
 	cg_genericTimerColor[1] = 1.0f;
 	cg_genericTimerColor[2] = 0.0f;
 	cg_genericTimerColor[3] = 1.0f;
+}
+
+//set the local timing bar
+extern int cg_slamTimerBar;
+extern int cg_slamTimerDur;
+extern vec4_t cg_slamTimerColor;
+
+static void CG_SlamTimingBar(const int start_time, const int duration)
+{
+	cg_slamTimerBar = start_time + duration;
+	cg_slamTimerDur = duration;
+
+	// green slam cooldown bar
+	cg_slamTimerColor[0] = 0.0f;
+	cg_slamTimerColor[1] = 1.0f;
+	cg_slamTimerColor[2] = 0.0f;
+	cg_slamTimerColor[3] = 1.0f;
+}
+
+//set the local timing bar
+extern int cg_dashTimerBar;
+extern int cg_dashTimerDur;
+extern vec4_t cg_dashTimerColor;
+
+static void CG_DashTimingBar(const int start_time, const int duration)
+{
+	cg_dashTimerBar = start_time + duration;
+	cg_dashTimerDur = duration;
+
+	// blue dash cooldown bar
+	cg_dashTimerColor[0] = 0.0f;  // red
+	cg_dashTimerColor[1] = 0.0f;  // green
+	cg_dashTimerColor[2] = 1.0f;  // blue
+	cg_dashTimerColor[3] = 1.0f;  // alpha
 }
 
 /*
@@ -1398,6 +1432,34 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		else if (es->otherentityNum == cg.snap->ps.clientNum)
 		{
 			CG_LocalTimingBar(es->time, es->time2);
+		}
+		break;
+
+	case EV_SLAMTIMER:
+		DEBUGNAME("EV_SLAMTIMER");
+		// Prefer the engine's mapped owner pointer if present
+		if (cent->gent && cent->gent->owner && cent->gent->owner->s.number == cg.snap->ps.clientNum)
+		{
+			CG_SlamTimingBar(es->time, es->time2);
+		}
+		// Fallback: the server may have set otherentityNum
+		else if (es->otherentityNum == cg.snap->ps.clientNum)
+		{
+			CG_SlamTimingBar(es->time, es->time2);
+		}
+		break;
+
+	case EV_DASHTIMER:
+		DEBUGNAME("EV_DASHTIMER");
+		// Prefer the engine's mapped owner pointer if present
+		if (cent->gent && cent->gent->owner && cent->gent->owner->s.number == cg.snap->ps.clientNum)
+		{
+			CG_DashTimingBar(es->time, es->time2);
+		}
+		// Fallback: the server may have set otherentityNum
+		else if (es->otherentityNum == cg.snap->ps.clientNum)
+		{
+			CG_DashTimingBar(es->time, es->time2);
 		}
 		break;
 

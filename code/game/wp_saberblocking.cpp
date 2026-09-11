@@ -45,7 +45,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
-extern qboolean pm_saber_innonblockable_attack(int anim);
+extern qboolean PM_SaberInnonblockableAttack(int anim);
 extern void sab_beh_saber_should_be_disarmed_attacker(gentity_t* attacker, int saberNum);
 extern void wp_saber_clear_damage_for_ent_num(gentity_t* attacker, int entityNum, int saberNum, int bladeNum);
 extern cvar_t* g_SerenityJediEngineMode;
@@ -917,7 +917,7 @@ qboolean sab_beh_attack_vs_block(gentity_t* attacker, gentity_t* blocker, const 
 	//(Npc Blocking function)
 	const qboolean atkfake = ((attacker->client->ps.userInt3 & (1 << FLAG_ATTACKFAKE)) != 0) ? qtrue : qfalse;
 
-	if (pm_saber_innonblockable_attack(attacker->client->ps.torsoAnim))
+	if (PM_SaberInnonblockableAttack(attacker->client->ps.torsoAnim))
 	{
 		//perfect Blocking
 		if (m_blocking) // A perfectly timed block
@@ -1054,7 +1054,7 @@ qboolean sab_beh_attack_vs_block(gentity_t* attacker, gentity_t* blocker, const 
 
 			if (!m_blocking)
 			{
-				if (pm_saber_innonblockable_attack(blocker->client->ps.torsoAnim))
+				if (PM_SaberInnonblockableAttack(blocker->client->ps.torsoAnim))
 				{
 					sab_beh_animate_heavy_slow_bounce_attacker(attacker);
 					sab_beh_add_balance(blocker, -MPCOST_PARRIED);
@@ -1111,7 +1111,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 	{
 		if (g_SerenityJediEngineMode->integer == 2)
 		{
-			if (!pm_saber_innonblockable_attack(attacker->client->ps.torsoAnim))
+			if (!PM_SaberInnonblockableAttack(attacker->client->ps.torsoAnim))
 			{ //if the attack is blockable, then check for accurate parry
 				if (blocker->client->ps.blockPoints <= BLOCKPOINTS_FATIGUE) // blocker has less than 20BP
 				{//Low points = bad blocks
@@ -1469,7 +1469,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 		}
 		else
 		{
-			if (!pm_saber_innonblockable_attack(attacker->client->ps.torsoAnim))
+			if (!PM_SaberInnonblockableAttack(attacker->client->ps.torsoAnim))
 			{
 				if (blocker->client->ps.forcePower <= BLOCKPOINTS_FATIGUE) // blocker has less than 20BP
 				{

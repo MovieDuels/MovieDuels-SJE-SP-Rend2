@@ -98,6 +98,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #define VALIDSTRING( a )	( ( a != NULL ) && ( a[0] != '\0' ) )
 
+#define SABER_SMASH_COOLDOWN_MS 20000
+
 //animations
 class animFileSet_t
 {

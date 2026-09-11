@@ -403,7 +403,7 @@ using saberMoveName_t = enum saberMoveName_t
 	LS_STABDOWN_WINDU,
 	///////////////////////////////////////////
 	LS_SMASHDOWN_DUAL,
-	LS_SMASHDOWN_MEDIUM,
+	LS_SMASHDOWN_SINGLE,
 	LS_SMASHDOWN_STAFF,
 	//////////////////////////////////////////
 

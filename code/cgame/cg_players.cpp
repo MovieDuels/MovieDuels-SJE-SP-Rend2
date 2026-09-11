@@ -109,7 +109,7 @@ extern qboolean PM_WindAnim(int anim);
 extern qboolean PM_StandingAtReadyAnim(int anim);
 extern qboolean PM_InKataAnim(int anim);
 extern vmCvar_t cg_SerenityJediEngineMode;
-extern qboolean pm_saber_innonblockable_attack(int anim);
+extern qboolean PM_SaberInnonblockableAttack(int anim);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void CheckCameraLocation(vec3_t oldeye_origin);
 extern void CG_CubeOutline(vec3_t mins, vec3_t maxs, int time, unsigned int color);
@@ -286,7 +286,7 @@ extern qboolean PM_InRoll(const playerState_t* ps);
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
 extern qboolean PM_SuperBreakWinAnim(int anim);
 extern qboolean BG_SaberInPartialDamageMove(gentity_t* self);
-extern qboolean BG_SaberInTransitionDamageMove(const playerState_t* ps);
+extern qboolean PM_SaberInTransitionDamageMove(const playerState_t* ps);
 extern qboolean PM_SaberInNonIdleDamageMove(const playerState_t* ps);
 
 //Basic set of custom sounds that everyone needs
@@ -6209,13 +6209,11 @@ void CG_AddRefEntityWithPowerups(refEntity_t* ent, int powerups, centity_t* cent
 
 	if (cg_SerenityJediEngineMode.integer && !in_camera)
 	{
-		if (cg_SaberInnonblockableAttackWarning.integer == 1
-			|| d_SaberactionInfo->integer
-			|| cg_DebugSaberCombat.integer)
+		if (cent->gent->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(cent->gent))
 		{
-			if (cent->gent->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(cent->gent))
+			if (cg_SaberInnonblockableAttackWarning.integer == 1)
 			{
-				if (pm_saber_innonblockable_attack(cent->currentState.torsoAnim))
+				if (PM_SaberInnonblockableAttack(cent->currentState.torsoAnim) && !(cent->currentState.powerups & 1 << PW_CLOAKED))
 				{
 					ent->renderfx |= RF_RGB_TINT;
 					ent->shaderRGBA[0] = 255;
@@ -6229,36 +6227,69 @@ void CG_AddRefEntityWithPowerups(refEntity_t* ent, int powerups, centity_t* cent
 	}
 
 	if (cg_SerenityJediEngineMode.integer && !in_camera)
-	{
-		//test for all sorts of shit... does it work? show me.
-		if (cg_IsSaberDoingAttackDamage.integer == 1 || d_SaberactionInfo->integer || cg_DebugSaberCombat.integer)
+	{// Local player: saber damage coloring (blue = partial, red = full)
+		if (cent->currentState.number == cg.snap->ps.clientNum)
 		{
-			if (BG_SaberInTransitionDamageMove(&cent->gent->client->ps)) //if in a transition dont do damage turn green
+			if (cg_IsSaberDoingAttackDamage.integer == 1)
 			{
-				ent->renderfx |= RF_RGB_TINT;
-				ent->shaderRGBA[0] = 0;
-				ent->shaderRGBA[1] = ent->shaderRGBA[2] = 255;
-				ent->shaderRGBA[3] = 0;
+				qboolean doTint = qfalse;
+				qboolean tintBlue = qfalse;
+				qboolean tintRed = qfalse;
+				qboolean tintGreen = qfalse;
 
-				cgi_R_AddRefEntityToScene(ent);
-			}
-			else if (PM_SaberInNonIdleDamageMove(&cent->gent->client->ps)) //doing damage make red
-			{
-				if (BG_SaberInPartialDamageMove(cent->gent)) //turn off damage in the move turn green
+				// 1. Transition damage
+				if (PM_SaberInTransitionDamageMove(&cent->gent->client->ps) == qtrue)
 				{
-					ent->renderfx |= RF_RGB_TINT;
-					ent->shaderRGBA[0] = 0;
-					ent->shaderRGBA[1] = ent->shaderRGBA[2] = 255;
-					ent->shaderRGBA[3] = 0;
-
-					cgi_R_AddRefEntityToScene(ent);
+					doTint = qtrue;
+					tintGreen = qtrue;
 				}
 				else
 				{
-					ent->renderfx |= RF_RGB_TINT; //doing damage make red
-					ent->shaderRGBA[0] = 255;
-					ent->shaderRGBA[1] = ent->shaderRGBA[2] = 0;
-					ent->shaderRGBA[3] = 255;
+					// 2. Non‑idle damage moves
+					if (PM_SaberInNonIdleDamageMove(&cent->gent->client->ps) == qtrue)
+					{
+						// 2a. Partial damage window → BLUE
+						if (BG_SaberInPartialDamageMove(cent->gent) == qtrue)
+						{
+							doTint = qtrue;
+							tintBlue = qtrue;
+						}
+						else
+						{
+							// 2b. Full damage window → RED
+							doTint = qtrue;
+							tintRed = qtrue;
+						}
+					}
+				}
+
+				// Apply tint if needed
+				if (doTint == qtrue)
+				{
+					ent->renderfx |= RF_RGB_TINT;
+
+					if (tintGreen == qtrue)
+					{
+						// GREEN tint
+						ent->shaderRGBA[0] = 0;     // R
+						ent->shaderRGBA[1] = 255;   // G
+						ent->shaderRGBA[2] = 0;     // B
+						ent->shaderRGBA[3] = 255;   // A
+					}
+					else if (tintBlue == qtrue)
+					{// BLUE tint (partial damage)
+						ent->shaderRGBA[0] = 0;
+						ent->shaderRGBA[1] = 0;
+						ent->shaderRGBA[2] = 255;
+						ent->shaderRGBA[3] = 255;
+					}
+					else if (tintRed == qtrue)
+					{// RED tint (full damage)
+						ent->shaderRGBA[0] = 255;
+						ent->shaderRGBA[1] = 0;
+						ent->shaderRGBA[2] = 0;
+						ent->shaderRGBA[3] = 255;
+					}
 
 					cgi_R_AddRefEntityToScene(ent);
 				}
@@ -13782,16 +13813,44 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		switch (cent->gent->client->ps.saber[saberNum].type)
 		{
 		case SABER_SINGLE:
-		case SABER_SINGLE_CLASSIC:
 		case SABER_DAGGER:
 		case SABER_LANCE:
-		case SABER_GRIE:
+			// custom Added sabers for specific animations
+		case SABER_SINGLE_ANAKIN:
+		case SABER_SINGLE_KENOBI:
+		case SABER_SINGLE_KESTIS:
+		case SABER_SINGLE_DARKFORCES:
+		case SABER_SINGLE_DOOKU:
+		case SABER_SINGLE_GALEN:
+		case SABER_SINGLE_QUIGON:
+		case SABER_DUAL_GRIE:
+		case SABER_DUAL_GRIE4:
+		case SABER_SINGLE_KOTOR:
+		case SABER_SINGLE_LUKE:
+		case SABER_SINGLE_WINDU:
+		case SABER_SINGLE_MAUL:
+		case SABER_SINGLE_MOVIEDUELS:
+		case SABER_SINGLE_OBIWAN:
+		case SABER_SINGLE_PALP:
+		case SABER_SINGLE_KYLO_REN:
+		case SABER_SINGLE_REY:
+		case SABER_SINGLE_VADER:
+		case SABER_SINGLE_YODA:
+			// custom added sabers for specific models
+		case SABER_SINGLE_BACKHAND:
+		case SABER_SINGLE_ASBACKHAND:
+			//Misc added sabers
+		case SABER_SINGLE_CLASSIC:
 		case SABER_UNSTABLE:
 		case SABER_THIN:
 		case SABER_SFX:
 		case SABER_CUSTOMSFX:
 			break;
 		case SABER_STAFF:
+			// custom added sabers for specific models
+		case SABER_STAFF_MAUL:
+		case SABER_STAFF_ELECTROSTAFF:
+			//Misc added sabers
 		case SABER_STAFF_UNSTABLE:
 		case SABER_STAFF_THIN:
 		case SABER_STAFF_SFX:
@@ -14391,7 +14450,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 						}
 						else if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE
 							|| cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE
-							|| cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+							|| cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 						{
 							fx->mShader = cgs.media.unstableBlurShader;
 							duration = saber_trail->duration / (PM_InKataAnim(cg.snap->ps.torsoAnim) ? 20.0f : 5.0f);
@@ -14505,7 +14564,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 		{
 			if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 				cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-				cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+				cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 			{
 				CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 					client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14672,7 +14731,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 			{
 				if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 					cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-					cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+					cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 				{
 					CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 						client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14694,7 +14753,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 1:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14714,7 +14773,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 2:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14734,7 +14793,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 3:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14754,7 +14813,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 4:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14774,7 +14833,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 5:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14794,7 +14853,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 6:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14814,7 +14873,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 7:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14834,7 +14893,7 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 				case 8:
 					if (cent->gent->client->ps.saber[saberNum].type == SABER_UNSTABLE ||
 						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_UNSTABLE ||
-						cent->gent->client->ps.saber[saberNum].type == SABER_ELECTROSTAFF)
+						cent->gent->client->ps.saber[saberNum].type == SABER_STAFF_ELECTROSTAFF)
 					{
 						CG_DoSaberUnstable(org, axis[0], length, client->ps.saber[saberNum].blade[bladeNum].lengthMax,
 							client->ps.saber[saberNum].blade[bladeNum].radius,
@@ -14953,11 +15012,11 @@ void CG_AddSaberBlade(centity_t* cent, centity_t* scent, const int renderfx, con
 
 /*
  ================
- GetSelfLegAnimPoint
+ CG_GetSelfLegAnimPoint
  ================
  */
  //Get the point in the leg animation and return a percentage of the current point in the anim between 0 and the total anim length (0.0f - 1.0f)
-static float GetSelfLegAnimPoint()
+static float CG_GetSelfLegAnimPoint()
 {
 	float current = 0.0f;
 	int end = 0;
@@ -14984,12 +15043,12 @@ static float GetSelfLegAnimPoint()
 
 /*
  ================
- GetSelfTorsoAnimPoint
+ CG_GetSelfTorsoAnimPoint
 
  ================
  */
  //Get the point in the torso animation and return a percentage of the current point in the anim between 0 and the total anim length (0.0f - 1.0f)
-static float GetSelfTorsoAnimPoint()
+float CG_GetSelfTorsoAnimPoint()
 {
 	float current = 0.0f;
 	int end = 0;
@@ -15029,8 +15088,8 @@ static float GetSelfTorsoAnimPoint()
 
 static void SmoothTrueView(vec3_t eye_angles)
 {
-	const float leg_anim_point = GetSelfLegAnimPoint();
-	const float torso_anim_point = GetSelfTorsoAnimPoint();
+	const float leg_anim_point = CG_GetSelfLegAnimPoint();
+	const float torso_anim_point = CG_GetSelfTorsoAnimPoint();
 
 	qboolean eye_range = qtrue;
 	qboolean use_ref_def = qfalse;

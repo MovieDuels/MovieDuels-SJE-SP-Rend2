@@ -605,6 +605,7 @@ static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
 	client->ps.communicatingflags &= ~(1 << CF_DESTRUCTING);
 	client->ps.communicatingflags &= ~(1 << CF_PROJECTING);
 	client->ps.communicatingflags &= ~(1 << CF_KICKING);
+	client->ps.communicatingflags &= ~(1 << CF_SABERSMASHING);
 	// Reset speed timers
 	client->ps.forcePowerDebounce[FP_SPEED] = 0;
 	client->ps.forcePowerDuration[FP_SPEED] = 0;
@@ -619,6 +620,9 @@ static void Client_ResetCommunicatingDashAndSpeedState(gclient_t* client)
 	client->ps.Dash_NPC_Count = 0;
 	client->ps.pm_flags &= ~PMF_DASH_HELD;
 	client->pers.lastCommand.buttons &= ~BUTTON_DASH;
+	client->ps.SaberSmashStartTime = 0;
+	client->ps.SaberSmashLastStartTime = 0;
+	client->ps.Smash_Count = 0;
 	// Also clear any persisted command/button state that may have been saved
 	// (e.g. held dash in client->pers.cmd) so the player doesn't need to
 	// press another key after load to re-enable normal dashing.

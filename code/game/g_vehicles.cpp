@@ -1156,7 +1156,7 @@ static bool Eject(Vehicle_t* p_veh, bgEntity_t* pEnt, const qboolean force_eject
 #endif
 	ent->s.m_iVehicleNum = 0;
 
-		// Make sure entity is facing the direction it got off at.
+	// Make sure entity is facing the direction it got off at.
 #ifndef _JK2MP
 	VectorCopy(p_veh->m_vOrientation, vPlayerDir);
 	vPlayerDir[ROLL] = 0;

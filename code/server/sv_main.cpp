@@ -168,8 +168,6 @@ void SV_SendServerCommand(client_t* cl, const char* fmt, ...)
 	free(message);
 }
 
-
-
 /*
 ==============================================================================
 
@@ -263,7 +261,6 @@ static void SVC_Status(const netadr_t from)
 	free(infostring);
 	free(player);
 }
-
 
 /*
 ================

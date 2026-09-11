@@ -238,6 +238,241 @@ extern saberMoveName_t transitionMove[Q_NUM_QUADS][Q_NUM_QUADS];
 
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
 
+typedef struct
+{
+	qboolean isAnakin;
+	qboolean isBenKenobi;
+	qboolean isCalKestis;
+	qboolean isDarkForces2;
+	qboolean isCountDooku;
+	qboolean isGalenMarek;
+	qboolean isQuiGonJinn;
+	qboolean isGrievous;
+	qboolean isKotor;
+	qboolean isLukeSkywalker;
+	qboolean isMaceWindu;
+	qboolean isMaul;
+	qboolean isMovieDuels;
+	qboolean isObiWan;
+	qboolean isObiWanEP3;
+	qboolean isPalpatine;
+	qboolean isKyloRen;
+	qboolean isRey;
+	qboolean isVader;
+	qboolean isYoda;
+} animFlags_t;
+
+animFlags_t PM_Animationstyletable(const pmove_t* pm)
+{
+	qboolean isAnakin = qfalse;
+	qboolean isBenKenobi = qfalse;
+	qboolean isCalKestis = qfalse;
+	qboolean isDarkForces2 = qfalse;
+	qboolean isCountDooku = qfalse;
+	qboolean isGalenMarek = qfalse;
+	qboolean isQuiGonJinn = qfalse;
+	qboolean isGrievous = qfalse;
+	qboolean isKotor = qfalse;
+	qboolean isLukeSkywalker = qfalse;
+	qboolean isMaceWindu = qfalse;
+	qboolean isMaul = qfalse;
+	qboolean isMovieDuels = qfalse;
+	qboolean isObiWan = qfalse;
+	qboolean isObiWanEP3 = qfalse;
+	qboolean isPalpatine = qfalse;
+	qboolean isKyloRen = qfalse;
+	qboolean isRey = qfalse;
+	qboolean isVader = qfalse;
+	qboolean isYoda = qfalse;
+
+	// ANAKIN
+	if (((pm->gent->client->animationstyle == CS_ANAKIN) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 1)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_ANAKIN) ? qtrue : qfalse))
+	{
+		isAnakin = qtrue;
+	}
+
+	// BEN KENOBI
+	if (((pm->gent->client->animationstyle == CS_BENKENOBI) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 3)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KENOBI) ? qtrue : qfalse))
+	{
+		isBenKenobi = qtrue;
+	}
+
+	// CAL KESTIS
+	if (((pm->gent->client->animationstyle == CS_CAL_KESTIS) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 4)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KESTIS) ? qtrue : qfalse))
+	{
+		isCalKestis = qtrue;
+	}
+
+	// DARK FORCES 2
+	if (((pm->gent->client->animationstyle == CS_DARKFORCES2) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 7)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_DARKFORCES) ? qtrue : qfalse))
+	{
+		isDarkForces2 = qtrue;
+	}
+
+	// COUNT DOOKU
+	if (((pm->gent->client->animationstyle == CS_COUNT_DOOKU) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 8)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_DOOKU) ? qtrue : qfalse))
+	{
+		isCountDooku = qtrue;
+	}
+
+	// GALEN MAREK
+	if (((pm->gent->client->animationstyle == CS_GALEN_MAREK) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 9)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_GALEN) ? qtrue : qfalse))
+	{
+		isGalenMarek = qtrue;
+	}
+
+	// QUI-GON JINN
+	if (((pm->gent->client->animationstyle == CS_QUI_GON_JINN) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 10)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_QUIGON) ? qtrue : qfalse))
+	{
+		isQuiGonJinn = qtrue;
+	}
+
+	// GENERAL GRIEVOUS
+	if (((pm->gent->client->animationstyle == CS_GRIEVOUS) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 11)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_DUAL_GRIE) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_DUAL_GRIE4) ? qtrue : qfalse))
+	{
+		isGrievous = qtrue;
+	}
+
+	// KOTOR
+	if (((pm->gent->client->animationstyle == CS_KOTOR) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 14)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KOTOR) ? qtrue : qfalse))
+	{
+		isKotor = qtrue;
+	}
+
+	// LUKE SKYWALKER
+	if (((pm->gent->client->animationstyle == CS_LUKE_SKYWALKER) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 15)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_LUKE) ? qtrue : qfalse))
+	{
+		isLukeSkywalker = qtrue;
+	}
+
+	// MACE WINDU
+	if (((pm->gent->client->animationstyle == CS_MACE_WINDU) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 16)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_WINDU) ? qtrue : qfalse))
+	{
+		isMaceWindu = qtrue;
+	}
+
+	// DARTH MAUL
+	if (((pm->gent->client->animationstyle == CS_MAUL) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 17)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_MAUL) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_STAFF_MAUL) ? qtrue : qfalse))
+	{
+		isMaul = qtrue;
+	}
+
+	// MOVIE DUELS
+	if (((pm->gent->client->animationstyle == CS_MOVIEDUELS) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 18)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_MOVIEDUELS) ? qtrue : qfalse))
+	{
+		isMovieDuels = qtrue;
+	}
+
+	// OBI-WAN
+	if (((pm->gent->client->animationstyle == CS_OBIWAN) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 20)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_OBIWAN) ? qtrue : qfalse))
+	{
+		isObiWan = qtrue;
+	}
+
+	// OBI-WAN EP3
+	if (((pm->gent->client->animationstyle == CS_OBIWAN_EP3) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 21)) ? qtrue : qfalse))
+	{
+		isObiWanEP3 = qtrue;
+	}
+
+	// PALPATINE
+	if (((pm->gent->client->animationstyle == CS_PALPATINE) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 22)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_PALP) ? qtrue : qfalse))
+	{
+		isPalpatine = qtrue;
+	}
+
+	// KYLO REN
+	if (((pm->gent->client->animationstyle == CS_KYLO_REN) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 24)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_KYLO_REN) ? qtrue : qfalse))
+	{
+		isKyloRen = qtrue;
+	}
+
+	// REY
+	if (((pm->gent->client->animationstyle == CS_REY) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 25)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_REY) ? qtrue : qfalse))
+	{
+		isRey = qtrue;
+	}
+
+	// VADER
+	if (((pm->gent->client->animationstyle == CS_VADER) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 27)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_VADER) ? qtrue : qfalse))
+	{
+		isVader = qtrue;
+	}
+
+	// YODA
+	if (((pm->gent->client->animationstyle == CS_YODA) ? qtrue : qfalse) ||
+		((g_AnimationStyle && (g_AnimationStyle->integer == 28)) ? qtrue : qfalse) ||
+		((pm->ps->saber[0].type == SABER_SINGLE_YODA) ? qtrue : qfalse))
+	{
+		isYoda = qtrue;
+	}
+
+	// Pack flags into struct
+	animFlags_t flags{};
+
+	flags.isAnakin = isAnakin;
+	flags.isBenKenobi = isBenKenobi;
+	flags.isCalKestis = isCalKestis;
+	flags.isDarkForces2 = isDarkForces2;
+	flags.isCountDooku = isCountDooku;
+	flags.isGalenMarek = isGalenMarek;
+	flags.isQuiGonJinn = isQuiGonJinn;
+	flags.isGrievous = isGrievous;
+	flags.isKotor = isKotor;
+	flags.isLukeSkywalker = isLukeSkywalker;
+	flags.isMaceWindu = isMaceWindu;
+	flags.isMaul = isMaul;
+	flags.isMovieDuels = isMovieDuels;
+	flags.isObiWan = isObiWan;
+	flags.isObiWanEP3 = isObiWanEP3;
+	flags.isPalpatine = isPalpatine;
+	flags.isKyloRen = isKyloRen;
+	flags.isRey = isRey;
+	flags.isVader = isVader;
+	flags.isYoda = isYoda;
+
+	return flags;
+}
+
 static Vehicle_t* PM_RidingVehicle()
 {
 	return G_IsRidingVehicle(pm->gent);
@@ -4360,7 +4595,7 @@ static int PM_GetLandingAnim()
 	case BOTH_STABDOWN_WINDU:
 		///////////////////////////////////////////
 	case BOTH_SMASHDOWN_DUAL:
-	case BOTH_SMASHDOWN_MEDIUM:
+	case BOTH_SMASHDOWN_SINGLE:
 	case BOTH_SMASHDOWN_STAFF:
 		//////////////////////////////////////////
 
@@ -8842,6 +9077,11 @@ qboolean PM_WalkingAnim(const int anim)
 	case BOTH_WALK_HEAVY:
 	case BOTH_WALK_MINIGUN:
 	case BOTH_WALK_PISTOL:
+		//////////////////////////////////////////
+			// ANAKIN
+	case BOTH_WALK1_ANI:
+	case BOTH_WALK2_ANI:
+	case BOTH_WALK_DUAL_ANI:
 		return qtrue;
 	default:;
 	}
@@ -8901,6 +9141,13 @@ qboolean PM_RunningAnim(const int anim)
 	case BOTH_JOG_HEAVY:
 	case BOTH_JOG_MINIGUN:
 	case BOTH_JOG_PISTOL:
+		// ANAKIN
+	case BOTH_RUN1_ANI:
+	case BOTH_RUN2_ANI:
+	case BOTH_RUN_DUAL_ANI:
+	case BOTH_RUN_STAFF_ANI:
+	case BOTH_SPRINT_ANI_LIGHTSABER:
+	case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
 		return qtrue;
 	default:;
 	}
@@ -8957,6 +9204,13 @@ static qboolean PM_NotWalkingAnim(const int anim)
 	case BOTH_DASH_R:
 	case BOTH_DASH_L:
 	case BOTH_DASH_B:
+		// ANAKIN
+	case BOTH_RUN1_ANI:
+	case BOTH_RUN2_ANI:
+	case BOTH_RUN_DUAL_ANI:
+	case BOTH_RUN_STAFF_ANI:
+	case BOTH_SPRINT_ANI_LIGHTSABER:
+	case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
 		return qtrue;
 	default:;
 	}
@@ -9002,6 +9256,11 @@ static qboolean PM_SaberWalkAnim(const int anim)
 	case BOTH_WALKBACK_DUAL: //# Walk backwards with dual
 	case BOTH_MENUIDLE1: //# Walk backwards with dual
 	case BOTH_WALK1_STICK: //# Normal yoda walk
+		//////////////////////////////////////////
+			// ANAKIN
+	case BOTH_WALK2_ANI:
+	case BOTH_WALK1_ANI:
+	case BOTH_WALK_DUAL_ANI:
 		return qtrue;
 	default:;
 	}
@@ -10280,6 +10539,331 @@ static void PM_RemoveSprintFlag(qboolean removeFlag)
 	}
 }
 
+static int PM_GetSprintAnim(const pmove_t* pm)
+{
+	animFlags_t flags = PM_Animationstyletable(pm);
+
+	switch (pm->ps->saberAnimLevel)
+	{
+	case SS_DUAL:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_SPRINT_DUAL_LIGHTSABER;
+			}
+			else
+			{
+				return BOTH_SPRINT_DUAL_LIGHTSABER;
+			}
+		}
+		else
+		{
+			return BOTH_SPRINT_DUAL_LIGHTSABER;
+		}
+
+	case SS_STAFF:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_SPRINT_ANI_STAFF_LIGHTSABER;
+			}
+			else
+			{
+				return BOTH_SPRINT_STAFF_LIGHTSABER;
+			}
+		}
+		else
+		{
+			return BOTH_SPRINT_STAFF_LIGHTSABER;
+		}
+
+	default:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_SPRINT_ANI_LIGHTSABER;
+			}
+			else
+			{
+				return BOTH_SPRINT_SINGLE_LIGHTSABER;
+			}
+		}
+		else
+		{
+			return BOTH_SPRINT_SINGLE_LIGHTSABER;
+		}
+	}
+}
+
+static int PM_GetRunAnim(const pmove_t* pm)
+{
+	// Safety
+	if (pm == nullptr ||
+		pm->ps == nullptr ||
+		pm->gent == nullptr ||
+		pm->gent->client == nullptr)
+	{
+		return BOTH_RUN1;
+	}
+
+	// Retrieve animation-style flags
+	animFlags_t flags = PM_Animationstyletable(pm);
+
+	// If saber is being drawn or put away, always use BOTH_RUN1
+	if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
+	{
+		return BOTH_RUN1;
+	}
+
+	// Select run animation based on saberAnimLevel
+	switch (pm->ps->saberAnimLevel)
+	{
+	case SS_DUAL:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_RUN_DUAL_ANI;
+			}
+			else
+			{
+				return BOTH_RUN_DUAL;
+			}
+		}
+		else
+		{
+			return BOTH_RUN_DUAL;
+		}
+
+	case SS_STAFF:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_RUN_STAFF_ANI;
+			}
+			else
+			{
+				return BOTH_RUN_STAFF;
+			}
+		}
+		else
+		{
+			return BOTH_RUN_STAFF;
+		}
+
+	default:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_RUN2_ANI;
+			}
+			else
+			{
+				return BOTH_RUN2;
+			}
+		}
+		else
+		{
+			return BOTH_RUN2;
+		}
+	}
+}
+
+static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_button)
+{
+	if (pm == nullptr ||
+		pm->ps == nullptr ||
+		pm->gent == nullptr ||
+		pm->gent->client == nullptr)
+	{
+		return BOTH_WALK1;
+	}
+
+	animFlags_t flags = PM_Animationstyletable(pm);
+
+	if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
+	{
+		return BOTH_WALK1;
+	}
+
+	// ---------------------------
+	// DUAL SABER WALK
+	// ---------------------------
+	if (pm->ps->saberAnimLevel == SS_DUAL)
+	{
+		if (g_SerenityJediEngineMode->integer == 2)
+		{
+			if (is_holding_block_button == qtrue)
+			{
+				return BOTH_WALK_DUAL;
+			}
+
+			if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
+			{
+				if (in_camera == qtrue)
+				{
+					return BOTH_WALK_DUAL_AMD;
+				}
+				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+				{
+					return BOTH_WALK_DUAL_ANI;
+				}
+				else
+				{
+					return BOTH_WALK_DUAL;
+				}
+			}
+			else
+			{
+				if (pm->gent->client->NPC_class == CLASS_GALEN || pm->gent->client->NPC_class == CLASS_AHSOKA)
+				{
+					return BOTH_WALK_DUAL;
+				}
+				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+				{
+					return BOTH_WALK_DUAL_ANI;
+				}
+				else
+				{
+					return BOTH_WALK_DUAL;
+				}
+			}
+		}
+		else
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+			{
+				return BOTH_WALK_DUAL_ANI;
+			}
+			else
+			{
+				return BOTH_WALK_DUAL;
+			}
+		}
+	}
+
+	// ---------------------------
+	// STAFF SABER WALK
+	// ---------------------------
+	if (pm->ps->saberAnimLevel == SS_STAFF)
+	{
+		if (g_SerenityJediEngineMode->integer == 2)
+		{
+			if (is_holding_block_button == qtrue)
+			{
+				return BOTH_WALK_STAFF;
+			}
+
+			if (pm->gent->client->NPC_class == CLASS_GALEN)
+			{
+				return BOTH_WALK_STAFF;
+			}
+
+			if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
+			{
+				if (in_camera == qtrue)
+				{
+					return BOTH_WALK_STAFF_AMD;
+				}
+				else
+				{
+					return BOTH_WALK_STAFF;
+				}
+			}
+			else
+			{
+				return BOTH_WALK_STAFF_AMD;
+			}
+		}
+		else
+		{
+			return BOTH_WALK_STAFF;
+		}
+	}
+
+	// ---------------------------
+	// SINGLE SABER WALK
+	// ---------------------------
+	if (g_SerenityJediEngineMode->integer == 2)
+	{
+		if ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+			{
+				return BOTH_WALK2_ANI;
+			}
+			else
+			{
+				return BOTH_WALK2;
+			}
+		}
+
+		if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
+		{
+			if (g_RealisticBlockingMode->integer)
+			{
+				if (in_camera == qtrue && pm->gent->client->NPC_class == CLASS_VADER)
+				{
+					return BOTH_WALK1_MDA;
+				}
+				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+				{
+					return BOTH_WALK2_ANI;
+				}
+				else
+				{
+					return BOTH_WALK2;
+				}
+			}
+			else
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 &&
+					flags.isAnakin == qtrue)
+				{
+					return BOTH_WALK1_ANI;
+				}
+				else
+				{
+					return BOTH_WALK1_MDA;
+				}
+			}
+		}
+		else
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 &&
+				flags.isAnakin == qtrue)
+			{
+				return BOTH_WALK1_ANI;
+			}
+			else
+			{
+				return BOTH_WALK1_MDA;
+			}
+		}
+	}
+	else
+	{
+		if (in_camera == qtrue && pm->gent->client->NPC_class == CLASS_VADER)
+		{
+			return BOTH_WALK1_MDA;
+		}
+		else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 &&
+			flags.isAnakin == qtrue)
+		{
+			return BOTH_WALK2_ANI;
+		}
+		else
+		{
+			return BOTH_WALK2;
+		}
+	}
+}
+
 static void PM_Footsteps()
 {
 	float bobmove;
@@ -11244,60 +11828,20 @@ static void PM_Footsteps()
 				//running //sprinting
 				bobmove = 0.4f; // faster speeds bob faster
 
-				if (pm->ps->weapon == WP_SABER /* && pm->ps->SaberActive()*/)
+				if (pm->ps->weapon == WP_SABER)
 				{
-					if ((is_holding_block_button || (pm->cmd.buttons & BUTTON_BLOCK)) && pm->ps->sprintFuel > 15)
+					if ((is_holding_block_button || (pm->cmd.buttons & BUTTON_BLOCK)) &&
+						pm->ps->sprintFuel > 15)
 					{
-						if (pm->ps->saberAnimLevel == SS_DUAL)
-						{
-							PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_DUAL_LIGHTSABER, set_anim_flags);
-						}
-						else if (pm->ps->saberAnimLevel == SS_STAFF)
-						{
-							PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_STAFF_LIGHTSABER, set_anim_flags);
-						}
-						else
-						{
-							PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_SINGLE_LIGHTSABER, set_anim_flags);
-						}
+						const int sprintAnim = PM_GetSprintAnim(pm);
+						PM_SetAnim(pm, SETANIM_LEGS, sprintAnim, set_anim_flags);
 
 						PM_HandleSprint(qtrue);
 					}
 					else
 					{
-						if (pm->ps->saberAnimLevel == SS_DUAL)
-						{
-							if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN_DUAL, set_anim_flags);
-							}
-						}
-						else if (pm->ps->saberAnimLevel == SS_STAFF)
-						{
-							if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN_STAFF, set_anim_flags);
-							}
-						}
-						else
-						{
-							if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN2, set_anim_flags);
-							}
-						}
+						const int runAnim = PM_GetRunAnim(pm);
+						PM_SetAnim(pm, SETANIM_LEGS, runAnim, set_anim_flags);
 
 						PM_RemoveSprintFlag(qtrue);
 					}
@@ -11535,153 +12079,8 @@ static void PM_Footsteps()
 
 				if (pm->ps->weapon == WP_SABER && pm->ps->SaberActive())
 				{
-					if (pm->ps->saberAnimLevel == SS_DUAL)
-					{
-						if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
-						{
-							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, SETANIM_FLAG_NORMAL);
-						}
-						else
-						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								if (is_holding_block_button)
-								{
-									PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_DUAL, set_anim_flags);
-								}
-								else
-								{
-									if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) //npc
-									{
-										if (in_camera) //cosmetics off
-										{
-											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_DUAL_AMD, set_anim_flags);
-										}
-										else
-										{
-											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_DUAL, set_anim_flags);
-										}
-									}
-									else
-									{
-										if (pm->gent->client->NPC_class == CLASS_GALEN || pm->gent->client->
-											NPC_class == CLASS_AHSOKA)
-										{
-											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_DUAL, set_anim_flags);
-										}
-										else
-										{
-											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_DUAL_AMD, set_anim_flags);
-										}
-									}
-								}
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_DUAL, set_anim_flags);
-							}
-						}
-					}
-					else if (pm->ps->saberAnimLevel == SS_STAFF)
-					{
-						if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
-						{
-							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, SETANIM_FLAG_NORMAL);
-						}
-						else
-						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								if (is_holding_block_button)
-								{
-									PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_STAFF, set_anim_flags);
-								}
-								else
-								{
-									if (pm->gent->client->NPC_class == CLASS_GALEN)
-									{
-										PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_STAFF, set_anim_flags);
-									}
-									else
-									{
-										if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) //npc
-										{
-											if (in_camera) //cosmetics off
-											{
-												PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_STAFF_AMD, set_anim_flags);
-											}
-											else
-											{
-												PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_STAFF, set_anim_flags);
-											}
-										}
-										else
-										{
-											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_STAFF_AMD, set_anim_flags);
-										}
-									}
-								}
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_STAFF, set_anim_flags);
-							}
-						}
-					}
-					else
-					{
-						if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
-						{
-							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, SETANIM_FLAG_NORMAL);
-						}
-						else
-						{
-							if (g_SerenityJediEngineMode->integer == 2) // amd mode
-							{
-								if (pm->ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
-								{
-									PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK2, set_anim_flags);
-								}
-								else
-								{
-									if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) //npc
-									{
-										if (g_RealisticBlockingMode->integer) //cosmetics off
-										{
-											if (in_camera && pm->gent->client->NPC_class == CLASS_VADER)//cosmetics off
-											{
-												PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, set_anim_flags);
-											}
-											else
-											{
-												PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK2, set_anim_flags);
-											}
-										}
-										else
-										{
-											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, set_anim_flags);
-											//cosmetics on
-										}
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, SETANIM_FLAG_NORMAL);
-									}
-								}
-							}
-							else
-							{
-								if (in_camera && pm->gent->client->NPC_class == CLASS_VADER) //cosmetics off
-								{
-									PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, set_anim_flags);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK2, set_anim_flags);
-								}
-							}
-						}
-					}
+					const int walkAnim = PM_GetWalkAnim(pm, is_holding_block_button);
+					PM_SetAnim(pm, SETANIM_LEGS, walkAnim, set_anim_flags);
 				}
 				else if (!in_camera && pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_DROIDEKA)
 				{
@@ -14913,6 +15312,17 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_SABERDUALCROUCH:
 		case BOTH_SABERSTAFFCROUCH:
 		case BOTH_WALK1_STICK:
+			//////////////////////////////////////////
+				// ANAKIN
+		case BOTH_WALK1_ANI:
+		case BOTH_WALK2_ANI:
+		case BOTH_WALK_DUAL_ANI:
+		case BOTH_RUN1_ANI:
+		case BOTH_RUN2_ANI:
+		case BOTH_RUN_DUAL_ANI:
+		case BOTH_RUN_STAFF_ANI:
+		case BOTH_SPRINT_ANI_LIGHTSABER:
+		case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
 			anim = pm->ps->legsAnim;
 			break;
 		default:;
@@ -14959,7 +15369,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 				|| new_move == LS_STABDOWN_WINDU
 				///////////////////////////////////////////
 				|| new_move == LS_SMASHDOWN_DUAL
-				|| new_move == LS_SMASHDOWN_MEDIUM
+				|| new_move == LS_SMASHDOWN_SINGLE
 				|| new_move == LS_SMASHDOWN_STAFF
 				//////////////////////////////////////////
 
@@ -15157,7 +15567,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case LS_STABDOWN_WINDU:
 			///////////////////////////////////////////
 		case LS_SMASHDOWN_DUAL:
-		case LS_SMASHDOWN_MEDIUM:
+		case LS_SMASHDOWN_SINGLE:
 		case LS_SMASHDOWN_STAFF:
 			//////////////////////////////////////////
 
@@ -19528,6 +19938,21 @@ saberMoveName_t PM_DoAI_Fake(const int curmove)
 Kata Animationstyles
 =================
 */
+
+static qboolean PM_SaberSmashOnCooldown(const playerState_t* ps)
+{
+	if (!ps)
+	{
+		return qfalse;
+	}
+
+	if (ps->Smash_Count > 0 && (level.time - ps->SaberSmashLastStartTime) < SABER_SMASH_COOLDOWN_MS)
+	{
+		return qtrue;
+	}
+	return qfalse;
+}
+
 static void PM_KataAnimationStyle(void)
 {
 	// Safety
@@ -19539,9 +19964,17 @@ static void PM_KataAnimationStyle(void)
 		return;
 	}
 
+	const int saberOffenseLevel = pm->ps->forcePowerLevel[FP_SABER_OFFENSE];
+	const int forceCurrent = pm->ps->forcePower;
+	const int forceMax = pm->ps->forcePowerMax;
+	const qboolean hasEnoughForce = (forceCurrent >= (int)(forceMax * 0.95f)) ? qtrue : qfalse;
+	const qboolean smashReady = (PM_SaberSmashOnCooldown(pm->ps) == qfalse) ? qtrue : qfalse;
+
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	saberMoveName_t override_move = LS_INVALID;
 
-	//see if we have an overridden (or cancelled) kata move
+	// Check kata override from first saber
 	if (pm->ps->saber[0].kataMove != LS_INVALID)
 	{
 		if (pm->ps->saber[0].kataMove != LS_NONE)
@@ -19549,8 +19982,10 @@ static void PM_KataAnimationStyle(void)
 			override_move = static_cast<saberMoveName_t>(pm->ps->saber[0].kataMove);
 		}
 	}
+
+	// Check kata override from second saber
 	if (override_move == LS_INVALID)
-	{//not overridden by first saber, check second
+	{
 		if (pm->ps->dualSabers)
 		{
 			if (pm->ps->saber[1].kataMove != LS_INVALID)
@@ -19562,7 +19997,8 @@ static void PM_KataAnimationStyle(void)
 			}
 		}
 	}
-	//no overrides, cancelled?
+
+	// Cancelled?
 	if (override_move == LS_INVALID)
 	{
 		if (pm->ps->saber[0].kataMove == LS_NONE)
@@ -19578,30 +20014,36 @@ static void PM_KataAnimationStyle(void)
 		}
 	}
 
+	// No override, apply kata logic
 	if (override_move == LS_INVALID)
 	{
 		switch (pm->ps->saberAnimLevel)
 		{
 		case SS_FAST:
+		{
 			if (pm->ps->dualSabers && pm->ps->saber[1].Active())
 			{
 				PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
 			}
 			else
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer) // permission for the new anims
 				{
-					if ((pm->gent->client->animationstyle == CS_YODA) || (g_AnimationStyle && g_AnimationStyle->integer == 28) || (pm->ps->saber[0].type == SABER_YODA))
+					if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
 					{
-						PM_SetSaberMove(LS_A1_SPECIAL_YODA);
+						PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
 					}
-					else if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+					else if (flags.isYoda == qtrue)
 					{
-						PM_SetSaberMove(LS_STABDOWN_WINDU);
+						PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
 					}
-					else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+					else if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue))
 					{
-						PM_SetSaberMove(LS_STABDOWN_WINDU);
+						PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
 					}
 					else
 					{
@@ -19610,24 +20052,40 @@ static void PM_KataAnimationStyle(void)
 				}
 				else
 				{
-					PM_SetSaberMove(LS_A1_SPECIAL);
+					if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+					{
+						PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+					}
+					else
+					{
+						PM_SetSaberMove(LS_A1_SPECIAL);
+					}
 				}
 			}
-			break;
+		}
+		break;
+
 		case SS_TAVION:
-			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer) // permission for the new anims
 			{
-				if ((pm->gent->client->animationstyle == CS_YODA) || (g_AnimationStyle && g_AnimationStyle->integer == 28) || (pm->ps->saber[0].type == SABER_YODA))
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
 				{
-					PM_SetSaberMove(LS_A1_SPECIAL_YODA);
+					PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
 				}
-				else if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+				else if (flags.isYoda == qtrue)
 				{
-					PM_SetSaberMove(LS_STABDOWN_WINDU);
+					PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
 				}
-				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+				else if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue))
 				{
-					PM_SetSaberMove(LS_STABDOWN_WINDU);
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
 				}
 				else
 				{
@@ -19636,23 +20094,39 @@ static void PM_KataAnimationStyle(void)
 			}
 			else
 			{
-				PM_SetSaberMove(LS_A1_SPECIAL);
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A1_SPECIAL);
+				}
 			}
-			break;
+		}
+		break;
+
 		case SS_MEDIUM:
-			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer)// permission for the new anims
 			{
-				if ((pm->gent->client->animationstyle == CS_ANAKIN) || (g_AnimationStyle && g_AnimationStyle->integer == 1) || (pm->ps->saber[0].type == SABER_ANAKIN))
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
 				{
-					PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN);
+					PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
 				}
-				else if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+				else if (flags.isAnakin == qtrue)
 				{
-					PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
+					PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN); // ANAKIN get his own special attack
 				}
-				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+				else if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue))
 				{
-					PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
 				}
 				else
 				{
@@ -19661,41 +20135,107 @@ static void PM_KataAnimationStyle(void)
 			}
 			else
 			{
-				PM_SetSaberMove(LS_A2_SPECIAL);
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A2_SPECIAL);
+				}
 			}
-			break;
+		}
+		break;
+
 		case SS_STRONG:
-			if ((pm->gent->client->animationstyle == CS_MACE_WINDU) || (g_AnimationStyle && g_AnimationStyle->integer == 16) || (pm->ps->saber[0].type == SABER_WINDU))
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer)// permission for the new anims
 			{
-				PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
+				{
+					PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
+				}
+				else if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue))
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A3_SPECIAL);
+				}
 			}
-			else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+			else
 			{
-				PM_SetSaberMove(LS_SMASHDOWN_MEDIUM);
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A3_SPECIAL);
+				}
 			}
-			else 
-			{
-				PM_SetSaberMove(LS_A3_SPECIAL);
-			}
-			break;
+		}
+		break;
+
 		case SS_DESANN:
-			PM_SetSaberMove(LS_A3_SPECIAL);
-			break;
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer)// permission for the new anims
+			{
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
+				{
+					PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
+				}
+				else if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue))
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A3_SPECIAL);
+				}
+			}
+			else
+			{
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_A3_SPECIAL);
+				}
+			}
+		}
+		break;
+
 		case SS_DUAL:
 		{
-			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer)// permission for the new anims
 			{
-				if ((pm->gent->client->animationstyle == CS_GRIEVOUS) || (g_AnimationStyle && g_AnimationStyle->integer == 11) || (pm->ps->saber[0].type == SABER_GRIE) || (pm->ps->saber[0].type == SABER_GRIE4))
+				if (flags.isGrievous == qtrue)
 				{
 					PM_SetSaberMove(LS_DUAL_SPIN_PROTECT_GRIEVOUS);
 				}
-				else if ((pm->gent->client->animationstyle == CS_KOTOR) || (g_AnimationStyle && g_AnimationStyle->integer == 14) || (pm->ps->saber[0].type == SABER_WINDU))
+				else if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue))
 				{
-					PM_SetSaberMove(LS_SMASHDOWN_DUAL);
-				}
-				else if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
-				{
-					PM_SetSaberMove(LS_SMASHDOWN_DUAL);
+					PM_SetSaberMove(LS_SMASHDOWN_DUAL); // If you have enough power and are level 3, you can do a smashdown attack.
 				}
 				else
 				{
@@ -19704,22 +20244,54 @@ static void PM_KataAnimationStyle(void)
 			}
 			else
 			{
-				PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_DUAL); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_DUAL_SPIN_PROTECT);
+				}
 			}
 		}
 		break;
+
 		case SS_STAFF:
-			if ((pm->gent->client->animationstyle == CS_MOVIEDUELS) || (g_AnimationStyle && g_AnimationStyle->integer == 18))
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer)// permission for the new anims
 			{
-				PM_SetSaberMove(LS_SMASHDOWN_STAFF);
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_STAFF); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_STAFF_SOULCAL);
+				}
 			}
 			else
 			{
-				PM_SetSaberMove(LS_STAFF_SOULCAL);
+				if ((smashReady == qtrue &&
+					saberOffenseLevel == FORCE_LEVEL_3 &&
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+				{
+					PM_SetSaberMove(LS_SMASHDOWN_STAFF); // If you have enough power and are level 3, you can do a smashdown attack.
+				}
+				else
+				{
+					PM_SetSaberMove(LS_STAFF_SOULCAL);
+				}
 			}
-			break;
-		default:;
 		}
+		break;
+		default:
+			break;
+		}
+
 		pm->ps->weaponstate = WEAPON_FIRING;
 		G_DrainPowerForSpecialMove(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER, qtrue);
 	}
@@ -19729,9 +20301,9 @@ static void PM_KataAnimationStyle(void)
 		pm->ps->weaponstate = WEAPON_FIRING;
 		G_DrainPowerForSpecialMove(pm->gent, FP_SABER_OFFENSE, SABER_ALT_ATTACK_POWER, qtrue);
 	}
+
 	if (override_move != LS_NONE)
 	{
-		//not cancelled
 		return;
 	}
 }
@@ -20244,6 +20816,17 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_SABERDUALCROUCH:
 				case BOTH_SABERSTAFFCROUCH:
 				case BOTH_WALK1_STICK:
+					//////////////////////////////////////////
+						// ANAKIN
+				case BOTH_WALK1_ANI:
+				case BOTH_WALK2_ANI:
+				case BOTH_WALK_DUAL_ANI:
+				case BOTH_RUN1_ANI:
+				case BOTH_RUN2_ANI:
+				case BOTH_RUN_DUAL_ANI:
+				case BOTH_RUN_STAFF_ANI:
+				case BOTH_SPRINT_ANI_LIGHTSABER:
+				case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
 					PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
 					break;
 				default:;
@@ -20925,6 +21508,17 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_SABERDUALCROUCH:
 					case BOTH_SABERSTAFFCROUCH:
 					case BOTH_WALK1_STICK:
+						//////////////////////////////////////////
+							// ANAKIN
+					case BOTH_WALK1_ANI:
+					case BOTH_WALK2_ANI:
+					case BOTH_WALK_DUAL_ANI:
+					case BOTH_RUN1_ANI:
+					case BOTH_RUN2_ANI:
+					case BOTH_RUN_DUAL_ANI:
+					case BOTH_RUN_STAFF_ANI:
+					case BOTH_SPRINT_ANI_LIGHTSABER:
+					case BOTH_SPRINT_ANI_STAFF_LIGHTSABER:
 						// Use the current legs anim as the attack anim.
 						anim = pm->ps->legsAnim;
 						break;
@@ -24182,44 +24776,200 @@ void PM_SaberPerfectBlockUpdate(const int new_move)
 	}
 }
 
-// saber status utility tools
+extern float CG_GetSelfTorsoAnimPoint();
+//saber status utility tools
 static qboolean PM_SaberInFullDamageMove(const playerState_t* ps)
 {
-	//The player is attacking with a saber attack that does full damage
-	if (PM_SaberInAttack(ps->saberMove)
-		|| PM_SaberInDamageMove(ps->saberMove)
-		|| PM_SaberInSpecialAttack(ps->torsoAnim) //jacesolaris 2019 test for idle kill
-		|| PM_SaberDoDamageAnim(ps->torsoAnim)
-		|| PM_SuperBreakWinAnim(ps->torsoAnim))
+	if (ps == NULL)
 	{
-		//in attack animation
+		return qfalse;
+	}
+
+	const float torso_anim_point = CG_GetSelfTorsoAnimPoint();
+
+	// Full damage conditions
+	const qboolean inAttack = (PM_SaberInAttack(ps->saberMove) == qtrue) ? qtrue : qfalse;
+	const qboolean inDamage = (PM_SaberInDamageMove(ps->saberMove) == qtrue) ? qtrue : qfalse;
+	const qboolean inSpecial = (PM_SaberInSpecialAttack(ps->torsoAnim) == qtrue) ? qtrue : qfalse;
+	const qboolean inDoDamageAnim = (PM_SaberDoDamageAnim(ps->torsoAnim) == qtrue) ? qtrue : qfalse;
+	const qboolean inKick = (PM_KickMove(ps->saberMove) == qtrue) ? qtrue : qfalse;
+	const qboolean inLock = (PM_InSaberLock(ps->torsoAnim) == qtrue) ? qtrue : qfalse;
+	const qboolean inSuperBreak = (PM_SuperBreakWinAnim(ps->torsoAnim) == qtrue) ? qtrue : qfalse;
+
+	if (inAttack == qtrue ||
+		inDamage == qtrue ||
+		inSpecial == qtrue ||
+		(inDoDamageAnim == qtrue && inKick == qfalse && inLock == qfalse) ||
+		inSuperBreak == qtrue)
+	{
+		// Invert MD BG partial windows → PM full windows
+		switch (ps->torsoAnim)
+		{
+		case BOTH_ATTACK_BACK:
+			if (torso_anim_point >= 0.30f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_A2_STABBACK1:
+			if (torso_anim_point >= 0.40f && torso_anim_point <= 0.65f) { return qtrue; }
+			break;
+
+		case BOTH_CROUCHATTACKBACK1:
+			if (torso_anim_point >= 0.25f && torso_anim_point <= 0.75f) { return qtrue; }
+			break;
+
+		case BOTH_BUTTERFLY_LEFT:
+		case BOTH_BUTTERFLY_RIGHT:
+		case BOTH_BUTTERFLY_FL1:
+		case BOTH_BUTTERFLY_FR1:
+		case BOTH_FJSS_TR_BL:
+		case BOTH_FJSS_TL_BR:
+			if (torso_anim_point >= 0.25f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_FORCELEAP2_T__B_:
+			if (torso_anim_point >= 0.50f && torso_anim_point <= 0.75f) { return qtrue; }
+			break;
+
+		case BOTH_JUMPFLIPSTABDOWN:
+		case BOTH_JUMPFLIPSLASHDOWN1:
+			if (torso_anim_point >= 0.20f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_ROLL_STAB:
+			if (torso_anim_point >= 0.30f && torso_anim_point <= 0.75f) { return qtrue; }
+			break;
+
+		case BOTH_JUMPATTACK6:
+			if (torso_anim_point >= 0.25f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_JUMPATTACK7:
+			if (torso_anim_point >= 0.35f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_SPINATTACK6:
+			if (torso_anim_point >= 0.35f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_SPINATTACK7:
+			if (torso_anim_point >= 0.45f && torso_anim_point <= 0.85f) { return qtrue; }
+			break;
+
+		case BOTH_FORCELONGLEAP_ATTACK:
+			if (torso_anim_point >= 0.20f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_STABDOWN:
+		case BOTH_STABDOWN_STAFF:
+		case BOTH_STABDOWN_DUAL:
+		case BOTH_STABDOWN_BACKHAND:
+			if (torso_anim_point >= 0.50f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_SMASHDOWN_SINGLE:
+			if (torso_anim_point >= 0.10f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_SMASHDOWN_DUAL:
+			if (torso_anim_point >= 0.45f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_SMASHDOWN_STAFF:
+			if (torso_anim_point >= 0.20f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		case BOTH_A6_SABERPROTECT:
+			if (torso_anim_point >= 0.30f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_A7_SOULCAL:
+			if (torso_anim_point >= 0.25f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_A1_SPECIAL:
+		case BOTH_A2_SPECIAL:
+		case BOTH_A3_SPECIAL:
+			if (torso_anim_point >= 0.20f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_FLIP_ATTACK7:
+			if (torso_anim_point >= 0.40f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_PULL_IMPALE_STAB:
+		case BOTH_PULL_IMPALE_SWING:
+			if (torso_anim_point >= 0.40f && torso_anim_point <= 0.70f) { return qtrue; }
+			break;
+
+		case BOTH_ALORA_SPIN_SLASH:
+			if (torso_anim_point >= 0.22f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_A6_FB:
+		case BOTH_A6_LR:
+			if (torso_anim_point >= 0.45f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+			// NEW MOVIEDUELS KATA ANIMS
+		case BOTH_A1_SPECIAL_YODA:
+			if (torso_anim_point >= 0.10f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_A2_SPECIAL_ANAKIN:
+			if (torso_anim_point >= 0.10f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_A6_SABERPROTECT_GRIEVOUS:
+			if (torso_anim_point >= 0.10f && torso_anim_point <= 0.90f) { return qtrue; }
+			break;
+
+		case BOTH_STABDOWN_WINDU:
+			if (torso_anim_point >= 0.50f && torso_anim_point <= 0.80f) { return qtrue; }
+			break;
+
+		default:
+			break;
+		}
+
+		// If not blocked, full damage
 		if (ps->saberBlocked == BLOCKED_NONE)
 		{
-			//and not attempting to do some sort of block animation
 			return qtrue;
 		}
 	}
+
 	return qfalse;
 }
 
-qboolean BG_SaberInTransitionDamageMove(const playerState_t* ps)
+qboolean PM_SaberInTransitionDamageMove(const playerState_t* ps)
 {
-	//player is in a saber move where it does transitional damage
-	if (PM_SaberInTransition(ps->saberMove))
+	if (ps == NULL)
+	{
+		return qfalse;
+	}
+
+	// Transitional saber moves do damage only during transition
+	const qboolean inTransition = (PM_SaberInTransition(ps->saberMove) == qtrue) ? qtrue : qfalse;
+
+	if (inTransition == qtrue)
 	{
 		if (ps->saberBlocked == BLOCKED_NONE)
 		{
-			//and not attempting to do some sort of block animation
 			return qtrue;
 		}
 	}
+
 	return qfalse;
 }
 
 qboolean PM_SaberInNonIdleDamageMove(const playerState_t* ps)
 {
-	//player is in a saber move that does something more than idle saber damage
-	return PM_SaberInFullDamageMove(ps);
+	if (ps == NULL)
+	{
+		return qfalse;
+	}
+
+	return (PM_SaberInFullDamageMove(ps) == qtrue) ? qtrue : qfalse;
 }
 
 extern qboolean PM_BounceAnim(int anim);

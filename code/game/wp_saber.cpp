@@ -238,7 +238,7 @@ extern qboolean BG_InSlowBounce(const playerState_t* ps);
 extern qboolean PM_InSlowBounce(const playerState_t* ps);
 qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker, vec3_t hit_loc);
 extern qboolean WalkCheck(const gentity_t* self);
-extern qboolean pm_saber_innonblockable_attack(int anim);
+extern qboolean PM_SaberInnonblockableAttack(int anim);
 extern int BG_InGrappleMove(int anim);
 extern qboolean PM_KickMove(int move);
 extern qboolean PM_SaberInDamageMove(int move);
@@ -913,7 +913,7 @@ static qboolean SaberCanNotHolster(const gentity_t* ent)
 {
 	if (ent->client->ps.saber[0].type == SABER_DAGGER ||
 		ent->client->ps.saber[0].type == SABER_STAFF_SFX ||
-		ent->client->ps.saber[0].type == SABER_GRIE ||
+		ent->client->ps.saber[0].type == SABER_DUAL_GRIE ||
 		ent->client->NPC_class == CLASS_JANGO ||
 		ent->client->NPC_class == CLASS_JANGODUAL ||
 		!Q_stricmp("md_grievous4", ent->NPC_type) ||
@@ -2708,7 +2708,7 @@ static int G_GetAttackDamageMD(const gentity_t* self, const int min_dmg, const i
 
 extern float damageModifier[];
 extern float hitLocHealthPercentage[];
-extern qboolean BG_SaberInTransitionDamageMove(const playerState_t* ps);
+extern qboolean PM_SaberInTransitionDamageMove(const playerState_t* ps);
 extern cvar_t* g_dismemberProbabilities;
 
 static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, const int base_d_flags,
@@ -3146,7 +3146,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 	qboolean did_damage = qfalse;
 	float max_dmg;
 	const saberType_t saber_type = ent->client->ps.saber[saberNum].type;
-
+	int partialDamage = BG_SaberInPartialDamageMove(ent) ? 1 : 0;
 	const qboolean is_holding_block_button_and_attack = ((ent->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button = ((ent->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((ent->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
@@ -3168,7 +3168,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 		return qfalse;
 	}
 
-	if (BG_SaberInTransitionDamageMove(&ent->client->ps)) //if in a transition dont do damage
+	if (PM_SaberInTransitionDamageMove(&ent->client->ps)) //if in a transition dont do damage
 	{
 		return qfalse;
 	}
@@ -3181,7 +3181,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 
 	if (!(ent->client->ps.forcePowersActive & 1 << FP_SPEED))
 	{
-		if (BG_SaberInPartialDamageMove(ent)) //if this is true dont do damage
+		if (partialDamage == qtrue) //if this is true dont do damage
 		{
 			return qfalse;
 		}
@@ -7770,7 +7770,7 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 	// Trace down from blade tip (deep enough to guarantee floor impact).
 	vec3_t bottom;
 	VectorCopy(bladeOrigin, bottom);
-	bottom[2] -= 512.0f; // deep enough to guarantee floor impact
+	bottom[2] -= 256.0f; // deep enough to guarantee floor impact
 
 	gi.trace(&trace,
 		bladeOrigin,
@@ -7785,7 +7785,7 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 	// ----------------------------------------------------------------------
 	// Play effect + sound at impact point
 	// ----------------------------------------------------------------------
-	G_PlayEffect(G_EffectIndex("scepter/slam.efx"), trace.endpos, trace.plane.normal);
+	G_PlayEffect(G_EffectIndex("saber/sabersmash.efx"), trace.endpos, trace.plane.normal);
 
 	// ----------------------------------------------------------------------
 	// Radius search setup
@@ -8630,7 +8630,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
-					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A7_SOULCAL
@@ -8699,7 +8699,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A7_SOULCAL
@@ -9281,28 +9281,6 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 					ent->client->ps.saber[saberNum].splashKnockback2);
 			}
 		}
-		else if (saber_hit_wall &&
-			(ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF))
-		{
-			G_PlayerSaberSmash(ent);
-		}
-		else if (saber_hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL)
-		{
-			if (!ent->client->ps.saberSmashTriggered && !BG_SaberInPartialDamageMove(ent))
-			{
-				G_PlayerSaberSmash(ent);
-				ent->client->ps.saberSmashTriggered = qtrue;
-			}
-		}
-		else
-		{
-			// reset when animation ends/changes
-			if (ent->client->ps.torsoAnim != BOTH_SMASHDOWN_DUAL)
-			{
-				ent->client->ps.saberSmashTriggered = qfalse;
-			}
-		}
 	}
 
 	if (WP_SaberApplyDamageJKA(ent, base_damage, base_d_flags, broken_parry, saberNum, bladeNum,
@@ -9660,6 +9638,11 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 	qboolean saber_hit_wall = qfalse;
 	qboolean broken_parry = qfalse;
 	qboolean saber_in_special = PM_SaberInSpecialAttack(ent->client->ps.torsoAnim);
+	int isSmashTorso = (ent->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE ||
+		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF ||
+		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL ||
+		ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU) ? 1 : 0;
+	int partialDamage = BG_SaberInPartialDamageMove(ent) ? 1 : 0;
 
 	for (int& ven : victimEntityNum)
 	{
@@ -10424,7 +10407,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
-					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A7_SOULCAL
@@ -10484,7 +10467,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A7_SOULCAL
@@ -10918,114 +10901,98 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 	}
 	else
 	{
-		if (saber_hit_wall
-			&& (ent->client->ps.saber[saberNum].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer)
-			&& (PM_SaberInAttackPure(ent->client->ps.saberMove) || ent->client->ps.saberMove == LS_A_JUMP_T__B_))
+		if (saber_hit_wall)
 		{
-			//bounce off walls
-			//do anim
-			ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
-			ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
-			//do bounce sound & force feedback
-			WP_SaberBounceOnWallSound(ent, saberNum, bladeNum);
-			//do hit effect
-			if (!g_saberNoEffects)
-			{
-				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect)
+			if ((ent->client->ps.saber[saberNum].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer)
+				&& (PM_SaberInAttackPure(ent->client->ps.saberMove) || ent->client->ps.saberMove == LS_A_JUMP_T__B_))
+			{//bounce off walls
+				ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
+				ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
+				//do bounce sound & force feedback
+				WP_SaberBounceOnWallSound(ent, saberNum, bladeNum);
+				//do hit effect
+				if (!g_saberNoEffects)
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					}
+					else
+					{
+						G_PlayEffect("saber/saber_bodyhit", saberHitLocation, saberHitNormal);
+					}
 				}
-				else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+				//do radius damage/knockback, if any
+				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
+						ent->client->ps.saber[saberNum].splashDamage,
+						ent->client->ps.saber[saberNum].splashKnockback);
 				}
 				else
 				{
-					G_PlayEffect("saber/saber_bodyhit", saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
+						ent->client->ps.saber[saberNum].splashDamage2,
+						ent->client->ps.saber[saberNum].splashKnockback2);
 				}
 			}
-			//do radius damage/knockback, if any
-			if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
-			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
-					ent->client->ps.saber[saberNum].splashDamage,
-					ent->client->ps.saber[saberNum].splashKnockback);
-			}
-			else
-			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
-					ent->client->ps.saber[saberNum].splashDamage2,
-					ent->client->ps.saber[saberNum].splashKnockback2);
-			}
-		}
-		else if (saber_hit_wall &&
-			!PM_SaberInAttackPure(ent->client->ps.saberMove) &&
-			!PM_CrouchAnim(ent->client->ps.legsAnim) &&
-			!PM_WalkingAnim(ent->client->ps.legsAnim) &&
-			!PM_RunningAnim(ent->client->ps.legsAnim) &&
-			ent->client->buttons & BUTTON_WALKING &&
-			ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK &&
-			(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
-			(ent->client->ps.forcePower < BLOCKPOINTS_DANGER || ent->client->ps.blockPoints < BLOCKPOINTS_DANGER))
-		{
-			//reflect from wall
-			ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
-			ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
+			else if (!PM_SaberInAttackPure(ent->client->ps.saberMove) &&
+				!PM_CrouchAnim(ent->client->ps.legsAnim) &&
+				!PM_WalkingAnim(ent->client->ps.legsAnim) &&
+				!PM_RunningAnim(ent->client->ps.legsAnim) &&
+				ent->client->buttons & BUTTON_WALKING &&
+				ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK &&
+				(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
+				(ent->client->ps.forcePower < BLOCKPOINTS_DANGER || ent->client->ps.blockPoints < BLOCKPOINTS_DANGER))
+			{//reflect from wall
+				ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
+				ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
 
-			//do hit effect
-			if (!g_saberNoEffects)
-			{
-				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect)
+				//do hit effect
+				if (!g_saberNoEffects)
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					}
+					else
+					{
+						G_PlayEffect("saber/saber_cut", saberHitLocation, saberHitNormal);
+					}
 				}
-				else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+				//do radius damage/knockback, if any
+				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
+						ent->client->ps.saber[saberNum].splashDamage,
+						ent->client->ps.saber[saberNum].splashKnockback);
 				}
 				else
 				{
-					G_PlayEffect("saber/saber_cut", saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
+						ent->client->ps.saber[saberNum].splashDamage2,
+						ent->client->ps.saber[saberNum].splashKnockback2);
 				}
 			}
-			//do radius damage/knockback, if any
-			if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
+			else if ((isSmashTorso == qtrue) && (partialDamage == qfalse))
 			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
-					ent->client->ps.saber[saberNum].splashDamage,
-					ent->client->ps.saber[saberNum].splashKnockback);
-			}
-			else
-			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
-					ent->client->ps.saber[saberNum].splashDamage2,
-					ent->client->ps.saber[saberNum].splashKnockback2);
-			}
-		}
-		else if (saber_hit_wall &&
-			(ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF))
-		{
-			G_PlayerSaberSmash(ent);
-		}
-		else if (saber_hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL)
-		{
-			if (!ent->client->ps.saberSmashTriggered && !BG_SaberInPartialDamageMove(ent))
-			{
-				G_PlayerSaberSmash(ent);
-				ent->client->ps.saberSmashTriggered = qtrue;
-			}
-		}
-		else
-		{
-			// reset when animation ends/changes
-			if (ent->client->ps.torsoAnim != BOTH_SMASHDOWN_DUAL)
-			{
-				ent->client->ps.saberSmashTriggered = qfalse;
+				if (ent->client->ps.saberSmashTriggered == qfalse)
+				{
+					G_PlayerSaberSmash(ent);
+					ent->client->ps.saberSmashTriggered = qtrue;
+				}
 			}
 		}
 	}
@@ -11085,6 +11052,11 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 	qboolean saber_hit_wall = qfalse;
 	qboolean broken_parry = qfalse;
 	qboolean saber_in_special = PM_SaberInSpecialAttack(ent->client->ps.torsoAnim);
+	int isSmashTorso = (ent->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE ||
+		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF ||
+		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL ||
+		ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU) ? 1 : 0;
+	int partialDamage = BG_SaberInPartialDamageMove(ent) ? 1 : 0;
 
 	for (int& ven : victimEntityNum)
 	{
@@ -11842,7 +11814,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					|| ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
-					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE
 					|| ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
 					////////////////////////////////////////
 					|| ent->client->ps.torsoAnim == BOTH_A7_SOULCAL
@@ -11902,7 +11874,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					|| hit_owner->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
-					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE
 					|| hit_owner->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
 					////////////////////////////////////////
 					|| hit_owner->client->ps.torsoAnim == BOTH_A7_SOULCAL
@@ -12336,114 +12308,98 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 	}
 	else
 	{
-		if (saber_hit_wall
-			&& (ent->client->ps.saber[saberNum].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer)
-			&& (PM_SaberInAttackPure(ent->client->ps.saberMove) || ent->client->ps.saberMove == LS_A_JUMP_T__B_))
+		if (saber_hit_wall)
 		{
-			//bounce off walls
-			//do anim
-			ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
-			ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
-			//do bounce sound & force feedback
-			WP_SaberBounceOnWallSound(ent, saberNum, bladeNum);
-			//do hit effect
-			if (!g_saberNoEffects)
-			{
-				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect)
+			if ((ent->client->ps.saber[saberNum].saberFlags & SFL_BOUNCE_ON_WALLS || g_SaberBounceOnWalls->integer)
+				&& (PM_SaberInAttackPure(ent->client->ps.saberMove) || ent->client->ps.saberMove == LS_A_JUMP_T__B_))
+			{//bounce off walls
+				ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
+				ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
+				//do bounce sound & force feedback
+				WP_SaberBounceOnWallSound(ent, saberNum, bladeNum);
+				//do hit effect
+				if (!g_saberNoEffects)
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					}
+					else
+					{
+						G_PlayEffect("saber/saber_bodyhit", saberHitLocation, saberHitNormal);
+					}
 				}
-				else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+				//do radius damage/knockback, if any
+				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
+						ent->client->ps.saber[saberNum].splashDamage,
+						ent->client->ps.saber[saberNum].splashKnockback);
 				}
 				else
 				{
-					G_PlayEffect("saber/saber_bodyhit", saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
+						ent->client->ps.saber[saberNum].splashDamage2,
+						ent->client->ps.saber[saberNum].splashKnockback2);
 				}
 			}
-			//do radius damage/knockback, if any
-			if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
-			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
-					ent->client->ps.saber[saberNum].splashDamage,
-					ent->client->ps.saber[saberNum].splashKnockback);
-			}
-			else
-			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
-					ent->client->ps.saber[saberNum].splashDamage2,
-					ent->client->ps.saber[saberNum].splashKnockback2);
-			}
-		}
-		else if (saber_hit_wall &&
-			!PM_SaberInAttackPure(ent->client->ps.saberMove) &&
-			!PM_CrouchAnim(ent->client->ps.legsAnim) &&
-			!PM_WalkingAnim(ent->client->ps.legsAnim) &&
-			!PM_RunningAnim(ent->client->ps.legsAnim) &&
-			ent->client->buttons & BUTTON_WALKING &&
-			ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK &&
-			(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
-			(ent->client->ps.forcePower < BLOCKPOINTS_DANGER || ent->client->ps.blockPoints < BLOCKPOINTS_DANGER))
-		{
-			//reflect from wall
-			ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
-			ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
+			else if (!PM_SaberInAttackPure(ent->client->ps.saberMove) &&
+				!PM_CrouchAnim(ent->client->ps.legsAnim) &&
+				!PM_WalkingAnim(ent->client->ps.legsAnim) &&
+				!PM_RunningAnim(ent->client->ps.legsAnim) &&
+				ent->client->buttons & BUTTON_WALKING &&
+				ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK &&
+				(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
+				(ent->client->ps.forcePower < BLOCKPOINTS_DANGER || ent->client->ps.blockPoints < BLOCKPOINTS_DANGER))
+			{//reflect from wall
+				ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
+				ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
 
-			//do hit effect
-			if (!g_saberNoEffects)
-			{
-				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect)
+				//do hit effect
+				if (!g_saberNoEffects)
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect, saberHitLocation, saberHitNormal);
+					}
+					else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
+						&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+					{
+						G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					}
+					else
+					{
+						G_PlayEffect("saber/saber_cut", saberHitLocation, saberHitNormal);
+					}
 				}
-				else if (WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum)
-					&& ent->client->ps.saber[saberNum].hitOtherEffect2)
+				//do radius damage/knockback, if any
+				if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
 				{
-					G_PlayEffect(ent->client->ps.saber[saberNum].hitOtherEffect2, saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
+						ent->client->ps.saber[saberNum].splashDamage,
+						ent->client->ps.saber[saberNum].splashKnockback);
 				}
 				else
 				{
-					G_PlayEffect("saber/saber_cut", saberHitLocation, saberHitNormal);
+					WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
+						ent->client->ps.saber[saberNum].splashDamage2,
+						ent->client->ps.saber[saberNum].splashKnockback2);
 				}
 			}
-			//do radius damage/knockback, if any
-			if (!WP_SaberBladeUseSecondBladeStyle(&ent->client->ps.saber[saberNum], bladeNum))
+			else if ((isSmashTorso == qtrue) && (partialDamage == qfalse))
 			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius,
-					ent->client->ps.saber[saberNum].splashDamage,
-					ent->client->ps.saber[saberNum].splashKnockback);
-			}
-			else
-			{
-				WP_SaberRadiusDamage(ent, saberHitLocation, ent->client->ps.saber[saberNum].splashRadius2,
-					ent->client->ps.saber[saberNum].splashDamage2,
-					ent->client->ps.saber[saberNum].splashKnockback2);
-			}
-		}
-		else if (saber_hit_wall &&
-			(ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM || ent->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF))
-		{
-			G_PlayerSaberSmash(ent);
-		}
-		else if (saber_hit_wall &&
-			ent->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL)
-		{
-			if (!ent->client->ps.saberSmashTriggered && !BG_SaberInPartialDamageMove(ent))
-			{
-				G_PlayerSaberSmash(ent);
-				ent->client->ps.saberSmashTriggered = qtrue;
-			}
-		}
-		else
-		{
-			// reset when animation ends/changes
-			if (ent->client->ps.torsoAnim != BOTH_SMASHDOWN_DUAL)
-			{
-				ent->client->ps.saberSmashTriggered = qfalse;
+				if (ent->client->ps.saberSmashTriggered == qfalse)
+				{
+					G_PlayerSaberSmash(ent);
+					ent->client->ps.saberSmashTriggered = qtrue;
+				}
 			}
 		}
 	}
@@ -15020,7 +14976,7 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 			|| self->client->ps.torsoAnim == BOTH_STABDOWN_WINDU
 			////////////////////////////////////////
 			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_DUAL
-			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_MEDIUM
+			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE
 			|| self->client->ps.torsoAnim == BOTH_SMASHDOWN_STAFF
 			////////////////////////////////////////
 			|| self->client->ps.torsoAnim == BOTH_A7_SOULCAL
@@ -15979,7 +15935,7 @@ qboolean NPC_Should_Block(const gentity_t* npc)
 	}
 
 	// Cannot block during non‑blockable saber attacks
-	if (pm_saber_innonblockable_attack(npc->client->ps.torsoAnim) == qtrue)
+	if (PM_SaberInnonblockableAttack(npc->client->ps.torsoAnim) == qtrue)
 	{
 		return qfalse;
 	}
@@ -23278,7 +23234,7 @@ static qboolean IsAllowedToUseForcePowers(const gentity_t* self)
 			|| PM_SaberInBounce(self->client->ps.saberMove)
 			|| PM_SaberInKnockaway(self->client->ps.saberMove)
 			|| PM_SaberInBrokenParry(self->client->ps.saberMove)
-			|| pm_saber_innonblockable_attack(self->client->ps.torsoAnim))) //npc force use limit
+			|| PM_SaberInnonblockableAttack(self->client->ps.torsoAnim))) //npc force use limit
 	{
 		return qfalse;
 	}
@@ -23319,7 +23275,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 	qboolean no_resist = qfalse;
 	qboolean is_class_guard = qfalse;
 
-	if (pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
+	if (PM_SaberInnonblockableAttack(self->client->ps.torsoAnim))
 	{
 		return;
 	}
@@ -24754,7 +24710,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 		damage_level = FORCE_LEVEL_1;
 	}
 
-	if (pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
+	if (PM_SaberInnonblockableAttack(self->client->ps.torsoAnim))
 	{
 		return;
 	}
@@ -42407,7 +42363,7 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 	}
 
 	if (PM_ForceUsingSaberAnim(self->client->ps.torsoAnim) ||
-		pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
+		PM_SaberInnonblockableAttack(self->client->ps.torsoAnim))
 	{
 		using_force = qtrue;
 	}
@@ -42772,7 +42728,7 @@ void G_SaberBounce(const gentity_t* self, gentity_t* other)
 		return;
 	}
 
-	if (pm_saber_innonblockable_attack(self->client->ps.torsoAnim))
+	if (PM_SaberInnonblockableAttack(self->client->ps.torsoAnim))
 	{
 		return;
 	}
@@ -43141,81 +43097,90 @@ void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps)
 
 qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 {
-	//The player is attacking with a saber attack that does NO damage AT THIS POINT
-	if (pm_saber_innonblockable_attack(self->client->ps.torsoAnim) || self->client->ps.torsoAnim == BOTH_ROLL_STAB)
+	if (self == NULL || self->client == NULL)
 	{
-		float current = 0.0f;
-		int end = 0;
-		int start = 0;
+		return qfalse;
+	}
 
-		if (gi.G2API_GetBoneAnimIndex(&self->ghoul2[self->playerModel],
-			self->lowerLumbarBone,
-			level.time,
-			&current,
-			&start,
-			&end,
-			nullptr,
-			nullptr,
-			nullptr))
-		{
-			const float percent_complete = (current - start) / (end - start);
+	if (PM_SaberInnonblockableAttack(self->client->ps.torsoAnim) == qfalse)
+	{
+		return qfalse;
+	}
 
-			if (g_IsSaberDoingAttackDamage->integer || g_DebugSaberCombat->integer)
-			{
-				gi.Printf("%f\n", percent_complete);
-			}
+	float current = 0.0f;
+	int   start = 0;
+	int   end = 0;
 
-			switch (self->client->ps.torsoAnim)
-			{
-			case BOTH_ATTACK_BACK: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.80);
-			case BOTH_A2_STABBACK1: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.65);
-			case BOTH_CROUCHATTACKBACK1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.75);
-			case BOTH_BUTTERFLY_LEFT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_BUTTERFLY_RIGHT: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_BUTTERFLY_FL1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_BUTTERFLY_FR1: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_FJSS_TR_BL: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_FJSS_TL_BR: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_FORCELEAP2_T__B_: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
-			case BOTH_JUMPFLIPSTABDOWN: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
-			case BOTH_JUMPFLIPSLASHDOWN1: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
-			case BOTH_ROLL_STAB: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.75);
-			case BOTH_JUMPATTACK6: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_JUMPATTACK7: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
-			case BOTH_SPINATTACK6: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
-			case BOTH_SPINATTACK7: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
-			case BOTH_FORCELONGLEAP_ATTACK: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.80);
-			case BOTH_STABDOWN: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-			case BOTH_STABDOWN_STAFF: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-			case BOTH_STABDOWN_DUAL: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-			case BOTH_A6_SABERPROTECT: return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
-			case BOTH_A7_SOULCAL: return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			case BOTH_A1_SPECIAL: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
-			case BOTH_A2_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-			case BOTH_A3_SPECIAL: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+	if (gi.G2API_GetBoneAnimIndex(&self->ghoul2[self->playerModel],
+		self->lowerLumbarBone,
+		level.time,
+		&current,
+		&start,
+		&end,
+		NULL,
+		NULL,
+		NULL) == 0)
+	{
+		return qfalse;
+	}
 
-				//  NEW KATA ANIMS FOR ANIMATION SYSTEM
-				///////////////////////////////////////
-			case BOTH_A1_SPECIAL_YODA: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
-			case BOTH_A2_SPECIAL_ANAKIN: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
-			case BOTH_A6_SABERPROTECT_GRIEVOUS: return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
-			case BOTH_STABDOWN_WINDU: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-				///////////////////////////////////////////
-			case BOTH_SMASHDOWN_DUAL: return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
-			case BOTH_SMASHDOWN_STAFF: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
-			case BOTH_SMASHDOWN_MEDIUM: return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.80);
-				//////////////////////////////////////////
+	if (end == start)
+	{
+		return qfalse;
+	}
 
-			case BOTH_FLIP_ATTACK7: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.90);
-			case BOTH_PULL_IMPALE_STAB: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
-			case BOTH_PULL_IMPALE_SWING: return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
-			case BOTH_ALORA_SPIN_SLASH: return static_cast<qboolean>(percent_complete < 0.22 || percent_complete > 0.90);
-			case BOTH_A6_FB: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
-			case BOTH_A6_LR: return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
-			case BOTH_GRAPPLE_FIRE: return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
-			default:;
-			}
-		}
+	const float percent_complete = (current - (float)start) / (float)(end - start);
+
+#ifndef _DEBUG
+	gi.Printf("%f\n", percent_complete);
+#endif
+
+	switch (self->client->ps.torsoAnim)
+	{
+	case BOTH_ATTACK_BACK:             return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.80);
+	case BOTH_A2_STABBACK1:            return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.65);
+	case BOTH_CROUCHATTACKBACK1:       return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.75);
+	case BOTH_BUTTERFLY_LEFT:          return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_BUTTERFLY_RIGHT:         return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_BUTTERFLY_FL1:           return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_BUTTERFLY_FR1:           return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_FJSS_TR_BL:              return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_FJSS_TL_BR:              return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_FORCELEAP2_T__B_:        return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
+	case BOTH_JUMPFLIPSTABDOWN:        return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+	case BOTH_JUMPFLIPSLASHDOWN1:      return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+	case BOTH_ROLL_STAB:               return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.75);
+	case BOTH_JUMPATTACK6:             return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_JUMPATTACK7:             return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
+	case BOTH_SPINATTACK6:             return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
+	case BOTH_SPINATTACK7:             return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
+	case BOTH_FORCELONGLEAP_ATTACK:    return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+	case BOTH_STABDOWN:                return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+	case BOTH_STABDOWN_STAFF:          return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+	case BOTH_STABDOWN_DUAL:           return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+	case BOTH_SMASHDOWN_SINGLE:        return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.80);
+	case BOTH_SMASHDOWN_DUAL:          return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
+	case BOTH_SMASHDOWN_STAFF:         return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
+	case BOTH_STABDOWN_BACKHAND:       return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+	case BOTH_A6_SABERPROTECT:         return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.90);
+	case BOTH_A7_SOULCAL:              return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
+	case BOTH_A1_SPECIAL:              return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+	case BOTH_A2_SPECIAL:              return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+	case BOTH_A3_SPECIAL:              return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.90);
+	case BOTH_FLIP_ATTACK7:            return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.90);
+	case BOTH_PULL_IMPALE_STAB:        return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
+	case BOTH_PULL_IMPALE_SWING:       return static_cast<qboolean>(percent_complete < 0.40 || percent_complete > 0.70);
+	case BOTH_ALORA_SPIN_SLASH:        return static_cast<qboolean>(percent_complete < 0.22 || percent_complete > 0.90);
+	case BOTH_A6_FB:                   return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
+	case BOTH_A6_LR:                   return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.80);
+		//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+		///////////////////////////////////////
+	case BOTH_A1_SPECIAL_YODA:         return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+	case BOTH_A2_SPECIAL_ANAKIN:       return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+	case BOTH_A6_SABERPROTECT_GRIEVOUS:return static_cast<qboolean>(percent_complete < 0.10 || percent_complete > 0.90);
+	case BOTH_STABDOWN_WINDU:          return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
+	default:;
+		break;
 	}
 
 	return qfalse;

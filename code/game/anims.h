@@ -1948,16 +1948,6 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	BOTH_A2_SPECIAL,
 	BOTH_A3_SPECIAL,
 
-	//  NEW KATA ANIMS FOR ANIMATION SYSTEM
-	///////////////////////////////////////
-	BOTH_A1_SPECIAL_YODA,
-	BOTH_A2_SPECIAL_ANAKIN,
-	///////////////////////////////////////////
-	BOTH_SMASHDOWN_DUAL,
-	BOTH_SMASHDOWN_MEDIUM,
-	BOTH_SMASHDOWN_STAFF,
-	//////////////////////////////////////////
-
 	BOTH_ROLL_STAB,
 
 	//# #sep BOTH_ STANDING
@@ -5022,6 +5012,26 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	BOTH_STAND_BLOCKING_ON_STAFF_LEFT,
 
 	BOTH_RELOAD_DEKA,
+
+	//  NEW KATA ANIMS FOR ANIMATION SYSTEM
+	///////////////////////////////////////
+	BOTH_A1_SPECIAL_YODA,
+	BOTH_A2_SPECIAL_ANAKIN,
+	///////////////////////////////////////////
+	BOTH_SMASHDOWN_DUAL,
+	BOTH_SMASHDOWN_SINGLE,
+	BOTH_SMASHDOWN_STAFF,
+	//////////////////////////////////////////
+		// ANAKIN
+	BOTH_WALK1_ANI,
+	BOTH_WALK2_ANI,
+	BOTH_WALK_DUAL_ANI,
+	BOTH_RUN1_ANI,
+	BOTH_RUN2_ANI,
+	BOTH_RUN_DUAL_ANI,
+	BOTH_RUN_STAFF_ANI,
+	BOTH_SPRINT_ANI_LIGHTSABER,
+	BOTH_SPRINT_ANI_STAFF_LIGHTSABER,
 
 	//# #eol
 	MAX_ANIMATIONS,

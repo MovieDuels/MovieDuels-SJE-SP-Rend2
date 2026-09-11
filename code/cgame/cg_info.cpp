@@ -770,7 +770,6 @@ static void CG_GetLoadScreenInfo(char* weapons, int* forceBits)
 	}
 }
 
-
 /*
 ====================
 CG_DrawLoadingScreen
