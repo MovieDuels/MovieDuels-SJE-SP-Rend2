@@ -238,30 +238,6 @@ extern saberMoveName_t transitionMove[Q_NUM_QUADS][Q_NUM_QUADS];
 
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
 
-typedef struct
-{
-	qboolean isAnakin;
-	qboolean isBenKenobi;
-	qboolean isCalKestis;
-	qboolean isDarkForces2;
-	qboolean isCountDooku;
-	qboolean isGalenMarek;
-	qboolean isQuiGonJinn;
-	qboolean isGrievous;
-	qboolean isKotor;
-	qboolean isLukeSkywalker;
-	qboolean isMaceWindu;
-	qboolean isMaul;
-	qboolean isMovieDuels;
-	qboolean isObiWan;
-	qboolean isObiWanEP3;
-	qboolean isPalpatine;
-	qboolean isKyloRen;
-	qboolean isRey;
-	qboolean isVader;
-	qboolean isYoda;
-} animFlags_t;
-
 animFlags_t PM_Animationstyletable(const pmove_t* pm)
 {
 	qboolean isAnakin = qfalse;
@@ -1487,10 +1463,25 @@ qboolean PM_ForceJumpingUp(const gentity_t* gent)
 
 static void PM_JumpForDir()
 {
+	animFlags_t flags = PM_Animationstyletable(pm);
 	int anim;
 	if (pm->cmd.forwardmove > 0)
 	{
-		anim = BOTH_JUMP1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_JUMP1_ANI;
+			}
+			else
+			{
+				anim = BOTH_JUMP1;
+			}
+		}
+		else
+		{
+			anim = BOTH_JUMP1;
+		}
 		pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 	}
 	else if (pm->cmd.forwardmove < 0)
@@ -1510,7 +1501,21 @@ static void PM_JumpForDir()
 	}
 	else
 	{
-		anim = BOTH_JUMP1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_JUMP1_ANI;
+			}
+			else
+			{
+				anim = BOTH_JUMP1;
+			}
+		}
+		else
+		{
+			anim = BOTH_JUMP1;
+		}
 		pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 	}
 	if (!PM_InDeathAnim())
@@ -1560,6 +1565,8 @@ static qboolean PM_Is_A_Dash_Anim(const int anim)
 
 static qboolean PM_CheckJump()
 {
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	//Don't allow jump until all buttons are up
 	if (pm->ps->pm_flags & PMF_RESPAWNED)
 	{
@@ -1804,7 +1811,11 @@ static qboolean PM_CheckJump()
 								pm->ps->legsAnim != BOTH_FLIP_F &&
 								pm->ps->legsAnim != BOTH_FLIP_B &&
 								pm->ps->legsAnim != BOTH_FLIP_R &&
+								pm->ps->legsAnim != BOTH_FLIP_R_ANI &&
 								pm->ps->legsAnim != BOTH_FLIP_L &&
+								pm->ps->legsAnim != BOTH_FLIP_L_ANI &&
+								pm->ps->legsAnim != BOTH_FLIP_B_ANI &&
+								pm->ps->legsAnim != BOTH_FLIP_F_ANI &&
 								pm->ps->legsAnim != BOTH_ALORA_FLIP_1 &&
 								pm->ps->legsAnim != BOTH_ALORA_FLIP_2 &&
 								pm->ps->legsAnim != BOTH_ALORA_FLIP_3
@@ -1828,20 +1839,76 @@ static qboolean PM_CheckJump()
 									}
 									else
 									{
-										anim = BOTH_FLIP_F;
+										if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+										{
+											if (flags.isAnakin == qtrue)
+											{
+												anim = BOTH_FLIP_F_ANI;
+											}
+											else
+											{
+												anim = BOTH_FLIP_F;
+											}
+										}
+										else
+										{
+											anim = BOTH_FLIP_F;
+										}
 									}
 								}
 								else if (pm->cmd.forwardmove < 0)
 								{
-									anim = BOTH_FLIP_B;
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isAnakin == qtrue)
+										{
+											anim = BOTH_FLIP_B_ANI;
+										}
+										else
+										{
+											anim = BOTH_FLIP_B;
+										}
+									}
+									else
+									{
+										anim = BOTH_FLIP_B;
+									}
 								}
 								else if (pm->cmd.rightmove > 0)
 								{
-									anim = BOTH_FLIP_R;
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isAnakin == qtrue)
+										{
+											anim = BOTH_FLIP_R_ANI;
+										}
+										else
+										{
+											anim = BOTH_FLIP_R;
+										}
+									}
+									else
+									{
+										anim = BOTH_FLIP_R;
+									}
 								}
 								else if (pm->cmd.rightmove < 0)
 								{
-									anim = BOTH_FLIP_L;
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isAnakin == qtrue)
+										{
+											anim = BOTH_FLIP_L_ANI;
+										}
+										else
+										{
+											anim = BOTH_FLIP_L;
+										}
+									}
+									else
+									{
+										anim = BOTH_FLIP_L;
+									}
 								}
 								if (pm->ps->weaponTime)
 								{
@@ -2805,21 +2872,12 @@ static qboolean PM_CheckJump()
 					|| level.time - pm->ps->lastOnGround > 250
 					//we are jumping, but have been in the air for at least half a second
 					&& pm->ps->origin[2] - pm->ps->forceJumpZStart < forceJumpHeightMax[FORCE_LEVEL_3] -
-					G_ForceWallJumpStrength() / 2.0f
-					)
-				//&& (pm->ps->legsAnim == BOTH_JUMP1 || pm->ps->legsAnim == BOTH_INAIR1 ) )//not in a flip or spin or anything
-				)
+					G_ForceWallJumpStrength() / 2.0f))
 			{
 				//see if we're pushing at a wall and jump off it if so
 				if (!(pm->ps->saber[0].saberFlags & SFL_NO_WALL_GRAB)
 					&& (!pm->ps->dualSabers || !(pm->ps->saber[1].saberFlags & SFL_NO_WALL_GRAB)))
 				{
-					//okay to do wall-grabs with this saber
-					//FIXME: make sure we have enough force power
-					//FIXME: check  to see if we can go any higher
-					//FIXME: limit to a certain number of these in a row?
-					//FIXME: maybe don't require a ucmd direction, just check all 4?
-					//FIXME: should stick to the wall for a second, then push off...
 					vec3_t check_dir, mins = { pm->mins[0], pm->mins[1], 0 }, maxs = {
 							   pm->maxs[0], pm->maxs[1], 24
 					}, fwd_angles = { 0, pm->ps->viewangles[YAW], 0 };
@@ -4057,6 +4115,8 @@ static void PM_WalkMove()
 
 static void PM_BocMove()
 {
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	if (pm->gent->client->moveType == MT_RUNJUMP)
 	{
 		const float cur_height = pm->ps->origin[2] - pm->ps->forceJumpZStart;
@@ -4079,7 +4139,11 @@ static void PM_BocMove()
 						pm->ps->legsAnim != BOTH_FLIP_F &&
 						pm->ps->legsAnim != BOTH_FLIP_B &&
 						pm->ps->legsAnim != BOTH_FLIP_R &&
-						pm->ps->legsAnim != BOTH_FLIP_L
+						pm->ps->legsAnim != BOTH_FLIP_R_ANI &&
+						pm->ps->legsAnim != BOTH_FLIP_L &&
+						pm->ps->legsAnim != BOTH_FLIP_L_ANI &&
+						pm->ps->legsAnim != BOTH_FLIP_B_ANI &&
+						pm->ps->legsAnim != BOTH_FLIP_F_ANI
 						&& cg.renderingThirdPerson //third person only
 						&& !cg.zoomMode) //not zoomed in
 					{
@@ -4089,19 +4153,75 @@ static void PM_BocMove()
 
 						if (pm->cmd.forwardmove > 0)
 						{
-							anim = BOTH_FLIP_F;
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isAnakin == qtrue)
+								{
+									anim = BOTH_FLIP_F_ANI;
+								}
+								else
+								{
+									anim = BOTH_FLIP_F;
+								}
+							}
+							else
+							{
+								anim = BOTH_FLIP_F;
+							}
 						}
 						else if (pm->cmd.forwardmove < 0)
 						{
-							anim = BOTH_FLIP_B;
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isAnakin == qtrue)
+								{
+									anim = BOTH_FLIP_B_ANI;
+								}
+								else
+								{
+									anim = BOTH_FLIP_B;
+								}
+							}
+							else
+							{
+								anim = BOTH_FLIP_B;
+							}
 						}
 						else if (pm->cmd.rightmove > 0)
 						{
-							anim = BOTH_FLIP_R;
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isAnakin == qtrue)
+								{
+									anim = BOTH_FLIP_R_ANI;
+								}
+								else
+								{
+									anim = BOTH_FLIP_R;
+								}
+							}
+							else
+							{
+								anim = BOTH_FLIP_R;
+							}
 						}
 						else if (pm->cmd.rightmove < 0)
 						{
-							anim = BOTH_FLIP_L;
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isAnakin == qtrue)
+								{
+									anim = BOTH_FLIP_L_ANI;
+								}
+								else
+								{
+									anim = BOTH_FLIP_L;
+								}
+							}
+							else
+							{
+								anim = BOTH_FLIP_L;
+							}
 						}
 						if (pm->ps->weaponTime)
 						{
@@ -4193,15 +4313,12 @@ static void PM_BocMove()
 
 			//need to scale this down, start with height velocity (based on max force jump height) and scale down to regular jump vel
 			pm->ps->velocity[2] = (forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] - cur_height) /
-				forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] * forceJumpStrength[pm->ps->forcePowerLevel[
-					FP_LEVITATION]]; //JUMP_VELOCITY;
+				forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] * forceJumpStrength[pm->ps->forcePowerLevel[FP_LEVITATION]]; //JUMP_VELOCITY;
 			pm->ps->velocity[2] /= 10;
 			pm->ps->velocity[2] += JUMP_VELOCITY;
 			pm->ps->pm_flags |= PMF_JUMP_HELD;
 		}
-		else if (cur_height > forceJumpHeight[0] && cur_height < forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]]
-			-
-			forceJumpHeight[0])
+		else if (cur_height > forceJumpHeight[0] && cur_height < forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] - forceJumpHeight[0])
 		{
 			//still have some headroom, don't totally stop it
 			if (pm->ps->velocity[2] > JUMP_VELOCITY)
@@ -4423,6 +4540,7 @@ static float PM_CrashLandDelta(vec3_t prev_vel)
 static int PM_GetLandingAnim()
 {
 	int anim = pm->ps->legsAnim;
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	//special cases:
 	if (anim == BOTH_FLIP_ATTACK7
@@ -4438,7 +4556,21 @@ static int PM_GetLandingAnim()
 			pm->ps->velocity[0] *= 0.5f;
 			pm->ps->velocity[1] *= 0.5f;
 		}
-		return BOTH_LAND1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_LAND1_ANI;
+			}
+			else
+			{
+				return BOTH_LAND1;
+			}
+		}
+		else
+		{
+			return BOTH_LAND1;
+		}
 	}
 	if (PM_InAirKickingAnim(anim))
 	{
@@ -4525,8 +4657,24 @@ static int PM_GetLandingAnim()
 		}
 		break;
 	case BOTH_JUMP1:
+	case BOTH_JUMP1_ANI:
 	case BOTH_INAIR1:
-		anim = BOTH_LAND1;
+	case BOTH_INAIR1_ANI:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_LAND1_ANI;
+			}
+			else
+			{
+				anim = BOTH_LAND1;
+			}
+		}
+		else
+		{
+			anim = BOTH_LAND1;
+		}
 		if (!g_allowBunnyhopping->integer)
 		{
 			//stick landings some
@@ -4622,7 +4770,21 @@ static int PM_GetLandingAnim()
 		}
 		else
 		{
-			anim = BOTH_LAND1;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					anim = BOTH_LAND1_ANI;
+				}
+				else
+				{
+					anim = BOTH_LAND1;
+				}
+			}
+			else
+			{
+				anim = BOTH_LAND1;
+			}
 		}
 		if (!g_allowBunnyhopping->integer)
 		{
@@ -5625,10 +5787,19 @@ static int PM_ForceJumpAnimForJumpAnim(int anim)
 	case BOTH_JUMP1: //# Jump - wind-up and leave ground
 		anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
 		break;
+	case BOTH_JUMP1_ANI: //# Jump - wind-up and leave ground
+		anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
+		break;
 	case BOTH_INAIR1: //# In air loop (from jump)
 		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
 		break;
+	case BOTH_INAIR1_ANI: //# In air loop (from jump)
+		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
+		break;
 	case BOTH_LAND1: //# Landing (from in air loop)
+		anim = BOTH_FORCELAND1; //# Landing (from in air loop)
+		break;
+	case BOTH_LAND1_ANI: //# Landing (from in air loop)
 		anim = BOTH_FORCELAND1; //# Landing (from in air loop)
 		break;
 	case BOTH_JUMPBACK1: //# Jump backwards - wind-up and leave ground
@@ -5956,6 +6127,7 @@ static void PM_GroundTraceMissed()
 {
 	trace_t trace;
 	qboolean cliff_fall = qfalse;
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	if (Flying != FLY_HOVER)
 	{
@@ -6182,7 +6354,21 @@ static void PM_GroundTraceMissed()
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isAnakin == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_ANI, SETANIM_FLAG_NORMAL, 350);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
+						}
 					}
 				}
 				else if (PM_InAirKickingAnim(pm->ps->legsAnim))
@@ -6193,7 +6379,21 @@ static void PM_GroundTraceMissed()
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isAnakin == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_ANI, SETANIM_FLAG_NORMAL, 350);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
+						}
 						pm->ps->saberMove = LS_READY;
 						pm->ps->weaponTime = 0;
 					}
@@ -6250,8 +6450,21 @@ static void PM_GroundTraceMissed()
 										float dot = DotProduct(move_dir, look_dir);
 										if (dot > 0.5)
 										{
-											//redundant
-											anim = BOTH_INAIR1;
+											if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+											{
+												if (flags.isAnakin == qtrue)
+												{//redundant
+													anim = BOTH_INAIR1_ANI;
+												}
+												else
+												{
+													anim = BOTH_INAIR1;
+												}
+											}
+											else
+											{
+												anim = BOTH_INAIR1;
+											}
 										}
 										else if (dot < -0.5)
 										{
@@ -6270,8 +6483,21 @@ static void PM_GroundTraceMissed()
 											}
 											else
 											{
-												//redundant
-												anim = BOTH_INAIR1;
+												if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+												{
+													if (flags.isAnakin == qtrue)
+													{//redundant
+														anim = BOTH_INAIR1_ANI;
+													}
+													else
+													{
+														anim = BOTH_INAIR1;
+													}
+												}
+												else
+												{
+													anim = BOTH_INAIR1;
+												}
 											}
 										}
 										if (pm->ps->forcePowersActive & 1 << FP_LEVITATION)
@@ -6290,7 +6516,21 @@ static void PM_GroundTraceMissed()
 								{
 									if (!PM_InDeathAnim())
 									{
-										PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1, SETANIM_FLAG_OVERRIDE, 100);
+										if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+										{
+											if (flags.isAnakin == qtrue)
+											{
+												PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1_ANI, SETANIM_FLAG_OVERRIDE, 100);
+											}
+											else
+											{
+												PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1, SETANIM_FLAG_OVERRIDE, 100);
+											}
+										}
+										else
+										{
+											PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1, SETANIM_FLAG_OVERRIDE, 100);
+										}
 										// Only blend over 100ms
 									}
 									pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
@@ -7107,9 +7347,11 @@ qboolean PM_ForceAnim(const int anim)
 	case BOTH_FORCEHEAL_START: //# Healing meditation pose start
 	case BOTH_FORCEHEAL_STOP: //# Healing meditation pose end
 	case BOTH_FORCEHEAL_QUICK: //# Healing meditation gesture
-	case BOTH_FORCEGRIP1: //# temp force-grip anim (actually re-using push)
+	case BOTH_FORCEGRIP1:
+	case BOTH_FORCEGRIP1_ANI: //# temp force-grip anim (actually re-using push)
 	case BOTH_FORCEGRIP_HOLD: //# temp force-grip anim (actually re-using push)
 	case BOTH_FORCEGRIP_RELEASE: //# temp force-grip anim (actually re-using push)
+	case BOTH_FORCEGRIP_RELEASE_ANI: //# temp force-grip anim (actually re-using push)
 		//case BOTH_FORCEGRIP3:		//# force-gripping
 	case BOTH_FORCE_RAGE:
 	case BOTH_FORCE_2HANDEDLIGHTNING:
@@ -8582,6 +8824,7 @@ qboolean PM_WeponRestAnim(const int anim)
 		//
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND9IDLE1:
+	case BOTH_STAND9IDLE1_ANI:
 		//
 	case BOTH_STANCE_MINIGUN_IDLE:
 		//
@@ -8939,9 +9182,12 @@ qboolean PM_JumpingAnim(const int anim)
 {
 	switch (anim)
 	{
-	case BOTH_JUMP1: //# Jump - wind-up and leave ground
+	case BOTH_JUMP1:
+	case BOTH_JUMP1_ANI: //# Jump - wind-up and leave ground
 	case BOTH_INAIR1: //# In air loop (from jump)
+	case BOTH_INAIR1_ANI: //# In air loop (from jump)
 	case BOTH_LAND1: //# Landing (from in air loop)
+	case BOTH_LAND1_ANI: //# Landing (from in air loop)
 	case BOTH_LAND2: //# Landing Hard (from a great height)
 	case BOTH_JUMPBACK1: //# Jump backwards - wind-up and leave ground
 	case BOTH_INAIRBACK1: //# In air loop (from jump back)
@@ -8968,6 +9214,7 @@ qboolean PM_LandingAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_LAND1: //# Landing (from in air loop)
+	case BOTH_LAND1_ANI: //# Landing (from in air loop)
 	case BOTH_LAND2: //# Landing Hard (from a great height)
 	case BOTH_LANDBACK1: //# Landing backwards(from in air loop)
 	case BOTH_LANDLEFT1: //# Landing left(from in air loop)
@@ -8990,6 +9237,10 @@ qboolean PM_FlippingAnim(const int anim)
 	case BOTH_FLIP_B: //# Flip backwards
 	case BOTH_FLIP_L: //# Flip left
 	case BOTH_FLIP_R: //# Flip right
+	case BOTH_FLIP_B_ANI: //# Flip backwards (animation)
+	case BOTH_FLIP_F_ANI: //# Flip forward (animation)
+	case BOTH_FLIP_L_ANI: //# Flip left (animation)
+	case BOTH_FLIP_R_ANI: //# Flip right (animation)
 	case BOTH_ALORA_FLIP_1:
 	case BOTH_ALORA_FLIP_2:
 	case BOTH_ALORA_FLIP_3:
@@ -9721,13 +9972,19 @@ qboolean PM_SaberStanceAnim(const int anim)
 	case BOTH_STAND2_JKA:
 	case BOTH_SABERFAST_STANCE: //single-saber, fast style
 	case BOTH_STAND_BLOCKING_ON:
+	case BOTH_STAND_BLOCKING_ON_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
+	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
 		//
 	case BOTH_STAND_BLOCKING_ON_FORWARD:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK:
+	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
+	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
@@ -9738,8 +9995,10 @@ qboolean PM_SaberStanceAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
 		//
 	case BOTH_SABERFAST_STANCE_JKA:
+	case BOTH_SABERFAST_STANCE_JKA_ANI:
 	case BOTH_SABERSLOW_STANCE: //single-saber, strong style
 	case BOTH_SABERSLOW_STANCE_JKA:
+	case BOTH_SABERSLOW_STANCE_JKA_ANI:
 	case BOTH_SABERSTAFF_STANCE: //saber staff style
 	case BOTH_SABERSTAFF_STANCE_JKA: //saber staff style
 	case BOTH_SABERSTAFF_WALK_STANCE: //saber staff style
@@ -9749,6 +10008,7 @@ qboolean PM_SaberStanceAnim(const int anim)
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
+	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 	case BOTH_STANDYODA_STICK:
 	case BOTH_STAND_SABER_ON:
 	case BOTH_STAND_SABER_ON_DUELS:
@@ -9893,13 +10153,19 @@ static qboolean PM_AdjustStandAnimForSlope()
 		case BOTH_STAND2_JKA:
 		case BOTH_SABERFAST_STANCE:
 		case BOTH_STAND_BLOCKING_ON:
+		case BOTH_STAND_BLOCKING_ON_ANI:
 		case BOTH_STAND_BLOCKING_ON_DUAL:
+		case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
 		case BOTH_STAND_BLOCKING_ON_STAFF:
 			//
 		case BOTH_STAND_BLOCKING_ON_FORWARD:
+		case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 		case BOTH_STAND_BLOCKING_ON_BACK:
+		case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 		case BOTH_STAND_BLOCKING_ON_RIGHT:
 		case BOTH_STAND_BLOCKING_ON_LEFT:
+		case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+		case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 		case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 		case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
 		case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
@@ -9910,12 +10176,15 @@ static qboolean PM_AdjustStandAnimForSlope()
 		case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
 			//
 		case BOTH_SABERFAST_STANCE_JKA:
+		case BOTH_SABERFAST_STANCE_JKA_ANI:
 		case BOTH_SABERSLOW_STANCE:
 		case BOTH_SABERSLOW_STANCE_JKA:
+		case BOTH_SABERSLOW_STANCE_JKA_ANI:
 		case BOTH_SABERTAVION_STANCE:
 		case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 		case BOTH_SABERDESANN_STANCE:
 		case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
+		case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 		case BOTH_STAND_SABER_ON_IDLE:
 		case BOTH_STAND_SABER_ON_IDLE_DUELS:
 		case BOTH_STAND_SABER_ON_IDLE_STAFF:
@@ -10114,13 +10383,19 @@ static qboolean PM_AdjustStandAnimForSlope()
 			case BOTH_STAND2_JKA:
 			case BOTH_SABERFAST_STANCE:
 			case BOTH_STAND_BLOCKING_ON:
+			case BOTH_STAND_BLOCKING_ON_ANI:
 			case BOTH_STAND_BLOCKING_ON_DUAL:
+			case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
 			case BOTH_STAND_BLOCKING_ON_STAFF:
 				//
 			case BOTH_STAND_BLOCKING_ON_FORWARD:
+			case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 			case BOTH_STAND_BLOCKING_ON_BACK:
+			case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 			case BOTH_STAND_BLOCKING_ON_RIGHT:
 			case BOTH_STAND_BLOCKING_ON_LEFT:
+			case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+			case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 			case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 			case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
 			case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
@@ -10131,12 +10406,15 @@ static qboolean PM_AdjustStandAnimForSlope()
 			case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
 				//
 			case BOTH_SABERFAST_STANCE_JKA:
+			case BOTH_SABERFAST_STANCE_JKA_ANI:
 			case BOTH_SABERSLOW_STANCE:
 			case BOTH_SABERSLOW_STANCE_JKA:
+			case BOTH_SABERSLOW_STANCE_JKA_ANI:
 			case BOTH_SABERTAVION_STANCE:
 			case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 			case BOTH_SABERDESANN_STANCE:
 			case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
+			case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 			case BOTH_CROUCH1IDLE:
 				if (destAnim >= LEGS_LEFTUP1 && destAnim <= LEGS_LEFTUP5)
 				{
@@ -10709,9 +10987,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 				{
 					return BOTH_WALK_DUAL_AMD;
 				}
-				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
-					return BOTH_WALK_DUAL_ANI;
+					if (flags.isAnakin == qtrue)
+					{
+						return BOTH_WALK_DUAL_ANI;
+					}
+					else
+					{
+						return BOTH_WALK_DUAL;
+					}
 				}
 				else
 				{
@@ -10724,9 +11009,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 				{
 					return BOTH_WALK_DUAL;
 				}
-				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
-					return BOTH_WALK_DUAL_ANI;
+					if (flags.isAnakin == qtrue)
+					{
+						return BOTH_WALK_DUAL_ANI;
+					}
+					else
+					{
+						return BOTH_WALK_DUAL;
+					}
 				}
 				else
 				{
@@ -10736,9 +11028,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 		}
 		else
 		{
-			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
-				return BOTH_WALK_DUAL_ANI;
+				if (flags.isAnakin == qtrue)
+				{
+					return BOTH_WALK_DUAL_ANI;
+				}
+				else
+				{
+					return BOTH_WALK_DUAL;
+				}
 			}
 			else
 			{
@@ -10793,9 +11092,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 	{
 		if ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0)
 		{
-			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
-				return BOTH_WALK2_ANI;
+				if (flags.isAnakin == qtrue)
+				{
+					return BOTH_WALK2_ANI;
+				}
+				else
+				{
+					return BOTH_WALK2;
+				}
 			}
 			else
 			{
@@ -10811,9 +11117,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 				{
 					return BOTH_WALK1_MDA;
 				}
-				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isAnakin == qtrue)
+				else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
-					return BOTH_WALK2_ANI;
+					if (flags.isAnakin == qtrue)
+					{
+						return BOTH_WALK2_ANI;
+					}
+					else
+					{
+						return BOTH_WALK2;
+					}
 				}
 				else
 				{
@@ -10822,10 +11135,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 			}
 			else
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 &&
-					flags.isAnakin == qtrue)
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
-					return BOTH_WALK1_ANI;
+					if (flags.isAnakin == qtrue)
+					{
+						return BOTH_WALK1_ANI;
+					}
+					else
+					{
+						return BOTH_WALK1_MDA;
+					}
 				}
 				else
 				{
@@ -10835,10 +11154,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 		}
 		else
 		{
-			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 &&
-				flags.isAnakin == qtrue)
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
-				return BOTH_WALK1_ANI;
+				if (flags.isAnakin == qtrue)
+				{
+					return BOTH_WALK1_ANI;
+				}
+				else
+				{
+					return BOTH_WALK1_MDA;
+				}
 			}
 			else
 			{
@@ -10852,10 +11177,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 		{
 			return BOTH_WALK1_MDA;
 		}
-		else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 &&
-			flags.isAnakin == qtrue)
+		else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 		{
-			return BOTH_WALK2_ANI;
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_WALK2_ANI;
+			}
+			else
+			{
+				return BOTH_WALK2;
+			}
 		}
 		else
 		{
@@ -10935,7 +11266,11 @@ static void PM_Footsteps()
 	if (pm->ps->legsAnim == BOTH_FLIP_F ||
 		pm->ps->legsAnim == BOTH_FLIP_B ||
 		pm->ps->legsAnim == BOTH_FLIP_L ||
+		pm->ps->legsAnim == BOTH_FLIP_L_ANI ||
 		pm->ps->legsAnim == BOTH_FLIP_R ||
+		pm->ps->legsAnim == BOTH_FLIP_R_ANI ||
+		pm->ps->legsAnim == BOTH_FLIP_B_ANI ||
+		pm->ps->legsAnim == BOTH_FLIP_F_ANI ||
 		pm->ps->legsAnim == BOTH_ALORA_FLIP_1 ||
 		pm->ps->legsAnim == BOTH_ALORA_FLIP_2 ||
 		pm->ps->legsAnim == BOTH_ALORA_FLIP_3)
@@ -13019,6 +13354,8 @@ static int PM_ReadyPoseForSaberAnimLevelDucked(void)
 {
 	int anim = BOTH_SABERSINGLECROUCH; // safe default
 
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	// Riding a vehicle → no ready pose
 	if (PM_RidingVehicle())
 	{
@@ -13042,7 +13379,21 @@ static int PM_ReadyPoseForSaberAnimLevelDucked(void)
 	case SS_MEDIUM:
 	case SS_DESANN:
 		// All single‑saber styles share the same crouch stance
-		anim = BOTH_SABERSINGLECROUCH;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_SABERSINGLECROUCH_ANI;
+			}
+			else
+			{
+				anim = BOTH_SABERSINGLECROUCH;
+			}
+		}
+		else
+		{
+			anim = BOTH_SABERSINGLECROUCH;
+		}
 		break;
 
 	case SS_NONE:
@@ -13059,9 +13410,10 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 {
 	int anim = BOTH_STAND2;
 
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	// Explicit qboolean: is NPC currently in block stance?
-	const qboolean activate_npc_block_stance =
-		((pm->ps->ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) != 0) ? qtrue : qfalse;
+	const qboolean activate_npc_block_stance = ((pm->ps->ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) != 0) ? qtrue : qfalse;
 
 	// Riding a vehicle → no ready pose
 	if (PM_RidingVehicle())
@@ -13102,9 +13454,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 			switch (pm->ps->saberAnimLevel)
 			{
 			case SS_DUAL:
-				anim = (activate_npc_block_stance == qtrue)
-					? BOTH_STAND_BLOCKING_ON_DUAL
-					: BOTH_SABERDUALCROUCH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_DUAL_ANI : BOTH_SABERDUALCROUCH;
+					}
+					else
+					{
+						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_DUAL : BOTH_SABERDUALCROUCH;
+					}
+				}
+				else
+				{
+					anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_DUAL : BOTH_SABERDUALCROUCH;
+				}
 				break;
 
 			case SS_STAFF:
@@ -13118,9 +13482,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 			case SS_STRONG:
 			case SS_DESANN:
 			case SS_MEDIUM:
-				anim = (activate_npc_block_stance == qtrue)
-					? BOTH_STAND_BLOCKING_ON
-					: BOTH_SABERSINGLECROUCH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_ANI : BOTH_SABERSINGLECROUCH_ANI;
+					}
+					else
+					{
+						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERSINGLECROUCH;
+					}
+				}
+				else
+				{
+					anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERSINGLECROUCH;
+				}
 				break;
 
 			case SS_NONE:
@@ -13135,13 +13511,20 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 		// Cosmetic mode ON → always use normal stance
 		switch (pm->ps->saberAnimLevel)
 		{
-		case SS_DUAL:   return BOTH_SABERDUAL_STANCE;
-		case SS_STAFF:  return BOTH_SABERSTAFF_STANCE;
-		case SS_FAST:   return BOTH_SABERFAST_STANCE;
-		case SS_TAVION: return BOTH_SABERTAVION_STANCE;
-		case SS_STRONG: return BOTH_SABERSLOW_STANCE;
-		case SS_DESANN: return BOTH_SABERDESANN_STANCE;
-		case SS_MEDIUM: return BOTH_STAND2;
+		case SS_DUAL:
+			return BOTH_SABERDUAL_STANCE;
+		case SS_STAFF:
+			return BOTH_SABERSTAFF_STANCE;
+		case SS_FAST:
+			return BOTH_SABERFAST_STANCE;
+		case SS_TAVION:
+			return BOTH_SABERTAVION_STANCE;
+		case SS_STRONG:
+			return BOTH_SABERSLOW_STANCE;
+		case SS_DESANN:
+			return BOTH_SABERDESANN_STANCE;
+		case SS_MEDIUM:
+			return BOTH_STAND2;
 		case SS_NONE:
 		default:        return BOTH_STAND2;
 		}
@@ -13167,6 +13550,8 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 int PM_ReadyPoseForSaberAnimLevel(void)
 {
 	int anim;
+
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	// Riding a vehicle → no saber ready pose
 	if (PM_RidingVehicle())
@@ -13225,7 +13610,21 @@ int PM_ReadyPoseForSaberAnimLevel(void)
 		break;
 
 	case SS_FAST:
-		anim = BOTH_SABERFAST_STANCE_JKA;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_SABERFAST_STANCE_JKA_ANI;
+			}
+			else
+			{
+				anim = BOTH_SABERFAST_STANCE_JKA;
+			}
+		}
+		else
+		{
+			anim = BOTH_SABERFAST_STANCE_JKA;
+		}
 		break;
 
 	case SS_TAVION:
@@ -13233,11 +13632,39 @@ int PM_ReadyPoseForSaberAnimLevel(void)
 		break;
 
 	case SS_STRONG:
-		anim = BOTH_SABERSLOW_STANCE_JKA;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_SABERSLOW_STANCE_JKA_ANI;
+			}
+			else
+			{
+				anim = BOTH_SABERSLOW_STANCE_JKA;
+			}
+		}
+		else
+		{
+			anim = BOTH_SABERSLOW_STANCE_JKA;
+		}
 		break;
 
 	case SS_DESANN:
-		anim = BOTH_SABERDESANN_STANCE_JKA;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_SABERDESANN_STANCE_JKA_ANI;
+			}
+			else
+			{
+				anim = BOTH_SABERDESANN_STANCE_JKA;
+			}
+		}
+		else
+		{
+			anim = BOTH_SABERDESANN_STANCE_JKA;
+		}
 		break;
 
 	case SS_MEDIUM:
@@ -13340,6 +13767,8 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 	// Start with the normal ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	// Explicit qboolean: is the player/NPC actively blocking + attacking?
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
@@ -13368,9 +13797,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			}
 			else
 			{
-				anim = (g_RealisticBlockingMode->integer != 0)
-					? BOTH_SABERSINGLECROUCH
-					: BOTH_STAND_BLOCKING_ON_LEFT;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_LEFT_ANI;
+					}
+					else
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
+					}
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
+				}
 			}
 		}
 		// Back‑Right
@@ -13382,9 +13823,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			}
 			else
 			{
-				anim = (g_RealisticBlockingMode->integer != 0)
-					? BOTH_SABERSINGLECROUCH
-					: BOTH_STAND_BLOCKING_ON_RIGHT;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_RIGHT_ANI;
+					}
+					else
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
+					}
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
+				}
 			}
 		}
 		// Straight Back
@@ -13396,9 +13849,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			}
 			else
 			{
-				anim = (g_RealisticBlockingMode->integer != 0)
-					? BOTH_SABERSINGLECROUCH
-					: BOTH_STAND_BLOCKING_ON_BACK;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_BACK_ANI;
+					}
+					else
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_BACK;
+					}
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_BACK;
+				}
 			}
 		}
 
@@ -13419,9 +13884,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			}
 			else
 			{
-				anim = (g_RealisticBlockingMode->integer != 0)
-					? BOTH_SABERSINGLECROUCH
-					: BOTH_STAND_BLOCKING_ON_LEFT;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_LEFT_ANI;
+					}
+					else
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
+					}
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
+				}
 			}
 		}
 		// Forward‑Right
@@ -13433,9 +13910,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			}
 			else
 			{
-				anim = (g_RealisticBlockingMode->integer != 0)
-					? BOTH_SABERSINGLECROUCH
-					: BOTH_STAND_BLOCKING_ON_RIGHT;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_RIGHT_ANI;
+					}
+					else
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
+					}
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
+				}
 			}
 		}
 		// Straight Forward (Top Block)
@@ -13447,9 +13936,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			}
 			else
 			{
-				anim = (g_RealisticBlockingMode->integer != 0)
-					? BOTH_SABERSINGLECROUCH
-					: BOTH_STAND_BLOCKING_ON_FORWARD;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_FORWARD_ANI;
+					}
+					else
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_FORWARD;
+					}
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_FORWARD;
+				}
 			}
 		}
 
@@ -13469,9 +13970,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 		}
 		else
 		{
-			anim = (g_RealisticBlockingMode->integer != 0)
-				? BOTH_SABERSINGLECROUCH
-				: BOTH_STAND_BLOCKING_ON_LEFT;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_LEFT_ANI;
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
+				}
+			}
+			else
+			{
+				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
+			}
 		}
 
 		return anim;
@@ -13486,9 +13999,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 		}
 		else
 		{
-			anim = (g_RealisticBlockingMode->integer != 0)
-				? BOTH_SABERSINGLECROUCH
-				: BOTH_STAND_BLOCKING_ON_RIGHT;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_RIGHT_ANI;
+				}
+				else
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
+				}
+			}
+			else
+			{
+				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
+			}
 		}
 
 		return anim;
@@ -13516,7 +14041,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			}
 			else
 			{
-				anim = BOTH_STAND_BLOCKING_ON; // new method
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = BOTH_STAND_BLOCKING_ON_ANI; // new method
+					}
+					else
+					{
+						anim = BOTH_STAND_BLOCKING_ON; // new method
+					}
+				}
+				else
+				{
+					anim = BOTH_STAND_BLOCKING_ON; // new method
+				}
 			}
 		}
 		else
@@ -13527,10 +14066,24 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 	}
 	else
 	{
-		// Pressing block only
-		anim = (g_RealisticBlockingMode->integer != 0)
-			? BOTH_SABERSINGLECROUCH
-			: BOTH_STAND_BLOCKING_ON;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				// Pressing block only
+				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_ANI;
+			}
+			else
+			{
+				// Pressing block only
+				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON;
+			}
+		}
+		else
+		{
+			// Pressing block only
+			anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON;
+		}
 	}
 
 	return anim;
@@ -13540,6 +14093,8 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 {
 	// Start from the base ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
+
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	// Active blocking (block + attack) flag
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
@@ -13735,8 +14290,24 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 							}
 							else
 							{
-								// Standing front block (new method)
-								anim = BOTH_STAND_BLOCKING_ON_DUAL;
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (flags.isAnakin == qtrue)
+									{
+										// Standing front block (new method)
+										anim = BOTH_STAND_BLOCKING_ON_DUAL_ANI;
+									}
+									else
+									{
+										// Standing front block (new method)
+										anim = BOTH_STAND_BLOCKING_ON_DUAL;
+									}
+								}
+								else
+								{
+									// Standing front block (new method)
+									anim = BOTH_STAND_BLOCKING_ON_DUAL;
+								}
 							}
 						}
 						else
@@ -13755,7 +14326,22 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isAnakin == qtrue)
+							{
+								// Standing front block (new method)
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_ANI;
+							}
+							else
+							{// Standing front block (new method)
+								anim = BOTH_STAND_BLOCKING_ON_DUAL;
+							}
+						}
+						else
+						{// Standing front block (new method)
+							anim = BOTH_STAND_BLOCKING_ON_DUAL;
+						}
 					}
 				}
 			}
@@ -14006,6 +14592,8 @@ int PM_BlockingPoseForSaberAnimLevelSingleMD(void)
 	// Start from the normal ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
 
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	// Explicit qboolean: block + attack held
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
@@ -14086,8 +14674,21 @@ int PM_BlockingPoseForSaberAnimLevelSingleMD(void)
 				}
 				else
 				{
-					// Block only → front block stance
-					anim = BOTH_STAND_BLOCKING_ON;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isAnakin == qtrue)
+						{
+							anim = BOTH_STAND_BLOCKING_ON_ANI; // new method
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON; // new method
+						}
+					}
+					else
+					{
+						anim = BOTH_STAND_BLOCKING_ON; // new method
+					}
 				}
 			}
 		}
@@ -14099,6 +14700,8 @@ int PM_BlockingPoseForSaberAnimLevelSingleMD(void)
 int PM_BlockingPoseForSaberAnimLevelDualMD()
 {
 	int anim = PM_ReadyPoseForSaberAnimLevel();
+
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 	//Active Blocking
@@ -14167,7 +14770,21 @@ int PM_BlockingPoseForSaberAnimLevelDualMD()
 				}
 				else
 				{
-					anim = BOTH_STAND_BLOCKING_ON_DUAL;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isAnakin == qtrue)
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_ANI;
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL;
+						}
+					}
+					else
+					{
+						anim = BOTH_STAND_BLOCKING_ON_DUAL;
+					}
 				}
 			}
 		}
@@ -15071,6 +15688,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		}
 		if (pm->ps->torsoAnim == BOTH_STAND1IDLE1
 			|| pm->ps->torsoAnim == BOTH_STAND9IDLE1
+			|| pm->ps->torsoAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->torsoAnim == BOTH_STANDYODAIDLE_STICK
 			|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_IDLE
 			|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_IDLE_DUELS
@@ -15269,12 +15887,15 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		|| anim == BOTH_STAND2
 		|| anim == BOTH_SABERDUAL_STANCE
 		|| anim == BOTH_SABERFAST_STANCE_JKA
+		|| anim == BOTH_SABERFAST_STANCE_JKA_ANI
 		|| anim == BOTH_SABERSLOW_STANCE
 		|| anim == BOTH_SABERSLOW_STANCE_JKA
+		|| anim == BOTH_SABERSLOW_STANCE_JKA_ANI
 		|| anim == BOTH_SABERTAVION_STANCE
 		|| anim == BOTH_SABERTAVION_STANCE_JKA
 		|| anim == BOTH_SABERDESANN_STANCE
-		|| anim == BOTH_SABERDESANN_STANCE_JKA)
+		|| anim == BOTH_SABERDESANN_STANCE_JKA
+		|| anim == BOTH_SABERDESANN_STANCE_JKA_ANI)
 	{
 		//match torso anim to walk/run anim if newMove is just LS_READY
 		//FIXME: play both_stand2_random1 when you've been idle for a while
@@ -15309,6 +15930,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_RUNBACK_STAFF:
 		case BOTH_MENUIDLE1:
 		case BOTH_SABERSINGLECROUCH:
+		case BOTH_SABERSINGLECROUCH_ANI:
 		case BOTH_SABERDUALCROUCH:
 		case BOTH_SABERSTAFFCROUCH:
 		case BOTH_WALK1_STICK:
@@ -20028,26 +20650,49 @@ static void PM_KataAnimationStyle(void)
 			else
 			{
 				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer) // permission for the new anims
-				{
-					if ((smashReady == qtrue &&
-						saberOffenseLevel == FORCE_LEVEL_3 &&
-						hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
-					{
-						PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
-					}
-					else if (flags.isYoda == qtrue)
-					{
-						PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
-					}
-					else if ((smashReady == qtrue &&
-						saberOffenseLevel == FORCE_LEVEL_3 &&
-						hasEnoughForce == qtrue))
-					{
-						PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				{// Cosmetic mode off
+					if (g_RealisticBlockingMode->integer != 0)
+					{// can do the smash first if you have enough power and are level 3, you can do a smashdown attack.
+						if ((smashReady == qtrue &&
+							saberOffenseLevel == FORCE_LEVEL_3 &&
+							hasEnoughForce == qtrue))
+						{
+							PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+						}
+						else if ((smashReady == qtrue &&
+							saberOffenseLevel == FORCE_LEVEL_3 &&
+							hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
+						{
+							PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack with enough power and are level 3
+						}
+						else
+						{// Cosmetic mode on
+							if (flags.isYoda == qtrue)
+							{
+								PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
+							}
+							else
+							{
+								PM_SetSaberMove(LS_A1_SPECIAL);
+							}
+						}
 					}
 					else
 					{
-						PM_SetSaberMove(LS_A1_SPECIAL);
+						if ((smashReady == qtrue &&
+							saberOffenseLevel == FORCE_LEVEL_3 &&
+							hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+						{
+							PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+						}
+						else if (flags.isYoda == qtrue)
+						{
+							PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
+						}
+						else
+						{
+							PM_SetSaberMove(LS_A1_SPECIAL);
+						}
 					}
 				}
 				else
@@ -20070,26 +20715,49 @@ static void PM_KataAnimationStyle(void)
 		case SS_TAVION:
 		{
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer) // permission for the new anims
-			{
-				if ((smashReady == qtrue &&
-					saberOffenseLevel == FORCE_LEVEL_3 &&
-					hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
-				{
-					PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
-				}
-				else if (flags.isYoda == qtrue)
-				{
-					PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
-				}
-				else if ((smashReady == qtrue &&
-					saberOffenseLevel == FORCE_LEVEL_3 &&
-					hasEnoughForce == qtrue))
-				{
-					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+			{// Cosmetic mode off
+				if (g_RealisticBlockingMode->integer != 0)
+				{// can do the smash first if you have enough power and are level 3, you can do a smashdown attack.
+					if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue))
+					{
+						PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+					}
+					else if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
+					{
+						PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack with enough power and are level 3
+					}
+					else
+					{// Cosmetic mode on
+						if (flags.isYoda == qtrue)
+						{
+							PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
+						}
+						else
+						{
+							PM_SetSaberMove(LS_A1_SPECIAL);
+						}
+					}
 				}
 				else
 				{
-					PM_SetSaberMove(LS_A1_SPECIAL);
+					if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
+					{
+						PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						PM_SetSaberMove(LS_A1_SPECIAL_YODA); // YODA get his own special attack
+					}
+					else
+					{
+						PM_SetSaberMove(LS_A1_SPECIAL);
+					}
 				}
 			}
 			else
@@ -20112,25 +20780,55 @@ static void PM_KataAnimationStyle(void)
 		{
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && g_SerenityJediEngineMode->integer)// permission for the new anims
 			{
-				if ((smashReady == qtrue &&
-					saberOffenseLevel == FORCE_LEVEL_3 &&
-					hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
-				{
-					PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
-				}
-				else if (flags.isAnakin == qtrue)
-				{
-					PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN); // ANAKIN get his own special attack
-				}
-				else if ((smashReady == qtrue &&
-					saberOffenseLevel == FORCE_LEVEL_3 &&
-					hasEnoughForce == qtrue))
-				{
-					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+				// Cosmetic mode off
+				if (g_RealisticBlockingMode->integer != 0)
+				{// can do the smash first if you have enough power and are level 3, you can do a smashdown attack.
+					if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue))
+					{
+						PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+					}
+					else
+					{// Cosmetic mode on
+						if ((smashReady == qtrue &&
+							saberOffenseLevel == FORCE_LEVEL_3 &&
+							hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
+						{
+							PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
+						}
+						else if (flags.isAnakin == qtrue)
+						{
+							PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN); // ANAKIN get his own special attack
+						}
+						else
+						{
+							PM_SetSaberMove(LS_A2_SPECIAL);
+						}
+					}
 				}
 				else
 				{
-					PM_SetSaberMove(LS_A2_SPECIAL);
+					if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue) && (flags.isMaceWindu == qtrue))
+					{
+						PM_SetSaberMove(LS_STABDOWN_WINDU); // WINDU get his own special attack
+					}
+					else if (flags.isAnakin == qtrue)
+					{
+						PM_SetSaberMove(LS_A2_SPECIAL_ANAKIN); // ANAKIN get his own special attack
+					}
+					else if ((smashReady == qtrue &&
+						saberOffenseLevel == FORCE_LEVEL_3 &&
+						hasEnoughForce == qtrue))
+					{
+						PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
+					}
+					else
+					{
+						PM_SetSaberMove(LS_A2_SPECIAL);
+					}
 				}
 			}
 			else
@@ -20198,7 +20896,7 @@ static void PM_KataAnimationStyle(void)
 				}
 				else if ((smashReady == qtrue &&
 					saberOffenseLevel == FORCE_LEVEL_3 &&
-					hasEnoughForce == qtrue))
+					hasEnoughForce == qtrue) && g_SerenityJediEngineMode->integer)
 				{
 					PM_SetSaberMove(LS_SMASHDOWN_SINGLE); // If you have enough power and are level 3, you can do a smashdown attack.
 				}
@@ -20813,6 +21511,7 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_RUNBACK_STAFF:
 				case BOTH_MENUIDLE1:
 				case BOTH_SABERSINGLECROUCH:
+				case BOTH_SABERSINGLECROUCH_ANI:
 				case BOTH_SABERDUALCROUCH:
 				case BOTH_SABERSTAFFCROUCH:
 				case BOTH_WALK1_STICK:
@@ -21505,6 +22204,7 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_RUNBACK_STAFF:
 					case BOTH_MENUIDLE1:
 					case BOTH_SABERSINGLECROUCH:
+					case BOTH_SABERSINGLECROUCH_ANI:
 					case BOTH_SABERDUALCROUCH:
 					case BOTH_SABERSTAFFCROUCH:
 					case BOTH_WALK1_STICK:

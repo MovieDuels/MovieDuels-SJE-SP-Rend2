@@ -59,6 +59,7 @@ extern cvar_t* com_outcast;
 extern cvar_t* com_kotor;
 
 extern cvar_t* g_allowAlignmentChange;
+extern cvar_t* g_ActivateAnimationStyle;
 
 extern qboolean G_StandardHumanoid(const char* gla_name);
 
@@ -162,16 +163,16 @@ stringID_table_t AnimationstylesTable[] =
 	ENUM2STRING(CS_DEFAULT),
 	{"anakin",CS_ANAKIN},
 	ENUM2STRING(CS_ANAKIN),
-	{"battle_droid",CS_BATTLEDROID},
-	ENUM2STRING(CS_BATTLEDROID),
+	//{"battle_droid",CS_BATTLEDROID},
+	//ENUM2STRING(CS_BATTLEDROID),
 	{"ben_kenobi",CS_BENKENOBI},
 	ENUM2STRING(CS_BENKENOBI),
 	{"cal_kestis",CS_CAL_KESTIS},
 	ENUM2STRING(CS_CAL_KESTIS),
-	{"clone_trooper",CS_CLONETROOPER},
-	ENUM2STRING(CS_CLONETROOPER),
-	{"droideka",CS_DROIDEKA},
-	ENUM2STRING(CS_DROIDEKA),
+	//{"clone_trooper",CS_CLONETROOPER},
+	//ENUM2STRING(CS_CLONETROOPER),
+	//{"droideka",CS_DROIDEKA},
+	//ENUM2STRING(CS_DROIDEKA),
 	{"darkforces2",CS_DARKFORCES2},
 	ENUM2STRING(CS_DARKFORCES2),
 	{"count_dooku",CS_COUNT_DOOKU},
@@ -182,10 +183,10 @@ stringID_table_t AnimationstylesTable[] =
 	ENUM2STRING(CS_QUI_GON_JINN),
 	{"grievous",CS_GRIEVOUS},
 	ENUM2STRING(CS_GRIEVOUS),
-	{"jabba",CS_JABBA},
-	ENUM2STRING(CS_JABBA),
-	{"jango", CS_JANGO},
-	ENUM2STRING(CS_JANGO),
+	//{"jabba",CS_JABBA},
+	//ENUM2STRING(CS_JABBA),
+	//{"jango", CS_JANGO},
+	//ENUM2STRING(CS_JANGO),
 	{"kotor",CS_KOTOR},
 	ENUM2STRING(CS_KOTOR),
 	{"luke_skywalker", CS_LUKE_SKYWALKER},
@@ -196,22 +197,22 @@ stringID_table_t AnimationstylesTable[] =
 	ENUM2STRING(CS_MAUL),
 	{"movie_duels",CS_MOVIEDUELS},
 	ENUM2STRING(CS_MOVIEDUELS),
-	{"melee", CS_MELEE},
-	ENUM2STRING(CS_MELEE),
+	//{"melee", CS_MELEE},
+	//ENUM2STRING(CS_MELEE),
 	{"obiwan", CS_OBIWAN},
 	ENUM2STRING(CS_OBIWAN),
 	{"obiwan_ep3",CS_OBIWAN_EP3},
 	ENUM2STRING(CS_OBIWAN_EP3),
 	{"palpatine",CS_PALPATINE},
 	ENUM2STRING(CS_PALPATINE),
-	{"rebels",CS_REBELS},
-	ENUM2STRING(CS_REBELS),
+	//{"rebels",CS_REBELS},
+	//ENUM2STRING(CS_REBELS),
 	{"kylo_ren",CS_KYLO_REN},
 	ENUM2STRING(CS_KYLO_REN),
 	{"rey",CS_REY},
 	ENUM2STRING(CS_REY),
-	{"sbd",CS_SBD},
-	ENUM2STRING(CS_SBD),
+	//{"sbd",CS_SBD},
+	//ENUM2STRING(CS_SBD),
 	{"vader",CS_VADER},
 	ENUM2STRING(CS_VADER),
 	{"yoda", CS_YODA},
@@ -553,30 +554,33 @@ ParseAnimationEvtBlock
 */
 static void ParseAnimationEvtBlock(const int gla_index, const unsigned short modelIndex, const char* aeb_filename,
 	animevent_t* anim_events, const animation_t* animations,
-	unsigned char& last_anim_event,
+	int& last_anim_event,
 	const char** text_p, const bool b_is_frame_skipped)
 {
 	const char* token;
 	int num, n, lowest_val, highest_val;
 
 	// get past starting bracket
-	while (true)
+	while (qtrue)
 	{
 		token = COM_Parse(text_p);
-		if (!Q_stricmp(token, "{"))
+		if (!token || !token[0])
+		{
+			// malformed block, nothing more to do
+			return;
+		}
+
+		if (Q_stricmp(token, "{") == 0)
 		{
 			break;
 		}
 	}
 
-	//NOTE: instead of a blind increment, increase the index
-	//			this way if we have an event on an anim that already
-	//			has an event of that type, it stomps it
-
 	// read information for each frame
-	while (true)
+	while (qtrue)
 	{
 		char string_data[MAX_QPATH];
+
 		// Get base frame of sequence
 		token = COM_Parse(text_p);
 		if (!token || !token[0])
@@ -584,49 +588,43 @@ static void ParseAnimationEvtBlock(const int gla_index, const unsigned short mod
 			break;
 		}
 
-		if (!Q_stricmp(token, "}")) // At end of block
+		if (Q_stricmp(token, "}") == 0) // At end of block
 		{
 			break;
 		}
 
-		//Compare to same table as animations used
-		//	so we don't have to use actual numbers for animation first frames,
-		//	just need offsets.
-		//This way when animation numbers change, this table won't have to be updated,
-		//	at least not much.
+		// Compare to same table as animations used
 		const int anim_num = GetIDForString(animTable, token);
 		if (anim_num == -1)
 		{
-			//Unrecognized ANIM ENUM name,
+			// Unrecognized ANIM ENUM name
 			Com_Printf(S_COLOR_YELLOW"WARNING: Unknown ANIM %s in file %s\n", token, aeb_filename);
-			//skip this entry
+			// skip this entry
 			SkipRestOfLine(text_p);
 			continue;
 		}
 
 		if (animations[anim_num].numFrames == 0)
 		{
-			//we don't use this anim
 #ifndef FINAL_BUILD
 			Com_Printf(S_COLOR_YELLOW"WARNING: %s: anim %s not used by this model\n", aeb_filename, token);
 #endif
-			//skip this entry
 			SkipRestOfLine(text_p);
 			continue;
 		}
 
 		token = COM_Parse(text_p);
-		const auto event_type = static_cast<animEventType_t>(GetIDForString(animEventTypeTable, token));
+		const animEventType_t event_type = static_cast<animEventType_t>(GetIDForString(animEventTypeTable, token));
 		if (event_type == AEV_NONE || event_type == static_cast<animEventType_t>(-1))
 		{
-			//Unrecognized ANIM EVENT TYPE
+			// Unrecognized ANIM EVENT TYPE
 			Com_Printf(S_COLOR_RED"ERROR: Unknown EVENT %s in animEvent file %s\n", token, aeb_filename);
+			SkipRestOfLine(text_p);
 			continue;
 		}
 
 		// Get offset to frame within sequence
 		token = COM_Parse(text_p);
-
 		if (!token)
 		{
 			break;
@@ -634,40 +632,44 @@ static void ParseAnimationEvtBlock(const int gla_index, const unsigned short mod
 
 		int key_frame = atoi(token);
 
-		if (b_is_frame_skipped &&
+		if ((b_is_frame_skipped == qtrue) &&
 			animations[anim_num].numFrames > 2)
-			// important, else frame 1 gets divided down and becomes frame 0. Carcass & Assimilate also work this way
 		{
+			// important, else frame 1 gets divided down and becomes frame 0
 			key_frame /= 2;
-			// if we ever use any other value in frame-skipping we'll have to figure out some way of reading it, since it's not stored anywhere
 		}
+
 		if (key_frame >= animations[anim_num].numFrames)
 		{
-			//Com_Printf(S_COLOR_YELLOW"WARNING: Event out of range on %s in %s\n", GetStringForID(animTable,animNum), aeb_filename );
-			//assert(keyFrame < animations[animNum].numFrames);
-			key_frame = animations[anim_num].numFrames - 1; //clamp it
+			key_frame = animations[anim_num].numFrames - 1; // clamp it
 		}
 
-		//set our start frame
+		// set our start frame
 		key_frame += animations[anim_num].firstFrame;
 
-		//see if this frame already has an event of this type on it, if so, overwrite it
+		// see if this frame already has an event of this type on it, if so, overwrite it
 		int curAnimEvent = CG_CheckAnimFrameForEventType(anim_events, key_frame, event_type, modelIndex);
 		if (curAnimEvent == -1)
 		{
-			//this anim frame doesn't already have an event of this type on it
+			// this anim frame doesn't already have an event of this type on it
+			if (last_anim_event >= MAX_ANIM_EVENTS)
+			{
+				Com_Printf(S_COLOR_RED"ERROR: %s: more than %d events in one block, event ignored\n",
+					aeb_filename, MAX_ANIM_EVENTS);
+				SkipRestOfLine(text_p);
+				continue;
+			}
 			curAnimEvent = last_anim_event;
 		}
 
-		//now that we know which event index we're going to plug the data into, start doing it
+		// now that we know which event index we're going to plug the data into, start doing it
 		anim_events[curAnimEvent].eventType = event_type;
-		assert(key_frame >= 0 && key_frame < 65535); //
 		anim_events[curAnimEvent].keyFrame = key_frame;
 		anim_events[curAnimEvent].glaIndex = gla_index;
 		anim_events[curAnimEvent].modelOnly = modelIndex;
 		int temp_val;
 
-		//now read out the proper data based on the type
+		// now read out the proper data based on the type
 		switch (anim_events[curAnimEvent].eventType)
 		{
 		case AEV_SOUNDCHAN: //# animID AEV_SOUNDCHAN framenum CHANNEL soundpath randomlow randomhi chancetoplay
@@ -704,149 +706,133 @@ static void ParseAnimationEvtBlock(const int gla_index, const unsigned short mod
 			{
 				anim_events[curAnimEvent].eventData[AED_SOUNDCHANNEL] = CHAN_AUTO;
 			}
-			//fall through to normal sound
+			// fall through to normal sound
+
 		case AEV_SOUND: //# animID AEV_SOUND framenum soundpath randomlow randomhi chancetoplay
-			//get soundstring
+			// get soundstring
 			token = COM_Parse(text_p);
 			if (!token)
 			{
 				break;
 			}
-			strcpy(string_data, token);
-			//get lowest value
+			if (strlen(token) >= sizeof(string_data))
+			{
+				Com_Printf(S_COLOR_YELLOW"WARNING: %s: path too long, truncated: %s\n", aeb_filename, token);
+			}
+			Q_strncpyz(string_data, token, sizeof(string_data));
+
+			// get lowest value
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			lowest_val = atoi(token);
-			//get highest value
+
+			// get highest value
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			highest_val = atoi(token);
-			//Now precache all the sounds
-			//NOTE: If we can be assured sequential handles, we can store the first sound index and count
-			//		unfortunately, if these sounds were previously registered, we cannot be guaranteed sequential indices.  Thus an array
+
+			// Now precache all the sounds
 			if (lowest_val && highest_val)
 			{
 				assert(highest_val - lowest_val < MAX_RANDOM_ANIM_SOUNDS);
-				for (n = lowest_val, num = AED_SOUNDINDEX_START; n <= highest_val && num <= AED_SOUNDINDEX_END; n++, num
-					++)
+				for (n = lowest_val, num = AED_SOUNDINDEX_START; n <= highest_val && num <= AED_SOUNDINDEX_END; n++, num++)
 				{
-					anim_events[curAnimEvent].eventData[num] = G_SoundIndex(va(string_data, n)); //cgi_S_RegisterSound
+					anim_events[curAnimEvent].eventData[num] = G_SoundIndex(va(string_data, n));
 				}
 				anim_events[curAnimEvent].eventData[AED_SOUND_NUMRANDOMSNDS] = num - 1;
 			}
 			else
 			{
 				anim_events[curAnimEvent].eventData[AED_SOUNDINDEX_START] = G_SoundIndex(string_data);
-				//cgi_S_RegisterSound
-#if 0 //#ifndef FINAL_BUILD (only meaningfull if using S_RegisterSound
-				if (!animEvents[curAnimEvent].eventData[AED_SOUNDINDEX_START])
-				{//couldn't register it - file not found
-					Com_Printf(S_COLOR_RED "ParseAnimationSndBlock: sound %s does not exist (%s)!\n", stringData, *aeb_filename);
-				}
-#endif
 				anim_events[curAnimEvent].eventData[AED_SOUND_NUMRANDOMSNDS] = 0;
 			}
-			//get probability
+
+			// get probability
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			anim_events[curAnimEvent].eventData[AED_SOUND_PROBABILITY] = atoi(token);
 
-			//last part - cheat and check and see if it's a special overridable saber sound we know of...
-			if (!Q_stricmpn("sound/weapons/saber/saberhup", string_data, 28))
+			// saber swing / spin overrides
+			if (Q_stricmpn("sound/weapons/saber/saberhup", string_data, 28) == 0)
 			{
-				//a saber swing
 				anim_events[curAnimEvent].eventType = AEV_SABER_SWING;
 				anim_events[curAnimEvent].eventData[AED_SABER_SWING_saber_num] = 0;
-				//since we don't know which one they meant if we're hacking this, always use first saber
-				anim_events[curAnimEvent].eventData[AED_SABER_SWING_PROBABILITY] = anim_events[curAnimEvent].eventData[
-					AED_SOUND_PROBABILITY];
+				anim_events[curAnimEvent].eventData[AED_SABER_SWING_PROBABILITY] =
+					anim_events[curAnimEvent].eventData[AED_SOUND_PROBABILITY];
+
 				if (lowest_val < 4)
 				{
-					//fast swing
 					anim_events[curAnimEvent].eventData[AED_SABER_SWING_TYPE] = SWING_FAST;
 				}
 				else if (lowest_val < 7)
 				{
-					//medium swing
 					anim_events[curAnimEvent].eventData[AED_SABER_SWING_TYPE] = SWING_MEDIUM;
 				}
 				else
 				{
-					//strong swing
 					anim_events[curAnimEvent].eventData[AED_SABER_SWING_TYPE] = SWING_STRONG;
 				}
 			}
-			else if (!Q_stricmpn("sound/weapons/saber/saberspin", string_data, 29))
+			else if (Q_stricmpn("sound/weapons/saber/saberspin", string_data, 29) == 0)
 			{
-				//a saber spin
 				anim_events[curAnimEvent].eventType = AEV_SABER_SPIN;
 				anim_events[curAnimEvent].eventData[AED_SABER_SPIN_saber_num] = 0;
-				//since we don't know which one they meant if we're hacking this, always use first saber
-				anim_events[curAnimEvent].eventData[AED_SABER_SPIN_PROBABILITY] = anim_events[curAnimEvent].eventData[
-					AED_SOUND_PROBABILITY];
+				anim_events[curAnimEvent].eventData[AED_SABER_SPIN_PROBABILITY] =
+					anim_events[curAnimEvent].eventData[AED_SOUND_PROBABILITY];
+
 				if (string_data[29] == 'o')
 				{
-					//saberspinoff
 					anim_events[curAnimEvent].eventData[AED_SABER_SPIN_TYPE] = 0;
 				}
 				else if (string_data[29] == '1')
 				{
-					//saberspin1
 					anim_events[curAnimEvent].eventData[AED_SABER_SPIN_TYPE] = 2;
 				}
 				else if (string_data[29] == '2')
 				{
-					//saberspin2
 					anim_events[curAnimEvent].eventData[AED_SABER_SPIN_TYPE] = 3;
 				}
 				else if (string_data[29] == '3')
 				{
-					//saberspin3
 					anim_events[curAnimEvent].eventData[AED_SABER_SPIN_TYPE] = 4;
 				}
 				else if (string_data[29] == '%')
 				{
-					//saberspin%d
 					anim_events[curAnimEvent].eventData[AED_SABER_SPIN_TYPE] = 5;
 				}
 				else
 				{
-					//just plain saberspin
 					anim_events[curAnimEvent].eventData[AED_SABER_SPIN_TYPE] = 1;
 				}
 			}
 			break;
+
 		case AEV_FOOTSTEP: //# animID AEV_FOOTSTEP framenum footstepType
-			//get footstep type
 			token = COM_Parse(text_p);
 			if (!token)
 			{
 				break;
 			}
 			anim_events[curAnimEvent].eventData[AED_FOOTSTEP_TYPE] = GetIDForString(footstepTypeTable, token);
-			//get probability
+
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			anim_events[curAnimEvent].eventData[AED_FOOTSTEP_PROBABILITY] = atoi(token);
 			break;
+
 		case AEV_EFFECT: //# animID AEV_EFFECT framenum effectpath boltName
-			//get effect index
 			token = COM_Parse(text_p);
 			if (!token)
 			{
@@ -854,20 +840,16 @@ static void ParseAnimationEvtBlock(const int gla_index, const unsigned short mod
 			}
 			if (token[0] && Q_stricmp("special", token) == 0)
 			{
-				//special hard-coded effects
-				//let cgame know it's not a real effect
 				anim_events[curAnimEvent].eventData[AED_EFFECTINDEX] = -1;
-				//get the name of it
 				token = COM_Parse(text_p);
 				anim_events[curAnimEvent].stringData = G_NewString(token);
 			}
 			else
 			{
-				//regular effect
 				temp_val = G_EffectIndex(token);
 				assert(temp_val > -32767 && temp_val < 32767);
 				anim_events[curAnimEvent].eventData[AED_EFFECTINDEX] = temp_val;
-				//get bolt index
+
 				token = COM_Parse(text_p);
 				if (!token)
 				{
@@ -875,72 +857,64 @@ static void ParseAnimationEvtBlock(const int gla_index, const unsigned short mod
 				}
 				if (Q_stricmp("none", token) != 0 && Q_stricmp("NULL", token) != 0)
 				{
-					//actually are specifying a bolt to use
 					anim_events[curAnimEvent].stringData = G_NewString(token);
 				}
 			}
-			//NOTE: this string will later be used to add a bolt and store the index, as below:
-			//animEvent->eventData[AED_BOLTINDEX] = gi.G2API_AddBolt( &cent->gent->ghoul2[cent->gent->playerModel], animEvent->stringData );
-			//get probability
+
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			anim_events[curAnimEvent].eventData[AED_EFFECT_PROBABILITY] = atoi(token);
 			break;
+
 		case AEV_FIRE: //# animID AEV_FIRE framenum altfire chancetofire
-			//get altfire
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			anim_events[curAnimEvent].eventData[AED_FIRE_ALT] = atoi(token);
-			//get probability
+
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			anim_events[curAnimEvent].eventData[AED_FIRE_PROBABILITY] = atoi(token);
 			break;
+
 		case AEV_MOVE: //# animID AEV_MOVE framenum forwardpush rightpush uppush
-			//get forward push
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			temp_val = atoi(token);
 			assert(temp_val > -32767 && temp_val < 32767);
 			anim_events[curAnimEvent].eventData[AED_MOVE_FWD] = temp_val;
-			//get right push
+
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			temp_val = atoi(token);
 			assert(temp_val > -32767 && temp_val < 32767);
 			anim_events[curAnimEvent].eventData[AED_MOVE_RT] = temp_val;
-			//get upwards push
+
 			token = COM_Parse(text_p);
 			if (!token)
 			{
-				//WARNING!  BAD TABLE!
 				break;
 			}
 			temp_val = atoi(token);
 			assert(temp_val > -32767 && temp_val < 32767);
 			anim_events[curAnimEvent].eventData[AED_MOVE_UP] = temp_val;
 			break;
-		default: //unknown?
+
+		default:
 			SkipRestOfLine(text_p);
 			continue;
 		}
@@ -955,17 +929,16 @@ static void ParseAnimationEvtBlock(const int gla_index, const unsigned short mod
 // -----------------------------------------------------------------------------
 // G_ParseAnimationEvtFile
 // Loads animevents.cfg for a given skeleton and fills animation event tables.
-// NOTE: Original version used an 80 KB stack buffer. This version moves that
-//       buffer to static storage to avoid massive stack usage.
+// Updated version: uses a sized heap buffer instead of a fixed 80 KB static
+// buffer, and keeps behaviour while avoiding hard size limits.
 // -----------------------------------------------------------------------------
 static void G_ParseAnimationEvtFile(const int gla_index, const char* events_directory, const int file_index,
 	const int i_real_gla_index = -1,
 	const bool model_specific = false)
 {
-	// Large buffer moved off stack → static storage (BSS), zero‑initialized.
-	static char text[80000];
+	// Sized to the file instead of a fixed 80000 byte buffer.
+	std::vector<char> text;
 
-	const char* text_p = text;
 	fileHandle_t f;
 	char events_path[MAX_QPATH];
 	int modelIndex = 0;
@@ -1002,20 +975,14 @@ static void G_ParseAnimationEvtFile(const int gla_index, const char* events_dire
 		return;
 	}
 
-	if (len >= (int)(sizeof(text) - 1))
-	{
-		cgi_FS_FCloseFile(f);
-		Com_Printf("G_ParseAnimationEvtFile: File %s too long (%d > %d)\n",
-			events_path, len, (int)sizeof(text) - 1);
-		return;
-	}
-
 	// -------------------------------------------------------------------------
-	// Read file into static buffer
+	// Read file into buffer sized to the file
 	// -------------------------------------------------------------------------
-	cgi_FS_Read(text, len, f);
-	text[len] = '\0';
+	text.assign(static_cast<size_t>(len) + 1, '\0');
+	cgi_FS_Read(text.data(), len, f);
 	cgi_FS_FCloseFile(f);
+
+	const char* text_p = text.data();
 
 	// -------------------------------------------------------------------------
 	// Get animation event arrays
@@ -1083,43 +1050,34 @@ static void G_ParseAnimationEvtFile(const int gla_index, const char* events_dire
 // -----------------------------------------------------------------------------
 // G_ParseAnimationFile
 // Loads and parses an animation.cfg for a given skeleton.
-// NOTE: The original version used a 160 KB stack buffer. This version moves
-//       that buffer to static storage to avoid massive stack usage.
+// Updated version: uses a sized heap buffer instead of a fixed 160 KB static
+// buffer, and keeps behaviour while avoiding hard size limits.
 // -----------------------------------------------------------------------------
 static qboolean G_ParseAnimationFile(const int gla_index, const char* skeletonName, const int file_index)
 {
-	// Large buffer moved off stack → static storage (BSS), zero‑initialized.
-	static char text[160000];
-
-	const char* text_p = text;
+	// The renderer caches the whole file and answers a size query, so the buffer
+	// is sized to the file instead of a fixed 160000 bytes. No "too long" case.
+	std::vector<char> text;
 	animation_t* animations = level.knownAnimFileSets[file_index].animations;
 
 	char skeleton_path[MAX_QPATH];
 
 	// -------------------------------------------------------------------------
-	// Load animation.cfg into the static text buffer
+	// Load animation.cfg
 	// -------------------------------------------------------------------------
 	Com_sprintf(skeleton_path, MAX_QPATH, "models/players/%s/%s.cfg", skeletonName, skeletonName);
-	int len = gi.RE_GetAnimationCFG(skeleton_path, text, sizeof(text));
 
-	if (len <= 0)
+	if (!AnimCFG_Load(gi.RE_GetAnimationCFG, skeleton_path, text))
 	{
 		Com_sprintf(skeleton_path, MAX_QPATH, "models/players/%s/animation.cfg", skeletonName);
-		len = gi.RE_GetAnimationCFG(skeleton_path, text, sizeof(text));
 
-		if (len <= 0)
+		if (!AnimCFG_Load(gi.RE_GetAnimationCFG, skeleton_path, text))
 		{
 			return qfalse;
 		}
 	}
 
-	// Ensure file fits in buffer
-	if (len >= (int)(sizeof(text) - 1))
-	{
-		Com_Printf("G_ParseAnimationFile: File %s too long (%d > %d)\n",
-			skeletonName, len, (int)sizeof(text) - 1);
-		return qfalse;
-	}
+	const char* text_p = text.data();
 
 	// -------------------------------------------------------------------------
 	// Begin parsing
@@ -1139,7 +1097,7 @@ static qboolean G_ParseAnimationFile(const int gla_index, const char* skeletonNa
 		// Convert token to animation index
 		const int anim_num = GetIDForString(animTable, token);
 
-		if (anim_num == -1)
+		if (anim_num < 0 || anim_num >= MAX_ANIMATIONS)
 		{
 			// Skip unknown tokens until end of line
 			do
@@ -1150,127 +1108,53 @@ static qboolean G_ParseAnimationFile(const int gla_index, const char* skeletonNa
 			continue;
 		}
 
+		// COM_Parse overwrites com_token on the next call, so keep the name for
+		// the warning messages below.
+		char anim_name[MAX_QPATH];
+		Q_strncpyz(anim_name, token, sizeof(anim_name));
+
 		// ---------------------------------------------------------------------
 		// Parse animation fields
 		// ---------------------------------------------------------------------
+		AnimCFG_Row row;
+		if (!AnimCFG_ReadRow(&text_p, row))
+		{
+			Com_Printf(S_COLOR_YELLOW "WARNING: %s: %s has an incomplete row, ignored\n",
+				skeleton_path, anim_name);
+			continue;
+		}
+
+		if (!AnimCFG_Store(animations[anim_num], row, anim_name, skeleton_path))
+		{
+			continue;
+		}
 
 		animations[anim_num].glaIndex = gla_index;
 
-		// FIRST FRAME
-		token = COM_Parse(&text_p);
-		if (!token) break;
-
-		const int firstFrame = atoi(token);
-		if (firstFrame < 0 || firstFrame >= 65536)
+		// Slowdown logic (unchanged, but applied once instead of duplicated)
+		if (g_SerenityJediEngineMode->integer == 2 &&
+			g_SaberAttackSpeedMD->integer &&
+			g_RealisticBlockingMode->integer)
 		{
-			Com_Printf("G_ParseAnimationFile: Invalid firstFrame %d in %s\n", firstFrame, skeletonName);
-		}
-		animations[anim_num].firstFrame = firstFrame;
-
-		// NUM FRAMES
-		token = COM_Parse(&text_p);
-		if (!token) break;
-
-		const int numFrames = atoi(token);
-		if (numFrames < 0 || numFrames >= 65536)
-		{
-			Com_Printf("G_ParseAnimationFile: Invalid numFrames %d in %s\n", numFrames, skeletonName);
-		}
-		animations[anim_num].numFrames = numFrames;
-
-		// LOOP FRAMES
-		token = COM_Parse(&text_p);
-		if (!token) break;
-
-		const int loopFrames = atoi(token);
-		if (loopFrames < -1 || loopFrames >= 128)
-		{
-			Com_Printf("G_ParseAnimationFile: Invalid loopFrames %d in %s\n", loopFrames, skeletonName);
-		}
-		animations[anim_num].loopFrames = loopFrames;
-
-		// FPS
-		token = COM_Parse(&text_p);
-		if (!token) break;
-
-		float fps = (float)atof(token);
-		if (fps == 0.0f)
-		{
-			fps = 1.0f; // avoid divide-by-zero
-		}
-
-		// FRAME LERP CALCULATION
-		int lerp;
-
-		if (fps < 0.0f)
-		{
-			lerp = (int)floorf(1000.0f / fps);
-
-			if (lerp <= -32767 || lerp >= 32767)
+			for (int x = 4; x < LS_MOVE_MAX; x++)
 			{
-				Com_Printf("G_ParseAnimationFile: Invalid negative lerp %d in %s\n", lerp, skeletonName);
-			}
-
-			animations[anim_num].frameLerp = lerp;
-
-			// Slowdown logic (unchanged)
-			if (g_SerenityJediEngineMode->integer == 2 &&
-				g_SaberAttackSpeedMD->integer &&
-				g_RealisticBlockingMode->integer)
-			{
-				for (int x = 4; x < LS_MOVE_MAX; x++)
+				if (saberMoveData[x].animToUse + SABER_ANIM_GROUP_SIZE * 4 == anim_num)
 				{
-					if (saberMoveData[x].animToUse + 77 * 4 == anim_num)
-					{
-						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.2f);
-						break;
-					}
-					if (saberMoveData[x].animToUse + 77 * 5 == anim_num)
-					{
-						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
-						break;
-					}
-					if (saberMoveData[x].animToUse + 77 * 6 == anim_num)
-					{
-						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
-						break;
-					}
+					animations[anim_num].frameLerp =
+						static_cast<short>(animations[anim_num].frameLerp * 1.2f);
+					break;
 				}
-			}
-		}
-		else
-		{
-			lerp = (int)ceilf(1000.0f / fps);
-
-			if (lerp <= -32767 || lerp >= 32767)
-			{
-				Com_Printf("G_ParseAnimationFile: Invalid lerp %d in %s\n", lerp, skeletonName);
-			}
-
-			animations[anim_num].frameLerp = lerp;
-
-			// Slowdown logic (unchanged)
-			if (g_SerenityJediEngineMode->integer == 2 &&
-				g_SaberAttackSpeedMD->integer &&
-				g_RealisticBlockingMode->integer)
-			{
-				for (int x = 4; x < LS_MOVE_MAX; x++)
+				if (saberMoveData[x].animToUse + SABER_ANIM_GROUP_SIZE * 5 == anim_num)
 				{
-					if (saberMoveData[x].animToUse + 77 * 4 == anim_num)
-					{
-						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.2f);
-						break;
-					}
-					if (saberMoveData[x].animToUse + 77 * 5 == anim_num)
-					{
-						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
-						break;
-					}
-					if (saberMoveData[x].animToUse + 77 * 6 == anim_num)
-					{
-						animations[anim_num].frameLerp = (int)(animations[anim_num].frameLerp * 1.1f);
-						break;
-					}
+					animations[anim_num].frameLerp =
+						static_cast<short>(animations[anim_num].frameLerp * 1.1f);
+					break;
+				}
+				if (saberMoveData[x].animToUse + SABER_ANIM_GROUP_SIZE * 6 == anim_num)
+				{
+					animations[anim_num].frameLerp =
+						static_cast<short>(animations[anim_num].frameLerp * 1.1f);
+					break;
 				}
 			}
 		}
@@ -1364,7 +1248,7 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 		}
 
 		// Get The Cinematic GLA Name
-//--------------------------------------------
+		//--------------------------------------------
 		if (G_StandardHumanoid(skeletonName))
 		{
 			const char* map_name = strrchr(level.mapname, '/');
@@ -1379,26 +1263,25 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 
 			char skeletonMapName[MAX_QPATH];
 			Com_sprintf(skeletonMapName, MAX_QPATH, "_humanoid_%s", map_name);
-
 			// Precache the normal humanoid GLA
-			const int normalGLAIndex =
-				gi.G2API_PrecacheGhoul2Model(va("models/players/%s/_humanoid.gla", skeletonName));
+			const int normalGLAIndex = gi.G2API_PrecacheGhoul2Model(va("models/players/%s/_humanoid.gla", skeletonName));
 
-			// Parse base animation + event files
+			//double check this always comes first!
+
+			// Make Sure To Precache The GLAs (both regular and cinematic), And Remember Their Indicies
+			//------------------------------------------------------------------------------------------
 			G_ParseAnimationFile(0, skeletonName, file_index);
 			G_ParseAnimationEvtFile(0, skeletonName, file_index, normalGLAIndex, qfalse);
 
-			// Precache the map‑specific cinematic GLA
-			const int cineGLAIndex =
-				gi.G2API_PrecacheGhoul2Model(va("models/players/%s/%s.gla", skeletonMapName, skeletonMapName));
+			// Precache the map‑specific cinematic GLA (optional)
+			const int cineGLAIndex = gi.G2API_PrecacheGhoul2Model(va("models/players/%s/%s.gla", skeletonMapName, skeletonMapName));
 
 			if (cineGLAIndex)
 			{
 #ifdef _DEBUG
 				if (cineGLAIndex != normalGLAIndex + 1)
 				{
-					Com_Printf("Warning: cineGLAIndex (%d) != normalGLAIndex+1 (%d)\n",
-						cineGLAIndex, normalGLAIndex + 1);
+					Com_Printf("Warning: cineGLAIndex (%d) != normalGLAIndex+1 (%d)\n", cineGLAIndex, normalGLAIndex + 1);
 				}
 #endif
 
@@ -1406,20 +1289,20 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 				G_ParseAnimationEvtFile(1, skeletonMapName, file_index, cineGLAIndex, qfalse);
 			}
 
-			// ------------------------------------------------------------------
-			// NEW: Load _humanoid_cutscenes.gla if present
-			// ------------------------------------------------------------------
-			const int cutsceneGLAIndex =
-				gi.G2API_PrecacheGhoul2Model("models/players/_humanoid/_humanoid_cutscenes.gla");
+			//if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1) // permission for the new anims
+			//{	// ------------------------------------------------------------------
+			//	// EXTRA: Always load _humanoid_cutscenes/_humanoid.gla
+			//	// ------------------------------------------------------------------
+			//	const int cutsceneGLAIndex = gi.G2API_PrecacheGhoul2Model("models/players/_humanoid_cutscenes/_humanoid.gla");
 
-			if (cutsceneGLAIndex)
-			{
-				// Slot 2 is safe: 0 = base, 1 = map‑cine, 2 = cutscene‑cine
-				G_ParseAnimationFile(2, "_humanoid_cutscenes", file_index);
-				G_ParseAnimationEvtFile(2, "_humanoid_cutscenes", file_index, cutsceneGLAIndex, qfalse);
-			}
+			//	if (cutsceneGLAIndex)
+			//	{
+			//		// Slot 2 is safe: 0 = base, 1 = map‑cine, 2 = cutscene‑cine
+			//		G_ParseAnimationFile(2, "_humanoid_cutscenes", file_index);
+			//		G_ParseAnimationEvtFile(2, "_humanoid_cutscenes", file_index, cutsceneGLAIndex, qfalse);
+			//	}
+			//}
 		}
-
 		else
 		{
 			// non-humanoid...

@@ -840,7 +840,7 @@ static void CG_SetLerpFrameAnimation(clientInfo_t* ci, lerpFrame_t* lf, int new_
 #ifdef FINAL_BUILD
 		new_animation = 0;
 #else
-		CG_Error("Bad animation number: %i for ", new_animation, ci->name);
+		CG_Error("Bad animation number: %i for %s", new_animation, ci->name);
 #endif
 	}
 
@@ -858,8 +858,16 @@ static void CG_SetLerpFrameAnimation(clientInfo_t* ci, lerpFrame_t* lf, int new_
 	animation_t* anim = &level.knownAnimFileSets[ci->animFileIndex].animations[new_animation];
 
 	lf->animation = anim;
-	lf->animationTime = lf->frameTime + abs(anim->frameLerp);
+
+	int frame_time = abs(anim->frameLerp);
+	if (frame_time <= 0)
+	{
+		frame_time = 100;
+	}
+
+	lf->animationTime = lf->frameTime + frame_time;
 }
+
 /*
 ==========================
 CG_RunLerpFrame
@@ -872,38 +880,43 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 {
 	qboolean newFrame = qfalse;
 
-	// ---------------------------------------------------------------------
 	// If animation changed or uninitialized, reset lerp state
-	// ---------------------------------------------------------------------
 	if ((new_animation != lf->animationNumber) || (lf->animation == NULL))
 	{
 		CG_SetLerpFrameAnimation(ci, lf, new_animation);
 	}
 
-	// ---------------------------------------------------------------------
 	// SAFETY CHECK: animation pointer must be valid
-	// ---------------------------------------------------------------------
 	if (lf->animation == NULL)
 	{
 		gi.Printf("^1CG_RunLerpFrame: NULL animation for ent %d anim %d\n",
 			entNum, new_animation);
 
-		// Prevent crash: freeze on current frame
 		lf->backlerp = 0.0f;
 		return qfalse;
 	}
 
 	const animation_t* anim = lf->animation;
 
-	// ---------------------------------------------------------------------
-	// Advance frame if we've reached/passed the next frame time
-	// ---------------------------------------------------------------------
+	// Guard against invalid numFrames
+	if (anim->numFrames <= 0)
+	{
+		gi.Printf("^1CG_RunLerpFrame: anim %d has numFrames <= 0 for ent %d\n",
+			lf->animationNumber, entNum);
+		lf->backlerp = 0.0f;
+		return qfalse;
+	}
+
 	if (cg.time >= lf->frameTime)
 	{
 		lf->oldFrame = lf->frame;
 		lf->oldFrameTime = lf->frameTime;
 
 		int anim_frame_time = abs(anim->frameLerp);
+		if (anim_frame_time <= 0)
+		{
+			anim_frame_time = 100;
+		}
 
 		// Special case: speed up weapon raise/drop for player entity
 		if (entNum == 0)
@@ -915,7 +928,6 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 			}
 		}
 
-		// Initial lerp or normal progression
 		if (cg.time < lf->animationTime)
 		{
 			lf->frameTime = lf->animationTime;
@@ -925,20 +937,26 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 			lf->frameTime = lf->oldFrameTime + anim_frame_time;
 		}
 
-		// Determine frame index within animation
 		int f = (lf->frameTime - lf->animationTime) / anim_frame_time;
 
-		// -----------------------------------------------------------------
-		// Handle end-of-animation behaviour
-		// -----------------------------------------------------------------
 		if (f >= anim->numFrames)
 		{
 			f -= anim->numFrames;
 
-			if (anim->loopFrames != -1)
+			int loopFrames = anim->loopFrames;
+
+			if (loopFrames != -1)
 			{
-				// Looping animation
-				const int nonLoop = anim->numFrames - anim->loopFrames;
+				if (loopFrames < 0)
+				{
+					loopFrames = 0;
+				}
+				else if (loopFrames > anim->numFrames)
+				{
+					loopFrames = anim->numFrames;
+				}
+
+				const int nonLoop = anim->numFrames - loopFrames;
 
 				if (nonLoop == 0)
 				{
@@ -949,25 +967,20 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 					f %= nonLoop;
 				}
 
-				f += anim->loopFrames;
+				f += loopFrames;
 			}
 			else
 			{
-				// Non-looping: clamp to last frame
 				f = anim->numFrames - 1;
 				if (f < 0)
 				{
 					f = 0;
 				}
 
-				// Allow immediate transition to next animation
 				lf->frameTime = cg.time;
 			}
 		}
 
-		// -----------------------------------------------------------------
-		// Apply reversed animations if frameLerp < 0
-		// -----------------------------------------------------------------
 		if (anim->frameLerp < 0)
 		{
 			lf->frame = anim->firstFrame + (anim->numFrames - 1 - f);
@@ -977,7 +990,6 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 			lf->frame = anim->firstFrame + f;
 		}
 
-		// Prevent runaway frameTime
 		if (cg.time > lf->frameTime)
 		{
 			lf->frameTime = cg.time;
@@ -986,9 +998,6 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 		newFrame = qtrue;
 	}
 
-	// ---------------------------------------------------------------------
-	// Clamp future times
-	// ---------------------------------------------------------------------
 	if (lf->frameTime > cg.time + 200)
 	{
 		lf->frameTime = cg.time;
@@ -999,9 +1008,6 @@ static qboolean CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, const int new
 		lf->oldFrameTime = cg.time;
 	}
 
-	// ---------------------------------------------------------------------
-	// Compute backlerp safely
-	// ---------------------------------------------------------------------
 	if (lf->frameTime == lf->oldFrameTime)
 	{
 		lf->backlerp = 0.0f;
@@ -1343,62 +1349,76 @@ static void CG_PlayerAnimEventDo(centity_t* cent, animevent_t* anim_event)
 	}
 }
 
-static void CG_PlayerAnimEvents(const int anim_file_index, const qboolean torso, const int old_frame, const int frame,
-	const int entNum)
+/*
+==========================
+CG_PlayerAnimEvents (modernised)
+==========================
+*/
+static void CG_PlayerAnimEvents(const int anim_file_index, const qboolean torso,
+	const int old_frame, const int frame, const int entNum)
 {
-	int first_frame = 0, lastFrame = 0;
+	int first_frame = 0;
+	int lastFrame = 0;
+
 	qboolean do_event = qfalse;
 	qboolean in_same_anim = qfalse;
 	qboolean loop_anim = qfalse;
 	qboolean anim_backward = qfalse;
+
 	animevent_t* anim_events;
 	int gla_index = -1;
 
+	// Determine GLA index for model
 	if (g_entities[entNum].ghoul2.size())
 	{
 		gla_index = gi.G2API_GetAnimIndex(&g_entities[entNum].ghoul2[0]);
 	}
 
-	if (torso)
-	{
-		anim_events = level.knownAnimFileSets[anim_file_index].torsoAnimEvents;
-	}
-	else
-	{
-		anim_events = level.knownAnimFileSets[anim_file_index].legsAnimEvents;
-	}
+	// Select torso or legs event table
+	anim_events = (torso)
+		? level.knownAnimFileSets[anim_file_index].torsoAnimEvents
+		: level.knownAnimFileSets[anim_file_index].legsAnimEvents;
+
+	// Detect animation continuity when frame jump > 1
 	if (abs(old_frame - frame) > 1)
 	{
-		//given a range, see if keyFrame falls in that range
-		int old_anim, anim;
+		int old_anim = -1;
+		int anim = -1;
+
 		if (torso)
 		{
-			//more precise, slower
 			old_anim = PM_TorsoAnimForFrame(&g_entities[entNum], old_frame);
 			anim = PM_TorsoAnimForFrame(&g_entities[entNum], frame);
 		}
 		else
 		{
-			//more precise, slower
 			old_anim = PM_LegsAnimForFrame(&g_entities[entNum], old_frame);
 			anim = PM_LegsAnimForFrame(&g_entities[entNum], frame);
 		}
 
-		if (anim != old_anim)
+		// Validate anim indices
+		if (anim < 0 || anim >= MAX_ANIMATIONS ||
+			old_anim < 0 || old_anim >= MAX_ANIMATIONS ||
+			anim != old_anim)
 		{
-			//not in same anim
 			in_same_anim = qfalse;
-			//FIXME: we *could* see if the oldFrame was *just about* to play the keyframed sound...
 		}
 		else
 		{
-			//still in same anim, check for looping anim
 			in_same_anim = qtrue;
-			const animation_t* animation = &level.knownAnimFileSets[anim_file_index].animations[anim];
-			anim_backward = static_cast<qboolean>(animation->frameLerp < 0);
-			if (animation->loopFrames != -1)
+
+			const animation_t* animation =
+				&level.knownAnimFileSets[anim_file_index].animations[anim];
+
+			anim_backward = (animation->frameLerp < 0) ? qtrue : qfalse;
+
+			// Clamp loopFrames
+			int loopFrames = animation->loopFrames;
+			if (loopFrames < -1) loopFrames = -1;
+			if (loopFrames > animation->numFrames) loopFrames = animation->numFrames;
+
+			if (loopFrames != -1)
 			{
-				//a looping anim!
 				loop_anim = qtrue;
 				first_frame = animation->firstFrame;
 				lastFrame = animation->firstFrame + animation->numFrames;
@@ -1406,175 +1426,162 @@ static void CG_PlayerAnimEvents(const int anim_file_index, const qboolean torso,
 		}
 	}
 
-	const hstring my_model = g_entities[entNum].NPC_type; //apparently NPC_type is always the same as the model name???
+	const hstring my_model = g_entities[entNum].NPC_type;
 
-	// Check for anim event
+	// Iterate through all animation events
 	for (int i = 0; i < MAX_ANIM_EVENTS; ++i)
 	{
-		if (anim_events[i].eventType == AEV_NONE) // No event, end of list
+		if (anim_events[i].eventType == AEV_NONE)
 		{
-			break;
+			break; // end of list
 		}
 
+		// GLA mismatch
 		if (gla_index != -1 && anim_events[i].glaIndex != gla_index)
 		{
 			continue;
 		}
 
-		qboolean match = qfalse;
-		if (anim_events[i].modelOnly == 0 || anim_events[i].modelOnly == my_model.handle())
+		// Model mismatch
+		if (anim_events[i].modelOnly != 0 &&
+			anim_events[i].modelOnly != my_model.handle())
 		{
-			if (anim_events[i].keyFrame == frame)
+			continue;
+		}
+
+		// Clamp keyFrame to valid range
+		if (anim_events[i].keyFrame < 0)
+		{
+			continue;
+		}
+
+		qboolean match = qfalse;
+
+		// Exact match
+		if (anim_events[i].keyFrame == frame)
+		{
+			match = qtrue;
+		}
+		else if (abs(old_frame - frame) > 1)
+		{
+			// Range match
+			if (in_same_anim)
 			{
-				//exact match
-				match = qtrue;
-			}
-			else if (abs(old_frame - frame) > 1) //&& cg_reliableAnimEvents.integer )
-			{
-				//given a range, see if keyFrame falls in that range
-				if (in_same_anim)
+				const int key = anim_events[i].keyFrame;
+
+				// Must be close to keyframe
+				if (abs(old_frame - key) <= 3 || abs(frame - key) <= 3)
 				{
-					//if changed anims altogether, sorry, the sound is lost
-					if (abs(old_frame - anim_events[i].keyFrame) <= 3
-						|| abs(frame - anim_events[i].keyFrame) <= 3)
+					if (anim_backward)
 					{
-						//must be at least close to the keyframe
-						if (anim_backward)
+						// Backwards animation
+						if (old_frame > key && frame < key)
 						{
-							//animation plays backwards
-							if (old_frame > anim_events[i].keyFrame && frame < anim_events[i].keyFrame)
-							{
-								//old to new passed through keyframe
-								match = qtrue;
-							}
-							else if (loop_anim)
-							{
-								//hmm, didn't pass through it linearally, see if we looped
-								if (anim_events[i].keyFrame >= first_frame && anim_events[i].keyFrame < lastFrame)
-								{
-									//keyframe is in this anim
-									if (old_frame > anim_events[i].keyFrame
-										&& frame > old_frame)
-									{
-										//old to new passed through keyframe
-										match = qtrue;
-									}
-								}
-							}
+							match = qtrue;
 						}
-						else
+						else if (loop_anim)
 						{
-							//anim plays forwards
-							if (old_frame < anim_events[i].keyFrame && frame > anim_events[i].keyFrame)
+							if (key >= first_frame && key < lastFrame)
 							{
-								//old to new passed through keyframe
-								match = qtrue;
-							}
-							else if (loop_anim)
-							{
-								//hmm, didn't pass through it linearally, see if we looped
-								if (anim_events[i].keyFrame >= first_frame && anim_events[i].keyFrame < lastFrame)
+								if (old_frame > key && frame > old_frame)
 								{
-									//keyframe is in this anim
-									if (old_frame < anim_events[i].keyFrame
-										&& frame < old_frame)
-									{
-										//old to new passed through keyframe
-										match = qtrue;
-									}
+									match = qtrue;
 								}
 							}
 						}
 					}
+					else
+					{
+						// Forward animation
+						if (old_frame < key && frame > key)
+						{
+							match = qtrue;
+						}
+						else if (loop_anim)
+						{
+							if (key >= first_frame && key < lastFrame)
+							{
+								if (old_frame < key && frame < old_frame)
+								{
+									match = qtrue;
+								}
+							}
+						}
+					}
 				}
 			}
-			if (match)
+		}
+
+		if (!match)
+		{
+			continue;
+		}
+
+		// Probability checks
+		switch (anim_events[i].eventType)
+		{
+		case AEV_SOUNDCHAN:
+		case AEV_SOUND:
+			if (!anim_events[i].eventData[AED_SOUND_PROBABILITY] ||
+				anim_events[i].eventData[AED_SOUND_PROBABILITY] > Q_irand(0, 99))
 			{
-				switch (anim_events[i].eventType)
-				{
-				case AEV_SOUNDCHAN:
-				case AEV_SOUND:
-					// Determine probability of playing sound
-					if (!anim_events[i].eventData[AED_SOUND_PROBABILITY]) // 100%
-					{
-						do_event = qtrue;
-					}
-					else if (anim_events[i].eventData[AED_SOUND_PROBABILITY] > Q_irand(0, 99))
-					{
-						do_event = qtrue;
-					}
-					break;
-				case AEV_SABER_SWING:
-					// Determine probability of playing sound
-					if (!anim_events[i].eventData[AED_SABER_SWING_PROBABILITY]) // 100%
-					{
-						do_event = qtrue;
-					}
-					else if (anim_events[i].eventData[AED_SABER_SWING_PROBABILITY] > Q_irand(0, 99))
-					{
-						do_event = qtrue;
-					}
-					break;
-				case AEV_SABER_SPIN:
-					// Determine probability of playing sound
-					if (!anim_events[i].eventData[AED_SABER_SPIN_PROBABILITY]) // 100%
-					{
-						do_event = qtrue;
-					}
-					else if (anim_events[i].eventData[AED_SABER_SPIN_PROBABILITY] > Q_irand(0, 99))
-					{
-						do_event = qtrue;
-					}
-					break;
-				case AEV_FOOTSTEP:
-					// Determine probability of playing sound
-					//Com_Printf( "Footstep event on frame %d, even should be on frame %d, off by %d\n", frame, animEvents[i].keyFrame, frame-animEvents[i].keyFrame );
-					if (!anim_events[i].eventData[AED_FOOTSTEP_PROBABILITY]) // 100%
-					{
-						do_event = qtrue;
-					}
-					else if (anim_events[i].eventData[AED_FOOTSTEP_PROBABILITY] > Q_irand(0, 99))
-					{
-						do_event = qtrue;
-					}
-					break;
-				case AEV_EFFECT:
-					// Determine probability of playing sound
-					if (!anim_events[i].eventData[AED_EFFECT_PROBABILITY]) // 100%
-					{
-						do_event = qtrue;
-					}
-					else if (anim_events[i].eventData[AED_EFFECT_PROBABILITY] > Q_irand(0, 99))
-					{
-						do_event = qtrue;
-					}
-					break;
-				case AEV_FIRE:
-					// Determine probability of playing sound
-					if (!anim_events[i].eventData[AED_FIRE_PROBABILITY]) // 100%
-					{
-						do_event = qtrue;
-					}
-					else if (anim_events[i].eventData[AED_FIRE_PROBABILITY] > Q_irand(0, 99))
-					{
-						do_event = qtrue;
-					}
-					break;
-				case AEV_MOVE:
-					do_event = qtrue;
-					break;
-				default:
-					//doEvent = qfalse;//implicit
-					break;
-				}
-				// do event
-				if (do_event)
-				{
-					CG_PlayerAnimEventDo(&cg_entities[entNum], &anim_events[i]);
-				}
-			} // end if event matches
-		} // end if model matches
-	} // end for
+				do_event = qtrue;
+			}
+			break;
+
+		case AEV_SABER_SWING:
+			if (!anim_events[i].eventData[AED_SABER_SWING_PROBABILITY] ||
+				anim_events[i].eventData[AED_SABER_SWING_PROBABILITY] > Q_irand(0, 99))
+			{
+				do_event = qtrue;
+			}
+			break;
+
+		case AEV_SABER_SPIN:
+			if (!anim_events[i].eventData[AED_SABER_SPIN_PROBABILITY] ||
+				anim_events[i].eventData[AED_SABER_SPIN_PROBABILITY] > Q_irand(0, 99))
+			{
+				do_event = qtrue;
+			}
+			break;
+
+		case AEV_FOOTSTEP:
+			if (!anim_events[i].eventData[AED_FOOTSTEP_PROBABILITY] ||
+				anim_events[i].eventData[AED_FOOTSTEP_PROBABILITY] > Q_irand(0, 99))
+			{
+				do_event = qtrue;
+			}
+			break;
+
+		case AEV_EFFECT:
+			if (!anim_events[i].eventData[AED_EFFECT_PROBABILITY] ||
+				anim_events[i].eventData[AED_EFFECT_PROBABILITY] > Q_irand(0, 99))
+			{
+				do_event = qtrue;
+			}
+			break;
+
+		case AEV_FIRE:
+			if (!anim_events[i].eventData[AED_FIRE_PROBABILITY] ||
+				anim_events[i].eventData[AED_FIRE_PROBABILITY] > Q_irand(0, 99))
+			{
+				do_event = qtrue;
+			}
+			break;
+
+		case AEV_MOVE:
+			do_event = qtrue;
+			break;
+
+		default:
+			break;
+		}
+
+		if (do_event)
+		{
+			CG_PlayerAnimEventDo(&cg_entities[entNum], &anim_events[i]);
+		}
+	}
 }
 
 static void CGG2_AnimEvents(centity_t* cent)
@@ -15148,6 +15155,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 		{
 			//Use simple roll for the more complicated rolls
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_L
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_L_ANI
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_L)
 			{
 				//Left rolls
@@ -15158,6 +15166,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 				did_special = qtrue;
 			}
 			else if (cg.snap->ps.legsAnim == BOTH_FLIP_R
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_R_ANI
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_R)
 			{
 				//Right rolls
@@ -15172,8 +15181,10 @@ static void SmoothTrueView(vec3_t eye_angles)
 		{
 			//You're here because you're using cg_trueroll.integer == 2
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_L
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_L_ANI
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_L
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_R
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_R_ANI
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_R)
 			{
 				//Roll animation, lock the eyemovement
@@ -15191,8 +15202,10 @@ static void SmoothTrueView(vec3_t eye_angles)
 		|| cg.snap->ps.legsAnim == BOTH_WALL_FLIP_LEFT
 		|| cg.snap->ps.legsAnim == BOTH_WALL_FLIP_RIGHT
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_L
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_L_ANI
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_L
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_R
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_R_ANI
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_R)
 	{
 		//you don't want rolling so use cg.refdef.viewangles as the view
@@ -15212,6 +15225,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 		{
 			//Use simple flip for the more complicated flips
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_F
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_F_ANI
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_F2
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F1
@@ -15225,6 +15239,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 				did_special = qtrue;
 			}
 			else if (cg.snap->ps.legsAnim == BOTH_FLIP_B
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_B_ANI
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_B
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK1
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK2
@@ -15242,11 +15257,13 @@ static void SmoothTrueView(vec3_t eye_angles)
 		{
 			//You're here because you're using cg_trueflip.integer = 2
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_F
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_F_ANI
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_F2
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F1
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F2
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_B
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_B_ANI
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_B
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK1
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK2
@@ -15260,11 +15277,13 @@ static void SmoothTrueView(vec3_t eye_angles)
 	}
 	else if (cg.snap->ps.legsAnim == BOTH_WALL_FLIP_BACK1
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_F
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_F_ANI
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_F2
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_F
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_F1
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_F2
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_B
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_B_ANI
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_B
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK1
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK2
@@ -15374,6 +15393,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 
 	//Prevent camera flicker while landing.
 	if (cg.snap->ps.legsAnim == BOTH_LAND1
+		|| cg.snap->ps.legsAnim == BOTH_LAND1_ANI
 		|| cg.snap->ps.legsAnim == BOTH_LAND2
 		|| cg.snap->ps.legsAnim == BOTH_LANDBACK1
 		|| cg.snap->ps.legsAnim == BOTH_LANDLEFT1

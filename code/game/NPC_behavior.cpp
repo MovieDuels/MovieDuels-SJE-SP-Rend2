@@ -60,6 +60,74 @@ extern void NPC_CheckGetNewWeapon();
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern void NPC_AimAdjust(int change);
 extern qboolean g_standard_humanoid(gentity_t* self);
+extern cvar_t* g_ActivateAnimationStyle;
+
+animFlags_t B_Animationstyletable(const gentity_t* NPC)
+{
+	const gclient_t* cl = NPC->client;
+
+	animFlags_t flags{};
+	if (!cl)
+	{
+		return flags;
+	}
+
+	const int style = cl->animationstyle;
+
+	// Base style checks
+	flags.isAnakin = (style == CS_ANAKIN) ? qtrue : qfalse;
+	flags.isBenKenobi = (style == CS_BENKENOBI) ? qtrue : qfalse;
+	flags.isCalKestis = (style == CS_CAL_KESTIS) ? qtrue : qfalse;
+	flags.isDarkForces2 = (style == CS_DARKFORCES2) ? qtrue : qfalse;
+	flags.isCountDooku = (style == CS_COUNT_DOOKU) ? qtrue : qfalse;
+	flags.isGalenMarek = (style == CS_GALEN_MAREK) ? qtrue : qfalse;
+	flags.isQuiGonJinn = (style == CS_QUI_GON_JINN) ? qtrue : qfalse;
+	flags.isGrievous = (style == CS_GRIEVOUS) ? qtrue : qfalse;
+	flags.isKotor = (style == CS_KOTOR) ? qtrue : qfalse;
+	flags.isLukeSkywalker = (style == CS_LUKE_SKYWALKER) ? qtrue : qfalse;
+	flags.isMaceWindu = (style == CS_MACE_WINDU) ? qtrue : qfalse;
+	flags.isMaul = (style == CS_MAUL) ? qtrue : qfalse;
+	flags.isMovieDuels = (style == CS_MOVIEDUELS) ? qtrue : qfalse;
+	flags.isObiWan = (style == CS_OBIWAN) ? qtrue : qfalse;
+	flags.isObiWanEP3 = (style == CS_OBIWAN_EP3) ? qtrue : qfalse;
+	flags.isPalpatine = (style == CS_PALPATINE) ? qtrue : qfalse;
+	flags.isKyloRen = (style == CS_KYLO_REN) ? qtrue : qfalse;
+	flags.isRey = (style == CS_REY) ? qtrue : qfalse;
+	flags.isVader = (style == CS_VADER) ? qtrue : qfalse;
+	flags.isYoda = (style == CS_YODA) ? qtrue : qfalse;
+
+	// Server-side override (equivalent to g_AnimationStyle on client)
+	if (g_AnimationStyle)
+	{
+		switch (g_AnimationStyle->integer)
+		{
+		case 1:  flags.isAnakin = qtrue; break;
+		case 3:  flags.isBenKenobi = qtrue; break;
+		case 4:  flags.isCalKestis = qtrue; break;
+		case 7:  flags.isDarkForces2 = qtrue; break;
+		case 8:  flags.isCountDooku = qtrue; break;
+		case 9:  flags.isGalenMarek = qtrue; break;
+		case 10: flags.isQuiGonJinn = qtrue; break;
+		case 11: flags.isGrievous = qtrue; break;
+		case 14: flags.isKotor = qtrue; break;
+		case 15: flags.isLukeSkywalker = qtrue; break;
+		case 16: flags.isMaceWindu = qtrue; break;
+		case 17: flags.isMaul = qtrue; break;
+		case 18: flags.isMovieDuels = qtrue; break;
+		case 20: flags.isObiWan = qtrue; break;
+		case 21: flags.isObiWanEP3 = qtrue; break;
+		case 22: flags.isPalpatine = qtrue; break;
+		case 24: flags.isKyloRen = qtrue; break;
+		case 25: flags.isRey = qtrue; break;
+		case 27: flags.isVader = qtrue; break;
+		case 28: flags.isYoda = qtrue; break;
+		default: break;
+		}
+	}
+
+	return flags;
+}
+
 /*
  void NPC_BSAdvanceFight ()
 
@@ -663,6 +731,8 @@ void NPC_BSJump()
 	vec3_t dir, p1, p2, apex;
 	float time, height, forward, z, xy, dist, apexHeight;
 
+	animFlags_t flags = B_Animationstyletable(NPC);
+
 	if (!NPCInfo->goalEntity)
 	{
 		//Should have task completed the navgoal
@@ -789,7 +859,21 @@ void NPC_BSJump()
 			//Landed, start landing anim
 			//FIXME: if the
 			VectorClear(NPC->client->ps.velocity);
-			NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 			NPCInfo->jumpState = JS_LANDING;
 			//FIXME: landsound?
 		}
@@ -799,8 +883,24 @@ void NPC_BSJump()
 		}
 		else
 		{
-			//still in air, but done with jump anim, play inair anim
-			NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_OVERRIDE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_ANI, SETANIM_FLAG_OVERRIDE);
+				}
+				else
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_OVERRIDE);
+				}
+			}
+			else
+			{
+				//still in air, but done with jump anim, play inair anim
+				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_OVERRIDE);
+			}
 		}
 		break;
 	case JS_LANDING:

@@ -5014,7 +5014,6 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	//  NEW KATA ANIMS FOR ANIMATION SYSTEM
 	///////////////////////////////////////
 	BOTH_A1_SPECIAL_YODA,
-	BOTH_A2_SPECIAL_ANI,
 	BOTH_A6_SABERPROTECT_GRIEV,
 	///////////////////////////////////////////
 	BOTH_STABDOWN_WINDU,
@@ -5022,7 +5021,8 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	BOTH_SMASHDOWN_SINGLE,
 	BOTH_SMASHDOWN_STAFF,
 	//////////////////////////////////////////
-		// ANAKIN
+		// ANAKIN CS_ANAKIN
+	BOTH_A2_SPECIAL_ANI,
 	BOTH_WALK1_ANI,
 	BOTH_WALK2_ANI,
 	BOTH_WALK_DUAL_ANI,
@@ -5032,6 +5032,32 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	BOTH_RUN_STAFF_ANI,
 	BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,
 	BOTH_SPRINT_STAFF_LIGHTSABER_ANI,
+	BOTH_STAND2IDLE1_ANI,
+	BOTH_STAND9IDLE1_ANI,
+	BOTH_STAND_BLOCKING_ON_ANI,
+	BOTH_STAND_BLOCKING_ON_LEFT_ANI,
+	BOTH_STAND_BLOCKING_ON_RIGHT_ANI,
+	BOTH_STAND_BLOCKING_ON_FORWARD_ANI,
+	BOTH_STAND_BLOCKING_ON_BACK_ANI,
+	BOTH_STAND_BLOCKING_ON_DUAL_ANI,
+	BOTH_SABERFAST_STANCE_JKA_ANI,
+	BOTH_SABERDESANN_STANCE_JKA_ANI,
+	BOTH_SABERSINGLECROUCH_ANI,
+	BOTH_SABERSLOW_STANCE_JKA_ANI,
+	BOTH_FLIP_B_ANI,
+	BOTH_FLIP_F_ANI,
+	BOTH_FLIP_L_ANI,
+	BOTH_FLIP_R_ANI,
+	BOTH_FORCEGRIP_RELEASE_ANI,
+	BOTH_FORCEGRIP1_ANI,
+	BOTH_INAIR1_ANI,
+	BOTH_JUMP1_ANI,
+	BOTH_LAND1_ANI,
+	//////////////////////////////////////////
+		// BATTLEDROID CS_BATTLEDROID
+
+	//////////////////////////////////////////
+		// BEN CS_BENKENOBI
 
 	//# #eol
 	MAX_ANIMATIONS,
@@ -5040,4 +5066,145 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 
 #define SABER_ANIM_GROUP_SIZE (BOTH_A2_T__B_ - BOTH_A1_T__B_)
 
-#endif// #ifndef __ANIMS_H__
+// ------------------------------------------------------------
+// Begin embedded h helpers
+// ------------------------------------------------------------
+
+#include <vector>
+#include <climits>
+#include <cmath>
+#include <cstdlib>
+
+// Loads an animation config through the renderer cache.
+inline qboolean AnimCFG_Load(int (*get_cfg)(const char*, char*, int),
+	const char* path,
+	std::vector<char>& text)
+{
+	text.clear();
+
+	const int len = get_cfg(path, nullptr, 0);
+	if (len <= 0)
+	{
+		return qfalse;
+	}
+
+	text.assign(static_cast<size_t>(len) + 1, '\0');
+	const int copied = get_cfg(path, text.data(), len + 1);
+
+	return (copied == len) ? qtrue : qfalse;
+}
+
+// One row of animation.cfg
+struct AnimCFG_Row
+{
+	int   first_frame;
+	int   num_frames;
+	int   loop_frames;
+	float fps;
+};
+
+// Reads the four values following an animation name
+inline qboolean AnimCFG_ReadRow(const char** text_p, AnimCFG_Row& row)
+{
+	const char* token = COM_ParseExt(text_p, qfalse);
+	if (!token[0]) return qfalse;
+	row.first_frame = atoi(token);
+
+	token = COM_ParseExt(text_p, qfalse);
+	if (!token[0]) return qfalse;
+	row.num_frames = atoi(token);
+
+	token = COM_ParseExt(text_p, qfalse);
+	if (!token[0]) return qfalse;
+	row.loop_frames = atoi(token);
+
+	token = COM_ParseExt(text_p, qfalse);
+	if (!token[0]) return qfalse;
+	row.fps = static_cast<float>(atof(token));
+
+	// Skip anything else on this line
+	do
+	{
+		token = COM_ParseExt(text_p, qfalse);
+	} while (token[0]);
+
+	return qtrue;
+}
+
+// fps → frameLerp using Raven arithmetic
+inline int AnimCFG_FrameLerp(float fps, qboolean* clamped)
+{
+	if (fps == 0.0f)
+	{
+		fps = 1.0f;
+	}
+
+	int lerp;
+
+	if (fps < 0.0f)
+	{
+		const float f = floorf(1000.0f / fps);
+		lerp = (f < -32767.0f) ? -32767 : static_cast<int>(f);
+	}
+	else
+	{
+		const float f = ceilf(1000.0f / fps);
+		lerp = (f > 32767.0f) ? 32767 : static_cast<int>(f);
+	}
+
+	if (clamped != nullptr)
+	{
+		*clamped = (lerp == 32767 || lerp == -32767) ? qtrue : qfalse;
+	}
+
+	return lerp;
+}
+
+// Validates and stores one row
+inline qboolean AnimCFG_Store(animation_t& anim,
+	const AnimCFG_Row& row,
+	const char* anim_name,
+	const char* file_name)
+{
+	if (row.first_frame < 0 ||
+		row.num_frames <= 0 ||
+		row.first_frame > INT_MAX - row.num_frames)
+	{
+		Com_Printf(S_COLOR_YELLOW "WARNING: %s: %s has an invalid frame range (first %d, count %d), row ignored\n",
+			file_name, anim_name, row.first_frame, row.num_frames);
+		return qfalse;
+	}
+
+	const int max_loop = (row.num_frames < SHRT_MAX) ? row.num_frames : SHRT_MAX;
+	int loop_frames = row.loop_frames;
+
+	if (loop_frames < -1 || loop_frames > max_loop)
+	{
+		Com_Printf(S_COLOR_YELLOW "WARNING: %s: %s loopFrames %d is outside -1..%d, clamped\n",
+			file_name, anim_name, loop_frames, max_loop);
+
+		loop_frames = (loop_frames < -1) ? -1 : max_loop;
+	}
+
+	qboolean lerp_clamped = qfalse;
+	const int lerp = AnimCFG_FrameLerp(row.fps, &lerp_clamped);
+
+	if (lerp_clamped == qtrue)
+	{
+		Com_Printf(S_COLOR_YELLOW "WARNING: %s: %s fps %g gives a frame time outside +-32767 ms, clamped\n",
+			file_name, anim_name, row.fps);
+	}
+
+	anim.firstFrame = row.first_frame;
+	anim.numFrames = row.num_frames;
+	anim.loopFrames = static_cast<short>(loop_frames);
+	anim.frameLerp = static_cast<short>(lerp);
+
+	return qtrue;
+}
+
+// ------------------------------------------------------------
+// End embedded anim_cfg.h helpers
+// ------------------------------------------------------------
+
+#endif // __ANIMS_H__

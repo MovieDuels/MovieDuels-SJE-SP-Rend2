@@ -35,6 +35,7 @@ extern qboolean NAV_MoveDirSafe(const gentity_t* self, const usercmd_t* cmd, flo
 qboolean G_BoundsOverlap(const vec3_t mins1, const vec3_t maxs1, const vec3_t mins2, const vec3_t maxs2);
 
 extern int GetTime(int lastTime);
+extern cvar_t* g_ActivateAnimationStyle;
 
 navInfo_t frameNavInfo;
 extern qboolean FlyingCreature(const gentity_t* ent);
@@ -50,6 +51,72 @@ constexpr auto APEX_HEIGHT = 200.0f;
 constexpr auto JUMP_SPEED = 200.0f;
 
 static qboolean NPC_TryJump();
+
+animFlags_t M_Animationstyletable(const gentity_t* NPC)
+{
+	const gclient_t* cl = NPC->client;
+
+	animFlags_t flags{};
+	if (!cl)
+	{
+		return flags;
+	}
+
+	const int style = cl->animationstyle;
+
+	// Base style checks
+	flags.isAnakin = (style == CS_ANAKIN) ? qtrue : qfalse;
+	flags.isBenKenobi = (style == CS_BENKENOBI) ? qtrue : qfalse;
+	flags.isCalKestis = (style == CS_CAL_KESTIS) ? qtrue : qfalse;
+	flags.isDarkForces2 = (style == CS_DARKFORCES2) ? qtrue : qfalse;
+	flags.isCountDooku = (style == CS_COUNT_DOOKU) ? qtrue : qfalse;
+	flags.isGalenMarek = (style == CS_GALEN_MAREK) ? qtrue : qfalse;
+	flags.isQuiGonJinn = (style == CS_QUI_GON_JINN) ? qtrue : qfalse;
+	flags.isGrievous = (style == CS_GRIEVOUS) ? qtrue : qfalse;
+	flags.isKotor = (style == CS_KOTOR) ? qtrue : qfalse;
+	flags.isLukeSkywalker = (style == CS_LUKE_SKYWALKER) ? qtrue : qfalse;
+	flags.isMaceWindu = (style == CS_MACE_WINDU) ? qtrue : qfalse;
+	flags.isMaul = (style == CS_MAUL) ? qtrue : qfalse;
+	flags.isMovieDuels = (style == CS_MOVIEDUELS) ? qtrue : qfalse;
+	flags.isObiWan = (style == CS_OBIWAN) ? qtrue : qfalse;
+	flags.isObiWanEP3 = (style == CS_OBIWAN_EP3) ? qtrue : qfalse;
+	flags.isPalpatine = (style == CS_PALPATINE) ? qtrue : qfalse;
+	flags.isKyloRen = (style == CS_KYLO_REN) ? qtrue : qfalse;
+	flags.isRey = (style == CS_REY) ? qtrue : qfalse;
+	flags.isVader = (style == CS_VADER) ? qtrue : qfalse;
+	flags.isYoda = (style == CS_YODA) ? qtrue : qfalse;
+
+	// Server-side override (equivalent to g_AnimationStyle on client)
+	if (g_AnimationStyle)
+	{
+		switch (g_AnimationStyle->integer)
+		{
+		case 1:  flags.isAnakin = qtrue; break;
+		case 3:  flags.isBenKenobi = qtrue; break;
+		case 4:  flags.isCalKestis = qtrue; break;
+		case 7:  flags.isDarkForces2 = qtrue; break;
+		case 8:  flags.isCountDooku = qtrue; break;
+		case 9:  flags.isGalenMarek = qtrue; break;
+		case 10: flags.isQuiGonJinn = qtrue; break;
+		case 11: flags.isGrievous = qtrue; break;
+		case 14: flags.isKotor = qtrue; break;
+		case 15: flags.isLukeSkywalker = qtrue; break;
+		case 16: flags.isMaceWindu = qtrue; break;
+		case 17: flags.isMaul = qtrue; break;
+		case 18: flags.isMovieDuels = qtrue; break;
+		case 20: flags.isObiWan = qtrue; break;
+		case 21: flags.isObiWanEP3 = qtrue; break;
+		case 22: flags.isPalpatine = qtrue; break;
+		case 24: flags.isKyloRen = qtrue; break;
+		case 25: flags.isRey = qtrue; break;
+		case 27: flags.isVader = qtrue; break;
+		case 28: flags.isYoda = qtrue; break;
+		default: break;
+		}
+	}
+
+	return flags;
+}
 
 static qboolean NPC_Jump(vec3_t dest, const int goalEntNum)
 {
@@ -359,6 +426,9 @@ qboolean NPC_TryJump(gentity_t* goal, const float max_xy_dist, const float max_z
 static void NPC_JumpAnimation()
 {
 	int jumpAnim = BOTH_JUMP1;
+	int jumpAnim_ANI = BOTH_JUMP1_ANI;
+
+	animFlags_t flags = M_Animationstyletable(NPC);
 
 	if (NPC->client->NPC_class == CLASS_BOBAFETT || NPC->client->NPC_class == CLASS_MANDALORIAN || NPC->client->
 		NPC_class == CLASS_JANGO || NPC->client->NPC_class == CLASS_JANGODUAL
@@ -378,10 +448,38 @@ static void NPC_JumpAnimation()
 		}
 		else
 		{
-			jumpAnim = BOTH_FLIP_F;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					jumpAnim = BOTH_FLIP_F;
+				}
+				else
+				{
+					jumpAnim = BOTH_FLIP_F;
+				}
+			}
+			else
+			{
+				jumpAnim = BOTH_FLIP_F;
+			}
 		}
 	}
-	NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+	{
+		if (flags.isAnakin == qtrue)
+		{
+			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+		else
+		{
+			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+	}
+	else
+	{
+		NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	}
 }
 
 extern void JET_FlyStart(gentity_t* self);

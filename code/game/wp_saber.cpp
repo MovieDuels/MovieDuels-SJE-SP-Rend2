@@ -297,6 +297,7 @@ void G_Beskar_Attack_Bounce(const gentity_t* self, gentity_t* other);
 extern qboolean Mandalorian_Character(const gentity_t* self);
 extern void jet_fly_stop(gentity_t* self);
 extern qboolean g_standard_humanoid(gentity_t* self);
+extern cvar_t* g_ActivateAnimationStyle;
 
 extern cvar_t* g_saberAutoBlocking;
 extern cvar_t* g_saberRealisticCombat;
@@ -322,6 +323,72 @@ qboolean g_saberNoEffects = qfalse;
 qboolean g_noClashFlare = qfalse;
 int g_saberFlashTime = 0;
 vec3_t g_saberFlashPos = { 0, 0, 0 };
+
+animFlags_t W_Animationstyletable(const gentity_t* self)
+{
+	const gclient_t* cl = self->client;
+
+	animFlags_t flags{};
+	if (!cl)
+	{
+		return flags;
+	}
+
+	const int style = cl->animationstyle;
+
+	// Base style checks
+	flags.isAnakin = (style == CS_ANAKIN) ? qtrue : qfalse;
+	flags.isBenKenobi = (style == CS_BENKENOBI) ? qtrue : qfalse;
+	flags.isCalKestis = (style == CS_CAL_KESTIS) ? qtrue : qfalse;
+	flags.isDarkForces2 = (style == CS_DARKFORCES2) ? qtrue : qfalse;
+	flags.isCountDooku = (style == CS_COUNT_DOOKU) ? qtrue : qfalse;
+	flags.isGalenMarek = (style == CS_GALEN_MAREK) ? qtrue : qfalse;
+	flags.isQuiGonJinn = (style == CS_QUI_GON_JINN) ? qtrue : qfalse;
+	flags.isGrievous = (style == CS_GRIEVOUS) ? qtrue : qfalse;
+	flags.isKotor = (style == CS_KOTOR) ? qtrue : qfalse;
+	flags.isLukeSkywalker = (style == CS_LUKE_SKYWALKER) ? qtrue : qfalse;
+	flags.isMaceWindu = (style == CS_MACE_WINDU) ? qtrue : qfalse;
+	flags.isMaul = (style == CS_MAUL) ? qtrue : qfalse;
+	flags.isMovieDuels = (style == CS_MOVIEDUELS) ? qtrue : qfalse;
+	flags.isObiWan = (style == CS_OBIWAN) ? qtrue : qfalse;
+	flags.isObiWanEP3 = (style == CS_OBIWAN_EP3) ? qtrue : qfalse;
+	flags.isPalpatine = (style == CS_PALPATINE) ? qtrue : qfalse;
+	flags.isKyloRen = (style == CS_KYLO_REN) ? qtrue : qfalse;
+	flags.isRey = (style == CS_REY) ? qtrue : qfalse;
+	flags.isVader = (style == CS_VADER) ? qtrue : qfalse;
+	flags.isYoda = (style == CS_YODA) ? qtrue : qfalse;
+
+	// Server-side override (equivalent to g_AnimationStyle on client)
+	if (g_AnimationStyle)
+	{
+		switch (g_AnimationStyle->integer)
+		{
+		case 1:  flags.isAnakin = qtrue; break;
+		case 3:  flags.isBenKenobi = qtrue; break;
+		case 4:  flags.isCalKestis = qtrue; break;
+		case 7:  flags.isDarkForces2 = qtrue; break;
+		case 8:  flags.isCountDooku = qtrue; break;
+		case 9:  flags.isGalenMarek = qtrue; break;
+		case 10: flags.isQuiGonJinn = qtrue; break;
+		case 11: flags.isGrievous = qtrue; break;
+		case 14: flags.isKotor = qtrue; break;
+		case 15: flags.isLukeSkywalker = qtrue; break;
+		case 16: flags.isMaceWindu = qtrue; break;
+		case 17: flags.isMaul = qtrue; break;
+		case 18: flags.isMovieDuels = qtrue; break;
+		case 20: flags.isObiWan = qtrue; break;
+		case 21: flags.isObiWanEP3 = qtrue; break;
+		case 22: flags.isPalpatine = qtrue; break;
+		case 24: flags.isKyloRen = qtrue; break;
+		case 25: flags.isRey = qtrue; break;
+		case 27: flags.isVader = qtrue; break;
+		case 28: flags.isYoda = qtrue; break;
+		default: break;
+		}
+	}
+
+	return flags;
+}
 
 int forcePowerDarkLight[NUM_FORCE_POWERS] = //0 == neutral
 {
@@ -18893,6 +18960,7 @@ qboolean WP_SaberBounceDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 
 qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolean missileBlock)
 {
+	animFlags_t flags = W_Animationstyletable(self);
 	vec3_t diff, fwdangles = { 0, 0, 0 }, right;
 	const qboolean in_front = InFront(hitloc, self->client->ps.origin, self->client->ps.viewangles, -0.7f);
 
@@ -19038,7 +19106,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			default:
 				if (self->client && NPC_IsOversized(self))
 				{
-					NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_BLOCKPACE);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isAnakin == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_AFLAG_BLOCKPACE);
+						}
+						else
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_BLOCKPACE);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_BLOCKPACE);
+					}
 				}
 				else
 				{
@@ -33725,6 +33807,7 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 
 static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot, vec3_t impact_point)
 {
+	animFlags_t flags = W_Animationstyletable(self);
 	qboolean lightning_blocked = qfalse;
 	qboolean is_class_guard = qfalse;
 
@@ -34163,7 +34246,21 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 								}
 								else
 								{
-									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isAnakin == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_AFLAG_PACE);
+										}
+										else
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
+										}
+									}
+									else
+									{
+										NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
+									}
 								}
 								traceEnt->client->IsBlockingLightning = qfalse;
 							}
@@ -34183,7 +34280,21 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 								}
 								else
 								{
-									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isAnakin == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_AFLAG_PACE);
+										}
+										else
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
+										}
+									}
+									else
+									{
+										NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
+									}
 								}
 								traceEnt->client->IsBlockingLightning = qfalse;
 							}
@@ -36976,6 +37087,8 @@ int WP_GetVelocityForForceJump(const gentity_t* self, vec3_t jump_vel, const use
 
 void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 {
+	animFlags_t flags = W_Animationstyletable(self);
+
 	if (self->client->NPC_class == CLASS_GUARD)
 	{
 		return;
@@ -37072,7 +37185,21 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 			}
 			else
 			{
-				anim = BOTH_FLIP_F;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isAnakin == qtrue)
+					{
+						anim = BOTH_FLIP_F_ANI;
+					}
+					else
+					{
+						anim = BOTH_FLIP_F;
+					}
+				}
+				else
+				{
+					anim = BOTH_FLIP_F;
+				}
 			}
 		}
 		break;
@@ -37091,7 +37218,21 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 		}
 		else
 		{
-			anim = BOTH_FLIP_B;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					anim = BOTH_FLIP_B_ANI;
+				}
+				else
+				{
+					anim = BOTH_FLIP_B;
+				}
+			}
+			else
+			{
+				anim = BOTH_FLIP_B;
+			}
 		}
 		break;
 	case FJ_RIGHT:
@@ -37109,7 +37250,21 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 		}
 		else
 		{
-			anim = BOTH_FLIP_R;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					anim = BOTH_FLIP_R_ANI;
+				}
+				else
+				{
+					anim = BOTH_FLIP_R;
+				}
+			}
+			else
+			{
+				anim = BOTH_FLIP_R;
+			}
 		}
 		break;
 	case FJ_LEFT:
@@ -37127,12 +37282,40 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 		}
 		else
 		{
-			anim = BOTH_FLIP_L;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					anim = BOTH_FLIP_L_ANI;
+				}
+				else
+				{
+					anim = BOTH_FLIP_L;
+				}
+			}
+			else
+			{
+				anim = BOTH_FLIP_L;
+			}
 		}
 		break;
 	default:
 	case FJ_UP:
-		anim = BOTH_JUMP1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				anim = BOTH_JUMP1_ANI;
+			}
+			else
+			{
+				anim = BOTH_JUMP1;
+			}
+		}
+		else
+		{
+			anim = BOTH_JUMP1;
+		}
 		break;
 	}
 
@@ -39713,6 +39896,7 @@ qboolean WP_ForcePowerUsable(const gentity_t* self, const forcePowers_t force_po
 void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 {
 	gentity_t* grip_ent;
+	animFlags_t flags = W_Animationstyletable(self);
 
 	if (!(self->client->ps.forcePowersActive & 1 << force_power))
 	{
@@ -39916,7 +40100,21 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 		}
 		if (self->client->ps.torsoAnim == BOTH_FORCEGRIP_HOLD)
 		{
-			NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 		break;
 	case FP_LIGHTNING:
@@ -40227,7 +40425,21 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 		}
 		if (self->client->ps.torsoAnim == BOTH_FORCEGRIP_HOLD)
 		{
-			NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 		break;
 	case FP_REPULSE:

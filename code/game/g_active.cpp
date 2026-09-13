@@ -201,6 +201,7 @@ extern cvar_t* g_SaberPerfectBlockingTimerHard;
 extern void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps);
 extern void WP_SaberFatigueRegenerate(int override_amt);
 extern void WP_BlasterFatigueRegenerate(int override_amt);
+extern cvar_t* g_ActivateAnimationStyle;
 
 extern bool in_camera;
 extern qboolean player_locked;
@@ -218,6 +219,72 @@ extern vmCvar_t cg_thirdPersonAlpha;
 extern vmCvar_t cg_thirdPersonAutoAlpha;
 extern qboolean PM_InForceFall();
 extern cvar_t* com_kotor;
+
+animFlags_t G_Animationstyletable(const gentity_t* ent)
+{
+	const gclient_t* cl = ent->client;
+
+	animFlags_t flags{};
+	if (!cl)
+	{
+		return flags;
+	}
+
+	const int style = cl->animationstyle;
+
+	// Base style checks
+	flags.isAnakin = (style == CS_ANAKIN) ? qtrue : qfalse;
+	flags.isBenKenobi = (style == CS_BENKENOBI) ? qtrue : qfalse;
+	flags.isCalKestis = (style == CS_CAL_KESTIS) ? qtrue : qfalse;
+	flags.isDarkForces2 = (style == CS_DARKFORCES2) ? qtrue : qfalse;
+	flags.isCountDooku = (style == CS_COUNT_DOOKU) ? qtrue : qfalse;
+	flags.isGalenMarek = (style == CS_GALEN_MAREK) ? qtrue : qfalse;
+	flags.isQuiGonJinn = (style == CS_QUI_GON_JINN) ? qtrue : qfalse;
+	flags.isGrievous = (style == CS_GRIEVOUS) ? qtrue : qfalse;
+	flags.isKotor = (style == CS_KOTOR) ? qtrue : qfalse;
+	flags.isLukeSkywalker = (style == CS_LUKE_SKYWALKER) ? qtrue : qfalse;
+	flags.isMaceWindu = (style == CS_MACE_WINDU) ? qtrue : qfalse;
+	flags.isMaul = (style == CS_MAUL) ? qtrue : qfalse;
+	flags.isMovieDuels = (style == CS_MOVIEDUELS) ? qtrue : qfalse;
+	flags.isObiWan = (style == CS_OBIWAN) ? qtrue : qfalse;
+	flags.isObiWanEP3 = (style == CS_OBIWAN_EP3) ? qtrue : qfalse;
+	flags.isPalpatine = (style == CS_PALPATINE) ? qtrue : qfalse;
+	flags.isKyloRen = (style == CS_KYLO_REN) ? qtrue : qfalse;
+	flags.isRey = (style == CS_REY) ? qtrue : qfalse;
+	flags.isVader = (style == CS_VADER) ? qtrue : qfalse;
+	flags.isYoda = (style == CS_YODA) ? qtrue : qfalse;
+
+	// Server-side override (equivalent to g_AnimationStyle on client)
+	if (g_AnimationStyle)
+	{
+		switch (g_AnimationStyle->integer)
+		{
+		case 1:  flags.isAnakin = qtrue; break;
+		case 3:  flags.isBenKenobi = qtrue; break;
+		case 4:  flags.isCalKestis = qtrue; break;
+		case 7:  flags.isDarkForces2 = qtrue; break;
+		case 8:  flags.isCountDooku = qtrue; break;
+		case 9:  flags.isGalenMarek = qtrue; break;
+		case 10: flags.isQuiGonJinn = qtrue; break;
+		case 11: flags.isGrievous = qtrue; break;
+		case 14: flags.isKotor = qtrue; break;
+		case 15: flags.isLukeSkywalker = qtrue; break;
+		case 16: flags.isMaceWindu = qtrue; break;
+		case 17: flags.isMaul = qtrue; break;
+		case 18: flags.isMovieDuels = qtrue; break;
+		case 20: flags.isObiWan = qtrue; break;
+		case 21: flags.isObiWanEP3 = qtrue; break;
+		case 22: flags.isPalpatine = qtrue; break;
+		case 24: flags.isKyloRen = qtrue; break;
+		case 25: flags.isRey = qtrue; break;
+		case 27: flags.isVader = qtrue; break;
+		case 28: flags.isYoda = qtrue; break;
+		default: break;
+		}
+	}
+
+	return flags;
+}
 
 void ClientEndPowerUps(const gentity_t* ent);
 
@@ -6342,6 +6409,8 @@ void G_StartCinematicSkip()
 
 static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 {
+	animFlags_t flags = G_Animationstyletable(ent);
+
 	if (!ent || !ent->client || ent->health <= 0)
 	{
 		return;
@@ -6377,10 +6446,12 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND9IDLE1:
+			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STAND_SABER_ON_IDLE:
 			case BOTH_STAND_SABER_ON_IDLE_DUELS:
 			case BOTH_STAND_SABER_ON_IDLE_STAFF:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_ANI: //# Random standing idle
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6394,10 +6465,12 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND9IDLE1:
+			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STAND_SABER_ON_IDLE:
 			case BOTH_STAND_SABER_ON_IDLE_DUELS:
 			case BOTH_STAND_SABER_ON_IDLE_STAFF:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_ANI:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6426,17 +6499,35 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			idle_anim = BOTH_STAND1IDLE1;
 			break;
 		case BOTH_STAND9:
-			idle_anim = BOTH_STAND9IDLE1;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					idle_anim = BOTH_STAND9IDLE1_ANI;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND9IDLE1;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND9IDLE1;
+			}
 			break;
 		case BOTH_SABERTAVION_STANCE:
 		case BOTH_SABERTAVION_STANCE_JKA:
 		case BOTH_SABERDESANN_STANCE:
 		case BOTH_SABERDESANN_STANCE_JKA:
+		case BOTH_SABERDESANN_STANCE_JKA_ANI:
 		case BOTH_SABERFAST_STANCE:
 		case BOTH_SABERFAST_STANCE_JKA:
+		case BOTH_SABERFAST_STANCE_JKA_ANI:
 		case BOTH_SABERSLOW_STANCE:
 		case BOTH_SABERSLOW_STANCE_JKA:
+		case BOTH_SABERSLOW_STANCE_JKA_ANI:
 		case BOTH_SABERSINGLECROUCH:
+		case BOTH_SABERSINGLECROUCH_ANI:
 		case BOTH_STAND_SABER_ON:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE;
 			break;
@@ -6490,7 +6581,21 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			idle_anim = BOTH_STAND1IDLE1;
 			break;
 		case BOTH_STAND9:
-			idle_anim = BOTH_STAND9IDLE1;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					idle_anim = BOTH_STAND9IDLE1_ANI;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND9IDLE1;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND9IDLE1;
+			}
 			break;
 		case BOTH_STAND_SABER_ON:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE;
@@ -6543,6 +6648,9 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERDESANN_STANCE_JKA:
 			idle_anim = BOTH_SABERDESANN_STANCE_JKA;
 			break;
+		case BOTH_SABERDESANN_STANCE_JKA_ANI:
+			idle_anim = BOTH_SABERDESANN_STANCE_JKA_ANI;
+			break;
 		case BOTH_SABERSTAFF_STANCE_JKA:
 			idle_anim = BOTH_SABERSTAFF_STANCE_JKA;
 			break;
@@ -6552,8 +6660,14 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERFAST_STANCE_JKA:
 			idle_anim = BOTH_SABERFAST_STANCE_JKA;
 			break;
+		case BOTH_SABERFAST_STANCE_JKA_ANI:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_ANI;
+			break;
 		case BOTH_SABERSLOW_STANCE_JKA:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_ANI:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_ANI;
 			break;
 		default:;
 		}
@@ -6663,6 +6777,8 @@ static qboolean GunisBomb(const gentity_t* ent)
 
 static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 {
+	animFlags_t flags = G_Animationstyletable(ent);
+
 	if (!ent || !ent->client || ent->health <= 0)
 	{
 		return;
@@ -6697,10 +6813,12 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_ANI:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
 			case BOTH_STAND9IDLE1:
+			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STANDYODAIDLE_STICK:
 			case BOTH_MENUIDLE1:
 			case TORSO_WEAPONREST2:
@@ -6717,10 +6835,12 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_ANI:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
 			case BOTH_STAND9IDLE1:
+			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STANDYODAIDLE_STICK:
 			case BOTH_MENUIDLE1:
 			case TORSO_WEAPONREST2:
@@ -6815,9 +6935,25 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 
 		constexpr int idle_anim = BOTH_STAND9IDLE1;
 
+		constexpr int idle_anim_ani = BOTH_STAND9IDLE1_ANI;
+
 		if (PM_HasAnimation(ent, idle_anim))
 		{
-			NPC_SetAnim(ent, SETANIM_TORSO, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isAnakin == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, idle_anim_ani, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(ent, SETANIM_TORSO, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 	}
 	else

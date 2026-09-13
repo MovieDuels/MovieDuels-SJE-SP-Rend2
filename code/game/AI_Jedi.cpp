@@ -154,6 +154,7 @@ void NPC_CheckEvasion(void);
 extern void WP_Melee(gentity_t* ent);
 extern cvar_t* g_npcSpecialAttackFreq;
 extern qboolean PM_SaberInReturn(int move);
+extern cvar_t* g_ActivateAnimationStyle;
 
 //Locals
 qboolean jedi_waiting_ambush(const gentity_t* self);
@@ -177,6 +178,72 @@ static int jedi_get_kata_cooldown_duration()
 	default:
 		return Q_irand(5000, 9000);
 	}
+}
+
+animFlags_t J_Animationstyletable(const gentity_t* npc)
+{
+	const gclient_t* cl = npc->client;
+
+	animFlags_t flags{};
+	if (!cl)
+	{
+		return flags;
+	}
+
+	const int style = cl->animationstyle;
+
+	// Base style checks
+	flags.isAnakin = (style == CS_ANAKIN) ? qtrue : qfalse;
+	flags.isBenKenobi = (style == CS_BENKENOBI) ? qtrue : qfalse;
+	flags.isCalKestis = (style == CS_CAL_KESTIS) ? qtrue : qfalse;
+	flags.isDarkForces2 = (style == CS_DARKFORCES2) ? qtrue : qfalse;
+	flags.isCountDooku = (style == CS_COUNT_DOOKU) ? qtrue : qfalse;
+	flags.isGalenMarek = (style == CS_GALEN_MAREK) ? qtrue : qfalse;
+	flags.isQuiGonJinn = (style == CS_QUI_GON_JINN) ? qtrue : qfalse;
+	flags.isGrievous = (style == CS_GRIEVOUS) ? qtrue : qfalse;
+	flags.isKotor = (style == CS_KOTOR) ? qtrue : qfalse;
+	flags.isLukeSkywalker = (style == CS_LUKE_SKYWALKER) ? qtrue : qfalse;
+	flags.isMaceWindu = (style == CS_MACE_WINDU) ? qtrue : qfalse;
+	flags.isMaul = (style == CS_MAUL) ? qtrue : qfalse;
+	flags.isMovieDuels = (style == CS_MOVIEDUELS) ? qtrue : qfalse;
+	flags.isObiWan = (style == CS_OBIWAN) ? qtrue : qfalse;
+	flags.isObiWanEP3 = (style == CS_OBIWAN_EP3) ? qtrue : qfalse;
+	flags.isPalpatine = (style == CS_PALPATINE) ? qtrue : qfalse;
+	flags.isKyloRen = (style == CS_KYLO_REN) ? qtrue : qfalse;
+	flags.isRey = (style == CS_REY) ? qtrue : qfalse;
+	flags.isVader = (style == CS_VADER) ? qtrue : qfalse;
+	flags.isYoda = (style == CS_YODA) ? qtrue : qfalse;
+
+	// Server-side override (equivalent to g_AnimationStyle on client)
+	if (g_AnimationStyle)
+	{
+		switch (g_AnimationStyle->integer)
+		{
+		case 1:  flags.isAnakin = qtrue; break;
+		case 3:  flags.isBenKenobi = qtrue; break;
+		case 4:  flags.isCalKestis = qtrue; break;
+		case 7:  flags.isDarkForces2 = qtrue; break;
+		case 8:  flags.isCountDooku = qtrue; break;
+		case 9:  flags.isGalenMarek = qtrue; break;
+		case 10: flags.isQuiGonJinn = qtrue; break;
+		case 11: flags.isGrievous = qtrue; break;
+		case 14: flags.isKotor = qtrue; break;
+		case 15: flags.isLukeSkywalker = qtrue; break;
+		case 16: flags.isMaceWindu = qtrue; break;
+		case 17: flags.isMaul = qtrue; break;
+		case 18: flags.isMovieDuels = qtrue; break;
+		case 20: flags.isObiWan = qtrue; break;
+		case 21: flags.isObiWanEP3 = qtrue; break;
+		case 22: flags.isPalpatine = qtrue; break;
+		case 24: flags.isKyloRen = qtrue; break;
+		case 25: flags.isRey = qtrue; break;
+		case 27: flags.isVader = qtrue; break;
+		case 28: flags.isYoda = qtrue; break;
+		default: break;
+		}
+	}
+
+	return flags;
 }
 
 static qboolean enemy_in_striking_range = qfalse;
@@ -4871,9 +4938,13 @@ static qboolean jedi_in_no_ai_anim(const gentity_t* self)
 	case BOTH_BUTTERFLY_FL1:
 	case BOTH_BUTTERFLY_FR1:
 	case BOTH_FLIP_F:
+	case BOTH_FLIP_F_ANI:
 	case BOTH_FLIP_B:
+	case BOTH_FLIP_B_ANI:
 	case BOTH_FLIP_L:
+	case BOTH_FLIP_L_ANI:
 	case BOTH_FLIP_R:
+	case BOTH_FLIP_R_ANI:
 	case BOTH_DODGE_FL:
 	case BOTH_DODGE_FR:
 	case BOTH_DODGE_BL:
@@ -8420,6 +8491,8 @@ static qboolean Jedi_Jump(vec3_t dest, const int goal_ent_num)
 
 static qboolean Jedi_TryJump(const gentity_t* goal)
 {
+	animFlags_t flags = J_Animationstyletable(NPC);
+
 	if (NPCInfo->scriptFlags & SCF_NO_ACROBATICS)
 	{
 		return qfalse;
@@ -8514,10 +8587,23 @@ static qboolean Jedi_TryJump(const gentity_t* goal)
 									}
 									else
 									{
-										jump_anim = BOTH_FLIP_F;
+										if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+										{
+											if (flags.isAnakin == qtrue)
+											{
+												jump_anim = BOTH_FLIP_F_ANI;
+											}
+											else
+											{
+												jump_anim = BOTH_FLIP_F;
+											}
+										}
+										else
+										{
+											jump_anim = BOTH_FLIP_F;
+										}
 									}
-									NPC_SetAnim(NPC, SETANIM_BOTH, jump_anim,
-										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+									NPC_SetAnim(NPC, SETANIM_BOTH, jump_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 								}
 
 								NPC->client->ps.forceJumpZStart = NPC->currentOrigin[2];
@@ -11726,6 +11812,7 @@ static void Jedi_Attack(void)
 				if (Distance(NPC->enemy->currentOrigin, NPC->currentOrigin) > 80)
 				{
 					if (NPC->client->ps.legsAnim == BOTH_FLIP_F ||
+						NPC->client->ps.legsAnim == BOTH_FLIP_F_ANI ||
 						NPC->client->ps.legsAnim == BOTH_ALORA_FLIP_1 ||
 						NPC->client->ps.legsAnim == BOTH_ALORA_FLIP_2 ||
 						NPC->client->ps.legsAnim == BOTH_ALORA_FLIP_3)

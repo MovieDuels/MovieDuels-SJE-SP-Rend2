@@ -2141,4 +2141,36 @@ enum
 	NODE_NAVGOAL,
 };
 
+extern cvar_t* g_AnimationStyle;
+
+typedef struct
+{
+	qboolean isAnakin;
+	qboolean isBenKenobi;
+	qboolean isCalKestis;
+	qboolean isDarkForces2;
+	qboolean isCountDooku;
+	qboolean isGalenMarek;
+	qboolean isQuiGonJinn;
+	qboolean isGrievous;
+	qboolean isKotor;
+	qboolean isLukeSkywalker;
+	qboolean isMaceWindu;
+	qboolean isMaul;
+	qboolean isMovieDuels;
+	qboolean isObiWan;
+	qboolean isObiWanEP3;
+	qboolean isPalpatine;
+	qboolean isKyloRen;
+	qboolean isRey;
+	qboolean isVader;
+	qboolean isYoda;
+} animFlags_t;
+
+animFlags_t PM_Animationstyletable(const pmove_t* pm);
+animFlags_t G_Animationstyletable(const gentity_t* ent);
+animFlags_t J_Animationstyletable(const gentity_t* NPC);
+animFlags_t M_Animationstyletable(const gentity_t* NPC);
+animFlags_t W_Animationstyletable(const gentity_t* self);
+
 #endif // #ifndef __G_SHARED_H__

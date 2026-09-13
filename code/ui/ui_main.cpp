@@ -4372,40 +4372,25 @@ int ui_numKnownAnimFileSets;
 UI_ParseAnimationFile
 
 Parses animation.cfg into the UI animation table.
-
-This version removes the 80 KB stack allocation by moving
-the text buffer to static storage, eliminating MSVC warning C6262.
+Modern version using shared AnimCFG helpers.
 ==============================
 */
 static qboolean UI_ParseAnimationFile(const char* af_filename)
 {
-	/* FIX: move 80 KB buffer off the stack */
-	static char text[180000]; // i increased from 80 KB to 180 KB to allow for larger animation.cfg files
+	// Sized to the file instead of a fixed 180 KB buffer.
+	std::vector<char> text;
 
-	const char* text_p;
-	animation_t* animations =ui_knownAnimFileSets[ui_numKnownAnimFileSets].animations;
+	animation_t* animations = ui_knownAnimFileSets[ui_numKnownAnimFileSets].animations;
 
-	/* Load animation.cfg into buffer */
-	const int len = re.GetAnimationCFG(af_filename, text, sizeof(text));
-
-	if (len <= 0)
+	// Load animation.cfg using renderer cache
+	if (!AnimCFG_Load(re.GetAnimationCFG, af_filename, text))
 	{
 		return qfalse;
 	}
 
-	if (len >= (int)sizeof(text) - 1)
-	{
-		Com_Error(ERR_FATAL,
-			"UI_ParseAnimationFile: File %s too long\n (%d > %d)",
-			af_filename, len, (int)sizeof(text) - 1);
-		return qfalse; /* static analysis safety */
-	}
+	const char* text_p = text.data();
 
-	/* Null‑terminate */
-	text[len] = '\0';
-	text_p = text;
-
-	/* Initialise all animations with defaults */
+	// Initialise all animations with defaults
 	for (int i = 0; i < MAX_ANIMATIONS; i++)
 	{
 		animations[i].firstFrame = 0;
@@ -4418,66 +4403,40 @@ static qboolean UI_ParseAnimationFile(const char* af_filename)
 
 	while (qtrue)
 	{
-		/* Read animation name */
+		// Read animation name
 		const char* token = COM_Parse(&text_p);
 		if (!token || !token[0])
 		{
-			break; /* EOF */
+			break; // EOF
 		}
 
 		const int animNum = GetIDForString(animTable, token);
-		if (animNum == -1)
+		if (animNum < 0 || animNum >= MAX_ANIMATIONS)
 		{
-#ifdef _DEBUG
-			if (strcmp(token, "ROOT"))
-			{
-				/* Unknown token — skip line */
-			}
-#endif
-			/* Skip to end of line */
-			while (token[0])
+			// Skip unknown tokens until end of line
+			do
 			{
 				token = COM_ParseExt(&text_p, qfalse);
-			}
+			} while (token && token[0] != '\0');
+
 			continue;
 		}
 
-		/* firstFrame */
-		token = COM_Parse(&text_p);
-		if (!token || !token[0]) break;
-		animations[animNum].firstFrame = atoi(token);
+		// Preserve name for warnings
+		char anim_name[MAX_QPATH];
+		Q_strncpyz(anim_name, token, sizeof(anim_name));
 
-		/* numFrames */
-		token = COM_Parse(&text_p);
-		if (!token || !token[0]) break;
-		animations[animNum].numFrames = atoi(token);
-
-		/* loopFrames */
-		token = COM_Parse(&text_p);
-		if (!token || !token[0]) break;
-		animations[animNum].loopFrames = atoi(token);
-
-		/* fps → frameLerp */
-		token = COM_Parse(&text_p);
-		if (!token || !token[0]) break;
-
-		float fps = atof(token);
-		if (fps == 0.0f)
+		// Read row values
+		AnimCFG_Row row;
+		if (!AnimCFG_ReadRow(&text_p, row))
 		{
-			fps = 1.0f; /* avoid divide‑by‑zero */
+			Com_Printf(S_COLOR_YELLOW "WARNING: %s has an incomplete row for %s, ignored\n",
+				af_filename, anim_name);
+			continue;
 		}
 
-		if (fps < 0.0f)
-		{
-			/* backwards animation */
-			animations[animNum].frameLerp =
-				(int)floor(1000.0f / fps);
-		}
-		else
-		{
-			animations[animNum].frameLerp =
-				(int)ceil(1000.0f / fps);
-		}
+		// Store validated row
+		AnimCFG_Store(animations[animNum], row, anim_name, af_filename);
 	}
 
 	COM_EndParseSession();
@@ -5419,7 +5378,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 11/09/2026 ---------------------\n");// build date
+	Com_Printf("--------------------- Build Date 13/09/2026 ---------------------\n");// build date
 	Com_Printf("--------------------------- Build 06 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
