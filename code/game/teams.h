@@ -53,40 +53,65 @@ using faction_t = enum faction_t //# team_e
 	TEAM_NUM_FACTIONS
 };
 
-using Animationstyles_t = enum Animationstyles_t //# animationstyles_e
-{
-	CS_DEFAULT,        // "g_AnimationStyle 0"  //Uses the default _humanoid
-	CS_ANAKIN,         // "g_AnimationStyle 1"  //Uses the Anakin style
-	//CS_BATTLEDROID,    // "g_AnimationStyle 2"  //Uses the Battle Droid style
-	CS_BENKENOBI,      // "g_AnimationStyle 3"  //Uses the Ben Kenobi style
-	CS_CAL_KESTIS,     // "g_AnimationStyle 4"  //Uses the Cal Kestis style
-	//CS_CLONETROOPER,   // "g_AnimationStyle 5"  //Uses the Clone Trooper style
-	CS_DROIDEKA,       // "g_AnimationStyle 6"  //Uses the Droideka style
-	CS_DARKFORCES2,    // "g_AnimationStyle 7"  //Uses the Dark Forces 2 style
-	CS_COUNT_DOOKU,    // "g_AnimationStyle 8"  //Uses the Count Dooku style
-	CS_GALEN_MAREK,    // "g_AnimationStyle 9"  //Uses the Galen Marek style
-	CS_QUI_GON_JINN,   // "g_AnimationStyle 10"  //Uses the Qui-Gon Jinn style
-	CS_GRIEVOUS,       // "g_AnimationStyle 11"  //Uses the General Grievous style
-	//CS_JABBA,          // "g_AnimationStyle 12"  //Uses the Jabba style
-	//CS_JANGO,          // "g_AnimationStyle 13"  //Uses the Jango style
-	CS_KOTOR,          // "g_AnimationStyle 14"  //Uses the KOTOR style
-	CS_LUKE_SKYWALKER, // "g_AnimationStyle 15"  //Uses the Luke Skywalker style
-	CS_MACE_WINDU,     // "g_AnimationStyle 16"  //Uses the Mace Windu style
-	CS_MAUL,           // "g_AnimationStyle 17"  //Uses the Darth Maul style
-	CS_MOVIEDUELS,     // "g_AnimationStyle 18"  //Uses the Movie Duels style
-	//CS_MELEE,          // "g_AnimationStyle 19"  //Uses the Melee style
-	CS_OBIWAN,         // "g_AnimationStyle 20"  //Uses the Obi-Wan style
-	CS_OBIWAN_EP3,     // "g_AnimationStyle 21"  //Uses the Obi-Wan style from Episode 3
-	CS_PALPATINE,      // "g_AnimationStyle 22"  //Uses the Palpatine style
-	//CS_REBELS,         // "g_AnimationStyle 23"  //Uses the Rebels style
-	CS_KYLO_REN,       // "g_AnimationStyle 24"  //Uses the Kylo Ren style
-	CS_REY,            // "g_AnimationStyle 25"  //Uses the Rey style
-	//CS_SBD,            // "g_AnimationStyle 26"  //Uses the SBD style
-	CS_VADER,          // "g_AnimationStyle 27"  //Uses the Darth Vader style
-	CS_YODA,           // "g_AnimationStyle 28"  //Uses the Yoda style
-	//# #eol
+using Animationstyles_t = enum Animationstyles_t
+{                      // g_AnimationStyle number list
+	CS_DEFAULT,        // 0
+	CS_ANAKIN,         // 1
+	CS_BATTLEDROID,    // 2
+	CS_BENKENOBI,      // 3
+	CS_CAL_KESTIS,     // 4
+	CS_CLONETROOPER,   // 5
+	CS_DARKFORCES2,    // 6
+	CS_COUNT_DOOKU,    // 7
+	CS_GALEN_MAREK,    // 8
+	CS_QUI_GON_JINN,   // 9
+	CS_GRIEVOUS,       // 10
+	CS_JANGO,          // 11
+	CS_KOTOR,          // 12
+	CS_LUKE_SKYWALKER, // 13
+	CS_MACE_WINDU,     // 14
+	CS_MAUL,           // 15
+	CS_MOVIEDUELS,     // 16
+	CS_OBIWAN,         // 17
+	CS_OBIWAN_EP3,     // 18
+	CS_PALPATINE,      // 19
+	CS_REBELS,         // 20
+	CS_KYLO_REN,       // 21
+	CS_REY,            // 22
+	CS_VADER,          // 23
+	CS_YODA,           // 24
+
 	CS_NUM_ANIMATION_STYLES
 };
+
+typedef struct
+{
+	qboolean isDefault;
+	qboolean isAnakin;
+	qboolean isBattleDroid;
+	qboolean isBenKenobi;
+	qboolean isCalKestis;
+	qboolean isCloneTrooper;
+	qboolean isDarkForces2;
+	qboolean isCountDooku;
+	qboolean isGalenMarek;
+	qboolean isQuiGonJinn;
+	qboolean isGrievous;
+	qboolean isJango;
+	qboolean isKotor;
+	qboolean isLukeSkywalker;
+	qboolean isMaceWindu;
+	qboolean isMaul;
+	qboolean isMovieDuels;
+	qboolean isObiWan;
+	qboolean isObiWanEP3;
+	qboolean isPalpatine;
+	qboolean isRebels;
+	qboolean isKyloRen;
+	qboolean isRey;
+	qboolean isVader;
+	qboolean isYoda;
+} animFlags_t;
 
 extern stringID_table_t TeamTable[];
 

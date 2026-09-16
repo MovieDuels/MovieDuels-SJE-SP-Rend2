@@ -5058,6 +5058,12 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 
 	//////////////////////////////////////////
 		// BEN CS_BENKENOBI
+	BOTH_RUN1_BEN,
+	BOTH_RUN2_BEN,
+	BOTH_WALK1_BEN,
+	BOTH_WALK2_BEN,
+	BOTH_STAND_BLOCKING_ON_BEN,
+	BOTH_SHOWOFF_FAST_BEN,
 
 	//# #eol
 	MAX_ANIMATIONS,

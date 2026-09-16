@@ -277,16 +277,13 @@ namespace ratl
 			// Constructors
 			//--------------
 			iterator() : mIndex(0), mOwner(nullptr)
-			{
-			}
+			{}
 
 			iterator(pool_root<T>* p, const int index) : mIndex(index), mOwner(p)
-			{
-			}
+			{}
 
 			iterator(const iterator& t) : mIndex(t.mIndex), mOwner(t.mOwner)
-			{
-			}
+			{}
 
 			// Assignment Operator
 			//---------------------
@@ -369,20 +366,16 @@ namespace ratl
 			// Constructors
 			//--------------
 			const_iterator() : mIndex(0), mOwner(nullptr)
-			{
-			}
+			{}
 
 			const_iterator(const pool_root<T>* p, const int index) : mIndex(index), mOwner(p)
-			{
-			}
+			{}
 
 			const_iterator(const iterator& t) : mIndex(t.mIndex), mOwner(t.mOwner)
-			{
-			}
+			{}
 
 			const_iterator(const const_iterator& t) : mIndex(t.mIndex), mOwner(t.mOwner)
-			{
-			}
+			{}
 
 			// Equality Operators
 			//--------------------
@@ -622,8 +615,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		pool_vs()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY>
@@ -635,8 +627,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		pool_os()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY, int ARG_MAX_CLASS_SIZE>
@@ -649,8 +640,7 @@ namespace ratl
 		static const int MAX_CLASS_SIZE = ARG_MAX_CLASS_SIZE;
 
 		pool_is()
-		{
-		}
+		{}
 	};
 }
 #endif

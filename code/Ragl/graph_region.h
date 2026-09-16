@@ -86,8 +86,7 @@ namespace ragl
 		}
 
 		~graph_region()
-		{
-		}
+		{}
 
 		////////////////////////////////////////////////////////////////////////////////////
 		// Clear Out All Temp Data So We Can Recalculate Regions

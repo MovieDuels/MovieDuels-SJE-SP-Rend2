@@ -331,6 +331,7 @@ using windowDef_t = struct windowDef_s
 	int border; //
 	int ownerDraw; // ownerDraw style
 	int ownerDrawFlags; // show flags for ownerdraw items
+	int ownerDrawID;
 	float borderSize; //
 	int flags; // visible, focus, mouseover, cursor
 	UIRectangle rectEffects; // for various effects

@@ -82,6 +82,59 @@ extern qboolean PM_InKataAnim(int anim);
 // Pazaak client command handler (pzk ...)
 #include "g_pazaak.h"
 
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
+// -----------------------------------------------------------------------------
+// CMD_Animationstyletable
+// Command-side animation style resolver for any gentity_t.
+// Cleaned to match final animFlags_t and Animationstyles_t enum.
+// -----------------------------------------------------------------------------
+static animFlags_t CMD_Animationstyletable(const gentity_t* ent)
+{
+	animFlags_t flags{};
+	if (!ent || !ent->client)
+	{
+		Com_Printf("CMD_Animationstyletable: ent or ent->client is null\n");
+		return flags;
+	}
+
+	const int style = ent->client->animationstyle;
+	const int cvarStyle = (g_AnimationStyle ? g_AnimationStyle->integer : -1);
+
+	// Helper macro: match either entity style or cvar override
+#define MATCH(s) ((style == (s)) || (cvarStyle == (s)))
+
+	if (MATCH(CS_DEFAULT))        flags.isDefault = qtrue;
+	if (MATCH(CS_ANAKIN))         flags.isAnakin = qtrue;
+	if (MATCH(CS_BATTLEDROID))    flags.isBattleDroid = qtrue;
+	if (MATCH(CS_BENKENOBI))      flags.isBenKenobi = qtrue;
+	if (MATCH(CS_CAL_KESTIS))     flags.isCalKestis = qtrue;
+	if (MATCH(CS_CLONETROOPER))   flags.isCloneTrooper = qtrue;
+	if (MATCH(CS_DARKFORCES2))    flags.isDarkForces2 = qtrue;
+	if (MATCH(CS_COUNT_DOOKU))    flags.isCountDooku = qtrue;
+	if (MATCH(CS_GALEN_MAREK))    flags.isGalenMarek = qtrue;
+	if (MATCH(CS_QUI_GON_JINN))   flags.isQuiGonJinn = qtrue;
+	if (MATCH(CS_GRIEVOUS))       flags.isGrievous = qtrue;
+	if (MATCH(CS_JANGO))          flags.isJango = qtrue;
+	if (MATCH(CS_KOTOR))          flags.isKotor = qtrue;
+	if (MATCH(CS_LUKE_SKYWALKER)) flags.isLukeSkywalker = qtrue;
+	if (MATCH(CS_MACE_WINDU))     flags.isMaceWindu = qtrue;
+	if (MATCH(CS_MAUL))           flags.isMaul = qtrue;
+	if (MATCH(CS_MOVIEDUELS))     flags.isMovieDuels = qtrue;
+	if (MATCH(CS_OBIWAN))         flags.isObiWan = qtrue;
+	if (MATCH(CS_OBIWAN_EP3))     flags.isObiWanEP3 = qtrue;
+	if (MATCH(CS_PALPATINE))      flags.isPalpatine = qtrue;
+	if (MATCH(CS_REBELS))         flags.isRebels = qtrue;
+	if (MATCH(CS_KYLO_REN))       flags.isKyloRen = qtrue;
+	if (MATCH(CS_REY))            flags.isRey = qtrue;
+	if (MATCH(CS_VADER))          flags.isVader = qtrue;
+	if (MATCH(CS_YODA))           flags.isYoda = qtrue;
+
+#undef MATCH
+
+	return flags;
+}
+
 /*
 ==================
 CheatsOk
@@ -1818,6 +1871,8 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 	const qboolean is_holding_block_button = ((ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK) != 0) ? qtrue : qfalse;
 	//Normal Blocking
 
+	animFlags_t flags = CMD_Animationstyletable(ent);
+
 	if (!ent || !ent->client)
 	{
 		return;
@@ -2134,9 +2189,16 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					}
 				}
 			}
-			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
-				// No force powers so do basic taunt
-				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			else if (ent->client->friendlyfaction == FACTION_NEUTRAL)
+			{
+				if (flags.isBenKenobi == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
 			}
 			else if (ent->client->ps.saber[0].flourishAnim != -1)
 			{
@@ -2160,7 +2222,14 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					{
 					case SS_FAST:
 					case SS_TAVION:
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (flags.isBenKenobi == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 						break;
 					case SS_MEDIUM:
 						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_MEDIUM, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -2184,7 +2253,14 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					{
 					case SS_FAST:
 					case SS_TAVION:
-						NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (flags.isBenKenobi == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 						break;
 					case SS_MEDIUM:
 						NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_MEDIUM, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);

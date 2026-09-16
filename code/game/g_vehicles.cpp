@@ -404,8 +404,7 @@ void G_PilotXWing(gentity_t* ent)
 }
 
 void G_DrivableATSTDie(gentity_t* self)
-{
-}
+{}
 
 void G_DriveATST(gentity_t* pEnt, gentity_t* atst)
 {
@@ -1397,8 +1396,7 @@ static void DeathUpdate(Vehicle_t* p_veh)
 
 // Register all the assets used by this vehicle.
 static void RegisterAssets(Vehicle_t* p_veh)
-{
-}
+{}
 
 extern void ChangeWeapon(const gentity_t* ent, int new_weapon);
 

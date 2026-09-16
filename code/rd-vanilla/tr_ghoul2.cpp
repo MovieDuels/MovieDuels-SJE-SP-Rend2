@@ -637,8 +637,7 @@ public:
 #else
 		boltList(initboltList)
 #endif
-	{
-	}
+	{}
 };
 
 constexpr auto MAX_RENDER_SURFACES = (2048);

@@ -730,8 +730,7 @@ static void Com_InitHunkMemory()
 // I'm leaving this in just in case we ever need to remember where's a good place to hook something like this in.
 //
 void Com_ShutdownHunkMemory()
-{
-}
+{}
 
 /*
 ===================
@@ -741,8 +740,7 @@ The server calls this after the level and game VM have been loaded
 ===================
 */
 void Hunk_SetMark()
-{
-}
+{}
 
 /*
 =================

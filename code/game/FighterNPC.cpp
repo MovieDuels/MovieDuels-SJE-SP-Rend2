@@ -1754,8 +1754,7 @@ static void AnimateVehicle(Vehicle_t* p_veh)
 
 // This function makes sure that the rider's in this vehicle are properly animated.
 static void AnimateRiders(Vehicle_t* p_veh)
-{
-}
+{}
 
 #endif //game-only
 

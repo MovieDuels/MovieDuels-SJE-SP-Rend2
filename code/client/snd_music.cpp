@@ -114,8 +114,7 @@ void Music_Free()
 namespace detail
 {
 	static void build_string(std::ostream& stream)
-	{
-	}
+	{}
 
 	template <typename T, typename... Tail>
 	static void build_string(std::ostream& stream, const T& head, Tail... tail)

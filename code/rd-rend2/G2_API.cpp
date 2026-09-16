@@ -2508,8 +2508,7 @@ void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
 
 void G2API_ClearSkinGore(CGhoul2Info_v& ghoul2) {}
 void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
-{
-}
+{}
 
 #endif
 // Returns true if the model is properly set up

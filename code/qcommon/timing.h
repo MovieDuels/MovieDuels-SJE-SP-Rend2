@@ -36,8 +36,7 @@ class timing_c
 
 public:
 	timing_c() : start(0), end(0), reset(0)
-	{
-	}
+	{}
 
 	void Start()
 	{

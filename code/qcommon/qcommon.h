@@ -127,12 +127,10 @@ using netsrc_t = enum netsrc_e
 
 // For compatibility with shared code
 static inline void NET_Init()
-{
-}
+{}
 
 static inline void NET_Shutdown()
-{
-}
+{}
 
 void NET_SendPacket(netsrc_t sock, int length, const void* data, netadr_t to);
 void NET_OutOfBandPrint(netsrc_t sock, netadr_t adr, const char* format, ...);

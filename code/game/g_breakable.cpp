@@ -326,8 +326,7 @@ static void InitBBrush(gentity_t* ent)
 }
 
 void funcBBrushTouch(gentity_t* ent, gentity_t* other, trace_t* trace)
-{
-}
+{}
 
 /*QUAKED func_breakable (0 .8 .5) ? INVINCIBLE IMPACT CRUSHER THIN SABERONLY HEAVY_WEAP USE_NOT_BREAK PLAYER_USE NO_EXPLOSION
 INVINCIBLE - can only be broken by being used

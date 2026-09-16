@@ -249,8 +249,7 @@ G_InitWorldSession
 ==================
 */
 void G_InitWorldSession()
-{
-}
+{}
 
 /*
 ==================

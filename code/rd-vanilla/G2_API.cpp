@@ -71,8 +71,7 @@ class ErrorReporter
 public:
 	ErrorReporter(const std::string& name) :
 		mName(name)
-	{
-	}
+	{}
 	~ErrorReporter()
 	{
 		char mess[1000];
@@ -2379,12 +2378,10 @@ void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
 }
 #else
 void G2API_ClearSkinGore(CGhoul2Info_v& ghoul2)
-{
-}
+{}
 
 void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
-{
-}
+{}
 #endif
 
 extern model_t* R_GetAnimModelByHandle(const CGhoul2Info* ghlInfo, qhandle_t index);

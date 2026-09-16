@@ -18,8 +18,7 @@ struct ShaderCacheEntry
 	ShaderCacheEntry(int nameOffset, int pokeOffset)
 		: nameOffset(nameOffset)
 		, pokeOffset(pokeOffset)
-	{
-	}
+	{}
 
 	int nameOffset;
 	int pokeOffset;

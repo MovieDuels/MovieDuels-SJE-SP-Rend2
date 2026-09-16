@@ -84,6 +84,9 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model);
 extern cvar_t* com_outcast;
 extern cvar_t* com_freeMelee;
 
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
+
 // g_client.c -- client functions that don't happen every frame
 
 float DEFAULT_MINS_0 = -16;
@@ -106,8 +109,7 @@ potential spawning position for deathmatch games.
 Targets will be fired when someone spawns in on them.
 */
 void SP_info_player_intermission(gentity_t* ent)
-{
-}
+{}
 
 /*QUAKED info_player_intermission_red (1 0 1) (-16 -16 -24) (16 16 32)
 The intermission will be viewed from this point.  Target an info_notnull for the view direction.
@@ -117,8 +119,7 @@ target - ent to look at
 target2 - ents to use when this intermission point is chosen
 */
 void SP_info_player_intermission_red(gentity_t* ent)
-{
-}
+{}
 
 /*QUAKED info_player_intermission_blue (1 0 1) (-16 -16 -24) (16 16 32)
 The intermission will be viewed from this point.  Target an info_notnull for the view direction.
@@ -128,8 +129,7 @@ target - ent to look at
 target2 - ents to use when this intermission point is chosen
 */
 void SP_info_player_intermission_blue(gentity_t* ent)
-{
-}
+{}
 
 /*QUAKED info_player_duel (1 0 1) (-16 -16 -24) (16 16 32) initial
 potential spawning position for duelists in duel.
@@ -2795,6 +2795,37 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 		{
 			if (NPC_ParseParms(ent->NPC_type, ent))
 			{
+				// -----------------------------------------------------------------------------
+				// Apply animation style after NPC_ParseParms
+				// -----------------------------------------------------------------------------
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					// 1. Console/UI override
+					if (ent->client->animationstyle >= 0)
+					{
+						// Keep it
+					}
+					// 2. Global override
+					else if (g_AnimationStyle && g_AnimationStyle->integer >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)g_AnimationStyle->integer;
+					}
+					// 3. NPC file animationstyle — ONLY for NPCs, NOT the player
+					else if (ent->s.number != 0 && ent->client->parsedAnimationStyle >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)ent->client->parsedAnimationStyle;
+					}
+					// 4. Fallback
+					else
+					{
+						ent->client->animationstyle = CS_DEFAULT;
+					}
+				}
+				else
+				{
+					// System disabled → do NOT touch animationstyle
+				}
+
 				G_AddWeaponModels(ent);
 
 				NPC_SetAnim(ent, SETANIM_LEGS, ent->client->ps.legsAnim, SETANIM_FLAG_NORMAL | SETANIM_FLAG_RESTART);
@@ -2987,6 +3018,36 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 		{
 			if (NPC_ParseParms(ent->NPC_type, ent))
 			{
+				// -----------------------------------------------------------------------------
+				// Apply animation style after NPC_ParseParms
+				// -----------------------------------------------------------------------------
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					// 1. Console/UI override
+					if (ent->client->animationstyle >= 0)
+					{
+						// Keep it
+					}
+					// 2. Global override
+					else if (g_AnimationStyle && g_AnimationStyle->integer >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)g_AnimationStyle->integer;
+					}
+					// 3. NPC file animationstyle — ONLY for NPCs, NOT the player
+					else if (ent->s.number != 0 && ent->client->parsedAnimationStyle >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)ent->client->parsedAnimationStyle;
+					}
+					// 4. Fallback
+					else
+					{
+						ent->client->animationstyle = CS_DEFAULT;
+					}
+				}
+				else
+				{
+					// System disabled → do NOT touch animationstyle
+				}
 				G_AddWeaponModels(ent);
 
 				NPC_SetAnim(ent, SETANIM_LEGS, ent->client->ps.legsAnim, SETANIM_FLAG_NORMAL | SETANIM_FLAG_RESTART);
@@ -3276,6 +3337,37 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			Q_strncpyz(bleh, ent->NPC_type, sizeof(bleh));
 
 			G_ChangePlayerModel(ent, bleh);
+
+			// -----------------------------------------------------------------------------
+			// Apply animation style after NPC_ParseParms
+			// -----------------------------------------------------------------------------
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				// 1. Console/UI override
+				if (ent->client->animationstyle >= 0)
+				{
+					// Keep it
+				}
+				// 2. Global override
+				else if (g_AnimationStyle && g_AnimationStyle->integer >= 0)
+				{
+					ent->client->animationstyle = (Animationstyles_t)g_AnimationStyle->integer;
+				}
+				// 3. NPC file animationstyle — ONLY for NPCs, NOT the player
+				else if (ent->s.number != 0 && ent->client->parsedAnimationStyle >= 0)
+				{
+					ent->client->animationstyle = (Animationstyles_t)ent->client->parsedAnimationStyle;
+				}
+				// 4. Fallback
+				else
+				{
+					ent->client->animationstyle = CS_DEFAULT;
+				}
+			}
+			else
+			{
+				// System disabled → do NOT touch animationstyle
+			}
 		}
 		else
 		{
@@ -3285,6 +3377,37 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			//G_InitPlayerFromCvars(ent);
 			G_LoadAnimFileSet(ent, ent->NPC_type);
 			G_SetSkin(ent);
+
+			// -----------------------------------------------------------------------------
+			// Apply animation style after NPC_ParseParms
+			// -----------------------------------------------------------------------------
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				// 1. Console/UI override
+				if (ent->client->animationstyle >= 0)
+				{
+					// Keep it
+				}
+				// 2. Global override
+				else if (g_AnimationStyle && g_AnimationStyle->integer >= 0)
+				{
+					ent->client->animationstyle = (Animationstyles_t)g_AnimationStyle->integer;
+				}
+				// 3. NPC file animationstyle — ONLY for NPCs, NOT the player
+				else if (ent->s.number != 0 && ent->client->parsedAnimationStyle >= 0)
+				{
+					ent->client->animationstyle = (Animationstyles_t)ent->client->parsedAnimationStyle;
+				}
+				// 4. Fallback
+				else
+				{
+					ent->client->animationstyle = CS_DEFAULT;
+				}
+			}
+			else
+			{
+				// System disabled → do NOT touch animationstyle
+			}
 		}
 
 		// setup sabers
@@ -3549,6 +3672,37 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			}
 			G_InitPlayerFromCvars(ent);
 
+			// -----------------------------------------------------------------------------
+			// Apply animation style after NPC_ParseParms
+			// -----------------------------------------------------------------------------
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				// 1. Console/UI override
+				if (ent->client->animationstyle >= 0)
+				{
+					// Keep it
+				}
+				// 2. Global override
+				else if (g_AnimationStyle && g_AnimationStyle->integer >= 0)
+				{
+					ent->client->animationstyle = (Animationstyles_t)g_AnimationStyle->integer;
+				}
+				// 3. NPC file animationstyle — ONLY for NPCs, NOT the player
+				else if (ent->s.number != 0 && ent->client->parsedAnimationStyle >= 0)
+				{
+					ent->client->animationstyle = (Animationstyles_t)ent->client->parsedAnimationStyle;
+				}
+				// 4. Fallback
+				else
+				{
+					ent->client->animationstyle = CS_DEFAULT;
+				}
+			}
+			else
+			{
+				// System disabled → do NOT touch animationstyle
+			}
+
 			// Reset communicating / dash / speed-related state on full save-load
 			Client_ResetCommunicatingDashAndSpeedState(client);
 		}
@@ -3562,11 +3716,73 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 				Q_strncpyz(bleh, ent->NPC_type, sizeof(bleh));
 
 				G_ChangePlayerModel(ent, bleh);
+
+				// -----------------------------------------------------------------------------
+				// Apply animation style after NPC_ParseParms
+				// -----------------------------------------------------------------------------
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					// 1. Console/UI override
+					if (ent->client->animationstyle >= 0)
+					{
+						// Keep it
+					}
+					// 2. Global override
+					else if (g_AnimationStyle && g_AnimationStyle->integer >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)g_AnimationStyle->integer;
+					}
+					// 3. NPC file animationstyle — ONLY for NPCs, NOT the player
+					else if (ent->s.number != 0 && ent->client->parsedAnimationStyle >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)ent->client->parsedAnimationStyle;
+					}
+					// 4. Fallback
+					else
+					{
+						ent->client->animationstyle = CS_DEFAULT;
+					}
+				}
+				else
+				{
+					// System disabled → do NOT touch animationstyle
+				}
 			}
 			else
 			{
 				G_LoadAnimFileSet(ent, ent->NPC_type);
 				G_SetSkin(ent);
+
+				// -----------------------------------------------------------------------------
+				// Apply animation style after NPC_ParseParms
+				// -----------------------------------------------------------------------------
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					// 1. Console/UI override
+					if (ent->client->animationstyle >= 0)
+					{
+						// Keep it
+					}
+					// 2. Global override
+					else if (g_AnimationStyle && g_AnimationStyle->integer >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)g_AnimationStyle->integer;
+					}
+					// 3. NPC file animationstyle — ONLY for NPCs, NOT the player
+					else if (ent->s.number != 0 && ent->client->parsedAnimationStyle >= 0)
+					{
+						ent->client->animationstyle = (Animationstyles_t)ent->client->parsedAnimationStyle;
+					}
+					// 4. Fallback
+					else
+					{
+						ent->client->animationstyle = CS_DEFAULT;
+					}
+				}
+				else
+				{
+					// System disabled → do NOT touch animationstyle
+				}
 			}
 			G_ReloadSaberData(ent);
 

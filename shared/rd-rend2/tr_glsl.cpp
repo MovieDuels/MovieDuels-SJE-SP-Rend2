@@ -702,8 +702,7 @@ ShaderProgramBuilder::ShaderProgramBuilder()
 	, shaderNames()
 	, numShaderNames(0)
 	, shaderSource(MAX_SHADER_SOURCE_LEN, '\0')
-{
-}
+{}
 
 ShaderProgramBuilder::~ShaderProgramBuilder()
 {

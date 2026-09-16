@@ -25,7 +25,7 @@ set(InMovieDuels TRUE)
 
 
 # Project name
-set(ProjectName "MovieDuels-SP-Working" CACHE STRING "Project Name")
+set(ProjectName "MovieDuels-SP" CACHE STRING "Project Name")
 project(${ProjectName})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

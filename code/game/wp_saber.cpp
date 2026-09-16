@@ -297,26 +297,21 @@ void G_Beskar_Attack_Bounce(const gentity_t* self, gentity_t* other);
 extern qboolean Mandalorian_Character(const gentity_t* self);
 extern void jet_fly_stop(gentity_t* self);
 extern qboolean g_standard_humanoid(gentity_t* self);
-extern cvar_t* g_ActivateAnimationStyle;
 
 extern cvar_t* g_saberAutoBlocking;
 extern cvar_t* g_saberRealisticCombat;
 extern cvar_t* g_saberDamageCapping;
 extern cvar_t* g_saberNewControlScheme;
-
 extern cvar_t* g_InvertedHolsteredSabers;
 extern cvar_t* g_CannonHolsteredSabers;
-
 extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_IsSaberDoingAttackDamage;
 extern cvar_t* g_DebugSaberCombat;
 extern cvar_t* g_lightningdamage;
 extern cvar_t* com_outcast;
-
 extern cvar_t* g_SaberBounceOnWalls;
 extern cvar_t* g_SaberMustReturn;
 extern cvar_t* g_jkoeffects;
-
 extern int g_crosshairEntNum;
 
 qboolean g_saberNoEffects = qfalse;
@@ -324,68 +319,55 @@ qboolean g_noClashFlare = qfalse;
 int g_saberFlashTime = 0;
 vec3_t g_saberFlashPos = { 0, 0, 0 };
 
-animFlags_t W_Animationstyletable(const gentity_t* self)
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
+// -----------------------------------------------------------------------------
+// W_Animationstyletable
+// Weapon-system animation style resolver for any gentity_t.
+// Cleaned to match final animFlags_t and Animationstyles_t enum.
+// -----------------------------------------------------------------------------
+static animFlags_t W_Animationstyletable(const gentity_t* self)
 {
-	const gclient_t* cl = self->client;
-
 	animFlags_t flags{};
-	if (!cl)
+	if (!self || !self->client)
 	{
+		Com_Printf("W_Animationstyletable: self or self->client is null\n");
 		return flags;
 	}
 
-	const int style = cl->animationstyle;
+	const int style = self->client->animationstyle;
+	const int cvarStyle = (g_AnimationStyle ? g_AnimationStyle->integer : -1);
 
-	// Base style checks
-	flags.isAnakin = (style == CS_ANAKIN) ? qtrue : qfalse;
-	flags.isBenKenobi = (style == CS_BENKENOBI) ? qtrue : qfalse;
-	flags.isCalKestis = (style == CS_CAL_KESTIS) ? qtrue : qfalse;
-	flags.isDarkForces2 = (style == CS_DARKFORCES2) ? qtrue : qfalse;
-	flags.isCountDooku = (style == CS_COUNT_DOOKU) ? qtrue : qfalse;
-	flags.isGalenMarek = (style == CS_GALEN_MAREK) ? qtrue : qfalse;
-	flags.isQuiGonJinn = (style == CS_QUI_GON_JINN) ? qtrue : qfalse;
-	flags.isGrievous = (style == CS_GRIEVOUS) ? qtrue : qfalse;
-	flags.isKotor = (style == CS_KOTOR) ? qtrue : qfalse;
-	flags.isLukeSkywalker = (style == CS_LUKE_SKYWALKER) ? qtrue : qfalse;
-	flags.isMaceWindu = (style == CS_MACE_WINDU) ? qtrue : qfalse;
-	flags.isMaul = (style == CS_MAUL) ? qtrue : qfalse;
-	flags.isMovieDuels = (style == CS_MOVIEDUELS) ? qtrue : qfalse;
-	flags.isObiWan = (style == CS_OBIWAN) ? qtrue : qfalse;
-	flags.isObiWanEP3 = (style == CS_OBIWAN_EP3) ? qtrue : qfalse;
-	flags.isPalpatine = (style == CS_PALPATINE) ? qtrue : qfalse;
-	flags.isKyloRen = (style == CS_KYLO_REN) ? qtrue : qfalse;
-	flags.isRey = (style == CS_REY) ? qtrue : qfalse;
-	flags.isVader = (style == CS_VADER) ? qtrue : qfalse;
-	flags.isYoda = (style == CS_YODA) ? qtrue : qfalse;
+	// Helper macro: match either entity style or cvar override
+#define MATCH(s) ((style == (s)) || (cvarStyle == (s)))
 
-	// Server-side override (equivalent to g_AnimationStyle on client)
-	if (g_AnimationStyle)
-	{
-		switch (g_AnimationStyle->integer)
-		{
-		case 1:  flags.isAnakin = qtrue; break;
-		case 3:  flags.isBenKenobi = qtrue; break;
-		case 4:  flags.isCalKestis = qtrue; break;
-		case 7:  flags.isDarkForces2 = qtrue; break;
-		case 8:  flags.isCountDooku = qtrue; break;
-		case 9:  flags.isGalenMarek = qtrue; break;
-		case 10: flags.isQuiGonJinn = qtrue; break;
-		case 11: flags.isGrievous = qtrue; break;
-		case 14: flags.isKotor = qtrue; break;
-		case 15: flags.isLukeSkywalker = qtrue; break;
-		case 16: flags.isMaceWindu = qtrue; break;
-		case 17: flags.isMaul = qtrue; break;
-		case 18: flags.isMovieDuels = qtrue; break;
-		case 20: flags.isObiWan = qtrue; break;
-		case 21: flags.isObiWanEP3 = qtrue; break;
-		case 22: flags.isPalpatine = qtrue; break;
-		case 24: flags.isKyloRen = qtrue; break;
-		case 25: flags.isRey = qtrue; break;
-		case 27: flags.isVader = qtrue; break;
-		case 28: flags.isYoda = qtrue; break;
-		default: break;
-		}
-	}
+	if (MATCH(CS_DEFAULT))        flags.isDefault = qtrue;
+	if (MATCH(CS_ANAKIN))         flags.isAnakin = qtrue;
+	if (MATCH(CS_BATTLEDROID))    flags.isBattleDroid = qtrue;
+	if (MATCH(CS_BENKENOBI))      flags.isBenKenobi = qtrue;
+	if (MATCH(CS_CAL_KESTIS))     flags.isCalKestis = qtrue;
+	if (MATCH(CS_CLONETROOPER))   flags.isCloneTrooper = qtrue;
+	if (MATCH(CS_DARKFORCES2))    flags.isDarkForces2 = qtrue;
+	if (MATCH(CS_COUNT_DOOKU))    flags.isCountDooku = qtrue;
+	if (MATCH(CS_GALEN_MAREK))    flags.isGalenMarek = qtrue;
+	if (MATCH(CS_QUI_GON_JINN))   flags.isQuiGonJinn = qtrue;
+	if (MATCH(CS_GRIEVOUS))       flags.isGrievous = qtrue;
+	if (MATCH(CS_JANGO))          flags.isJango = qtrue;
+	if (MATCH(CS_KOTOR))          flags.isKotor = qtrue;
+	if (MATCH(CS_LUKE_SKYWALKER)) flags.isLukeSkywalker = qtrue;
+	if (MATCH(CS_MACE_WINDU))     flags.isMaceWindu = qtrue;
+	if (MATCH(CS_MAUL))           flags.isMaul = qtrue;
+	if (MATCH(CS_MOVIEDUELS))     flags.isMovieDuels = qtrue;
+	if (MATCH(CS_OBIWAN))         flags.isObiWan = qtrue;
+	if (MATCH(CS_OBIWAN_EP3))     flags.isObiWanEP3 = qtrue;
+	if (MATCH(CS_PALPATINE))      flags.isPalpatine = qtrue;
+	if (MATCH(CS_REBELS))         flags.isRebels = qtrue;
+	if (MATCH(CS_KYLO_REN))       flags.isKyloRen = qtrue;
+	if (MATCH(CS_REY))            flags.isRey = qtrue;
+	if (MATCH(CS_VADER))          flags.isVader = qtrue;
+	if (MATCH(CS_YODA))           flags.isYoda = qtrue;
+
+#undef MATCH
 
 	return flags;
 }
@@ -5239,6 +5221,7 @@ static qboolean G_DrawSaberTrailForAnimation(const gentity_t* self)
 	case BOTH_GESTURE2:
 	case BOTH_GESTURE3:
 	case BOTH_SHOWOFF_FAST:
+	case BOTH_SHOWOFF_FAST_BEN:
 	case BOTH_SHOWOFF_MEDIUM:
 	case BOTH_SHOWOFF_STRONG:
 	case BOTH_SHOWOFF_DUAL:
@@ -19112,6 +19095,10 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 						{
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_AFLAG_BLOCKPACE);
 						}
+						else if (flags.isBenKenobi == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_AFLAG_BLOCKPACE);
+						}
 						else
 						{
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_BLOCKPACE);
@@ -23402,7 +23389,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -24836,7 +24823,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -26333,7 +26320,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -29285,7 +29272,7 @@ static void ForceRepulseThrow(gentity_t* self, int charge_time)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -30162,7 +30149,7 @@ void ForceSpeed(gentity_t* self, const int duration)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -30523,7 +30510,7 @@ void ForceHeal(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -30668,7 +30655,7 @@ void ForceTelepathy(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -30918,7 +30905,7 @@ void ForceGrip(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -31604,7 +31591,7 @@ void ForceFear(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -31962,7 +31949,7 @@ static void ForceShootstrike(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -32905,7 +32892,7 @@ void ForceLightningStrike(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -32966,7 +32953,7 @@ void ForceLightning(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -34252,6 +34239,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_AFLAG_PACE);
 										}
+										else if (flags.isBenKenobi == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_AFLAG_PACE);
+										}
 										else
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
@@ -34285,6 +34276,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										if (flags.isAnakin == qtrue)
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_AFLAG_PACE);
+										}
+										else if (flags.isBenKenobi == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_AFLAG_PACE);
 										}
 										else
 										{
@@ -36061,7 +36056,7 @@ static void ForceDrain(gentity_t* self, const qboolean tried_drain2)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -36344,7 +36339,7 @@ static void ForceShootDrain(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -36651,7 +36646,7 @@ void ForceSeeing(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -36747,7 +36742,7 @@ void ForceProtect(gentity_t* self)
 		WP_ForcePowerStop(self, FP_PROJECTION);
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -36836,7 +36831,7 @@ void ForceAbsorb(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -36925,7 +36920,7 @@ void ForceRage(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -37098,7 +37093,7 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -37442,7 +37437,7 @@ void ForceDestruction(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -38042,7 +38037,7 @@ void ForceStasis(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -38534,7 +38529,7 @@ void ForceGrasp(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -39054,7 +39049,7 @@ void ForceBlast(gentity_t* self)
 		return;
 	}
 
-	if (PM_InLedgeMove(self->client->ps.legsAnim))
+	if (PM_InLedgeMove(self->client->ps.legsAnim) == qtrue)
 	{
 		return;
 	}
@@ -43342,10 +43337,6 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 	}
 
 	const float percent_complete = (current - (float)start) / (float)(end - start);
-
-#ifndef _DEBUG
-	gi.Printf("%f\n", percent_complete);
-#endif
 
 	switch (self->client->ps.torsoAnim)
 	{

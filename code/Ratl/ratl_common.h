@@ -93,8 +93,7 @@ inline void* operator new(size_t, TRatlNew* where)
 }
 
 inline void operator delete(void*, TRatlNew*)
-{
-}
+{}
 
 namespace ratl
 {
@@ -461,20 +460,16 @@ namespace ratl
 	{
 	public:
 		static void clear()
-		{
-		}
+		{}
 
 		static void set()
-		{
-		}
+		{}
 
 		static void set_bit(const int i)
-		{
-		}
+		{}
 
 		static void clear_bit(const int i)
-		{
-		}
+		{}
 		bool operator[](const int i) const
 		{
 			return true;
@@ -507,15 +502,13 @@ namespace ratl
 				VALUE_SIZE = sizeof(TStorage),
 			};
 			static void construct(TStorage*)
-			{
-			}
+			{}
 			static void construct(TStorage* me, const TValue& v)
 			{
 				*me = v;
 			}
 			static void destruct(TStorage*)
-			{
-			}
+			{}
 			static TRatlNew* raw(TStorage* me)
 			{
 				return static_cast<TRatlNew*>(me);
@@ -715,15 +708,13 @@ namespace ratl
 				VALUE_SIZE = sizeof(TValue),
 			};
 			static void construct(TStorage*)
-			{
-			}
+			{}
 			static void construct(TStorage* me, const TValue& v)
 			{
 				me->value = v;
 			}
 			static void destruct(TStorage*)
-			{
-			}
+			{}
 			static TRatlNew* raw(TStorage* me)
 			{
 				return static_cast<TRatlNew*>(&me->value);
@@ -993,8 +984,7 @@ namespace ratl
 	public:
 
 		array_base()
-		{
-		}
+		{}
 
 		~array_base()
 		{

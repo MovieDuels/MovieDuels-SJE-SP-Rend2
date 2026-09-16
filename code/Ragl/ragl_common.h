@@ -112,12 +112,10 @@ namespace ragl
 	{
 	public:
 		CNode()
-		{
-		}
+		{}
 
 		CNode(const CVec3& Pt) : mPoint(Pt)
-		{
-		}
+		{}
 
 		////////////////////////////////////////////////////////////////////////////////////
 		// Access Operator (For Triangulation)
@@ -183,8 +181,7 @@ namespace ragl
 		// Constructors
 		////////////////////////////////////////////////////////////////////////////////////
 		ragl_ref()
-		{
-		}
+		{}
 
 		ragl_ref(const ragl_ref& r) { mDataRef = static_cast<TDATAREF>(r.mDataRef); }
 		ragl_ref(const TDATA& r) { mDataRef = static_cast<TDATAREF>(&r); }

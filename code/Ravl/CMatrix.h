@@ -58,8 +58,7 @@ public:
 	// Constructors
 	////////////////////////////////////////////////////////////////////////////////////
 	CMatrix()
-	{
-	}
+	{}
 
 	CMatrix(const CVec4& x, const CVec4& y, const CVec4& z, const CVec4& w)
 	{

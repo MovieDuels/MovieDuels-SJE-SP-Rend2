@@ -154,7 +154,6 @@ void NPC_CheckEvasion(void);
 extern void WP_Melee(gentity_t* ent);
 extern cvar_t* g_npcSpecialAttackFreq;
 extern qboolean PM_SaberInReturn(int move);
-extern cvar_t* g_ActivateAnimationStyle;
 
 //Locals
 qboolean jedi_waiting_ambush(const gentity_t* self);
@@ -180,68 +179,55 @@ static int jedi_get_kata_cooldown_duration()
 	}
 }
 
-animFlags_t J_Animationstyletable(const gentity_t* npc)
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
+// -----------------------------------------------------------------------------
+// Jedi_Animationstyletable
+// NPC animation style resolver for Jedi-type entities.
+// Cleaned to match the final animFlags_t list and updated Animationstyles_t enum.
+// -----------------------------------------------------------------------------
+static animFlags_t Jedi_Animationstyletable(const gentity_t* NPC)
 {
-	const gclient_t* cl = npc->client;
-
 	animFlags_t flags{};
-	if (!cl)
+	if (!NPC || !NPC->client)
 	{
+		Com_Printf("Jedi_Animationstyletable: NPC or NPC->client is null\n");
 		return flags;
 	}
 
-	const int style = cl->animationstyle;
+	const int style = NPC->client->animationstyle;
+	const int cvarStyle = (g_AnimationStyle ? g_AnimationStyle->integer : -1);
 
-	// Base style checks
-	flags.isAnakin = (style == CS_ANAKIN) ? qtrue : qfalse;
-	flags.isBenKenobi = (style == CS_BENKENOBI) ? qtrue : qfalse;
-	flags.isCalKestis = (style == CS_CAL_KESTIS) ? qtrue : qfalse;
-	flags.isDarkForces2 = (style == CS_DARKFORCES2) ? qtrue : qfalse;
-	flags.isCountDooku = (style == CS_COUNT_DOOKU) ? qtrue : qfalse;
-	flags.isGalenMarek = (style == CS_GALEN_MAREK) ? qtrue : qfalse;
-	flags.isQuiGonJinn = (style == CS_QUI_GON_JINN) ? qtrue : qfalse;
-	flags.isGrievous = (style == CS_GRIEVOUS) ? qtrue : qfalse;
-	flags.isKotor = (style == CS_KOTOR) ? qtrue : qfalse;
-	flags.isLukeSkywalker = (style == CS_LUKE_SKYWALKER) ? qtrue : qfalse;
-	flags.isMaceWindu = (style == CS_MACE_WINDU) ? qtrue : qfalse;
-	flags.isMaul = (style == CS_MAUL) ? qtrue : qfalse;
-	flags.isMovieDuels = (style == CS_MOVIEDUELS) ? qtrue : qfalse;
-	flags.isObiWan = (style == CS_OBIWAN) ? qtrue : qfalse;
-	flags.isObiWanEP3 = (style == CS_OBIWAN_EP3) ? qtrue : qfalse;
-	flags.isPalpatine = (style == CS_PALPATINE) ? qtrue : qfalse;
-	flags.isKyloRen = (style == CS_KYLO_REN) ? qtrue : qfalse;
-	flags.isRey = (style == CS_REY) ? qtrue : qfalse;
-	flags.isVader = (style == CS_VADER) ? qtrue : qfalse;
-	flags.isYoda = (style == CS_YODA) ? qtrue : qfalse;
+	// Helper macro: match either NPC style or cvar override
+#define MATCH(s) ((style == (s)) || (cvarStyle == (s)))
 
-	// Server-side override (equivalent to g_AnimationStyle on client)
-	if (g_AnimationStyle)
-	{
-		switch (g_AnimationStyle->integer)
-		{
-		case 1:  flags.isAnakin = qtrue; break;
-		case 3:  flags.isBenKenobi = qtrue; break;
-		case 4:  flags.isCalKestis = qtrue; break;
-		case 7:  flags.isDarkForces2 = qtrue; break;
-		case 8:  flags.isCountDooku = qtrue; break;
-		case 9:  flags.isGalenMarek = qtrue; break;
-		case 10: flags.isQuiGonJinn = qtrue; break;
-		case 11: flags.isGrievous = qtrue; break;
-		case 14: flags.isKotor = qtrue; break;
-		case 15: flags.isLukeSkywalker = qtrue; break;
-		case 16: flags.isMaceWindu = qtrue; break;
-		case 17: flags.isMaul = qtrue; break;
-		case 18: flags.isMovieDuels = qtrue; break;
-		case 20: flags.isObiWan = qtrue; break;
-		case 21: flags.isObiWanEP3 = qtrue; break;
-		case 22: flags.isPalpatine = qtrue; break;
-		case 24: flags.isKyloRen = qtrue; break;
-		case 25: flags.isRey = qtrue; break;
-		case 27: flags.isVader = qtrue; break;
-		case 28: flags.isYoda = qtrue; break;
-		default: break;
-		}
-	}
+	if (MATCH(CS_DEFAULT))        flags.isDefault = qtrue;
+	if (MATCH(CS_ANAKIN))         flags.isAnakin = qtrue;
+	if (MATCH(CS_BATTLEDROID))    flags.isBattleDroid = qtrue;
+	if (MATCH(CS_BENKENOBI))      flags.isBenKenobi = qtrue;
+	if (MATCH(CS_CAL_KESTIS))     flags.isCalKestis = qtrue;
+	if (MATCH(CS_CLONETROOPER))   flags.isCloneTrooper = qtrue;
+	if (MATCH(CS_DARKFORCES2))    flags.isDarkForces2 = qtrue;
+	if (MATCH(CS_COUNT_DOOKU))    flags.isCountDooku = qtrue;
+	if (MATCH(CS_GALEN_MAREK))    flags.isGalenMarek = qtrue;
+	if (MATCH(CS_QUI_GON_JINN))   flags.isQuiGonJinn = qtrue;
+	if (MATCH(CS_GRIEVOUS))       flags.isGrievous = qtrue;
+	if (MATCH(CS_JANGO))          flags.isJango = qtrue;
+	if (MATCH(CS_KOTOR))          flags.isKotor = qtrue;
+	if (MATCH(CS_LUKE_SKYWALKER)) flags.isLukeSkywalker = qtrue;
+	if (MATCH(CS_MACE_WINDU))     flags.isMaceWindu = qtrue;
+	if (MATCH(CS_MAUL))           flags.isMaul = qtrue;
+	if (MATCH(CS_MOVIEDUELS))     flags.isMovieDuels = qtrue;
+	if (MATCH(CS_OBIWAN))         flags.isObiWan = qtrue;
+	if (MATCH(CS_OBIWAN_EP3))     flags.isObiWanEP3 = qtrue;
+	if (MATCH(CS_PALPATINE))      flags.isPalpatine = qtrue;
+	if (MATCH(CS_REBELS))         flags.isRebels = qtrue;
+	if (MATCH(CS_KYLO_REN))       flags.isKyloRen = qtrue;
+	if (MATCH(CS_REY))            flags.isRey = qtrue;
+	if (MATCH(CS_VADER))          flags.isVader = qtrue;
+	if (MATCH(CS_YODA))           flags.isYoda = qtrue;
+
+#undef MATCH
 
 	return flags;
 }
@@ -8491,7 +8477,7 @@ static qboolean Jedi_Jump(vec3_t dest, const int goal_ent_num)
 
 static qboolean Jedi_TryJump(const gentity_t* goal)
 {
-	animFlags_t flags = J_Animationstyletable(NPC);
+	animFlags_t flags = Jedi_Animationstyletable(NPC);
 
 	if (NPCInfo->scriptFlags & SCF_NO_ACROBATICS)
 	{

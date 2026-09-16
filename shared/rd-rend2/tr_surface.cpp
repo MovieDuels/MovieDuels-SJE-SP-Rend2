@@ -2585,8 +2585,7 @@ static void RB_SurfaceVBOMDVMesh(srfVBOMDVMesh_t* surface)
 	tess.numVertexes += surface->numVerts;
 }
 
-static void RB_SurfaceSkip(void* surf) {
-}
+static void RB_SurfaceSkip(void* surf) {}
 
 static void RB_SurfaceSprites(srfSprites_t* surf)
 {

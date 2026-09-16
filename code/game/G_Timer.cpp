@@ -25,7 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../Rufl/hstring.h"
 #include "qcommon/ojk_saved_game_helper.h"
 
-constexpr auto MAX_GTIMERS = 16384;using gtimer_t = struct gtimer_s
+constexpr auto MAX_GTIMERS = 16384; using gtimer_t = struct gtimer_s
 {
 	hstring     id{};
 	int         time{};

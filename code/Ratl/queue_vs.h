@@ -101,8 +101,7 @@ namespace ratl
 		// Constructor
 		////////////////////////////////////////////////////////////////////////////////////
 		queue_base() : mPush(0), mPop(0), mSize(0)
-		{
-		}
+		{}
 
 		////////////////////////////////////////////////////////////////////////////////////
 		// Get The Size (The Difference Between The Push And Pop "Pointers")
@@ -212,8 +211,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		queue_vs()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY>
@@ -225,8 +223,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		queue_os()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY, int ARG_MAX_CLASS_SIZE>
@@ -239,8 +236,7 @@ namespace ratl
 		static const int MAX_CLASS_SIZE = ARG_MAX_CLASS_SIZE;
 
 		queue_is()
-		{
-		}
+		{}
 	};
 }
 #endif

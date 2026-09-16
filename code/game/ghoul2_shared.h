@@ -57,8 +57,7 @@ struct surfaceInfo_t
 		genBarycentricI(0),
 		genPolySurfaceIndex(0),
 		genLod(0)
-	{
-	}
+	{}
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -424,8 +423,7 @@ struct boltInfo_t
 		surfaceNumber(-1),
 		surfaceType(0),
 		boltUsed(0)
-	{
-	}
+	{}
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const
@@ -476,15 +474,13 @@ public:
 		ident(8), //SF_MDX
 		boneCache(0),
 		surfaceData(0)
-	{
-	}
+	{}
 
 	CRenderableSurface(const CRenderableSurface& rs) :
 		ident(rs.ident),
 		boneCache(rs.boneCache),
 		surfaceData(rs.surfaceData)
-	{
-	}
+	{}
 };
 #endif
 
@@ -908,8 +904,7 @@ public:
 		mMaterial(0),
 		mLocation(0),
 		mBarycentricI(0), mBarycentricJ(0)
-	{
-	}
+	{}
 
 	void sg_export(
 		ojk::SavedGameHelper& saved_game) const

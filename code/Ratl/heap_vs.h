@@ -168,8 +168,7 @@ namespace ratl
 		// Constructor
 		////////////////////////////////////////////////////////////////////////////////////
 		heap_base() : mPush(0)
-		{
-		}
+		{}
 
 		////////////////////////////////////////////////////////////////////////////////////
 		// Get The Size (The Difference Between The Push And Pop "Pointers")
@@ -300,8 +299,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		heap_vs()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY>
@@ -313,8 +311,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		heap_os()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY, int ARG_MAX_CLASS_SIZE>
@@ -327,8 +324,7 @@ namespace ratl
 		static const int MAX_CLASS_SIZE = ARG_MAX_CLASS_SIZE;
 
 		heap_is()
-		{
-		}
+		{}
 	};
 }
 #endif

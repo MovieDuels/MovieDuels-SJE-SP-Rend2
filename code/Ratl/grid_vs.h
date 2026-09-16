@@ -308,12 +308,10 @@ namespace ratl
 			// Constructors
 			//--------------
 			iterator()
-			{
-			}
+			{}
 
 			iterator(grid2_vs* p, const int t) : mLoc(t), mOwner(p)
-			{
-			}
+			{}
 
 			// Assignment Operator
 			//---------------------
@@ -402,8 +400,7 @@ namespace ratl
 			// Constructors
 			//--------------
 			riterator()
-			{
-			}
+			{}
 
 			riterator(grid2_vs* p, const int Range, const int SX, const int SY) :
 				mOwner(p)

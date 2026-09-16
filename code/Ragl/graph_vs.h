@@ -247,8 +247,7 @@ namespace ragl
 			//
 			////////////////////////////////////////////////////////////////////////////////
 			cells(TGraph& g) : mGraph(g)
-			{
-			}
+			{}
 
 			void		clear()
 			{
@@ -534,8 +533,7 @@ namespace ragl
 		}
 
 		~graph_vs()
-		{
-		}
+		{}
 
 		////////////////////////////////////////////////////////////////////////////////////
 		// Number Of Nodes
@@ -1139,15 +1137,13 @@ namespace ragl
 				mParentVisit(Parent),
 				mCostToGoal(-1),
 				mCostFromStart(0)
-			{
-			}
+			{}
 			search_node(const search_node& t) :
 				mNode(t.mNode),
 				mParentVisit(t.mParentVisit),
 				mCostToGoal(t.mCostToGoal),
 				mCostFromStart(t.mCostFromStart)
-			{
-			}
+			{}
 
 			////////////////////////////////////////////////////////////////////////////////
 			// Assignment Operator

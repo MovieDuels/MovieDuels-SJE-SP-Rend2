@@ -461,16 +461,13 @@ namespace ratl
 			// Constructors
 			//--------------
 			iterator() : mLoc(0), mOwner(nullptr)
-			{
-			}
+			{}
 
 			iterator(vector_base<T>* p, const int t) : mLoc(t), mOwner(p)
-			{
-			}
+			{}
 
 			iterator(const iterator& t) : mLoc(t.mLoc), mOwner(t.mOwner)
-			{
-			}
+			{}
 
 			// Assignment Operator
 			//---------------------
@@ -550,20 +547,16 @@ namespace ratl
 			// Constructors
 			//--------------
 			const_iterator() : mLoc(0), mOwner(nullptr)
-			{
-			}
+			{}
 
 			const_iterator(const vector_base<T>* p, const int t) : mLoc(t), mOwner(p)
-			{
-			}
+			{}
 
 			const_iterator(const const_iterator& t) : mLoc(t.mLoc), mOwner(t.mOwner)
-			{
-			}
+			{}
 
 			const_iterator(const iterator& t) : mLoc(t.mLoc), mOwner(t.mOwner)
-			{
-			}
+			{}
 
 			// Assignment Operator
 			//---------------------
@@ -740,8 +733,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		vector_vs()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY>
@@ -753,8 +745,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		vector_os()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY, int ARG_MAX_CLASS_SIZE>
@@ -767,8 +758,7 @@ namespace ratl
 		static const int MAX_CLASS_SIZE = ARG_MAX_CLASS_SIZE;
 
 		vector_is()
-		{
-		}
+		{}
 	};
 }
 #endif

@@ -163,8 +163,7 @@ void CGPProperty::AddValue(const gsl::cstring_view newValue)
 
 CGPGroup::CGPGroup(const gsl::cstring_view& initName)
 	: mName(initName)
-{
-}
+{}
 
 bool CGPGroup::Parse(gsl::cstring_view& data, const bool topLevel)
 {

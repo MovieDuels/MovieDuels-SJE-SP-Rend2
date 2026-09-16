@@ -71,12 +71,10 @@ namespace ratl
 #endif
 
 	void ratl_base::save(hfile& file)
-	{
-	}
+	{}
 
 	void ratl_base::load(hfile& file)
-	{
-	}
+	{}
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// A Profile Print Function
@@ -113,7 +111,6 @@ namespace ratl
 	}
 #else
 	void ratl_base::ProfilePrint(const char* format, ...)
-	{
-	}
+	{}
 #endif
 }

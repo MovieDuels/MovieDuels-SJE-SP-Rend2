@@ -156,44 +156,34 @@ namespace ojk
 
 		// Tags for dispatching.
 		class BooleanTag
-		{
-		};
+		{};
 
 		class NumericTag
-		{
-		};
+		{};
 
 		class PointerTag
-		{
-		};
+		{};
 
 		class ClassTag
-		{
-		};
+		{};
 
 		class Array1dTag
-		{
-		};
+		{};
 
 		class Array2dTag
-		{
-		};
+		{};
 
 		class InplaceTag
-		{
-		};
+		{};
 
 		class CastTag
-		{
-		};
+		{};
 
 		class InternalTag
-		{
-		};
+		{};
 
 		class ExternalTag
-		{
-		};
+		{};
 
 		template <typename TSrc, typename TDst>
 		bool try_read(

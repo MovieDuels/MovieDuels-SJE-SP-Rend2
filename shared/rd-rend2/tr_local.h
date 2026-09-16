@@ -3534,8 +3534,7 @@ public:
 		, fade(0.0f)
 		, impactTime(0.0f)
 #endif
-	{
-	}
+	{}
 
 	void Init()
 	{
@@ -3791,7 +3790,7 @@ struct modelUboCache_t
 };
 
 #define MAX_GPU_TIMERS (512)
-#define MAX_SCENES (3)
+#define MAX_SCENES (6)
 struct gpuFrame_t
 {
 	GLsync sync;

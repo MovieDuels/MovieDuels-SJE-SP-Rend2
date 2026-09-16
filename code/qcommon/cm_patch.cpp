@@ -1781,5 +1781,4 @@ void BotDrawDebugPolygons(void (*draw_poly)(int color, int numPoints, float* poi
 #endif
 
 void CM_DrawDebugSurface(void (*draw_poly)(int color, int numPoints, const float* points))
-{
-}
+{}

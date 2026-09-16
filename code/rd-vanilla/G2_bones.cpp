@@ -1445,25 +1445,20 @@ class CRagDollInitialUpdateParams : public CRagDollUpdateParams
 {
 public:
 	void EffectorCollision(const SRagDollEffectorCollision& data) override
-	{
-	}
+	{}
 
 	void RagDollBegin() override
-	{
-	}
+	{}
 
 	void RagDollSettled() override
-	{
-	}
+	{}
 
 	void Collision() override
-	{
-	}
+	{}
 
 #ifdef _DEBUG
 	void DebugLine(vec3_t p1, vec3_t p2, int color, bool bbox) override
-	{
-	}
+	{}
 #endif
 };
 

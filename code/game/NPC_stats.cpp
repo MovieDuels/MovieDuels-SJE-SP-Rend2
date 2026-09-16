@@ -59,13 +59,15 @@ extern cvar_t* com_outcast;
 extern cvar_t* com_kotor;
 
 extern cvar_t* g_allowAlignmentChange;
-extern cvar_t* g_ActivateAnimationStyle;
 
 extern qboolean G_StandardHumanoid(const char* gla_name);
 
 constexpr auto MAX_MODELS_PER_LEVEL = 120;
 
 hstring modelsAlreadyDone[MAX_MODELS_PER_LEVEL];
+
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
 
 stringID_table_t animEventTypeTable[] =
 {
@@ -159,63 +161,55 @@ stringID_table_t FactionTable[] =
 
 stringID_table_t AnimationstylesTable[] =
 {
-	{"default", CS_DEFAULT},
+	{"default",        CS_DEFAULT},
 	ENUM2STRING(CS_DEFAULT),
-	{"anakin",CS_ANAKIN},
+	{"anakin",         CS_ANAKIN},
 	ENUM2STRING(CS_ANAKIN),
-	//{"battle_droid",CS_BATTLEDROID},
-	//ENUM2STRING(CS_BATTLEDROID),
-	{"ben_kenobi",CS_BENKENOBI},
+	{"battle_droid",   CS_BATTLEDROID},
+	ENUM2STRING(CS_BATTLEDROID),
+		{"ben_kenobi",     CS_BENKENOBI},
 	ENUM2STRING(CS_BENKENOBI),
-	{"cal_kestis",CS_CAL_KESTIS},
+	{"cal_kestis",     CS_CAL_KESTIS},
 	ENUM2STRING(CS_CAL_KESTIS),
-	//{"clone_trooper",CS_CLONETROOPER},
-	//ENUM2STRING(CS_CLONETROOPER),
-	//{"droideka",CS_DROIDEKA},
-	//ENUM2STRING(CS_DROIDEKA),
-	{"darkforces2",CS_DARKFORCES2},
+	{"clone_trooper",  CS_CLONETROOPER},
+	ENUM2STRING(CS_CLONETROOPER),
+	{"darkforces2",    CS_DARKFORCES2},
 	ENUM2STRING(CS_DARKFORCES2),
-	{"count_dooku",CS_COUNT_DOOKU},
+	{"count_dooku",    CS_COUNT_DOOKU},
 	ENUM2STRING(CS_COUNT_DOOKU),
-	{"galen_marek",CS_GALEN_MAREK},
+	{"galen_marek",    CS_GALEN_MAREK},
 	ENUM2STRING(CS_GALEN_MAREK),
-	{"qui_gon_jinn",CS_QUI_GON_JINN},
+	{"qui_gon_jinn",   CS_QUI_GON_JINN},
 	ENUM2STRING(CS_QUI_GON_JINN),
-	{"grievous",CS_GRIEVOUS},
+	{"grievous",       CS_GRIEVOUS},
 	ENUM2STRING(CS_GRIEVOUS),
-	//{"jabba",CS_JABBA},
-	//ENUM2STRING(CS_JABBA),
-	//{"jango", CS_JANGO},
-	//ENUM2STRING(CS_JANGO),
-	{"kotor",CS_KOTOR},
+	{"jango",          CS_JANGO},
+	ENUM2STRING(CS_JANGO),
+	{"kotor",          CS_KOTOR},
 	ENUM2STRING(CS_KOTOR),
 	{"luke_skywalker", CS_LUKE_SKYWALKER},
 	ENUM2STRING(CS_LUKE_SKYWALKER),
-	{"mace_windu", CS_MACE_WINDU},
+	{"mace_windu",     CS_MACE_WINDU},
 	ENUM2STRING(CS_MACE_WINDU),
-	{"maul",CS_MAUL},
+	{"maul",           CS_MAUL},
 	ENUM2STRING(CS_MAUL),
-	{"movie_duels",CS_MOVIEDUELS},
+	{"movie_duels",    CS_MOVIEDUELS},
 	ENUM2STRING(CS_MOVIEDUELS),
-	//{"melee", CS_MELEE},
-	//ENUM2STRING(CS_MELEE),
-	{"obiwan", CS_OBIWAN},
+	{"obiwan",         CS_OBIWAN},
 	ENUM2STRING(CS_OBIWAN),
-	{"obiwan_ep3",CS_OBIWAN_EP3},
+	{"obiwan_ep3",     CS_OBIWAN_EP3},
 	ENUM2STRING(CS_OBIWAN_EP3),
-	{"palpatine",CS_PALPATINE},
+	{"palpatine",      CS_PALPATINE},
 	ENUM2STRING(CS_PALPATINE),
-	//{"rebels",CS_REBELS},
-	//ENUM2STRING(CS_REBELS),
-	{"kylo_ren",CS_KYLO_REN},
+	{"rebels",         CS_REBELS},
+	ENUM2STRING(CS_REBELS),
+	{"kylo_ren",       CS_KYLO_REN},
 	ENUM2STRING(CS_KYLO_REN),
-	{"rey",CS_REY},
+	{"rey",            CS_REY},
 	ENUM2STRING(CS_REY),
-	//{"sbd",CS_SBD},
-	//ENUM2STRING(CS_SBD),
-	{"vader",CS_VADER},
+	{"vader",          CS_VADER},
 	ENUM2STRING(CS_VADER),
-	{"yoda", CS_YODA},
+	{"yoda",           CS_YODA},
 	ENUM2STRING(CS_YODA),
 	{"", -1}
 };
@@ -965,6 +959,7 @@ static void G_ParseAnimationEvtFile(const int gla_index, const char* events_dire
 	// -------------------------------------------------------------------------
 	// Open animevents.cfg
 	// -------------------------------------------------------------------------
+
 	Com_sprintf(events_path, MAX_QPATH, "models/players/%s/animevents.cfg", events_directory);
 
 	const int len = cgi_FS_FOpenFile(events_path, &f, FS_READ);
@@ -1933,7 +1928,9 @@ void CG_NPC_Precache(gentity_t* spawner)
 			{
 				continue;
 			}
-			animationstyle = static_cast<Animationstyles_t>(GetIDForString(AnimationstylesTable, token));
+
+			animationstyle = static_cast<Animationstyles_t>(GetIDForString(AnimationstylesTable, value));
+
 			continue;
 		}
 
@@ -2135,8 +2132,7 @@ void CG_NPC_Precache(gentity_t* spawner)
 }
 
 static void NPC_BuildRandom()
-{
-}
+{}
 
 extern void G_MatchPlayerWeapon(gentity_t* ent);
 extern void G_InitPlayerFromCvars(gentity_t* ent);

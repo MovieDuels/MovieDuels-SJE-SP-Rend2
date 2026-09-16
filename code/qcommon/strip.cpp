@@ -862,8 +862,7 @@ bool cStringPackage::Load(char* Data, int& Size)
 
 cStringPackageSingle::cStringPackageSingle(const char* in, unsigned char initID, char* initReference)
 	:cStringPackage(in, initID, initReference)
-{
-}
+{}
 
 cStringPackageSingle::~cStringPackageSingle(void)
 {

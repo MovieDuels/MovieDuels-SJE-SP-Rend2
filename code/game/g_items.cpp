@@ -734,8 +734,7 @@ RespawnItem
 ===============
 */
 void RespawnItem(gentity_t* ent)
-{
-}
+{}
 
 qboolean CheckItemCanBePickedUpByNPC(const gentity_t* item, const gentity_t* pickerupper)
 {

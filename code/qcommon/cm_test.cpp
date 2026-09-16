@@ -32,8 +32,7 @@ public:
 		x(_x),
 		y(_y),
 		z(_z)
-	{
-	}
+	{}
 
 	bool operator==(const CPoint& p) const { return x == p.x && y == p.y && z == p.z; }
 };
@@ -52,8 +51,7 @@ struct PointAndLeaf
 {
 	// Default constructor for array construction below
 	PointAndLeaf() : point(0, 0, 0), leaf(0)
-	{
-	}
+	{}
 
 	CPoint point;
 	int leaf;

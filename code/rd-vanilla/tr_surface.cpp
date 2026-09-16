@@ -2169,8 +2169,7 @@ void RB_SurfaceDisplayList(const srfDisplayList_t* surf) {
 	qglCallList(surf->listNum);
 }
 
-void RB_SurfaceSkip(void* surf) {
-}
+void RB_SurfaceSkip(void* surf) {}
 
 void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void*) = {
 	reinterpret_cast<void(*)(void*)>(RB_SurfaceBad),			// SF_BAD,

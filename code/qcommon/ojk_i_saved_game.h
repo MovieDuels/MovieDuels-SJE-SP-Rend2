@@ -13,8 +13,7 @@ namespace ojk
 	{
 	public:
 		ISavedGame()
-		{
-		}
+		{}
 
 		ISavedGame(
 			const ISavedGame& that) = delete;
@@ -23,8 +22,7 @@ namespace ojk
 			const ISavedGame& that) = delete;
 
 		virtual ~ISavedGame()
-		{
-		}
+		{}
 
 		// Reads a chunk from the file into the internal buffer.
 		// Returns true on success or false otherwise.

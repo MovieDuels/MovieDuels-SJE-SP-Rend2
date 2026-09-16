@@ -492,6 +492,18 @@ static qboolean MenuParse_ignoreescape(itemDef_t* item)
 	return qtrue;
 }
 
+static qboolean MenuParse_ownerdrawID(itemDef_t* item)
+{
+	/*const auto menu = (menuDef_t*)item;
+
+	if (PC_ParseInt(&menu->window.ownerDrawID))
+	{
+		return qfalse;
+	}
+	return qtrue;*/
+	return qfalse;
+}
+
 /*
 =================
 MenuParse_onOpen
@@ -1185,6 +1197,7 @@ keywordHash_t menuParseKeywords[] = {
 	{"style", MenuParse_style,},
 	{"visible", MenuParse_visible,},
 	{"ignoreescape", MenuParse_ignoreescape,},
+	{"ownerdrawID",	MenuParse_ownerdrawID,},
 	{nullptr, nullptr,}
 };
 
@@ -3779,6 +3792,17 @@ static qboolean ItemParse_ownerdraw(itemDef_t* item)
 	return qtrue;
 }
 
+static qboolean ItemParse_ownerdrawID(itemDef_t* item)
+{
+	/*if (PC_ParseInt(&item->window.ownerDrawID))
+	{
+		return qfalse;
+	}
+	item->type = ITEM_TYPE_OWNERDRAW;
+	return qtrue;*/
+	return qfalse;
+}
+
 /*
 ===============
 ItemParse_align
@@ -4923,6 +4947,7 @@ keywordHash_t itemParseKeywords[] = {
 	{"wrapped", ItemParse_wrapped,},
 	{"invertyesno", ItemParse_invertyesno},
 	{"xoffset", ItemParse_xoffset}, //for yes/no and multi
+	{"ownerdrawID", ItemParse_ownerdrawID,},
 
 	// Text scroll specific
 	{"lineHeight", ItemParse_lineHeight, nullptr},
@@ -10299,8 +10324,7 @@ Item_StopCapture
 =================
 */
 static void Item_StopCapture(itemDef_t* item)
-{
-}
+{}
 
 /*
 =================

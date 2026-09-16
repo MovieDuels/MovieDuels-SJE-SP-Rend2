@@ -1576,8 +1576,7 @@ public:
 #else
 		surfaceData(0)
 #endif
-	{
-	}
+	{}
 
 	void Init()
 	{

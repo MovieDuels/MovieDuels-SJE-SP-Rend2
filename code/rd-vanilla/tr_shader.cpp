@@ -2029,8 +2029,7 @@ using infoParm_t = struct infoParm_s
 
 	infoParm_s(const char* name, const uint32_t& clearSolid, const uint32_t& surfaceFlags, const uint32_t& contents)
 		: name(name), clearSolid(clearSolid), surfaceFlags(surfaceFlags), contents(contents)
-	{
-	}
+	{}
 };
 
 infoParm_t info_Parms[] = {

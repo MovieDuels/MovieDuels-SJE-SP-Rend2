@@ -1768,6 +1768,8 @@ cvar_t* g_NPCsabertwo;
 cvar_t* g_NPCsabertwocolor;
 vmCvar_t ui_com_kotor;
 vmCvar_t ui_com_rend2;
+vmCvar_t ui_ActivateAnimationStyle;
+vmCvar_t UI_AnimationStyle;
 
 static void UI_UpdateScreenshot()
 {
@@ -1921,6 +1923,10 @@ static cvarTable_t cvarTable[] =
 	{&ui_com_kotor, "com_kotor", "0", nullptr, CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 
 	{&ui_com_rend2, "com_rend2", "0", nullptr, CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
+
+	{ &ui_ActivateAnimationStyle, "g_ActivateAnimationStyle", "0", nullptr, CVAR_ARCHIVE },
+
+	{ &UI_AnimationStyle, "g_AnimationStyle", "0", nullptr, CVAR_ARCHIVE },// I may need this later.
 };
 
 constexpr auto FP_UPDATED_NONE = -1;
@@ -1930,8 +1936,7 @@ static constexpr size_t cvarTableSize = std::size(cvarTable);
 
 extern void SE_CheckForLanguageUpdates();
 
-void Text_Paint(float x, float y, float scale, vec4_t color, const char* text, int iMaxPixelWidth, int style,
-	int iFontIndex);
+void Text_Paint(float x, float y, float scale, vec4_t color, const char* text, int iMaxPixelWidth, int style, int iFontIndex);
 int Key_GetCatcher();
 
 constexpr auto UI_FPS_FRAMES = 4;
@@ -4868,6 +4873,7 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 				}
 
 				ui.FS_FOpenFile(va("models/players/%s/animevents.cfg", dirptr), &f, FS_READ);
+
 				if (f != 0)
 				{
 					ui.FS_FCloseFile(f);
@@ -5378,8 +5384,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 13/09/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 06 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 16/09/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 08 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");

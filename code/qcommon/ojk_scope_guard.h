@@ -18,8 +18,7 @@ namespace ojk
 		ScopeGuard(
 			const Callback leave_callback) :
 			leave_callback_(leave_callback)
-		{
-		}
+		{}
 
 		ScopeGuard(
 			const Callback enter_callback,

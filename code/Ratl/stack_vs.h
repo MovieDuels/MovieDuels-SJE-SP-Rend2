@@ -75,8 +75,7 @@ namespace ratl
 		// Constructor
 		////////////////////////////////////////////////////////////////////////////////////
 		stack_base() : mSize(0)
-		{
-		}
+		{}
 
 		////////////////////////////////////////////////////////////////////////////////////
 		// Get The Size (The Difference Between The Push And Pop "Pointers")
@@ -180,8 +179,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		stack_vs()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY>
@@ -193,8 +191,7 @@ namespace ratl
 		static const int CAPACITY = ARG_CAPACITY;
 
 		stack_os()
-		{
-		}
+		{}
 	};
 
 	template <class T, int ARG_CAPACITY, int ARG_MAX_CLASS_SIZE>
@@ -207,8 +204,7 @@ namespace ratl
 		static const int MAX_CLASS_SIZE = ARG_MAX_CLASS_SIZE;
 
 		stack_is()
-		{
-		}
+		{}
 	};
 }
 #endif

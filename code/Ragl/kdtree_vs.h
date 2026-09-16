@@ -74,8 +74,7 @@ namespace ragl
 		// Constructor
 		////////////////////////////////////////////////////////////////////////////////////
 		kdtree_vs() : mRoot(NULL_NODE)
-		{
-		}
+		{}
 
 		////////////////////////////////////////////////////////////////////////////////////
 		// How Many Objects Are In This Tree
@@ -179,8 +178,7 @@ namespace ragl
 		{
 		public:
 			range_query()
-			{
-			}
+			{}
 
 		public:
 			ratl::vector_vs<T, SIZE> mReported;
