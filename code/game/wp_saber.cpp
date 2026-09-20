@@ -16027,8 +16027,7 @@ qboolean NPC_Should_Block(const gentity_t* npc)
 	const float BLOCK_RELEASE_DIST_SQ = 192.0f * 192.0f;   // exit block
 
 	// Current stance flag
-	const qboolean blockActive =
-		((npc->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) != 0 ? qtrue : qfalse);
+	const qboolean blockActive = ((npc->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) != 0 ? qtrue : qfalse);
 
 	// ENTER BLOCK STANCE
 	if (blockActive == qfalse && distSq <= BLOCK_ENGAGE_DIST_SQ)
@@ -20638,8 +20637,7 @@ void wp_saber_start_missile_block_check(gentity_t* self, const usercmd_t* ucmd)
 				VectorMA(incoming->currentOrigin, dist, entDir, start);
 				VectorCopy(self->currentOrigin, end);
 				end[2] += self->maxs[2] * 0.75f;
-				gi.trace(&trace, start, incoming->mins, incoming->maxs, end, incoming->s.number, MASK_SHOT, G2_COLLIDE,
-					10);
+				gi.trace(&trace, start, incoming->mins, incoming->maxs, end, incoming->s.number, MASK_SHOT, G2_COLLIDE, 10);
 
 				jedi_dodge_evasion(self, incoming->owner, &trace, HL_NONE);
 			}

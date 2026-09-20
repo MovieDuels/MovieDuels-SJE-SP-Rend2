@@ -15314,11 +15314,15 @@ static void SmoothTrueView(vec3_t eye_angles)
 				|| cg.snap->ps.torsoAnim == BOTH_T4_BL_BR
 				|| cg.snap->ps.torsoAnim == BOTH_T4_BL__R
 				|| cg.snap->ps.torsoAnim == BOTH_T5_TL_BR
+				|| cg.snap->ps.torsoAnim == BOTH_T5_TL_BR_YODA
 				|| cg.snap->ps.torsoAnim == BOTH_T5__L_BR
 				|| cg.snap->ps.torsoAnim == BOTH_T5__L__R
+				|| cg.snap->ps.torsoAnim == BOTH_T5__L__R_YODA
 				|| cg.snap->ps.torsoAnim == BOTH_T5_BL_BR
 				|| cg.snap->ps.torsoAnim == BOTH_T5_BL__R
+				|| cg.snap->ps.torsoAnim == BOTH_T5_BL__R_YODA
 				|| cg.snap->ps.torsoAnim == BOTH_T5_BL_TR
+				|| cg.snap->ps.torsoAnim == BOTH_T5_BL_TR_YODA
 				|| cg.snap->ps.torsoAnim == BOTH_ATTACK_BACK
 				|| cg.snap->ps.torsoAnim == BOTH_CROUCHATTACKBACK1
 				|| cg.snap->ps.torsoAnim == BOTH_BUTTERFLY_LEFT
@@ -15349,9 +15353,11 @@ static void SmoothTrueView(vec3_t eye_angles)
 				|| cg.snap->ps.torsoAnim == BOTH_T4__R_BL
 				|| cg.snap->ps.torsoAnim == BOTH_T5_BR_BL
 				|| cg.snap->ps.torsoAnim == BOTH_T5__R__L
+				|| cg.snap->ps.torsoAnim == BOTH_T5__R__L_YODA
 				|| cg.snap->ps.torsoAnim == BOTH_T5__R_BL
 				|| cg.snap->ps.torsoAnim == BOTH_T5_TR_BL
 				|| cg.snap->ps.torsoAnim == BOTH_T5_BR_TL
+				|| cg.snap->ps.torsoAnim == BOTH_T5_BR_TL_YODA
 				|| cg.snap->ps.torsoAnim == BOTH_T5_BR__L
 				//This technically has 2 spins
 				|| cg.snap->ps.legsAnim == BOTH_BUTTERFLY_RIGHT

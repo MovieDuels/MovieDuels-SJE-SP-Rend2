@@ -5529,7 +5529,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		//pull back the view
 		G_CamPullBackForLegsAnim(ent);
 	}
-	else if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT || ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV)
+	else if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT)
 	{
 		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 		if (ent->NPC)
@@ -5563,6 +5563,15 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			cg.overrides.thirdPersonPitchOffset = cg_thirdPersonPitchOffset.value + back_dist / 2.0f;
 		}
 		overridAngles = PM_AdjustAnglesForSpinProtect(ent, ucmd) ? qtrue : overridAngles;
+	}
+	else if (ent->client->ps.torsoAnim == BOTH_A6_SABERPROTECT_GRIEV)
+	{
+		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
+		if (ent->NPC)
+		{
+			VectorClear(ent->client->ps.moveDir);
+			ent->client->ps.forceJumpCharge = 0;
+		}
 	}
 	else if (ent->client->ps.torsoAnim == BOTH_STABDOWN_WINDU ||
 		ent->client->ps.torsoAnim == BOTH_SMASHDOWN_SINGLE ||
@@ -6503,15 +6512,18 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			break;
 		case BOTH_SABERTAVION_STANCE:
 		case BOTH_SABERTAVION_STANCE_JKA:
+		case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
 		case BOTH_SABERDESANN_STANCE:
 		case BOTH_SABERDESANN_STANCE_JKA:
 		case BOTH_SABERDESANN_STANCE_JKA_ANI:
 		case BOTH_SABERFAST_STANCE:
 		case BOTH_SABERFAST_STANCE_JKA:
 		case BOTH_SABERFAST_STANCE_JKA_ANI:
+		case BOTH_SABERFAST_STANCE_JKA_BEN:
 		case BOTH_SABERSLOW_STANCE:
 		case BOTH_SABERSLOW_STANCE_JKA:
 		case BOTH_SABERSLOW_STANCE_JKA_ANI:
+		case BOTH_SABERSLOW_STANCE_JKA_BEN:
 		case BOTH_SABERSINGLECROUCH:
 		case BOTH_SABERSINGLECROUCH_ANI:
 		case BOTH_STAND_SABER_ON:
@@ -6525,6 +6537,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			break;
 		case BOTH_SABERSTAFF_STANCE:
 		case BOTH_SABERSTAFF_STANCE_JKA:
+		case BOTH_SABERSTAFF_STANCE_BEN:
 		case BOTH_SABERSTAFFCROUCH:
 		case BOTH_STAND_SABER_ON_STAFF:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE_STAFF;
@@ -6618,6 +6631,9 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERSTAFF_STANCE:
 			idle_anim = BOTH_SABERSTAFF_STANCE;
 			break;
+		case BOTH_SABERSTAFF_STANCE_BEN:
+			idle_anim = BOTH_SABERSTAFF_STANCE_BEN;
+			break;
 		case BOTH_SABERDUAL_STANCE:
 			idle_anim = BOTH_SABERDUAL_STANCE;
 			break;
@@ -6630,6 +6646,9 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			//
 		case BOTH_SABERTAVION_STANCE_JKA:
 			idle_anim = BOTH_SABERTAVION_STANCE_JKA;
+			break;
+		case BOTH_SABERTAVION_STANCE_JKA_BEN:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_BEN;
 			break;
 		case BOTH_SABERDESANN_STANCE_JKA:
 			idle_anim = BOTH_SABERDESANN_STANCE_JKA;
@@ -6646,11 +6665,17 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERFAST_STANCE_JKA:
 			idle_anim = BOTH_SABERFAST_STANCE_JKA;
 			break;
+		case BOTH_SABERFAST_STANCE_JKA_BEN:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_BEN;
+			break;
 		case BOTH_SABERFAST_STANCE_JKA_ANI:
 			idle_anim = BOTH_SABERFAST_STANCE_JKA_ANI;
 			break;
 		case BOTH_SABERSLOW_STANCE_JKA:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_BEN:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_BEN;
 			break;
 		case BOTH_SABERSLOW_STANCE_JKA_ANI:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA_ANI;

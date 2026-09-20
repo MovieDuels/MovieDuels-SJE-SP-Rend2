@@ -671,6 +671,11 @@ static int PM_AnimLevelForSaberAnim(const int anim)
 		//tavion
 		return FORCE_LEVEL_5;
 	}
+	if (anim == BOTH_A5_T__B__YODA)
+	{
+		//YODA
+		return FORCE_LEVEL_5;
+	}
 	if (anim >= BOTH_A6_T__B_ && anim <= BOTH_D6_B____)
 	{
 		//dual
@@ -729,6 +734,11 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	{
 		//tavion
 		return FORCE_LEVEL_2;
+	}
+	if (anim == BOTH_A5_T__B__YODA)
+	{
+		//YODA
+		return FORCE_LEVEL_5;
 	}
 	if (anim >= BOTH_A6_T__B_ && anim <= BOTH_D6_B____)
 	{
@@ -3469,6 +3479,7 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
@@ -3484,16 +3495,20 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_ANI
+					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_BEN
 					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_ANI
+					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_BEN
 					|| pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE_JKA
+					|| pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE_BEN
 					|| pm->ps->legsAnim == BOTH_SABERSTAFF_WALK_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERDUAL_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERDUAL_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA
+					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA_BEN
 					|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA_ANI
@@ -4002,6 +4017,7 @@ static qboolean PM_CheckJumpForwardAttackMove()
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
@@ -4016,11 +4032,14 @@ static qboolean PM_CheckJumpForwardAttackMove()
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_ANI
+								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_BEN
 								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE
 								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_ANI
+								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_BEN
 								|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE
 								|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA
+								|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA_BEN
 								|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE
 								|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA_ANI
@@ -6794,6 +6813,7 @@ qboolean BG_SprintAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_SPRINT:
+	case BOTH_SPRINT_BEN:
 		return qtrue;
 	default:;
 	}
@@ -6807,9 +6827,10 @@ qboolean BG_SaberSprintAnim(const int anim)
 	case BOTH_SPRINT_SINGLE_LIGHTSABER:
 	case BOTH_SPRINT_STAFF_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER:
-		//ANAKIN
+	case BOTH_SPRINT_DUAL_LIGHTSABER_BEN:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
 	case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
 		return qtrue;
 	default:;
 	}
@@ -7273,6 +7294,11 @@ static void PM_TorsoAnimLightsaber()
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
 		}
+		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_BEN)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+			pm->ps->saberMove = LS_READY;
+		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER_ANI)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
@@ -7288,9 +7314,19 @@ static void PM_TorsoAnimLightsaber()
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
 		}
+		else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER_BEN)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+			pm->ps->saberMove = LS_READY;
+		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT, SETANIM_FLAG_NORMAL);
+			pm->ps->saberMove = LS_READY;
+		}
+		else if (pm->ps->legsAnim == BOTH_SPRINT_BEN)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BEN, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_BAZOOKA)
@@ -7551,6 +7587,11 @@ static void PM_TorsoAnimLightsaber()
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
 		}
+		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_BEN, SETANIM_FLAG_NORMAL);
+			pm->ps->saberMove = LS_READY;
+		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_ANI, SETANIM_FLAG_NORMAL);
@@ -7775,6 +7816,7 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
@@ -8381,6 +8423,10 @@ void PM_TorsoAnimation()
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
 		}
+		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_BEN && !weaponBusy)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER && !weaponBusy)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
@@ -8389,9 +8435,17 @@ void PM_TorsoAnimation()
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER, SETANIM_FLAG_NORMAL);
 		}
+		else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER_BEN && !weaponBusy)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT && !weaponBusy)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT, SETANIM_FLAG_NORMAL);
+		}
+		else if (pm->ps->legsAnim == BOTH_SPRINT_BEN && !weaponBusy)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BEN, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_SPRINT_BAZOOKA && !weaponBusy)
 		{
@@ -8577,6 +8631,10 @@ void PM_TorsoAnimation()
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK, SETANIM_FLAG_NORMAL);
+		}
+		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_BEN, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI)
 		{
@@ -10155,6 +10213,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
+	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
@@ -10171,11 +10230,14 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERFAST_STANCE:
 	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
+	case BOTH_SABERFAST_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE:
 	case BOTH_SABERSLOW_STANCE_JKA:
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
+	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
@@ -10294,6 +10356,7 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
+	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
@@ -10307,12 +10370,16 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
 		//
+	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
+	case BOTH_SABERFAST_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE:
 	case BOTH_SABERSLOW_STANCE_JKA:
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
+	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
@@ -10800,17 +10867,22 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
+	case BOTH_SABERFAST_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE: //single-saber, strong style
 	case BOTH_SABERSLOW_STANCE_JKA:
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
+	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERSTAFF_STANCE: //saber staff style
+	case BOTH_SABERSTAFF_STANCE_BEN:
 	case BOTH_SABERSTAFF_STANCE_JKA: //saber staff style
 	case BOTH_SABERSTAFF_WALK_STANCE: //saber staff style
 	case BOTH_SABERDUAL_STANCE: //dual saber style
 	case BOTH_SABERDUAL_STANCE_JKA: //dual saber style
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
@@ -10868,17 +10940,22 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
+	case BOTH_SABERFAST_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE: //single-saber, strong style
 	case BOTH_SABERSLOW_STANCE_JKA:
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
+	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERSTAFF_STANCE: //saber staff style
+	case BOTH_SABERSTAFF_STANCE_BEN:
 	case BOTH_SABERSTAFF_STANCE_JKA: //saber staff style
 	case BOTH_SABERSTAFF_WALK_STANCE: //saber staff style
 	case BOTH_SABERDUAL_STANCE: //dual saber style
 	case BOTH_SABERDUAL_STANCE_JKA: //dual saber style
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
