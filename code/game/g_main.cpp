@@ -959,7 +959,7 @@ static void G_InitCvars()
 
 	g_HitTracking = gi.cvar("g_HitTracking", "0", CVAR_ARCHIVE);
 
-	g_ActivateAnimationStyle = gi.cvar("g_activateanimationstyle", "0", CVAR_INIT /*CVAR_ARCHIVE*/);
+	g_ActivateAnimationStyle = gi.cvar("g_activateanimationstyle", "0", CVAR_ARCHIVE);
 	// CVAR_INIT will be used for release, but CVAR_ARCHIVE will be used for testing and development.
 	//This is to allow the user to change the animation style without having to restart the game.
 

@@ -30196,6 +30196,7 @@ int IsPressingDashButton(const gentity_t* self)
 		&& !PM_KickMove(self->client->ps.saberMove)
 		&& self->client->pers.cmd.upmove == 0
 		&& !self->client->hookhasbeenfired
+		&& self->client->ps.Dash_Count < 3
 		&& (!(self->client->buttons & BUTTON_KICK))
 		&& (!(self->client->buttons & BUTTON_USE))
 		&& (self->client->buttons & BUTTON_DASH))

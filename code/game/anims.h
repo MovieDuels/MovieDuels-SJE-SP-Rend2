@@ -5071,6 +5071,7 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,
 	BOTH_SPRINT_DUAL_LIGHTSABER_BEN,
 	BOTH_STAND_BLOCKING_ON_BACK_BEN,
+	BOTH_WALK_STAFF_BEN,
 	//////////////////////////////////////////
 		// YODA CS_YODA
 	BOTH_A1_SPECIAL_YODA,

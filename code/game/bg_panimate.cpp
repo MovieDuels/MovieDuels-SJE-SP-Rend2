@@ -6934,6 +6934,7 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
 								|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
+								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
@@ -7000,6 +7001,7 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
 								|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
+								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
@@ -7067,6 +7069,7 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
 							|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
+							|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 							|| pm->ps->legsAnim == BOTH_WALK1
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
@@ -7226,6 +7229,7 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
 							|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
+							|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 							|| pm->ps->legsAnim == BOTH_WALK1
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
@@ -7694,6 +7698,11 @@ static void PM_TorsoAnimLightsaber()
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_AMD, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
 		}
+		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_BEN)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_BEN, SETANIM_FLAG_NORMAL);
+			pm->ps->saberMove = LS_READY;
+		}
 		else if (pm->ps->legsAnim == BOTH_WALK_DUAL)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL, SETANIM_FLAG_NORMAL);
@@ -7927,6 +7936,7 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
 								|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
+								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
@@ -8737,6 +8747,10 @@ void PM_TorsoAnimation()
 		else if (pm->ps->legsAnim == BOTH_WALK_STAFF && !weaponBusy)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF, SETANIM_FLAG_NORMAL);
+		}
+		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_BEN && !weaponBusy)
+		{
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_BEN, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_AMD && !weaponBusy)
 		{

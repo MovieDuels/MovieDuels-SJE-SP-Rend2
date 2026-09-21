@@ -9145,6 +9145,7 @@ qboolean PM_WalkingAnim(const int anim)
 	case BOTH_WALK2: //# Normal walk with saber
 	case BOTH_WALK_STAFF:
 	case BOTH_WALK_STAFF_AMD: //# Normal walk with staff
+	case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
 	case BOTH_WALK_DUAL:
 	case BOTH_WALK_DUAL_AMD: //# Normal walk with staff
 	case BOTH_WALK5: //# Tavion taunting Kyle (cin 22)
@@ -9356,6 +9357,7 @@ static qboolean PM_SaberWalkAnim(const int anim)
 	case BOTH_WALK1_MDA:
 	case BOTH_WALK2: //# Normal walk with saber
 	case BOTH_WALK_STAFF: //# Normal walk with staff
+	case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
 	case BOTH_WALK_STAFF_AMD:
 	case BOTH_WALK_DUAL:
 	case BOTH_WALK_DUAL_AMD: //# Normal walk with staff
@@ -10969,7 +10971,14 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 				}
 				else
 				{
-					return BOTH_WALK_STAFF;
+					if (flags.isBenKenobi == qtrue)
+					{
+						return BOTH_WALK_STAFF_BEN;
+					}
+					else
+					{
+						return BOTH_WALK_STAFF;
+					}
 				}
 			}
 			else
@@ -16192,6 +16201,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_WALK1_MDA:
 		case BOTH_WALK2:
 		case BOTH_WALK_STAFF:
+		case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
 		case BOTH_WALK_STAFF_AMD:
 		case BOTH_WALK_DUAL:
 		case BOTH_WALK_DUAL_AMD:
@@ -20906,15 +20916,7 @@ static qboolean PM_EnemyCloseEnoughForNormalKata(void)
 
 		trace_t tr;
 
-		gi.trace(
-			&tr,
-			start,
-			vec3_origin,
-			vec3_origin,
-			end,
-			self->s.number,
-			MASK_SHOT,
-			static_cast<EG2_Collision>(0),0);
+		gi.trace(&tr, start, vec3_origin, vec3_origin, end, self->s.number, MASK_SHOT, static_cast<EG2_Collision>(0), 0);
 
 		if (tr.entityNum < 0 || tr.entityNum >= ENTITYNUM_MAX_NORMAL)
 		{
@@ -20973,18 +20975,30 @@ static qboolean PM_CanDoSmashdown(const pmove_t* pm)
 	int roll = Q_irand(0, 99);
 	int chanceThreshold;
 
-	switch (g_spskill->integer)
-	{
-	case 0: chanceThreshold = 50; break; // Easy
-	case 1: chanceThreshold = 66; break; // Medium
-	case 2: chanceThreshold = 75; break; // Hard
-	default: chanceThreshold = 50; break;
+	switch (pm->ps->saberAnimLevel)
+	{// chance based on saber style NPC is using.
+	case SS_DUAL:
+	case SS_STAFF:
+		chanceThreshold = 66;
+		break;
+	case SS_FAST:
+	case SS_TAVION:
+	case SS_STRONG:
+	case SS_DESANN:
+	case SS_MEDIUM:
+		chanceThreshold = 75;
+		break;
+	case SS_NONE:
+	default:
+		chanceThreshold = 50;
+		break;
 	}
 
 	const qboolean Chance = (roll < chanceThreshold) ? qtrue : qfalse;
 
 	// Force requirements
 	const int MustHaveForcePush = pm->ps->forcePowerLevel[FP_PUSH];
+	const int NPCMustHaveForceSaberOffense = pm->ps->forcePowerLevel[FP_SABER_OFFENSE];
 	const int forceCurrent = pm->ps->forcePower;
 	const int forceMax = pm->ps->forcePowerMax;
 
@@ -20995,17 +21009,34 @@ static qboolean PM_CanDoSmashdown(const pmove_t* pm)
 	const qboolean serenityMode = (g_SerenityJediEngineMode->integer != 0) ? qtrue : qfalse;
 	// Server toggle
 	const qboolean AllowSmashDown = (g_AllowSmashDown->integer != 0) ? qtrue : qfalse;
+	const qboolean ButtonUse = (pm->cmd.buttons & BUTTON_USE) ? qtrue : qfalse;
 
-	// Final combined rule
-	if (smashReady == qtrue &&                 // Not on cooldown
-		MustHaveForcePush == FORCE_LEVEL_3 &&  // Must have Force Push level 3
-		hasEnoughForce == qtrue &&             // Must have enough Force power
-		serenityMode == qtrue &&               // Must be in Serenity mode
-		AllowSmashDown == qtrue &&             // Server must allow Smashdown
-		Chance == qtrue &&                     // Random chance based on difficulty
-		EnemyTooFarForSmashdown == qfalse)     // Enemy must be close enough
+	if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
 	{
-		return qtrue;
+		// Final combined rule
+		if (smashReady == qtrue &&                 // Not on cooldown
+			NPCMustHaveForceSaberOffense >= FORCE_LEVEL_1 &&  // Must have Force saber offense level 1
+			hasEnoughForce == qtrue &&             // Must have enough Force power
+			serenityMode == qtrue &&               // Must be in Serenity mode
+			AllowSmashDown == qtrue &&             // Server must allow Smashdown
+			Chance == qtrue &&                     // Difficulty chance
+			EnemyTooFarForSmashdown == qfalse)     // Enemy must be close enough
+		{
+			return qtrue;
+		}
+	}
+	else
+	{
+		// Final combined rule
+		if (smashReady == qtrue &&                 // Not on cooldown
+			MustHaveForcePush == FORCE_LEVEL_3 &&  // Must have Force Push level 3
+			hasEnoughForce == qtrue &&             // Must have enough Force power
+			serenityMode == qtrue &&               // Must be in Serenity mode
+			AllowSmashDown == qtrue &&             // Server must allow Smashdown
+			ButtonUse == qtrue)
+		{
+			return qtrue;
+		}
 	}
 
 	return qfalse;
@@ -21851,6 +21882,7 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_WALK1_MDA:
 				case BOTH_WALK2:
 				case BOTH_WALK_STAFF:
+				case BOTH_WALK_STAFF_BEN:
 				case BOTH_WALK_STAFF_AMD:
 				case BOTH_WALK_DUAL:
 				case BOTH_WALK_DUAL_AMD:
@@ -22553,6 +22585,7 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_WALK2:
 					case BOTH_WALK_STAFF:
 					case BOTH_WALK_STAFF_AMD:
+					case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
 					case BOTH_WALK_DUAL:
 					case BOTH_WALK_DUAL_AMD:
 					case BOTH_WALKBACK1:
