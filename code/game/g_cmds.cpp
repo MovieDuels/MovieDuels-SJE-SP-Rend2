@@ -2191,9 +2191,16 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			}
 			else if (ent->client->friendlyfaction == FACTION_NEUTRAL)
 			{
-				if (flags.isBenKenobi == qtrue)
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (flags.isBenKenobi == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 				else
 				{
@@ -2222,9 +2229,16 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					{
 					case SS_FAST:
 					case SS_TAVION:
-						if (flags.isBenKenobi == qtrue)
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (flags.isBenKenobi == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
@@ -2253,9 +2267,16 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					{
 					case SS_FAST:
 					case SS_TAVION:
-						if (flags.isBenKenobi == qtrue)
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (flags.isBenKenobi == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
@@ -2759,7 +2780,9 @@ static void Cmd_SaberDrop_f(gentity_t* ent, const int saberNum)
 
 	if (ent->client->ps.saberMove != LS_READY
 		&& ent->client->ps.saberMove != LS_PUTAWAY
+		&& ent->client->ps.saberMove != LS_PUTAWAY_YODA
 		&& ent->client->ps.saberMove != LS_DRAW
+		&& ent->client->ps.saberMove != LS_DRAW_YODA
 		&& ent->client->ps.saberMove != LS_NONE)
 	{
 		return;

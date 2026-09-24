@@ -1411,6 +1411,8 @@ static int CG_MapTorsoToWeaponFrame(const clientInfo_t* ci, const int frame, con
 	case BOTH_ATTACK2:
 	case BOTH_ATTACK3:
 	case BOTH_ATTACK4:
+	case BOTH_ATTACK3_BDROID:
+	case BOTH_ATTACK4_BDROID:
 	case BOTH_ATTACK_DUAL:
 	case BOTH_ATTACK_FP:
 	case BOTH_PF_GRENADE:

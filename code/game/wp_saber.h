@@ -333,7 +333,9 @@ using saberMoveName_t = enum saberMoveName_t
 	// General movements with saber
 	LS_READY,
 	LS_DRAW,
+	LS_DRAW_YODA,
 	LS_PUTAWAY,
+	LS_PUTAWAY_YODA,
 
 	// Attacks
 	LS_A_TL2BR,

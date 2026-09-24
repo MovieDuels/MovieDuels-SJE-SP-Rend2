@@ -109,16 +109,7 @@ extern void G_SetViewEntity(gentity_t* self, gentity_t* view_entity);
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern void G_AddVoiceEvent(const gentity_t* self, int event, int speak_debounce_time);
 extern void CG_ChangeWeapon(int num);
-extern void CG_SaberDoWeaponHitMarks(
-	const gclient_t* client,
-	const gentity_t* saber_ent,
-	gentity_t* hitEnt,
-	const int saberNum,
-	const int bladeNum,
-	vec3_t hit_pos,
-	vec3_t hit_dir,
-	vec3_t uaxis,
-	const float sizeTimeScale);
+extern void CG_SaberDoWeaponHitMarks(const gclient_t* client, const gentity_t* saber_ent, gentity_t* hitEnt, const int saberNum, const int bladeNum, vec3_t hit_pos, vec3_t hit_dir, vec3_t uaxis, const float sizeTimeScale);
 extern void CG_SaberDoWeaponHitMarks_Rend2(gclient_t* client, gentity_t* saberEnt, gentity_t* hitEnt, int saberNum, int bladeNum, vec3_t hitPos, vec3_t hitDir, vec3_t uaxis, vec3_t splashBackDir, float sizeTimeScale);
 extern void G_AngerAlert(const gentity_t* self);
 extern qboolean PM_WalkingOrRunningAnim(int anim);
@@ -128,14 +119,12 @@ extern void G_ReflectMissileNPC(gentity_t* ent, gentity_t* missile, vec3_t forwa
 extern void G_ReflectMissileAuto(gentity_t* ent, gentity_t* missile, vec3_t forward);
 extern void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward);
 extern qboolean BG_IsAlreadyinTauntAnim(int anim);
-extern int G_CheckLedgeDive(gentity_t* self, float check_dist, const vec3_t check_vel, qboolean try_opposite,
-	qboolean try_perp);
+extern int G_CheckLedgeDive(gentity_t* self, float check_dist, const vec3_t check_vel, qboolean try_opposite, qboolean try_perp);
 extern void G_BounceMissile(gentity_t* ent, trace_t* trace);
 extern qboolean G_PointInBounds(const vec3_t point, const vec3_t mins, const vec3_t maxs);
 extern void NPC_UseResponse(gentity_t* self, const gentity_t* user, qboolean useWhenDone);
 extern void G_MissileImpacted(gentity_t* ent, gentity_t* other, vec3_t impact_pos, vec3_t normal, int hit_loc = HL_NONE);
-extern evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitloc, vec3_t phit_dir,
-	const gentity_t* incoming, float dist = 0.0f);
+extern evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitloc, vec3_t phit_dir, const gentity_t* incoming, float dist = 0.0f);
 extern void jedi_rage_stop(const gentity_t* self);
 extern int PM_PickAnim(const gentity_t* self, int min_anim, int max_anim);
 extern void NPC_SetPainEvent(gentity_t* self);
@@ -12671,8 +12660,7 @@ static void WP_SaberCatchFromWall(gentity_t* self, gentity_t* saber, const qbool
 		case SS_MEDIUM:
 		case SS_STRONG:
 		case SS_DESANN:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND1TO2,
-				SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
 			break;
 
 		case SS_DUAL:
@@ -14676,8 +14664,7 @@ void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_s
 		case SS_MEDIUM:
 		case SS_STRONG:
 		case SS_DESANN:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND1TO2,
-				SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND1TO2, SETANIM_AFLAG_PACE | SETANIM_FLAG_OVERRIDE);
 			break;
 
 		case SS_DUAL:
@@ -19098,6 +19085,10 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 						{
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_AFLAG_BLOCKPACE);
 						}
+						else if (flags.isYoda == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_AFLAG_BLOCKPACE);
+						}
 						else
 						{
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_BLOCKPACE);
@@ -19729,6 +19720,7 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 {
 	vec3_t diff, fwdangles = { 0, 0, 0 }, right;
 	const qboolean in_front = InFront(hitloc, self->client->ps.origin, self->client->ps.viewangles, -0.7f);
+	animFlags_t flags = W_Animationstyletable(self);
 
 	VectorSubtract(hitloc, self->client->renderInfo.eyePoint, diff);
 	diff[2] = 0;
@@ -19821,13 +19813,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19859,13 +19893,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19897,13 +19973,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19942,13 +20060,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19980,13 +20140,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -20018,13 +20220,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -20059,13 +20303,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -20097,13 +20383,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			case SS_DESANN:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_TAVION:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -23341,6 +23669,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 	int anim, hold, sound_index, cost;
 	qboolean no_resist = qfalse;
 	qboolean is_class_guard = qfalse;
+	animFlags_t flags = W_Animationstyletable(self);
 
 	if (PM_SaberInnonblockableAttack(self->client->ps.torsoAnim))
 	{
@@ -23460,7 +23789,21 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 			return;
 		}
 		//make sure this plays and that you cannot press fire for about 200ms after this
-		anim = BOTH_FORCEPULL;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_FORCEPULL_YODA;
+			}
+			else
+			{
+				anim = BOTH_FORCEPULL;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEPULL;
+		}
 		sound_index = G_SoundIndex("sound/weapons/force/pull.wav");
 		hold = 200;
 	}
@@ -23473,7 +23816,21 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 		}
 
 		//make sure this plays and that you cannot press fire for about 1 second after this
-		anim = BOTH_FORCEPUSH;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else
+			{
+				anim = BOTH_FORCEPUSH;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEPUSH;
+		}
 
 		if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)) // npc push sounds
 		{
@@ -24756,6 +25113,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 	qboolean no_resist = qfalse;
 	int damage_level = FORCE_LEVEL_0;
 	qboolean is_class_guard = qfalse;
+	animFlags_t flags = W_Animationstyletable(self);
 
 	if (self->client->ps.groundEntityNum == ENTITYNUM_NONE && self->client->ps.forcePowerLevel[FP_PUSH] > FORCE_LEVEL_2
 		&& (self->s.weapon == WP_MELEE ||
@@ -24894,7 +25252,22 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 			return;
 		}
 		//make sure this plays and that you cannot press fire for about 200ms after this
-		anim = BOTH_FORCEPULL;
+
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_FORCEPULL_YODA;
+			}
+			else
+			{
+				anim = BOTH_FORCEPULL;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEPULL;
+		}
 		sound_index = G_SoundIndex("sound/weapons/force/pull.wav");
 		hold = 200;
 	}
@@ -24917,10 +25290,23 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 			}
 			else
 			{
-				if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags &
-					EF_FORCE_GRASPED)
+				if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags & EF_FORCE_GRASPED)
 				{
-					anim = BOTH_FORCEPUSH;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isYoda == qtrue)
+						{
+							anim = BOTH_FORCEPUSH_YODA;
+						}
+						else
+						{
+							anim = BOTH_FORCEPUSH;
+						}
+					}
+					else
+					{
+						anim = BOTH_FORCEPUSH;
+					}
 				}
 				else
 				{
@@ -24930,7 +25316,21 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 		}
 		else
 		{
-			anim = BOTH_FORCEPUSH;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isYoda == qtrue)
+				{
+					anim = BOTH_FORCEPUSH_YODA;
+				}
+				else
+				{
+					anim = BOTH_FORCEPUSH;
+				}
+			}
+			else
+			{
+				anim = BOTH_FORCEPUSH;
+			}
 		}
 
 		if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)) // npc push sounds
@@ -26296,6 +26696,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 	qboolean no_resist = qfalse;
 	int damage_level = FORCE_LEVEL_0;
 	qboolean is_class_guard = qfalse;
+	animFlags_t flags = W_Animationstyletable(self);
 
 	if (self->client->ps.userInt3 & 1 << FLAG_PREBLOCK)
 	{
@@ -26421,7 +26822,22 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 			return;
 		}
 		//make sure this plays and that you cannot press fire for about 200ms after this
-		anim = BOTH_FORCEPULL;
+
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_FORCEPULL_YODA;
+			}
+			else
+			{
+				anim = BOTH_FORCEPULL;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEPULL;
+		}
 		sound_index = G_SoundIndex("sound/weapons/force/pull.wav");
 		hold = 200;
 	}
@@ -26444,10 +26860,23 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 			}
 			else
 			{
-				if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags &
-					EF_FORCE_GRASPED)
+				if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags & EF_FORCE_GRASPED)
 				{
-					anim = BOTH_FORCEPUSH;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isYoda == qtrue)
+						{
+							anim = BOTH_FORCEPUSH_YODA;
+						}
+						else
+						{
+							anim = BOTH_FORCEPUSH;
+						}
+					}
+					else
+					{
+						anim = BOTH_FORCEPUSH;
+					}
 				}
 				else
 				{
@@ -26457,7 +26886,21 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 		}
 		else
 		{
-			anim = BOTH_FORCEPUSH;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isYoda == qtrue)
+				{
+					anim = BOTH_FORCEPUSH_YODA;
+				}
+				else
+				{
+					anim = BOTH_FORCEPUSH;
+				}
+			}
+			else
+			{
+				anim = BOTH_FORCEPUSH;
+			}
 		}
 
 		if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self)) // npc push sounds
@@ -30639,6 +31082,7 @@ void ForceTelepathy(gentity_t* self)
 	trace_t tr;
 	vec3_t end, forward;
 	qboolean target_live = qfalse;
+	animFlags_t flags = W_Animationstyletable(self);
 
 	if (WP_CheckBreakControl(self))
 	{
@@ -30858,8 +31302,21 @@ void ForceTelepathy(gentity_t* self)
 		VectorNormalize(eyeDir);
 		G_PlayEffect("force/force_touch", traceEnt->client->renderInfo.eyePoint, eyeDir);
 
-		NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1,
-			SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+		}
 	}
 	else
 	{
@@ -30872,8 +31329,21 @@ void ForceTelepathy(gentity_t* self)
 			AddSightEvent(self, tr.endpos, 512, AEL_SUSPICIOUS, 50);
 			WP_ForcePowerStart(self, FP_TELEPATHY, 0);
 		}
-		NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK2,
-			SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK2_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+		}
 	}
 	self->client->ps.saberMove = self->client->ps.saberBounceMove = LS_READY;
 	//don't finish whatever saber anim you may have been in
@@ -31570,6 +32040,7 @@ void ForceFear(gentity_t* self)
 	trace_t tr;
 	vec3_t end, forward;
 	qboolean target_live = qfalse;
+	animFlags_t flags = W_Animationstyletable(self);
 
 	if (WP_CheckBreakControl(self))
 	{
@@ -31755,7 +32226,22 @@ void ForceFear(gentity_t* self)
 		VectorNormalize(eye_dir);
 		G_PlayEffect("force/fear", traceEnt->client->renderInfo.eyePoint, eye_dir);
 	}
-	NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+
+	if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+	{
+		if (flags.isYoda == qtrue)
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+		}
+	}
+	else
+	{
+		NPC_SetAnim(self, SETANIM_TORSO, BOTH_MINDTRICK1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+	}
 
 	if (!target_live
 		&& !traceEnt->NPC)
@@ -34188,8 +34674,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 								}
 								else
 								{
-									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL,
-										SETANIM_AFLAG_PACE);
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL, SETANIM_AFLAG_PACE);
 								}
 								traceEnt->client->IsBlockingLightning = qfalse;
 							}
@@ -34208,8 +34693,21 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 								}
 								else
 								{
-									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF,
-										SETANIM_AFLAG_PACE);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isBenKenobi == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BEN, SETANIM_AFLAG_PACE);
+										}
+										else
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF, SETANIM_AFLAG_PACE);
+										}
+									}
+									else
+									{
+										NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF, SETANIM_AFLAG_PACE);
+									}
 								}
 								traceEnt->client->IsBlockingLightning = qfalse;
 							}
@@ -34241,6 +34739,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										else if (flags.isBenKenobi == qtrue)
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_AFLAG_PACE);
+										}
+										else if (flags.isYoda == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_AFLAG_PACE);
 										}
 										else
 										{
@@ -34279,6 +34781,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										else if (flags.isBenKenobi == qtrue)
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_AFLAG_PACE);
+										}
+										else if (flags.isYoda == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_AFLAG_PACE);
 										}
 										else
 										{
@@ -37301,6 +37807,10 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 			{
 				anim = BOTH_JUMP1_ANI;
 			}
+			else if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_JUMP1_YODA;
+			}
 			else
 			{
 				anim = BOTH_JUMP1;
@@ -37427,6 +37937,8 @@ static void WP_FireDestruction(gentity_t* ent, const int force_level)
 void ForceDestruction(gentity_t* self)
 {
 	int anim;
+	animFlags_t flags = W_Animationstyletable(self);
+
 	if (self->health <= 0)
 	{
 		return;
@@ -37484,10 +37996,23 @@ void ForceDestruction(gentity_t* self)
 		}
 		else
 		{
-			if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags &
-				EF_FORCE_GRASPED)
+			if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags & EF_FORCE_GRASPED)
 			{
-				anim = BOTH_FORCEPUSH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_YODA;
+					}
+					else
+					{
+						anim = BOTH_FORCEPUSH;
+					}
+				}
+				else
+				{
+					anim = BOTH_FORCEPUSH;
+				}
 
 				if (self->handLBolt != -1)
 				{
@@ -37515,7 +38040,21 @@ void ForceDestruction(gentity_t* self)
 	}
 	else
 	{
-		anim = BOTH_FORCEPUSH;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else
+			{
+				anim = BOTH_FORCEPUSH;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEPUSH;
+		}
 
 		if (self->handLBolt != -1)
 		{
@@ -37571,6 +38110,7 @@ extern void PM_SetTorsoAnimTimer(gentity_t* ent, int* torso_anim_timer, int time
 static void forcestasis_anim(gentity_t* self)
 {
 	int anim;
+	animFlags_t flags = W_Animationstyletable(self);
 
 	if (self->s.weapon == WP_MELEE ||
 		self->s.weapon == WP_NONE ||
@@ -37595,10 +38135,23 @@ static void forcestasis_anim(gentity_t* self)
 		}
 		else
 		{
-			if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags &
-				EF_FORCE_GRASPED)
+			if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags & EF_FORCE_GRASPED)
 			{
-				anim = BOTH_FORCEPUSH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_YODA;
+					}
+					else
+					{
+						anim = BOTH_FORCEPUSH;
+					}
+				}
+				else
+				{
+					anim = BOTH_FORCEPUSH;
+				}
 
 				if (self->handLBolt != -1)
 				{
@@ -37626,7 +38179,21 @@ static void forcestasis_anim(gentity_t* self)
 	}
 	else
 	{
-		anim = BOTH_FORCEPUSH;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else
+			{
+				anim = BOTH_FORCEPUSH;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEPUSH;
+		}
 
 		if (self->handLBolt != -1)
 		{
@@ -39024,6 +39591,8 @@ extern void WP_FireBlast(gentity_t* ent, int force_level);
 void ForceBlast(gentity_t* self)
 {
 	int anim;
+	animFlags_t flags = W_Animationstyletable(self);
+
 	if (self->health <= 0)
 	{
 		return;
@@ -39085,10 +39654,23 @@ void ForceBlast(gentity_t* self)
 		}
 		else
 		{
-			if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags &
-				EF_FORCE_GRASPED)
+			if (self->s.eFlags & EF_FORCE_DRAINED || self->s.eFlags & EF_FORCE_GRIPPED || self->s.eFlags & EF_FORCE_GRASPED)
 			{
-				anim = BOTH_FORCEPUSH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_YODA;
+					}
+					else
+					{
+						anim = BOTH_FORCEPUSH;
+					}
+				}
+				else
+				{
+					anim = BOTH_FORCEPUSH;
+				}
 
 				if (self->handLBolt != -1)
 				{
@@ -39116,7 +39698,21 @@ void ForceBlast(gentity_t* self)
 	}
 	else
 	{
-		anim = BOTH_FORCEPUSH;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else
+			{
+				anim = BOTH_FORCEPUSH;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEPUSH;
+		}
 
 		if (self->handLBolt != -1 && !in_camera)
 		{
@@ -40205,7 +40801,7 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 						}
 						else
 						{
-							if (drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH)
+							if (drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH && drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_YODA)
 							{
 								//don't stop the push
 								drain_ent->client->ps.torsoAnimTimer = 0;

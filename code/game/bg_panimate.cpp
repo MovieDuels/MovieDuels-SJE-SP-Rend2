@@ -132,6 +132,56 @@ qboolean PM_StandingAtReadyAnim(int anim);
 extern qboolean PM_InKataAnim(int anim);
 extern cvar_t* g_ActivateAnimationStyle;
 extern cvar_t* g_AnimationStyle;
+// -----------------------------------------------------------------------------
+// PA_Animationstyletable
+// Player movement animation style resolver.
+// Cleaned to match final animFlags_t and Animationstyles_t enum.
+// -----------------------------------------------------------------------------
+static animFlags_t PA_Animationstyletable(const pmove_t* pm)
+{
+	animFlags_t flags{};
+	if (!pm || !pm->gent || !pm->gent->client)
+	{
+		Com_Printf("PA_Animationstyletable: pm or pm->gent->client is null\n");
+		return flags;
+	}
+
+	const int style = pm->gent->client->animationstyle;
+	const int cvarStyle = (g_AnimationStyle ? g_AnimationStyle->integer : -1);
+
+	// Helper macro: match either client style or cvar override
+#define MATCH(s) ((style == (s)) || (cvarStyle == (s)))
+
+	if (MATCH(CS_DEFAULT))        flags.isDefault = qtrue;
+	if (MATCH(CS_ANAKIN))         flags.isAnakin = qtrue;
+	if (MATCH(CS_BATTLEDROID))    flags.isBattleDroid = qtrue;
+	if (MATCH(CS_BENKENOBI))      flags.isBenKenobi = qtrue;
+	if (MATCH(CS_CAL_KESTIS))     flags.isCalKestis = qtrue;
+	if (MATCH(CS_CLONETROOPER))   flags.isCloneTrooper = qtrue;
+	if (MATCH(CS_DARKFORCES2))    flags.isDarkForces2 = qtrue;
+	if (MATCH(CS_COUNT_DOOKU))    flags.isCountDooku = qtrue;
+	if (MATCH(CS_GALEN_MAREK))    flags.isGalenMarek = qtrue;
+	if (MATCH(CS_QUI_GON_JINN))   flags.isQuiGonJinn = qtrue;
+	if (MATCH(CS_GRIEVOUS))       flags.isGrievous = qtrue;
+	if (MATCH(CS_JANGO))          flags.isJango = qtrue;
+	if (MATCH(CS_KOTOR))          flags.isKotor = qtrue;
+	if (MATCH(CS_LUKE_SKYWALKER)) flags.isLukeSkywalker = qtrue;
+	if (MATCH(CS_MACE_WINDU))     flags.isMaceWindu = qtrue;
+	if (MATCH(CS_MAUL))           flags.isMaul = qtrue;
+	if (MATCH(CS_MOVIEDUELS))     flags.isMovieDuels = qtrue;
+	if (MATCH(CS_OBIWAN))         flags.isObiWan = qtrue;
+	if (MATCH(CS_OBIWAN_EP3))     flags.isObiWanEP3 = qtrue;
+	if (MATCH(CS_PALPATINE))      flags.isPalpatine = qtrue;
+	if (MATCH(CS_REBELS))         flags.isRebels = qtrue;
+	if (MATCH(CS_KYLO_REN))       flags.isKyloRen = qtrue;
+	if (MATCH(CS_REY))            flags.isRey = qtrue;
+	if (MATCH(CS_VADER))          flags.isVader = qtrue;
+	if (MATCH(CS_YODA))           flags.isYoda = qtrue;
+
+#undef MATCH
+
+	return flags;
+}
 
 // Okay, here lies the much-dreaded Pat-created FSM movement chart...  Heretic II strikes again!
 // Why am I inflicting this on you?  Well, it's better than hardcoded states.
@@ -153,7 +203,9 @@ saber_moveData_t saberMoveData[LS_MOVE_MAX] = {
 	// General movements with saber
 	{"Ready", BOTH_STAND2, Q_R, Q_R, AFLAG_IDLE, 350, BLK_WIDE, LS_READY, LS_S_R2L, 0}, // LS_READY,
 	{"Draw", BOTH_STAND1TO2, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW,
+	{"Draw_YODA", BOTH_STAND1TO2_YODA, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW_YODA,
 	{"Putaway", BOTH_STAND2TO1, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY,
+	{"Putaway_YODA", BOTH_STAND2TO1_YODA, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY_YODA,
 
 	// Attacks
 	//UL2LR
@@ -1374,7 +1426,7 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	}
 	if (PM_SaberDrawPutawayAnim(anim))
 	{
-		if (saberMove == LS_DRAW || saberMove == LS_PUTAWAY)
+		if (saberMove == LS_DRAW || saberMove == LS_PUTAWAY || saberMove == LS_PUTAWAY_YODA || saberMove == LS_DRAW_YODA)
 		{
 			return qtrue;
 		}
@@ -1595,7 +1647,9 @@ qboolean PM_SaberInIdle(const int move)
 	case LS_NONE:
 	case LS_READY:
 	case LS_DRAW:
+	case LS_DRAW_YODA:
 	case LS_PUTAWAY:
+	case LS_PUTAWAY_YODA:
 		return qtrue;
 	default:;
 	}
@@ -3472,26 +3526,44 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_ANI
@@ -3509,6 +3581,7 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA_BEN
+					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA_YODA
 					|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA_ANI
@@ -4010,26 +4083,44 @@ static qboolean PM_CheckJumpForwardAttackMove()
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_ANI
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_BEN
@@ -4040,6 +4131,7 @@ static qboolean PM_CheckJumpForwardAttackMove()
 								|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE
 								|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA_BEN
+								|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA_YODA
 								|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE
 								|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERDESANN_STANCE_JKA_ANI
@@ -4241,9 +4333,7 @@ qboolean PM_CheckFlipOverAttackMove(const qboolean check_enemy)
 		&& pm->ps->forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1 //can force jump
 		&& !(pm->gent->flags & FL_LOCK_PLAYER_WEAPONS)
 		// yes this locked weapons check also includes force powers, if we need a separate check later I'll make one
-		&& (pm->ps->groundEntityNum != ENTITYNUM_NONE || level.time - pm->ps->lastOnGround <= 250)
-		//on ground or just jumped
-		)
+		&& (pm->ps->groundEntityNum != ENTITYNUM_NONE || level.time - pm->ps->lastOnGround <= 250))	//on ground or just jumped
 	{
 		qboolean try_move = qfalse;
 		if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
@@ -4272,9 +4362,11 @@ qboolean PM_CheckFlipOverAttackMove(const qboolean check_enemy)
 				{
 					if (pm->ps->legsAnim == BOTH_JUMP1
 						|| pm->ps->legsAnim == BOTH_JUMP1_ANI
+						|| pm->ps->legsAnim == BOTH_JUMP1_YODA
 						|| pm->ps->legsAnim == BOTH_FORCEJUMP1
 						|| pm->ps->legsAnim == BOTH_INAIR1
 						|| pm->ps->legsAnim == BOTH_INAIR1_ANI
+						|| pm->ps->legsAnim == BOTH_INAIR1_YODA
 						|| pm->ps->legsAnim == BOTH_FORCEINAIR1
 						|| pm->ps->legsAnim == BOTH_GRAPPLE_PULL)
 					{
@@ -6814,6 +6906,7 @@ qboolean BG_SprintAnim(const int anim)
 	{
 	case BOTH_SPRINT:
 	case BOTH_SPRINT_BEN:
+	case BOTH_SPRINT_YODA:
 		return qtrue;
 	default:;
 	}
@@ -6831,6 +6924,7 @@ qboolean BG_SaberSprintAnim(const int anim)
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
 	case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_YODA:
 		return qtrue;
 	default:;
 	}
@@ -6854,6 +6948,1466 @@ qboolean BG_WeaponSprintAnim(const int anim)
 	return qfalse;
 }
 
+// Exhaustive table-driven mapping for torso animations based on legsAnim.
+
+struct TorsoMapEntry {
+	int legsAnim;
+	int torsoAnim;                    // -1 => don't set torso (saberMove-only)
+	qboolean setSaberReady;           // set pm->ps->saberMove = LS_READY when matched
+	qboolean saberReadyClientNonZero; // only set saberMove when clientNum != 0
+	qboolean requireNoWeaponBusy;     // only apply when weaponBusy == qfalse
+	qboolean onlyForLightsaber;       // true => apply only when called from lightsaber path
+	int blendMs;                      // 0 = default; >0 passed as extra PM_SetAnim blend/time param
+};
+
+// Note: Entries duplicated when semantics differ between lightsaber-path and weaponBusy-path.
+// Use qtrue/qfalse to match project qboolean usage.
+static const TorsoMapEntry g_torsoMap[] = {
+	// -----------------------
+	// Lightsaber-only entries (original PM_TorsoAnimLightsaberFromLegs)
+	// setSaberReady = qtrue, onlyForLightsaber = qtrue
+	// -----------------------
+	{ BOTH_RUN1,                           BOTH_RUN1,                          qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN1_ANI,                       BOTH_RUN1_ANI,                      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN1_BEN,                       BOTH_RUN1_BEN,                      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN1_YODA,                      BOTH_RUN1_YODA,                     qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER,       BOTH_SPRINT_SINGLE_LIGHTSABER,      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,   BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,   BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_YODA,  BOTH_SPRINT_SINGLE_LIGHTSABER_YODA, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_STAFF_LIGHTSABER_ANI,    BOTH_SPRINT_STAFF_LIGHTSABER_ANI,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_STAFF_LIGHTSABER,        BOTH_SPRINT_STAFF_LIGHTSABER,       qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_DUAL_LIGHTSABER,         BOTH_SPRINT_DUAL_LIGHTSABER,        qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_DUAL_LIGHTSABER_BEN,     BOTH_SPRINT_DUAL_LIGHTSABER_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_SPRINT,                         BOTH_SPRINT,                        qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_BEN,                     BOTH_SPRINT_BEN,                    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_YODA,                    BOTH_SPRINT_YODA,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_BAZOOKA,                 BOTH_SPRINT_BAZOOKA,                qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_BLASTER,                 BOTH_SPRINT_BLASTER,                qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_DOUBLE_PISTOL,           BOTH_SPRINT_DOUBLE_PISTOL,          qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_GRENADE,                 BOTH_SPRINT_GRENADE,                qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_HEAVY,                   BOTH_SPRINT_HEAVY,                  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_MINIGUN,                 BOTH_SPRINT_HEAVY,                  qtrue, qfalse, qfalse, qtrue, 0 }, // fallback preserved
+	{ BOTH_SPRINT_PISTOL,                  BOTH_SPRINT_PISTOL,                 qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_RUN2,                           BOTH_RUN2,                          qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN2_ANI,                       BOTH_RUN2_ANI,                      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN2_BEN,                       BOTH_RUN2_BEN,                      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN2_YODA,                      BOTH_RUN2_YODA,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN4,                           BOTH_RUN4,                          qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_RUN_STAFF,                      BOTH_RUN_STAFF,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN_STAFF_ANI,                  BOTH_RUN_STAFF_ANI,                 qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN_STAFF_BEN,                  BOTH_RUN_STAFF_BEN,                 qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_RUN_DUAL,                       BOTH_RUN_DUAL,                      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN_DUAL_ANI,                   BOTH_RUN_DUAL_ANI,                  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN_DUAL_BEN,                   BOTH_RUN_DUAL_BEN,                  qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_JOG_BAZOOKA,                    BOTH_JOG_BAZOOKA,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_BLASTER,                    BOTH_JOG_BLASTER,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_DOUBLE_PISTOL,              BOTH_JOG_DOUBLE_PISTOL,             qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_GRENADE,                    BOTH_JOG_GRENADE,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_HEAVY,                      BOTH_JOG_HEAVY,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_MINIGUN,                    BOTH_JOG_HEAVY,                     qtrue, qfalse, qfalse, qtrue, 0 }, // fallback
+	{ BOTH_JOG_PISTOL,                     BOTH_JOG_PISTOL,                    qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_WALK1,                          BOTH_WALK1,                         qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK1_ANI,                      BOTH_WALK1_ANI,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK1_BEN,                      BOTH_WALK1_BEN,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK1_YODA,                     BOTH_WALK1_YODA,                    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_BAZOOKA,                   BOTH_WALK_BAZOOKA,                  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_BLASTER,                   BOTH_WALK_BLASTER,                  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_DOUBLE_PISTOL,             BOTH_WALK_DOUBLE_PISTOL,            qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_GRENADE,                   BOTH_WALK_GRENADE,                  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_HEAVY,                     BOTH_WALK_HEAVY,                    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_MINIGUN,                   BOTH_WALK_HEAVY,                    qtrue, qfalse, qfalse, qtrue, 0 }, // fallback
+	{ BOTH_WALK_PISTOL,                    BOTH_WALK_PISTOL,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK1_STICK,                    BOTH_WALK1_STICK,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK1_STICK_YODA,               BOTH_WALK1_STICK_YODA,              qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_MENUIDLE1,                      BOTH_MENUIDLE1,                     qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_SABER_ON,                 BOTH_STAND_SABER_ON,                qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_SABER_ON_DUELS,          BOTH_STAND_SABER_ON_DUELS,          qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_SABER_ON_STAFF,          BOTH_STAND_SABER_ON_STAFF,          qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_SABER_ON_IDLE,           BOTH_STAND_SABER_ON_IDLE,           qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_SABER_ON_IDLE_DUELS,     BOTH_STAND_SABER_ON_IDLE_DUELS,     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_SABER_ON_IDLE_STAFF,     BOTH_STAND_SABER_ON_IDLE_STAFF,     qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_SABERSINGLECROUCH,              BOTH_SABERSINGLECROUCH,             qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SABERSINGLECROUCH_ANI,          BOTH_SABERSINGLECROUCH_ANI,         qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON,              BOTH_STAND_BLOCKING_ON,             qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_ANI,          BOTH_STAND_BLOCKING_ON_ANI,         qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BEN,          BOTH_STAND_BLOCKING_ON_BEN,         qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_YODA,         BOTH_STAND_BLOCKING_ON_YODA,        qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL,         BOTH_STAND_BLOCKING_ON_DUAL,        qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BEN,     BOTH_STAND_BLOCKING_ON_DUAL_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_ANI,     BOTH_STAND_BLOCKING_ON_DUAL_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_STAFF,        BOTH_STAND_BLOCKING_ON_STAFF,       qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_STAFF_BEN,    BOTH_STAND_BLOCKING_ON_STAFF_BEN,   qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_FORWARD,      BOTH_STAND_BLOCKING_ON_FORWARD,     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_BEN,  BOTH_STAND_BLOCKING_ON_FORWARD_BEN, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_ANI,  BOTH_STAND_BLOCKING_ON_FORWARD_ANI, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_YODA, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_BACK,         BOTH_STAND_BLOCKING_ON_BACK,        qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_BEN,     BOTH_STAND_BLOCKING_ON_BACK_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_ANI,     BOTH_STAND_BLOCKING_ON_BACK_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_YODA,    BOTH_STAND_BLOCKING_ON_BACK_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_RIGHT,        BOTH_STAND_BLOCKING_ON_RIGHT,       qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_BEN,    BOTH_STAND_BLOCKING_ON_RIGHT_BEN,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_YODA,    BOTH_STAND_BLOCKING_ON_RIGHT_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT,         BOTH_STAND_BLOCKING_ON_LEFT,        qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_BEN,     BOTH_STAND_BLOCKING_ON_LEFT_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_YODA,    BOTH_STAND_BLOCKING_ON_LEFT_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_LEFT_ANI,     BOTH_STAND_BLOCKING_ON_LEFT_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_ANI,    BOTH_STAND_BLOCKING_ON_RIGHT_ANI,   qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK,    BOTH_STAND_BLOCKING_ON_DUAL_BACK,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,qtrue,qfalse,qfalse,qtrue,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,   BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,qtrue,qfalse,qfalse,qtrue,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT,    BOTH_STAND_BLOCKING_ON_DUAL_LEFT,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,qtrue,qfalse,qfalse,qtrue,0 },
+
+	{ BOTH_SABERDUALCROUCH,                BOTH_SABERDUALCROUCH,               qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SABERSTAFFCROUCH,               BOTH_SABERSTAFFCROUCH,              qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_WALK2,                          BOTH_WALK2,                         qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK2_ANI,                      BOTH_WALK2_ANI,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK2_BEN,                      BOTH_WALK2_BEN,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK2_YODA,                     BOTH_WALK2_YODA,                    qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_WALK_STAFF,                     BOTH_WALK_STAFF,                    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_STAFF_AMD,                 BOTH_WALK_STAFF_AMD,                qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_STAFF_BEN,                 BOTH_WALK_STAFF_BEN,                qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_WALK_DUAL,                      BOTH_WALK_DUAL,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_DUAL_ANI,                  BOTH_WALK_DUAL_ANI,                 qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_DUAL_AMD,                  BOTH_WALK_DUAL_AMD,                 qtrue, qfalse, qfalse, qtrue, 0 },
+
+	{ BOTH_CROUCH1IDLE,                    -1,                                 qtrue, qtrue,  qfalse, qtrue, 0 }, // lightsaber path: only set saberMove if clientNum != 0
+
+	{ BOTH_JUMP1,                          BOTH_JUMP1,                         qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JUMP1_ANI,                      BOTH_JUMP1_ANI,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JUMP1_YODA,                     BOTH_JUMP1_YODA,                    qtrue, qfalse, qfalse, qtrue, 0 },
+
+	// -----------------------
+	// Weapon-aware-only entries (original PM_TorsoAnimFromLegs when !weaponBusy)
+	// requireNoWeaponBusy = qtrue, onlyForLightsaber = qfalse
+	// -----------------------
+	{ BOTH_RUN1,                           BOTH_RUN1,                          qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN1_ANI,                       BOTH_RUN1_ANI,                      qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN1_BEN,                       BOTH_RUN1_BEN,                      qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN1_YODA,                      BOTH_RUN1_YODA,                     qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER,       BOTH_SPRINT_SINGLE_LIGHTSABER,      qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,   BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_STAFF_LIGHTSABER_ANI,    BOTH_SPRINT_STAFF_LIGHTSABER_ANI,   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,   BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_YODA,  BOTH_SPRINT_SINGLE_LIGHTSABER_YODA, qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_STAFF_LIGHTSABER,        BOTH_SPRINT_STAFF_LIGHTSABER,       qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_DUAL_LIGHTSABER,         BOTH_SPRINT_DUAL_LIGHTSABER,        qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_DUAL_LIGHTSABER_BEN,     BOTH_SPRINT_DUAL_LIGHTSABER_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_SPRINT,                         BOTH_SPRINT,                        qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_BEN,                     BOTH_SPRINT_BEN,                    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_YODA,                    BOTH_SPRINT_YODA,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_BAZOOKA,                 BOTH_SPRINT_BAZOOKA,                qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_BLASTER,                 BOTH_SPRINT_BLASTER,                qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_DOUBLE_PISTOL,           BOTH_SPRINT_DOUBLE_PISTOL,          qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_GRENADE,                 BOTH_SPRINT_GRENADE,                qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_HEAVY,                   BOTH_SPRINT_HEAVY,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_MINIGUN,                 BOTH_SPRINT_HEAVY,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_PISTOL,                  BOTH_SPRINT_PISTOL,                 qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_RUN2,                           BOTH_RUN2,                          qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN2_ANI,                       BOTH_RUN2_ANI,                      qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN2_BEN,                       BOTH_RUN2_BEN,                      qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN2_YODA,                      BOTH_RUN2_YODA,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN4,                           BOTH_RUN4,                          qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_RUN_STAFF,                      BOTH_RUN_STAFF,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN_STAFF_ANI,                  BOTH_RUN_STAFF_ANI,                 qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN_STAFF_BEN,                  BOTH_RUN_STAFF_BEN,                 qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_RUN_DUAL,                       BOTH_RUN_DUAL,                      qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN_DUAL_ANI,                   BOTH_RUN_DUAL_ANI,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN_DUAL_BEN,                   BOTH_RUN_DUAL_BEN,                  qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_JOG_BAZOOKA,                    BOTH_JOG_BAZOOKA,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_BLASTER,                    BOTH_JOG_BLASTER,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_DOUBLE_PISTOL,              BOTH_JOG_DOUBLE_PISTOL,             qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_GRENADE,                    BOTH_JOG_GRENADE,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_HEAVY,                      BOTH_JOG_HEAVY,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_MINIGUN,                    BOTH_JOG_HEAVY,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_PISTOL,                     BOTH_JOG_PISTOL,                    qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_WALK1,                          BOTH_WALK1,                         qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK1_ANI,                      BOTH_WALK1_ANI,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK1_BEN,                      BOTH_WALK1_BEN,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK1_YODA,                     BOTH_WALK1_YODA,                    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_BAZOOKA,                   BOTH_WALK_BAZOOKA,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_BLASTER,                   BOTH_WALK_BLASTER,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_DOUBLE_PISTOL,             BOTH_WALK_DOUBLE_PISTOL,            qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_GRENADE,                   BOTH_WALK_GRENADE,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_HEAVY,                     BOTH_WALK_HEAVY,                    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_MINIGUN,                   BOTH_WALK_HEAVY,                    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_PISTOL,                    BOTH_WALK_PISTOL,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK1_STICK,                    BOTH_WALK1_STICK,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK1_STICK_YODA,               BOTH_WALK1_STICK_YODA,              qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_MENUIDLE1,                      BOTH_MENUIDLE1,                     qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON,              BOTH_STAND_BLOCKING_ON,             qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_ANI,          BOTH_STAND_BLOCKING_ON_ANI,         qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BEN,          BOTH_STAND_BLOCKING_ON_BEN,         qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_YODA,         BOTH_STAND_BLOCKING_ON_YODA,        qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL,         BOTH_STAND_BLOCKING_ON_DUAL,        qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BEN,     BOTH_STAND_BLOCKING_ON_DUAL_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_ANI,     BOTH_STAND_BLOCKING_ON_DUAL_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_STAFF,        BOTH_STAND_BLOCKING_ON_STAFF,       qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_STAFF_BEN,    BOTH_STAND_BLOCKING_ON_STAFF_BEN,   qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_FORWARD,      BOTH_STAND_BLOCKING_ON_FORWARD,     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_BEN,  BOTH_STAND_BLOCKING_ON_FORWARD_BEN, qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_ANI,  BOTH_STAND_BLOCKING_ON_FORWARD_ANI, qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_YODA, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_BACK,         BOTH_STAND_BLOCKING_ON_BACK,        qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_BEN,     BOTH_STAND_BLOCKING_ON_BACK_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_ANI,     BOTH_STAND_BLOCKING_ON_BACK_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_YODA,    BOTH_STAND_BLOCKING_ON_BACK_YODA,   qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_RIGHT,        BOTH_STAND_BLOCKING_ON_RIGHT,       qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_BEN,    BOTH_STAND_BLOCKING_ON_RIGHT_BEN,   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_YODA,   BOTH_STAND_BLOCKING_ON_RIGHT_YODA,  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT,         BOTH_STAND_BLOCKING_ON_LEFT,        qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_BEN,     BOTH_STAND_BLOCKING_ON_LEFT_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_YODA,    BOTH_STAND_BLOCKING_ON_LEFT_YODA,   qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_LEFT_ANI,     BOTH_STAND_BLOCKING_ON_LEFT_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_ANI,    BOTH_STAND_BLOCKING_ON_RIGHT_ANI,   qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK,    BOTH_STAND_BLOCKING_ON_DUAL_BACK,   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,   BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT,    BOTH_STAND_BLOCKING_ON_DUAL_LEFT,   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,qfalse,qfalse,qtrue,qfalse,0 },
+
+	{ BOTH_SABERDUALCROUCH,                BOTH_SABERDUALCROUCH,               qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SABERSTAFFCROUCH,               BOTH_SABERSTAFFCROUCH,              qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_WALK2,                          BOTH_WALK2,                         qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK2_ANI,                      BOTH_WALK2_ANI,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK2_BEN,                      BOTH_WALK2_BEN,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK2_YODA,                     BOTH_WALK2_YODA,                    qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_WALK_STAFF,                     BOTH_WALK_STAFF,                    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_STAFF_AMD,                 BOTH_WALK_STAFF_AMD,                qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_STAFF_BEN,                 BOTH_WALK_STAFF_BEN,                qfalse, qfalse, qtrue, qfalse, 0 },
+
+	{ BOTH_WALK_DUAL,                      BOTH_WALK_DUAL,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_DUAL_ANI,                  BOTH_WALK_DUAL_ANI,                 qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_DUAL_AMD,                  BOTH_WALK_DUAL_AMD,                 qfalse, qfalse, qtrue, qfalse, 0 },
+
+	// Jumps/swim for weaponBusy path
+	{ BOTH_JUMP1,                          BOTH_JUMP1,                         qfalse, qfalse, qtrue, qfalse, 100 },
+	{ BOTH_JUMP1_ANI,                      BOTH_JUMP1_ANI,                     qfalse, qfalse, qtrue, qfalse, 100 },
+	{ BOTH_JUMP1_YODA,                     BOTH_JUMP1_YODA,                    qfalse, qfalse, qtrue, qfalse, 100 },
+	{ BOTH_SWIM_IDLE1,                     BOTH_SWIM_IDLE1,                    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SWIMFORWARD,                    BOTH_SWIMFORWARD,                   qfalse, qfalse, qtrue, qfalse, 0 },
+};
+
+static void PM_ApplyTorsoMap(pmove_t* pm, qboolean weaponBusy, qboolean setSaberReadyOverride)
+{
+	const int legs = pm->ps->legsAnim;
+	const size_t count = sizeof(g_torsoMap) / sizeof(g_torsoMap[0]);
+
+	for (size_t i = 0; i < count; ++i) {
+		const TorsoMapEntry& e = g_torsoMap[i];
+		if (e.legsAnim != legs) {
+			continue;
+		}
+		// Skip lightsaber-only rows when caller is NOT the lightsaber path
+		if (e.onlyForLightsaber && !setSaberReadyOverride)
+		{
+			continue;
+		}
+		// honor requireNoWeaponBusy
+		if (e.requireNoWeaponBusy && weaponBusy)
+		{
+			continue;
+		}
+		// apply torsoAnim if provided
+		if (e.torsoAnim >= 0)
+		{
+			if (e.blendMs > 0)
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, e.torsoAnim, SETANIM_FLAG_NORMAL, e.blendMs);
+			}
+			else
+			{
+				PM_SetAnim(pm, SETANIM_TORSO, e.torsoAnim, SETANIM_FLAG_NORMAL);
+			}
+		}
+		// apply saber ready flag if requested
+		if (setSaberReadyOverride || e.setSaberReady)
+		{
+			if (e.saberReadyClientNonZero)
+			{
+				if (pm->ps->clientNum != 0)
+				{
+					pm->ps->saberMove = LS_READY;
+				}
+			}
+			else
+			{
+				pm->ps->saberMove = LS_READY;
+			}
+		}
+		return;
+	}
+
+	// Fallback behavior: if no mapping matched, set torso = legsAnim like original code in many cases
+	PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
+}
+
+// PM_TorsoAnimLightsaberFromLegs will be the only system used when all new anims are added and the new system is finished.
+// The old system is kept for reference and to avoid breaking existing code.
+static void PM_TorsoAnimLightsaberFromLegs(pmove_t* pm)
+{
+	PM_ApplyTorsoMap(pm, qfalse, qtrue);
+}
+
+static void PM_TorsoAnimLightsaberFromLegsOld(pmove_t* pm)
+{ // This function is used to set the torso animation to match the legs animation when sprinting with a lightsaber.
+	if (pm->ps->legsAnim == BOTH_RUN1)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN1_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN1_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN1_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_BAZOOKA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BAZOOKA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_BLASTER)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BLASTER, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_DOUBLE_PISTOL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_GRENADE)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_GRENADE, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_HEAVY)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN)
+	{
+		//PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_PISTOL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN2)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN2_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN2_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN2_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_STAFF)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN_STAFF_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_STAFF_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_DUAL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN_DUAL_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_DUAL_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_BAZOOKA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BAZOOKA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_BLASTER)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BLASTER, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_DOUBLE_PISTOL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_GRENADE)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_GRENADE, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_HEAVY)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN)
+	{
+		//PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_PISTOL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_PISTOL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_WALK1_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// BENKENOBI
+	else if (pm->ps->legsAnim == BOTH_WALK1_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_BAZOOKA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BAZOOKA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_BLASTER)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BLASTER, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_DOUBLE_PISTOL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_GRENADE)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_GRENADE, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_HEAVY)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN)
+	{
+		//PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_PISTOL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_PISTOL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1_STICK)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_STICK, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1_STICK_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_STICK_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_MENUIDLE1)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_MENUIDLE1, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_DUELS)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_DUELS, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_STAFF)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_STAFF, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_DUELS)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_DUELS, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_STAFF, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BACK, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_LEFT, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_FORWARD, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BACK, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_RIGHT, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_LEFT, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERDUALCROUCH)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERDUALCROUCH, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSTAFFCROUCH, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK2)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_WALK2_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// BENKENOBI
+	else if (pm->ps->legsAnim == BOTH_WALK2_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK2_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_STAFF)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_STAFF_AMD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_AMD, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_STAFF_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_BEN, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_DUAL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_WALK_DUAL_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_DUAL_AMD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_AMD, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_CROUCH1IDLE && pm->ps->clientNum != 0)
+	{
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JUMP1)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JUMP1_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1_ANI, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+	else if (pm->ps->legsAnim == BOTH_JUMP1_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1_YODA, SETANIM_FLAG_NORMAL);
+		pm->ps->saberMove = LS_READY;
+	}
+}
+
+// PM_TorsoAnimFromLegs will be the only system used when all new anims are added and the new system is finished.
+// The old system is kept for reference and to avoid breaking existing code.
+static void PM_TorsoAnimFromLegs(pmove_t* pm, qboolean weaponBusy)
+{
+	PM_ApplyTorsoMap(pm, weaponBusy, qfalse);
+}
+
+static void PM_TorsoAnimFromLegsOld(pmove_t* pm, qboolean weaponBusy)
+{ // This function is used to set the torso animation based on the legs animation when the weapon is busy or not busy.
+	if (pm->ps->legsAnim == BOTH_RUN1 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN1_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN1_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN1_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_BAZOOKA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BAZOOKA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_BLASTER && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BLASTER, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_DOUBLE_PISTOL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_GRENADE && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_GRENADE, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_HEAVY && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_PISTOL, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN2 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN2_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN2_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN2_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN4 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN4, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_STAFF && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN_STAFF_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_STAFF_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_DUAL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_RUN_DUAL_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_RUN_DUAL_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_BAZOOKA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BAZOOKA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_BLASTER && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BLASTER, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_DOUBLE_PISTOL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_GRENADE && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_GRENADE, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_HEAVY && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_JOG_PISTOL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_PISTOL, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_WALK1_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_ANI, SETANIM_FLAG_NORMAL);
+	}
+	// BENKENOBI
+	else if (pm->ps->legsAnim == BOTH_WALK1_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_BAZOOKA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BAZOOKA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_BLASTER && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BLASTER, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_DOUBLE_PISTOL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_GRENADE && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_GRENADE, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_HEAVY && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_PISTOL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_PISTOL, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1_STICK && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_STICK, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK1_STICK_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_STICK_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_MENUIDLE1 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_MENUIDLE1, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BACK, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_LEFT, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_FORWARD, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BACK, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_RIGHT, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_LEFT, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERDUALCROUCH && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERDUALCROUCH, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSTAFFCROUCH, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_DUELS && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_DUELS, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_STAFF && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_STAFF, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_DUELS && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_DUELS, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_STAFF, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK2 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_WALK2_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_ANI, SETANIM_FLAG_NORMAL);
+	}
+	// BENKENOBI
+	else if (pm->ps->legsAnim == BOTH_WALK2_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK2_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_YODA, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_STAFF && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_STAFF_BEN && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_BEN, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_STAFF_AMD && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_AMD, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_DUAL && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL, SETANIM_FLAG_NORMAL);
+	}
+	// ANAKIN
+	else if (pm->ps->legsAnim == BOTH_WALK_DUAL_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_ANI, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_WALK_DUAL_AMD && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_AMD, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_CROUCH1IDLE && pm->ps->clientNum != 0) //player falls through
+	{
+		//
+	}
+	else if (pm->ps->legsAnim == BOTH_JUMP1 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1, SETANIM_FLAG_NORMAL, 100); // Only blend over 100ms
+	}
+	else if (pm->ps->legsAnim == BOTH_JUMP1_ANI && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1_ANI, SETANIM_FLAG_NORMAL, 100); // Only blend over 100ms
+	}
+	else if (pm->ps->legsAnim == BOTH_JUMP1_YODA && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1_YODA, SETANIM_FLAG_NORMAL, 100); // Only blend over 100ms
+	}
+	else if (pm->ps->legsAnim == BOTH_SWIM_IDLE1 && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SWIM_IDLE1, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->legsAnim == BOTH_SWIMFORWARD && !weaponBusy)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, BOTH_SWIMFORWARD, SETANIM_FLAG_NORMAL);
+	}
+	else if (pm->ps->weapon == WP_NONE)
+	{
+		const int legs_anim = pm->ps->legsAnim;
+		PM_SetAnim(pm, SETANIM_TORSO, legs_anim, SETANIM_FLAG_NORMAL);
+	}
+}
+
 /*
 -------------------------
 PM_TorsoAnimLightsaber
@@ -6870,6 +8424,7 @@ qboolean PM_InCartwheel(int anim);
 
 static void PM_TorsoAnimLightsaber()
 {
+	animFlags_t flags = PA_Animationstyletable(pm);
 	// *********************************************************
 	// WEAPON_READY
 	// *********************************************************
@@ -6911,7 +8466,28 @@ static void PM_TorsoAnimLightsaber()
 		{
 			if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
 			{
-				PM_SetSaberMove(LS_DRAW);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							//PM_SetSaberMove(LS_DRAW);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_DRAW_YODA);
+						}
+					}
+					else
+					{
+						PM_SetSaberMove(LS_DRAW);
+					}
+				}
+				else
+				{
+					PM_SetSaberMove(LS_DRAW);
+				}
 			}
 			else
 			{
@@ -6925,7 +8501,28 @@ static void PM_TorsoAnimLightsaber()
 							&& !is_holding_block_button
 							&& !IsSurrendering(pm->gent)) //twirl on
 						{
-							PM_SetSaberMove(LS_DRAW);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isYoda == qtrue)
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim))
+									{
+										//PM_SetSaberMove(LS_DRAW);
+									}
+									else
+									{
+										PM_SetSaberMove(LS_DRAW_YODA);
+									}
+								}
+								else
+								{
+									PM_SetSaberMove(LS_DRAW);
+								}
+							}
+							else
+							{
+								PM_SetSaberMove(LS_DRAW);
+							}
 						}
 						else
 						{
@@ -6937,9 +8534,11 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
+								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
 								|| pm->ps->legsAnim == BOTH_WALK2
+								|| pm->ps->legsAnim == BOTH_WALK2_YODA
 								//////////////////////////////////////////
 									// ANAKIN
 								|| pm->ps->legsAnim == BOTH_WALK1_ANI
@@ -6949,7 +8548,8 @@ static void PM_TorsoAnimLightsaber()
 									// BENKENOBI
 								|| pm->ps->legsAnim == BOTH_WALK1_BEN
 								|| pm->ps->legsAnim == BOTH_WALK2_BEN
-								|| pm->ps->legsAnim == BOTH_WALKBACK2)
+								|| pm->ps->legsAnim == BOTH_WALKBACK2
+								|| pm->ps->legsAnim == BOTH_WALKBACK2_YODA)
 								&& pm->ps->saberBlockingTime < cg.time
 								&& !is_holding_block_button_and_attack
 								&& !is_holding_block_button
@@ -6964,16 +8564,28 @@ static void PM_TorsoAnimLightsaber()
 								}
 								PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
 							}
-							else if (PM_RunningAnim(pm->ps->legsAnim) && pm->ps->saberBlockingTime < cg.time && !
-								IsSurrendering(pm->gent))
+							else if (PM_RunningAnim(pm->ps->legsAnim) && pm->ps->saberBlockingTime < cg.time && !IsSurrendering(pm->gent))
 							{
-								//running w/1-handed weapon uses full-body anim
-								int set_flags = SETANIM_FLAG_NORMAL;
-								if (PM_LandingAnim(pm->ps->torsoAnim))
+								if (flags.isYoda == qtrue)
 								{
-									set_flags = SETANIM_FLAG_OVERRIDE;
+									//running w/1-handed weapon uses full-body anim
+									int set_flags = SETANIM_FLAG_NORMAL;
+									if (PM_LandingAnim(pm->ps->torsoAnim))
+									{
+										set_flags = SETANIM_FLAG_OVERRIDE;
+									}
+									PM_SetAnim(pm, SETANIM_LEGS, pm->ps->legsAnim, set_flags);
 								}
-								PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
+								else
+								{
+									//running w/1-handed weapon uses full-body anim
+									int set_flags = SETANIM_FLAG_NORMAL;
+									if (PM_LandingAnim(pm->ps->torsoAnim))
+									{
+										set_flags = SETANIM_FLAG_OVERRIDE;
+									}
+									PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
+								}
 							}
 							else
 							{
@@ -6992,7 +8604,28 @@ static void PM_TorsoAnimLightsaber()
 							&& !is_holding_block_button
 							&& !IsSurrendering(pm->gent)) //twirl on
 						{
-							PM_SetSaberMove(LS_DRAW);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isYoda == qtrue)
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim))
+									{
+										//PM_SetSaberMove(LS_DRAW);
+									}
+									else
+									{
+										PM_SetSaberMove(LS_DRAW_YODA);
+									}
+								}
+								else
+								{
+									PM_SetSaberMove(LS_DRAW);
+								}
+							}
+							else
+							{
+								PM_SetSaberMove(LS_DRAW);
+							}
 						}
 						else
 						{
@@ -7004,9 +8637,11 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
+								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
 								|| pm->ps->legsAnim == BOTH_WALK2
+								|| pm->ps->legsAnim == BOTH_WALK2_YODA
 								//////////////////////////////////////////
 									// ANAKIN
 								|| pm->ps->legsAnim == BOTH_WALK1_ANI
@@ -7016,7 +8651,8 @@ static void PM_TorsoAnimLightsaber()
 									// BENKENOBI
 								|| pm->ps->legsAnim == BOTH_WALK1_BEN
 								|| pm->ps->legsAnim == BOTH_WALK2_BEN
-								|| pm->ps->legsAnim == BOTH_WALKBACK2)
+								|| pm->ps->legsAnim == BOTH_WALKBACK2
+								|| pm->ps->legsAnim == BOTH_WALKBACK2_YODA)
 								&& pm->ps->saberBlockingTime < cg.time
 								&& !is_holding_block_button_and_attack
 								&& !is_holding_block_button
@@ -7031,16 +8667,28 @@ static void PM_TorsoAnimLightsaber()
 								}
 								PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
 							}
-							else if (PM_RunningAnim(pm->ps->legsAnim) && pm->ps->saberBlockingTime < cg.time && !
-								IsSurrendering(pm->gent))
+							else if (PM_RunningAnim(pm->ps->legsAnim) && pm->ps->saberBlockingTime < cg.time && !IsSurrendering(pm->gent))
 							{
-								//running w/1-handed weapon uses full-body anim
-								int set_flags = SETANIM_FLAG_NORMAL;
-								if (PM_LandingAnim(pm->ps->torsoAnim))
+								if (flags.isYoda == qtrue)
 								{
-									set_flags = SETANIM_FLAG_OVERRIDE;
+									//running w/1-handed weapon uses full-body anim
+									int set_flags = SETANIM_FLAG_NORMAL;
+									if (PM_LandingAnim(pm->ps->torsoAnim))
+									{
+										set_flags = SETANIM_FLAG_OVERRIDE;
+									}
+									PM_SetAnim(pm, SETANIM_LEGS, pm->ps->legsAnim, set_flags);
 								}
-								PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
+								else
+								{
+									//running w/1-handed weapon uses full-body anim
+									int set_flags = SETANIM_FLAG_NORMAL;
+									if (PM_LandingAnim(pm->ps->torsoAnim))
+									{
+										set_flags = SETANIM_FLAG_OVERRIDE;
+									}
+									PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
+								}
 							}
 							else
 							{
@@ -7060,7 +8708,28 @@ static void PM_TorsoAnimLightsaber()
 						&& !is_holding_block_button
 						&& !IsSurrendering(pm->gent)) //twirl on
 					{
-						PM_SetSaberMove(LS_DRAW);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isYoda == qtrue)
+							{
+								if (PM_RunningAnim(pm->ps->legsAnim))
+								{
+									//PM_SetSaberMove(LS_DRAW);
+								}
+								else
+								{
+									PM_SetSaberMove(LS_DRAW_YODA);
+								}
+							}
+							else
+							{
+								PM_SetSaberMove(LS_DRAW);
+							}
+						}
+						else
+						{
+							PM_SetSaberMove(LS_DRAW);
+						}
 					}
 					else
 					{
@@ -7072,9 +8741,11 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 							|| pm->ps->legsAnim == BOTH_WALK1
+							|| pm->ps->legsAnim == BOTH_WALK1_YODA
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
 							|| pm->ps->legsAnim == BOTH_WALKBACK1
 							|| pm->ps->legsAnim == BOTH_WALK2
+							|| pm->ps->legsAnim == BOTH_WALK2_YODA
 							//////////////////////////////////////////
 								// ANAKIN
 							|| pm->ps->legsAnim == BOTH_WALK1_ANI
@@ -7084,7 +8755,8 @@ static void PM_TorsoAnimLightsaber()
 								// BENKENOBI
 							|| pm->ps->legsAnim == BOTH_WALK1_BEN
 							|| pm->ps->legsAnim == BOTH_WALK2_BEN
-							|| pm->ps->legsAnim == BOTH_WALKBACK2)
+							|| pm->ps->legsAnim == BOTH_WALKBACK2
+							|| pm->ps->legsAnim == BOTH_WALKBACK2_YODA)
 							&& pm->ps->saberBlockingTime < cg.time
 							&& !is_holding_block_button_and_attack
 							&& !is_holding_block_button
@@ -7099,16 +8771,28 @@ static void PM_TorsoAnimLightsaber()
 							}
 							PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
 						}
-						else if (PM_RunningAnim(pm->ps->legsAnim) && pm->ps->saberBlockingTime < cg.time && !
-							IsSurrendering(pm->gent))
+						else if (PM_RunningAnim(pm->ps->legsAnim) && pm->ps->saberBlockingTime < cg.time && !IsSurrendering(pm->gent))
 						{
-							//running w/1-handed weapon uses full-body anim
-							int set_flags = SETANIM_FLAG_NORMAL;
-							if (PM_LandingAnim(pm->ps->torsoAnim))
+							if (flags.isYoda == qtrue)
 							{
-								set_flags = SETANIM_FLAG_OVERRIDE;
+								//running w/1-handed weapon uses full-body anim
+								int set_flags = SETANIM_FLAG_NORMAL;
+								if (PM_LandingAnim(pm->ps->torsoAnim))
+								{
+									set_flags = SETANIM_FLAG_OVERRIDE;
+								}
+								PM_SetAnim(pm, SETANIM_LEGS, pm->ps->legsAnim, set_flags);
 							}
-							PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
+							else
+							{
+								//running w/1-handed weapon uses full-body anim
+								int set_flags = SETANIM_FLAG_NORMAL;
+								if (PM_LandingAnim(pm->ps->torsoAnim))
+								{
+									set_flags = SETANIM_FLAG_OVERRIDE;
+								}
+								PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, set_flags);
+							}
 						}
 						else
 						{
@@ -7129,13 +8813,55 @@ static void PM_TorsoAnimLightsaber()
 		{
 			if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
 			{
-				PM_SetSaberMove(LS_PUTAWAY);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							//PM_SetSaberMove(LS_PUTAWAY);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_PUTAWAY_YODA);
+						}
+					}
+					else
+					{
+						PM_SetSaberMove(LS_PUTAWAY);
+					}
+				}
+				else
+				{
+					PM_SetSaberMove(LS_PUTAWAY);
+				}
 			}
 			else
 			{
 				if (!g_noIgniteTwirl->integer && !IsSurrendering(pm->gent)) //twirl on
 				{
-					PM_SetSaberMove(LS_PUTAWAY);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isYoda == qtrue)
+						{
+							if (PM_RunningAnim(pm->ps->legsAnim))
+							{
+								//PM_SetSaberMove(LS_PUTAWAY);
+							}
+							else
+							{
+								PM_SetSaberMove(LS_PUTAWAY_YODA);
+							}
+						}
+						else
+						{
+							PM_SetSaberMove(LS_PUTAWAY);
+						}
+					}
+					else
+					{
+						PM_SetSaberMove(LS_PUTAWAY);
+					}
 				}
 				else
 				{
@@ -7148,7 +8874,21 @@ static void PM_TorsoAnimLightsaber()
 								//AMD Mode
 								if (!IsSurrendering(pm->gent))
 								{
-									PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isYoda == qtrue)
+										{
+											PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+										}
+										else
+										{
+											PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+										}
+									}
+									else
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+									}
 								}
 							}
 							else
@@ -7232,9 +8972,11 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 							|| pm->ps->legsAnim == BOTH_WALK1
+							|| pm->ps->legsAnim == BOTH_WALK1_YODA
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
 							|| pm->ps->legsAnim == BOTH_WALKBACK1
 							|| pm->ps->legsAnim == BOTH_WALK2
+							|| pm->ps->legsAnim == BOTH_WALK2_YODA
 							//////////////////////////////////////////
 								// ANAKIN
 							|| pm->ps->legsAnim == BOTH_WALK1_ANI
@@ -7244,7 +8986,8 @@ static void PM_TorsoAnimLightsaber()
 								// BENKENOBI
 							|| pm->ps->legsAnim == BOTH_WALK1_BEN
 							|| pm->ps->legsAnim == BOTH_WALK2_BEN
-							|| pm->ps->legsAnim == BOTH_WALKBACK2)
+							|| pm->ps->legsAnim == BOTH_WALKBACK2
+							|| pm->ps->legsAnim == BOTH_WALKBACK2_YODA)
 							&& pm->ps->saberBlockingTime < cg.time
 							&& !is_holding_block_button_and_attack
 							&& !is_holding_block_button
@@ -7271,470 +9014,17 @@ static void PM_TorsoAnimLightsaber()
 		else if (TorsoAgainstWindTest(pm->gent))
 		{
 		}
-		else if (pm->ps->legsAnim == BOTH_RUN1)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN1_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN1_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_BAZOOKA)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BAZOOKA, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_BLASTER)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BLASTER, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_DOUBLE_PISTOL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_GRENADE)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_GRENADE, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_HEAVY)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN)
-		{
-			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_MINIGUN, SETANIM_FLAG_NORMAL);
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN2)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN2_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN2_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN_STAFF)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN_STAFF_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN_DUAL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN_DUAL_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_BAZOOKA)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BAZOOKA, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_BLASTER)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BLASTER, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_DOUBLE_PISTOL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_GRENADE)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_GRENADE, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_HEAVY)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN)
-		{
-			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_MINIGUN, SETANIM_FLAG_NORMAL);
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_PISTOL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK1)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_WALK1_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// BENKENOBI
-		else if (pm->ps->legsAnim == BOTH_WALK1_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_BAZOOKA)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BAZOOKA, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_BLASTER)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BLASTER, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_DOUBLE_PISTOL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_GRENADE)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_GRENADE, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_HEAVY)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN)
-		{
-			//PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_MINIGUN, SETANIM_FLAG_NORMAL);
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_PISTOL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_PISTOL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK1_STICK)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_STICK, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_MENUIDLE1)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_MENUIDLE1, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_DUELS)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_DUELS, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_STAFF)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_DUELS)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_DUELS, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BACK, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_LEFT, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_FORWARD, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BACK, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_RIGHT, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_LEFT, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERDUALCROUCH)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERDUALCROUCH, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSTAFFCROUCH, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK2)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_WALK2_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// BENKENOBI
-		else if (pm->ps->legsAnim == BOTH_WALK2_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_STAFF)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_AMD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_AMD, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_BEN, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_DUAL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_WALK_DUAL_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_DUAL_AMD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_AMD, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_CROUCH1IDLE && pm->ps->clientNum != 0)
-		{
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JUMP1)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
-		else if (pm->ps->legsAnim == BOTH_JUMP1_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1_ANI, SETANIM_FLAG_NORMAL);
-			pm->ps->saberMove = LS_READY;
-		}
 		else
 		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{// new method of handling torso anims based on legs anims, to allow for more fluid transitions between torso and legs anims
+				PM_TorsoAnimLightsaberFromLegs(pm);// compiler limit hit moving to a helper function
+			}
+			else
+			{
+				PM_TorsoAnimLightsaberFromLegsOld(pm);// compiler limit hit moving to a helper function
+			}
+
 			if (pm->ps->saberMove > LS_READY && pm->ps->saberMove < LS_MOVE_MAX)
 			{
 				PM_SetSaberMove(saberMoveData[pm->ps->saberMove].chain_idle);
@@ -7793,6 +9083,7 @@ static void PM_TorsoAnimLightsaber()
 			pm->ps->saberMove = LS_READY;
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND1IDLE1
+			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_YODA
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE
@@ -7800,11 +9091,13 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_ANI
+			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_BEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE2
 			|| pm->ps->legsAnim == BOTH_STAND3IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND5IDLE1
 			|| pm->ps->legsAnim == BOTH_MENUIDLE1
 			|| pm->ps->legsAnim == BOTH_STANDYODAIDLE_STICK
+			|| pm->ps->legsAnim == BOTH_STANDYODAIDLE_STICK_YODA
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE2
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE2P
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE3
@@ -7818,26 +9111,44 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT
-			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT)
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
@@ -7889,8 +9200,21 @@ static void PM_TorsoAnimLightsaber()
 				{
 					if (pm->ps->torsoAnim != BOTH_LOSE_SABER || !pm->ps->torsoAnimTimer)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 				}
 			}
@@ -7939,9 +9263,11 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
+								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
 								|| pm->ps->legsAnim == BOTH_WALK2
+								|| pm->ps->legsAnim == BOTH_WALK2_YODA
 								//////////////////////////////////////////
 									// ANAKIN
 								|| pm->ps->legsAnim == BOTH_WALK1_ANI
@@ -7951,7 +9277,8 @@ static void PM_TorsoAnimLightsaber()
 									// BENKENOBI
 								|| pm->ps->legsAnim == BOTH_WALK1_BEN
 								|| pm->ps->legsAnim == BOTH_WALK2_BEN
-								|| pm->ps->legsAnim == BOTH_WALKBACK2)
+								|| pm->ps->legsAnim == BOTH_WALKBACK2
+								|| pm->ps->legsAnim == BOTH_WALKBACK2_YODA)
 								&& pm->ps->saberBlockingTime < cg.time
 								&& !is_holding_block_button_and_attack
 								&& !is_holding_block_button
@@ -8120,6 +9447,8 @@ PM_TorsoAnimation
 */
 void PM_TorsoAnimation()
 {
+	animFlags_t flags = PA_Animationstyletable(pm);
+
 	const qboolean is_walking_and_blocking = ((pm->cmd.buttons & BUTTON_WALKING) && (pm->cmd.buttons & BUTTON_BLOCK)) ? qtrue : qfalse;
 
 	if (PM_InKnockDown(pm->ps) || PM_InRoll(pm->ps))
@@ -8270,6 +9599,7 @@ void PM_TorsoAnimation()
 						|| pm->ps->torsoAnim == BOTH_SABERDUAL_STANCE //not attacking
 						|| pm->ps->torsoAnim == BOTH_SABERDUAL_STANCE_JKA //not attacking
 						|| pm->ps->torsoAnim == BOTH_SABERPULL //not attacking
+						|| pm->ps->torsoAnim == BOTH_SABERPULL_YODA //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND1 //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_DUELS //not attacking
@@ -8283,10 +9613,23 @@ void PM_TorsoAnimation()
 					if (!PM_ForceAnim(pm->ps->torsoAnim) || pm->ps->torsoAnimTimer < 300)
 					{
 						//don't interrupt a force power anim
-						if (pm->ps->torsoAnim != BOTH_LOSE_SABER && !PM_SaberInMassiveBounce(pm->ps->torsoAnim)
-							|| !pm->ps->torsoAnimTimer)
+						if (pm->ps->torsoAnim != BOTH_LOSE_SABER && !PM_SaberInMassiveBounce(pm->ps->torsoAnim) || !pm->ps->torsoAnimTimer)
 						{
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isYoda == qtrue)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 					}
 				}
@@ -8405,397 +9748,19 @@ void PM_TorsoAnimation()
 	{
 		if (pm->ps->weapon == WP_SABER && pm->ps->SaberLength() && (pm->ps->SaberActive() || !g_noIgniteTwirl->integer))
 		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK1, SETANIM_FLAG_NORMAL); //TORSO_WEAPONREADY1
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN1 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN1_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN1_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN1_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_SINGLE_LIGHTSABER_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_SINGLE_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_STAFF_LIGHTSABER && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_STAFF_LIGHTSABER, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_DUAL_LIGHTSABER_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DUAL_LIGHTSABER_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_BAZOOKA && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BAZOOKA, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_BLASTER && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_BLASTER, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_DOUBLE_PISTOL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_GRENADE && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_GRENADE, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_HEAVY && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_MINIGUN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_HEAVY, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SPRINT_PISTOL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SPRINT_PISTOL, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN2 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN2_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN2_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN2_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN4 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN4, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN_STAFF && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN_STAFF_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_STAFF_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_RUN_DUAL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_RUN_DUAL_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_RUN_DUAL_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_BAZOOKA && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BAZOOKA, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_BLASTER && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_BLASTER, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_DOUBLE_PISTOL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_GRENADE && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_GRENADE, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_HEAVY && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_MINIGUN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_HEAVY, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_JOG_PISTOL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JOG_PISTOL, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK1 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_WALK1_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_ANI, SETANIM_FLAG_NORMAL);
-		}
-		// BENKENOBI
-		else if (pm->ps->legsAnim == BOTH_WALK1_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_BAZOOKA && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BAZOOKA, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_BLASTER && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_BLASTER, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_DOUBLE_PISTOL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DOUBLE_PISTOL, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_GRENADE && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_GRENADE, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_HEAVY && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_MINIGUN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_HEAVY, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_PISTOL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_PISTOL, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK1_STICK && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK1_STICK, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_MENUIDLE1 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_MENUIDLE1, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSINGLECROUCH_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_FORWARD_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_BACK_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_LEFT_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_RIGHT_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_BACK, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_DUAL_LEFT, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_FORWARD, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_BACK, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_RIGHT, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_STAFF_LEFT, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERDUALCROUCH && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERDUALCROUCH, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERSTAFFCROUCH, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_DUELS && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_DUELS, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_STAFF && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_STAFF, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_DUELS && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_DUELS, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND_SABER_ON_IDLE_STAFF, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK2 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_WALK2_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_ANI, SETANIM_FLAG_NORMAL);
-		}
-		// BENKENOBI
-		else if (pm->ps->legsAnim == BOTH_WALK2_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK2_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_STAFF && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_BEN && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_BEN, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_STAFF_AMD && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_STAFF_AMD, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_DUAL && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL, SETANIM_FLAG_NORMAL);
-		}
-		// ANAKIN
-		else if (pm->ps->legsAnim == BOTH_WALK_DUAL_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_ANI, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_WALK_DUAL_AMD && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_WALK_DUAL_AMD, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_CROUCH1IDLE && pm->ps->clientNum != 0) //player falls through
-		{
-			//
-		}
-		else if (pm->ps->legsAnim == BOTH_JUMP1 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1, SETANIM_FLAG_NORMAL, 100); // Only blend over 100ms
-		}
-		else if (pm->ps->legsAnim == BOTH_JUMP1_ANI && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_JUMP1_ANI, SETANIM_FLAG_NORMAL, 100); // Only blend over 100ms
-		}
-		else if (pm->ps->legsAnim == BOTH_SWIM_IDLE1 && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SWIM_IDLE1, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->legsAnim == BOTH_SWIMFORWARD && !weaponBusy)
-		{
-			PM_SetAnim(pm, SETANIM_TORSO, BOTH_SWIMFORWARD, SETANIM_FLAG_NORMAL);
-		}
-		else if (pm->ps->weapon == WP_NONE)
-		{
-			const int legs_anim = pm->ps->legsAnim;
-			PM_SetAnim(pm, SETANIM_TORSO, legs_anim, SETANIM_FLAG_NORMAL);
+			PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK1, SETANIM_FLAG_NORMAL);
 		}
 		else
 		{//Used to default to both_stand1 which is an arms-down anim
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{// new method of handling torso anims based on legs anims, to allow for more fluid transitions between torso and legs anims
+				PM_TorsoAnimFromLegs(pm, weaponBusy);// compiler limit hit moving to a helper function
+			}
+			else
+			{
+				PM_TorsoAnimFromLegsOld(pm, weaponBusy);// compiler limit hit moving to a helper function
+			}
+
 			if ((pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) && pm->ps->torsoAnim == BOTH_BUTTON_HOLD)
 			{
 				//using something
@@ -9046,13 +10011,41 @@ void PM_TorsoAnimation()
 
 					if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
 						if (cg.renderingThirdPerson)
 						{
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isBattleDroid == qtrue)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+								}
+								else
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+								}
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+							}
 						}
 						else
 						{
@@ -9256,6 +10249,7 @@ void PM_TorsoAnimation()
 			PM_SetAnim(pm, SETANIM_TORSO, BOTH_GUARD_IDLE1, SETANIM_FLAG_NORMAL);
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND1IDLE1
+			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_YODA
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE
@@ -9263,11 +10257,13 @@ void PM_TorsoAnimation()
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_ANI
+			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_BEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE2
 			|| pm->ps->legsAnim == BOTH_STAND3IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND5IDLE1
 			|| pm->ps->legsAnim == BOTH_MENUIDLE1
 			|| pm->ps->legsAnim == BOTH_STANDYODAIDLE_STICK
+			|| pm->ps->legsAnim == BOTH_STANDYODAIDLE_STICK_YODA
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE2
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE2P
 			|| pm->ps->legsAnim == TORSO_WEAPONIDLE3
@@ -9776,7 +10772,21 @@ void PM_TorsoAnimation()
 					{
 						if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 						{ //alt fire
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isBattleDroid == qtrue)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+								}
+								else
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+								}
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+							}
 
 							if (cg.renderingThirdPerson)
 							{
@@ -9797,7 +10807,21 @@ void PM_TorsoAnimation()
 						{ //normal fire
 							if (cg.renderingThirdPerson)
 							{ //third person
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (flags.isBattleDroid == qtrue)
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+									}
+									else
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+									}
+								}
+								else
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+								}
 
 								if (is_walking_and_blocking == qtrue)
 								{
@@ -10214,32 +11238,51 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI:
 	case BOTH_STAND1IDLE1: //# Random standing idle
+	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND2: //# Standing idle with a weapon
 	case BOTH_STAND2_JKA: //# Standing idle with a weapon
 	case BOTH_STAND_BLOCKING_ON:
 	case BOTH_STAND_BLOCKING_ON_ANI:
 	case BOTH_STAND_BLOCKING_ON_BEN:
+	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 		//
 	case BOTH_STAND_BLOCKING_ON_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
+	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
+	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
+	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT:
+	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD:
+	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BACK:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
+	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN:
 		//
 	case BOTH_SABERFAST_STANCE:
 	case BOTH_SABERFAST_STANCE_JKA:
@@ -10252,11 +11295,13 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 	case BOTH_STAND2IDLE1: //# Random standing idle
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
+	case BOTH_STAND2IDLE1_BEN: //# Random standing idle
 	case BOTH_STAND2IDLE2: //# Random standing idle
 	case BOTH_STAND3: //# Standing hands behind back: at ease: etc.
 	case BOTH_STAND3IDLE1: //# Random standing idle
@@ -10274,6 +11319,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_TALK2: //# Generic talk anim
 	case BOTH_STANDYODA_STICK:
 	case BOTH_STANDYODAIDLE_STICK:
+	case BOTH_STANDYODAIDLE_STICK_YODA:
 	case TORSO_WEAPONIDLE2:
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
@@ -10299,8 +11345,10 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	}
 	case BOTH_ATTACK1: //# Attack with generic 1-handed weapon
 	case BOTH_ATTACK2: //# Attack with generic 2-handed weapon
-	case BOTH_ATTACK3: //# Attack with heavy 2-handed weapon
-	case BOTH_ATTACK4: //# Attack with ???
+	case BOTH_ATTACK3:
+	case BOTH_ATTACK3_BDROID: //# Attack with heavy 2-handed weapon
+	case BOTH_ATTACK4: //# Attack with ???`
+	case BOTH_ATTACK4_BDROID:
 	case BOTH_MELEE1: //# First melee attack
 	case BOTH_MELEE2: //# Second melee attack
 	case BOTH_SLAP_L:
@@ -10335,6 +11383,7 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI:
 	case BOTH_STAND1IDLE1: //# Random standing idle
+	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND_SABER_ON_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE_DUELS:
 	case BOTH_STAND_SABER_ON_IDLE_STAFF:
@@ -10343,6 +11392,7 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_SABER_ON_STAFF:
 	case BOTH_STANDYODA_STICK:
 	case BOTH_STANDYODAIDLE_STICK:
+	case BOTH_STANDYODAIDLE_STICK_YODA:
 	case TORSO_WEAPONIDLE2:
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
@@ -10362,27 +11412,45 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 	case BOTH_STAND_BLOCKING_ON_ANI:
 	case BOTH_STAND_BLOCKING_ON_BEN:
+	case BOTH_STAND_BLOCKING_ON_YODA:
 		//
 	case BOTH_STAND_BLOCKING_ON_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
+	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
+	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
+	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT:
+	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD:
+	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BACK:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
+	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN:
 		//
 	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
@@ -10394,11 +11462,13 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 	case BOTH_STAND2IDLE1: //# Random standing idle
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
+	case BOTH_STAND2IDLE1_BEN: //# Random standing idle
 	case BOTH_STAND2IDLE2: //# Random standing idle
 	case BOTH_SABERSINGLECROUCH:
 	case BOTH_SABERSINGLECROUCH_ANI:
@@ -10853,6 +11923,7 @@ qboolean PM_StandingAnim(const int anim)
 	case BOTH_STAND3:
 	case BOTH_STAND4:
 	case BOTH_ATTACK3:
+	case BOTH_ATTACK3_BDROID:
 	case BOTH_STANDYODA_STICK:
 	case BOTH_STAND_SABER_ON:
 	case BOTH_STAND_SABER_ON_DUELS:
@@ -10861,9 +11932,12 @@ qboolean PM_StandingAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON:
 	case BOTH_STAND_BLOCKING_ON_BEN:
 	case BOTH_STAND_BLOCKING_ON_ANI:
+	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 		return qtrue;
 	default:;
 	}
@@ -10878,9 +11952,12 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON:
 	case BOTH_STAND_BLOCKING_ON_BEN:
 	case BOTH_STAND_BLOCKING_ON_ANI:
+	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
 	case BOTH_SABERFAST_STANCE_JKA_BEN:
@@ -10897,16 +11974,19 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 	case BOTH_STAND1:
 	case BOTH_STAND1IDLE1:
+	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI: //# Random standing idle
 	case BOTH_STAND2:
 	case BOTH_STAND2_JKA:
 	case BOTH_STAND2IDLE1:
+	case BOTH_STAND2IDLE1_BEN:
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
 	case BOTH_STAND2IDLE2:
 	case BOTH_STAND3:
@@ -10916,10 +11996,12 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND5IDLE1:
 	case BOTH_MENUIDLE1:
 	case BOTH_ATTACK3:
+	case BOTH_ATTACK3_BDROID:
 	case BOTH_ATTACK5:
 	case BOTH_ATTACK6:
 	case BOTH_STANDYODA_STICK:
 	case BOTH_STANDYODAIDLE_STICK:
+	case BOTH_STANDYODAIDLE_STICK_YODA:
 	case TORSO_WEAPONIDLE2:
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
@@ -10949,11 +12031,14 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	{
 	case BOTH_SABERFAST_STANCE: //single-saber, fast style
 	case BOTH_STAND_BLOCKING_ON:
+	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_BEN:
 	case BOTH_STAND_BLOCKING_ON_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
 	case BOTH_SABERFAST_STANCE_JKA_BEN:
@@ -10970,16 +12055,19 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 	case BOTH_STAND1:
 	case BOTH_STAND1IDLE1:
+	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI:
 	case BOTH_STAND2:
 	case BOTH_STAND2_JKA:
 	case BOTH_STAND2IDLE1:
+	case BOTH_STAND2IDLE1_BEN:
 	case BOTH_STAND2IDLE1_ANI:
 	case BOTH_STAND2IDLE2:
 	case BOTH_STAND3:
@@ -10990,6 +12078,7 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_MENUIDLE1:
 	case BOTH_STANDYODA_STICK:
 	case BOTH_STANDYODAIDLE_STICK:
+	case BOTH_STANDYODAIDLE_STICK_YODA:
 	case TORSO_WEAPONIDLE2:
 	case TORSO_WEAPONIDLE2P:
 	case TORSO_WEAPONIDLE3:
@@ -11872,6 +12961,7 @@ qboolean BG_IsAlreadyinTauntAnim(const int anim)
 		//
 	case BOTH_PISTOLRELOAD:
 	case BOTH_PISTOLCHARGE:
+	case BOTH_PISTOLCHARGE_BEN:
 	case BOTH_PISTOLFAIL:
 		//
 	case BOTH_RELOAD_MINIGUN:
@@ -11904,6 +12994,7 @@ qboolean PM_Bobaspecialanim(const int anim)
 		//
 	case BOTH_PISTOLRELOAD:
 	case BOTH_PISTOLCHARGE:
+	case BOTH_PISTOLCHARGE_BEN:
 	case BOTH_PISTOLFAIL:
 		//
 	case BOTH_RELOAD_MINIGUN:
@@ -11913,7 +13004,9 @@ qboolean PM_Bobaspecialanim(const int anim)
 	case BOTH_GUNSIT1:
 	case BOTH_ATTACK2:
 	case BOTH_ATTACK3:
+	case BOTH_ATTACK3_BDROID:
 	case BOTH_ATTACK4:
+	case BOTH_ATTACK4_BDROID:
 	case BOTH_ATTACK_DUAL:
 	case BOTH_ATTACK_FP:
 	case BOTH_READY_DUAL:

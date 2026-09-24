@@ -611,6 +611,7 @@ static bool NPC_BSFollowLeader_InFullBodyAttack()
 	return NPC->client->ps.legsAnim == BOTH_ATTACK1 ||
 		NPC->client->ps.legsAnim == BOTH_ATTACK2 ||
 		NPC->client->ps.legsAnim == BOTH_ATTACK3 ||
+		NPC->client->ps.legsAnim == BOTH_ATTACK3_BDROID ||
 		NPC->client->ps.legsAnim == BOTH_MELEE1 ||
 		NPC->client->ps.legsAnim == BOTH_MELEE2;
 }
@@ -844,13 +845,17 @@ void NPC_BSJump()
 		if (NPC->s.groundEntityNum != ENTITYNUM_NONE)
 		{
 			//Landed, start landing anim
-			//FIXME: if the
 			VectorClear(NPC->client->ps.velocity);
+
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
 				if (flags.isAnakin == qtrue)
 				{
 					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
@@ -862,7 +867,6 @@ void NPC_BSJump()
 				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 			NPCInfo->jumpState = JS_LANDING;
-			//FIXME: landsound?
 		}
 		else if (NPC->client->ps.legsAnimTimer > 0)
 		{
@@ -876,6 +880,11 @@ void NPC_BSJump()
 				{
 					//still in air, but done with jump anim, play inair anim
 					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_ANI, SETANIM_FLAG_OVERRIDE);
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_YODA, SETANIM_FLAG_OVERRIDE);
 				}
 				else
 				{

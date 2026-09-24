@@ -15400,6 +15400,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 	//Prevent camera flicker while landing.
 	if (cg.snap->ps.legsAnim == BOTH_LAND1
 		|| cg.snap->ps.legsAnim == BOTH_LAND1_ANI
+		|| cg.snap->ps.legsAnim == BOTH_LAND1_YODA
 		|| cg.snap->ps.legsAnim == BOTH_LAND2
 		|| cg.snap->ps.legsAnim == BOTH_LANDBACK1
 		|| cg.snap->ps.legsAnim == BOTH_LANDLEFT1
@@ -15410,7 +15411,9 @@ static void SmoothTrueView(vec3_t eye_angles)
 
 	//Prevent the camera flicker while switching to the saber.
 	if (cg.snap->ps.torsoAnim == BOTH_STAND2TO1
-		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2)
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_YODA
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_YODA)
 	{
 		use_ref_def = qtrue;
 	}

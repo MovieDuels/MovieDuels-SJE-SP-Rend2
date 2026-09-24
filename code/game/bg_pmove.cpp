@@ -1315,6 +1315,10 @@ static void PM_JumpForDir()
 			{
 				anim = BOTH_JUMP1_ANI;
 			}
+			else if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_JUMP1_YODA;
+			}
 			else
 			{
 				anim = BOTH_JUMP1;
@@ -1348,6 +1352,10 @@ static void PM_JumpForDir()
 			if (flags.isAnakin == qtrue)
 			{
 				anim = BOTH_JUMP1_ANI;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_JUMP1_YODA;
 			}
 			else
 			{
@@ -4404,6 +4412,10 @@ static int PM_GetLandingAnim()
 			{
 				return BOTH_LAND1_ANI;
 			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_LAND1_YODA;
+			}
 			else
 			{
 				return BOTH_LAND1;
@@ -4500,13 +4512,19 @@ static int PM_GetLandingAnim()
 		break;
 	case BOTH_JUMP1:
 	case BOTH_JUMP1_ANI:
+	case BOTH_JUMP1_YODA:
 	case BOTH_INAIR1:
 	case BOTH_INAIR1_ANI:
+	case BOTH_INAIR1_YODA:
 		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 		{
 			if (flags.isAnakin == qtrue)
 			{
 				anim = BOTH_LAND1_ANI;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_LAND1_YODA;
 			}
 			else
 			{
@@ -4617,6 +4635,10 @@ static int PM_GetLandingAnim()
 				if (flags.isAnakin == qtrue)
 				{
 					anim = BOTH_LAND1_ANI;
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					anim = BOTH_LAND1_YODA;
 				}
 				else
 				{
@@ -5632,16 +5654,25 @@ static int PM_ForceJumpAnimForJumpAnim(int anim)
 	case BOTH_JUMP1_ANI: //# Jump - wind-up and leave ground
 		anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
 		break;
+	case BOTH_JUMP1_YODA: //# Jump - wind-up and leave ground
+		anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
+		break;
 	case BOTH_INAIR1: //# In air loop (from jump)
 		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
 		break;
 	case BOTH_INAIR1_ANI: //# In air loop (from jump)
 		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
 		break;
+	case BOTH_INAIR1_YODA: //# In air loop (from jump)
+		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
+		break;
 	case BOTH_LAND1: //# Landing (from in air loop)
 		anim = BOTH_FORCELAND1; //# Landing (from in air loop)
 		break;
 	case BOTH_LAND1_ANI: //# Landing (from in air loop)
+		anim = BOTH_FORCELAND1; //# Landing (from in air loop)
+		break;
+	case BOTH_LAND1_YODA: //# Landing (from in air loop)
 		anim = BOTH_FORCELAND1; //# Landing (from in air loop)
 		break;
 	case BOTH_JUMPBACK1: //# Jump backwards - wind-up and leave ground
@@ -6202,6 +6233,10 @@ static void PM_GroundTraceMissed()
 							{
 								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_ANI, SETANIM_FLAG_NORMAL, 350);
 							}
+							else if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_YODA, SETANIM_FLAG_NORMAL, 350);
+							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
@@ -6226,6 +6261,10 @@ static void PM_GroundTraceMissed()
 							if (flags.isAnakin == qtrue)
 							{
 								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_ANI, SETANIM_FLAG_NORMAL, 350);
+							}
+							else if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_YODA, SETANIM_FLAG_NORMAL, 350);
 							}
 							else
 							{
@@ -6295,8 +6334,12 @@ static void PM_GroundTraceMissed()
 											if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 											{
 												if (flags.isAnakin == qtrue)
-												{//redundant
+												{
 													anim = BOTH_INAIR1_ANI;
+												}
+												else if (flags.isYoda == qtrue)
+												{
+													anim = BOTH_INAIR1_YODA;
 												}
 												else
 												{
@@ -6328,8 +6371,12 @@ static void PM_GroundTraceMissed()
 												if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 												{
 													if (flags.isAnakin == qtrue)
-													{//redundant
+													{
 														anim = BOTH_INAIR1_ANI;
+													}
+													else if (flags.isYoda == qtrue)
+													{
+														anim = BOTH_INAIR1_YODA;
 													}
 													else
 													{
@@ -6363,6 +6410,10 @@ static void PM_GroundTraceMissed()
 											if (flags.isAnakin == qtrue)
 											{
 												PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1_ANI, SETANIM_FLAG_OVERRIDE, 100);
+											}
+											else if (flags.isYoda == qtrue)
+											{
+												PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1_YODA, SETANIM_FLAG_OVERRIDE, 100);
 											}
 											else
 											{
@@ -7177,11 +7228,15 @@ qboolean PM_ForceAnim(const int anim)
 	case BOTH_CHOKE1: //being choked...???
 	case BOTH_GESTURE1: //taunting...
 	case BOTH_RESISTPUSH: //# plant yourself to resist force push/pulls.
-	case BOTH_FORCEPUSH: //# Use off-hand to do force power.
+	case BOTH_FORCEPUSH:
+	case BOTH_FORCEPUSH_YODA: //# Use off-hand to do force power.
 	case BOTH_DUAL_PUSH: //# Use off-hand to do force power.
-	case BOTH_FORCEPULL: //# Use off-hand to do force power.
+	case BOTH_FORCEPULL:
+	case BOTH_FORCEPULL_YODA: //# Use off-hand to do force power.
 	case BOTH_MINDTRICK1: //# Use off-hand to do mind trick
 	case BOTH_MINDTRICK2: //# Use off-hand to do distraction
+	case BOTH_MINDTRICK1_YODA: //# Use off-hand to do mind trick
+	case BOTH_MINDTRICK2_YODA: //# Use off-hand to do distraction
 	case BOTH_FORCELIGHTNING: //# Use off-hand to do lightning
 	case BOTH_FORCELIGHTNING_START:
 	case BOTH_FORCELIGHTNING_HOLD: //# Use off-hand to do lightning
@@ -7815,12 +7870,19 @@ qboolean PM_BoltBlockingAnim(const int anim)
 	case BOTH_BOLT_BLOCK_STAFF_TOP_RIGHT:
 		//
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA:
 		//
 	case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_LEFT:
 	case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_RIGHT:
@@ -8649,6 +8711,7 @@ qboolean PM_ReloadAnim(const int anim)
 		//
 	case BOTH_PISTOLRELOAD:
 	case BOTH_PISTOLCHARGE:
+	case BOTH_PISTOLCHARGE_BEN:
 	case BOTH_PISTOLFAIL:
 		return qtrue;
 	default:;
@@ -8665,6 +8728,7 @@ qboolean PM_WeponRestAnim(const int anim)
 	case TORSO_WEAPONREST4:
 		//
 	case BOTH_STAND1IDLE1:
+	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI:
 		//
@@ -9028,8 +9092,10 @@ qboolean PM_JumpingAnim(const int anim)
 	case BOTH_JUMP1_ANI: //# Jump - wind-up and leave ground
 	case BOTH_INAIR1: //# In air loop (from jump)
 	case BOTH_INAIR1_ANI: //# In air loop (from jump)
+	case BOTH_INAIR1_YODA: //# In air loop (from jump)
 	case BOTH_LAND1: //# Landing (from in air loop)
 	case BOTH_LAND1_ANI: //# Landing (from in air loop)
+	case BOTH_LAND1_YODA: //# Landing (from in air loop)
 	case BOTH_LAND2: //# Landing Hard (from a great height)
 	case BOTH_JUMPBACK1: //# Jump backwards - wind-up and leave ground
 	case BOTH_INAIRBACK1: //# In air loop (from jump back)
@@ -9057,6 +9123,7 @@ qboolean PM_LandingAnim(const int anim)
 	{
 	case BOTH_LAND1: //# Landing (from in air loop)
 	case BOTH_LAND1_ANI: //# Landing (from in air loop)
+	case BOTH_LAND1_YODA: //# Landing (from in air loop)
 	case BOTH_LAND2: //# Landing Hard (from a great height)
 	case BOTH_LANDBACK1: //# Landing backwards(from in air loop)
 	case BOTH_LANDLEFT1: //# Landing left(from in air loop)
@@ -9141,8 +9208,10 @@ qboolean PM_WalkingAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_WALK1: //# Normal walk
+	case BOTH_WALK1_YODA:
 	case BOTH_WALK1_MDA:
 	case BOTH_WALK2: //# Normal walk with saber
+	case BOTH_WALK2_YODA:
 	case BOTH_WALK_STAFF:
 	case BOTH_WALK_STAFF_AMD: //# Normal walk with staff
 	case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
@@ -9153,10 +9222,12 @@ qboolean PM_WalkingAnim(const int anim)
 	case BOTH_WALK7: //# Fast walk
 	case BOTH_WALKBACK1: //# Walk1 backwards
 	case BOTH_WALKBACK2: //# Walk2 backwards
+	case BOTH_WALKBACK2_YODA: //# Walk2 backwards with yoda
 	case BOTH_WALKBACK_STAFF: //# Walk backwards with staff
 	case BOTH_WALKBACK_DUAL: //# Walk backwards with dual
 	case BOTH_MENUIDLE1: //# Walk backwards with dual
 	case BOTH_WALK1_STICK: //# Normal yoda walk
+	case BOTH_WALK1_STICK_YODA:
 		//
 	case BOTH_WALKBACK_PISTOL:
 	case BOTH_WALKBACK_BLASTER:
@@ -9191,10 +9262,13 @@ qboolean PM_RunningAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_RUN1:
+	case BOTH_RUN1_YODA:
 	case BOTH_SPRINT:
+	case BOTH_SPRINT_YODA:
 	case BOTH_SPRINT_BEN:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_YODA:
 	case BOTH_SPRINT_STAFF_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER_BEN:
@@ -9206,6 +9280,7 @@ qboolean PM_RunningAnim(const int anim)
 	case BOTH_SPRINT_MINIGUN:
 	case BOTH_SPRINT_PISTOL:
 	case BOTH_RUN2:
+	case BOTH_RUN2_YODA:
 	case BOTH_RUN4:
 	case BOTH_RUN5:
 	case BOTH_RUN6:
@@ -9220,9 +9295,12 @@ qboolean PM_RunningAnim(const int anim)
 	case SBD_RUNING_WEAPON:
 	case SBD_RUNBACK_WEAPON:
 	case BOTH_RUN_STAFF:
+	case BOTH_RUN_STAFF_BEN:
 	case BOTH_RUN_DUAL:
+	case BOTH_RUN_DUAL_BEN:
 	case BOTH_RUNBACK1:
 	case BOTH_RUNBACK2:
+	case BOTH_RUNBACK2_YODA:
 	case BOTH_RUNBACK_STAFF:
 	case BOTH_RUN1START: //# Start into full run1
 	case BOTH_RUN1STOP: //# Stop from full run1
@@ -9263,10 +9341,13 @@ static qboolean PM_NotWalkingAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_RUN1:
+	case BOTH_RUN1_YODA:
 	case BOTH_SPRINT:
+	case BOTH_SPRINT_YODA:
 	case BOTH_SPRINT_BEN:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_YODA:
 	case BOTH_SPRINT_STAFF_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER_BEN:
@@ -9278,11 +9359,15 @@ static qboolean PM_NotWalkingAnim(const int anim)
 	case BOTH_SPRINT_MINIGUN:
 	case BOTH_SPRINT_PISTOL:
 	case BOTH_RUN2:
+	case BOTH_RUN2_YODA:
 	case BOTH_RUN4:
 	case BOTH_RUN_STAFF:
+	case BOTH_RUN_STAFF_BEN:
 	case BOTH_RUN_DUAL:
+	case BOTH_RUN_DUAL_BEN:
 	case BOTH_RUNBACK1:
 	case BOTH_RUNBACK2:
+	case BOTH_RUNBACK2_YODA:
 	case BOTH_RUNBACK_STAFF:
 	case BOTH_RUN1START: //# Start into full run1
 	case BOTH_RUN1STOP: //# Stop from full run1
@@ -9354,8 +9439,10 @@ static qboolean PM_SaberWalkAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_WALK1:
+	case BOTH_WALK1_YODA:
 	case BOTH_WALK1_MDA:
 	case BOTH_WALK2: //# Normal walk with saber
+	case BOTH_WALK2_YODA: //# Normal walk with saber
 	case BOTH_WALK_STAFF: //# Normal walk with staff
 	case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
 	case BOTH_WALK_STAFF_AMD:
@@ -9363,10 +9450,12 @@ static qboolean PM_SaberWalkAnim(const int anim)
 	case BOTH_WALK_DUAL_AMD: //# Normal walk with staff
 	case BOTH_WALKBACK1: //# Walk1 backwards
 	case BOTH_WALKBACK2: //# Walk2 backwards
+	case BOTH_WALKBACK2_YODA: //# Walk2 backwards with yoda
 	case BOTH_WALKBACK_STAFF: //# Walk backwards with staff
 	case BOTH_WALKBACK_DUAL: //# Walk backwards with dual
 	case BOTH_MENUIDLE1: //# Walk backwards with dual
 	case BOTH_WALK1_STICK: //# Normal yoda walk
+	case BOTH_WALK1_STICK_YODA: //# Normal yoda walk
 		//////////////////////////////////////////
 			// ANAKIN
 	case BOTH_WALK2_ANI:
@@ -9662,27 +9751,6 @@ static void PM_FootSlopeTrace(float* p_diff, float* p_interval)
 		nullptr, pm->gent->s.modelScale);
 	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, pm->gent->client->renderInfo.footRPoint);
 #endif
-	//NOTE: on AT-STs, rotating the foot moves this point, so it will wiggle...
-	//		we have to do this extra work (more G2 transforms) to stop the wiggle... is it worth it?
-	/*
-	if ( pm->gent->client->NPC_class == CLASS_ATST )
-	{
-		mdxaBone_t	bolt_matrix;
-		vec3_t		G2Angles = {0, pm->gent->client->ps.legsYaw, 0};
-		//get the feet
-		gi.G2API_SetBoneAnglesIndex( &pm->gent->ghoul2[0], pm->gent->footLBone, vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_Z, NEGATIVE_Y, NEGATIVE_X, NULL );
-		gi.G2API_GetBoltMatrix( pm->gent->ghoul2, pm->gent->playerModel, pm->gent->footLBolt,
-				&bolt_matrix, G2Angles, pm->ps->origin, (cg.time?cg.time:level.time),
-						NULL, pm->gent->s.modelScale );
-		gi.G2API_GiveMeVectorFromMatrix( bolt_matrix, ORIGIN, pm->gent->client->renderInfo.footLPoint );
-
-		gi.G2API_SetBoneAnglesIndex( &pm->gent->ghoul2[0], pm->gent->footRBone, vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_Z, NEGATIVE_Y, NEGATIVE_X, NULL );
-		gi.G2API_GetBoltMatrix( pm->gent->ghoul2, pm->gent->playerModel, pm->gent->footRBolt,
-						&bolt_matrix, G2Angles, pm->ps->origin, (cg.time?cg.time:level.time),
-						NULL, pm->gent->s.modelScale );
-		gi.G2API_GiveMeVectorFromMatrix( bolt_matrix, ORIGIN, pm->gent->client->renderInfo.footRPoint );
-	}
-	*/
 	//get these on the cgame and store it, save ourselves a ghoul2 construct skel call
 	VectorCopy(pm->gent->client->renderInfo.footLPoint, foot_l_org);
 	VectorCopy(pm->gent->client->renderInfo.footRPoint, foot_r_org);
@@ -9844,27 +9912,45 @@ qboolean PM_SaberStanceAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON:
 	case BOTH_STAND_BLOCKING_ON_BEN:
 	case BOTH_STAND_BLOCKING_ON_ANI:
+	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 		//
 	case BOTH_STAND_BLOCKING_ON_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
+	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
+	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
+	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT:
+	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD:
+	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BACK:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
+	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
+	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN:
 		//
 	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
@@ -9882,6 +9968,7 @@ qboolean PM_SaberStanceAnim(const int anim)
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+	case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
 	case BOTH_SABERDESANN_STANCE: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
@@ -9904,7 +9991,9 @@ qboolean PM_SaberDrawPutawayAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_STAND1TO2:
+	case BOTH_STAND1TO2_YODA:
 	case BOTH_STAND2TO1:
+	case BOTH_STAND2TO1_YODA:
 	case BOTH_S1_S7:
 	case BOTH_S1_S7_AMD:
 	case BOTH_S7_S1:
@@ -10030,28 +10119,46 @@ static qboolean PM_AdjustStandAnimForSlope()
 		case BOTH_SABERFAST_STANCE:
 		case BOTH_STAND_BLOCKING_ON:
 		case BOTH_STAND_BLOCKING_ON_ANI:
+		case BOTH_STAND_BLOCKING_ON_YODA:
 		case BOTH_STAND_BLOCKING_ON_DUAL:
 		case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
 		case BOTH_STAND_BLOCKING_ON_STAFF:
+		case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 		case BOTH_STAND_BLOCKING_ON_BEN:
+		case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 			//
 		case BOTH_STAND_BLOCKING_ON_FORWARD:
 		case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
+		case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
+		case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
 		case BOTH_STAND_BLOCKING_ON_BACK:
 		case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 		case BOTH_STAND_BLOCKING_ON_BACK_BEN:
+		case BOTH_STAND_BLOCKING_ON_BACK_YODA:
 		case BOTH_STAND_BLOCKING_ON_RIGHT:
+		case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
+		case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
 		case BOTH_STAND_BLOCKING_ON_LEFT:
 		case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+		case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
+		case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
 		case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 		case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
+		case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
 		case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
+		case BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN:
 		case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
+		case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN:
 		case BOTH_STAND_BLOCKING_ON_DUAL_LEFT:
+		case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN:
 		case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD:
+		case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN:
 		case BOTH_STAND_BLOCKING_ON_STAFF_BACK:
+		case BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN:
 		case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
+		case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN:
 		case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
+		case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN:
 			//
 		case BOTH_SABERFAST_STANCE_JKA:
 		case BOTH_SABERFAST_STANCE_JKA_ANI:
@@ -10063,6 +10170,7 @@ static qboolean PM_AdjustStandAnimForSlope()
 		case BOTH_SABERTAVION_STANCE:
 		case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 		case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+		case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
 		case BOTH_SABERDESANN_STANCE:
 		case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 		case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
@@ -10267,27 +10375,45 @@ static qboolean PM_AdjustStandAnimForSlope()
 			case BOTH_STAND_BLOCKING_ON:
 			case BOTH_STAND_BLOCKING_ON_BEN:
 			case BOTH_STAND_BLOCKING_ON_ANI:
+			case BOTH_STAND_BLOCKING_ON_YODA:
 			case BOTH_STAND_BLOCKING_ON_DUAL:
 			case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+			case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 			case BOTH_STAND_BLOCKING_ON_STAFF:
+			case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
 				//
 			case BOTH_STAND_BLOCKING_ON_FORWARD:
 			case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
+			case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
+			case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
 			case BOTH_STAND_BLOCKING_ON_BACK:
 			case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 			case BOTH_STAND_BLOCKING_ON_BACK_BEN:
+			case BOTH_STAND_BLOCKING_ON_BACK_YODA:
 			case BOTH_STAND_BLOCKING_ON_RIGHT:
+			case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
+			case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
 			case BOTH_STAND_BLOCKING_ON_LEFT:
 			case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
+			case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
+			case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
 			case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 			case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
+			case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
 			case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
+			case BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN:
 			case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
+			case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN:
 			case BOTH_STAND_BLOCKING_ON_DUAL_LEFT:
+			case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN:
 			case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD:
+			case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN:
 			case BOTH_STAND_BLOCKING_ON_STAFF_BACK:
+			case BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN:
 			case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
+			case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN:
 			case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
+			case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN:
 				//
 			case BOTH_SABERFAST_STANCE_JKA:
 			case BOTH_SABERFAST_STANCE_JKA_ANI:
@@ -10299,6 +10425,7 @@ static qboolean PM_AdjustStandAnimForSlope()
 			case BOTH_SABERTAVION_STANCE:
 			case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 			case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+			case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
 			case BOTH_SABERDESANN_STANCE:
 			case BOTH_SABERDESANN_STANCE_JKA: //desann saber style
 			case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
@@ -10709,6 +10836,29 @@ static int PM_GetSprintAnim(const pmove_t* pm)
 {
 	animFlags_t flags = PM_Animationstyletable(pm);
 
+	// If saber is being drawn or put away, always use BOTH_RUN1
+	if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim) || (!pm->ps->SaberActive()))
+	{
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isBenKenobi == qtrue)
+			{
+				return BOTH_SPRINT_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_SPRINT_YODA;
+			}
+			else
+			{
+				return BOTH_SPRINT;
+			}
+		}
+		else
+		{
+			return BOTH_SPRINT;
+		}
+	}
 	switch (pm->ps->saberAnimLevel)
 	{
 	case SS_DUAL:
@@ -10760,6 +10910,10 @@ static int PM_GetSprintAnim(const pmove_t* pm)
 			{
 				return BOTH_SPRINT_SINGLE_LIGHTSABER_BEN;
 			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_SPRINT_SINGLE_LIGHTSABER_YODA;
+			}
 			else
 			{
 				return BOTH_SPRINT_SINGLE_LIGHTSABER;
@@ -10774,22 +10928,66 @@ static int PM_GetSprintAnim(const pmove_t* pm)
 
 static int PM_GetRunAnim(const pmove_t* pm)
 {
+	// Retrieve animation-style flags
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	// Safety
 	if (pm == nullptr ||
 		pm->ps == nullptr ||
 		pm->gent == nullptr ||
 		pm->gent->client == nullptr)
 	{
-		return BOTH_RUN1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_RUN1_ANI;
+			}
+			else if (flags.isBenKenobi == qtrue)
+			{
+				return BOTH_RUN1_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_RUN1_YODA;
+			}
+			else
+			{
+				return BOTH_RUN1;
+			}
+		}
+		else
+		{
+			return BOTH_RUN1;
+		}
 	}
 
-	// Retrieve animation-style flags
-	animFlags_t flags = PM_Animationstyletable(pm);
-
 	// If saber is being drawn or put away, always use BOTH_RUN1
-	if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
+	if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim) || (!pm->ps->SaberActive()))
 	{
-		return BOTH_RUN1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_RUN1_ANI;
+			}
+			else if (flags.isBenKenobi == qtrue)
+			{
+				return BOTH_RUN1_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_RUN1_YODA;
+			}
+			else
+			{
+				return BOTH_RUN1;
+			}
+		}
+		else
+		{
+			return BOTH_RUN1;
+		}
 	}
 
 	// Select run animation based on saberAnimLevel
@@ -10801,6 +10999,10 @@ static int PM_GetRunAnim(const pmove_t* pm)
 			if (flags.isAnakin == qtrue)
 			{
 				return BOTH_RUN_DUAL_ANI;
+			}
+			else if (flags.isBenKenobi == qtrue)
+			{
+				return BOTH_RUN_DUAL_BEN;
 			}
 			else
 			{
@@ -10818,6 +11020,10 @@ static int PM_GetRunAnim(const pmove_t* pm)
 			if (flags.isAnakin == qtrue)
 			{
 				return BOTH_RUN_STAFF_ANI;
+			}
+			else if (flags.isBenKenobi == qtrue)
+			{
+				return BOTH_RUN_STAFF_BEN;
 			}
 			else
 			{
@@ -10840,6 +11046,10 @@ static int PM_GetRunAnim(const pmove_t* pm)
 			{
 				return BOTH_RUN2_BEN;
 			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_RUN2_YODA;
+			}
 			else
 			{
 				return BOTH_RUN2;
@@ -10854,19 +11064,63 @@ static int PM_GetRunAnim(const pmove_t* pm)
 
 static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_button)
 {
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	if (pm == nullptr ||
 		pm->ps == nullptr ||
 		pm->gent == nullptr ||
 		pm->gent->client == nullptr)
 	{
-		return BOTH_WALK1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_WALK1_ANI;
+			}
+			else if (flags.isBenKenobi == qtrue)
+			{
+				return BOTH_WALK1_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_WALK1_YODA;
+			}
+			else
+			{
+				return BOTH_WALK1;
+			}
+		}
+		else
+		{
+			return BOTH_WALK1;
+		}
 	}
-
-	animFlags_t flags = PM_Animationstyletable(pm);
 
 	if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
 	{
-		return BOTH_WALK1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isAnakin == qtrue)
+			{
+				return BOTH_WALK1_ANI;
+			}
+			else if (flags.isBenKenobi == qtrue)
+			{
+				return BOTH_WALK1_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_WALK1_YODA;
+			}
+			else
+			{
+				return BOTH_WALK1;
+			}
+		}
+		else
+		{
+			return BOTH_WALK1;
+		}
 	}
 
 	// ---------------------------
@@ -10971,9 +11225,16 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 				}
 				else
 				{
-					if (flags.isBenKenobi == qtrue)
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 					{
-						return BOTH_WALK_STAFF_BEN;
+						if (flags.isBenKenobi == qtrue)
+						{
+							return BOTH_WALK_STAFF_BEN;
+						}
+						else
+						{
+							return BOTH_WALK_STAFF;
+						}
 					}
 					else
 					{
@@ -11009,6 +11270,10 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 				{
 					return BOTH_WALK2_BEN;
 				}
+				else if (flags.isYoda == qtrue)
+				{
+					return BOTH_WALK2_YODA;
+				}
 				else
 				{
 					return BOTH_WALK2;
@@ -11037,6 +11302,10 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 					else if (flags.isBenKenobi == qtrue)
 					{
 						return BOTH_WALK2_BEN;
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						return BOTH_WALK2_YODA;
 					}
 					else
 					{
@@ -11109,6 +11378,10 @@ static int PM_GetWalkAnim(const pmove_t* pm, const qboolean is_holding_block_but
 			else if (flags.isBenKenobi == qtrue)
 			{
 				return BOTH_WALK2_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				return BOTH_WALK2_YODA;
 			}
 			else
 			{
@@ -11473,10 +11746,23 @@ static void PM_Footsteps()
 			{
 				if (!PM_AdjustStandAnimForSlope())
 				{
-					if (pm->ps->legsAnim != BOTH_LOSE_SABER && !PM_SaberInMassiveBounce(pm->ps->torsoAnim)
-						|| !pm->ps->legsAnimTimer)
+					if (pm->ps->legsAnim != BOTH_LOSE_SABER && !PM_SaberInMassiveBounce(pm->ps->torsoAnim) || !pm->ps->legsAnimTimer)
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_SABERPULL, SETANIM_FLAG_NORMAL);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SABERPULL_YODA, SETANIM_FLAG_NORMAL);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SABERPULL, SETANIM_FLAG_NORMAL);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_SABERPULL, SETANIM_FLAG_NORMAL);
+						}
 					}
 				}
 			}
@@ -11772,7 +12058,21 @@ static void PM_Footsteps()
 			{
 				if (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer())
 				{
-					PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK2, set_anim_flags);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isYoda == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK2_YODA, set_anim_flags);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK2, set_anim_flags);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK2, set_anim_flags);
+					}
 				}
 				else
 				{
@@ -11955,7 +12255,21 @@ static void PM_Footsteps()
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK2, set_anim_flags);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK2_YODA, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK2, set_anim_flags);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK2, set_anim_flags);
+						}
 					}
 				}
 			}
@@ -12120,6 +12434,14 @@ static void PM_Footsteps()
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_BEN, set_anim_flags);
 							}
+							else if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT_YODA, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SPRINT, set_anim_flags);
+							}
 						}
 						else
 						{
@@ -12130,7 +12452,29 @@ static void PM_Footsteps()
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isAnakin == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1_ANI, set_anim_flags);
+							}
+							else if (flags.isBenKenobi == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1_BEN, set_anim_flags);
+							}
+							else if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1_YODA, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
+						}
 
 						PM_RemoveSprintFlag(qtrue);
 					}
@@ -12330,7 +12674,29 @@ static void PM_Footsteps()
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isAnakin == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1_ANI, set_anim_flags);
+							}
+							else if (flags.isBenKenobi == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1_BEN, set_anim_flags);
+							}
+							else if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1_YODA, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUN1, set_anim_flags);
+						}
 
 						PM_RemoveSprintFlag(qtrue);
 					}
@@ -12378,14 +12744,6 @@ static void PM_Footsteps()
 						//normal walk
 						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, SETANIM_FLAG_NORMAL);
 					}
-				}
-				else if (pm->gent->client->NPC_class == CLASS_YODA && pm->ps->weapon == WP_MELEE)
-				{
-					PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_STICK, set_anim_flags);
-				}
-				else if (pm->gent->client->NPC_class == CLASS_SITHLORD && pm->ps->weapon == WP_MELEE)
-				{
-					PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, set_anim_flags);
 				}
 				else
 				{
@@ -12454,9 +12812,65 @@ static void PM_Footsteps()
 					{
 						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK_GRENADE, set_anim_flags);
 					}
+					else if (pm->ps->weapon == WP_MELEE)
+					{
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if ((flags.isYoda == qtrue) || (pm->gent->client->NPC_class == CLASS_YODA))
+							{
+								//PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_STICK_YODA, set_anim_flags);
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_YODA, set_anim_flags);
+							}
+							else if (pm->gent->client->NPC_class == CLASS_SITHLORD)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, set_anim_flags);
+							}
+						}
+						else
+						{
+							if (pm->gent->client->NPC_class == CLASS_YODA)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_YODA, set_anim_flags);
+							}
+							else if (pm->gent->client->NPC_class == CLASS_SITHLORD)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_MDA, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, set_anim_flags);
+							}
+						}
+					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, set_anim_flags);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isAnakin == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_ANI, set_anim_flags);
+							}
+							else if (flags.isBenKenobi == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_BEN, set_anim_flags);
+							}
+							else if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1_YODA, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, set_anim_flags);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALK1, set_anim_flags);
+						}
 					}
 				}
 				//Enemy NPCs always make footsteps for the benefit of the player
@@ -12730,6 +13144,7 @@ extern qboolean PM_AllowedDualPistol();
 
 static void PM_BeginWeaponChange(const int weapon)
 {
+	animFlags_t flags = PM_Animationstyletable(pm);
 	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
@@ -12867,7 +13282,28 @@ static void PM_BeginWeaponChange(const int weapon)
 			{
 				if (!g_noIgniteTwirl->integer && !is_holding_block_button && !IsSurrendering(gent)) //twirl on
 				{
-					PM_SetSaberMove(LS_PUTAWAY);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isYoda == qtrue)
+						{
+							if (PM_RunningAnim(pm->ps->legsAnim))
+							{
+								//PM_SetSaberMove(LS_PUTAWAY);
+							}
+							else
+							{
+								PM_SetSaberMove(LS_PUTAWAY_YODA);
+							}
+						}
+						else
+						{
+							PM_SetSaberMove(LS_PUTAWAY);
+						}
+					}
+					else
+					{
+						PM_SetSaberMove(LS_PUTAWAY);
+					}
 				}
 			}
 		}
@@ -12885,6 +13321,8 @@ PM_FinishWeaponChange
 static void PM_FinishWeaponChange()
 {
 	qboolean true_switch = qtrue;
+
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	if (pm->gent && pm->gent->client && pm->gent->client->pers.enterTime >= level.time - 500)
 	{
@@ -12919,8 +13357,7 @@ static void PM_FinishWeaponChange()
 		gentity_t* dropped = Drop_Item(pm->gent, item, 0, qfalse);
 		dropped->count = pm->ps->ammo[AMMO_EMPLACED];
 		gi.G2API_InitGhoul2Model(dropped->ghoul2, "models/map_objects/hoth/eweb_model.glm",
-			G_ModelIndex("models/map_objects/hoth/eweb_model.glm"), NULL_HANDLE, NULL_HANDLE,
-			0, 0);
+			G_ModelIndex("models/map_objects/hoth/eweb_model.glm"), NULL_HANDLE, NULL_HANDLE, 0, 0);
 		gi.G2API_SetSurfaceOnOff(&dropped->ghoul2[0], "eweb_cannon", 0x00000002);
 		dropped->s.radius = 10;
 		dropped->delay = level.time + 1000;
@@ -13028,7 +13465,28 @@ static void PM_FinishWeaponChange()
 			//actually did switch weapons, play anim
 			if (!G_IsRidingVehicle(pm->gent) && !IsSurrendering(pm->gent))
 			{
-				PM_SetSaberMove(LS_DRAW);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							PM_SetSaberMove(LS_DRAW);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_DRAW_YODA);
+						}
+					}
+					else
+					{
+						PM_SetSaberMove(LS_DRAW);
+					}
+				}
+				else
+				{
+					PM_SetSaberMove(LS_DRAW);
+				}
 			}
 		}
 	}
@@ -13484,6 +13942,10 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 					{
 						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_DUAL_ANI : BOTH_SABERDUALCROUCH;
 					}
+					else if (flags.isBenKenobi == qtrue)
+					{
+						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_DUAL_BEN : BOTH_SABERDUALCROUCH;
+					}
 					else
 					{
 						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_DUAL : BOTH_SABERDUALCROUCH;
@@ -13496,7 +13958,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 				break;
 
 			case SS_STAFF:
-				anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_STAFF : BOTH_SABERSTAFFCROUCH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isBenKenobi == qtrue)
+					{
+						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_STAFF_BEN : BOTH_SABERSTAFFCROUCH;
+					}
+					else
+					{
+						anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_STAFF : BOTH_SABERSTAFFCROUCH;
+					}
+				}
+				else
+				{
+					anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_STAFF : BOTH_SABERSTAFFCROUCH;
+				}
 				break;
 
 			case SS_FAST:
@@ -13526,6 +14002,17 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 						else
 						{
 							anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_BEN : BOTH_SABERSINGLECROUCH;
+						}
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						if (enemy_far == qtrue)
+						{
+							return BOTH_SABERTAVION_STANCE_JKA_YODA;
+						}
+						else
+						{
+							anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_YODA : BOTH_SABERSINGLECROUCH;
 						}
 					}
 					else
@@ -13568,6 +14055,10 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 						return BOTH_SABERSTAFF_STANCE;
 					}
 				}
+				else
+				{
+					return BOTH_SABERSTAFF_STANCE;
+				}
 			}
 			else
 			{
@@ -13588,6 +14079,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 					{
 						return BOTH_SABERFAST_STANCE;
 					}
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					if (enemy_far == qtrue)
+					{
+						return BOTH_SABERTAVION_STANCE_JKA_YODA;
+					}
+					else
+					{
+						return BOTH_SABERFAST_STANCE;
+					}
+				}
+				else
+				{
+					return BOTH_SABERFAST_STANCE;
 				}
 			}
 			else
@@ -13610,6 +14116,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 						return BOTH_SABERTAVION_STANCE;
 					}
 				}
+				else if (flags.isYoda == qtrue)
+				{
+					if (enemy_far == qtrue)
+					{
+						return BOTH_SABERTAVION_STANCE_JKA_YODA;
+					}
+					else
+					{
+						return BOTH_SABERTAVION_STANCE;
+					}
+				}
+				else
+				{
+					return BOTH_SABERTAVION_STANCE;
+				}
 			}
 			else
 			{
@@ -13631,6 +14152,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 						return BOTH_SABERSLOW_STANCE;
 					}
 				}
+				else if (flags.isYoda == qtrue)
+				{
+					if (enemy_far == qtrue)
+					{
+						return BOTH_SABERTAVION_STANCE_JKA_YODA;
+					}
+					else
+					{
+						return BOTH_SABERSLOW_STANCE;
+					}
+				}
+				else
+				{
+					return BOTH_SABERSLOW_STANCE;
+				}
 			}
 			else
 			{
@@ -13651,6 +14187,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 					{
 						return BOTH_SABERDESANN_STANCE;
 					}
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					if (enemy_far == qtrue)
+					{
+						return BOTH_SABERTAVION_STANCE_JKA_YODA;
+					}
+					else
+					{
+						return BOTH_SABERDESANN_STANCE;
+					}
+				}
+				else
+				{
+					return BOTH_SABERDESANN_STANCE;
 				}
 			}
 			else
@@ -13683,6 +14234,21 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 					{
 						return BOTH_STAND2;
 					}
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					if (enemy_far == qtrue)
+					{
+						return BOTH_SABERTAVION_STANCE_JKA_YODA;
+					}
+					else
+					{
+						return BOTH_STAND2;
+					}
+				}
+				else
+				{
+					return BOTH_STAND2;
 				}
 			}
 			else
@@ -13802,6 +14368,10 @@ int PM_ReadyPoseForSaberAnimLevel(void)
 			if (flags.isBenKenobi == qtrue)
 			{
 				anim = BOTH_SABERTAVION_STANCE_JKA_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				anim = BOTH_SABERTAVION_STANCE_JKA_YODA;
 			}
 			else
 			{
@@ -13997,6 +14567,14 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_LEFT_ANI;
 					}
+					else if (flags.isBenKenobi == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_BEN;
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_YODA;
+					}
 					else
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
@@ -14022,6 +14600,14 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					if (flags.isAnakin == qtrue)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_RIGHT_ANI;
+					}
+					else if (flags.isBenKenobi == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_BEN;
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_YODA;
 					}
 					else
 					{
@@ -14052,6 +14638,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					else if (flags.isBenKenobi == qtrue)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_BACK_BEN;
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_BACK_YODA;
 					}
 					else
 					{
@@ -14088,6 +14678,14 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_LEFT_ANI;
 					}
+					else if (flags.isBenKenobi == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_BEN;
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_YODA;
+					}
 					else
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
@@ -14114,6 +14712,14 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_RIGHT_ANI;
 					}
+					else if (flags.isBenKenobi == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_BEN;
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_YODA;
+					}
 					else
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
@@ -14139,6 +14745,14 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					if (flags.isAnakin == qtrue)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_FORWARD_ANI;
+					}
+					else if (flags.isBenKenobi == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_FORWARD_BEN;
+					}
+					else if (flags.isYoda == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_FORWARD_YODA;
 					}
 					else
 					{
@@ -14174,6 +14788,14 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 				{
 					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_LEFT_ANI;
 				}
+				else if (flags.isBenKenobi == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_BEN;
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_YODA;
+				}
 				else
 				{
 					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
@@ -14202,6 +14824,14 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 				if (flags.isAnakin == qtrue)
 				{
 					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_ANI : BOTH_STAND_BLOCKING_ON_RIGHT_ANI;
+				}
+				else if (flags.isBenKenobi == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_BEN;
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_YODA;
 				}
 				else
 				{
@@ -14249,6 +14879,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = BOTH_SABERFAST_STANCE_JKA_BEN; // new method
 					}
+					else if (flags.isYoda == qtrue)
+					{
+						anim = BOTH_SABERTAVION_STANCE_JKA_YODA; // new method
+					}
 					else
 					{
 						anim = BOTH_STAND_BLOCKING_ON; // new method
@@ -14279,6 +14913,11 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			{
 				// Pressing block only
 				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERFAST_STANCE_JKA_BEN;
+			}
+			else if (flags.isYoda == qtrue)
+			{
+				// Pressing block only
+				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERTAVION_STANCE_JKA_YODA;
 			}
 			else
 			{
@@ -14330,7 +14969,21 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
+						}
 					}
 				}
 			}
@@ -14349,7 +15002,21 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
+						}
 					}
 				}
 			}
@@ -14368,7 +15035,21 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_BACK;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_BACK;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_BACK;
+						}
 					}
 				}
 			}
@@ -14391,7 +15072,21 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_LEFT;
+						}
 					}
 				}
 			}
@@ -14410,7 +15105,21 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_RIGHT;
+						}
 					}
 				}
 			}
@@ -14429,7 +15138,21 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_DUAL_FORWARD;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_FORWARD;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_FORWARD;
+						}
 					}
 				}
 			}
@@ -14504,6 +15227,11 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 										// Standing front block (new method)
 										anim = BOTH_STAND_BLOCKING_ON_DUAL_ANI;
 									}
+									else if (flags.isBenKenobi == qtrue)
+									{
+										// Standing front block (new method)
+										anim = BOTH_STAND_BLOCKING_ON_DUAL_BEN;
+									}
 									else
 									{
 										// Standing front block (new method)
@@ -14540,6 +15268,11 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 								// Standing front block (new method)
 								anim = BOTH_STAND_BLOCKING_ON_DUAL_ANI;
 							}
+							else if (flags.isBenKenobi == qtrue)
+							{
+								// Standing front block (new method)
+								anim = BOTH_STAND_BLOCKING_ON_DUAL_BEN;
+							}
 							else
 							{// Standing front block (new method)
 								anim = BOTH_STAND_BLOCKING_ON_DUAL;
@@ -14561,6 +15294,8 @@ int PM_BlockingPoseForSaberAnimLevelDualAMD()
 int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 {
 	int anim = PM_ReadyPoseForSaberAnimLevel();
+
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	// Active blocking: block + attack held
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
@@ -14588,7 +15323,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+						}
 					}
 				}
 			}
@@ -14607,7 +15356,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+						}
 					}
 				}
 			}
@@ -14626,7 +15389,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_BACK;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_BACK;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_BACK;
+						}
 					}
 				}
 			}
@@ -14649,7 +15426,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+						}
 					}
 				}
 			}
@@ -14668,7 +15459,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+						}
 					}
 				}
 			}
@@ -14687,7 +15492,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_FORWARD;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_FORWARD;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_FORWARD;
+						}
 					}
 				}
 			}
@@ -14710,7 +15529,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_LEFT;
+						}
 					}
 				}
 			}
@@ -14729,7 +15562,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN;
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_RIGHT;
+						}
 					}
 				}
 			}
@@ -14754,7 +15601,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 							}
 							else
 							{
-								anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (flags.isBenKenobi == qtrue)
+									{
+										anim = BOTH_STAND_BLOCKING_ON_STAFF_BEN; // New front block
+									}
+									else
+									{
+										anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
+									}
+								}
+								else
+								{
+									anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
+								}
 							}
 						}
 						else
@@ -14772,7 +15633,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 					}
 					else
 					{
-						anim = BOTH_STAND_BLOCKING_ON_STAFF;
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBenKenobi == qtrue)
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF_BEN; // New front block
+							}
+							else
+							{
+								anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
+							}
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
+						}
 					}
 				}
 			}
@@ -14891,6 +15766,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleMD(void)
 						{
 							anim = BOTH_STAND_BLOCKING_ON_BEN; // new method
 						}
+						else if (flags.isYoda == qtrue)
+						{
+							anim = BOTH_STAND_BLOCKING_ON_YODA; // new method
+						}
 						else
 						{
 							anim = BOTH_STAND_BLOCKING_ON; // new method
@@ -14987,6 +15866,11 @@ int PM_BlockingPoseForSaberAnimLevelDualMD()
 						{
 							anim = BOTH_STAND_BLOCKING_ON_DUAL_ANI;
 						}
+						else if (flags.isBenKenobi == qtrue)
+						{
+							// Standing front block (new method)
+							anim = BOTH_STAND_BLOCKING_ON_DUAL_BEN;
+						}
 						else
 						{
 							anim = BOTH_STAND_BLOCKING_ON_DUAL;
@@ -15018,6 +15902,8 @@ int PM_BlockingPoseForSaberAnimLevelStaffMD(void)
 {
 	// Start from the normal ready pose
 	int anim = PM_ReadyPoseForSaberAnimLevel();
+
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	// Explicit qboolean: block + attack held
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
@@ -15099,8 +15985,21 @@ int PM_BlockingPoseForSaberAnimLevelStaffMD(void)
 				}
 				else
 				{
-					// Block only → staff front block stance
-					anim = BOTH_STAND_BLOCKING_ON_STAFF;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBenKenobi == qtrue)
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF_BEN; // New front block
+						}
+						else
+						{
+							anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
+						}
+					}
+					else
+					{
+						anim = BOTH_STAND_BLOCKING_ON_STAFF; // New front block
+					}
 				}
 			}
 		}
@@ -15426,7 +16325,7 @@ void WP_BlasterFatigueRegenerate(const int override_amt)
 	}
 }
 
-static int PM_ApplyAnimOverride(int anim, saberMoveName_t new_move, const animFlags_t flags)
+static int PM_ApplySaberAnimOverride(int anim, saberMoveName_t new_move, const animFlags_t flags)
 {
 	if (!g_ActivateAnimationStyle || g_ActivateAnimationStyle->integer != 1)
 	{
@@ -15891,7 +16790,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			}
 		}
 	}
-	else if (new_move == LS_DRAW)
+	else if (new_move == LS_DRAW || new_move == LS_DRAW_YODA)
 	{
 		if (PM_RunningAnim(pm->ps->torsoAnim))
 		{
@@ -15981,9 +16880,11 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			anim = BOTH_S1_S6;
 		}
 		if (pm->ps->torsoAnim == BOTH_STAND1IDLE1
+			|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA
 			|| pm->ps->torsoAnim == BOTH_STAND9IDLE1
 			|| pm->ps->torsoAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->torsoAnim == BOTH_STANDYODAIDLE_STICK
+			|| pm->ps->torsoAnim == BOTH_STANDYODAIDLE_STICK_YODA
 			|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_IDLE
 			|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_IDLE_DUELS
 			|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_IDLE_STAFF)
@@ -15991,7 +16892,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			setflags |= SETANIM_FLAG_OVERRIDE;
 		}
 	}
-	else if (new_move == LS_PUTAWAY)
+	else if (new_move == LS_PUTAWAY || new_move == LS_PUTAWAY_YODA)
 	{
 		if ((pm->ps->saber[0].holsterPlace == HOLSTER_LHIP
 			|| pm->ps->saber[0].holsterPlace == HOLSTER_LHIPF
@@ -16050,7 +16951,8 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		{
 			anim = BOTH_S6_S1;
 		}
-		if (pm->ps->torsoAnim == BOTH_STAND1IDLE1)
+		if (pm->ps->torsoAnim == BOTH_STAND1IDLE1
+			|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA)
 		{
 			setflags |= SETANIM_FLAG_OVERRIDE;
 		}
@@ -16071,7 +16973,8 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 				pm->ps->saberMove = new_move;
 				return;
 			}
-			if (pm->ps->torsoAnim == BOTH_STAND1IDLE1)
+			if (pm->ps->torsoAnim == BOTH_STAND1IDLE1
+				|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA)
 			{
 				parts = SETANIM_BOTH;
 			}
@@ -16171,7 +17074,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 	}
 
 	if ((pm->ps->torsoAnim == anim || pm->ps->legsAnim == anim)
-		&& new_move > LS_PUTAWAY)
+		&& new_move > LS_PUTAWAY_YODA)
 	{
 		setflags |= SETANIM_FLAG_RESTART;
 	}
@@ -16189,6 +17092,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		|| anim == BOTH_SABERTAVION_STANCE
 		|| anim == BOTH_SABERTAVION_STANCE_JKA
 		|| anim == BOTH_SABERTAVION_STANCE_JKA_BEN
+		|| anim == BOTH_SABERTAVION_STANCE_JKA_YODA
 		|| anim == BOTH_SABERDESANN_STANCE
 		|| anim == BOTH_SABERDESANN_STANCE_JKA
 		|| anim == BOTH_SABERDESANN_STANCE_JKA_ANI)
@@ -16198,8 +17102,10 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		switch (pm->ps->legsAnim)
 		{
 		case BOTH_WALK1:
+		case BOTH_WALK1_YODA:
 		case BOTH_WALK1_MDA:
 		case BOTH_WALK2:
+		case BOTH_WALK2_YODA:
 		case BOTH_WALK_STAFF:
 		case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
 		case BOTH_WALK_STAFF_AMD:
@@ -16211,22 +17117,30 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_WALKBACK_HEAVY:
 		case BOTH_WALKBACK_GRENADE:
 		case BOTH_WALKBACK2:
+		case BOTH_WALKBACK2_YODA:
 		case BOTH_WALKBACK_STAFF:
 		case BOTH_WALKBACK_DUAL:
 		case BOTH_WALKBACK_DUALPISTOL:
 		case BOTH_RUN1:
+		case BOTH_RUN1_YODA:
 		case BOTH_SPRINT:
 		case BOTH_SPRINT_BEN:
+		case BOTH_SPRINT_YODA:
 		case BOTH_SPRINT_SINGLE_LIGHTSABER:
 		case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
+		case BOTH_SPRINT_SINGLE_LIGHTSABER_YODA:
 		case BOTH_SPRINT_STAFF_LIGHTSABER:
 		case BOTH_SPRINT_DUAL_LIGHTSABER:
 		case BOTH_SPRINT_DUAL_LIGHTSABER_BEN:
 		case BOTH_RUN2:
+		case BOTH_RUN2_YODA:
 		case BOTH_RUN_STAFF:
+		case BOTH_RUN_STAFF_BEN:
 		case BOTH_RUN_DUAL:
+		case BOTH_RUN_DUAL_BEN:
 		case BOTH_RUNBACK1:
 		case BOTH_RUNBACK2:
+		case BOTH_RUNBACK2_YODA:
 		case BOTH_RUNBACK_STAFF:
 		case BOTH_MENUIDLE1:
 		case BOTH_SABERSINGLECROUCH:
@@ -16234,6 +17148,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_SABERDUALCROUCH:
 		case BOTH_SABERSTAFFCROUCH:
 		case BOTH_WALK1_STICK:
+		case BOTH_WALK1_STICK_YODA:
 			//////////////////////////////////////////
 				// ANAKIN
 		case BOTH_WALK1_ANI:
@@ -16331,7 +17246,8 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 					!PM_InSpecialJump(pm->ps->legsAnim) &&
 					!PM_InSlopeAnim(pm->ps->legsAnim) &&
 					!(pm->ps->pm_flags & PMF_DUCKED) &&
-					new_move != LS_PUTAWAY)
+					new_move != LS_PUTAWAY &&
+					new_move != LS_PUTAWAY_YODA)
 				{
 					parts = SETANIM_BOTH;
 				}
@@ -16356,7 +17272,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 	if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 	{
 		// Apply Anim override BEFORE setting the animation
-		anim = PM_ApplyAnimOverride(anim, new_move, flags);
+		anim = PM_ApplySaberAnimOverride(anim, new_move, flags);
 	}
 	////////////////////////////////////////////////////
 
@@ -19519,7 +20435,7 @@ static qboolean PM_SaberBlocking()
 			{
 				qboolean was_attacked_by_gun = qfalse;
 
-				if (pm->ps->saberMove > LS_PUTAWAY && pm->ps->saberMove <= LS_A_BL2TR && pm->ps->saberBlocked !=
+				if (pm->ps->saberMove > LS_PUTAWAY_YODA && pm->ps->saberMove <= LS_A_BL2TR && pm->ps->saberBlocked !=
 					BLOCKED_PARRY_BROKEN &&
 					(pm->ps->saberBlocked < BLOCKED_UPPER_RIGHT_PROJ || pm->ps->saberBlocked > BLOCKED_TOP_PROJ))
 				{
@@ -19867,7 +20783,7 @@ static qboolean PM_SaberBlocking()
 			// Now we react to a block action by the player's lightsaber.
 			if (pm->ps->saberBlocked)
 			{
-				if (pm->ps->saberMove > LS_PUTAWAY && pm->ps->saberMove <= LS_A_BL2TR && pm->ps->saberBlocked !=
+				if (pm->ps->saberMove > LS_PUTAWAY_YODA && pm->ps->saberMove <= LS_A_BL2TR && pm->ps->saberBlocked !=
 					BLOCKED_PARRY_BROKEN &&
 					(pm->ps->saberBlocked < BLOCKED_UPPER_RIGHT_PROJ || pm->ps->saberBlocked > BLOCKED_TOP_PROJ))
 				{
@@ -20190,7 +21106,7 @@ static qboolean PM_SaberBlocking()
 		// Now we react to a block action by the player's lightsaber.
 		if (pm->ps->saberBlocked)
 		{
-			if (pm->ps->saberMove > LS_PUTAWAY && pm->ps->saberMove <= LS_A_BL2TR && pm->ps->saberBlocked !=
+			if (pm->ps->saberMove > LS_PUTAWAY_YODA && pm->ps->saberMove <= LS_A_BL2TR && pm->ps->saberBlocked !=
 				BLOCKED_PARRY_BROKEN &&
 				(pm->ps->saberBlocked < BLOCKED_UPPER_RIGHT_PROJ || pm->ps->saberBlocked > BLOCKED_TOP_PROJ))
 			{
@@ -21412,6 +22328,8 @@ static void PM_WeaponLightsaber(void)
 	int      anim = -1;
 	int      newmove = LS_NONE;
 
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 	const qboolean is_walking_and_blocking = (((pm->cmd.buttons & BUTTON_WALKING) != 0) && (is_holding_block_button)) ? qtrue : qfalse;
@@ -21474,7 +22392,7 @@ static void PM_WeaponLightsaber(void)
 				!PM_SaberInStart(pm->ps->saberMove) &&
 				!PM_SaberInTransition(pm->ps->saberMove) &&
 				!PM_SaberInAttack(pm->ps->saberMove) &&
-				pm->ps->saberMove > LS_PUTAWAY)
+				pm->ps->saberMove > LS_PUTAWAY_YODA)
 			{
 				// Always return to ready when attack is released...
 				PM_SetSaberMove(LS_READY);
@@ -21745,8 +22663,21 @@ static void PM_WeaponLightsaber(void)
 							!PM_SaberInMassiveBounce(pm->ps->torsoAnim) ||
 							!pm->ps->torsoAnimTimer)
 						{
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isYoda == qtrue)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 					}
 				}
@@ -21879,8 +22810,10 @@ static void PM_WeaponLightsaber(void)
 				switch (pm->ps->legsAnim)
 				{
 				case BOTH_WALK1:
+				case BOTH_WALK1_YODA:
 				case BOTH_WALK1_MDA:
 				case BOTH_WALK2:
+				case BOTH_WALK2_YODA:
 				case BOTH_WALK_STAFF:
 				case BOTH_WALK_STAFF_BEN:
 				case BOTH_WALK_STAFF_AMD:
@@ -21892,22 +22825,30 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_WALKBACK_HEAVY:
 				case BOTH_WALKBACK_GRENADE:
 				case BOTH_WALKBACK2:
+				case BOTH_WALKBACK2_YODA:
 				case BOTH_WALKBACK_STAFF:
 				case BOTH_WALKBACK_DUAL:
 				case BOTH_WALKBACK_DUALPISTOL:
 				case BOTH_RUN1:
+				case BOTH_RUN1_YODA:
 				case BOTH_SPRINT:
 				case BOTH_SPRINT_BEN:
+				case BOTH_SPRINT_YODA:
 				case BOTH_SPRINT_SINGLE_LIGHTSABER:
 				case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
+				case BOTH_SPRINT_SINGLE_LIGHTSABER_YODA:
 				case BOTH_SPRINT_STAFF_LIGHTSABER:
 				case BOTH_SPRINT_DUAL_LIGHTSABER:
 				case BOTH_SPRINT_DUAL_LIGHTSABER_BEN:
 				case BOTH_RUN2:
+				case BOTH_RUN2_YODA:
 				case BOTH_RUN_STAFF:
+				case BOTH_RUN_STAFF_BEN:
 				case BOTH_RUN_DUAL:
+				case BOTH_RUN_DUAL_BEN:
 				case BOTH_RUNBACK1:
 				case BOTH_RUNBACK2:
+				case BOTH_RUNBACK2_YODA:
 				case BOTH_RUNBACK_STAFF:
 				case BOTH_MENUIDLE1:
 				case BOTH_SABERSINGLECROUCH:
@@ -21915,6 +22856,7 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_SABERDUALCROUCH:
 				case BOTH_SABERSTAFFCROUCH:
 				case BOTH_WALK1_STICK:
+				case BOTH_WALK1_STICK_YODA:
 					//////////////////////////////////////////
 						// ANAKIN
 				case BOTH_WALK1_ANI:
@@ -22025,7 +22967,21 @@ static void PM_WeaponLightsaber(void)
 					if (pm->ps->torsoAnim != BOTH_LOSE_SABER && !PM_SaberInMassiveBounce(pm->ps->torsoAnim)
 						|| !pm->ps->torsoAnimTimer)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isYoda == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 				}
 			}
@@ -22304,7 +23260,21 @@ static void PM_WeaponLightsaber(void)
 				if (pm->ps->torsoAnim != BOTH_LOSE_SABER && !PM_SaberInMassiveBounce(pm->ps->torsoAnim)
 					|| !pm->ps->torsoAnimTimer)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isYoda == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 			}
 		}
@@ -22581,8 +23551,10 @@ static void PM_WeaponLightsaber(void)
 					switch (pm->ps->legsAnim)
 					{
 					case BOTH_WALK1:
+					case BOTH_WALK1_YODA:
 					case BOTH_WALK1_MDA:
 					case BOTH_WALK2:
+					case BOTH_WALK2_YODA:
 					case BOTH_WALK_STAFF:
 					case BOTH_WALK_STAFF_AMD:
 					case BOTH_WALK_STAFF_BEN: //# Normal walk with staff
@@ -22594,22 +23566,30 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_WALKBACK_HEAVY:
 					case BOTH_WALKBACK_GRENADE:
 					case BOTH_WALKBACK2:
+					case BOTH_WALKBACK2_YODA:
 					case BOTH_WALKBACK_STAFF:
 					case BOTH_WALKBACK_DUAL:
 					case BOTH_WALKBACK_DUALPISTOL:
 					case BOTH_RUN1:
+					case BOTH_RUN1_YODA:
 					case BOTH_SPRINT:
 					case BOTH_SPRINT_SINGLE_LIGHTSABER:
+					case BOTH_SPRINT_SINGLE_LIGHTSABER_YODA:
 					case BOTH_SPRINT_STAFF_LIGHTSABER:
 					case BOTH_SPRINT_DUAL_LIGHTSABER:
 					case BOTH_SPRINT_BEN:
+					case BOTH_SPRINT_YODA:
 					case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
 					case BOTH_SPRINT_DUAL_LIGHTSABER_BEN:
 					case BOTH_RUN2:
+					case BOTH_RUN2_YODA:
 					case BOTH_RUN_STAFF:
+					case BOTH_RUN_STAFF_BEN:
 					case BOTH_RUN_DUAL:
+					case BOTH_RUN_DUAL_BEN:
 					case BOTH_RUNBACK1:
 					case BOTH_RUNBACK2:
+					case BOTH_RUNBACK2_YODA:
 					case BOTH_RUNBACK_STAFF:
 					case BOTH_MENUIDLE1:
 					case BOTH_SABERSINGLECROUCH:
@@ -22617,6 +23597,7 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_SABERDUALCROUCH:
 					case BOTH_SABERSTAFFCROUCH:
 					case BOTH_WALK1_STICK:
+					case BOTH_WALK1_STICK_YODA:
 						//////////////////////////////////////////
 							// ANAKIN
 					case BOTH_WALK1_ANI:
@@ -23377,6 +24358,7 @@ static void PM_Weapon()
 {
 	int add_time, amount, true_count = 1;
 	qboolean delayed_fire = qfalse;
+	animFlags_t flags = PM_Animationstyletable(pm);
 
 	if (pm->ps->eFlags & EF_HELD_BY_WAMPA)
 	{
@@ -23808,8 +24790,7 @@ static void PM_Weapon()
 			}
 			else
 			{
-				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLDLESS);
+				PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,	SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLDLESS);
 			}
 		}
 		else if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_DROIDEKA)
@@ -23923,7 +24904,21 @@ static void PM_Weapon()
 				{
 					//shoot
 					//in alt-fire, sniper mode
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBattleDroid == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 				else
 				{
@@ -24023,13 +25018,41 @@ static void PM_Weapon()
 
 				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); //from hip
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBattleDroid == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from hip
+					}
 				}
 				else
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+						}
 					}
 					else
 					{
@@ -24046,7 +25069,21 @@ static void PM_Weapon()
 			case WP_FLECHETTE:
 				if (cg.renderingThirdPerson)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); //from hip
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBattleDroid == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from hip
+					}
 				}
 				else
 				{
@@ -24064,13 +25101,41 @@ static void PM_Weapon()
 
 				if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBattleDroid == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from hip
+					}
 				}
 				else
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+						}
 					}
 					else
 					{
@@ -24095,7 +25160,21 @@ static void PM_Weapon()
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from hip
+						}
 					}
 					else
 					{
@@ -24183,20 +25262,59 @@ static void PM_Weapon()
 
 				if (pm->cmd.buttons & BUTTON_ALT_ATTACK)
 				{
-					PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBattleDroid == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from hip
+					}
 				}
 				else
 				{
 					if (cg.renderingThirdPerson)
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);  // from shoulder
+						}
 					}
 					else
 					{
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3,
-							SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART); //from hip
+						}
 					}
 				}
 				break;

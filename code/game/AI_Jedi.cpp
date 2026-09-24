@@ -1390,6 +1390,8 @@ static void jedi_aggression(const gentity_t* self, const int change)
 
 static void jedi_aggression_erosion(const int amt)
 {
+	animFlags_t flags = Jedi_Animationstyletable(NPC);
+
 	if (TIMER_Done(NPC, "roamTime"))
 	{
 		//the longer we're not alerted and have no enemy, the more our aggression goes down
@@ -1406,7 +1408,21 @@ static void jedi_aggression_erosion(const int amt)
 			{
 				//turn off the saber
 				WP_DeactivateSaber(NPC);
-				NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else
+					{
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
 				G_AddVoiceEvent(NPC, Q_irand(EV_VICTORY1, EV_VICTORY3), 3000);
 			}
 		}

@@ -47,7 +47,6 @@ extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_RealisticBlockingMode;
 extern void G_SetWeapon(gentity_t* self, int wp);
 extern stringID_table_t WPTable[];
-extern cvar_t* g_ActivateAnimationStyle;
 
 extern cvar_t* g_char_model;
 extern cvar_t* g_char_skin_head;
@@ -78,6 +77,59 @@ extern cvar_t* g_NPChealth;
 extern cvar_t* g_NPCspawnscript;
 extern cvar_t* g_NPCfleescript;
 extern cvar_t* g_NPCdeathscript;
+
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
+// -----------------------------------------------------------------------------
+// W_Animationstyletable
+// Weapon-system animation style resolver for any gentity_t.
+// Cleaned to match final animFlags_t and Animationstyles_t enum.
+// -----------------------------------------------------------------------------
+static animFlags_t SVC_Animationstyletable(const gentity_t* self)
+{
+	animFlags_t flags{};
+	if (!self || !self->client)
+	{
+		Com_Printf("W_Animationstyletable: self or self->client is null\n");
+		return flags;
+	}
+
+	const int style = self->client->animationstyle;
+	const int cvarStyle = (g_AnimationStyle ? g_AnimationStyle->integer : -1);
+
+	// Helper macro: match either entity style or cvar override
+#define MATCH(s) ((style == (s)) || (cvarStyle == (s)))
+
+	if (MATCH(CS_DEFAULT))        flags.isDefault = qtrue;
+	if (MATCH(CS_ANAKIN))         flags.isAnakin = qtrue;
+	if (MATCH(CS_BATTLEDROID))    flags.isBattleDroid = qtrue;
+	if (MATCH(CS_BENKENOBI))      flags.isBenKenobi = qtrue;
+	if (MATCH(CS_CAL_KESTIS))     flags.isCalKestis = qtrue;
+	if (MATCH(CS_CLONETROOPER))   flags.isCloneTrooper = qtrue;
+	if (MATCH(CS_DARKFORCES2))    flags.isDarkForces2 = qtrue;
+	if (MATCH(CS_COUNT_DOOKU))    flags.isCountDooku = qtrue;
+	if (MATCH(CS_GALEN_MAREK))    flags.isGalenMarek = qtrue;
+	if (MATCH(CS_QUI_GON_JINN))   flags.isQuiGonJinn = qtrue;
+	if (MATCH(CS_GRIEVOUS))       flags.isGrievous = qtrue;
+	if (MATCH(CS_JANGO))          flags.isJango = qtrue;
+	if (MATCH(CS_KOTOR))          flags.isKotor = qtrue;
+	if (MATCH(CS_LUKE_SKYWALKER)) flags.isLukeSkywalker = qtrue;
+	if (MATCH(CS_MACE_WINDU))     flags.isMaceWindu = qtrue;
+	if (MATCH(CS_MAUL))           flags.isMaul = qtrue;
+	if (MATCH(CS_MOVIEDUELS))     flags.isMovieDuels = qtrue;
+	if (MATCH(CS_OBIWAN))         flags.isObiWan = qtrue;
+	if (MATCH(CS_OBIWAN_EP3))     flags.isObiWanEP3 = qtrue;
+	if (MATCH(CS_PALPATINE))      flags.isPalpatine = qtrue;
+	if (MATCH(CS_REBELS))         flags.isRebels = qtrue;
+	if (MATCH(CS_KYLO_REN))       flags.isKyloRen = qtrue;
+	if (MATCH(CS_REY))            flags.isRey = qtrue;
+	if (MATCH(CS_VADER))          flags.isVader = qtrue;
+	if (MATCH(CS_YODA))           flags.isYoda = qtrue;
+
+#undef MATCH
+
+	return flags;
+}
 
 /*
 ===================
@@ -431,12 +483,12 @@ extern void NPC_SetAnim(gentity_t* ent, int set_anim_parts, int anim, int set_an
 
 static void Svcmd_SaberAttackCycle_f()
 {
+	gentity_t* self = G_GetSelfForPlayerCmd();
+
 	if (!g_entities[0].client)
 	{
 		return;
 	}
-
-	gentity_t* self = G_GetSelfForPlayerCmd();
 	if (self->s.weapon != WP_SABER)
 	{
 		// saberAttackCycle button also switches to saber
@@ -960,6 +1012,11 @@ static void Svcmd_PlayerAnimationStyle_f(void)
 {
 	const char* cmd2 = gi.argv(1);
 
+	if (g_ActivateAnimationStyle->integer != 1)
+	{
+		gi.Printf(S_COLOR_RED "g_ActivateAnimationStyle is not enabled.\n");
+		return;
+	}
 	if (!g_entities[0].client)
 	{
 		gi.Printf(S_COLOR_RED "Player client not available.\n");

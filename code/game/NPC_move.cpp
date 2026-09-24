@@ -415,6 +415,7 @@ static void NPC_JumpAnimation()
 {
 	int jumpAnim = BOTH_JUMP1;
 	int jumpAnim_ANI = BOTH_JUMP1_ANI;
+	int jumpAnim_YODA = BOTH_JUMP1_YODA;
 
 	animFlags_t flags = NPCMove_Animationstyletable(NPC);
 
@@ -458,6 +459,10 @@ static void NPC_JumpAnimation()
 		if (flags.isAnakin == qtrue)
 		{
 			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+		else if (flags.isYoda == qtrue)
+		{
+			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 		else
 		{
