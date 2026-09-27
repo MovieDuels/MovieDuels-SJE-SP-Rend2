@@ -956,6 +956,25 @@ static void WriteGEntities(const qboolean qb_autosave)
 	}
 }
 
+// Only saber[].name is restored as a string (savefields_gClient). The other char*
+// fields were written as 32-bit placeholders, so after loading they hold truncated,
+// invalid pointers. G_ReloadSaberData() rebuilds them - but only for sabers that have
+// a name. Clear them first, otherwise e.g. G_FreeEntity() later calls
+// gi.bIsFromZone()/gi.Free() on a garbage saber model pointer and crashes (seen when
+// a dead NPC's body is removed after loading a save), or G_ChangePlayerModel() reads
+// the garbage holster model while a non-"player" character (e.g. boba_fett) is loaded.
+static void ClearSaberStringPointers(gclient_t* client)
+{
+	for (saberInfo_t& saber : client->ps.saber)
+	{
+		saber.fullName = nullptr;
+		saber.model = nullptr;
+		saber.skin = nullptr;
+		saber.brokenSaber1 = nullptr;
+		saber.brokenSaber2 = nullptr;
+	}
+}
+
 static void ReadGEntities(const qboolean qbAutosave)
 {
 	int iCount = 0;
@@ -1055,20 +1074,7 @@ static void ReadGEntities(const qboolean qbAutosave)
 			*pEnt->client = *tempGClient;
 			delete tempGClient;
 
-			// Only saber[].name is restored as a string (savefields_gClient). The other
-			// char* fields were written as 32-bit placeholders, so after loading they hold
-			// truncated, invalid pointers. G_ReloadSaberData() rebuilds them - but only for
-			// sabers that have a name. Clear them first, otherwise e.g. G_FreeEntity() later
-			// calls gi.bIsFromZone()/gi.Free() on a garbage saber model pointer and crashes
-			// (seen when a dead NPC's body is removed after loading a save).
-			for (saberInfo_t& saber : pEnt->client->ps.saber)
-			{
-				saber.fullName = nullptr;
-				saber.model = nullptr;
-				saber.skin = nullptr;
-				saber.brokenSaber1 = nullptr;
-				saber.brokenSaber2 = nullptr;
-			}
+			ClearSaberStringPointers(pEnt->client);
 
 			if (pEnt->s.number)
 			{
@@ -1266,6 +1272,9 @@ void ReadLevel(const qboolean qbAutosave, const qboolean qb_load_transition)
 
 			level.clients[0] = *GClient;   // struct copy
 			delete GClient;
+
+			// the player is not a "-2" client, so ReadGEntities() does not clear these
+			ClearSaberStringPointers(&level.clients[0]);
 
 			ReadLevelLocals();
 		}
