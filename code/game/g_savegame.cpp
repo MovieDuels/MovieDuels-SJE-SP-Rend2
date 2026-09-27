@@ -975,6 +975,40 @@ static void ClearSaberStringPointers(gclient_t* client)
 	}
 }
 
+// Grapple hooks and stun projectiles are not safe to restore: their "parent" (the
+// shooter) is not saved, and gclient_t::hook/stun were written as 32-bit placeholders.
+// After a load the projectile has parent == NULL and G_MissileImpact_MD(),
+// Weapon_HookThink() or Weapon_HookFree() crash dereferencing it. Remove them and
+// reset the shooter state, as if the hook/stun had just been released.
+static void ClearGrappleAndStunAfterLoad()
+{
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		gentity_t* ent = &g_entities[i];
+
+		if (!ent->inuse)
+		{
+			continue;
+		}
+
+		if (ent->client)
+		{
+			ent->client->hook = nullptr;
+			ent->client->stun = nullptr;
+			ent->client->hookhasbeenfired = qfalse;
+			ent->client->stunhasbeenfired = qfalse;
+			ent->client->fireHeld = qfalse;
+			ent->client->stunHeld = qfalse;
+			ent->client->ps.pm_flags &= ~PMF_GRAPPLE_PULL;
+		}
+		else if (ent->classname
+			&& (!Q_stricmp(ent->classname, "hook") || !Q_stricmp(ent->classname, "stun")))
+		{
+			G_FreeEntity(ent);
+		}
+	}
+}
+
 static void ReadGEntities(const qboolean qbAutosave)
 {
 	int iCount = 0;
@@ -1199,6 +1233,8 @@ static void ReadGEntities(const qboolean qbAutosave)
 	{
 		ReadInUseBits();
 	}
+
+	ClearGrappleAndStunAfterLoad();
 }
 
 extern void CG_WriteTheEvilCGHackStuff();
