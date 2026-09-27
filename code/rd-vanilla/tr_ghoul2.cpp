@@ -2353,6 +2353,12 @@ void G2_GetBoltMatrixLow(CGhoul2Info& ghoul2, const int boltNum, const vec3_t sc
 	}
 	if (boltList[boltNum].boneNumber >= 0)
 	{
+		// the bone must exist in the bone cache this model uses right now
+		if (boltList[boltNum].boneNumber >= boneCache.mNumBones)
+		{
+			retMatrix = identityMatrix;
+			return;
+		}
 		const mdxaSkelOffsets_t* offsets = reinterpret_cast<mdxaSkelOffsets_t*>((byte*)boneCache.header + sizeof(mdxaHeader_t));
 		const mdxaSkel_t* skel = reinterpret_cast<mdxaSkel_t*>((byte*)boneCache.header + sizeof(mdxaHeader_t) + offsets->offsets[boltList[boltNum]
 			.boneNumber]);
@@ -2378,6 +2384,13 @@ void G2_GetBoltMatrixLow(CGhoul2Info& ghoul2, const int boltNum, const vec3_t sc
 		if (!surface && surfInfo && surfInfo->surface < 10000)
 		{
 			surface = static_cast<mdxmSurface_t*>(G2_FindSurface(boneCache.mod, surfInfo->surface, 0));
+		}
+		// a model surface bolt needs a surface this model really has
+		// (generated surfaces find their own original surface)
+		if (!surface && !(surfInfo && surfInfo->offFlags == G2SURFACEFLAG_GENERATED))
+		{
+			retMatrix = identityMatrix;
+			return;
 		}
 		G2_ProcessSurfaceBolt2(boneCache, surface, boltNum, boltList, surfInfo, boneCache.mod, retMatrix);
 	}
