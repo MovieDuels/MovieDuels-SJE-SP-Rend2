@@ -463,6 +463,10 @@ void SV_Shutdown(const char* finalmsg)
 {
 	if (!com_sv_running || !com_sv_running->integer)
 	{
+		// The server never finished starting (e.g. quit or error during map
+		// load), but the game library may already be loaded. Release it now
+		// while the renderer is still alive (see SV_ShutdownGameProgs).
+		SV_ShutdownGameProgs();
 		return;
 	}
 
