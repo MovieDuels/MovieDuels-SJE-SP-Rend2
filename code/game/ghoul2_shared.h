@@ -634,6 +634,13 @@ IGhoul2InfoArray& TheGhoul2InfoArray();
 IGhoul2InfoArray& _TheGhoul2InfoArray();
 #else
 IGhoul2InfoArray& TheGameGhoul2InfoArray();
+
+// Set while the game module is being torn down (library unload or process
+// exit). After this point the renderer may already be gone, so Ghoul2
+// cleanup must not call back into the engine. One instance per module
+// (inline variable): the game sets its own copy on teardown, other modules
+// including this header are unaffected.
+inline bool g_ghoul2EngineTeardown = false;
 #endif
 
 class CGhoul2Info_v
@@ -682,6 +689,16 @@ class CGhoul2Info_v
 
 	void Free()
 	{
+#if !defined(RENDERER) && !defined(_JK2EXE)
+		if (g_ghoul2EngineTeardown)
+		{
+			// Module teardown (library unload / process exit): the engine
+			// side may already be gone. Just drop the handle; the OS
+			// reclaims everything left behind.
+			mItem = 0;
+			return;
+		}
+#endif
 		if (!mItem)
 		{
 #ifdef _DEBUG

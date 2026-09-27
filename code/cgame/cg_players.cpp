@@ -14543,7 +14543,8 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 						fx->mVerts[3].destST[1] = 0.99f;
 
 						//				fx->SetFlags( FX_USE_ALPHA );
-						FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), duration); //SABER_TRAIL_TIME );
+						CEffect* base_fx = fx;
+						FX_AddPrimitive(&base_fx, duration); //SABER_TRAIL_TIME );
 					}
 				}
 
@@ -15017,7 +15018,8 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 			fx->mVerts[3].destST[0] = 4.0f;
 			fx->mVerts[3].destST[1] = 4.0f;
 
-			FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), 0);
+			CEffect* base_fx = fx;
+			FX_AddPrimitive(&base_fx, 0);
 		}
 
 		if (client->ps.saber[saberNum].saberFlags2 & SFL2_NO_BLADE)
