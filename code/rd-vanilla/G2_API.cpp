@@ -2344,6 +2344,14 @@ void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
 		return;
 	}
 
+	// Refresh mValid / currentModel first, like G2API_CollisionDetect does. Right after a
+	// save game is loaded they still describe the models from before the load, so a saber
+	// hit mark could trace into a MOD_BAD model (mdxm == NULL) and crash in G2_DecideTraceLod.
+	if (!G2_SetupModelPointers(ghoul2))
+	{
+		return;
+	}
+
 	// make sure we have transformed the whole skeletons for each model
 	//G2_ConstructGhoulSkeleton(ghoul2, gore.currentTime, NULL, true, gore.angles, gore.position, gore.scale, false);
 	G2_ConstructGhoulSkeleton(ghoul2, gore.currentTime, true, gore.scale);
