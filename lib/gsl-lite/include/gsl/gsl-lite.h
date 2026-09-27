@@ -181,6 +181,10 @@
 # include <type_traits>
 #endif
 
+#if gsl_HAVE_ENUM_CLASS || gsl_HAVE_SIZED_TYPES
+# include <cstdint>
+#endif
+
 namespace gsl {
 
 //
@@ -444,10 +448,8 @@ private:
 // Byte-specific type.
 //
 #if gsl_HAVE_ENUM_CLASS
-# include <cstdint>
   enum class byte : std::uint8_t {};
 #elif gsl_HAVE_SIZED_TYPES
-# include <cstdint>
   typedef ::std::uint8_t byte;
 #else
   typedef unsigned char byte;
