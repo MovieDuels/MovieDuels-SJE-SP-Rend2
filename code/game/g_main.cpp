@@ -1147,11 +1147,39 @@ and global variables
 */
 extern int PM_ValidateAnimRange(int startFrame, int endFrame, float animSpeed);
 
+#ifndef _WIN32
+extern "C"
+{
+	using __cxa_atexit_func_t = void (*)(void*);
+	extern int __cxa_atexit(__cxa_atexit_func_t func, void* arg, void* dso);
+}
+#endif
+
+// Runs before any static destructor on module teardown (library unload or
+// process exit): static destructors are registered at load time, this one is
+// registered below in GetGameAPI, so LIFO ordering puts it first. It marks
+// the engine as unavailable so Ghoul2 cleanup in static destructors (e.g.
+// the g_entities array) cannot call into an already-unloaded renderer.
+#ifdef _WIN32
+static void GameModuleMarkTeardown()
+#else
+static void GameModuleMarkTeardown(void*)
+#endif
+{
+	g_ghoul2EngineTeardown = true;
+}
+
 extern "C" Q_EXPORT game_export_t* QDECL GetGameAPI(const game_import_t* import)
 {
 	gameinfo_import_t gameinfo_import{};
 
 	gi = *import;
+
+#ifdef _WIN32
+	atexit(GameModuleMarkTeardown);
+#else
+	__cxa_atexit(GameModuleMarkTeardown, nullptr, &__dso_handle);
+#endif
 
 	globals.apiversion = GAME_API_VERSION;
 	globals.Init = InitGame;
