@@ -132,14 +132,25 @@ int FX_Init()
 //-------------------------
 static void FX_FreeMember(SEffectList* obj)
 {
-	obj->mEffect->Die();
-	delete obj->mEffect;
-	obj->mEffect = nullptr;
+	if (obj == nullptr)
+	{
+		return;
+	}
+
+	if (obj->mEffect)
+	{
+		obj->mEffect->Die();
+		delete obj->mEffect;
+		obj->mEffect = nullptr;
+	}
 
 	// May as well mark this to be used next
 	nextValidEffect = obj;
 
-	activeFx--;
+	if (activeFx > 0)
+	{
+		activeFx--;
+	}
 }
 
 //-------------------------
@@ -152,6 +163,11 @@ static void FX_FreeMember(SEffectList* obj)
 //-------------------------
 static SEffectList* FX_GetValidEffect()
 {
+	if (nextValidEffect == nullptr)
+	{
+		nextValidEffect = &effectList[0];
+	}
+
 	if (nextValidEffect->mEffect == nullptr)
 	{
 		return nextValidEffect;
@@ -378,7 +394,19 @@ void FX_Add(const bool portal)
 extern bool gEffectsInPortal; //from FXScheduler.cpp so i don't have to pass it in on EVERY FX_ADD*
 void FX_AddPrimitive(CEffect** p_effect, const int kill_time)
 {
+	if (p_effect == nullptr || *p_effect == nullptr)
+	{
+		return;
+	}
+
 	SEffectList* item = FX_GetValidEffect();
+
+	if (item == nullptr)
+	{
+		delete* p_effect;
+		*p_effect = nullptr;
+		return;
+	}
 
 	item->mEffect = *p_effect;
 	item->mKillTime = theFxHelper.mTime + kill_time;
@@ -479,7 +507,12 @@ CParticle* FX_AddParticle(const int client_id, const vec3_t org, const vec3_t ve
 		fx->SetDeathFxID(death_id);
 		fx->SetImpactFxID(impact_id);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL
 	}
 
@@ -564,7 +597,12 @@ CLine* FX_AddLine(const int client_id, vec3_t start, vec3_t end, const float siz
 		fx->SetSTScale(1.0f, 1.0f);
 		fx->SetImpactFxID(impact_fx_id);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL
 	}
 
@@ -650,7 +688,12 @@ CElectricity* FX_AddElectricity(const int client_id, vec3_t start, vec3_t end, c
 
 		fx->SetSTScale(1.0f, 1.0f);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL?
 		if (fx)
 		{
@@ -757,7 +800,12 @@ CTail* FX_AddTail(const int client_id, vec3_t org, vec3_t vel, vec3_t accel,
 		fx->SetDeathFxID(death_id);
 		fx->SetImpactFxID(impact_id);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL
 	}
 
@@ -869,7 +917,12 @@ CCylinder* FX_AddCylinder(const int client_id, vec3_t start, vec3_t normal,
 		fx->SetShader(shader);
 		fx->SetFlags(flags);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 	}
 
 	return fx;
@@ -959,7 +1012,12 @@ CEmitter* FX_AddEmitter(vec3_t org, vec3_t vel, vec3_t accel,
 		fx->SetLastOrg(org);
 		fx->SetLastVel(vel);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL
 	}
 
@@ -1014,7 +1072,12 @@ CLight* FX_AddLight(vec3_t org, const float size1, const float size2, const floa
 
 		fx->SetFlags(flags);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL
 	}
 
@@ -1109,7 +1172,12 @@ COrientedParticle* FX_AddOrientedParticle(const int client_id, vec3_t org, vec3_
 		fx->SetDeathFxID(death_id);
 		fx->SetImpactFxID(impact_id);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL
 	}
 
@@ -1183,7 +1251,12 @@ CPoly* FX_AddPoly(const vec3_t* verts, const vec2_t* st, const int numVerts,
 		// Now that we've set our data up, let's process it into a useful format
 		fx->PolyInit();
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 		// in the editor, fx may now be NULL
 	}
 
@@ -1262,7 +1335,12 @@ CBezier* FX_AddBezier(const vec3_t start, const vec3_t end,
 
 		fx->SetSTScale(1.0f, 1.0f);
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 	}
 
 	return fx;
@@ -1333,7 +1411,12 @@ CFlash* FX_AddFlash(vec3_t origin, vec3_t s_rgb, vec3_t e_rgb, const float rgb_p
 
 		fx->Init();
 
-		FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), kill_time);
+		CEffect* base_fx = fx;
+		FX_AddPrimitive(&base_fx, kill_time);
+		if (base_fx == nullptr)
+		{
+			fx = nullptr;
+		}
 	}
 
 	return fx;
