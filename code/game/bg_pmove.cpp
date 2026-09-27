@@ -27236,7 +27236,34 @@ void PM_SaberPerfectBlockUpdate(const int new_move)
 	}
 }
 
-extern float CG_GetSelfTorsoAnimPoint();
+// Progress (0.0 - 1.0) of the torso animation of the entity that owns ps.
+// This used to call CG_GetSelfTorsoAnimPoint(), which reads the torso of the
+// *camera* entity (usually the player) - wrong for NPC attackers, and it
+// crashed when that entity had no gent/ghoul2 (e.g. right after loading a save).
+static float PM_GetTorsoAnimPoint(const playerState_t* ps)
+{
+	if (ps->clientNum < 0 || ps->clientNum >= MAX_GENTITIES)
+	{
+		return 0.0f;
+	}
+	const gentity_t* ent = &g_entities[ps->clientNum];
+	if (!ent->inuse || !ent->client || &ent->client->ps != ps
+		|| ent->playerModel < 0 || ent->playerModel >= ent->ghoul2.size() || ent->lowerLumbarBone < 0)
+	{
+		return 0.0f;
+	}
+
+	float current = 0.0f;
+	int start = 0;
+	int end = 0;
+	if (gi.G2API_GetBoneAnimIndex(const_cast<CGhoul2Info*>(&ent->ghoul2[ent->playerModel]), ent->lowerLumbarBone,
+		level.time, &current, &start, &end, nullptr, nullptr, nullptr) && end != start)
+	{
+		return (current - start) / (end - start);
+	}
+	return 0.0f;
+}
+
 //saber status utility tools
 static qboolean PM_SaberInFullDamageMove(const playerState_t* ps)
 {
@@ -27245,7 +27272,7 @@ static qboolean PM_SaberInFullDamageMove(const playerState_t* ps)
 		return qfalse;
 	}
 
-	const float torso_anim_point = CG_GetSelfTorsoAnimPoint();
+	const float torso_anim_point = PM_GetTorsoAnimPoint(ps);
 
 	// Full damage conditions
 	const qboolean inAttack = (PM_SaberInAttack(ps->saberMove) == qtrue) ? qtrue : qfalse;
