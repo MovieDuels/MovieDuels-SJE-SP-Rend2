@@ -142,7 +142,10 @@ static const save_field_t savefields_gClient[] =
 	{nullptr, 0, F_IGNORE}
 };
 
-static std::list<sstring_t> strList;
+// std::string, not sstring_t: an sstring_t holds at most MAX_QPATH-1 chars, but GetStringNum() writes the
+// full strlen()+1 as chunk length. Any entity string longer than 63 chars (e.g. an NPC fullName) was saved
+// truncated and the save could never be loaded again ("SG: Not enough data").
+static std::list<std::string> strList;
 
 /////////// char * /////////////
 //
@@ -166,19 +169,19 @@ static char* GetStringPtr(const int iStrlen, char* psOriginal/*may be NULL*/)
 {
 	if (iStrlen != -1)
 	{
-		char sString[768]{}; // arb, inc if nec.
-
-		sString[0] = 0;
-
-		assert(iStrlen + 1 <= static_cast<int>(sizeof sString));
+		// sized to the saved length - a fixed buffer overflows for long strings
+		std::vector<char> buffer(iStrlen > 0 ? iStrlen : 1, '\0');
 
 		ojk::SavedGameHelper saved_game(
 			gi.saved_game);
 
 		saved_game.read_chunk(
 			INT_ID('S', 'T', 'R', 'G'),
-			sString,
+			buffer.data(),
 			iStrlen);
+
+		buffer.back() = '\0';
+		const char* sString = buffer.data();
 
 		// TAG_G_ALLOC is always blown away, we can never recycle
 		if (psOriginal && gi.bIsFromZone(psOriginal, TAG_G_ALLOC))
