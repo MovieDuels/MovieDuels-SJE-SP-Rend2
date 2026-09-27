@@ -6534,6 +6534,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERTAVION_STANCE_JKA:
 		case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
 		case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
+		case BOTH_SABERTAVION_STANCE_JKA_VADER: //tavion saberstyle
 		case BOTH_SABERDESANN_STANCE:
 		case BOTH_SABERDESANN_STANCE_JKA:
 		case BOTH_SABERDESANN_STANCE_JKA_ANI:
@@ -6541,10 +6542,12 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERFAST_STANCE_JKA:
 		case BOTH_SABERFAST_STANCE_JKA_ANI:
 		case BOTH_SABERFAST_STANCE_JKA_BEN:
+		case BOTH_SABERFAST_STANCE_JKA_VADER:
 		case BOTH_SABERSLOW_STANCE:
 		case BOTH_SABERSLOW_STANCE_JKA:
 		case BOTH_SABERSLOW_STANCE_JKA_ANI:
 		case BOTH_SABERSLOW_STANCE_JKA_BEN:
+		case BOTH_SABERSLOW_STANCE_JKA_VADER:
 		case BOTH_SABERSINGLECROUCH:
 		case BOTH_SABERSINGLECROUCH_ANI:
 		case BOTH_STAND_SABER_ON:
@@ -6694,6 +6697,9 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERTAVION_STANCE_JKA_YODA:
 			idle_anim = BOTH_SABERTAVION_STANCE_JKA_YODA;
 			break;
+		case BOTH_SABERTAVION_STANCE_JKA_VADER:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_VADER;
+			break;
 		case BOTH_SABERDESANN_STANCE_JKA:
 			idle_anim = BOTH_SABERDESANN_STANCE_JKA;
 			break;
@@ -6715,8 +6721,14 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERFAST_STANCE_JKA_ANI:
 			idle_anim = BOTH_SABERFAST_STANCE_JKA_ANI;
 			break;
+		case BOTH_SABERFAST_STANCE_JKA_VADER:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_VADER;
+			break;
 		case BOTH_SABERSLOW_STANCE_JKA:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_VADER:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_VADER;
 			break;
 		case BOTH_SABERSLOW_STANCE_JKA_BEN:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA_BEN;
@@ -7413,7 +7425,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 				{
 					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 					{
-						if (flags.isYoda == qtrue)
+						if ((flags.isYoda == qtrue) || (client->NPC_class == CLASS_YODA))
 						{
 							if (client->NPC_class == CLASS_YODA)
 							{
@@ -7424,7 +7436,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 								sprintMul *= 1.20f;
 							}
 						}
-						else if (flags.isVader == qtrue)
+						else if ((flags.isVader == qtrue) || (client->NPC_class == CLASS_VADER))
 						{
 							sprintMul *= 1.15f;
 						}

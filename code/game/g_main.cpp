@@ -333,9 +333,10 @@ cvar_t* g_npc_is_smart_range;
 
 cvar_t* g_jkoeffects;
 cvar_t* g_HitTracking;
-cvar_t* g_ActivateAnimationStyle;
-cvar_t* g_AnimationStyle;
-cvar_t* g_AllowSmashDown;
+cvar_t* g_ActivateAnimationStyle; //turns on/off the new animation style for NPCs and players. 0 = off, 1 = on
+cvar_t* g_AnimationStyle;         // select between 0 -28 for specific style
+cvar_t* g_NPCAnimationStyle;      // turns npc range based stance on/off
+cvar_t* g_AllowSmashDown;         // allow smashdown attacks for NPCs and players. 0 = off, 1 = on
 
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
@@ -966,6 +967,8 @@ static void G_InitCvars()
 	g_AnimationStyle = gi.cvar("g_animationstyle", "0", CVAR_ARCHIVE | CVAR_SAVEGAME); //Alternate animationstyle
 
 	g_AllowSmashDown = gi.cvar("g_allowsmashdown", "0", CVAR_ARCHIVE);
+
+	g_NPCAnimationStyle = gi.cvar("g_npcanimationstyle", "0", CVAR_ARCHIVE);
 }
 
 /*

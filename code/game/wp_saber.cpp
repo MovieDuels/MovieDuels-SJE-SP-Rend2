@@ -19089,6 +19089,10 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 						{
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_AFLAG_BLOCKPACE);
 						}
+						else if (flags.isVader == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_VADER, SETANIM_AFLAG_BLOCKPACE);
+						}
 						else
 						{
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_BLOCKPACE);
@@ -34744,6 +34748,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_AFLAG_PACE);
 										}
+										else if (flags.isVader == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_VADER, SETANIM_AFLAG_PACE);
+										}
 										else
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
@@ -34785,6 +34793,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										else if (flags.isYoda == qtrue)
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_YODA, SETANIM_AFLAG_PACE);
+										}
+										else if (flags.isVader == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_VADER, SETANIM_AFLAG_PACE);
 										}
 										else
 										{
