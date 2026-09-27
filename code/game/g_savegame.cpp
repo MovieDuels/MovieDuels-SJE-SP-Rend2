@@ -1103,7 +1103,9 @@ static void ReadGEntities(const qboolean qbAutosave)
 		{
 			Vehicle_t* tempVehicle = new Vehicle_t;
 
-			BG_VehicleGetIndex(pEnt->NPC_type);
+			// (re)register the vehicle type by name - the index may differ from the one
+			// that was saved, because g_vehicleInfo is rebuilt in spawn order after a load
+			const int vehicleIndex = BG_VehicleGetIndex(pEnt->NPC_type);
 
 			EvaluateFields(savefields_gVHIC, tempVehicle,
 				reinterpret_cast<byte*>(pEntOriginal->m_pVehicle),
@@ -1121,6 +1123,15 @@ static void ReadGEntities(const qboolean qbAutosave)
 
 			*pEnt->m_pVehicle = *tempVehicle;
 			delete tempVehicle;
+
+			// The save only stores the g_vehicleInfo index. If another vehicle type was
+			// registered before it (e.g. a swoop that no longer exists), that index now
+			// points to an empty entry whose function pointers are NULL, and
+			// ClientThink_real crashes calling m_pVehicleInfo->Inhabited(). Re-hook by name.
+			if (vehicleIndex != VEHICLE_NONE)
+			{
+				pEnt->m_pVehicle->m_pVehicleInfo = &g_vehicleInfo[vehicleIndex];
+			}
 		}
 
 		// Ghoul2 block
