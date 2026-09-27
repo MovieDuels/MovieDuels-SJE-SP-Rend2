@@ -2343,7 +2343,14 @@ void G2_GetBoltMatrixLow(CGhoul2Info& ghoul2, const int boltNum, const vec3_t sc
 	CBoneCache& boneCache = *ghoul2.mBoneCache;
 	assert(boneCache.mod);
 	boltInfo_v& boltList = ghoul2.mBltlist;
-	assert(boltNum >= 0 && boltNum < static_cast<int>(boltList.size()));
+	// a model bolted to this one can still point at a bolt index that this model no
+	// longer has (seen right after a weapon switch + vid_restart: boltNum 9, size 1);
+	// the assert does nothing in release builds, so check it like rd-rend2 does
+	if (boltNum < 0 || boltNum >= static_cast<int>(boltList.size()))
+	{
+		retMatrix = identityMatrix;
+		return;
+	}
 	if (boltList[boltNum].boneNumber >= 0)
 	{
 		const mdxaSkelOffsets_t* offsets = reinterpret_cast<mdxaSkelOffsets_t*>((byte*)boneCache.header + sizeof(mdxaHeader_t));
