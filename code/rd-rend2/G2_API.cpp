@@ -713,27 +713,28 @@ static void TestAllGhoul2Anims()
 
 void RestoreGhoul2InfoArray()
 {
-	if (singleton == nullptr)
+	// Create the ghoul2 info array. It can already exist here: after a vid_restart the
+	// server frame (G_RunFrame) may touch ghoul2 before R_Init() runs, which creates a
+	// new, empty array. Restore the stored data in that case too - otherwise every
+	// entity keeps an invalid handle, loses its models and the game adds new models
+	// into the wrong list (crash in G2API_AttachG2Model / G2_GetBoltMatrixLow).
+	TheGhoul2InfoArray();
+
+	size_t size;
+	const void* data = ri.PD_Load(PERSISTENT_G2DATA, &size);
+	if (data == nullptr)
 	{
-		// Create the ghoul2 info array
-		TheGhoul2InfoArray();
-
-		size_t size;
-		const void* data = ri.PD_Load(PERSISTENT_G2DATA, &size);
-		if (data == nullptr)
-		{
-			return;
-		}
-
-#ifdef _DEBUG
-		size_t read =
-#endif // _DEBUG
-			singleton->Deserialize((const char*)data, size);
-		R_Free((void*)data);
-#ifdef _DEBUG
-		assert(read == size);
-#endif
+		return;
 	}
+
+#ifdef _DEBUG
+	size_t read =
+#endif // _DEBUG
+		singleton->Deserialize((const char*)data, size);
+	R_Free((void*)data);
+#ifdef _DEBUG
+	assert(read == size);
+#endif
 }
 
 void SaveGhoul2InfoArray()
