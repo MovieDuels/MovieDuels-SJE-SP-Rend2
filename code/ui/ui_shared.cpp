@@ -11272,7 +11272,7 @@ static qboolean Item_Multi_HandleKey(itemDef_t* item, const int key)
 						item->value--;
 						if (item->value < 0)
 						{
-							item->value = max;
+							item->value = max - 1;
 						}
 					}
 					else
