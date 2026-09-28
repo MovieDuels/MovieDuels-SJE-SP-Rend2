@@ -2082,6 +2082,7 @@ static void R_ShutdownBackEndFrameData()
 }
 
 static bool r_cacheGPUShaders = false;
+static int r_cachedGPUShadersCubeMapping = -1; // r_cubeMapping the cached GLSL programs were built with
 
 static void R_ClearTr(void)
 {
@@ -2192,8 +2193,21 @@ void R_Init(void)
 
 	FBO_Init();
 
+	// The map command switches r_cubeMapping per map (sv_ccmds.cpp). The GLSL programs
+	// depend on it (prefilterEnvMap is only built when it is on), so programs cached from
+	// the last level must be rebuilt when it changed, or cubemap rendering uses a program
+	// that was never built and crashes.
+	if (r_cacheGPUShaders && r_cubeMapping->integer != r_cachedGPUShadersCubeMapping)
+	{
+		GLSL_ShutdownGPUShaders();
+		r_cacheGPUShaders = false;
+	}
+
 	if (!r_cacheGPUShaders)
+	{
 		GLSL_LoadGPUShaders();
+		r_cachedGPUShadersCubeMapping = r_cubeMapping->integer;
+	}
 	r_cacheGPUShaders = false;
 
 	R_InitShaders(qfalse);
