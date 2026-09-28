@@ -1319,7 +1319,6 @@ static const void* RB_DrawSurfs(const void* data)
 		}
 
 		g_bRenderGlowingObjects = false;
-		qglFinish();
 
 		// Copy the glow scene to texture.
 		qglDisable(GL_TEXTURE_2D);
@@ -1339,13 +1338,17 @@ static const void* RB_DrawSurfs(const void* data)
 		// Blur the scene.
 		RB_BlurGlowTexture();
 
-		// Copy the finished glow scene back to texture.
-		qglDisable(GL_TEXTURE_2D);
-		qglEnable(GL_TEXTURE_RECTANGLE_ARB);
-		qglBindTexture(GL_TEXTURE_RECTANGLE_ARB, tr.blurImage);
-		qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
-		qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-		qglEnable(GL_TEXTURE_2D);
+		// Copy the finished glow scene back to texture. Every blur pass already ends with this copy,
+		// so it is only needed when there were no blur passes.
+		if (r_DynamicGlowPasses->integer <= 0)
+		{
+			qglDisable(GL_TEXTURE_2D);
+			qglEnable(GL_TEXTURE_RECTANGLE_ARB);
+			qglBindTexture(GL_TEXTURE_RECTANGLE_ARB, tr.blurImage);
+			qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
+			qglDisable(GL_TEXTURE_RECTANGLE_ARB);
+			qglEnable(GL_TEXTURE_2D);
+		}
 
 		// Set the viewport back to normal.
 		backEnd.viewParms.viewportWidth = old_view_width;
@@ -1768,10 +1771,7 @@ static void RB_BlurGlowTexture()
 			qglDisable(GL_TEXTURE_2D);
 			qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 			qglBindTexture(GL_TEXTURE_RECTANGLE_ARB, ui_tex);
-
-			// Copy the current image over.
-			qglBindTexture(GL_TEXTURE_RECTANGLE_ARB, ui_tex);
-			qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
+			// blurImage already holds the result of pass 0 (copied at the end of that pass).
 		}
 
 		// Draw the fullscreen quad.
