@@ -208,6 +208,20 @@ void R_AddMarkFragments(int num_clip_points, vec3_t clip_points[2][MAX_VERTS_ON_
 	int max_fragments, markFragment_t* fragment_buffer,
 	int* returned_points, int* returned_fragments, vec3_t mins, vec3_t maxs)
 {
+	// Skip polygons that are nowhere near the mark before chopping them by all planes:
+	// big triangle meshes / grids would otherwise chop every triangle for every mark
+	// (e.g. the blob shadow of every NPC, every frame). 32 = the near clip plane margin.
+	for (int axis = 0; axis < 3; axis++) {
+		float lo = clip_points[0][0][axis], hi = lo;
+		for (int j = 1; j < num_clip_points; j++) {
+			lo = Q_min(lo, clip_points[0][j][axis]);
+			hi = Q_max(hi, clip_points[0][j][axis]);
+		}
+		if (hi < mins[axis] - 32 || lo > maxs[axis] + 32) {
+			return;
+		}
+	}
+
 	// chop the surface by all the bounding planes of the to be projected polygon
 	int ping_pong = 0;
 
