@@ -684,7 +684,8 @@ static qboolean S_LoadSound_FileLoadAndNameAdjuster(char* ps_filename, byte** p_
 		{
 			strncpy(psVoice, "chr_f", 5);	// same number of letters as "chars"
 		}
-		else if (s_language && Q_stricmp("ESPANOL", s_language->string) == 0)
+		else if (s_language && (Q_stricmp("ESPANOL", s_language->string) == 0
+			|| Q_stricmp("ESPANYOL", s_language->string) == 0)) // the MD settings menu writes "espanyol"
 		{
 			strncpy(psVoice, "chr_e", 5);	// same number of letters as "chars"
 		}

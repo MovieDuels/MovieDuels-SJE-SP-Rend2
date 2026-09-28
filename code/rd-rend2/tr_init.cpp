@@ -2082,6 +2082,7 @@ static void R_ShutdownBackEndFrameData()
 }
 
 static bool r_cacheGPUShaders = false;
+static int r_cachedGPUShadersCubeMapping = -1; // r_cubeMapping the cached GLSL programs were built with
 
 static void R_ClearTr(void)
 {
@@ -2097,6 +2098,7 @@ static void R_ClearTr(void)
 }
 
 static bool r_inited = false;
+static bool r_glContextKept = false; // RE_Shutdown kept the GL context (level change)
 
 /*
 ===============
@@ -2112,6 +2114,16 @@ void R_Init(void)
 		return;
 
 	ri.Printf(PRINT_ALL, "-----Loading SP Quality Mode-----\n");
+
+	// On a level change the server registers images and models between RE_Shutdown and
+	// here (SV_SpawnServer -> R_SVModelInit, game spawn). Their GL textures and buffers are
+	// only known in tr, so delete them before R_ClearTr, or they leak every level load.
+	if (r_glContextKept && (tr.images || tr.numVBOs || tr.numIBOs))
+	{
+		R_DeleteTextures();
+		R_DestroyGPUBuffers();
+	}
+	r_glContextKept = false;
 
 	// clear all our internal state
 	R_ClearTr();
@@ -2192,8 +2204,21 @@ void R_Init(void)
 
 	FBO_Init();
 
+	// The map command switches r_cubeMapping per map (sv_ccmds.cpp). The GLSL programs
+	// depend on it (prefilterEnvMap is only built when it is on), so programs cached from
+	// the last level must be rebuilt when it changed, or cubemap rendering uses a program
+	// that was never built and crashes.
+	if (r_cacheGPUShaders && r_cubeMapping->integer != r_cachedGPUShadersCubeMapping)
+	{
+		GLSL_ShutdownGPUShaders();
+		r_cacheGPUShaders = false;
+	}
+
 	if (!r_cacheGPUShaders)
+	{
 		GLSL_LoadGPUShaders();
+		r_cachedGPUShadersCubeMapping = r_cubeMapping->integer;
+	}
 	r_cacheGPUShaders = false;
 
 	R_InitShaders(qfalse);
@@ -2287,6 +2312,7 @@ void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 
 	tr.registered = qfalse;
 	r_inited = false;
+	r_glContextKept = !destroyWindow;
 	backEndData = NULL;
 }
 

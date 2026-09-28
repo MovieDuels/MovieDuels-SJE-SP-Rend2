@@ -202,6 +202,13 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
+	# same language level as the GCC/Clang builds below (-std=c++17);
+	# MSVC defaults to C++14, which rejects inline variables (ghoul2_shared.h)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+	# keep std::random_shuffle (g_pazaak.cpp) available like GCC does, so the
+	# card shuffling behaves exactly as before
+	set(SharedDefines ${SharedDefines} "_HAS_AUTO_PTR_ETC=1")
+
 	# We don't try to control symbol visibility under MSVC.
 	set(OPENJK_VISIBILITY_FLAGS "")
 

@@ -100,6 +100,7 @@ IGhoul2InfoArray& _TheGhoul2InfoArray()
 
 static void CL_ShutdownRef(qboolean restarting);
 void CL_InitRef();
+static void CL_InitRenderer();
 void CL_CheckForResend();
 
 /*
@@ -408,7 +409,12 @@ void CL_Vid_Restart_f()
 
 	CL_InitRef();
 
-	cls.rendererStarted = qfalse;
+	// Start the new renderer right away instead of in the next CL_Frame: Com_Frame
+	// runs SV_Frame first, and the game's ghoul2 calls (e.g. an NPC changing its
+	// saber model) would reach a renderer that is loaded but not initialised yet.
+	cls.rendererStarted = qtrue;
+	CL_InitRenderer();
+
 	cls.uiStarted = qfalse;
 	cls.cgameStarted = qfalse;
 	cls.soundRegistered = qfalse;

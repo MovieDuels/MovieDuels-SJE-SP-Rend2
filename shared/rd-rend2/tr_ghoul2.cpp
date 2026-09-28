@@ -4141,6 +4141,23 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 		return qfalse;
 	}
 
+#ifndef JK2_MODE
+	// Same check as rd-vanilla: a mesh whose bone count does not match its skeleton (GLA) must not be
+	// used. Its surfaces/bolts reference bones the skeleton does not have, and G2_ProcessSurfaceBolt2 ->
+	// G2_TransformBone later reads outside the bone cache (crash). Old JK2 meshes (72 bones on
+	// _humanoid) are still allowed, they are converted.
+	{
+		const model_t* anim_model = R_GetModelByHandle(mdxm->animIndex);
+		if (anim_model && anim_model->data.gla && anim_model->data.gla->numBones != mdxm->numBones
+			&& !isAnOldModelFile)
+		{
+			ri.Printf(PRINT_WARNING, "R_LoadMDXM: %s has different bones than anim (%i != %i)\n", mod_name,
+				mdxm->numBones, anim_model->data.gla->numBones);
+			return qfalse;
+		}
+	}
+#endif
+
 	mod->numLods = mdxm->numLODs - 1;	//copy this up to the model for ease of use - it wil get inced after this.
 
 	surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>(reinterpret_cast<byte*>(mdxm) + mdxm->ofsSurfHierarchy);

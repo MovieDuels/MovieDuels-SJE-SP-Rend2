@@ -2603,33 +2603,37 @@ static qboolean UI_RunMenuScript(const char** args)
 				if (menu) {
 #ifdef NEW_FEEDER_V3
 					itemDef_t* item = Menu_FindItemByName(menu, "modellist");
-					listBoxDef_t* list = static_cast<listBoxDef_t*>(item->typeData);
+					if (item) {
+						listBoxDef_t* list = static_cast<listBoxDef_t*>(item->typeData);
 #ifdef NEW_FEEDER_V7
-					if (list) {
-						list->cursorPos = positionM;
-					}
-					item->cursorPos = positionM;
+						if (list) {
+							list->cursorPos = positionM;
+						}
+						item->cursorPos = positionM;
 #else
-					if (list) {
-						list->cursorPos = 0;
-					}
-					item->cursorPos = 0;
+						if (list) {
+							list->cursorPos = 0;
+						}
+						item->cursorPos = 0;
 #endif
+					}
 #endif
 
 					itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
-					listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
+					if (itemFeeder) {
+						listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
 #ifdef NEW_FEEDER_V7
-					if (listPtr) {
-						listPtr->cursorPos = positionV;
-					}
-					itemFeeder->cursorPos = positionV;
+						if (listPtr) {
+							listPtr->cursorPos = positionV;
+						}
+						itemFeeder->cursorPos = positionV;
 #else
-					if (listPtr) {
-						listPtr->cursorPos = 0;
-					}
-					itemFeeder->cursorPos = 0;
+						if (listPtr) {
+							listPtr->cursorPos = 0;
+						}
+						itemFeeder->cursorPos = 0;
 #endif
+					}
 
 #ifdef NEW_FEEDER_V2
 					itemDef_t* itemDesc = Menu_FindItemByName(menu, "char_desc");
@@ -3778,12 +3782,11 @@ static void UI_CalcForceStatus()
 	{
 		return;
 	}
-	const playerState_t* pState = cl->gentity->client;
-
 	if (!cl->gentity || !cl->gentity->client)
 	{
 		return;
 	}
+	const playerState_t* pState = cl->gentity->client;
 
 	memset(value, 0, sizeof value);
 
@@ -4260,11 +4263,13 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 #ifdef NEW_FEEDER_V1
 			if (menu) {
 				itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
-				listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
-				if (listPtr) {
-					listPtr->cursorPos = 0;
+				if (itemFeeder) {
+					listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
+					if (listPtr) {
+						listPtr->cursorPos = 0;
+					}
+					itemFeeder->cursorPos = 0;
 				}
-				itemFeeder->cursorPos = 0;
 			}
 #endif
 		}
@@ -7174,7 +7179,7 @@ static void UI_InitAllocForcePowers(const char* forceName)
 
 	// NOTE: this UIScript can be called outside the running game now, so handle that case
 	// by getting info frim UIInfo instead of PlayerState
-	if (cl)
+	if (cl && cl->gentity && cl->gentity->client)
 	{
 		const playerState_t* pState = cl->gentity->client;
 		forcelevel = pState->forcePowerLevel[powerEnums[forcePowerI].powerEnum];
@@ -7359,7 +7364,7 @@ static void UI_ViewWeaponWheel() {
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-	if (!cl)
+	if (!cl || !cl->gentity || !cl->gentity->client)
 	{
 		return; // No client, get out
 	}
@@ -7418,7 +7423,7 @@ static void UI_ViewForceWheel() {
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-	if (!cl)
+	if (!cl || !cl->gentity || !cl->gentity->client)
 	{
 		return; // No client, get out
 	}
@@ -7733,7 +7738,7 @@ static void UI_ShutdownForceHelp()
 		// Get player state
 		const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-		if (!cl) // No client, get out
+		if (!cl || !cl->gentity || !cl->gentity->client) // No client, get out
 		{
 			return;
 		}
@@ -8019,7 +8024,7 @@ static void UI_ShowForceLevelDesc(const char* forceName)
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-	if (!cl) // No client, get out
+	if (!cl || !cl->gentity || !cl->gentity->client) // No client, get out
 	{
 		return;
 	}

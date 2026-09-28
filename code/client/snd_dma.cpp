@@ -872,6 +872,21 @@ Will allocate a new sfx if it isn't found
 			Com_Error(ERR_FATAL, "s_find_name: out of sfx_t handles");
 			return NULL; // unreachable
 		}
+
+		// The recycled slot is still linked into the hash chain of its OLD name.
+		// Unlink it before it is re-inserted below, otherwise the chains get
+		// crossed and can form a cycle - the next lookup of a new sound then loops
+		// forever (seen as a hang while loading a map after ~120 map loads, when
+		// the table is full: s_numSfx == MAX_SFX).
+		sfx_t* recycled = &s_knownSfx[i];
+		for (sfx_t** link = &sfxHash[S_HashSFXName(recycled->sSoundName)]; *link; link = &(*link)->next)
+		{
+			if (*link == recycled)
+			{
+				*link = recycled->next;
+				break;
+			}
+		}
 	}
 	else
 	{

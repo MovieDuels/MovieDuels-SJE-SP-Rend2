@@ -15058,11 +15058,26 @@ void CG_AddSaberBlade(centity_t* cent, centity_t* scent, const int renderfx, con
  ================
  */
  //Get the point in the leg animation and return a percentage of the current point in the anim between 0 and the total anim length (0.0f - 1.0f)
+// the view entity may have no gent / ghoul2 model (cameras, right after loading)
+static bool CG_ViewEntityHasModel()
+{
+	if (!cg.snap || cg.snap->ps.viewEntity < 0 || cg.snap->ps.viewEntity >= MAX_GENTITIES)
+	{
+		return false;
+	}
+	const gentity_t* gent = cg_entities[cg.snap->ps.viewEntity].gent;
+	return gent && gent->playerModel >= 0 && gent->playerModel < gent->ghoul2.size();
+}
+
 static float CG_GetSelfLegAnimPoint()
 {
 	float current = 0.0f;
 	int end = 0;
 	int start = 0;
+	if (!CG_ViewEntityHasModel())
+	{
+		return 0.0f;
+	}
 	if (!!gi.G2API_GetBoneAnimIndex(&
 		cg_entities[cg.snap->ps.viewEntity].gent->ghoul2[cg_entities[cg.snap->ps.viewEntity]
 		.gent->playerModel],
@@ -15075,7 +15090,7 @@ static float CG_GetSelfLegAnimPoint()
 		nullptr,
 		nullptr))
 	{
-		const float percent_complete = (current - start) / (end - start);
+		const float percent_complete = end != start ? (current - start) / (end - start) : 0.0f;
 
 		return percent_complete;
 	}
@@ -15095,6 +15110,10 @@ float CG_GetSelfTorsoAnimPoint()
 	float current = 0.0f;
 	int end = 0;
 	int start = 0;
+	if (!CG_ViewEntityHasModel())
+	{
+		return 0.0f;
+	}
 	if (!!gi.G2API_GetBoneAnimIndex(&
 		cg_entities[cg.snap->ps.viewEntity].gent->ghoul2[cg_entities[cg.snap->ps.viewEntity]
 		.gent->playerModel],
@@ -15107,7 +15126,7 @@ float CG_GetSelfTorsoAnimPoint()
 		nullptr,
 		nullptr))
 	{
-		const float percent_complete = (current - start) / (end - start);
+		const float percent_complete = end != start ? (current - start) / (end - start) : 0.0f;
 
 		return percent_complete;
 	}

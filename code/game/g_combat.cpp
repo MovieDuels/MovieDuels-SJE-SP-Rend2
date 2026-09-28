@@ -9052,7 +9052,8 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		}
 	}
 
-	if (targ->client && attacker->client && targ->health > 0 &&
+	// point can be NULL (e.g. G_KillBox telefrag damage) - the head shot code below reads point[2]
+	if (point && targ->client && attacker->client && targ->health > 0 &&
 		g_standard_humanoid(targ) && !NPC_IsNotDismemberable(targ))
 	{
 		// do head shots
