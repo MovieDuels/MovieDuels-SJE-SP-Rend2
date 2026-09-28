@@ -2067,7 +2067,10 @@ void RB_StageIteratorGeneric()
 	//
 	qglVertexPointer(3, GL_FLOAT, 16, input->xyz);	// padded for SIMD
 
-	if (qglLockArraysEXT)
+	// glLockArraysEXT with a count of 0 is GL_INVALID_VALUE (and the unlock then GL_INVALID_OPERATION),
+	// e.g. for a sky without cloud layers, which reaches here with no vertexes
+	const bool lock_arrays = qglLockArraysEXT && input->numVertexes > 0;
+	if (lock_arrays)
 	{
 		qglLockArraysEXT(0, input->numVertexes);
 		GLimp_LogComment("glLockArraysEXT\n");
@@ -2117,7 +2120,7 @@ void RB_StageIteratorGeneric()
 	//
 	// unlock arrays
 	//
-	if (qglUnlockArraysEXT)
+	if (lock_arrays && qglUnlockArraysEXT)
 	{
 		qglUnlockArraysEXT();
 		GLimp_LogComment("glUnlockArraysEXT\n");
