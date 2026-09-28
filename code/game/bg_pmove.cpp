@@ -14015,7 +14015,9 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 {
 	int anim = BOTH_STAND2;
 
-	qboolean enemyInFront = PM_EnemyInFrontCloseRange();
+	// enemy_far is only read together with g_NPCAnimationStyle 1, so only do the 3 traces then
+	// (they ran for every saber NPC every frame even with the default style 0)
+	const qboolean enemyInFront = (g_NPCAnimationStyle && g_NPCAnimationStyle->integer == 1) ? PM_EnemyInFrontCloseRange() : qfalse;
 	const qboolean enemy_far = (enemyInFront == qfalse) ? qtrue : qfalse; // 3.0 meters = 300 units
 
 	animFlags_t flags = PM_Animationstyletable(pm);
