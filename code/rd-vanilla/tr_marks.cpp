@@ -208,6 +208,20 @@ void R_AddMarkFragments(int num_clip_points, vec3_t clip_points[2][MAX_VERTS_ON_
 	int max_fragments, markFragment_t* fragment_buffer,
 	int* returned_points, int* returned_fragments, vec3_t mins, vec3_t maxs)
 {
+	// Skip polygons that are nowhere near the mark before chopping them by all planes:
+	// big triangle meshes / grids would otherwise chop every triangle for every mark
+	// (e.g. the blob shadow of every NPC, every frame). 32 = the near clip plane margin.
+	for (int axis = 0; axis < 3; axis++) {
+		float lo = clip_points[0][0][axis], hi = lo;
+		for (int j = 1; j < num_clip_points; j++) {
+			lo = Q_min(lo, clip_points[0][j][axis]);
+			hi = Q_max(hi, clip_points[0][j][axis]);
+		}
+		if (hi < mins[axis] - 32 || lo > maxs[axis] + 32) {
+			return;
+		}
+	}
+
 	// chop the surface by all the bounding planes of the to be projected polygon
 	int ping_pong = 0;
 
@@ -237,6 +251,23 @@ void R_AddMarkFragments(int num_clip_points, vec3_t clip_points[2][MAX_VERTS_ON_
 
 	*returned_points += num_clip_points;
 	(*returned_fragments)++;
+}
+
+static bool R_MarkBoundsOutside(const vec3_t bmins, const vec3_t bmaxs, const vec3_t mins, const vec3_t maxs)
+{
+	return bmaxs[0] < mins[0] || bmins[0] > maxs[0]
+		|| bmaxs[1] < mins[1] || bmins[1] > maxs[1]
+		|| bmaxs[2] < mins[2] || bmins[2] > maxs[2];
+}
+
+static bool R_MarkTriangleOutside(const vec3_t a, const vec3_t b, const vec3_t c, const vec3_t mins, const vec3_t maxs)
+{
+	for (int axis = 0; axis < 3; axis++) {
+		if (Q_max(a[axis], Q_max(b[axis], c[axis])) < mins[axis] || Q_min(a[axis], Q_min(b[axis], c[axis])) > maxs[axis]) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /*
@@ -299,6 +330,14 @@ int R_MarkFragments(int num_points, const vec3_t* points, const vec3_t projectio
 	//assert(numsurfaces <= 64);
 	//assert(numsurfaces != 64);
 
+	// R_AddMarkFragments drops every polygon outside these bounds; test them here already so
+	// whole surfaces and triangles far from the mark cost nothing (same result)
+	vec3_t mark_mins, mark_maxs;
+	for (i = 0; i < 3; i++) {
+		mark_mins[i] = mins[i] - 32;
+		mark_maxs[i] = maxs[i] + 32;
+	}
+
 	returned_points = 0;
 	returned_fragments = 0;
 
@@ -308,6 +347,9 @@ int R_MarkFragments(int num_points, const vec3_t* points, const vec3_t projectio
 		vec3_t clip_points[2][MAX_VERTS_ON_POLY]{};
 		if (*surfaces[i] == SF_GRID) {
 			const srfGridMesh_t* const cv = reinterpret_cast<srfGridMesh_t*>(surfaces[i]);
+			if (R_MarkBoundsOutside(cv->meshBounds[0], cv->meshBounds[1], mark_mins, mark_maxs)) {
+				continue;
+			}
 			for (int m = 0; m < cv->height - 1; m++) {
 				for (int n = 0; n < cv->width - 1; n++) {
 					// We triangulate the grid and chop all triangles within
@@ -334,6 +376,12 @@ int R_MarkFragments(int num_points, const vec3_t* points, const vec3_t projectio
 					constexpr int num_clip_points = 3;
 
 					const drawVert_t* const dv = cv->verts + m * cv->width + n;
+
+					// both triangles of this cell far from the mark -> nothing to add (MARKER_OFFSET is 0)
+					if (R_MarkTriangleOutside(dv[0].xyz, dv[cv->width].xyz, dv[1].xyz, mark_mins, mark_maxs)
+						&& R_MarkTriangleOutside(dv[1].xyz, dv[cv->width].xyz, dv[cv->width + 1].xyz, mark_mins, mark_maxs)) {
+						continue;
+					}
 
 					VectorCopy(dv[0].xyz, clip_points[0][0]);
 					VectorMA(clip_points[0][0], MARKER_OFFSET, dv[0].normal, clip_points[0][0]);
@@ -413,12 +461,18 @@ int R_MarkFragments(int num_points, const vec3_t* points, const vec3_t projectio
 		else if (*surfaces[i] == SF_TRIANGLES)
 		{
 			const srfTriangles_t* const surf = reinterpret_cast<srfTriangles_t*>(surfaces[i]);
+			if (R_MarkBoundsOutside(surf->bounds[0], surf->bounds[1], mark_mins, mark_maxs)) {
+				continue;
+			}
 
 			for (k = 0; k < surf->numIndexes; k += 3)
 			{
 				const int i1 = surf->indexes[k];
 				const int i2 = surf->indexes[k + 1];
 				const int i3 = surf->indexes[k + 2];
+				if (R_MarkTriangleOutside(surf->verts[i1].xyz, surf->verts[i2].xyz, surf->verts[i3].xyz, mark_mins, mark_maxs)) {
+					continue;
+				}
 				VectorSubtract(surf->verts[i1].xyz, surf->verts[i2].xyz, v1);
 				VectorSubtract(surf->verts[i3].xyz, surf->verts[i2].xyz, v2);
 				CrossProduct(v1, v2, normal);
