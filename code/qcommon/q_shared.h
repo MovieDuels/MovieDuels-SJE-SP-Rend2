@@ -2361,7 +2361,7 @@ public:
 		saved_game.write<int32_t>(saberEntityNum);
 		saved_game.write<float>(saberEntityDist);
 		saved_game.write<int32_t>(saberThrowTime);
-		saved_game.write<int32_t>(saberDamageDebounceTime);
+		saved_game.write<int32_t>(saberEntityState); // sg_import reads saberEntityState here
 		saved_game.write<int32_t>(saberHitWallSoundDebounceTime);
 		saved_game.write<int32_t>(saberEventFlags);
 		saved_game.write<int32_t>(saberAnimLevel);
