@@ -22113,14 +22113,14 @@ static qboolean PM_CanDoSmashdown(const pmove_t* pm)
 	{// chance based on saber style NPC is using.
 	case SS_DUAL:
 	case SS_STAFF:
-		chanceThreshold = 66;
+		chanceThreshold = 75;
 		break;
 	case SS_FAST:
 	case SS_TAVION:
 	case SS_STRONG:
 	case SS_DESANN:
 	case SS_MEDIUM:
-		chanceThreshold = 75;
+		chanceThreshold = 95;
 		break;
 	case SS_NONE:
 	default:
