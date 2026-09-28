@@ -9628,7 +9628,10 @@ G_RadiusDamage
 */
 void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage, float radius, const gentity_t* ignore, const int mod)
 {
-	static gentity_t* entity_list[MAX_GENTITIES];
+	// Filled into a static buffer (MAX_GENTITIES pointers are too big for the stack) and then
+	// copied: G_Damage below can kill an explosive object whose die function calls G_RadiusDamage
+	// again (chain explosion), which refills the static buffer while this loop still walks it.
+	static gentity_t* entity_scratch[MAX_GENTITIES];
 	vec3_t mins{}, maxs{};
 	vec3_t v{};
 	vec3_t dir;
@@ -9656,7 +9659,8 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 		dflags |= DAMAGE_NO_KNOCKBACK;
 	}
 
-	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
+	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_scratch, MAX_GENTITIES);
+	const std::vector<gentity_t*> entity_list(entity_scratch, entity_scratch + num_listed_entities);
 
 	for (int e = 0; e < num_listed_entities; e++)
 	{
