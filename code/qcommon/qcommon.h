@@ -463,6 +463,7 @@ qboolean FS_FileExists(const char* file);
 char* FS_BuildOSPath(const char* base, const char* game, const char* qpath);
 
 int FS_GetFileList(const char* path, const char* extension, char* listbuf, int bufsize);
+int FS_Generation();
 int FS_GetModList(char* listbuf, int bufsize);
 
 // will properly create any needed paths and deal with seperater character issues

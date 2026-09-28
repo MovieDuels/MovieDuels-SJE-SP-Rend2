@@ -249,6 +249,7 @@ static searchpath_t* fs_searchpaths;
 static int			fs_readCount;			// total bytes read
 static int			fs_loadCount;			// total files read
 static int			fs_packFiles = 0;		// total number of files in packs
+static int			fs_generation = 0;		// bumped every time the search paths are rebuilt (FS_Startup)
 
 typedef union qfile_gus {
 	FILE* o;
@@ -2090,6 +2091,19 @@ void FS_FreeFileList(char** file_list) {
 
 /*
 ================
+FS_Generation
+
+Changes whenever the search paths are rebuilt (new game dir / pk3 set), so callers can
+tell whether data they built from the file system is still current.
+================
+*/
+int FS_Generation()
+{
+	return fs_generation;
+}
+
+/*
+================
 FS_GetFileList
 ================
 */
@@ -2748,6 +2762,7 @@ static void FS_Startup(const char* gameName)
 	Com_Printf("----- FS_Startup -----\n");
 
 	fs_packFiles = 0;
+	fs_generation++;
 
 	fs_debug = Cvar_Get("fs_debug", "0", 0);
 	fs_copyfiles = Cvar_Get("fs_copyfiles", "0", CVAR_INIT);

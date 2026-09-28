@@ -30,6 +30,7 @@ USER INTERFACE MAIN
 */
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "../server/exe_headers.h"
@@ -4703,6 +4704,121 @@ static void UI_FreeAllSpecies()
 	uiInfo.playerSpecies = nullptr;
 }
 
+// Every level load restarts the UI, which rebuilt the player model list from the files (about half
+// a second with 600+ model folders, most of it failed PlayerChoice.txt lookups in every pk3). The list
+// only depends on the files, so in-game restarts reuse the list built last time as long as the file
+// system (FS_Generation) and the list of model folders are unchanged.
+static playerSpeciesInfo_t* ui_speciesCache = nullptr;
+static int ui_speciesCacheCount = 0;
+static int ui_speciesCacheMax = 0;
+static int ui_speciesCacheFsGeneration = -1;
+static std::string ui_speciesCacheDirs;
+
+template <typename T>
+static bool UI_CopySpeciesArray(T*& dst, const T* src, const int count, const int max)
+{
+	dst = nullptr;
+	if (src == nullptr || max <= 0)
+	{
+		return true;
+	}
+	dst = static_cast<T*>(malloc(static_cast<size_t>(max) * sizeof(T)));
+	if (dst == nullptr)
+	{
+		return false;
+	}
+	if (count > 0)
+	{
+		memcpy(dst, src, static_cast<size_t>(count) * sizeof(T));
+	}
+	return true;
+}
+
+static bool UI_CopySpecies(playerSpeciesInfo_t* dst, const playerSpeciesInfo_t* src)
+{
+	*dst = *src;
+	const bool ok = UI_CopySpeciesArray(dst->SkinHead, src->SkinHead, src->SkinHeadCount, src->SkinHeadMax)
+		& UI_CopySpeciesArray(dst->SkinTorso, src->SkinTorso, src->SkinTorsoCount, src->SkinTorsoMax)
+		& UI_CopySpeciesArray(dst->SkinLeg, src->SkinLeg, src->SkinLegCount, src->SkinLegMax)
+		& UI_CopySpeciesArray(dst->Color, src->Color, src->ColorCount, src->ColorMax);
+	if (!ok)
+	{
+		UI_FreeSpecies(dst);
+	}
+	return ok;
+}
+
+static void UI_FreeSpeciesCache()
+{
+	for (int i = 0; i < ui_speciesCacheCount; i++)
+	{
+		UI_FreeSpecies(&ui_speciesCache[i]);
+	}
+	free(ui_speciesCache);
+	ui_speciesCache = nullptr;
+	ui_speciesCacheCount = 0;
+	ui_speciesCacheFsGeneration = -1;
+	ui_speciesCacheDirs.clear();
+}
+
+static void UI_StoreSpeciesCache(const std::string& dirs)
+{
+	UI_FreeSpeciesCache();
+	if (uiInfo.playerSpeciesCount <= 0 || uiInfo.playerSpecies == nullptr)
+	{
+		return;
+	}
+	ui_speciesCache = static_cast<playerSpeciesInfo_t*>(calloc(static_cast<size_t>(uiInfo.playerSpeciesCount), sizeof(playerSpeciesInfo_t)));
+	if (ui_speciesCache == nullptr)
+	{
+		return;
+	}
+	for (int i = 0; i < uiInfo.playerSpeciesCount; i++)
+	{
+		if (!UI_CopySpecies(&ui_speciesCache[i], &uiInfo.playerSpecies[i]))
+		{
+			ui_speciesCacheCount = i;
+			UI_FreeSpeciesCache();
+			return;
+		}
+	}
+	ui_speciesCacheCount = uiInfo.playerSpeciesCount;
+	ui_speciesCacheMax = uiInfo.playerSpeciesMax;
+	ui_speciesCacheFsGeneration = FS_Generation();
+	ui_speciesCacheDirs = dirs;
+}
+
+// uiInfo.playerSpecies must be the freshly allocated, still empty list
+static bool UI_RestoreSpeciesCache(const std::string& dirs)
+{
+	if (ui_speciesCache == nullptr || ui_speciesCacheFsGeneration != FS_Generation() || ui_speciesCacheDirs != dirs)
+	{
+		return false;
+	}
+	auto* species = static_cast<playerSpeciesInfo_t*>(calloc(static_cast<size_t>(ui_speciesCacheMax), sizeof(playerSpeciesInfo_t)));
+	if (species == nullptr)
+	{
+		return false;
+	}
+	for (int i = 0; i < ui_speciesCacheCount; i++)
+	{
+		if (!UI_CopySpecies(&species[i], &ui_speciesCache[i]))
+		{
+			for (int k = 0; k < i; k++)
+			{
+				UI_FreeSpecies(&species[k]);
+			}
+			free(species);
+			return false;
+		}
+	}
+	free(uiInfo.playerSpecies);
+	uiInfo.playerSpecies = species;
+	uiInfo.playerSpeciesMax = ui_speciesCacheMax;
+	uiInfo.playerSpeciesCount = ui_speciesCacheCount;
+	return true;
+}
+
 /*
 =================
 PlayerModel_BuildList
@@ -4743,6 +4859,20 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 	int dirlen = 0;
 	const int numdirs = ui.FS_GetFileList("models/players", "/", dirlist, static_cast<int>(DIR_LIST_SIZE));
 	char* dirptr = dirlist;
+
+	// the folder names identify the list together with FS_Generation (see UI_RestoreSpeciesCache)
+	std::string dirSignature;
+	for (int i = 0, pos = 0; i < numdirs && pos < static_cast<int>(DIR_LIST_SIZE); i++)
+	{
+		const int len = static_cast<int>(strlen(dirlist + pos));
+		dirSignature.append(dirlist + pos, static_cast<size_t>(len) + 1);
+		pos += len + 1;
+	}
+	if (inGameLoad && building == 0 && UI_RestoreSpeciesCache(dirSignature))
+	{
+		free(dirlist);
+		return;
+	}
 
 	for (int i = 0; i < numdirs; i++, dirptr += dirlen + 1)
 	{
@@ -5002,6 +5132,10 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 		}
 	}
 
+	if (building == 0)
+	{
+		UI_StoreSpeciesCache(dirSignature);
+	}
 	free(dirlist);
 }
 
