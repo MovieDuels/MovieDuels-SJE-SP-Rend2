@@ -81,9 +81,21 @@ public:
 private:
 	AssetCache::iterator FindAsset(const char* name);
 	FileCache::iterator	FindFile(const char* name);
+	void ClearHandleMemo();
 
 	AssetCache assets;
 	FileCache files;
+
+	// Remembers GetModelHandle results per exact name string, so repeated lookups (every ghoul2 call
+	// re-registers its models by name) skip the lower-casing and the linear search over all assets.
+	// Cleared whenever an asset is removed; appending assets keeps earlier results valid.
+	struct HandleMemo
+	{
+		char name[MAX_QPATH];
+		qhandle_t handle;
+	};
+	static constexpr int HANDLE_MEMO_SIZE = 1024;
+	HandleMemo handleMemo[HANDLE_MEMO_SIZE]{};
 };
 
 qboolean C_Models_LevelLoadEnd(qboolean deleteUnusedByLevel);
