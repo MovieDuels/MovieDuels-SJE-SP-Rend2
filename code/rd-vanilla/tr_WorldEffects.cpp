@@ -2103,9 +2103,19 @@ void RE_WorldEffectCommand(const char* command) // vanilla sp
 	// Check G_Weather value
 	else
 	{
+		// Maps send names this renderer does not handle (fx_wind "swirlingwind", fx_snow "lightsnow"/
+		// "heavysnow", fx_lava "lightlava"/"heavylava"). With r_weather 0 they fell into the "clear"
+		// preset below and wiped the lava, fog and wind the map had already set up. Ignore them; the
+		// presets stay for the console/menu path ("r_weather", "weather <number>").
+		//----------------------------------------------------
+		if (g_Weather->integer == 0 && token[0] && !(token[0] >= '0' && token[0] <= '9') && token[0] != '-')
+		{
+			ri.Printf(PRINT_DEVELOPER, "RE_WorldEffectCommand: unknown command '%s' ignored\n", token);
+		}
+
 		// Clear - Removes All Particle Clouds And Wind Zones
 		//----------------------------------------------------
-		if (g_Weather->integer == 0)
+		else if (g_Weather->integer == 0)
 		{
 			for (int p = 0; p < mParticleClouds.size(); p++)
 			{
