@@ -1296,6 +1296,9 @@ int S_AddLocalSet(const char* name, vec3_t listener_origin, vec3_t origin, const
 {
 	int currentTime;
 
+	if (!aSets)
+		return cl.serverTime;
+
 	const ambientSet_t* set = aSets->GetSet(name);
 
 	if (set == nullptr)
@@ -1316,6 +1319,9 @@ AS_GetBModelSound
 
 sfxHandle_t AS_GetBModelSound(const char* name, const int stage)
 {
+	if (!aSets)
+		return -1;
+
 	const ambientSet_t* set = aSets->GetSet(name);
 
 	if (set == nullptr)
