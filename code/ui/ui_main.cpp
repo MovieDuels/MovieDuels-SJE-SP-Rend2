@@ -1945,10 +1945,24 @@ int Key_GetCatcher();
 
 constexpr auto UI_FPS_FRAMES = 4;
 
+// Update 8 lock for g_ActivateAnimationStyle while no map is loaded (main menu). The game module does
+// the same check in a map (G_EnforceUpdateSettings), but it doesn't run until a map is loaded.
+static void UI_EnforceUpdateSettings()
+{
+	if (Cvar_VariableIntegerValue("md_update") < 9 && Cvar_VariableIntegerValue("g_ActivateAnimationStyle") != 0)
+	{
+		Cvar_Set("g_ActivateAnimationStyle", "0");
+		ui.Printf(S_COLOR_YELLOW "g_ActivateAnimationStyle is not available in MovieDuels Update %i, it stays 0.\n",
+			Cvar_VariableIntegerValue("md_update"));
+	}
+}
+
 void _UI_Refresh(const int realtime)
 {
 	static int index;
 	static int previousTimes[UI_FPS_FRAMES];
+
+	UI_EnforceUpdateSettings(); // every UI frame, including the main menu
 
 	if (!(Key_GetCatcher() & KEYCATCH_UI))
 	{
@@ -5192,6 +5206,8 @@ void _UI_Init(const qboolean inGameLoad)
 	uiInfo.inGameLoad = inGameLoad;
 
 	UI_RegisterCvars();
+	// (no UI_EnforceUpdateSettings here: the main menu hasn't set md_update yet, so an Update 9 install
+	//  would still read the default 8. The first UI frame, after the menu's "uiScript mdUpdate", does it.)
 
 	UI_InitMemory();
 
