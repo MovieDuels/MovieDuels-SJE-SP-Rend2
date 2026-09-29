@@ -15021,6 +15021,11 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 			CEffect* base_fx = fx;
 			FX_AddPrimitive(&base_fx, 0);
 		}
+		else
+		{
+			// not handed to the FX system (it only frees what it owns): the verts were only used as scratch
+			delete fx;
+		}
 
 		if (client->ps.saber[saberNum].saberFlags2 & SFL2_NO_BLADE)
 		{
