@@ -21839,7 +21839,11 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 		}
 		else if (self->client->ps.saberBlocking == BLK_TIGHT || self->client->ps.saberBlocking == BLK_WIDE)
 		{
+			// the blade loop below only sets this for blades that are on: while the saber is lit but
+			// its blades still have length 0 it stayed uninitialised and the saber entity was put
+			// at a garbage position (a thrown saber caught in that frame was then drawn there)
 			vec3_t saber_org;
+			VectorCopy(self->currentOrigin, saber_org);
 
 			if (!force_block
 				&& (self->s.number && !jedi_saber_busy(self) && !g_saberRealisticCombat->integer
@@ -22150,7 +22154,11 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 		}
 		else if (self->client->ps.saberBlocking == BLK_TIGHT || self->client->ps.saberBlocking == BLK_WIDE)
 		{
+			// the blade loop below only sets this for blades that are on: while the saber is lit but
+			// its blades still have length 0 it stayed uninitialised and the saber entity was put
+			// at a garbage position (a thrown saber caught in that frame was then drawn there)
 			vec3_t saber_org;
+			VectorCopy(self->currentOrigin, saber_org);
 
 			if (!force_block
 				&& (self->s.number && !jedi_saber_busy(self)
