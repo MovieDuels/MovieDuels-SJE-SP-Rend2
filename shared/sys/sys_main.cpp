@@ -33,6 +33,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "con_local.h"
 #include <SDL_messagebox.h>
 
+#if defined(_WIN32)
+// Ask hybrid-graphics laptops (NVIDIA Optimus / AMD PowerXpress) for the fast GPU.
+// The drivers only look for these exports in the .exe, not in a renderer DLL.
+extern "C" {
+	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 static char binaryPath[MAX_OSPATH] = { 0 };
 static char installPath[MAX_OSPATH] = { 0 };
 

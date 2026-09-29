@@ -13382,7 +13382,7 @@ void WP_SaberInFlightReflectCheck(gentity_t* self)
 
 	// --- PRECOMPUTE SABER TIP POSITIONS --------------------------------------
 	// This avoids recomputing muzzlePoint/tip for every missile
-	vec3_t saberTips[4]{};
+	vec3_t saberTips[MAX_SABERS * MAX_BLADES]{};
 	int tipCount = 0;
 
 	const int numSabers = self->client->ps.dualSabers ? 2 : 1;

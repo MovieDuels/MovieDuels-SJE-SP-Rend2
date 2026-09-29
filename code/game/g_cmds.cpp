@@ -463,7 +463,11 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 
 	if (!give_all && !Q_stricmp(name, "weaponnum"))
 	{
-		ent->client->ps.weapons[atoi(args)] = 1;
+		const int weapon_num = atoi(args);
+		if (weapon_num >= 0 && weapon_num < MAX_WEAPONS)
+		{
+			ent->client->ps.weapons[weapon_num] = 1;
+		}
 		return;
 	}
 
@@ -1300,6 +1304,11 @@ static void Cmd_SetObjective_f(const gentity_t* ent)
 	if (gi.argc() == 2)
 	{
 		objectiveI = atoi(gi.argv(1));
+		if (objectiveI < 0 || objectiveI >= MAX_MISSION_OBJ)
+		{
+			gi.Printf("objective #%d out of range (0-%d)\n", objectiveI, MAX_MISSION_OBJ - 1);
+			return;
+		}
 		gi.Printf("objective #%d  display status=%d, status=%d\n", objectiveI,
 			ent->client->sess.mission_objectives[objectiveI].display,
 			ent->client->sess.mission_objectives[objectiveI].status
@@ -1319,6 +1328,11 @@ static void Cmd_SetObjective_f(const gentity_t* ent)
 	}
 
 	objectiveI = atoi(gi.argv(1));
+	if (objectiveI < 0 || objectiveI >= MAX_MISSION_OBJ)
+	{
+		gi.Printf("objective #%d out of range (0-%d)\n", objectiveI, MAX_MISSION_OBJ - 1);
+		return;
+	}
 	const int displayStatus = atoi(gi.argv(2));
 	const int status = atoi(gi.argv(3));
 
@@ -1341,6 +1355,11 @@ static void Cmd_ViewObjective_f(const gentity_t* ent)
 	}
 
 	const int objectiveI = atoi(gi.argv(1));
+	if (objectiveI < 0 || objectiveI >= MAX_MISSION_OBJ)
+	{
+		gi.SendServerCommand(ent - g_entities, va("print \"objective #%d out of range (0-%d)\n\"", objectiveI, MAX_MISSION_OBJ - 1));
+		return;
+	}
 
 	gi.SendServerCommand(ent - g_entities, va("print \"Objective %d   Display Status(1=show): %d  Status:%d\n\"",
 		objectiveI, ent->client->sess.mission_objectives[objectiveI].display,

@@ -15620,8 +15620,7 @@ void CG_Player(centity_t* cent)
 
 	if (cent->gent && cent->gent->client && cent->gent->client->NPC_class == CLASS_VEHICLE)
 	{
-		//add vehicles
-		CG_AddRadarEnt(cent);
+		// vehicles are already on the radar (CG_AddRadarEnt above adds every entity)
 		if (CG_InFighter())
 		{
 			//this is a vehicle, bracket it
