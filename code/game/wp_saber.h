@@ -344,8 +344,10 @@ using saberMoveName_t = enum saberMoveName_t
 	LS_READY,
 	LS_DRAW,
 	LS_DRAW_YODA,
+	LS_DRAW_VADER,
 	LS_PUTAWAY,
-	LS_PUTAWAY_YODA,
+	LS_PUTAWAY_VADER,
+	LS_PUTAWAY_YODA, // keep last of the draw/putaway moves: code uses "> LS_PUTAWAY_YODA" for "past them"
 
 	// Attacks
 	LS_A_TL2BR,

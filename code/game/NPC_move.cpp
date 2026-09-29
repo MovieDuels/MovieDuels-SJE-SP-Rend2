@@ -416,6 +416,7 @@ static void NPC_JumpAnimation()
 	int jumpAnim = BOTH_JUMP1;
 	int jumpAnim_ANI = BOTH_JUMP1_ANI;
 	int jumpAnim_YODA = BOTH_JUMP1_YODA;
+	int jumpAnim_VADER = BOTH_JUMP1_VADER;
 
 	animFlags_t flags = NPCMove_Animationstyletable(NPC);
 
@@ -427,7 +428,21 @@ static void NPC_JumpAnimation()
 		|| NPCInfo->rank != RANK_CREWMAN && NPCInfo->rank <= RANK_LT_JG)
 	{
 		//can't do acrobatics
-		jumpAnim = BOTH_FORCEJUMP1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isVader == qtrue)
+			{
+				jumpAnim = BOTH_FORCEJUMP1_VADER;
+			}
+			else
+			{
+				jumpAnim = BOTH_FORCEJUMP1;
+			}
+		}
+		else
+		{
+			jumpAnim = BOTH_FORCEJUMP1;
+		}
 	}
 	else if (NPC->client->NPC_class != CLASS_HOWLER)
 	{
@@ -463,6 +478,10 @@ static void NPC_JumpAnimation()
 		else if (flags.isYoda == qtrue)
 		{
 			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+		else if (flags.isVader == qtrue)
+		{
+			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 		else
 		{

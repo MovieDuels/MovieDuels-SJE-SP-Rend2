@@ -294,6 +294,7 @@ Ghoul2 Insert End
 void SV_LoadGame_f();
 void SV_LoadTransition_f();
 void SV_SaveGame_f();
+void SV_AnimStyleReload_f(); // MovieDuels: save and reload after an Animation Style change
 void SV_WipeGame_f();
 qboolean SV_TryLoadTransition(const char* mapname);
 qboolean SG_WriteSavegame(const char* psPathlessBaseName, qboolean qbAutosave);

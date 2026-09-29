@@ -42,6 +42,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifdef _G2_GORE
 #include "../ghoul2/ghoul2_gore.h"
 #endif
+#include "../qcommon/md_animsets.h"
 
 #define	LL(x) x=LittleLong(x)
 #define	LS(x) x=LittleShort(x)
@@ -3546,7 +3547,15 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	}
 
 	// first up, go load in the animation file we need that has the skeletal animation info for this model
-	mdxm->animIndex = RE_RegisterModel(va("%s.gla", mdxm->animName));
+	// (MovieDuels: with g_ActivateAnimationStyle 1 the humanoid sets use the master _humanoid set, md_animsets.h)
+	const char* anim_set = MD_AnimSetGLA(mdxm->animName, ri.Cvar_VariableIntegerValue(MD_ANIMSTYLE_ACTIVE_CVAR) == 1);
+	mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+	if (anim_set != mdxm->animName && mdxm->animIndex
+		&& !MD_SkeletonFitsMaster(mdxm->numBones, tr.models[mdxm->animIndex]->mdxa->numBones, mdxm->animName))
+	{
+		anim_set = mdxm->animName; // the master skeleton does not fit this mesh: keep its own set
+		mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+	}
 
 	char  animGLAName[MAX_QPATH];
 	char* strippedName;
@@ -3560,7 +3569,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 			mapname = strrchr(mapname, '/') + 1;
 		}
 		//stripped name of GLA for this model
-		Q_strncpyz(animGLAName, mdxm->animName, sizeof(animGLAName));
+		Q_strncpyz(animGLAName, anim_set, sizeof(animGLAName));
 		slash = strrchr(animGLAName, '/');
 		if (slash)
 		{

@@ -1051,6 +1051,8 @@ static void Svcmd_PlayerAnimationStyle_f(void)
 	}
 
 	g_entities[0].client->animationstyle = animationstyle;
+	// keep the menu choice (Select Animation Style) in step with the command, and remember it for later maps
+	gi.cvar_set("g_playeranimationstyle", GetStringForID(AnimationstylesTable, animationstyle));
 }
 
 static void Svcmd_Control_f()

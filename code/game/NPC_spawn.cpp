@@ -558,7 +558,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->NPC->scriptFlags |= SCF_DONT_FLEE | SCF_IGNORE_ALERTS;
 		ent->NPC->ignorePain = qtrue;
 	}
-	if (Q_stricmp("chewie", ent->NPC_type))
+	if (Q_stricmp("chewie", ent->NPC_type) == 0) // was missing "== 0": every NPC except Chewie had heavy melee (4x punch damage + dismemberment)
 	{
 		//in case chewie ever loses his gun...
 		ent->NPC->aiFlags |= NPCAI_HEAVY_MELEE;

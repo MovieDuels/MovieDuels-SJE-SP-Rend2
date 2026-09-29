@@ -719,6 +719,7 @@ void SV_AddOperatorCommands()
 	Cmd_SetCommandCompletionFunc("load", SV_CompleteSaveName);
 	Cmd_AddCommand("loadtransition", SV_LoadTransition_f);
 	Cmd_AddCommand("save", SV_SaveGame_f);
+	Cmd_AddCommand("md_animstylereload", SV_AnimStyleReload_f); // MD_ANIMSTYLE_RELOAD_CMD
 	Cmd_AddCommand("wipe", SV_WipeGame_f);
 
 	//#ifdef _DEBUG

@@ -2720,7 +2720,9 @@ static int G_GetAttackDamageMD(const gentity_t* self, const int min_dmg, const i
 	//we treat torsoTimer as the point in the animation (closer it is to attackAnimLength, closer it is to beginning)
 	const float current_point = self->client->ps.torsoAnimTimer;
 
-	float damage_factor = current_point / peak_point;
+	// An attack anim missing from the model's animation set has length 0: dividing by it gave inf/NaN, and
+	// converting that to int is undefined. Such a hit now does min_dmg, which is what it came to in practice.
+	float damage_factor = peak_point > 0.0f ? current_point / peak_point : 0.0f;
 	if (damage_factor > 1)
 	{
 		damage_factor = 2.0f - damage_factor;
@@ -7914,6 +7916,14 @@ static void G_PlayerSaberSmash(gentity_t* owner)
 		}
 
 		// ------------------------------------------------------------------
+		// Allies are not hit (the smash damaged, threw and knocked down them too)
+		// ------------------------------------------------------------------
+		if (ent->client->playerTeam == owner->client->playerTeam)
+		{
+			continue;
+		}
+
+		// ------------------------------------------------------------------
 		// Compute distance from slam point
 		// ------------------------------------------------------------------
 		VectorSubtract(ent->currentOrigin, trace.endpos, entDir);
@@ -12664,7 +12674,7 @@ static void WP_SaberCatchFromWall(gentity_t* self, gentity_t* saber, const qbool
 
 		// Hide thrown saber entity
 		saber->s.eFlags |= EF_NODRAW;
-		saber->svFlags &= SVF_BROADCAST;
+		saber->svFlags &= ~SVF_BROADCAST; // was "&= SVF_BROADCAST": kept broadcast and cleared every other flag (SVF_USE_CURRENT_ORIGIN)
 		saber->svFlags |= SVF_NOCLIENT;
 
 		// Remove gravity/bounce
@@ -14671,7 +14681,7 @@ void WP_SaberCatch(gentity_t* self, gentity_t* saber, const qboolean switch_to_s
 		saber->enemy = nullptr;
 		//don't draw it
 		saber->s.eFlags |= EF_NODRAW;
-		saber->svFlags &= SVF_BROADCAST;
+		saber->svFlags &= ~SVF_BROADCAST; // was "&= SVF_BROADCAST": kept broadcast and cleared every other flag (SVF_USE_CURRENT_ORIGIN)
 		saber->svFlags |= SVF_NOCLIENT;
 
 		//take off any gravity stuff if we'd dropped it
@@ -14959,7 +14969,7 @@ static void WP_SaberPull(const gentity_t* self, gentity_t* saber)
 		//take off gravity
 		saber->s.pos.trType = TR_LINEAR;
 		//take off bounce
-		saber->s.eFlags &= EF_BOUNCE_HALF;
+		saber->s.eFlags &= ~EF_BOUNCE_HALF; // was "&= EF_BOUNCE_HALF": kept the bounce and cleared every other flag
 
 		// clear stuck flag so the saber can move away from the wall
 		saber->s.eFlags &= ~EF_MISSILE_STICK;
@@ -14993,7 +15003,7 @@ static void WP_SaberGrab(const gentity_t* self, gentity_t* saber)
 		//take off gravity
 		saber->s.pos.trType = TR_LINEAR;
 		//take off bounce
-		saber->s.eFlags &= EF_BOUNCE_HALF;
+		saber->s.eFlags &= ~EF_BOUNCE_HALF; // was "&= EF_BOUNCE_HALF": kept the bounce and cleared every other flag
 		//play sound
 		G_Sound(self, G_SoundIndex("sound/weapons/force/pull.wav"));
 	}
@@ -16637,34 +16647,6 @@ int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit
 			saber_block_cost += 2.0f;
 		}
 
-		// Defender movement / stance modifiers
-		if (defender->client->ps.weapon == WP_SABER)
-		{
-			// Force speed active
-			if ((defender->client->ps.forcePowersActive & (1 << FP_SPEED)) != 0)
-			{
-				saber_block_cost += 10.0f;
-			}
-
-			// Running
-			if (PM_RunningAnim(defender->client->ps.legsAnim))
-			{
-				saber_block_cost += 5.0f;
-			}
-
-			// Airborne
-			if (defender->client->ps.groundEntityNum == ENTITYNUM_NONE)
-			{
-				saber_block_cost += 10.0f;
-			}
-
-			// Walking + moving
-			if (WalkCheck(defender) && IsMoving(defender))
-			{
-				saber_block_cost += 2.0f;
-			}
-		}
-
 		//===========================================================
 		// Projectile weapon‑specific logic
 		//===========================================================
@@ -16771,6 +16753,35 @@ int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit
 			if (defender->client->ps.saberAnimLevel == SS_FAST)
 			{
 				saber_block_cost -= 1.0f;
+			}
+		}
+
+		// Defender movement / stance modifiers. Added after the weapon cost: before it they came first
+		// and every weapon branch above then set the cost, so they never applied.
+		if (defender->client->ps.weapon == WP_SABER)
+		{
+			// Force speed active
+			if ((defender->client->ps.forcePowersActive & (1 << FP_SPEED)) != 0)
+			{
+				saber_block_cost += 10.0f;
+			}
+
+			// Running
+			if (PM_RunningAnim(defender->client->ps.legsAnim))
+			{
+				saber_block_cost += 5.0f;
+			}
+
+			// Airborne
+			if (defender->client->ps.groundEntityNum == ENTITYNUM_NONE)
+			{
+				saber_block_cost += 10.0f;
+			}
+
+			// Walking + moving
+			if (WalkCheck(defender) && IsMoving(defender))
+			{
+				saber_block_cost += 2.0f;
 			}
 		}
 	}
@@ -17159,7 +17170,7 @@ int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, const qboolean 
 		VectorCopy(self->client->ps.origin, body_max);
 
 		body_max[2] += self->maxs[2];
-		body_min[2] -= self->mins[2];
+		body_min[2] += self->mins[2]; // mins[2] is negative (the feet): "-=" put the segment's bottom above the origin
 
 		//find dirToBody
 		G_FindClosestPointOnLineSegment(body_min, body_max, point, closest_body_point);
@@ -17381,7 +17392,7 @@ int WP_SaberMustDisruptorBlock(gentity_t* self, const gentity_t* atk, const qboo
 		VectorCopy(self->client->ps.origin, body_max);
 
 		body_max[2] += self->maxs[2];
-		body_min[2] -= self->mins[2];
+		body_min[2] += self->mins[2]; // mins[2] is negative (the feet): "-=" put the segment's bottom above the origin
 
 		//find dirToBody
 		G_FindClosestPointOnLineSegment(body_min, body_max, point, closest_body_point);
@@ -17597,7 +17608,7 @@ int WP_SaberMustBoltBlockJKAMode(gentity_t* self, const gentity_t* atk, const qb
 		VectorCopy(self->client->ps.origin, body_max);
 
 		body_max[2] += self->maxs[2];
-		body_min[2] -= self->mins[2];
+		body_min[2] += self->mins[2]; // mins[2] is negative (the feet): "-=" put the segment's bottom above the origin
 
 		//find dirToBody
 		G_FindClosestPointOnLineSegment(body_min, body_max, point, closest_body_point);
@@ -19867,6 +19878,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
@@ -19884,6 +19899,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT, SETANIM_AFLAG_BLOCKPACE);
@@ -19900,6 +19919,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -19947,6 +19970,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
@@ -19964,6 +19991,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT, SETANIM_AFLAG_BLOCKPACE);
@@ -19980,6 +20011,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -20027,6 +20062,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
@@ -20044,6 +20083,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
@@ -20060,6 +20103,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -20114,6 +20161,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
@@ -20131,6 +20182,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT, SETANIM_AFLAG_BLOCKPACE);
@@ -20147,6 +20202,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -20194,6 +20253,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
@@ -20211,6 +20274,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT, SETANIM_AFLAG_BLOCKPACE);
@@ -20227,6 +20294,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -20274,6 +20345,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
@@ -20291,6 +20366,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE, SETANIM_AFLAG_BLOCKPACE);
@@ -20307,6 +20386,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -20357,6 +20440,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
@@ -20374,6 +20461,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT, SETANIM_AFLAG_BLOCKPACE);
@@ -20390,6 +20481,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -20437,6 +20532,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
@@ -20454,6 +20553,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
+					}
 					else
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT, SETANIM_AFLAG_BLOCKPACE);
@@ -20470,6 +20573,10 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_VADER, SETANIM_AFLAG_BLOCKPACE);
 					}
 					else
 					{
@@ -22978,6 +23085,8 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 			&& !PM_InKnockDown(&self->client->ps))
 		{
 			int knock_anim = BOTH_KNOCKDOWN1; //default knockdown
+			// kick-resistant characters only stagger: knock_anim kept its default, so the knockdown below replaced the stagger
+			qboolean staggered = qfalse;
 
 			if (pusher->client->NPC_class == CLASS_DESANN || pusher->client->NPC_class == CLASS_SITHLORD || pusher->
 				client->NPC_class == CLASS_VADER && self->client->NPC_class != CLASS_LUKE)
@@ -23007,6 +23116,7 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 				if (jedi_is_kick_resistant(self))
 				{
 					G_Stagger(self);
+					staggered = qtrue;
 					WP_DeactivateSaber(self, qtrue);
 					if (jedi_is_kick_resistant(self))
 					{
@@ -23033,6 +23143,7 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 					if (jedi_is_kick_resistant(self))
 					{
 						G_Stagger(self);
+						staggered = qtrue;
 						WP_DeactivateSaber(self, qtrue);
 						if (jedi_is_kick_resistant(self))
 						{
@@ -23057,6 +23168,7 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 					if (jedi_is_kick_resistant(self))
 					{
 						G_Stagger(self);
+						staggered = qtrue;
 						WP_DeactivateSaber(self, qtrue);
 						if (jedi_is_kick_resistant(self))
 						{
@@ -23076,12 +23188,13 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 					}
 				}
 			}
-			if (knock_anim == BOTH_KNOCKDOWN1 && strong_knockdown)
+			if (knock_anim == BOTH_KNOCKDOWN1 && strong_knockdown && !staggered)
 			{
 				//push *hard*
 				if (jedi_is_kick_resistant(self))
 				{
 					G_Stagger(self);
+					staggered = qtrue;
 					WP_DeactivateSaber(self, qtrue);
 					if (jedi_is_kick_resistant(self))
 					{
@@ -23092,6 +23205,11 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 				{
 					knock_anim = BOTH_KNOCKDOWN2;
 				}
+			}
+			if (staggered)
+			{
+				self->forcePushTime = level.time + 600; // let the push effect last for 600 ms
+				return;
 			}
 			NPC_SetAnim(self, SETANIM_BOTH, knock_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
@@ -23483,7 +23601,7 @@ static qboolean PlayerisResistingForceThrow(const gentity_t* player, gentity_t* 
 	}
 
 	//not attacking or otherwise busy
-	if (player->client->ps.weaponTime >= level.time)
+	if (player->client->ps.weaponTime > 0) // weaponTime counts down in ms: ">= level.time" was never true after the first seconds of a map
 	{
 		return qfalse;
 	}
@@ -23593,7 +23711,7 @@ static qboolean ShouldPlayerResistForceThrow(const gentity_t* player, gentity_t*
 	}
 
 	//not attacking or otherwise busy
-	if (player->client->ps.weaponTime >= level.time)
+	if (player->client->ps.weaponTime > 0) // weaponTime counts down in ms: ">= level.time" was never true after the first seconds of a map
 	{
 		return qfalse;
 	}
@@ -23856,6 +23974,10 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 			{
 				anim = BOTH_FORCEPULL_YODA;
 			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEPULL_VADER;
+			}
 			else
 			{
 				anim = BOTH_FORCEPULL;
@@ -23882,6 +24004,10 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 			if (flags.isYoda == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_VADER;
 			}
 			else
 			{
@@ -24329,7 +24455,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 					&& InFront(self->currentOrigin, push_target[x]->currentOrigin, push_target[x]->client->ps.viewangles,
 						0.3f) //I'm in front of him
 					&& (push_target[x]->client->ps.powerups[PW_FORCE_PUSH] > level.time || //he's pushing too
-						push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime < level.time))
+						push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime <= 0)) // not attacking (weaponTime is a countdown; "< level.time" was always true)
 				{
 					//Jedi don't get pushed, they resist as long as they aren't already attacking and are on the ground
 					if (push_target[x]->client->ps.saberLockTime > level.time)
@@ -25320,6 +25446,10 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 			{
 				anim = BOTH_FORCEPULL_YODA;
 			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEPULL_VADER;
+			}
 			else
 			{
 				anim = BOTH_FORCEPULL;
@@ -25359,6 +25489,10 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 						{
 							anim = BOTH_FORCEPUSH_YODA;
 						}
+						else if (flags.isVader == qtrue)
+						{
+							anim = BOTH_FORCEPUSH_VADER;
+						}
 						else
 						{
 							anim = BOTH_FORCEPUSH;
@@ -25382,6 +25516,10 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 				if (flags.isYoda == qtrue)
 				{
 					anim = BOTH_FORCEPUSH_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					anim = BOTH_FORCEPUSH_VADER;
 				}
 				else
 				{
@@ -25861,7 +25999,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 					&& InFront(self->currentOrigin, push_target[x]->currentOrigin, push_target[x]->client->ps.viewangles,
 						0.3f) //I'm in front of him
 					&& (push_target[x]->client->ps.powerups[PW_FORCE_PUSH] > level.time || //he's pushing too
-						push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime < level.time))
+						push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime <= 0)) // not attacking (weaponTime is a countdown; "< level.time" was always true)
 				{
 					//Jedi don't get pushed, they resist as long as they aren't already attacking and are on the ground
 					if (push_target[x]->client->ps.saberLockTime > level.time)
@@ -26890,6 +27028,10 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 			{
 				anim = BOTH_FORCEPULL_YODA;
 			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEPULL_VADER;
+			}
 			else
 			{
 				anim = BOTH_FORCEPULL;
@@ -26929,6 +27071,10 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 						{
 							anim = BOTH_FORCEPUSH_YODA;
 						}
+						else if (flags.isVader == qtrue)
+						{
+							anim = BOTH_FORCEPUSH_VADER;
+						}
 						else
 						{
 							anim = BOTH_FORCEPUSH;
@@ -26952,6 +27098,10 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 				if (flags.isYoda == qtrue)
 				{
 					anim = BOTH_FORCEPUSH_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					anim = BOTH_FORCEPUSH_VADER;
 				}
 				else
 				{
@@ -27742,7 +27892,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 						&& InFront(self->currentOrigin, push_target[x]->currentOrigin,
 							push_target[x]->client->ps.viewangles, 0.3f) //I'm in front of him
 						&& (push_target[x]->client->ps.powerups[PW_FORCE_PUSH] > level.time || //he's pushing too
-							push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime < level.time))
+							push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime <= 0)) // not attacking (weaponTime is a countdown; "< level.time" was always true)
 					{
 						//Jedi don't get pushed, they resist as long as they aren't already attacking and are on the ground
 						if (push_target[x]->client->ps.saberLockTime > level.time)
@@ -27768,8 +27918,9 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 							}
 						}
 						int resist_chance = Q_irand(0, 2);
-						if (!push_target[x]->s.number && (self->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK || self
-							->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING))
+						// the pushed player holding block resists (this read the pusher's block flags)
+						if (!push_target[x]->s.number && (push_target[x]->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ||
+							push_target[x]->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING))
 						{
 							resist_chance = 1;
 						}
@@ -28847,7 +28998,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 						&& InFront(self->currentOrigin, push_target[x]->currentOrigin,
 							push_target[x]->client->ps.viewangles, 0.3f) //I'm in front of him
 						&& (push_target[x]->client->ps.powerups[PW_FORCE_PUSH] > level.time || //he's pushing too
-							push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime < level.time))
+							push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime <= 0)) // not attacking (weaponTime is a countdown; "< level.time" was always true)
 						//not the player and not attacking (NPC jedi auto-defend against pushes)
 					{
 						//Jedi don't get pushed, they resist as long as they aren't already attacking and are on the ground
@@ -28874,8 +29025,9 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 							}
 						}
 						int resist_chance = Q_irand(0, 2);
-						if (!push_target[x]->s.number && (self->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK || self
-							->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING))
+						// the pushed player holding block resists (this read the pusher's block flags)
+						if (!push_target[x]->s.number && (push_target[x]->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ||
+							push_target[x]->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING))
 						{
 							resist_chance = 1;
 						}
@@ -30084,7 +30236,7 @@ static void ForceRepulseThrow(gentity_t* self, int charge_time)
 				&& InFront(self->currentOrigin, push_target[x]->currentOrigin, push_target[x]->client->ps.viewangles,
 					0.3f) //I'm in front of him
 				&& (push_target[x]->client->ps.powerups[PW_FORCE_PUSH] > level.time || //he's pushing too
-					push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime < level.time))
+					push_target[x]->s.number != 0 && push_target[x]->client->ps.weaponTime <= 0)) // not attacking (weaponTime is a countdown; "< level.time" was always true)
 				//not the player and not attacking (NPC jedi auto-defend against pushes)
 			{
 				//Jedi don't get pushed, they resist as long as they aren't already attacking and are on the ground
@@ -32198,8 +32350,7 @@ void ForceFear(gentity_t* self)
 		&& traceEnt->health > 0)
 	{
 		//hit an organic non-player
-		if (traceEnt->client->playerTeam != self->client->playerTeam || traceEnt->client->playerTeam == self->client->
-			playerTeam)
+		if (traceEnt->client->playerTeam != self->client->playerTeam) // was "!= || ==", always true: allies were feared too
 		{
 			//an enemy
 			int override = 0;
@@ -32225,13 +32376,8 @@ void ForceFear(gentity_t* self)
 					{
 						G_ClearEnemy(traceEnt);
 					}
-					if (traceEnt->NPC)
-					{
-						if (traceEnt->s.weapon == WP_NONE)
-						{
-							CG_ChangeWeapon(WP_MELEE);
-						}
-					}
+					// (removed: "if the NPC has no weapon, CG_ChangeWeapon(WP_MELEE)". CG_ChangeWeapon is the
+					//  client's weapon switch, so fearing an unarmed NPC switched the PLAYER to melee.)
 
 					if (PM_HasAnimation(traceEnt, BOTH_SONICPAIN_HOLD))
 					{
@@ -32468,7 +32614,7 @@ extern int G_GetHitLocFromTrace(trace_t* trace, int mod);
 static void ForceShootstrike(gentity_t* self)
 {
 	trace_t tr;
-	vec3_t end, forward, right, up, dir;
+	vec3_t end, forward, right, up, dir, fx_dir; // fx_dir: the fizz effect's direction (it was built in forward, which the next target's cone check then used)
 	gentity_t* traceEnt;
 	constexpr int damage_low = STRIKE_DAMAGELOW;
 	constexpr int damage_medium = STRIKE_DAMAGEMEDIUM;
@@ -32707,20 +32853,20 @@ static void ForceShootstrike(gentity_t* self)
 									(!g_SerenityJediEngineMode->integer && traceEnt->client->ps.forcePower > 20)))
 							{
 								//saber can block lightning make them do a parry
-								VectorNegate(dir, forward);
+								VectorNegate(dir, fx_dir);
 
 								//randomise direction a bit
-								MakeNormalVectors(forward, right, up);
-								VectorMA(forward, Q_irand(0, 360), right, forward);
-								VectorMA(forward, Q_irand(0, 360), up, forward);
-								VectorNormalize(forward);
+								MakeNormalVectors(fx_dir, right, up);
+								VectorMA(fx_dir, Q_irand(0, 360), right, fx_dir);
+								VectorMA(fx_dir, Q_irand(0, 360), up, fx_dir);
+								VectorNormalize(fx_dir);
 
 								if (chanceOfFizz > 0)
 								{
 									VectorMA(traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzlePoint,
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].length * Q_flrand(0, 1),
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir, end);
-									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, forward);
+									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, fx_dir);
 								}
 
 								switch (traceEnt->client->ps.saberAnimLevel)
@@ -33003,20 +33149,20 @@ static void ForceShootstrike(gentity_t* self)
 									(!g_SerenityJediEngineMode->integer && traceEnt->client->ps.forcePower > 20)))
 							{
 								//saber can block lightning make them do a parry
-								VectorNegate(dir, forward);
+								VectorNegate(dir, fx_dir);
 
 								//randomise direction a bit
-								MakeNormalVectors(forward, right, up);
-								VectorMA(forward, Q_irand(0, 360), right, forward);
-								VectorMA(forward, Q_irand(0, 360), up, forward);
-								VectorNormalize(forward);
+								MakeNormalVectors(fx_dir, right, up);
+								VectorMA(fx_dir, Q_irand(0, 360), right, fx_dir);
+								VectorMA(fx_dir, Q_irand(0, 360), up, fx_dir);
+								VectorNormalize(fx_dir);
 
 								if (chanceOfFizz > 0)
 								{
 									VectorMA(traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzlePoint,
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].length * Q_flrand(0, 1),
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir, end);
-									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, forward);
+									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, fx_dir);
 								}
 
 								switch (traceEnt->client->ps.saberAnimLevel)
@@ -33307,20 +33453,20 @@ static void ForceShootstrike(gentity_t* self)
 									(!g_SerenityJediEngineMode->integer && traceEnt->client->ps.forcePower > 20)))
 							{
 								//saber can block lightning make them do a parry
-								VectorNegate(dir, forward);
+								VectorNegate(dir, fx_dir);
 
 								//randomise direction a bit
-								MakeNormalVectors(forward, right, up);
-								VectorMA(forward, Q_irand(0, 360), right, forward);
-								VectorMA(forward, Q_irand(0, 360), up, forward);
-								VectorNormalize(forward);
+								MakeNormalVectors(fx_dir, right, up);
+								VectorMA(fx_dir, Q_irand(0, 360), right, fx_dir);
+								VectorMA(fx_dir, Q_irand(0, 360), up, fx_dir);
+								VectorNormalize(fx_dir);
 
 								if (chanceOfFizz > 0)
 								{
 									VectorMA(traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzlePoint,
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].length * Q_flrand(0, 1),
 										traceEnt->client->ps.saber[npc_saber_num].blade[npc_blade_num].muzzleDir, end);
-									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, forward);
+									G_PlayEffect(G_EffectIndex("saber/fizz.efx"), end, fx_dir);
 								}
 
 								switch (traceEnt->client->ps.saberAnimLevel)
@@ -34350,7 +34496,13 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 
 static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot, vec3_t impact_point)
 {
-	animFlags_t flags = W_Animationstyletable(self);
+	// the TARGET's style: every anim these flags pick is the target's block anim (they came from the
+	// caster, so e.g. a Vader-style caster made every target block like Vader)
+	animFlags_t flags{};
+	if (traceEnt && traceEnt->client)
+	{
+		flags = W_Animationstyletable(traceEnt);
+	}
 	qboolean lightning_blocked = qfalse;
 	qboolean is_class_guard = qfalse;
 
@@ -37754,7 +37906,21 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 			self->NPC->rank <= RANK_LT_JG)
 		{
 			//can't do acrobatics
-			anim = BOTH_FORCEJUMP1;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isVader == qtrue)
+				{
+					anim = BOTH_FORCEJUMP1_VADER;
+				}
+				else
+				{
+					anim = BOTH_FORCEJUMP1;
+				}
+			}
+			else
+			{
+				anim = BOTH_FORCEJUMP1;
+			}
 		}
 		else
 		{
@@ -37889,6 +38055,10 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 			else if (flags.isYoda == qtrue)
 			{
 				anim = BOTH_JUMP1_YODA;
+			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_JUMP1_VADER;
 			}
 			else
 			{
@@ -38083,6 +38253,10 @@ void ForceDestruction(gentity_t* self)
 					{
 						anim = BOTH_FORCEPUSH_YODA;
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_VADER;
+					}
 					else
 					{
 						anim = BOTH_FORCEPUSH;
@@ -38124,6 +38298,10 @@ void ForceDestruction(gentity_t* self)
 			if (flags.isYoda == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_VADER;
 			}
 			else
 			{
@@ -38222,6 +38400,10 @@ static void forcestasis_anim(gentity_t* self)
 					{
 						anim = BOTH_FORCEPUSH_YODA;
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_VADER;
+					}
 					else
 					{
 						anim = BOTH_FORCEPUSH;
@@ -38263,6 +38445,10 @@ static void forcestasis_anim(gentity_t* self)
 			if (flags.isYoda == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_VADER;
 			}
 			else
 			{
@@ -39744,6 +39930,10 @@ void ForceBlast(gentity_t* self)
 					{
 						anim = BOTH_FORCEPUSH_YODA;
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_VADER;
+					}
 					else
 					{
 						anim = BOTH_FORCEPUSH;
@@ -39785,6 +39975,10 @@ void ForceBlast(gentity_t* self)
 			if (flags.isYoda == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_YODA;
+			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_VADER;
 			}
 			else
 			{
@@ -40883,7 +41077,8 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 						}
 						else
 						{
-							if (drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH && drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_YODA)
+							if (drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH && drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_YODA
+								&& drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_VADER)
 							{
 								//don't stop the push
 								drain_ent->client->ps.torsoAnimTimer = 0;
@@ -43099,8 +43294,13 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 	if (ucmd->buttons & BUTTON_REPULSE)
 	{
 		ForceJediRepulse(self);
-		self->client->ps.powerups[PW_INVINCIBLE] =
-			level.time + self->client->ps.torsoAnimTimer + 2000;
+		// only while a repulse is really charging: holding the button alone (e.g. without the force points
+		// to start one) made you invincible
+		if (self->client->ps.repulseChargeStart)
+		{
+			self->client->ps.powerups[PW_INVINCIBLE] =
+				level.time + self->client->ps.torsoAnimTimer + 2000;
+		}
 	}
 
 	// Force Grasp
@@ -43271,6 +43471,13 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 			// NPC regen logic
 			if (self->NPC && !G_ControlledByPlayer(self))
 			{
+				// recover from fatigue by the same rule as the player (only the player branch cleared it,
+				// so an NPC fatigued once stayed fatigued: no roll getups, higher block costs)
+				if (g_SerenityJediEngineMode->integer && self->client->ps.forcePower > BLOCKPOINTS_FATIGUE)
+				{
+					self->client->ps.userInt3 &= ~(1 << FLAG_FATIGUED);
+				}
+
 				if (g_SerenityJediEngineMode->integer == 1)
 				{
 					if (self->client->ps.forceRageRecoveryTime >= level.time)
@@ -43422,7 +43629,7 @@ void WP_BlockPointsUpdate(const gentity_t* self)
 						//regen half as fast
 						self->client->ps.BlockPointsRegenDebounceTime += 2000;
 					}
-					else if (self->client->ps.weaponTime <= 0) //slows down
+					else if (self->client->ps.weaponTime > 0) //slows down while busy (was "<= 0": idle regen was the slow one)
 					{
 						//regen half as fast
 						self->client->ps.BlockPointsRegenDebounceTime += 2000;
@@ -43465,7 +43672,7 @@ void WP_BlockPointsUpdate(const gentity_t* self)
 					//regen half as fast
 					self->client->ps.BlockPointsRegenDebounceTime += 2000;
 				}
-				else if (self->client->ps.weaponTime <= 0) //slows down
+				else if (self->client->ps.weaponTime > 0) //slows down while busy (was "<= 0": idle regen was the slow one)
 				{
 					//regen half as fast
 					self->client->ps.BlockPointsRegenDebounceTime += 2000;

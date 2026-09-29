@@ -1414,6 +1414,10 @@ static void jedi_aggression_erosion(const int amt)
 					{
 						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					else
 					{
 						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -8585,7 +8589,21 @@ static qboolean Jedi_TryJump(const gentity_t* goal)
 										|| (NPCInfo->rank != RANK_CREWMAN && NPCInfo->rank <= RANK_LT_JG))
 									{
 										//can't do acrobatics
-										jump_anim = BOTH_FORCEJUMP1;
+										if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+										{
+											if (flags.isVader == qtrue)
+											{
+												jump_anim = BOTH_FORCEJUMP1_VADER;
+											}
+											else
+											{
+												jump_anim = BOTH_FORCEJUMP1;
+											}
+										}
+										else
+										{
+											jump_anim = BOTH_FORCEJUMP1;
+										}
 									}
 									else
 									{
@@ -9479,6 +9497,8 @@ NPC_Jedi_Pain
 void NPC_Jedi_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const vec3_t point, const int damage,
 	const int mod, int hit_loc)
 {
+	animFlags_t flags = Jedi_Animationstyletable(self);
+
 	if (attacker->s.weapon == WP_SABER)
 	{
 		//back off
@@ -9577,11 +9597,39 @@ void NPC_Jedi_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, c
 	}
 	if (self->client->ps.legsAnim == BOTH_CEILING_CLING)
 	{
-		NPC_SetAnim(self, SETANIM_LEGS, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isVader == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_LEGS, BOTH_CEILING_DROP_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_LEGS, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_LEGS, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
 	}
 	if (self->client->ps.torsoAnim == BOTH_CEILING_CLING)
 	{
-		NPC_SetAnim(self, SETANIM_TORSO, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isVader == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_CEILING_DROP_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
 	}
 
 	//check special defenses
@@ -9787,9 +9835,25 @@ static qboolean jedi_check_ambush_player(void)
 
 void jedi_ambush(gentity_t* self)
 {
+	animFlags_t flags = Jedi_Animationstyletable(self);
+
 	self->client->noclip = false;
 	self->client->ps.pm_flags |= PMF_JUMPING | PMF_SLOW_MO_FALL;
-	NPC_SetAnim(self, SETANIM_BOTH, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+	{
+		if (flags.isVader == qtrue)
+		{
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_CEILING_DROP_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+	}
+	else
+	{
+		NPC_SetAnim(self, SETANIM_BOTH, BOTH_CEILING_DROP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	}
 	self->client->ps.weaponTime = NPC->client->ps.torsoAnimTimer;
 	if (self->client->NPC_class != CLASS_BOBAFETT && self->client->NPC_class != CLASS_MANDALORIAN && self->client->
 		NPC_class != CLASS_JANGO && self->client->NPC_class != CLASS_JANGODUAL

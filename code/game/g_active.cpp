@@ -2156,11 +2156,11 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 					{
 						if (client->ps.saberFatigueChainCount > MISHAPLEVEL_HUDFLASH)
 						{
-					WP_SaberFatigueRegenerate(&client->ps, 2);
+							WP_SaberFatigueRegenerate(&client->ps, 2);
 						}
 						else
 						{
-					WP_SaberFatigueRegenerate(&client->ps, 1);
+							WP_SaberFatigueRegenerate(&client->ps, 1);
 						}
 					}
 				}
@@ -6441,6 +6441,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STAND_SABER_ON_IDLE:
@@ -6449,6 +6450,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND2IDLE1:
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI: //# Random standing idle
+			case BOTH_STAND2IDLE1_VADER:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6463,6 +6465,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STAND_SABER_ON_IDLE:
@@ -6471,6 +6474,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND2IDLE1:
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
+			case BOTH_STAND2IDLE1_VADER:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6502,6 +6506,10 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 				if (flags.isYoda == qtrue)
 				{
 					idle_anim = BOTH_STAND1IDLE1_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_VADER;
 				}
 				else
 				{
@@ -6550,6 +6558,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERSLOW_STANCE_JKA_VADER:
 		case BOTH_SABERSINGLECROUCH:
 		case BOTH_SABERSINGLECROUCH_ANI:
+		case BOTH_SABERSINGLECROUCH_VADER:
 		case BOTH_STAND_SABER_ON:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE;
 			break;
@@ -6609,6 +6618,10 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 				if (flags.isYoda == qtrue)
 				{
 					idle_anim = BOTH_STAND1IDLE1_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_VADER;
 				}
 				else
 				{
@@ -6880,9 +6893,11 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
 			case BOTH_STAND2IDLE1:
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
+			case BOTH_STAND2IDLE1_VADER:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6905,9 +6920,11 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			{
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
 			case BOTH_STAND2IDLE1:
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
+			case BOTH_STAND2IDLE1_VADER:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6940,14 +6957,19 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 		constexpr int idle_anim = BOTH_STAND1IDLE1;
 
 		constexpr int idle_anim_YODA = BOTH_STAND1IDLE1_YODA;
+		constexpr int idle_anim_VADER = BOTH_STAND1IDLE1_VADER;
 
-		if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA))
+		if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER))
 		{
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
 				if (flags.isYoda == qtrue)
 				{
 					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isVader == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
@@ -7053,14 +7075,19 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 
 			constexpr int idle_anim = BOTH_STAND1IDLE1;
 			constexpr int idle_anim_YODA = BOTH_STAND1IDLE1_YODA;
+			constexpr int idle_anim_VADER = BOTH_STAND1IDLE1_VADER;
 
-			if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA))
+			if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER))
 			{
 				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
 					if (flags.isYoda == qtrue)
 					{
 						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
 					else
 					{

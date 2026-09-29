@@ -58,6 +58,7 @@ constexpr auto JPEG_IMAGE_QUALITY = 95;
 #include <client/client.h>
 #include <qcommon/cm_public.h>
 #include <qcommon/ojk_scope_guard.h>
+#include "qcommon/md_animsets.h"
 
 static char saveGameComment[iSG_COMMENT_SIZE];
 
@@ -373,6 +374,29 @@ void SV_SaveGame_f()
 		Com_Printf(S_COLOR_RED "%s.\n", SE_GetString("MENUS_FAILED_TO_OPEN_SAVEGAME"));
 	}
 }
+
+// MovieDuels: the Animation Style was changed in the middle of a map (sent by the game, g_main.cpp).
+// The models only pick their animations when they load, so save the game in its own slot and load it
+// straight back: the load uses the new style for every model and character. Nothing happens when the
+// game can't be saved right now (cutscene, dead, ...): the game asks again later. It only loads when
+// the save worked, so an old save is never loaded and no progress is lost.
+void SV_AnimStyleReload_f()
+{
+	if (gbAlreadyDoingLoad || !SG_GameAllowedToSaveHere(qfalse))
+	{
+		return;
+	}
+
+	Com_Printf(S_COLOR_CYAN "Animation Style changed: saving and reloading the game to switch the animations...\n");
+
+	if (!SG_WriteSavegame(MD_ANIMSTYLE_SAVE, qfalse))
+	{
+		Com_Printf(S_COLOR_RED "Animation Style: the game could not be saved, the new style will be used from the next map load.\n");
+		return;
+	}
+	Cbuf_AddText("load " MD_ANIMSTYLE_SAVE "\n");
+}
+
 extern void SV_Player_EndOfLevelSave();
 
 //---------------

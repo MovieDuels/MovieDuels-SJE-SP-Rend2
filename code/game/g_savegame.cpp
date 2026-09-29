@@ -1328,6 +1328,10 @@ void ReadLevel(const qboolean qbAutosave, const qboolean qb_load_transition)
 	G_LoadSave_ReadMiscData();
 	CG_ReadTheEvilCGHackStuff();
 
+	// the animation style may differ from when the save was made (g_main.cpp)
+	extern void G_RefreshAnimFileSetsAfterLoad();
+	G_RefreshAnimFileSetsAfterLoad();
+
 	static int iDONE = 1234;
 
 	saved_game.read_chunk<int32_t>(

@@ -46,6 +46,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <cassert>
 #include <string.h>
+#include "../qcommon/md_animsets.h"
 
 extern void WP_RemoveSaber(gentity_t* ent, int saberNum);
 extern qboolean NPCsPrecached;
@@ -1396,6 +1397,10 @@ void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name)
 		stripped_name = COM_SkipPath(anim_name);
 	}
 
+	// g_ActivateAnimationStyle 1: nothing to do here. gla_name is the GLA the model really loaded, so for a
+	// humanoid set the renderer switched to the master set it is already models/players/_humanoid/..., and
+	// for a model whose skeleton does not fit the master set it is still its own (md_animsets.h).
+
 	ent->client->clientInfo.animFileIndex = G_ParseAnimFileSet(stripped_name, model_name);
 
 	if (ent->client->clientInfo.animFileIndex < 0)
@@ -1507,7 +1512,9 @@ void NPC_PrecacheAnimationCFG(const char* npc_type)
 					{
 						*slash = 0;
 					}
-					const char* stripped_name = COM_SkipPath(anim_name);
+					const char* stripped_name = g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && MD_IsMasterHumanoidSet(gla_name)
+						? MD_MASTER_HUMANOID_DIR // master _humanoid set (md_animsets.h)
+						: COM_SkipPath(anim_name);
 
 					//must copy data out of this pointer into a different part of memory because the funcs we're about to call will call COM_ParseExt
 					Q_strncpyz(filename, value, sizeof filename);

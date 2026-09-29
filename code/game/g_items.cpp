@@ -487,6 +487,11 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 							//but only if already playing the pickup with left hand anim...
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
+						else if (flags.isVader == qtrue)
+						{
+							//but only if already playing the pickup with left hand anim...
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 						else
 						{
 							//but only if already playing the pickup with left hand anim...
@@ -547,7 +552,8 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 			}
 			if (self->client->ps.torsoAnim == BOTH_BUTTON_HOLD
 				|| self->client->ps.torsoAnim == BOTH_SABERPULL
-				|| self->client->ps.torsoAnim == BOTH_SABERPULL_YODA)
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_YODA
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_VADER)
 			{
 				//don't let them attack right away, force them to finish the anim
 				self->client->ps.weaponTime = self->client->ps.torsoAnimTimer;

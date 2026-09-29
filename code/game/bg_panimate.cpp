@@ -204,7 +204,9 @@ saber_moveData_t saberMoveData[LS_MOVE_MAX] = {
 	{"Ready", BOTH_STAND2, Q_R, Q_R, AFLAG_IDLE, 350, BLK_WIDE, LS_READY, LS_S_R2L, 0}, // LS_READY,
 	{"Draw", BOTH_STAND1TO2, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW,
 	{"Draw_YODA", BOTH_STAND1TO2_YODA, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW_YODA,
+	{"Draw_VADER", BOTH_STAND1TO2_VADER, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW_VADER,
 	{"Putaway", BOTH_STAND2TO1, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY,
+	{"Putaway_VADER", BOTH_STAND2TO1_VADER, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY_VADER,
 	{"Putaway_YODA", BOTH_STAND2TO1_YODA, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY_YODA,
 
 	// Attacks
@@ -1426,7 +1428,7 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	}
 	if (PM_SaberDrawPutawayAnim(anim))
 	{
-		if (saberMove == LS_DRAW || saberMove == LS_PUTAWAY || saberMove == LS_PUTAWAY_YODA || saberMove == LS_DRAW_YODA)
+		if (saberMove == LS_DRAW || saberMove == LS_PUTAWAY || saberMove == LS_PUTAWAY_YODA || saberMove == LS_PUTAWAY_VADER || saberMove == LS_DRAW_YODA || saberMove == LS_DRAW_VADER)
 		{
 			return qtrue;
 		}
@@ -1648,8 +1650,10 @@ qboolean PM_SaberInIdle(const int move)
 	case LS_READY:
 	case LS_DRAW:
 	case LS_DRAW_YODA:
+	case LS_DRAW_VADER:
 	case LS_PUTAWAY:
 	case LS_PUTAWAY_YODA:
+	case LS_PUTAWAY_VADER:
 		return qtrue;
 	default:;
 	}
@@ -3537,17 +3541,21 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_VADER
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_VADER
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_VADER
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_VADER
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
@@ -4098,17 +4106,21 @@ static qboolean PM_CheckJumpForwardAttackMove()
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_VADER
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_VADER
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_VADER
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_VADER
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
@@ -4370,10 +4382,13 @@ qboolean PM_CheckFlipOverAttackMove(const qboolean check_enemy)
 					if (pm->ps->legsAnim == BOTH_JUMP1
 						|| pm->ps->legsAnim == BOTH_JUMP1_ANI
 						|| pm->ps->legsAnim == BOTH_JUMP1_YODA
+						|| pm->ps->legsAnim == BOTH_JUMP1_VADER
 						|| pm->ps->legsAnim == BOTH_FORCEJUMP1
+						|| pm->ps->legsAnim == BOTH_FORCEJUMP1_VADER
 						|| pm->ps->legsAnim == BOTH_INAIR1
 						|| pm->ps->legsAnim == BOTH_INAIR1_ANI
 						|| pm->ps->legsAnim == BOTH_INAIR1_YODA
+						|| pm->ps->legsAnim == BOTH_INAIR1_VADER
 						|| pm->ps->legsAnim == BOTH_FORCEINAIR1
 						|| pm->ps->legsAnim == BOTH_GRAPPLE_PULL)
 					{
@@ -7057,6 +7072,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 
 	{ BOTH_SABERSINGLECROUCH,              BOTH_SABERSINGLECROUCH,             qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SABERSINGLECROUCH_ANI,          BOTH_SABERSINGLECROUCH_ANI,         qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SABERSINGLECROUCH_VADER,        BOTH_SABERSINGLECROUCH_VADER,               qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON,              BOTH_STAND_BLOCKING_ON,             qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_ANI,          BOTH_STAND_BLOCKING_ON_ANI,         qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7074,18 +7090,22 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_BEN,  BOTH_STAND_BLOCKING_ON_FORWARD_BEN, qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_ANI,  BOTH_STAND_BLOCKING_ON_FORWARD_ANI, qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_YODA, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_VADER, BOTH_STAND_BLOCKING_ON_FORWARD_VADER, qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_BACK,         BOTH_STAND_BLOCKING_ON_BACK,        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_BEN,     BOTH_STAND_BLOCKING_ON_BACK_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_ANI,     BOTH_STAND_BLOCKING_ON_BACK_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_YODA,    BOTH_STAND_BLOCKING_ON_BACK_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_VADER,   BOTH_STAND_BLOCKING_ON_BACK_VADER,    qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_RIGHT,        BOTH_STAND_BLOCKING_ON_RIGHT,       qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_BEN,    BOTH_STAND_BLOCKING_ON_RIGHT_BEN,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_YODA,    BOTH_STAND_BLOCKING_ON_RIGHT_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_VADER,  BOTH_STAND_BLOCKING_ON_RIGHT_VADER,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT,         BOTH_STAND_BLOCKING_ON_LEFT,        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_BEN,     BOTH_STAND_BLOCKING_ON_LEFT_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_YODA,    BOTH_STAND_BLOCKING_ON_LEFT_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_VADER,   BOTH_STAND_BLOCKING_ON_LEFT_VADER,    qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_LEFT_ANI,     BOTH_STAND_BLOCKING_ON_LEFT_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_ANI,    BOTH_STAND_BLOCKING_ON_RIGHT_ANI,   qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7121,6 +7141,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_JUMP1,                          BOTH_JUMP1,                         qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JUMP1_ANI,                      BOTH_JUMP1_ANI,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JUMP1_YODA,                     BOTH_JUMP1_YODA,                    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JUMP1_VADER,                    BOTH_JUMP1_VADER,                                      qtrue, qfalse, qfalse, qtrue, 0 },
 
 	// -----------------------
 	// Weapon-aware-only entries (original PM_TorsoAnimFromLegs when !weaponBusy)
@@ -7208,18 +7229,22 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_BEN,  BOTH_STAND_BLOCKING_ON_FORWARD_BEN, qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_ANI,  BOTH_STAND_BLOCKING_ON_FORWARD_ANI, qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_YODA, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_VADER, BOTH_STAND_BLOCKING_ON_FORWARD_VADER, qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_BACK,         BOTH_STAND_BLOCKING_ON_BACK,        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_BEN,     BOTH_STAND_BLOCKING_ON_BACK_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_ANI,     BOTH_STAND_BLOCKING_ON_BACK_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_YODA,    BOTH_STAND_BLOCKING_ON_BACK_YODA,   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_VADER,   BOTH_STAND_BLOCKING_ON_BACK_VADER,    qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_RIGHT,        BOTH_STAND_BLOCKING_ON_RIGHT,       qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_BEN,    BOTH_STAND_BLOCKING_ON_RIGHT_BEN,   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_YODA,   BOTH_STAND_BLOCKING_ON_RIGHT_YODA,  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_VADER,  BOTH_STAND_BLOCKING_ON_RIGHT_VADER,  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT,         BOTH_STAND_BLOCKING_ON_LEFT,        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_BEN,     BOTH_STAND_BLOCKING_ON_LEFT_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_YODA,    BOTH_STAND_BLOCKING_ON_LEFT_YODA,   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_VADER,   BOTH_STAND_BLOCKING_ON_LEFT_VADER,    qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_LEFT_ANI,     BOTH_STAND_BLOCKING_ON_LEFT_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_ANI,    BOTH_STAND_BLOCKING_ON_RIGHT_ANI,   qfalse, qfalse, qtrue, qfalse, 0 },
@@ -7254,6 +7279,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_JUMP1,                          BOTH_JUMP1,                         qfalse, qfalse, qtrue, qfalse, 100 },
 	{ BOTH_JUMP1_ANI,                      BOTH_JUMP1_ANI,                     qfalse, qfalse, qtrue, qfalse, 100 },
 	{ BOTH_JUMP1_YODA,                     BOTH_JUMP1_YODA,                    qfalse, qfalse, qtrue, qfalse, 100 },
+	{ BOTH_JUMP1_VADER,                    BOTH_JUMP1_VADER,                                      qfalse, qfalse, qtrue, qfalse, 100 },
 	{ BOTH_SWIM_IDLE1,                     BOTH_SWIM_IDLE1,                    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SWIMFORWARD,                    BOTH_SWIMFORWARD,                   qfalse, qfalse, qtrue, qfalse, 0 },
 };
@@ -7412,6 +7438,17 @@ static void PM_TorsoAnimLightsaber()
 							PM_SetSaberMove(LS_DRAW_YODA);
 						}
 					}
+					else if (flags.isVader == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							//PM_SetSaberMove(LS_DRAW);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_DRAW_VADER);
+						}
+					}
 					else
 					{
 						PM_SetSaberMove(LS_DRAW);
@@ -7447,6 +7484,17 @@ static void PM_TorsoAnimLightsaber()
 										PM_SetSaberMove(LS_DRAW_YODA);
 									}
 								}
+								else if (flags.isVader == qtrue)
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim))
+									{
+										//PM_SetSaberMove(LS_DRAW);
+									}
+									else
+									{
+										PM_SetSaberMove(LS_DRAW_VADER);
+									}
+								}
 								else
 								{
 									PM_SetSaberMove(LS_DRAW);
@@ -7471,6 +7519,7 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALK1_VADER
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
+								|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALK2_YODA
 								|| pm->ps->legsAnim == BOTH_WALK2_VADER
@@ -7552,6 +7601,17 @@ static void PM_TorsoAnimLightsaber()
 										PM_SetSaberMove(LS_DRAW_YODA);
 									}
 								}
+								else if (flags.isVader == qtrue)
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim))
+									{
+										//PM_SetSaberMove(LS_DRAW);
+									}
+									else
+									{
+										PM_SetSaberMove(LS_DRAW_VADER);
+									}
+								}
 								else
 								{
 									PM_SetSaberMove(LS_DRAW);
@@ -7576,6 +7636,7 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
+								|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALK2_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2_YODA
@@ -7658,6 +7719,17 @@ static void PM_TorsoAnimLightsaber()
 									PM_SetSaberMove(LS_DRAW_YODA);
 								}
 							}
+							else if (flags.isVader == qtrue)
+							{
+								if (PM_RunningAnim(pm->ps->legsAnim))
+								{
+									//PM_SetSaberMove(LS_DRAW);
+								}
+								else
+								{
+									PM_SetSaberMove(LS_DRAW_VADER);
+								}
+							}
 							else
 							{
 								PM_SetSaberMove(LS_DRAW);
@@ -7682,6 +7754,7 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALK1_YODA
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
 							|| pm->ps->legsAnim == BOTH_WALKBACK1
+							|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 							|| pm->ps->legsAnim == BOTH_WALK2
 							|| pm->ps->legsAnim == BOTH_WALK2_VADER
 							|| pm->ps->legsAnim == BOTH_WALK2_YODA
@@ -7765,6 +7838,17 @@ static void PM_TorsoAnimLightsaber()
 							PM_SetSaberMove(LS_PUTAWAY_YODA);
 						}
 					}
+					else if (flags.isVader == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							//PM_SetSaberMove(LS_PUTAWAY);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_PUTAWAY_VADER);
+						}
+					}
 					else
 					{
 						PM_SetSaberMove(LS_PUTAWAY);
@@ -7790,6 +7874,17 @@ static void PM_TorsoAnimLightsaber()
 							else
 							{
 								PM_SetSaberMove(LS_PUTAWAY_YODA);
+							}
+						}
+						else if (flags.isVader == qtrue)
+						{
+							if (PM_RunningAnim(pm->ps->legsAnim))
+							{
+								//PM_SetSaberMove(LS_PUTAWAY);
+							}
+							else
+							{
+								PM_SetSaberMove(LS_PUTAWAY_VADER);
 							}
 						}
 						else
@@ -7818,6 +7913,10 @@ static void PM_TorsoAnimLightsaber()
 										if (flags.isYoda == qtrue)
 										{
 											PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+										}
+										else if (flags.isVader == qtrue)
+										{
+											PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 										}
 										else
 										{
@@ -7915,6 +8014,7 @@ static void PM_TorsoAnimLightsaber()
 							|| pm->ps->legsAnim == BOTH_WALK1_YODA
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
 							|| pm->ps->legsAnim == BOTH_WALKBACK1
+							|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 							|| pm->ps->legsAnim == BOTH_WALK2
 							|| pm->ps->legsAnim == BOTH_WALK2_VADER
 							|| pm->ps->legsAnim == BOTH_WALK2_YODA
@@ -8019,6 +8119,7 @@ static void PM_TorsoAnimLightsaber()
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND1IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_YODA
+			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_VADER
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE
@@ -8026,6 +8127,7 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_ANI
+			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_VADER
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_BEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE2
 			|| pm->ps->legsAnim == BOTH_STAND3IDLE1
@@ -8041,6 +8143,7 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STANCE_READY_MINIGUN_IDLE
 			|| pm->ps->legsAnim == BOTH_SABERSINGLECROUCH
 			|| pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_ANI
+			|| pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_VADER
 			|| pm->ps->legsAnim == BOTH_SABERDUALCROUCH
 			|| pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON
@@ -8057,17 +8160,21 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_VADER
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_VADER
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_VADER
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_VADER
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
@@ -8142,6 +8249,10 @@ static void PM_TorsoAnimLightsaber()
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 							}
+							else if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -8203,6 +8314,7 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
+								|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALK2_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2_YODA
@@ -8538,6 +8650,7 @@ void PM_TorsoAnimation()
 						|| pm->ps->torsoAnim == BOTH_SABERDUAL_STANCE_JKA //not attacking
 						|| pm->ps->torsoAnim == BOTH_SABERPULL //not attacking
 						|| pm->ps->torsoAnim == BOTH_SABERPULL_YODA //not attacking
+						|| pm->ps->torsoAnim == BOTH_SABERPULL_VADER //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND1 //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_DUELS //not attacking
@@ -8558,6 +8671,10 @@ void PM_TorsoAnimation()
 								if (flags.isYoda == qtrue)
 								{
 									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else if (flags.isVader == qtrue)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 								}
 								else
 								{
@@ -9207,6 +9324,7 @@ void PM_TorsoAnimation()
 		}
 		else if (pm->ps->legsAnim == BOTH_STAND1IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_YODA
+			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_VADER
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE
@@ -9214,6 +9332,7 @@ void PM_TorsoAnimation()
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE_STAFF
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_ANI
+			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_VADER
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_BEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE2
 			|| pm->ps->legsAnim == BOTH_STAND3IDLE1
@@ -10196,6 +10315,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND9IDLE1_ANI:
 	case BOTH_STAND1IDLE1: //# Random standing idle
 	case BOTH_STAND1IDLE1_YODA:
+	case BOTH_STAND1IDLE1_VADER:
 	case BOTH_STAND2: //# Standing idle with a weapon
 	case BOTH_STAND2_JKA: //# Standing idle with a weapon
 	case BOTH_STAND_BLOCKING_ON:
@@ -10213,17 +10333,21 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_VADER:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
+	case BOTH_STAND_BLOCKING_ON_BACK_VADER:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_VADER:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
 	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
+	case BOTH_STAND_BLOCKING_ON_LEFT_VADER:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
@@ -10262,6 +10386,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 	case BOTH_STAND2IDLE1: //# Random standing idle
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
+	case BOTH_STAND2IDLE1_VADER:
 	case BOTH_STAND2IDLE1_BEN: //# Random standing idle
 	case BOTH_STAND2IDLE2: //# Random standing idle
 	case BOTH_STAND3: //# Standing hands behind back: at ease: etc.
@@ -10295,6 +10420,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_SABER_ON_STAFF:
 	case BOTH_SABERSINGLECROUCH:
 	case BOTH_SABERSINGLECROUCH_ANI:
+	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
 	case BOTH_SABERSTAFFCROUCH:
 	{
@@ -10345,6 +10471,7 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND9IDLE1_ANI:
 	case BOTH_STAND1IDLE1: //# Random standing idle
 	case BOTH_STAND1IDLE1_YODA:
+	case BOTH_STAND1IDLE1_VADER:
 	case BOTH_STAND_SABER_ON_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE_DUELS:
 	case BOTH_STAND_SABER_ON_IDLE_STAFF:
@@ -10385,17 +10512,21 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_VADER:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
+	case BOTH_STAND_BLOCKING_ON_BACK_VADER:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_VADER:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
 	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
+	case BOTH_STAND_BLOCKING_ON_LEFT_VADER:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
@@ -10433,10 +10564,12 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERDESANN_STANCE_JKA_ANI: //desann saber style
 	case BOTH_STAND2IDLE1: //# Random standing idle
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
+	case BOTH_STAND2IDLE1_VADER:
 	case BOTH_STAND2IDLE1_BEN: //# Random standing idle
 	case BOTH_STAND2IDLE2: //# Random standing idle
 	case BOTH_SABERSINGLECROUCH:
 	case BOTH_SABERSINGLECROUCH_ANI:
+	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
 	case BOTH_SABERSTAFFCROUCH:
 	{
@@ -10951,6 +11084,7 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND1:
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND1IDLE1_YODA:
+	case BOTH_STAND1IDLE1_VADER:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI: //# Random standing idle
 	case BOTH_STAND2:
@@ -10958,6 +11092,7 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND2IDLE1:
 	case BOTH_STAND2IDLE1_BEN:
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
+	case BOTH_STAND2IDLE1_VADER:
 	case BOTH_STAND2IDLE2:
 	case BOTH_STAND3:
 	case BOTH_STAND3IDLE1:
@@ -10987,6 +11122,7 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND9:
 	case BOTH_SABERSINGLECROUCH:
 	case BOTH_SABERSINGLECROUCH_ANI:
+	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
 	case BOTH_SABERSTAFFCROUCH:
 		return qtrue;
@@ -11036,6 +11172,7 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_STAND1:
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND1IDLE1_YODA:
+	case BOTH_STAND1IDLE1_VADER:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI:
 	case BOTH_STAND2:
@@ -11043,6 +11180,7 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_STAND2IDLE1:
 	case BOTH_STAND2IDLE1_BEN:
 	case BOTH_STAND2IDLE1_ANI:
+	case BOTH_STAND2IDLE1_VADER:
 	case BOTH_STAND2IDLE2:
 	case BOTH_STAND3:
 	case BOTH_STAND3IDLE1:
@@ -11068,6 +11206,7 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_STAND_SABER_ON_STAFF:
 	case BOTH_SABERSINGLECROUCH:
 	case BOTH_SABERSINGLECROUCH_ANI:
+	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
 	case BOTH_SABERSTAFFCROUCH:
 		return qtrue;
@@ -11231,8 +11370,10 @@ qboolean PM_ForceUsingSaberAnim(const int anim)
 	case BOTH_WALL_FLIP_RIGHT:
 	case BOTH_WALL_FLIP_LEFT:
 	case BOTH_FORCEJUMP1:
+	case BOTH_FORCEJUMP1_VADER:
 	case BOTH_FORCEINAIR1:
 	case BOTH_FORCELAND1:
+	case BOTH_FORCELAND1_VADER:
 	case BOTH_FORCEJUMPBACK1:
 	case BOTH_FORCEINAIRBACK1:
 	case BOTH_FORCELANDBACK1:

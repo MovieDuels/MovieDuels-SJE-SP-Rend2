@@ -17,6 +17,7 @@
 #include "qcommon/disablewarnings.h"
 #endif // !REND2_SP
 #include "tr_cache.h"
+#include "qcommon/md_animsets.h"
 
 #define	LL(x) x=LittleLong(x)
 
@@ -4094,7 +4095,19 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	}
 
 	// first up, go load in the animation file we need that has the skeletal animation info for this model
-	mdxm->animIndex = RE_RegisterModel(va("%s.gla", mdxm->animName));
+	// (MovieDuels: with g_ActivateAnimationStyle 1 the humanoid sets use the master _humanoid set, md_animsets.h)
+	const char* anim_set = MD_AnimSetGLA(mdxm->animName, ri.Cvar_VariableIntegerValue(MD_ANIMSTYLE_ACTIVE_CVAR) == 1);
+	mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+	if (anim_set != mdxm->animName && mdxm->animIndex)
+	{
+		const model_t* master_model = R_GetModelByHandle(mdxm->animIndex);
+		if (master_model && master_model->data.gla
+			&& !MD_SkeletonFitsMaster(mdxm->numBones, master_model->data.gla->numBones, mdxm->animName))
+		{
+			anim_set = mdxm->animName; // the master skeleton does not fit this mesh: keep its own set
+			mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+		}
+	}
 
 	char  animGLAName[MAX_QPATH];
 	char* strippedName;
@@ -4108,7 +4121,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 			mapname = strrchr(mapname, '/') + 1;
 		}
 		//stripped name of GLA for this model
-		Q_strncpyz(animGLAName, mdxm->animName, sizeof(animGLAName));
+		Q_strncpyz(animGLAName, anim_set, sizeof(animGLAName));
 		slash = strrchr(animGLAName, '/');
 		if (slash)
 		{

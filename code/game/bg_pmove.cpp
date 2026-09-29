@@ -1320,6 +1320,10 @@ static void PM_JumpForDir()
 			{
 				anim = BOTH_JUMP1_YODA;
 			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_JUMP1_VADER;
+			}
 			else
 			{
 				anim = BOTH_JUMP1;
@@ -1357,6 +1361,10 @@ static void PM_JumpForDir()
 			else if (flags.isYoda == qtrue)
 			{
 				anim = BOTH_JUMP1_YODA;
+			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_JUMP1_VADER;
 			}
 			else
 			{
@@ -1792,7 +1800,21 @@ static qboolean PM_CheckJump()
 								{
 									if (dot_f > 150)
 									{
-										anim = BOTH_FORCEJUMP1;
+										if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+										{
+											if (flags.isVader == qtrue)
+											{
+												anim = BOTH_FORCEJUMP1_VADER;
+											}
+											else
+											{
+												anim = BOTH_FORCEJUMP1;
+											}
+										}
+										else
+										{
+											anim = BOTH_FORCEJUMP1;
+										}
 									}
 									else if (dot_f < -150)
 									{
@@ -1822,7 +1844,22 @@ static qboolean PM_CheckJump()
 								switch (anim)
 								{
 								case BOTH_FORCEJUMP1:
-									new_anim = BOTH_FORCELAND1; //BOTH_FORCEINAIR1;
+								case BOTH_FORCEJUMP1_VADER:
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isVader == qtrue)
+										{
+											new_anim = BOTH_FORCELAND1_VADER; //BOTH_FORCEINAIR1;
+										}
+										else
+										{
+											new_anim = BOTH_FORCELAND1; //BOTH_FORCEINAIR1;
+										}
+									}
+									else
+									{
+										new_anim = BOTH_FORCELAND1; //BOTH_FORCEINAIR1;
+									}
 									break;
 								case BOTH_FORCEJUMPBACK1:
 									new_anim = BOTH_FORCELANDBACK1; //BOTH_FORCEINAIRBACK1;
@@ -1853,7 +1890,7 @@ static qboolean PM_CheckJump()
 					//need to scale this down, start with height velocity (based on max force jump height) and scale down to regular jump vel
 					pm->ps->velocity[2] = (forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])] - cur_height) /
 						forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])] * forceJumpStrength[FP_TableLevel(pm->ps->
-						forcePowerLevel[FP_LEVITATION])]; //JUMP_VELOCITY;
+							forcePowerLevel[FP_LEVITATION])]; //JUMP_VELOCITY;
 					pm->ps->velocity[2] /= 10;
 					pm->ps->velocity[2] += JUMP_VELOCITY;
 					pm->ps->pm_flags |= PMF_JUMP_HELD;
@@ -1927,8 +1964,24 @@ static qboolean PM_CheckJump()
 		{
 			VectorMA(pm->ps->velocity, static_cast<float>(JUMP_VELOCITY) / 2, forward, pm->ps->velocity);
 			//FIXME: kicking off wall anim?  At least check what anim we're in?
-			PM_SetAnim(pm, SETANIM_LEGS, BOTH_FORCEJUMP1,
-				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isVader == qtrue)
+				{
+					PM_SetAnim(pm, SETANIM_LEGS, BOTH_FORCEJUMP1_VADER,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+				}
+				else
+				{
+					PM_SetAnim(pm, SETANIM_LEGS, BOTH_FORCEJUMP1,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+				}
+			}
+			else
+			{
+				PM_SetAnim(pm, SETANIM_LEGS, BOTH_FORCEJUMP1,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+			}
 		}
 		else
 		{
@@ -4105,7 +4158,21 @@ static void PM_BocMove()
 						{
 							if (dot_f > 150)
 							{
-								anim = BOTH_FORCEJUMP1;
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (flags.isVader == qtrue)
+									{
+										anim = BOTH_FORCEJUMP1_VADER;
+									}
+									else
+									{
+										anim = BOTH_FORCEJUMP1;
+									}
+								}
+								else
+								{
+									anim = BOTH_FORCEJUMP1;
+								}
 							}
 							else if (dot_f < -150)
 							{
@@ -4134,7 +4201,22 @@ static void PM_BocMove()
 						switch (anim)
 						{
 						case BOTH_FORCEJUMP1:
-							new_anim = BOTH_FORCELAND1;
+						case BOTH_FORCEJUMP1_VADER:
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isVader == qtrue)
+								{
+									new_anim = BOTH_FORCELAND1_VADER;
+								}
+								else
+								{
+									new_anim = BOTH_FORCELAND1;
+								}
+							}
+							else
+							{
+								new_anim = BOTH_FORCELAND1;
+							}
 							break;
 						case BOTH_FORCEJUMPBACK1:
 							new_anim = BOTH_FORCELANDBACK1;
@@ -4417,6 +4499,10 @@ static int PM_GetLandingAnim()
 			{
 				return BOTH_LAND1_YODA;
 			}
+			else if (flags.isVader == qtrue)
+			{
+				return BOTH_LAND1_VADER;
+			}
 			else
 			{
 				return BOTH_LAND1;
@@ -4433,7 +4519,21 @@ static int PM_GetLandingAnim()
 		{
 		case BOTH_A7_KICK_F_AIR:
 		case BOTH_FLYING_KICK:
-			return BOTH_FORCELAND1;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isVader == qtrue)
+				{
+					return BOTH_FORCELAND1_VADER;
+				}
+				else
+				{
+					return BOTH_FORCELAND1;
+				}
+			}
+			else
+			{
+				return BOTH_FORCELAND1;
+			}
 		case BOTH_A7_KICK_B_AIR:
 			return BOTH_FORCELANDBACK1;
 		case BOTH_A7_KICK_R_AIR:
@@ -4471,6 +4571,7 @@ static int PM_GetLandingAnim()
 		}
 		break;
 	case BOTH_FORCEJUMP1:
+	case BOTH_FORCEJUMP1_VADER:
 	case BOTH_FORCEINAIR1:
 	case BOTH_GRAPPLE_PULL:
 		if (!g_allowBunnyhopping->integer)
@@ -4479,7 +4580,21 @@ static int PM_GetLandingAnim()
 			pm->ps->velocity[0] *= 0.5f;
 			pm->ps->velocity[1] *= 0.5f;
 		}
-		anim = BOTH_FORCELAND1;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCELAND1_VADER;
+			}
+			else
+			{
+				anim = BOTH_FORCELAND1;
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCELAND1;
+		}
 		break;
 	case BOTH_FORCEJUMPBACK1:
 	case BOTH_FORCEINAIRBACK1:
@@ -4514,9 +4629,11 @@ static int PM_GetLandingAnim()
 	case BOTH_JUMP1:
 	case BOTH_JUMP1_ANI:
 	case BOTH_JUMP1_YODA:
+	case BOTH_JUMP1_VADER:
 	case BOTH_INAIR1:
 	case BOTH_INAIR1_ANI:
 	case BOTH_INAIR1_YODA:
+	case BOTH_INAIR1_VADER:
 		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 		{
 			if (flags.isAnakin == qtrue)
@@ -4526,6 +4643,10 @@ static int PM_GetLandingAnim()
 			else if (flags.isYoda == qtrue)
 			{
 				anim = BOTH_LAND1_YODA;
+			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_LAND1_VADER;
 			}
 			else
 			{
@@ -4640,6 +4761,10 @@ static int PM_GetLandingAnim()
 				else if (flags.isYoda == qtrue)
 				{
 					anim = BOTH_LAND1_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					anim = BOTH_LAND1_VADER;
 				}
 				else
 				{
@@ -5647,6 +5772,8 @@ static void PM_FallToDeath()
 
 static int PM_ForceJumpAnimForJumpAnim(int anim)
 {
+	animFlags_t flags = PM_Animationstyletable(pm);
+
 	switch (anim)
 	{
 	case BOTH_JUMP1: //# Jump - wind-up and leave ground
@@ -5656,7 +5783,22 @@ static int PM_ForceJumpAnimForJumpAnim(int anim)
 		anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
 		break;
 	case BOTH_JUMP1_YODA: //# Jump - wind-up and leave ground
-		anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
+	case BOTH_JUMP1_VADER:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCEJUMP1_VADER; //# Jump - wind-up and leave ground
+			}
+			else
+			{
+				anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCEJUMP1; //# Jump - wind-up and leave ground
+		}
 		break;
 	case BOTH_INAIR1: //# In air loop (from jump)
 		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
@@ -5665,6 +5807,7 @@ static int PM_ForceJumpAnimForJumpAnim(int anim)
 		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
 		break;
 	case BOTH_INAIR1_YODA: //# In air loop (from jump)
+	case BOTH_INAIR1_VADER:
 		anim = BOTH_FORCEINAIR1; //# In air loop (from jump)
 		break;
 	case BOTH_LAND1: //# Landing (from in air loop)
@@ -5674,7 +5817,22 @@ static int PM_ForceJumpAnimForJumpAnim(int anim)
 		anim = BOTH_FORCELAND1; //# Landing (from in air loop)
 		break;
 	case BOTH_LAND1_YODA: //# Landing (from in air loop)
-		anim = BOTH_FORCELAND1; //# Landing (from in air loop)
+	case BOTH_LAND1_VADER:
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (flags.isVader == qtrue)
+			{
+				anim = BOTH_FORCELAND1_VADER; //# Landing (from in air loop)
+			}
+			else
+			{
+				anim = BOTH_FORCELAND1; //# Landing (from in air loop)
+			}
+		}
+		else
+		{
+			anim = BOTH_FORCELAND1; //# Landing (from in air loop)
+		}
 		break;
 	case BOTH_JUMPBACK1: //# Jump backwards - wind-up and leave ground
 		anim = BOTH_FORCEJUMPBACK1; //# Jump backwards - wind-up and leave ground
@@ -6204,7 +6362,8 @@ static void PM_GroundTraceMissed()
 					|| pm->ps->legsAnim == BOTH_FORCEWALLREBOUND_LEFT
 					|| pm->ps->legsAnim == BOTH_FORCEWALLREBOUND_BACK
 					|| pm->ps->legsAnim == BOTH_FORCEWALLREBOUND_RIGHT
-					|| pm->ps->legsAnim == BOTH_CEILING_DROP)
+					|| pm->ps->legsAnim == BOTH_CEILING_DROP
+					|| pm->ps->legsAnim == BOTH_CEILING_DROP_VADER)
 					&& !pm->ps->legsAnimTimer)
 				{
 					//if flip anim is done, okay to use inair
@@ -6238,6 +6397,10 @@ static void PM_GroundTraceMissed()
 							{
 								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_YODA, SETANIM_FLAG_NORMAL, 350);
 							}
+							else if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_VADER, SETANIM_FLAG_NORMAL, 350);
+							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1, SETANIM_FLAG_NORMAL, 350);
@@ -6266,6 +6429,10 @@ static void PM_GroundTraceMissed()
 							else if (flags.isYoda == qtrue)
 							{
 								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_YODA, SETANIM_FLAG_NORMAL, 350);
+							}
+							else if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_BOTH, BOTH_INAIR1_VADER, SETANIM_FLAG_NORMAL, 350);
 							}
 							else
 							{
@@ -6342,6 +6509,10 @@ static void PM_GroundTraceMissed()
 												{
 													anim = BOTH_INAIR1_YODA;
 												}
+												else if (flags.isVader == qtrue)
+												{
+													anim = BOTH_INAIR1_VADER;
+												}
 												else
 												{
 													anim = BOTH_INAIR1;
@@ -6379,6 +6550,10 @@ static void PM_GroundTraceMissed()
 													{
 														anim = BOTH_INAIR1_YODA;
 													}
+													else if (flags.isVader == qtrue)
+													{
+														anim = BOTH_INAIR1_VADER;
+													}
 													else
 													{
 														anim = BOTH_INAIR1;
@@ -6415,6 +6590,10 @@ static void PM_GroundTraceMissed()
 											else if (flags.isYoda == qtrue)
 											{
 												PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1_YODA, SETANIM_FLAG_OVERRIDE, 100);
+											}
+											else if (flags.isVader == qtrue)
+											{
+												PM_SetAnim(pm, SETANIM_LEGS, BOTH_JUMP1_VADER, SETANIM_FLAG_OVERRIDE, 100);
 											}
 											else
 											{
@@ -7231,9 +7410,11 @@ qboolean PM_ForceAnim(const int anim)
 	case BOTH_RESISTPUSH: //# plant yourself to resist force push/pulls.
 	case BOTH_FORCEPUSH:
 	case BOTH_FORCEPUSH_YODA: //# Use off-hand to do force power.
+	case BOTH_FORCEPUSH_VADER: //# Use off-hand to do force power.
 	case BOTH_DUAL_PUSH: //# Use off-hand to do force power.
 	case BOTH_FORCEPULL:
 	case BOTH_FORCEPULL_YODA: //# Use off-hand to do force power.
+	case BOTH_FORCEPULL_VADER: //# Use off-hand to do force power.
 	case BOTH_MINDTRICK1: //# Use off-hand to do mind trick
 	case BOTH_MINDTRICK2: //# Use off-hand to do distraction
 	case BOTH_MINDTRICK1_YODA: //# Use off-hand to do mind trick
@@ -7247,6 +7428,7 @@ qboolean PM_ForceAnim(const int anim)
 	case BOTH_FORCEHEAL_QUICK: //# Healing meditation gesture
 	case BOTH_FORCEGRIP1:
 	case BOTH_FORCEGRIP1_ANI: //# temp force-grip anim (actually re-using push)
+	case BOTH_FORCEGRIP1_VADER: //# temp force-grip anim (actually re-using push)
 	case BOTH_FORCEGRIP_HOLD: //# temp force-grip anim (actually re-using push)
 	case BOTH_FORCEGRIP_RELEASE: //# temp force-grip anim (actually re-using push)
 	case BOTH_FORCEGRIP_RELEASE_ANI: //# temp force-grip anim (actually re-using push)
@@ -7873,18 +8055,25 @@ qboolean PM_BoltBlockingAnim(const int anim)
 		//
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_YODA:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_LEFT_VADER:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_YODA:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_BOTTOM_RIGHT_VADER:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_YODA:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_LEFT_VADER:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_YODA:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_MIDDLE_RIGHT_VADER:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_YODA:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_LEFT_VADER:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_YODA:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_MIDDLE_VADER:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT:
 	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_YODA:
+	case BOTH_BOLT_BLOCK_SINGLE_HAND_TOP_RIGHT_VADER:
 		//
 	case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_LEFT:
 	case BOTH_BOLT_BLOCK_TWO_HAND_BOTTOM_RIGHT:
@@ -8735,6 +8924,7 @@ qboolean PM_WeponRestAnim(const int anim)
 		//
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND1IDLE1_YODA:
+	case BOTH_STAND1IDLE1_VADER:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI:
 		//
@@ -9072,8 +9262,10 @@ qboolean PM_ForceJumpingAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_FORCEJUMP1: //# Jump - wind-up and leave ground
+	case BOTH_FORCEJUMP1_VADER:
 	case BOTH_FORCEINAIR1: //# In air loop (from jump)
 	case BOTH_FORCELAND1: //# Landing (from in air loop)
+	case BOTH_FORCELAND1_VADER:
 	case BOTH_FORCEJUMPBACK1: //# Jump backwards - wind-up and leave ground
 	case BOTH_FORCEINAIRBACK1: //# In air loop (from jump back)
 	case BOTH_FORCELANDBACK1: //# Landing backwards(from in air loop)
@@ -9099,9 +9291,11 @@ qboolean PM_JumpingAnim(const int anim)
 	case BOTH_INAIR1: //# In air loop (from jump)
 	case BOTH_INAIR1_ANI: //# In air loop (from jump)
 	case BOTH_INAIR1_YODA: //# In air loop (from jump)
+	case BOTH_INAIR1_VADER:
 	case BOTH_LAND1: //# Landing (from in air loop)
 	case BOTH_LAND1_ANI: //# Landing (from in air loop)
 	case BOTH_LAND1_YODA: //# Landing (from in air loop)
+	case BOTH_LAND1_VADER:
 	case BOTH_LAND2: //# Landing Hard (from a great height)
 	case BOTH_JUMPBACK1: //# Jump backwards - wind-up and leave ground
 	case BOTH_INAIRBACK1: //# In air loop (from jump back)
@@ -9130,11 +9324,13 @@ qboolean PM_LandingAnim(const int anim)
 	case BOTH_LAND1: //# Landing (from in air loop)
 	case BOTH_LAND1_ANI: //# Landing (from in air loop)
 	case BOTH_LAND1_YODA: //# Landing (from in air loop)
+	case BOTH_LAND1_VADER:
 	case BOTH_LAND2: //# Landing Hard (from a great height)
 	case BOTH_LANDBACK1: //# Landing backwards(from in air loop)
 	case BOTH_LANDLEFT1: //# Landing left(from in air loop)
 	case BOTH_LANDRIGHT1: //# Landing right(from in air loop)
 	case BOTH_FORCELAND1: //# Landing (from in air loop)
+	case BOTH_FORCELAND1_VADER:
 	case BOTH_FORCELANDBACK1: //# Landing backwards(from in air loop)
 	case BOTH_FORCELANDLEFT1: //# Landing left(from in air loop)
 	case BOTH_FORCELANDRIGHT1: //# Landing right(from in air loop)
@@ -9229,6 +9425,7 @@ qboolean PM_WalkingAnim(const int anim)
 	case BOTH_WALK6: //# Slow walk for Luke (cin 12)
 	case BOTH_WALK7: //# Fast walk
 	case BOTH_WALKBACK1: //# Walk1 backwards
+	case BOTH_WALKBACK1_VADER:
 	case BOTH_WALKBACK2: //# Walk2 backwards
 	case BOTH_WALKBACK2_YODA: //# Walk2 backwards with yoda
 	case BOTH_WALKBACK_STAFF: //# Walk backwards with staff
@@ -9310,8 +9507,10 @@ qboolean PM_RunningAnim(const int anim)
 	case BOTH_RUN_DUAL:
 	case BOTH_RUN_DUAL_BEN:
 	case BOTH_RUNBACK1:
+	case BOTH_RUNBACK1_VADER:
 	case BOTH_RUNBACK2:
 	case BOTH_RUNBACK2_YODA:
+	case BOTH_RUNBACK2_VADER:
 	case BOTH_RUNBACK_STAFF:
 	case BOTH_RUN1START: //# Start into full run1
 	case BOTH_RUN1STOP: //# Stop from full run1
@@ -9380,8 +9579,10 @@ static qboolean PM_NotWalkingAnim(const int anim)
 	case BOTH_RUN_DUAL:
 	case BOTH_RUN_DUAL_BEN:
 	case BOTH_RUNBACK1:
+	case BOTH_RUNBACK1_VADER:
 	case BOTH_RUNBACK2:
 	case BOTH_RUNBACK2_YODA:
+	case BOTH_RUNBACK2_VADER:
 	case BOTH_RUNBACK_STAFF:
 	case BOTH_RUN1START: //# Start into full run1
 	case BOTH_RUN1STOP: //# Stop from full run1
@@ -9465,6 +9666,7 @@ static qboolean PM_SaberWalkAnim(const int anim)
 	case BOTH_WALK_DUAL:
 	case BOTH_WALK_DUAL_AMD: //# Normal walk with staff
 	case BOTH_WALKBACK1: //# Walk1 backwards
+	case BOTH_WALKBACK1_VADER:
 	case BOTH_WALKBACK2: //# Walk2 backwards
 	case BOTH_WALKBACK2_YODA: //# Walk2 backwards with yoda
 	case BOTH_WALKBACK_STAFF: //# Walk backwards with staff
@@ -9940,17 +10142,21 @@ qboolean PM_SaberStanceAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_VADER:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
+	case BOTH_STAND_BLOCKING_ON_BACK_VADER:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_VADER:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
 	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
+	case BOTH_STAND_BLOCKING_ON_LEFT_VADER:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
@@ -10012,8 +10218,10 @@ qboolean PM_SaberDrawPutawayAnim(const int anim)
 	{
 	case BOTH_STAND1TO2:
 	case BOTH_STAND1TO2_YODA:
+	case BOTH_STAND1TO2_VADER:
 	case BOTH_STAND2TO1:
 	case BOTH_STAND2TO1_YODA:
+	case BOTH_STAND2TO1_VADER:
 	case BOTH_S1_S7:
 	case BOTH_S1_S7_AMD:
 	case BOTH_S7_S1:
@@ -10152,17 +10360,21 @@ static qboolean PM_AdjustStandAnimForSlope()
 		case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 		case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
 		case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
+		case BOTH_STAND_BLOCKING_ON_FORWARD_VADER:
 		case BOTH_STAND_BLOCKING_ON_BACK:
 		case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 		case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 		case BOTH_STAND_BLOCKING_ON_BACK_YODA:
+		case BOTH_STAND_BLOCKING_ON_BACK_VADER:
 		case BOTH_STAND_BLOCKING_ON_RIGHT:
 		case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
 		case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
+		case BOTH_STAND_BLOCKING_ON_RIGHT_VADER:
 		case BOTH_STAND_BLOCKING_ON_LEFT:
 		case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
 		case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
 		case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
+		case BOTH_STAND_BLOCKING_ON_LEFT_VADER:
 		case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 		case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 		case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
@@ -10411,17 +10623,21 @@ static qboolean PM_AdjustStandAnimForSlope()
 			case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 			case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
 			case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
+			case BOTH_STAND_BLOCKING_ON_FORWARD_VADER:
 			case BOTH_STAND_BLOCKING_ON_BACK:
 			case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 			case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 			case BOTH_STAND_BLOCKING_ON_BACK_YODA:
+			case BOTH_STAND_BLOCKING_ON_BACK_VADER:
 			case BOTH_STAND_BLOCKING_ON_RIGHT:
 			case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
 			case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
+			case BOTH_STAND_BLOCKING_ON_RIGHT_VADER:
 			case BOTH_STAND_BLOCKING_ON_LEFT:
 			case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
 			case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
 			case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
+			case BOTH_STAND_BLOCKING_ON_LEFT_VADER:
 			case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 			case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 			case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
@@ -11854,6 +12070,10 @@ static void PM_Footsteps()
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SABERPULL_YODA, SETANIM_FLAG_NORMAL);
 							}
+							else if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SABERPULL_VADER, SETANIM_FLAG_NORMAL);
+							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_LEGS, BOTH_SABERPULL, SETANIM_FLAG_NORMAL);
@@ -12178,6 +12398,10 @@ static void PM_Footsteps()
 						{
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK2_YODA, set_anim_flags);
 						}
+						else if (flags.isVader == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK2_VADER, set_anim_flags);
+						}
 						else
 						{
 							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK2, set_anim_flags);
@@ -12190,7 +12414,21 @@ static void PM_Footsteps()
 				}
 				else
 				{
-					PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1, set_anim_flags);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isVader == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1_VADER, set_anim_flags);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1, set_anim_flags);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1, set_anim_flags);
+					}
 				}
 			}
 			else if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_RANCOR)
@@ -12300,7 +12538,21 @@ static void PM_Footsteps()
 				}
 				else
 				{
-					PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1, set_anim_flags);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isVader == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1_VADER, set_anim_flags);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1, set_anim_flags);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_LEGS, BOTH_RUNBACK1, set_anim_flags);
+					}
 				}
 			}
 			footstep = qtrue;
@@ -12315,7 +12567,21 @@ static void PM_Footsteps()
 				{
 					if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1_VADER, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+						}
 					}
 					else
 					{
@@ -12326,7 +12592,21 @@ static void PM_Footsteps()
 				{
 					if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1_VADER, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+						}
 					}
 					else
 					{
@@ -12340,7 +12620,21 @@ static void PM_Footsteps()
 							{
 								if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) //npc
 								{
-									PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (flags.isVader == qtrue)
+										{
+											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1_VADER, set_anim_flags);
+										}
+										else
+										{
+											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+										}
+									}
+									else
+									{
+										PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+									}
 								}
 								else
 								{
@@ -12350,7 +12644,21 @@ static void PM_Footsteps()
 									}
 									else
 									{
-										PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+										if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+										{
+											if (flags.isVader == qtrue)
+											{
+												PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1_VADER, set_anim_flags);
+											}
+											else
+											{
+												PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+											}
+										}
+										else
+										{
+											PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+										}
 									}
 								}
 							}
@@ -12365,7 +12673,21 @@ static void PM_Footsteps()
 				{
 					if (PM_SaberDrawPutawayAnim(pm->ps->torsoAnim))
 					{
-						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1_VADER, set_anim_flags);
+							}
+							else
+							{
+								PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+							}
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+						}
 					}
 					else
 					{
@@ -12484,7 +12806,21 @@ static void PM_Footsteps()
 				}
 				else
 				{
-					PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isVader == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1_VADER, set_anim_flags);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+						}
+					}
+					else
+					{
+						PM_SetAnim(pm, SETANIM_LEGS, BOTH_WALKBACK1, set_anim_flags);
+					}
 				}
 			}
 			if (!Q_irand(0, 9))
@@ -13434,6 +13770,17 @@ static void PM_BeginWeaponChange(const int weapon)
 								PM_SetSaberMove(LS_PUTAWAY_YODA);
 							}
 						}
+						else if (flags.isVader == qtrue)
+						{
+							if (PM_RunningAnim(pm->ps->legsAnim))
+							{
+								//PM_SetSaberMove(LS_PUTAWAY);
+							}
+							else
+							{
+								PM_SetSaberMove(LS_PUTAWAY_VADER);
+							}
+						}
 						else
 						{
 							PM_SetSaberMove(LS_PUTAWAY);
@@ -13615,6 +13962,17 @@ static void PM_FinishWeaponChange()
 						else
 						{
 							PM_SetSaberMove(LS_DRAW_YODA);
+						}
+					}
+					else if (flags.isVader == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							PM_SetSaberMove(LS_DRAW);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_DRAW_VADER);
 						}
 					}
 					else
@@ -13912,6 +14270,10 @@ static int PM_ReadyPoseForSaberAnimLevelDucked(void)
 			{
 				anim = BOTH_SABERSINGLECROUCH_ANI;
 			}
+			else if (flags.isVader == qtrue)
+			{
+				anim = BOTH_SABERSINGLECROUCH_VADER;
+			}
 			else
 			{
 				anim = BOTH_SABERSINGLECROUCH;
@@ -14164,7 +14526,7 @@ static int PM_ReadyPoseForSaberAnimLevelNPC(void)
 						}
 						else
 						{
-							anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_VADER : BOTH_SABERSINGLECROUCH;
+							anim = (activate_npc_block_stance == qtrue) ? BOTH_STAND_BLOCKING_ON_VADER : BOTH_SABERSINGLECROUCH_VADER;
 						}
 					}
 					else
@@ -14783,6 +15145,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_YODA;
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_LEFT_VADER;
+					}
 					else
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
@@ -14817,6 +15183,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_YODA;
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_RIGHT_VADER;
+					}
 					else
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
@@ -14850,6 +15220,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					else if (flags.isYoda == qtrue)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_BACK_YODA;
+					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_BACK_VADER;
 					}
 					else
 					{
@@ -14894,6 +15268,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_YODA;
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_LEFT_VADER;
+					}
 					else
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
@@ -14928,6 +15306,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_YODA;
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_RIGHT_VADER;
+					}
 					else
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT;
@@ -14961,6 +15343,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					else if (flags.isYoda == qtrue)
 					{
 						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_FORWARD_YODA;
+					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_FORWARD_VADER;
 					}
 					else
 					{
@@ -15004,6 +15390,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 				{
 					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT_YODA;
 				}
+				else if (flags.isVader == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_LEFT_VADER;
+				}
 				else
 				{
 					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_LEFT;
@@ -15040,6 +15430,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 				else if (flags.isYoda == qtrue)
 				{
 					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_RIGHT_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_RIGHT_VADER;
 				}
 				else
 				{
@@ -15091,6 +15485,10 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 					{
 						anim = BOTH_SABERTAVION_STANCE_JKA_YODA; // new method
 					}
+					else if (flags.isVader == qtrue)
+					{
+						anim = BOTH_SABERTAVION_STANCE_JKA_VADER; // new method
+					}
 					else
 					{
 						anim = BOTH_STAND_BLOCKING_ON; // new method
@@ -15130,7 +15528,7 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 			else if (flags.isVader == qtrue)
 			{
 				// Pressing block only
-				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_VADER;
+				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH_VADER : BOTH_STAND_BLOCKING_ON_VADER;
 			}
 			else
 			{
@@ -17019,7 +17417,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			}
 		}
 	}
-	else if (new_move == LS_DRAW || new_move == LS_DRAW_YODA)
+	else if (new_move == LS_DRAW || new_move == LS_DRAW_YODA || new_move == LS_DRAW_VADER)
 	{
 		if (PM_RunningAnim(pm->ps->torsoAnim))
 		{
@@ -17110,6 +17508,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		}
 		if (pm->ps->torsoAnim == BOTH_STAND1IDLE1
 			|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA
+			|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_VADER
 			|| pm->ps->torsoAnim == BOTH_STAND9IDLE1
 			|| pm->ps->torsoAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->torsoAnim == BOTH_STANDYODAIDLE_STICK
@@ -17121,7 +17520,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			setflags |= SETANIM_FLAG_OVERRIDE;
 		}
 	}
-	else if (new_move == LS_PUTAWAY || new_move == LS_PUTAWAY_YODA)
+	else if (new_move == LS_PUTAWAY || new_move == LS_PUTAWAY_YODA || new_move == LS_PUTAWAY_VADER)
 	{
 		if ((pm->ps->saber[0].holsterPlace == HOLSTER_LHIP
 			|| pm->ps->saber[0].holsterPlace == HOLSTER_LHIPF
@@ -17181,7 +17580,8 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			anim = BOTH_S6_S1;
 		}
 		if (pm->ps->torsoAnim == BOTH_STAND1IDLE1
-			|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA)
+			|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA
+			|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_VADER)
 		{
 			setflags |= SETANIM_FLAG_OVERRIDE;
 		}
@@ -17203,7 +17603,8 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 				return;
 			}
 			if (pm->ps->torsoAnim == BOTH_STAND1IDLE1
-				|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA)
+				|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_YODA
+				|| pm->ps->torsoAnim == BOTH_STAND1IDLE1_VADER)
 			{
 				parts = SETANIM_BOTH;
 			}
@@ -17346,6 +17747,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_WALK_DUAL:
 		case BOTH_WALK_DUAL_AMD:
 		case BOTH_WALKBACK1:
+		case BOTH_WALKBACK1_VADER:
 		case BOTH_WALKBACK_PISTOL:
 		case BOTH_WALKBACK_BLASTER:
 		case BOTH_WALKBACK_HEAVY:
@@ -17376,12 +17778,15 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 		case BOTH_RUN_DUAL:
 		case BOTH_RUN_DUAL_BEN:
 		case BOTH_RUNBACK1:
+		case BOTH_RUNBACK1_VADER:
 		case BOTH_RUNBACK2:
 		case BOTH_RUNBACK2_YODA:
+		case BOTH_RUNBACK2_VADER:
 		case BOTH_RUNBACK_STAFF:
 		case BOTH_MENUIDLE1:
 		case BOTH_SABERSINGLECROUCH:
 		case BOTH_SABERSINGLECROUCH_ANI:
+		case BOTH_SABERSINGLECROUCH_VADER:
 		case BOTH_SABERDUALCROUCH:
 		case BOTH_SABERSTAFFCROUCH:
 		case BOTH_WALK1_STICK:
@@ -17484,7 +17889,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 					!PM_InSlopeAnim(pm->ps->legsAnim) &&
 					!(pm->ps->pm_flags & PMF_DUCKED) &&
 					new_move != LS_PUTAWAY &&
-					new_move != LS_PUTAWAY_YODA)
+					new_move != LS_PUTAWAY_YODA && new_move != LS_PUTAWAY_VADER)
 				{
 					parts = SETANIM_BOTH;
 				}
@@ -19310,7 +19715,7 @@ saberMoveName_t G_PickAutoKick(const gentity_t* self, const gentity_t* enemy, co
 			if (self->client->ps.groundEntityNum != ENTITYNUM_NONE && g_SerenityJediEngineMode->integer == 2 && self
 				->client->ps.weapon == WP_SABER && self->client->ps.SaberActive())
 			{
-				if (G_CheckEnemyPresence(self, DIR_FRONT, 64, 12.0f))
+				if (G_CheckEnemyPresence(self, DIR_FRONT, 64)) // default tolerance 0.75: "12.0f" can never be reached by a dot product, so this never ran
 				{
 					if (self->client->ps.saberFatigueChainCount >= MISHAPLEVEL_TEN)
 					{
@@ -20046,7 +20451,7 @@ static void PM_CheckKick()
 				else if (pm->ps->groundEntityNum != ENTITYNUM_NONE && g_SerenityJediEngineMode->integer == 2 && pm->
 					ps->weapon == WP_SABER && pm->ps->SaberActive())
 				{
-					if (G_CheckEnemyPresence(pm->gent, DIR_FRONT, 64, 12.0f))
+					if (G_CheckEnemyPresence(pm->gent, DIR_FRONT, 64)) // default tolerance 0.75: "12.0f" can never be reached by a dot product, so this never ran
 					{
 						if (pm->ps->saberFatigueChainCount >= MISHAPLEVEL_TEN)
 						{
@@ -20279,7 +20684,7 @@ static void PM_MeleeKickForConditions()
 				else if (pm->ps->groundEntityNum != ENTITYNUM_NONE && g_SerenityJediEngineMode->integer == 2 && pm->
 					ps->weapon == WP_SABER && pm->ps->SaberActive())
 				{
-					if (G_CheckEnemyPresence(pm->gent, DIR_FRONT, 64, 12.0f))
+					if (G_CheckEnemyPresence(pm->gent, DIR_FRONT, 64)) // default tolerance 0.75: "12.0f" can never be reached by a dot product, so this never ran
 					{
 						if (pm->ps->saberFatigueChainCount >= MISHAPLEVEL_TEN)
 						{
@@ -20502,7 +20907,7 @@ static void PM_MeleeMoveForConditions()
 				else if (pm->ps->groundEntityNum != ENTITYNUM_NONE && g_SerenityJediEngineMode->integer == 2 && pm->
 					ps->weapon == WP_SABER && pm->ps->SaberActive())
 				{
-					if (G_CheckEnemyPresence(pm->gent, DIR_FRONT, 64, 12.0f))
+					if (G_CheckEnemyPresence(pm->gent, DIR_FRONT, 64)) // default tolerance 0.75: "12.0f" can never be reached by a dot product, so this never ran
 					{
 						if (pm->ps->saberFatigueChainCount >= MISHAPLEVEL_TEN)
 						{
@@ -22906,6 +23311,10 @@ static void PM_WeaponLightsaber(void)
 								{
 									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 								}
+								else if (flags.isVader == qtrue)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
 								else
 								{
 									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -23059,6 +23468,7 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_WALK_DUAL:
 				case BOTH_WALK_DUAL_AMD:
 				case BOTH_WALKBACK1:
+				case BOTH_WALKBACK1_VADER:
 				case BOTH_WALKBACK_PISTOL:
 				case BOTH_WALKBACK_BLASTER:
 				case BOTH_WALKBACK_HEAVY:
@@ -23089,12 +23499,15 @@ static void PM_WeaponLightsaber(void)
 				case BOTH_RUN_DUAL:
 				case BOTH_RUN_DUAL_BEN:
 				case BOTH_RUNBACK1:
+				case BOTH_RUNBACK1_VADER:
 				case BOTH_RUNBACK2:
 				case BOTH_RUNBACK2_YODA:
+				case BOTH_RUNBACK2_VADER:
 				case BOTH_RUNBACK_STAFF:
 				case BOTH_MENUIDLE1:
 				case BOTH_SABERSINGLECROUCH:
 				case BOTH_SABERSINGLECROUCH_ANI:
+				case BOTH_SABERSINGLECROUCH_VADER:
 				case BOTH_SABERDUALCROUCH:
 				case BOTH_SABERSTAFFCROUCH:
 				case BOTH_WALK1_STICK:
@@ -23214,6 +23627,10 @@ static void PM_WeaponLightsaber(void)
 							if (flags.isYoda == qtrue)
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else if (flags.isVader == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 							}
 							else
 							{
@@ -23507,6 +23924,10 @@ static void PM_WeaponLightsaber(void)
 						if (flags.isYoda == qtrue)
 						{
 							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else if (flags.isVader == qtrue)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
 						else
 						{
@@ -23805,6 +24226,7 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_WALK_DUAL:
 					case BOTH_WALK_DUAL_AMD:
 					case BOTH_WALKBACK1:
+					case BOTH_WALKBACK1_VADER:
 					case BOTH_WALKBACK_PISTOL:
 					case BOTH_WALKBACK_BLASTER:
 					case BOTH_WALKBACK_HEAVY:
@@ -23835,12 +24257,15 @@ static void PM_WeaponLightsaber(void)
 					case BOTH_RUN_DUAL:
 					case BOTH_RUN_DUAL_BEN:
 					case BOTH_RUNBACK1:
+					case BOTH_RUNBACK1_VADER:
 					case BOTH_RUNBACK2:
 					case BOTH_RUNBACK2_YODA:
+					case BOTH_RUNBACK2_VADER:
 					case BOTH_RUNBACK_STAFF:
 					case BOTH_MENUIDLE1:
 					case BOTH_SABERSINGLECROUCH:
 					case BOTH_SABERSINGLECROUCH_ANI:
+					case BOTH_SABERSINGLECROUCH_VADER:
 					case BOTH_SABERDUALCROUCH:
 					case BOTH_SABERSTAFFCROUCH:
 					case BOTH_WALK1_STICK:
