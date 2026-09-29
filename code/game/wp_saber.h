@@ -259,6 +259,16 @@ enum
 #define	FORCE_LEVEL_4 (FORCE_LEVEL_3+1)
 #define	FORCE_LEVEL_5 (FORCE_LEVEL_4+1)
 
+// The per-level tables (forceJumpHeight[], mindTrickTime[], forceGripDamage[], ...) only have entries for
+// FORCE_LEVEL_0..FORCE_LEVEL_3, but levels 4 and 5 exist (NPC files allow up to 5, setForceMindTrick and
+// setforceall give level 4). Indexing a table with those read past its end into the next table (a level-4
+// mind trick got stasisTime[0] = 0 ms). Clamp the index; levels above 3 use the level-3 value, as the
+// switch statements elsewhere already do.
+inline int FP_TableLevel(const int level)
+{
+	return level < FORCE_LEVEL_0 ? FORCE_LEVEL_0 : level > FORCE_LEVEL_3 ? FORCE_LEVEL_3 : level;
+}
+
 enum
 {
 	FJ_FORWARD,

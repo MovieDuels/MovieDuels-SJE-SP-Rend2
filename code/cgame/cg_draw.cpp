@@ -29,6 +29,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "cg_media.h"
 #include "../game/objectives.h"
 #include "../game/g_vehicles.h"
+#include "../game/wp_saber.h"
 #include <qcommon/q_shared.h>
 #include <qcommon/q_platform.h>
 #include <bg_public.h>
@@ -7114,14 +7115,14 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 									client->ps.forcePowerLevel[FP_PUSH])
 								{
 									//use the better range
-									max_range = forcePushPullRadius[cg_entities[0].gent->client->ps.forcePowerLevel[
-										FP_PULL]];
+									max_range = forcePushPullRadius[FP_TableLevel(cg_entities[0].gent->client->ps.forcePowerLevel[
+										FP_PULL])];
 								}
 								else
 								{
 									//use the better range
-									max_range = forcePushPullRadius[cg_entities[0].gent->client->ps.forcePowerLevel[
-										FP_PUSH]];
+									max_range = forcePushPullRadius[FP_TableLevel(cg_entities[0].gent->client->ps.forcePowerLevel[
+										FP_PUSH])];
 								}
 								if (max_range >= trace.fraction * 2048)
 								{
@@ -7142,14 +7143,14 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 								ps.forcePowerLevel[FP_PUSH])
 							{
 								//use the better range
-								max_range = forcePushPullRadius[cg_entities[0].gent->client->ps.forcePowerLevel[
-									FP_PULL]];
+								max_range = forcePushPullRadius[FP_TableLevel(cg_entities[0].gent->client->ps.forcePowerLevel[
+									FP_PULL])];
 							}
 							else
 							{
 								//use the better range
-								max_range = forcePushPullRadius[cg_entities[0].gent->client->ps.forcePowerLevel[
-									FP_PUSH]];
+								max_range = forcePushPullRadius[FP_TableLevel(cg_entities[0].gent->client->ps.forcePowerLevel[
+									FP_PUSH])];
 							}
 							if (max_range >= trace.fraction * 2048)
 							{
@@ -7160,7 +7161,7 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 						else if (traceEnt->spawnflags & 1/*F_PUSH*/)
 						{
 							//pushable only
-							if (forcePushPullRadius[cg_entities[0].gent->client->ps.forcePowerLevel[FP_PUSH]] >= trace.
+							if (forcePushPullRadius[FP_TableLevel(cg_entities[0].gent->client->ps.forcePowerLevel[FP_PUSH])] >= trace.
 								fraction * 2048)
 							{
 								//actually close enough to use force push on it
@@ -7170,7 +7171,7 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 						else if (traceEnt->spawnflags & 2/*F_PULL*/)
 						{
 							//pullable only
-							if (forcePushPullRadius[cg_entities[0].gent->client->ps.forcePowerLevel[FP_PULL]] >= trace.
+							if (forcePushPullRadius[FP_TableLevel(cg_entities[0].gent->client->ps.forcePowerLevel[FP_PULL])] >= trace.
 								fraction * 2048)
 							{
 								//actually close enough to use force pull on it
@@ -8833,6 +8834,7 @@ static float cg_draw_radar(const float y)
 				if (cent->currentState.clientNum >= MAX_CLIENTS //missile owned by an NPC
 					&& cg_entities[cent->currentState.clientNum].currentState.NPC_class == CLASS_VEHICLE
 					//NPC is a vehicle
+					&& cg_entities[cent->currentState.clientNum].currentState.m_iVehicleNum >= 1 // 0 = no driver, would read clientinfo[-1]
 					&& cg_entities[cent->currentState.clientNum].currentState.m_iVehicleNum <= MAX_CLIENTS
 					//Vehicle has a player driver
 					&& cgs.clientinfo[cg_entities[cent->currentState.clientNum].currentState.m_iVehicleNum - 1].

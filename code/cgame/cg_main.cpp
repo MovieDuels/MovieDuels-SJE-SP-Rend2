@@ -686,7 +686,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_ignitionSpeed, "cg_ignitionSpeed", "1", CVAR_ARCHIVE},
 	{&cg_ignitionSpeedstaff, "cg_ignitionSpeedstaff", "1", CVAR_ARCHIVE},
 
-	{&cg_SerenityJediEngineMode, "g_SerenityJediEngineMode", "1", CVAR_ARCHIVE},
+	{&cg_SerenityJediEngineMode, "g_SerenityJediEngineMode", "0", CVAR_ARCHIVE}, // default 0 everywhere (game, cgame, ui)
 	{&cg_SerenityJediEngineHudMode, "g_SerenityJediEngineHudMode", "5", CVAR_ARCHIVE},
 	{&cg_SaberInnonblockableAttackWarning, "g_SaberInnonblockableAttackWarning", "0", CVAR_ARCHIVE},
 	{&cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE},

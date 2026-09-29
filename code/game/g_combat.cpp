@@ -6607,6 +6607,14 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 		return;
 	}
 
+	if (!self->s.number && strength < 300)
+	{
+		//player only knocked down if pushed *hard*
+		//(checked first: further down it came after the saber was switched off and the pain event,
+		// so a weak knockover turned the player's saber off without knocking him down)
+		return;
+	}
+
 	if (self->client->NPC_class == CLASS_ROCKETTROOPER)
 	{
 		return;
@@ -6688,11 +6696,6 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 			&& !PM_InKnockDown(&self->client->ps))
 		{
 			int knock_anim = BOTH_KNOCKDOWN1;
-			if (!self->s.number && strength < 300)
-			{
-				//player only knocked down if pushed *hard*
-				return;
-			}
 			if (PM_CrouchAnim(self->client->ps.legsAnim))
 			{
 				//crouched knockdown

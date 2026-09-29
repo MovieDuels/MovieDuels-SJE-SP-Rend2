@@ -3027,7 +3027,7 @@ static void Jedi_CombatDistance(const int enemy_dist)
 			? FORCE_LEVEL_1
 			: NPC->client->ps.forcePowerLevel[FP_PUSH];
 
-		if (enemy_dist < forcePushPullRadius[testlevel] - 16)
+		if (enemy_dist < forcePushPullRadius[FP_TableLevel(testlevel)] - 16)
 		{
 			if (InFront(NPC->enemy->currentOrigin,
 				NPC->client->renderInfo.eyePoint,
@@ -4810,7 +4810,7 @@ int jedi_re_calc_parry_time(const gentity_t* self, const evasionType_t evasion_t
 	{
 		if (g_SerenityJediEngineMode->integer < 1)
 		{
-			return parryDebounce[self->client->ps.forcePowerLevel[FP_SABER_DEFENSE]];
+			return parryDebounce[FP_TableLevel(self->client->ps.forcePowerLevel[FP_SABER_DEFENSE])];
 		}
 	}
 	else if (self->NPC)
@@ -9099,7 +9099,9 @@ static void jedi_combat()
 	// If this NPC should be blocking, hold position and face the enemy.
 	// This MUST run before any movement / spacing logic.
 	// ----------------------------------------------------------------------
-	if (NPC_Should_Block(NPC) == qtrue)
+	const qboolean in_block_stance = NPC_Should_Block(NPC);
+
+	if (in_block_stance == qtrue)
 	{
 		// Mark stance flag
 		if ((NPC->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) == 0)
@@ -9114,8 +9116,9 @@ static void jedi_combat()
 			NPC_UpdateAngles(qtrue, qtrue);
 		}
 
-		// Do not run any other combat movement/spacing logic this frame
-		return;
+		// Hold position: the movement/spacing logic below is skipped, but the NPC still faces,
+		// parries, evades and decides to attack. (This used to return here, so an NPC in block
+		// stance never reached Jedi_AttackDecide and stopped attacking at close range.)
 	}
 	else
 	{
@@ -9135,7 +9138,9 @@ static void jedi_combat()
 		return;
 	}
 
-	if (TIMER_Done(NPC, "allyJediDelay"))
+	// Block stance holds position only once the enemy is in striking range: holding at the stance
+	// distance (128) left the NPC just out of reach, so it never attacked and never closed in.
+	if (!(in_block_stance == qtrue && enemy_in_striking_range == qtrue) && TIMER_Done(NPC, "allyJediDelay"))
 	{
 		if ((!(NPC->client->ps.forcePowersActive & 1 << FP_GRIP) ||
 			NPC->client->ps.forcePowerLevel[FP_GRIP] < FORCE_LEVEL_2)

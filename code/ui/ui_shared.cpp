@@ -1806,7 +1806,8 @@ static void Menu_SetItemText(const menuDef_t* menu, const char* itemName, const 
 					{
 						char cvartext[2048];
 						DC->getCVarString(item->cvar, cvartext, sizeof cvartext);
-						item->text = cvartext;
+						// item->text is kept and repainted later, so it must not point at this stack buffer.
+						item->text = const_cast<char*>(String_Alloc(cvartext));
 					}
 					else
 					{
@@ -3103,7 +3104,7 @@ qboolean ItemParse_asset_model_go(itemDef_t* item, const char* name)
 	Item_ValidateTypeData(item);
 	const modelDef_t* modelPtr = static_cast<modelDef_t*>(item->typeData);
 
-	if (!Q_stricmp(&name[strlen(name) - 4], ".glm"))
+	if (strlen(name) >= 4 && !Q_stricmp(&name[strlen(name) - 4], ".glm"))
 	{
 		//it's a ghoul2 model then
 		if (item->ghoul2.size() && item->ghoul2[0].mModelindex >= 0)
@@ -6283,9 +6284,9 @@ static void Item_Text_Wrapped_Paint(itemDef_t* item)
 	// now paint the text and/or any optional images
 	// default to left
 
+	char text[1024]; // outside the if: textPtr may point into it below
 	if (item->text == nullptr)
 	{
-		char text[1024];
 		if (item->cvar == nullptr)
 		{
 			return;
@@ -6349,9 +6350,9 @@ static void Item_Text_Paint(itemDef_t* item)
 		return;
 	}
 
+	char text[1024]; // outside the if: textPtr may point into it below
 	if (item->text == nullptr)
 	{
-		char text[1024];
 		if (item->cvar == nullptr)
 		{
 			return;
@@ -6486,7 +6487,8 @@ static void Item_TextScroll_Paint(itemDef_t* item)
 	{
 		char cvartext[1024];
 		DC->getCVarString(item->cvar, cvartext, sizeof cvartext);
-		item->text = cvartext;
+		// Pooled copy: item->text outlives this block (BuildLines below, later paints).
+		item->text = const_cast<char*>(String_Alloc(cvartext));
 	}
 
 	Item_TextScroll_BuildLines(item);
@@ -8649,9 +8651,9 @@ void Item_Text_AutoWrapped_Paint(itemDef_t* item)
 	int textWidth = 0;
 	const char* newLinePtr = nullptr;
 
+	char text[1024]; // outside the if: textPtr may point into it below
 	if (item->text == nullptr)
 	{
-		char text[1024];
 		if (item->cvar == nullptr)
 		{
 			return;

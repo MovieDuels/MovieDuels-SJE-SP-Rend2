@@ -689,18 +689,27 @@ static void UI_ParseScriptedSaber(char* script, const int snum)
 	char* p = script;
 
 	const int l = strlen(p);
+	if (l == 0)
+	{
+		ScriptedNum[snum] = 0;
+		return;
+	}
 	p++;
 
-	while (p[0] && p - script < l && n < 10)
+	// Never step past the terminator (same fix as CG_ParseScriptedSaber).
+	while (p - script < l && p[0] && n < 10)
 	{
 		ParseRGBSaber(p, ScriptedColors[n][snum]);
-		while (p[0] != ':')
+		while (p[0] && p[0] != ':')
 			p++;
+		if (!p[0])
+			break;
 		p++;
 
 		ScriptedTimes[n][snum] = getint(&p);
 
-		p++;
+		if (p[0] == ':')
+			p++;
 		n++;
 	}
 	ScriptedNum[snum] = n;

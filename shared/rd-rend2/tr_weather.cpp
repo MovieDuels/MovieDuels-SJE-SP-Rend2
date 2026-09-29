@@ -1303,7 +1303,7 @@ void RB_SurfaceWeather(srfWeather_t* surf)
 
 	vec2_t zoneOffsets[9]{};
 	GLint  zoneMapping[9]{};
-	int		centerZoneIndex;
+	int		centerZoneIndex = 4; // x == 0 && y == 0 in the loop below
 	{
 		int chunkIndex = 0;
 		int currentIndex = 0;
@@ -1342,6 +1342,10 @@ void RB_SurfaceWeather(srfWeather_t* surf)
 		weatherObject_t* weatherObject = &ws.weatherSlots[weatherType];
 		if (!weatherObject->active)
 			continue;
+
+		// The particle VBO holds maxWeatherTypeParticles per chunk; never simulate or draw more than that.
+		if (weatherObject->particleCount > maxWeatherTypeParticles[weatherType])
+			weatherObject->particleCount = maxWeatherTypeParticles[weatherType];
 
 		if (weatherObject->vbo == nullptr)
 			GenerateRainModel(

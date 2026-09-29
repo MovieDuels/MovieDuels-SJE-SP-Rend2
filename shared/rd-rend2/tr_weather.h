@@ -36,12 +36,15 @@ enum weatherType_t
 	NUM_WEATHER_TYPES
 };
 
+// Per-chunk particle buffer sizes. Must be >= every particleCount the weather commands set (sand and fog use
+// 1600): drawing more than the buffer holds read past its end, and on AMD those particles all came back at
+// the same spot, stacking into a big white blob (ffa4 fog weather). RB_SurfaceWeather also clamps.
 const int maxWeatherTypeParticles[NUM_WEATHER_TYPES] = {
 	30000,
 	10000,
 	5000,
-	1000,
-	1000
+	1600,
+	1600
 };
 
 struct weatherObject_t

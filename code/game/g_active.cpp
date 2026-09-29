@@ -199,8 +199,8 @@ extern cvar_t* g_SaberPerfectBlockingTimerEasy;
 extern cvar_t* g_SaberPerfectBlockingTimerNormal;
 extern cvar_t* g_SaberPerfectBlockingTimerHard;
 extern void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps);
-extern void WP_SaberFatigueRegenerate(int override_amt);
-extern void WP_BlasterFatigueRegenerate(int override_amt);
+extern void WP_SaberFatigueRegenerate(playerState_t* ps, int override_amt);
+extern void WP_BlasterFatigueRegenerate(playerState_t* ps, int override_amt);
 
 extern bool in_camera;
 extern qboolean player_locked;
@@ -2112,11 +2112,11 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 			{
 				if (client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_FULL)
 				{
-					WP_BlasterFatigueRegenerate(4);
+					WP_BlasterFatigueRegenerate(&client->ps, 4);
 				}
 				else
 				{
-					WP_BlasterFatigueRegenerate(1);
+					WP_BlasterFatigueRegenerate(&client->ps, 1);
 				}
 			}
 		}
@@ -2156,11 +2156,11 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 					{
 						if (client->ps.saberFatigueChainCount > MISHAPLEVEL_HUDFLASH)
 						{
-							WP_SaberFatigueRegenerate(2);
+					WP_SaberFatigueRegenerate(&client->ps, 2);
 						}
 						else
 						{
-							WP_SaberFatigueRegenerate(1);
+					WP_SaberFatigueRegenerate(&client->ps, 1);
 						}
 					}
 				}
@@ -2188,7 +2188,7 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 					// Regenerate 1 point every 2 frames instead of every frame.
 					if ((level.time & 1) == 0)  // even frame → regen
 					{
-						WP_SaberFatigueRegenerate(1);
+						WP_SaberFatigueRegenerate(&client->ps, 1);
 					}
 				}
 			}

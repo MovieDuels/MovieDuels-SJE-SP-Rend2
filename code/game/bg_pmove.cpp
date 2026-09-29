@@ -417,14 +417,14 @@ qboolean PM_InForceFall()
 		{
 			if (pm->ps->velocity[2] < FORCEFALLVELOCITY)
 			{
-				if (FORCEFALLVELOCITY - pm->ps->velocity[2] < ForceFallBrakeRate[pm->ps->forcePowerLevel[
-					FP_LEVITATION]])
+				if (FORCEFALLVELOCITY - pm->ps->velocity[2] < ForceFallBrakeRate[FP_TableLevel(pm->ps->forcePowerLevel[
+					FP_LEVITATION])])
 				{
 					pm->ps->velocity[2] = FORCEFALLVELOCITY;
 				}
 				else
 				{
-					pm->ps->velocity[2] += ForceFallBrakeRate[pm->ps->forcePowerLevel[FP_LEVITATION]];
+					pm->ps->velocity[2] += ForceFallBrakeRate[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])];
 				}
 			}
 		}
@@ -1618,7 +1618,7 @@ static qboolean PM_CheckJump()
 				if ((cur_height <= forceJumpHeight[0] || //still below minimum jump height
 					pm->ps->forcePower && pm->cmd.upmove >= 10) &&
 					////still have force power available and still trying to jump up
-					cur_height < forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]])
+					cur_height < forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])])
 					//still below maximum jump height
 				{
 					//can still go up
@@ -1851,15 +1851,15 @@ static qboolean PM_CheckJump()
 					}
 
 					//need to scale this down, start with height velocity (based on max force jump height) and scale down to regular jump vel
-					pm->ps->velocity[2] = (forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] - cur_height) /
-						forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] * forceJumpStrength[pm->ps->
-						forcePowerLevel[FP_LEVITATION]]; //JUMP_VELOCITY;
+					pm->ps->velocity[2] = (forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])] - cur_height) /
+						forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])] * forceJumpStrength[FP_TableLevel(pm->ps->
+						forcePowerLevel[FP_LEVITATION])]; //JUMP_VELOCITY;
 					pm->ps->velocity[2] /= 10;
 					pm->ps->velocity[2] += JUMP_VELOCITY;
 					pm->ps->pm_flags |= PMF_JUMP_HELD;
 				}
-				else if (cur_height > forceJumpHeight[0] && cur_height < forceJumpHeight[pm->ps->forcePowerLevel[
-					FP_LEVITATION]] - forceJumpHeight[0])
+				else if (cur_height > forceJumpHeight[0] && cur_height < forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[
+					FP_LEVITATION])] - forceJumpHeight[0])
 				{
 					//still have some headroom, don't totally stop it
 					if (pm->ps->velocity[2] > JUMP_VELOCITY)
@@ -3639,7 +3639,7 @@ static void PM_AirMove()
 	{
 		//I am force jumping and I'm not holding the button anymore
 		const float cur_height = pm->ps->origin[2] - pm->ps->forceJumpZStart + pm->ps->velocity[2] * pml.frametime;
-		const float max_jump_height = forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]];
+		const float max_jump_height = forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])];
 		if (cur_height >= max_jump_height)
 		{
 			//reached top, cut velocity
@@ -3973,7 +3973,7 @@ static void PM_BocMove()
 		const float cur_height = pm->ps->origin[2] - pm->ps->forceJumpZStart;
 		//check for max force jump level and cap off & cut z vel
 		if ((cur_height <= forceJumpHeight[0] || pm->ps->forcePower && pm->cmd.upmove >= 10)
-			&& cur_height < forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]])
+			&& cur_height < forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])])
 		{
 			//can still go up
 			if (cur_height > forceJumpHeight[0])
@@ -4163,13 +4163,13 @@ static void PM_BocMove()
 			}
 
 			//need to scale this down, start with height velocity (based on max force jump height) and scale down to regular jump vel
-			pm->ps->velocity[2] = (forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] - cur_height) /
-				forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] * forceJumpStrength[pm->ps->forcePowerLevel[FP_LEVITATION]]; //JUMP_VELOCITY;
+			pm->ps->velocity[2] = (forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])] - cur_height) /
+				forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])] * forceJumpStrength[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])]; //JUMP_VELOCITY;
 			pm->ps->velocity[2] /= 10;
 			pm->ps->velocity[2] += JUMP_VELOCITY;
 			pm->ps->pm_flags |= PMF_JUMP_HELD;
 		}
-		else if (cur_height > forceJumpHeight[0] && cur_height < forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]] - forceJumpHeight[0])
+		else if (cur_height > forceJumpHeight[0] && cur_height < forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])] - forceJumpHeight[0])
 		{
 			//still have some headroom, don't totally stop it
 			if (pm->ps->velocity[2] > JUMP_VELOCITY)
@@ -5177,7 +5177,7 @@ static void PM_CrashLand()
 			{
 				//take off some of it, at least
 				delta = pm->ps->jumpZStart - pm->ps->origin[2];
-				float drop_allow = forceJumpHeight[pm->ps->forcePowerLevel[FP_LEVITATION]];
+				float drop_allow = forceJumpHeight[FP_TableLevel(pm->ps->forcePowerLevel[FP_LEVITATION])];
 				if (drop_allow < 128)
 				{
 					//always allow a drop from 128, at least
@@ -7510,7 +7510,8 @@ qboolean PM_InGetUpNoRoll(const playerState_t* ps)
 
 qboolean PM_InKnockDown(const playerState_t* ps)
 {
-	if (!pm || !pm->ps)
+	// Check the argument, not the global pm (stale outside Pmove, e.g. when called from ClientThink).
+	if (!ps)
 	{
 		return qfalse;
 	}
@@ -8459,7 +8460,8 @@ qboolean PM_GettingUpFromKnockDown(const float standheight, const float crouchhe
 
 void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd)
 {
-	if (!pm || !pm->ps)
+	// Check the argument, not the global pm (stale outside Pmove, e.g. when called from ClientThink).
+	if (!ps)
 	{
 		return;
 	}
@@ -8621,7 +8623,8 @@ void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd)
 
 qboolean PM_InRollIgnoreTimer(const playerState_t* ps)
 {
-	if (!pm || !pm->ps)
+	// Check the argument, not the global pm (stale outside Pmove, e.g. when called from ClientThink).
+	if (!ps)
 	{
 		return qfalse;
 	}
@@ -8648,7 +8651,9 @@ qboolean PM_InRollIgnoreTimer(const playerState_t* ps)
 
 qboolean PM_InRoll(const playerState_t* ps)
 {
-	if (!pm || !pm->ps)
+	// Check the argument, not the global pm: this is also called outside Pmove (e.g. G_CheckClampUcmd),
+	// where pm still points at a finished Pmove's stack frame.
+	if (!ps)
 	{
 		return qfalse;
 	}
@@ -16499,42 +16504,54 @@ extern qboolean SaberStaffWeapon(const gentity_t* ent);
 void PM_SaberFakeFlagUpdate(int new_move);
 void PM_SaberPerfectBlockUpdate(int new_move);
 
-void WP_SaberFatigueRegenerate(const int override_amt)
+// The playerState_t versions are for game code outside Pmove (g_active.cpp), where the global pm is not
+// the entity being updated (it is stale or null) - using it regenerated the wrong entity or crashed.
+void WP_SaberFatigueRegenerate(playerState_t* ps, const int override_amt)
 {
-	if (pm->ps->saberFatigueChainCount >= MISHAPLEVEL_NONE)
+	if (ps->saberFatigueChainCount >= MISHAPLEVEL_NONE)
 	{
 		if (override_amt)
 		{
-			pm->ps->saberFatigueChainCount -= override_amt;
+			ps->saberFatigueChainCount -= override_amt;
 		}
 		else
 		{
-			pm->ps->saberFatigueChainCount--;
+			ps->saberFatigueChainCount--;
 		}
-		if (pm->ps->saberFatigueChainCount > MISHAPLEVEL_MAX)
+		if (ps->saberFatigueChainCount > MISHAPLEVEL_MAX)
 		{
-			pm->ps->saberFatigueChainCount = MISHAPLEVEL_MAX;
+			ps->saberFatigueChainCount = MISHAPLEVEL_MAX;
+		}
+	}
+}
+
+void WP_SaberFatigueRegenerate(const int override_amt)
+{
+	WP_SaberFatigueRegenerate(pm->ps, override_amt);
+}
+
+void WP_BlasterFatigueRegenerate(playerState_t* ps, const int override_amt)
+{
+	if (ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_NONE)
+	{
+		if (override_amt)
+		{
+			ps->BlasterAttackChainCount -= override_amt;
+		}
+		else
+		{
+			ps->BlasterAttackChainCount--;
+		}
+		if (ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_MAX)
+		{
+			ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_MAX;
 		}
 	}
 }
 
 void WP_BlasterFatigueRegenerate(const int override_amt)
 {
-	if (pm->ps->BlasterAttackChainCount >= BLASTERMISHAPLEVEL_NONE)
-	{
-		if (override_amt)
-		{
-			pm->ps->BlasterAttackChainCount -= override_amt;
-		}
-		else
-		{
-			pm->ps->BlasterAttackChainCount--;
-		}
-		if (pm->ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_MAX)
-		{
-			pm->ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_MAX;
-		}
-	}
+	WP_BlasterFatigueRegenerate(pm->ps, override_amt);
 }
 
 static int PM_ApplySaberAnimOverride(int anim, saberMoveName_t new_move, const animFlags_t flags)
@@ -17736,7 +17753,7 @@ extern saberMoveName_t PM_AttackForEnemyPos(qboolean allow_fb, qboolean allow_st
 extern saberMoveName_t PM_NPC_Force_Leap_Attack(void);
 extern qboolean PM_Can_Do_Kill_Lunge(void);
 extern qboolean PM_Can_Do_Kill_Lunge_back(void);
-int Next_Kill_Attack_Move_Check[MAX_CLIENTS]; // Next special move check.
+int Next_Kill_Attack_Move_Check[MAX_GENTITIES]; // Next special move check. Indexed by NPC entity number: was [MAX_CLIENTS] (= 1 in SP), so every NPC wrote past the end (overwrote pm -> crash).
 saberMoveName_t PM_DoAI_Fake(const int curmove);
 
 static saberMoveName_t PM_NPCSaberAttackFromBlock(const int quad)
@@ -21049,7 +21066,7 @@ static qboolean PM_SaberBlocking()
 						}
 						else
 						{
-							pm->ps->weaponTime = parryDebounce[pm->ps->forcePowerLevel[FP_SABER_DEFENSE]] * 2;
+							pm->ps->weaponTime = parryDebounce[FP_TableLevel(pm->ps->forcePowerLevel[FP_SABER_DEFENSE])] * 2;
 						}
 					}
 				}
@@ -21372,7 +21389,7 @@ static qboolean PM_SaberBlocking()
 					}
 					else
 					{
-						pm->ps->weaponTime = parryDebounce[pm->ps->forcePowerLevel[FP_SABER_DEFENSE]] * 2;
+						pm->ps->weaponTime = parryDebounce[FP_TableLevel(pm->ps->forcePowerLevel[FP_SABER_DEFENSE])] * 2;
 					}
 				}
 			}
@@ -26591,7 +26608,36 @@ static void PmoveSingle()
 
 extern qboolean BG_FullBodyTauntAnim(int anim);
 
+static void Pmove_Internal(pmove_t* pmove);
+
+// Pmove can re-enter itself (something done during one entity's move, e.g. a spawn from a script, can run
+// another entity's Pmove). The inner call repoints the globals pm/pml at its own stack data, so a nested call
+// restores them on return; otherwise the outer move would carry on with a dangling pm. A top-level call leaves
+// pm as before (pointing at the caller's pmove_t), since code after Pmove in ClientThink_real still uses it.
 void Pmove(pmove_t* pmove)
+{
+	static int depth = 0;
+
+	if (depth == 0)
+	{
+		depth++;
+		Pmove_Internal(pmove);
+		depth--;
+		return;
+	}
+
+	pmove_t* const outerPm = pm;
+	const pml_t outerPml = pml;
+
+	depth++;
+	Pmove_Internal(pmove);
+	depth--;
+
+	pm = outerPm;
+	pml = outerPml;
+}
+
+static void Pmove_Internal(pmove_t* pmove)
 {
 	Vehicle_t* p_veh = nullptr;
 

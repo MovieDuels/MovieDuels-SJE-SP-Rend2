@@ -334,6 +334,7 @@ cvar_t* g_npc_is_smart_range;
 cvar_t* g_jkoeffects;
 cvar_t* g_HitTracking;
 cvar_t* g_ActivateAnimationStyle; //turns on/off the new animation style for NPCs and players. 0 = off, 1 = on
+cvar_t* md_update;                // which MovieDuels update the assets are (8, 9, ...). Read-only: set by ui/main.menu ("uiScript mdUpdate 8")
 cvar_t* g_AnimationStyle;         // select between 0 -28 for specific style
 cvar_t* g_NPCAnimationStyle;      // turns npc range based stance on/off
 cvar_t* g_AllowSmashDown;         // allow smashdown attacks for NPCs and players. 0 = off, 1 = on
@@ -343,6 +344,7 @@ extern void CP_FindCombatPointWaypoints();
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
 
 void G_RunFrame(int level_time);
+void G_EnforceUpdateSettings();
 void ClearNPCGlobals();
 extern void AI_UpdateGroups();
 
@@ -961,6 +963,7 @@ static void G_InitCvars()
 	g_HitTracking = gi.cvar("g_HitTracking", "0", CVAR_ARCHIVE);
 
 	g_ActivateAnimationStyle = gi.cvar("g_activateanimationstyle", "0", CVAR_ARCHIVE);
+	md_update = gi.cvar("md_update", "8", CVAR_ROM); // default 8 so a start without the main menu (devmap) is Update 8 too
 	// CVAR_INIT will be used for release, but CVAR_ARCHIVE will be used for testing and development.
 	//This is to allow the user to change the animation style without having to restart the game.
 
@@ -1006,6 +1009,7 @@ static void InitGame(const char* mapname, const char* spawntarget, const int che
 	srand(randomSeed);
 
 	G_InitCvars();
+	G_EnforceUpdateSettings();
 
 	G_InitMemory();
 
@@ -2280,8 +2284,22 @@ constexpr auto BARRIER_DEFUEL_RATE = 100; //approx. 50 seconds of idle use from 
 constexpr auto BARRIER_REFUEL_RATE = 200; //seems fair;
 constexpr auto DROIDEKA_BARRIER_DEFUEL_RATE = 1000;
 
+// Update 8 assets have no animations for the new animation system (that is Update 9), so keep it off
+// even if it was typed in the console or saved in a config. Runs at every map start and every frame,
+// before any code reads g_ActivateAnimationStyle.
+void G_EnforceUpdateSettings()
+{
+	if (md_update && md_update->integer < 9 && g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer != 0)
+	{
+		gi.cvar_set("g_activateanimationstyle", "0");
+		gi.Printf(S_COLOR_YELLOW "g_ActivateAnimationStyle is not available in MovieDuels Update %i, it stays 0.\n", md_update->integer);
+	}
+}
+
 void G_RunFrame(const int level_time)
 {
+	G_EnforceUpdateSettings();
+
 	gentity_t* ent;
 	int ents_inuse = 0; // someone's gonna be pissed I put this here...
 #if	AI_TIMERS

@@ -1075,7 +1075,9 @@ void Boba_DoSniper()
 		}
 	}
 
-	if (Distance(NPC->currentOrigin, level.combatPoints[NPCInfo->combatPoint].origin) < 50.0f)
+	// combatPoint is -1 when no sniper point was found (e.g. maps without combat points)
+	if (NPCInfo->combatPoint >= 0 && NPCInfo->combatPoint < level.numCombatPoints &&
+		Distance(NPC->currentOrigin, level.combatPoints[NPCInfo->combatPoint].origin) < 50.0f)
 	{
 		Boba_FireDecide();
 	}
@@ -1949,8 +1951,10 @@ void Boba_Update()
 bool Boba_Flee()
 {
 	const bool enemy_recently_seen = level.time - NPCInfo->enemyLastSeenTime < 10000;
-	const bool reached_escape_point = Distance(level.combatPoints[NPCInfo->combatPoint].origin, NPC->currentOrigin) <
-		50.0f;
+	// combatPoint is -1 when no escape point was found (e.g. maps without combat points)
+	const bool has_escape_point = NPCInfo->combatPoint >= 0 && NPCInfo->combatPoint < level.numCombatPoints;
+	const bool reached_escape_point = has_escape_point &&
+		Distance(level.combatPoints[NPCInfo->combatPoint].origin, NPC->currentOrigin) < 50.0f;
 	const bool has_been_gone_enough = level.time > NPCInfo->surrenderTime || level.time - NPCInfo->enemyLastSeenTime >
 		400000;
 
@@ -2049,8 +2053,8 @@ bool Boba_Flee()
 		level.time - NPCInfo->blockedDebounceTime > 1000
 		)
 	{
-		if (!Boba_CanSeeEnemy(NPC) && Distance(NPC->currentOrigin, level.combatPoints[NPCInfo->combatPoint].origin) <
-			200)
+		if (has_escape_point && !Boba_CanSeeEnemy(NPC) &&
+			Distance(NPC->currentOrigin, level.combatPoints[NPCInfo->combatPoint].origin) < 200)
 		{
 			Boba_Printf("BLOCKED: Just Teleporting There");
 			G_SetOrigin(NPC, level.combatPoints[NPCInfo->combatPoint].origin);

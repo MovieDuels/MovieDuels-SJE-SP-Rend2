@@ -1377,6 +1377,8 @@ void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name)
 	}
 
 	const char* stripped_name;
+	// Must live for the whole function: stripped_name points into it and is used after the if/else below.
+	char anim_name[MAX_QPATH];
 
 	if (!gla_name)
 	{
@@ -1385,7 +1387,6 @@ void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name)
 	}
 	else
 	{
-		char anim_name[MAX_QPATH];
 		Q_strncpyz(anim_name, gla_name, sizeof(anim_name));
 
 		char* slash = strrchr(anim_name, '/');

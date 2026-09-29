@@ -575,10 +575,10 @@ static void CG_CalcIdealThirdPersonViewLocation()
 
 		const float length =
 			FORCE_SPEED_DURATION *
-			forceSpeedValue[player->client->ps.forcePowerLevel[FP_SPEED]];
+			forceSpeedValue[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
 
 		const float amt =
-			forceSpeedRangeMod[player->client->ps.forcePowerLevel[FP_SPEED]];
+			forceSpeedRangeMod[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
 
 		if (time_left < 500.0f)
 		{
@@ -868,6 +868,52 @@ static void CG_UpdateThirdPersonCameraDamp()
 	// however two full volume traces each frame is a bit scary to think about.
 }
 
+// Gunner aim camera (CF_AIMINGGUN) blend: 0 = normal third-person camera, 1 = aiming camera.
+// It moves towards the target over AIM_CAMERA_BLEND_MS instead of switching in one frame.
+extern vmCvar_t cg_thirdPersonAlpha;
+static constexpr float AIM_CAMERA_BLEND_MS = 250.0f;
+static float cg_aimBlend = 0.0f;
+static int cg_aimBlendLastTime = 0;
+
+static float CG_UpdateAimBlend()
+{
+	const bool aiming = cg.renderingThirdPerson
+		&& (cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN))
+		&& cg_AimingCinematicCamera.integer;
+
+	if (!cg.renderingThirdPerson || !cg_AimingCinematicCamera.integer)
+	{
+		cg_aimBlend = 0.0f; // first person or camera option off: no blending
+	}
+	else
+	{
+		// clamp the step so a time jump (map or save load) doesn't skip the blend
+		int msec = cg.time - cg_aimBlendLastTime;
+		if (msec < 0 || msec > 100)
+		{
+			msec = 0;
+		}
+		const float step = msec / AIM_CAMERA_BLEND_MS;
+		cg_aimBlend = aiming ? Q_min(1.0f, cg_aimBlend + step) : Q_max(0.0f, cg_aimBlend - step);
+		if (aiming && cg_aimBlend <= 0.0f)
+		{
+			cg_aimBlend = 0.001f; // start blending on the first aiming frame
+		}
+	}
+	cg_aimBlendLastTime = cg.time;
+	return cg_aimBlend;
+}
+
+static float CG_AimBlendEase()
+{
+	return cg_aimBlend * cg_aimBlend * (3.0f - 2.0f * cg_aimBlend); // smoothstep: eases in and out
+}
+
+static float CG_AimLerp(const float normal, const float aimed, const float s)
+{
+	return normal + (aimed - normal) * s;
+}
+
 /*
 ===============
 CG_OffsetThirdPersonView
@@ -964,21 +1010,23 @@ static void CG_OffsetThirdPersonView()
 		cameraFocusAngles[YAW] += (cg.overrides.thirdPersonAngle = 40.5f);
 		cameraFocusAngles[PITCH] += (cg.overrides.thirdPersonPitchOffset = -11.25f);
 	}
-	// Aiming weapon
-	else if (cg.renderingThirdPerson &&
-		(cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN)) &&
-		cg_AimingCinematicCamera.integer)
+	// Aiming weapon (also while the camera is still blending back out of aim mode)
+	else if (CG_UpdateAimBlend() > 0.0f)
 	{
-		// Shoulder camera tuning
-		cg.overrides.thirdPersonAngle = 0.0f;			// yaw inward
-		cg.overrides.thirdPersonAlpha = 1.0f;			// tighter camera
-		cg.overrides.thirdPersonPitchOffset = 0.0f;		// slight downward pitch
-		cg.overrides.thirdPersonHorzOffset = -20.0f;	// softer shoulder shift
-		cg.overrides.thirdPersonVertOffset = 4.0f;		// slight upward shift
-		cg.overrides.thirdPersonCameraDamp = 1.0f;		// tighter camera damping
-		cg.overrides.thirdPersonTargetDamp = 1.0f;		// tighter target damping
-		cg.overrides.thirdPersonRange = 50.0f;			// closer to the player
-		cg.overrides.fov = 60.0f;						// closer FOV
+		// Shoulder camera tuning, eased in and out: each value goes from the normal
+		// third-person setting (s = 0) to the aiming setting (s = 1)
+		const float s = CG_AimBlendEase();
+		cg.overrides.thirdPersonAngle = CG_AimLerp(cg_thirdPersonAngle.value, 0.0f, s);				// yaw inward
+		cg.overrides.thirdPersonAlpha = CG_AimLerp(cg_thirdPersonAlpha.value, 1.0f, s);				// fully visible player
+		cg.overrides.thirdPersonPitchOffset = CG_AimLerp(cg_thirdPersonPitchOffset.value, 0.0f, s);	// no pitch offset
+		cg.overrides.thirdPersonHorzOffset = CG_AimLerp(cg_thirdPersonHorzOffset.value, -20.0f, s);	// shoulder shift
+		cg.overrides.thirdPersonVertOffset = CG_AimLerp(cg_thirdPersonVertOffset.value, 4.0f, s);	// slight upward shift
+		// No damping during the whole blend: the blend already eases the camera. Blending the damping
+		// too made the camera trail behind and then snap into place when it reached 1.
+		cg.overrides.thirdPersonCameraDamp = 1.0f;
+		cg.overrides.thirdPersonTargetDamp = 1.0f;
+		cg.overrides.thirdPersonRange = CG_AimLerp(cg_thirdPersonRange.value, 50.0f, s);			// closer to the player
+		cg.overrides.fov = CG_AimLerp(cg_fov.value, 60.0f, s);										// closer FOV
 
 		cameraFocusAngles[YAW] += cg.overrides.thirdPersonAngle;
 		cameraFocusAngles[PITCH] += cg.overrides.thirdPersonPitchOffset;
@@ -1558,8 +1606,8 @@ float CG_ForceSpeedFOV()
 {
 	float fov;
 	const float time_left = player->client->ps.forcePowerDuration[FP_SPEED] - cg.time;
-	const float length = FORCE_SPEED_DURATION * forceSpeedValue[player->client->ps.forcePowerLevel[FP_SPEED]];
-	const float amt = forceSpeedFOVMod[player->client->ps.forcePowerLevel[FP_SPEED]];
+	const float length = FORCE_SPEED_DURATION * forceSpeedValue[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
+	const float amt = forceSpeedFOVMod[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
 	if (time_left < 500)
 	{
 		//start going back
@@ -1809,7 +1857,9 @@ void CG_SaberClashFlare()
 		return;
 	}
 
-	vec3_t color;
+	// RGBA: R_SetColor reads 4 floats. This was a vec3_t, so the alpha came from past the end of
+	// the array (ASan stack-buffer-overflow on every saber clash flare).
+	const vec4_t color = { 0.8f, 0.8f, 0.8f, 1.0f };
 	int x, y;
 	float len = VectorNormalize(dif);
 
@@ -1823,7 +1873,6 @@ void CG_SaberClashFlare()
 
 	CG_WorldCoordToScreenCoord(g_saberFlashPos, &x, &y);
 
-	VectorSet(color, 0.8f, 0.8f, 0.8f);
 	cgi_R_SetColor(color);
 
 	CG_DrawPic(x - v * 300 * cgs.widthRatioCoef, y - v * 300,

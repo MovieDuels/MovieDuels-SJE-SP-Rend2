@@ -1770,6 +1770,7 @@ cvar_t* g_NPCsabertwocolor;
 vmCvar_t ui_com_kotor;
 vmCvar_t ui_com_rend2;
 vmCvar_t ui_ActivateAnimationStyle;
+vmCvar_t ui_md_update;
 vmCvar_t UI_AnimationStyle;
 
 static void UI_UpdateScreenshot()
@@ -1901,7 +1902,7 @@ static cvarTable_t cvarTable[] =
 	{&ui_SFXSabersGlowSizeMaul, "cg_SFXSabersGlowSizeMaul", "1.0", nullptr, CVAR_ARCHIVE},
 	{&ui_SFXSabersCoreSizeMaul, "cg_SFXSabersCoreSizeMaul", "1.0", nullptr, CVAR_ARCHIVE},
 
-	{&ui_SerenityJediEngineMode, "g_SerenityJediEngineMode", "1", nullptr, CVAR_ARCHIVE},
+	{&ui_SerenityJediEngineMode, "g_SerenityJediEngineMode", "0", nullptr, CVAR_ARCHIVE}, // default 0 everywhere (game, cgame, ui)
 
 	{&ui_char_model_angle, "ui_char_model_angle", "175", nullptr, 0},
 
@@ -1926,6 +1927,8 @@ static cvarTable_t cvarTable[] =
 	{&ui_com_rend2, "com_rend2", "0", nullptr, CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 
 	{ &ui_ActivateAnimationStyle, "g_ActivateAnimationStyle", "0", nullptr, CVAR_ARCHIVE },
+
+	{ &ui_md_update, "md_update", "8", nullptr, CVAR_ROM }, // set by ui/main.menu: uiScript mdUpdate 8
 
 	{ &UI_AnimationStyle, "g_AnimationStyle", "0", nullptr, CVAR_ARCHIVE },// I may need this later.
 };
@@ -2648,7 +2651,24 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 #endif
 
-		if (Q_stricmp(name, "resetdefaults") == 0)
+		if (Q_stricmp(name, "mdUpdate") == 0)
+		{
+			// ui/main.menu tells the code which MovieDuels update its assets are: uiScript mdUpdate 8
+			// md_update is read-only, so only this script (not the console) can change it.
+			if (String_Parse(args, &name2))
+			{
+				const int update = atoi(name2);
+				if (update >= 8)
+				{
+					Cvar_Set("md_update", va("%i", update));
+					if (update < 9)
+					{
+						Cvar_Set("g_ActivateAnimationStyle", "0"); // the new animation system is Update 9
+					}
+				}
+			}
+		}
+		else if (Q_stricmp(name, "resetdefaults") == 0)
 		{
 			UI_ResetDefaults();
 		}
@@ -5523,8 +5543,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 27/09/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 11 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 29/09/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 12 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");

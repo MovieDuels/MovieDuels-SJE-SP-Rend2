@@ -481,13 +481,14 @@ int CFxScheduler::RegisterEffect(const char* path, const bool b_has_correct_path
 	}
 
 	const char* pfile;
+	// Must outlive the if/else: pfile may point into it and is used below.
+	char correctFilenameBuffer[MAX_QPATH];
 	if (b_has_correct_path)
 	{
 		pfile = path;
 	}
 	else
 	{
-		char correctFilenameBuffer[MAX_QPATH];
 		// Add on our extension and prepend the file with the default path
 		Com_sprintf(correctFilenameBuffer, sizeof correctFilenameBuffer, "%s/%s.efx", FX_FILE_PATH, filename_no_ext);
 		pfile = correctFilenameBuffer;

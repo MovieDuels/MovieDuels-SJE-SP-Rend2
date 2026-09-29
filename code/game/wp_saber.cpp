@@ -3177,6 +3177,40 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 	return did_damage;
 }
 
+// Mode 2 single-hit rule: the victims each attacker has already hit in the current swing.
+// This replaces client->saberHitEntityBitMask, an int shifted by entity number, which only worked
+// for entities 0..31: from 32 on the bits wrapped (undefined behaviour) and NPCs shared a bit, so a
+// hit on one blocked damage to another. That field is kept, unused, so savegames stay compatible.
+static constexpr int MAX_SWING_VICTIMS = 32;
+static short swingVictims[MAX_GENTITIES][MAX_SWING_VICTIMS];
+static unsigned char swingVictimCount[MAX_GENTITIES];
+
+static void WP_SwingHitsReset(const gentity_t* ent)
+{
+	swingVictimCount[ent->s.number] = 0;
+}
+
+static qboolean WP_SwingAlreadyHit(const gentity_t* ent, const gentity_t* victim)
+{
+	for (int i = 0; i < swingVictimCount[ent->s.number]; i++)
+	{
+		if (swingVictims[ent->s.number][i] == victim->s.number)
+		{
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
+static void WP_SwingAddHit(const gentity_t* ent, const gentity_t* victim)
+{
+	unsigned char& count = swingVictimCount[ent->s.number];
+	if (count < MAX_SWING_VICTIMS && !WP_SwingAlreadyHit(ent, victim))
+	{
+		swingVictims[ent->s.number][count++] = static_cast<short>(victim->s.number);
+	}
+}
+
 static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, const int base_d_flags,
 	const qboolean broken_parry, const int saberNum, const int bladeNum,
 	const qboolean thrown_saber)
@@ -3254,18 +3288,37 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 			// Single-hit enforcement: skip if already damaged this swing
 			if (g_SerenityJediEngineMode->integer == 2)
 			{
+				// Checked first: the parry, hit-confirm and interrupt rules below must happen once per victim
+				// per swing. They ran before this check, i.e. on every frame of contact, so the hit-confirm
+				// halved weaponTime frame after frame down to its 50 ms minimum.
+				if (WP_SwingAlreadyHit(ent, victim))
+				{
+					if (!PM_SaberInKata(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) &&
+						!PM_SaberInKillMove(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) &&
+						ent->client->ps.saberLockTime < level.time)
+					{// If we already hit this entity, and we're not in a kata or kill move, don't hit again
+						if (g_HitTracking->integer && (victim->NPC))
+						{
+							Com_Printf(S_COLOR_RED "Single-hit enforcement: skip if already damaged this swing\n");
+						}
+						continue;
+					}
+				}
+
 				// Perfect parry: defender in active block/parry state
 				qboolean perfectParry = qfalse;
 
+				// The defender's (victim's) perfect-block flag. This used m_blocking, which is the attacker's
+				// flag, so the attacker was penalised by his own block state.
 				if (victim->client &&
 					!(dflags & DAMAGE_NO_DAMAGE) &&
-					((m_blocking) == qtrue))
+					(victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0)
 				{
 					perfectParry = qtrue;
 				}
 
 				// Hit-confirm chain boost: landing a hit speeds up next chain swing
-				if (!perfectParry && !(dflags & DAMAGE_NO_DAMAGE) && victim->client)
+				if (!perfectParry && !(dflags & DAMAGE_NO_DAMAGE) && victim->client && totalDmg[i] > 0)
 				{
 					// reduce weaponTime to let the next swing chain faster
 					ent->client->ps.weaponTime = (int)(ent->client->ps.weaponTime * 0.5f);
@@ -3298,19 +3351,6 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 					victim->client->ps.saberAttackChainCount = 0;
 					victim->client->ps.saberMove = LS_READY;
 					victim->client->ps.weaponstate = WEAPON_IDLE;
-				}
-				if (ent->client->saberHitEntityBitMask & (1 << victim->s.number))
-				{
-					if (!PM_SaberInKata(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) &&
-						!PM_SaberInKillMove(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) &&
-						ent->client->ps.saberLockTime < level.time)
-					{// If we already hit this entity, and we're not in a kata or kill move, don't hit again
-						if (g_HitTracking->integer && (victim->NPC))
-						{
-							Com_Printf(S_COLOR_RED "Single-hit enforcement: skip if already damaged this swing\n");
-						}
-						continue;
-					}
 				}
 			}
 
@@ -3585,17 +3625,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								{
 									gi.Printf(S_COLOR_YELLOW"saberInStabDown\n");
 								}
-								if (totalDmg[i] > 20 && g_saberRealisticCombat->integer == 0)
-								{
-									totalDmg[i] = 20;
-								}
-								else if (totalDmg[i] > 40 && g_saberRealisticCombat->integer == 1)
-								{
-									totalDmg[i] = 40;
-								}
-								else {
-									totalDmg[i] = 80;
-								}
+								// A stab-down is a kill move (PM_SaberInKillMove): high damage. The old code looked like a
+								// cap by realism level (20/40, else 80), but a single hit is almost always below 20, so in
+								// practice every stab-down did 80. Keep that, written as what it does; realistic 0 a bit
+								// less but still a lot (kill moves are rare and hard to do).
+								totalDmg[i] = g_saberRealisticCombat->integer == 0 ? 60.0f : 80.0f;
 							}
 							else if (saber_in_LeapAttack)
 							{
@@ -3603,11 +3637,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								{
 									gi.Printf(S_COLOR_YELLOW"saber_in_LeapAttack\n");
 								}
-								if (g_saberRealisticCombat->integer == 0)
+								if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 								{
-									totalDmg[i] = G_GetAttackDamageMD(ent, 15, 30, 0.5f);
+									totalDmg[i] = G_GetAttackDamageMD(ent, 23, 45, 0.5f);
 								}
-								if (g_saberRealisticCombat->integer == 1)
+								else if (g_saberRealisticCombat->integer == 1)
 								{
 									totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
 								}
@@ -3624,11 +3658,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
 									SS_STRONG)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 80, 0.5f);
 									}
@@ -3638,11 +3672,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								}
 								else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
 									}
@@ -3653,11 +3687,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
 									== SS_TAVION)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 11, 30, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
 									}
@@ -3667,11 +3701,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								}
 								else // SS_STAFF // SS_DUAL
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 26, 45, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
 									}
@@ -3689,11 +3723,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
 									SS_STRONG)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 56, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
 									}
@@ -3703,11 +3737,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								}
 								else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 25, 50, 0.5f);
 									}
@@ -3718,11 +3752,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								else if (ent->client->ps.saberAnimLevel == SS_FAST || ent->client->ps.saberAnimLevel
 									== SS_TAVION)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 11, 30, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 15, 35, 0.5f);
 									}
@@ -3732,11 +3766,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								}
 								else // SS_STAFF // SS_DUAL
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.5f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 26, 40, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 35, 50, 0.5f);
 									}
@@ -3754,11 +3788,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								if (ent->client->ps.saberAnimLevel == SS_DESANN || ent->client->ps.saberAnimLevel ==
 									SS_STRONG)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
-										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
+										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 56, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 40, 75, 0.5f);
 									}
@@ -3768,11 +3802,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								}
 								else if (ent->client->ps.saberAnimLevel == SS_MEDIUM)
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 60, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 70, 0.5f);
 									}
@@ -3785,11 +3819,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								{
 									totalDmg[i] = G_GetAttackDamageMD(ent, 10, 50, 0.5f);
 									/*
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 20, 50, 0.5f);
 									}
@@ -3799,11 +3833,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								}
 								else // SS_STAFF // SS_DUAL
 								{
-									if (g_saberRealisticCombat->integer == 0)
+									if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 30, 50, 0.5f);
 									}
-									if (g_saberRealisticCombat->integer == 1)
+									else if (g_saberRealisticCombat->integer == 1)
 									{
 										totalDmg[i] = G_GetAttackDamageMD(ent, 35, 60, 0.5f);
 									}
@@ -3818,11 +3852,11 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								{
 									gi.Printf(S_COLOR_YELLOW"SaberInRollStab\n");
 								}
-								if (g_saberRealisticCombat->integer == 0)
+								if (g_saberRealisticCombat->integer == 0) // kill move: realistic 0 = 75% of realistic 1, never lower than before
 								{
-									totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
+									totalDmg[i] = G_GetAttackDamageMD(ent, 23, 45, 0.5f);
 								}
-								if (g_saberRealisticCombat->integer == 1)
+								else if (g_saberRealisticCombat->integer == 1)
 								{
 									totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
 								}
@@ -3840,7 +3874,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								{
 									totalDmg[i] = G_GetAttackDamageMD(ent, 10, 30, 0.5f);
 								}
-								if (g_saberRealisticCombat->integer == 1)
+								else if (g_saberRealisticCombat->integer == 1)
 								{
 									totalDmg[i] = G_GetAttackDamageMD(ent, 30, 60, 0.5f);
 								}
@@ -3858,7 +3892,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 								{
 									totalDmg[i] = G_GetAttackDamageMD(ent, 20, 40, 0.65f);
 								}
-								if (g_saberRealisticCombat->integer == 1)
+								else if (g_saberRealisticCombat->integer == 1)
 								{
 									totalDmg[i] = G_GetAttackDamageMD(ent, 50, 120, 0.65f);
 								}
@@ -4114,7 +4148,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 							{
 								Com_Printf(S_COLOR_RED "Tracking damage to player %d\n", victim->s.number);
 							}
-							ent->client->saberHitEntityBitMask |= (1 << victim->s.number);
+							WP_SwingAddHit(ent, victim);
 						}
 					}
 					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, dflags, MOD_SABER,
@@ -10005,6 +10039,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 						default:
 						case FORCE_LEVEL_5:
 							base_damage = 2.5f * static_cast<float>(ent_power_level);
+							break; // was missing: fell through to the 2.0x case below, so 2.5x never applied
 						case FORCE_LEVEL_4: //Staff, medium, duals all do same damage
 						case FORCE_LEVEL_3:
 							base_damage = 2.0f * static_cast<float>(ent_power_level);
@@ -10988,7 +11023,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 				ent->client->buttons & BUTTON_WALKING &&
 				ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK &&
 				(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
-				(ent->client->ps.forcePower < BLOCKPOINTS_DANGER || ent->client->ps.blockPoints < BLOCKPOINTS_DANGER))
+				ent->client->ps.blockPoints < BLOCKPOINTS_DANGER) // mode 2 resource: block points
 			{//reflect from wall
 				ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
 				ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
@@ -11413,6 +11448,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 						default:
 						case FORCE_LEVEL_5:
 							base_damage = 2.5f * static_cast<float>(ent_power_level);
+							break; // was missing: fell through to the 2.0x case below, so 2.5x never applied
 						case FORCE_LEVEL_4: //Staff, medium, duals all do same damage
 						case FORCE_LEVEL_3:
 							base_damage = 2.0f * static_cast<float>(ent_power_level);
@@ -12395,7 +12431,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 				ent->client->buttons & BUTTON_WALKING &&
 				ent->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK &&
 				(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
-				(ent->client->ps.forcePower < BLOCKPOINTS_DANGER || ent->client->ps.blockPoints < BLOCKPOINTS_DANGER))
+				ent->client->ps.forcePower < BLOCKPOINTS_DANGER) // mode 1 resource: force points
 			{//reflect from wall
 				ent->client->ps.saberBlocked = BLOCKED_ATK_BOUNCE;
 				ent->client->ps.saberBounceMove = LS_D1_BR + (saberMoveData[ent->client->ps.saberMove].startQuad - Q_BR);
@@ -12507,7 +12543,7 @@ void WP_SabersDamageTrace(gentity_t* ent, const qboolean no_effects)
 				{
 					Com_Printf(S_COLOR_RED "Reset hit tracking when a new swing begins\n");
 				}
-				ent->client->saberHitEntityBitMask = 0;
+				WP_SwingHitsReset(ent);
 				ent->client->saberLastAttackSequence = ent->client->ps.saberAttackSequence;
 			}
 		}
@@ -13576,7 +13612,7 @@ static qboolean WP_SaberValidateEnemy(gentity_t* self, gentity_t* enemy)
 	// Distance check (squared for performance)
 	// ----------------------------------------------------
 	const float maxDistSq =
-		saberThrowDistSquared[self->client->ps.forcePowerLevel[FP_SABERTHROW]];
+		saberThrowDistSquared[FP_TableLevel(self->client->ps.forcePowerLevel[FP_SABERTHROW])];
 
 	if (DistanceSquared(self->client->renderInfo.handRPoint,
 		enemy->currentOrigin) > maxDistSq)
@@ -14257,7 +14293,7 @@ static qboolean WP_SaberLaunch(gentity_t* self, gentity_t* saber, const qboolean
 	//Take it out of my hand
 	self->client->ps.saberInFlight = qtrue;
 	self->client->ps.saberEntityState = SES_LEAVING;
-	self->client->ps.saberEntityDist = saberThrowDist[self->client->ps.forcePowerLevel[FP_SABERTHROW]];
+	self->client->ps.saberEntityDist = saberThrowDist[FP_TableLevel(self->client->ps.forcePowerLevel[FP_SABERTHROW])];
 	self->client->ps.saberThrowTime = level.time;
 	self->client->ps.forcePowerDebounce[FP_SABERTHROW] = level.time + 1000;
 
@@ -14433,9 +14469,12 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir)
 	}
 
 	// ------------------------------------------------------------
-	// 1. TIMER EXPIRED → START NEW TIMER
+	// 1. NO WINDOW RUNNING → START NEW TIMER
+	// (only when none is running, or the last one ran out long ago; this was "< level.time", so an
+	//  expired window was simply restarted and step 3 below could never disarm)
 	// ------------------------------------------------------------
-	if (self->client->ps.saberDisarmProtectTime < level.time)
+	if (self->client->ps.saberDisarmProtectTime == 0
+		|| level.time - self->client->ps.saberDisarmProtectTime > protect_ms)
 	{
 		self->client->ps.saberDisarmProtectTime = level.time + protect_ms;
 
@@ -15926,8 +15965,8 @@ qboolean NPC_Should_Block(const gentity_t* npc)
 		return qfalse;
 	}
 
-	// Must be in SJE mode 3+
-	if (g_SerenityJediEngineMode->integer <= 2)
+	// SJE mode 2 only (was "<= 2", which switched it off in every mode)
+	if (g_SerenityJediEngineMode->integer < 2)
 	{
 		return qfalse;
 	}
@@ -16006,24 +16045,26 @@ qboolean NPC_Should_Block(const gentity_t* npc)
 		return qfalse;
 	}
 
-	// Distance‑based block stance logic
-	const float distSq = DistanceSquared(npc->currentOrigin, npc->enemy->currentOrigin);
+	// Block stance only at combat range: the distance left once the NPC's reach is taken off,
+	// measured like jedi_set_enemy_info's enemy_dist (<= 0 means the enemy is within saber reach).
+	const float reach = npc->client->ps.SaberLengthMax() + npc->maxs[0] * 1.5f + 16.0f;
+	const float gap = Distance(npc->currentOrigin, npc->enemy->currentOrigin) - reach;
 
 	// Tunable thresholds
-	const float BLOCK_ENGAGE_DIST_SQ = 128.0f * 128.0f;   // enter block
-	const float BLOCK_RELEASE_DIST_SQ = 192.0f * 192.0f;   // exit block
+	constexpr float BLOCK_ENGAGE_GAP = 0.0f;    // enter block: enemy within reach
+	constexpr float BLOCK_RELEASE_GAP = 32.0f;  // exit block: a little beyond reach, so it doesn't flicker at the edge
 
 	// Current stance flag
 	const qboolean blockActive = ((npc->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKSTANCE)) != 0 ? qtrue : qfalse);
 
 	// ENTER BLOCK STANCE
-	if (blockActive == qfalse && distSq <= BLOCK_ENGAGE_DIST_SQ)
+	if (blockActive == qfalse && gap <= BLOCK_ENGAGE_GAP)
 	{
 		return qtrue;
 	}
 
 	// EXIT BLOCK STANCE
-	if (blockActive == qtrue && distSq >= BLOCK_RELEASE_DIST_SQ)
+	if (blockActive == qtrue && gap >= BLOCK_RELEASE_GAP)
 	{
 		return qfalse;
 	}
@@ -16892,8 +16933,11 @@ int WP_SaberBlockCost(gentity_t* defender, const gentity_t* attacker, vec3_t hit
 		}
 	}
 
-	// Too soon after bolt block
-	if (defender->client->ps.ManualblockStartTime > level.time)
+	// Active block held too long: after 3 s of holding block + attack you are no longer timing your
+	// blocks, so they cost double. Same 3 s window as g_accurate_blocking and the "good" missile block.
+	// (This tested ManualblockStartTime > level.time, a start time in the future, so it never applied.)
+	if (defender->client->ps.ManualblockStartTime > 0
+		&& level.time - defender->client->ps.ManualblockStartTime >= 3000)
 	{
 		saber_block_cost *= 2.0f;
 	}
@@ -21645,7 +21689,9 @@ void wp_saber_start_missile_block_check_md(gentity_t* self, const usercmd_t* ucm
 		}
 		else
 		{
-			gentity_t* blocker = &g_entities[incoming->ownerNum];
+			// The one blocking is self. This used incoming->ownerNum (the shooter): 0 by luck for most
+			// shots, but the NPC that fired for stun/hook shots, and a crash for non-client owners.
+			gentity_t* blocker = self;
 
 			if (self->client && !self->client->ps.SaberActive())
 			{
@@ -21839,7 +21885,11 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 		}
 		else if (self->client->ps.saberBlocking == BLK_TIGHT || self->client->ps.saberBlocking == BLK_WIDE)
 		{
+			// the blade loop below only sets this for blades that are on: while the saber is lit but
+			// its blades still have length 0 it stayed uninitialised and the saber entity was put
+			// at a garbage position (a thrown saber caught in that frame was then drawn there)
 			vec3_t saber_org;
+			VectorCopy(self->currentOrigin, saber_org);
 
 			if (!force_block
 				&& (self->s.number && !jedi_saber_busy(self) && !g_saberRealisticCombat->integer
@@ -22150,7 +22200,11 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 		}
 		else if (self->client->ps.saberBlocking == BLK_TIGHT || self->client->ps.saberBlocking == BLK_WIDE)
 		{
+			// the blade loop below only sets this for blades that are on: while the saber is lit but
+			// its blades still have length 0 it stayed uninitialised and the saber entity was put
+			// at a garbage position (a thrown saber caught in that frame was then drawn there)
 			vec3_t saber_org;
+			VectorCopy(self->currentOrigin, saber_org);
 
 			if (!force_block
 				&& (self->s.number && !jedi_saber_busy(self)
@@ -23482,11 +23536,11 @@ static qboolean ShouldPlayerResistForceThrow(const gentity_t* player, gentity_t*
 		|| attacker->client->NPC_class == CLASS_SITHLORD
 		|| attacker->client->NPC_class == CLASS_VADER
 		|| attacker->client->NPC_class == CLASS_GROGU
-		|| Q_stricmp("Yoda", attacker->NPC_type)
-		|| Q_stricmp("T_Yoda", attacker->NPC_type)
-		|| Q_stricmp("jedi_kdm1", attacker->NPC_type)
-		|| Q_stricmp("RebornBoss", attacker->NPC_type)
-		|| Q_stricmp("T_Palpatine_sith", attacker->NPC_type) == 0)
+		|| attacker->NPC_type && Q_stricmp("Yoda", attacker->NPC_type) == 0
+		|| attacker->NPC_type && Q_stricmp("T_Yoda", attacker->NPC_type) == 0
+		|| attacker->NPC_type && Q_stricmp("jedi_kdm1", attacker->NPC_type) == 0
+		|| attacker->NPC_type && Q_stricmp("RebornBoss", attacker->NPC_type) == 0
+		|| attacker->NPC_type && Q_stricmp("T_Palpatine_sith", attacker->NPC_type) == 0) // Q_stricmp is 0 on a match: without "== 0" every non-Yoda attacker counted
 		&& Q_irand(0, 2) > 0)
 	{
 		return qfalse;
@@ -23586,7 +23640,7 @@ static void RepulseDamage(gentity_t* self, gentity_t* enemy, vec3_t location, co
 		break;
 	}
 
-	if (enemy->client->ps.stats[STAT_HEALTH] <= 1) // if we are dead
+	if (enemy->client && enemy->client->ps.stats[STAT_HEALTH] <= 1) // if we are dead
 	{
 		vec3_t spot;
 
@@ -23601,10 +23655,10 @@ static void RepulseDamage(gentity_t* self, gentity_t* enemy, vec3_t location, co
 
 		if (enemy->playerModel >= 0)
 		{
-			// don't let 'em animate
-			gi.G2API_PauseBoneAnimIndex(&enemy->ghoul2[self->playerModel], enemy->rootBone, cg.time);
-			gi.G2API_PauseBoneAnimIndex(&enemy->ghoul2[self->playerModel], enemy->motionBone, cg.time);
-			gi.G2API_PauseBoneAnimIndex(&enemy->ghoul2[self->playerModel], enemy->lowerLumbarBone, cg.time);
+			// don't let 'em animate (the enemy's own model, not the attacker's model index)
+			gi.G2API_PauseBoneAnimIndex(&enemy->ghoul2[enemy->playerModel], enemy->rootBone, cg.time);
+			gi.G2API_PauseBoneAnimIndex(&enemy->ghoul2[enemy->playerModel], enemy->motionBone, cg.time);
+			gi.G2API_PauseBoneAnimIndex(&enemy->ghoul2[enemy->playerModel], enemy->lowerLumbarBone, cg.time);
 		}
 
 		//not solid anymore
@@ -23612,7 +23666,10 @@ static void RepulseDamage(gentity_t* self, gentity_t* enemy, vec3_t location, co
 		enemy->maxs[2] = -8;
 
 		//need to pad death time some to stick around long enough for death effect to play
-		enemy->NPC->timeOfDeath = level.time + 4000;
+		if (enemy->NPC) // the player has no NPC data: a Galen repulse that killed the player crashed here
+		{
+			enemy->NPC->timeOfDeath = level.time + 4000;
+		}
 	}
 }
 
@@ -23772,11 +23829,11 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 	}
 	if (pull)
 	{
-		radius = forcePushPullRadius[self->client->ps.forcePowerLevel[FP_PULL]];
+		radius = forcePushPullRadius[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PULL])];
 	}
 	else
 	{
-		radius = forcePushPullRadius[self->client->ps.forcePowerLevel[FP_PUSH]];
+		radius = forcePushPullRadius[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PUSH])];
 	}
 
 	if (!radius)
@@ -23932,11 +23989,11 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 
 	if (pull)
 	{
-		cone = forcePullCone[self->client->ps.forcePowerLevel[FP_PULL]];
+		cone = forcePullCone[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PULL])];
 	}
 	else
 	{
-		cone = forcePushCone[self->client->ps.forcePowerLevel[FP_PUSH]];
+		cone = forcePushCone[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PUSH])];
 	}
 
 	//	if ( cone >= 1.0f )
@@ -25235,11 +25292,11 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 	}
 	if (pull)
 	{
-		radius = forcePushPullRadius[self->client->ps.forcePowerLevel[FP_PULL]];
+		radius = forcePushPullRadius[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PULL])];
 	}
 	else
 	{
-		radius = forcePushPullRadius[self->client->ps.forcePowerLevel[FP_PUSH]];
+		radius = forcePushPullRadius[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PUSH])];
 	}
 
 	if (!radius)
@@ -25432,11 +25489,11 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 
 	if (pull)
 	{
-		cone = forcePullCone[self->client->ps.forcePowerLevel[FP_PULL]];
+		cone = forcePullCone[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PULL])];
 	}
 	else
 	{
-		cone = forcePushCone[self->client->ps.forcePowerLevel[FP_PUSH]];
+		cone = forcePushCone[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PUSH])];
 	}
 
 	//	if ( cone >= 1.0f )
@@ -26805,11 +26862,11 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 	}
 	if (pull)
 	{
-		radius = forcePushPullRadiusMD[self->client->ps.forcePowerLevel[FP_PULL]];
+		radius = forcePushPullRadiusMD[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PULL])];
 	}
 	else
 	{
-		radius = forcePushPullRadiusMD[self->client->ps.forcePowerLevel[FP_PUSH]];
+		radius = forcePushPullRadiusMD[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PUSH])];
 	}
 
 	if (!radius)
@@ -27004,11 +27061,11 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 
 	if (pull)
 	{
-		cone = forcePullCone[self->client->ps.forcePowerLevel[FP_PULL]];
+		cone = forcePullCone[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PULL])];
 	}
 	else
 	{
-		cone = forcePushCone[self->client->ps.forcePowerLevel[FP_PUSH]];
+		cone = forcePushCone[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PUSH])];
 	}
 
 	VectorMA(self->client->renderInfo.eyePoint, radius, forward, end);
@@ -29750,7 +29807,7 @@ static void ForceRepulseThrow(gentity_t* self, int charge_time)
 		is_class_guard = qtrue;
 	}
 
-	radius = forcePushPullRadius[self->client->ps.forcePowerLevel[FP_REPULSE]];
+	radius = forcePushPullRadius[FP_TableLevel(self->client->ps.forcePowerLevel[FP_REPULSE])];
 
 	if (!radius)
 	{
@@ -31253,29 +31310,29 @@ void ForceTelepathy(gentity_t* self)
 					traceEnt->client->enemyTeam = traceEnt->client->playerTeam;
 					traceEnt->client->playerTeam = save_team;
 					//FIXME: need a *charmed* timer on this...?  Or do TEAM_PLAYERS assume that "confusion" means they should switch to team_enemy when done?
-					traceEnt->NPC->charmedTime = level.time + mindTrickTime[self->client->ps.forcePowerLevel[FP_TELEPATHY]];
+					traceEnt->NPC->charmedTime = level.time + mindTrickTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_TELEPATHY])];
 
 					if (traceEnt->ghoul2.size() && traceEnt->headBolt != -1)
 					{
 						//FIXME: what if already playing effect?
 						G_PlayEffect(G_EffectIndex("force/confusion"), traceEnt->playerModel, traceEnt->headBolt,
 							traceEnt->s.number, traceEnt->currentOrigin,
-							mindTrickTime[self->client->ps.forcePowerLevel[FP_TELEPATHY]], qtrue);
+							mindTrickTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_TELEPATHY])], qtrue);
 					}
 				}
 				else
 				{
 					//just confuse them
 					//somehow confuse them?  Set don't fire to true for a while?  Drop their aggression?  Maybe just take their enemy away and don't let them pick one up for a while unless shot?
-					traceEnt->NPC->confusionTime = level.time + mindTrickTime[self->client->ps.forcePowerLevel[
-						FP_TELEPATHY]]; //confused for about 10 seconds
+					traceEnt->NPC->confusionTime = level.time + mindTrickTime[FP_TableLevel(self->client->ps.forcePowerLevel[
+						FP_TELEPATHY])]; //confused for about 10 seconds
 
 					if (traceEnt->ghoul2.size() && traceEnt->headBolt != -1)
 					{
 						//FIXME: what if already playing effect?
 						G_PlayEffect(G_EffectIndex("force/confusion"), traceEnt->playerModel, traceEnt->headBolt,
 							traceEnt->s.number, traceEnt->currentOrigin,
-							mindTrickTime[self->client->ps.forcePowerLevel[FP_TELEPATHY]], qtrue);
+							mindTrickTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_TELEPATHY])], qtrue);
 					}
 					NPC_PlayConfusionSound(traceEnt);
 					if (traceEnt->enemy)
@@ -32208,14 +32265,14 @@ void ForceFear(gentity_t* self)
 						G_AddVoiceEvent(traceEnt, Q_irand(EV_GIVEUP1, EV_GIVEUP4), 2000);
 					}
 
-					traceEnt->NPC->charmedTime = level.time + mindTrickTime[self->client->ps.forcePowerLevel[FP_FEAR]];
+					traceEnt->NPC->charmedTime = level.time + mindTrickTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_FEAR])];
 
 					if (traceEnt->ghoul2.size() && traceEnt->headBolt != -1)
 					{
 						//FIXME: what if already playing effect?
 						G_PlayEffect(G_EffectIndex("force/fear"), traceEnt->playerModel, traceEnt->headBolt,
 							traceEnt->s.number, traceEnt->currentOrigin,
-							mindTrickTime[self->client->ps.forcePowerLevel[FP_FEAR]], qtrue);
+							mindTrickTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_FEAR])], qtrue);
 					}
 				}
 			}
@@ -32426,7 +32483,9 @@ static void ForceShootstrike(gentity_t* self)
 	static gentity_t* entity_list[MAX_GENTITIES];
 	int e, num_listed_entities, i;
 
-	const int hit_loc = G_GetHitLocFromTrace(&tr, MOD_LIGHTNING_STRIKE);
+	// No trace has run yet here, so tr is uninitialised: let G_Damage work the hit location out
+	// from each target's real hit point instead.
+	constexpr int hit_loc = HL_NONE;
 
 	if (self->health <= 0)
 	{
@@ -32449,7 +32508,12 @@ static void ForceShootstrike(gentity_t* self)
 	// always render a shot beam
 
 	G_PlayEffect("env/yellow_lightning", self->client->renderInfo.handLPoint, forward);
-	gentity_t* tent = G_TempEntity(tr.endpos, EV_LIGHTNING_STRIKE);
+	// The client draws the bolt from otherentityNum's hand in the event's direction (CG_StrikeBolt).
+	// This used the uninitialised tr.endpos and left the caster at 0, i.e. the player, even for NPCs.
+	gentity_t* tent = G_TempEntity(self->client->renderInfo.handLPoint, EV_LIGHTNING_STRIKE);
+	tent->s.otherentityNum = self->s.number;
+	VectorCopy(self->client->ps.viewangles, tent->s.angles);
+	VectorCopy(self->client->ps.viewangles, tent->s.apos.trBase);
 	tent->svFlags |= SVF_BROADCAST;
 
 	if (self->client->ps.forcePowerLevel[FP_LIGHTNING_STRIKE] == FORCE_LEVEL_3)
@@ -33547,6 +33611,9 @@ void ForceLightning(gentity_t* self)
 
 extern void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, float strength,
 	qboolean breakSaberLock);
+// G_KnockOver only knocks the player (entity 0) down at strength 300+, so lightning used 25 and never
+// knocked a running player down. NPCs keep 25.
+constexpr float LIGHTNING_KNOCKOVER_PLAYER = 300.0f;
 
 static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t dir, const float dist, const float dot,
 	vec3_t impact_point)
@@ -34195,7 +34262,7 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 							PM_InKataAnim(traceEnt->client->ps.torsoAnim) == qtrue ||
 							is_class_guard == qtrue)
 						{
-							G_KnockOver(traceEnt, self, dir, 25, qtrue);
+							G_KnockOver(traceEnt, self, dir, traceEnt->s.number ? 25.0f : LIGHTNING_KNOCKOVER_PLAYER, qtrue);
 						}
 						else
 						{
@@ -35097,7 +35164,7 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 							PM_InKataAnim(traceEnt->client->ps.torsoAnim) == qtrue ||
 							is_class_guard == qtrue)
 						{
-							G_KnockOver(traceEnt, self, dir, 25, qtrue);
+							G_KnockOver(traceEnt, self, dir, traceEnt->s.number ? 25.0f : LIGHTNING_KNOCKOVER_PLAYER, qtrue);
 
 							if (g_lightningdamage->integer)
 							{
@@ -35847,7 +35914,7 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 							PM_InKataAnim(traceEnt->client->ps.torsoAnim) == qtrue ||
 							is_class_guard == qtrue)
 						{
-							G_KnockOver(traceEnt, self, dir, 25, qtrue);
+							G_KnockOver(traceEnt, self, dir, traceEnt->s.number ? 25.0f : LIGHTNING_KNOCKOVER_PLAYER, qtrue);
 						}
 						else
 						{
@@ -37668,7 +37735,7 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 		}
 	}
 
-	const float force_jump_charge_interval = forceJumpStrength[self->client->ps.forcePowerLevel[FP_LEVITATION]] / (
+	const float force_jump_charge_interval = forceJumpStrength[FP_TableLevel(self->client->ps.forcePowerLevel[FP_LEVITATION])] / (
 		FORCE_JUMP_CHARGE_TIME / FRAMETIME);
 
 	int anim;
@@ -38301,7 +38368,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 				traceEnt->client->NPC_class != CLASS_REBORN)
 			{
 				traceEnt->client->ps.stasisTime =
-					level.time + stasisTime[self->client->ps.forcePowerLevel[FP_STASIS]];
+					level.time + stasisTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_STASIS])];
 				VectorClear(traceEnt->client->ps.velocity);
 
 				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
@@ -38387,7 +38454,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 					traceEnt->client->NPC_class != CLASS_JEDIMASTER))
 			{
 				traceEnt->client->ps.stasisJediTime =
-					level.time + stasisJediTime[self->client->ps.forcePowerLevel[FP_STASIS]];
+					level.time + stasisJediTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_STASIS])];
 				VectorClear(traceEnt->client->ps.velocity);
 
 				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
@@ -38468,7 +38535,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 				traceEnt->client->NPC_class == CLASS_GUARD)
 			{
 				traceEnt->client->ps.stasisJediTime =
-					level.time + stasisJediTime[self->client->ps.forcePowerLevel[FP_STASIS]];
+					level.time + stasisJediTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_STASIS])];
 				VectorClear(traceEnt->client->ps.velocity);
 
 				if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
@@ -38534,7 +38601,7 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 				if (traceEnt->client)
 				{
 					traceEnt->client->ps.stasisJediTime =
-						level.time + stasisJediTime[self->client->ps.forcePowerLevel[FP_STASIS]];
+						level.time + stasisJediTime[FP_TableLevel(self->client->ps.forcePowerLevel[FP_STASIS])];
 					VectorClear(traceEnt->client->ps.velocity);
 
 					if (g_SerenityJediEngineMode && g_SerenityJediEngineMode->integer)
@@ -38641,7 +38708,7 @@ void ForceStasis(gentity_t* self)
 		return;
 	}
 
-	const int radius = forceStasisRadius[self->client->ps.forcePowerLevel[FP_STASIS]];
+	const int radius = forceStasisRadius[FP_TableLevel(self->client->ps.forcePowerLevel[FP_STASIS])];
 
 	if (self->client->ps.forcePowerLevel[FP_STASIS] > FORCE_LEVEL_2)
 	{
@@ -38755,6 +38822,9 @@ void ForceStasis(gentity_t* self)
 				ForceStasisWide(self, traceEnt);
 			}
 		}
+		// Done: the targets were handled in the loop. Falling through ran the single-target code
+		// below on the last listed entity (possibly the caster), or crashed if none was listed.
+		return;
 	}
 	else
 	{
@@ -38864,7 +38934,7 @@ void ForceStasis(gentity_t* self)
 		{
 			if (traceEnt->client)
 			{
-				traceEnt->client->ps.stasisTime = level.time + stasisTime[actual_power_level]; //stuck for 5-10 seconds
+				traceEnt->client->ps.stasisTime = level.time + stasisTime[FP_TableLevel(actual_power_level)]; //stuck for 5-10 seconds
 				VectorClear(traceEnt->client->ps.velocity);
 
 				if (g_SerenityJediEngineMode->integer)
@@ -38941,7 +39011,7 @@ void ForceStasis(gentity_t* self)
 		{
 			if (traceEnt->client)
 			{
-				traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[actual_power_level];
+				traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[FP_TableLevel(actual_power_level)];
 				//stuck for 2-5 seconds
 				VectorClear(traceEnt->client->ps.velocity);
 
@@ -38993,7 +39063,7 @@ void ForceStasis(gentity_t* self)
 		{
 			if (traceEnt->client)
 			{
-				traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[actual_power_level];
+				traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[FP_TableLevel(actual_power_level)];
 				//stuck for 2-5 seconds
 				VectorClear(traceEnt->client->ps.velocity);
 
@@ -39045,7 +39115,7 @@ void ForceStasis(gentity_t* self)
 		{
 			if (traceEnt->client)
 			{
-				traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[actual_power_level];
+				traceEnt->client->ps.stasisJediTime = level.time + stasisJediTime[FP_TableLevel(actual_power_level)];
 				//stuck for 2-5 seconds
 				VectorClear(traceEnt->client->ps.velocity);
 
@@ -39518,10 +39588,10 @@ void ForceGrasp(gentity_t* self)
 				{
 					vec3_t throw_dir = { 0, 0, 20 };
 
-					if (g_SerenityJediEngineMode->integer <= 2 && traceEnt->client->ps.forcePower <= BLOCKPOINTS_FULL
+					if (g_SerenityJediEngineMode->integer < 2 && traceEnt->client->ps.forcePower <= BLOCKPOINTS_FULL
 						|| g_SerenityJediEngineMode->integer == 2 && traceEnt->client->ps.blockPoints <= BLOCKPOINTS_FULL) //less than 90 BP
 					{
-						if (g_SerenityJediEngineMode->integer <= 2 && traceEnt->client->ps.forcePower <= BLOCKPOINTS_HALF
+						if (g_SerenityJediEngineMode->integer < 2 && traceEnt->client->ps.forcePower <= BLOCKPOINTS_HALF
 							|| g_SerenityJediEngineMode->integer == 2 && traceEnt->client->ps.blockPoints <= BLOCKPOINTS_HALF) // Less than 50 Bp
 						{
 							if (g_spskill->integer < 2) //was < 2
@@ -40096,7 +40166,7 @@ void WP_ForcePowerStart(gentity_t* self, const forcePowers_t force_power, int ov
 		break;
 	case FP_SPEED:
 		//duration is always 5 seconds, player time
-		duration = ceil(FORCE_SPEED_DURATION * forceSpeedValue[self->client->ps.forcePowerLevel[force_power]]);
+		duration = ceil(FORCE_SPEED_DURATION * forceSpeedValue[FP_TableLevel(self->client->ps.forcePowerLevel[force_power])]);
 
 		self->client->ps.forcePowersActive |= 1 << force_power;
 
@@ -40126,7 +40196,7 @@ void WP_ForcePowerStart(gentity_t* self, const forcePowers_t force_power, int ov
 		//new Jedi Academy force powers
 	case FP_RAGE:
 		//duration is always 5 seconds, player time
-		duration = ceil(FORCE_RAGE_DURATION * forceSpeedValue[self->client->ps.forcePowerLevel[force_power] - 1]);
+		duration = ceil(FORCE_RAGE_DURATION * forceSpeedValue[FP_TableLevel(self->client->ps.forcePowerLevel[force_power] - 1)]);
 		//FIXME: because the timescale scales down (not instant), this doesn't end up being exactly right...
 		self->client->ps.forcePowersActive |= 1 << force_power;
 		G_SoundOnEnt(self, CHAN_ITEM, "sound/weapons/force/rage.mp3");
@@ -41295,7 +41365,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 		break;
 	case FP_SPEED:
 
-		speed = forceSpeedValue[self->client->ps.forcePowerLevel[FP_SPEED]];
+		speed = forceSpeedValue[FP_TableLevel(self->client->ps.forcePowerLevel[FP_SPEED])];
 
 		if (!self->s.number)
 		{
@@ -41621,7 +41691,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 					//we don't damage the empty vehicle
 					grip_ent->painDebounceTime = 0;
 
-					int grip_dmg = forceGripDamage[self->client->ps.forcePowerLevel[FP_GRIP]];
+					int grip_dmg = forceGripDamage[FP_TableLevel(self->client->ps.forcePowerLevel[FP_GRIP])];
 
 					if (grip_level != -1)
 					{
@@ -41653,7 +41723,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 					//player takes damage faster
 					self->client->ps.forcePowerDebounce[FP_GRIP] = level.time + Q_irand(100, 600);
 				}
-				if (forceGripDamage[self->client->ps.forcePowerLevel[FP_GRIP]] > 0)
+				if (forceGripDamage[FP_TableLevel(self->client->ps.forcePowerLevel[FP_GRIP])] > 0)
 				{
 					//no damage at level 1
 					WP_ForcePowerDrain(self, FP_GRIP, 3);
@@ -41909,9 +41979,9 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 			int soundduration = 0;
 			self->client->ps.stats[STAT_HEALTH] = self->health;
 
-			speed = forceSpeedValue[self->client->ps.forcePowerLevel[FP_RAGE] - 1];
+			speed = forceSpeedValue[FP_TableLevel(self->client->ps.forcePowerLevel[FP_RAGE] - 1)];
 
-			soundduration = ceil(FORCE_RAGE_DURATION * forceSpeedValue[self->client->ps.forcePowerLevel[FP_RAGE] - 1]);
+			soundduration = ceil(FORCE_RAGE_DURATION * forceSpeedValue[FP_TableLevel(self->client->ps.forcePowerLevel[FP_RAGE] - 1)]);
 
 			if (!self->s.number)
 			{
@@ -41982,8 +42052,10 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 				WP_ForcePowerStop(self, FP_DRAIN);
 				return;
 			}
+			// the drained creature's own speed (this read the global NPC, which is the wrong entity
+			// or null when the player drains)
 			if (drain_ent->client && drain_ent->client->moveType == MT_FLYSWIM && VectorLengthSquared(
-				NPC->client->ps.velocity) > 300 * 300)
+				drain_ent->client->ps.velocity) > 300 * 300)
 			{
 				//flying creature broke free
 				WP_ForcePowerStop(self, FP_DRAIN);
@@ -42477,7 +42549,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 				{
 					//we don't damage the empty vehicle
 					grip_ent->painDebounceTime = 0;
-					int grip_dmg = forceGraspDamage[self->client->ps.forcePowerLevel[FP_GRASP]];
+					int grip_dmg = forceGraspDamage[FP_TableLevel(self->client->ps.forcePowerLevel[FP_GRASP])];
 					if (grip_level != -1)
 					{
 						if (grip_level == 1)
@@ -42508,7 +42580,7 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 					//player takes damage faster
 					self->client->ps.forcePowerDebounce[FP_GRASP] = level.time + Q_irand(100, 600);
 				}
-				if (forceGripDamage[self->client->ps.forcePowerLevel[FP_GRASP]] > 0)
+				if (forceGripDamage[FP_TableLevel(self->client->ps.forcePowerLevel[FP_GRASP])] > 0)
 				{
 					//no damage at level 1
 					WP_ForcePowerDrain(self, FP_GRASP, 3);
@@ -43169,9 +43241,12 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 
 		if (entNum > 0 && entNum < MAX_GENTITIES)
 		{
-			if (g_entities[entNum].s.pos.trType == TR_LINEAR)
+			// Mode 0: a thrown saber counts as using the Force (no regen). Modes 1/2: it doesn't, but it must
+			// not clear the flag either: "? qfalse : qtrue" overwrote an active power (grip, lightning...),
+			// so FP regenerated while it was in use.
+			if (g_entities[entNum].s.pos.trType == TR_LINEAR && g_SerenityJediEngineMode->integer == 0)
 			{
-				using_force = g_SerenityJediEngineMode->integer ? qfalse : qtrue;
+				using_force = qtrue;
 			}
 		}
 	}
@@ -43650,8 +43725,11 @@ qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker
 	if (PM_InKnockDown(&blocker->client->ps))
 		return qfalse;
 
-	// Held block too long → too slow to parry
-	if (blocker->client->ps.ManualblockStartTime >= 3000)
+	// Held block too long → too slow to parry.
+	// ManualblockStartTime is the time the block started (0 = not holding, e.g. NPCs), not a duration:
+	// comparing it with 3000 made every accurate block fail once a map had run 3 seconds.
+	if (blocker->client->ps.ManualblockStartTime > 0
+		&& level.time - blocker->client->ps.ManualblockStartTime >= 3000)
 		return qfalse;
 
 	// ------------------------------------------------------------

@@ -4168,7 +4168,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 
 		Q_strlwr(surfInfo->name);	//just in case
 
-		if (!strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off"))
+		if (strlen(surfInfo->name) >= 4 && !strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off"))
 		{
 			surfInfo->name[strlen(surfInfo->name) - 4] = 0;	//remove "_off" from name
 		}

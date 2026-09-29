@@ -6481,8 +6481,14 @@ void PM_SetAnimFinal(int* torso_anim, int* legs_anim,
 
 	// If The Animation Is Walking Or Running, Attempt To Scale The Playback Speed To Match
 	//--------------------------------------------------------------------------------------
+	// Not for a stationary entity in a cutscene: there a walk/run anim is a scripted pose (e.g. JKO
+	// cinematic27 sets BOTH_WALK1TALKCOMM1 with an infinite hold before Kyle starts walking), and scaling
+	// by a resultspeed of 0 froze it at 1% speed for the whole hold, so he slid along in one frame.
+	// In gameplay keep scaling at low speed: without it, an NPC whose speed flickers around 0 (a
+	// stormtrooper about to attack) switched between full-speed and 1% playback every frame and stuttered.
 	if (g_noFootSlide->integer
 		&& anim_foot_move
+		&& (gent->resultspeed >= 1.0f || !in_camera)
 		&& animSpeed >= 0.0f
 		&& gent->client->NPC_class != CLASS_HOWLER
 		&& gent->client->NPC_class != CLASS_WAMPA
@@ -7251,6 +7257,23 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_SWIM_IDLE1,                     BOTH_SWIM_IDLE1,                    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SWIMFORWARD,                    BOTH_SWIMFORWARD,                   qfalse, qfalse, qtrue, qfalse, 0 },
 };
+
+// Hold an NPC's gun aim pose while its weapon is busy (e.g. crouched and aiming) without starting
+// it again: PM_TorsoAnimFromLegs runs first every frame and puts the legs anim on the torso as soon
+// as the hold timer runs out, so setting the fire anim again replayed it every ~250 ms and the NPC
+// looked like it was trying to shoot. The finished anim freezes on its last frame (the aim pose);
+// real shots still restart it in PM_Weapon.
+static void PM_HoldTorsoAimPose(pmove_t* pm, const int anim)
+{
+	if (pm->ps->torsoAnim != anim)
+	{
+		PM_SetAnim(pm, SETANIM_TORSO, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	}
+	if (pm->ps->torsoAnimTimer < 100)
+	{
+		pm->ps->torsoAnimTimer = 100; // keep PM_TorsoAnimFromLegs (SETANIM_FLAG_NORMAL) from replacing it
+	}
+}
 
 static void PM_ApplyTorsoMap(pmove_t* pm, qboolean weaponBusy, qboolean setSaberReadyOverride)
 {
@@ -8719,6 +8742,9 @@ void PM_TorsoAnimation()
 			}
 			else
 			{
+				// NPC ready poses. This runs every frame while the weapon is ready, so never use
+				// SETANIM_FLAG_RESTART here: it restarted the aim anim each frame and the upper body
+				// stuttered until the NPC's first shot. The real shots restart it in PM_Weapon.
 				switch (pm->ps->weapon)
 				{
 					// ********************************************************
@@ -8740,13 +8766,24 @@ void PM_TorsoAnimation()
 				case WP_CLONEPISTOL:
 				case WP_DUAL_PISTOL:
 				case WP_DUAL_CLONEPISTOL:
-					if (pm->gent && pm->gent->weaponModel[1] > 0)
+					if (!weaponBusy)
+					{ // not shooting: hold the pistol ready pose, the anims below are fire anims
+						if (pm->gent && pm->gent->weaponModel[1] > 0)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE2P, SETANIM_FLAG_NORMAL);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY2, SETANIM_FLAG_NORMAL);
+						}
+					}
+					else if (pm->gent && pm->gent->weaponModel[1] > 0)
 					{ //has a secondary weapon, so use the dual anims
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						PM_HoldTorsoAimPose(pm, BOTH_ATTACK_DUAL);
 					}
 					else
 					{//single pistols
-						PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACKJANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						PM_HoldTorsoAimPose(pm, BOTH_ATTACKJANGO);
 					}
 					break;
 
@@ -8860,17 +8897,17 @@ void PM_TorsoAnimation()
 				case WP_BOWCASTER:
 					if (pm->gent->alt_fire)
 					{ //alt fire
-						PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+						PM_HoldTorsoAimPose(pm, TORSO_WEAPONREADY3);// from hip
 					}
 					else
 					{ //normal fire
 						if (cg.renderingThirdPerson)
 						{ //third person
-							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+							PM_HoldTorsoAimPose(pm, TORSO_WEAPONREADY4); // from shoulder
 						}
 						else
 						{ // first person
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);  // from center of body
+							PM_HoldTorsoAimPose(pm, BOTH_ATTACK_FP);  // from center of body
 						}
 					}
 					break;
@@ -8918,22 +8955,33 @@ void PM_TorsoAnimation()
 				case WP_BATTLEDROID:
 				case WP_CLONECOMMANDO:
 
-					if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
+					if (!weaponBusy)
+					{ // not shooting: hold the rifle ready pose, the anims below are fire anims (as in SJE)
+						if (cg.renderingThirdPerson)
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
+						}
+						else
+						{
+							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_NORMAL);
+						}
+					}
+					else if (pm->gent->alt_fire || pm->gent->client->NPC_class == CLASS_BATTLEDROID)
 					{
 						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
 							if (flags.isBattleDroid == qtrue)
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+								PM_HoldTorsoAimPose(pm, BOTH_ATTACK3_BDROID);
 							}
 							else
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+								PM_HoldTorsoAimPose(pm, BOTH_ATTACK3);
 							}
 						}
 						else
 						{
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+							PM_HoldTorsoAimPose(pm, BOTH_ATTACK3);
 						}
 					}
 					else
@@ -8944,21 +8992,21 @@ void PM_TorsoAnimation()
 							{
 								if (flags.isBattleDroid == qtrue)
 								{
-									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+									PM_HoldTorsoAimPose(pm, BOTH_ATTACK4_BDROID);
 								}
 								else
 								{
-									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+									PM_HoldTorsoAimPose(pm, BOTH_ATTACK4);
 								}
 							}
 							else
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+								PM_HoldTorsoAimPose(pm, BOTH_ATTACK4);
 							}
 						}
 						else
 						{
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_RESTART);
+							PM_HoldTorsoAimPose(pm, BOTH_ATTACK_FP);
 						}
 					}
 					break;
@@ -9051,7 +9099,7 @@ void PM_TorsoAnimation()
 
 				case WP_BOT_LASER:
 					PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE2,
-						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					break;
 				case WP_THERMAL:
 					if (pm->ps->weaponstate != WEAPON_FIRING
@@ -9262,7 +9310,7 @@ void PM_TorsoAnimation()
 					{//dual pistols
 						if (weaponBusy)
 						{
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_DUAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+							PM_HoldTorsoAimPose(pm, BOTH_ATTACK_DUAL);
 
 							if (cg.renderingThirdPerson)
 							{
@@ -9321,7 +9369,7 @@ void PM_TorsoAnimation()
 					{//single pistols
 						if (weaponBusy)
 						{
-							PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACKJANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+							PM_HoldTorsoAimPose(pm, BOTH_ATTACKJANGO);
 
 							if (cg.renderingThirdPerson)
 							{
@@ -9520,7 +9568,7 @@ void PM_TorsoAnimation()
 					{ // weapon is busy, so don't change the anim
 						if (pm->gent->alt_fire)
 						{ //alt fire
-							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+							PM_HoldTorsoAimPose(pm, TORSO_WEAPONREADY3);// from hip
 
 							if (cg.renderingThirdPerson)
 							{
@@ -9541,7 +9589,7 @@ void PM_TorsoAnimation()
 						{ //normal fire
 							if (cg.renderingThirdPerson)
 							{ //third person
-								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+								PM_HoldTorsoAimPose(pm, TORSO_WEAPONREADY4); // from shoulder
 
 								if (is_walking_and_blocking == qtrue)
 								{
@@ -9557,7 +9605,7 @@ void PM_TorsoAnimation()
 							}
 							else
 							{ // first person
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+								PM_HoldTorsoAimPose(pm, BOTH_ATTACK_FP);
 							}
 						}
 					}
@@ -9685,16 +9733,16 @@ void PM_TorsoAnimation()
 							{
 								if (flags.isBattleDroid == qtrue)
 								{
-									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+									PM_HoldTorsoAimPose(pm, BOTH_ATTACK3_BDROID);// from hip
 								}
 								else
 								{
-									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+									PM_HoldTorsoAimPose(pm, BOTH_ATTACK3);// from hip
 								}
 							}
 							else
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+								PM_HoldTorsoAimPose(pm, BOTH_ATTACK3);// from hip
 							}
 
 							if (cg.renderingThirdPerson)
@@ -9720,16 +9768,16 @@ void PM_TorsoAnimation()
 								{
 									if (flags.isBattleDroid == qtrue)
 									{
-										PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+										PM_HoldTorsoAimPose(pm, BOTH_ATTACK4_BDROID); // from shoulder
 									}
 									else
 									{
-										PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+										PM_HoldTorsoAimPose(pm, BOTH_ATTACK4); // from shoulder
 									}
 								}
 								else
 								{
-									PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+									PM_HoldTorsoAimPose(pm, BOTH_ATTACK4); // from shoulder
 								}
 
 								if (is_walking_and_blocking == qtrue)
@@ -9746,7 +9794,7 @@ void PM_TorsoAnimation()
 							}
 							else
 							{ // first person
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+								PM_HoldTorsoAimPose(pm, BOTH_ATTACK_FP);
 							}
 						}
 					}
@@ -9879,13 +9927,13 @@ void PM_TorsoAnimation()
 					{ // weapon is busy, so don't change the anim
 						if (pm->gent->alt_fire)
 						{ //alt fire
-							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);// from hip
+							PM_HoldTorsoAimPose(pm, TORSO_WEAPONREADY3);// from hip
 						}
 						else
 						{ //normal fire
 							if (cg.renderingThirdPerson)
 							{ //third person
-								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from shoulder
+								PM_HoldTorsoAimPose(pm, TORSO_WEAPONREADY4); // from shoulder
 
 								if (is_walking_and_blocking == qtrue)
 								{
@@ -9901,7 +9949,7 @@ void PM_TorsoAnimation()
 							}
 							else
 							{ // first person
-								PM_SetAnim(pm, SETANIM_TORSO, BOTH_ATTACK_FP, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD); // from center of body
+								PM_HoldTorsoAimPose(pm, BOTH_ATTACK_FP); // from center of body
 							}
 						}
 					}
@@ -9994,7 +10042,7 @@ void PM_TorsoAnimation()
 					break;
 
 				case WP_BOT_LASER:
-					PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART | SETANIM_FLAG_HOLD);
+					PM_HoldTorsoAimPose(pm, TORSO_WEAPONIDLE2);
 					break;
 
 				case WP_THERMAL:

@@ -151,11 +151,13 @@ void CMod_LoadShaders(const lump_t* l, clipMap_t& cm)
 		Q_strncpyz(out->shader, in->shader, MAX_QPATH);
 		out->contentFlags = LittleLong in->contentFlags;
 		out->surfaceFlags = LittleLong in->surfaceFlags;
-		for (int j = 0; j <= std::size(replaceMaterials); j++)
+		for (size_t j = 0; j < std::size(replaceMaterials); j++)
 		{
 			if (!Q_stricmp(out->shader, replaceMaterials[j].shader))
 			{
-				out->surfaceFlags = replaceMaterials->materialNum;
+				// Replace only the material bits, keep the other surface flags.
+				out->surfaceFlags &= ~MATERIAL_MASK;
+				out->surfaceFlags |= replaceMaterials[j].materialNum;
 			}
 		}
 	}

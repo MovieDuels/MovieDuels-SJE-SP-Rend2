@@ -165,7 +165,10 @@ void SV_WipeGame_f()
 */
 void SG_StoreSaveGameComment(const char* sComment)
 {
-	memmove(saveGameComment, sComment, iSG_COMMENT_SIZE);
+	// Copy the string, not a fixed 64 bytes: callers pass "" or short strings, and reading a fixed
+	// size ran past their end (found by ASan on an autosave).
+	memset(saveGameComment, 0, sizeof(saveGameComment));
+	Q_strncpyz(saveGameComment, sComment, sizeof(saveGameComment));
 }
 
 qboolean SV_TryLoadTransition(const char* mapname)

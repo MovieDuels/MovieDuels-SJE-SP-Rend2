@@ -2617,7 +2617,10 @@ static void G_ForceSafeModelChangeState(gentity_t* ent)
 
 	if (ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN))
 	{
-		PM_RemoveGunnerAimFlag(qtrue);
+		// Clear it on this entity; PM_RemoveGunnerAimFlag works on the global pm, which is not this entity
+		// (or is null/stale) outside Pmove.
+		ent->client->ps.communicatingflags &= ~(1 << CF_AIMINGGUN);
+		ent->client->IsAiming = qfalse;
 	}
 
 	// ----------------------------------------------------------------------

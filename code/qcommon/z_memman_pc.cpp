@@ -488,6 +488,11 @@ static int Zone_FreeBlock(zoneHeader_t* pMemory)
 
 // stats-query function to to see if it's our malloc
 // returns block size if so
+// By design this peeks at the header in front of any pointer, including string literals
+// (e.g. entity classnames), so AddressSanitizer is told to skip it.
+#if defined(_MSC_VER) && defined(__SANITIZE_ADDRESS__)
+__declspec(no_sanitize_address)
+#endif
 qboolean Z_IsFromZone(const void* pvAddress, const memtag_t eTag)
 {
 	const zoneHeader_t* pMemory = static_cast<const zoneHeader_t*>(pvAddress) - 1;
