@@ -2315,6 +2315,18 @@ void SP_func_static(gentity_t* ent)
 			ent->damage = 2;
 		}
 	}
+
+	// "hyperspace" 1: this brush is the hyperspace tunnel. The cgame draws it around the view of a ship that is
+	// jumping, and nowhere else (CG_Mover). As in SerenityJediEngine2026 and MP.
+	int test;
+	G_SpawnInt("hyperspace", "0", &test);
+	if (test)
+	{
+		ent->svFlags |= SVF_BROADCAST;
+		// I need to rotate something that is huge and it's touching too many area portals...
+		ent->s.eFlags2 |= EF2_HYPERSPACE;
+	}
+
 	gi.linkentity(ent);
 
 	if (level.mBSPInstanceDepth)

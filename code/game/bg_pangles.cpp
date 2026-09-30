@@ -50,6 +50,57 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_functions.h"
 #include "weapons.h"
 
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
+
+// Animation style flags of the player (copy of bg_pmove.cpp PM_Animationstyletable; the builders are
+// kept per file on purpose until they are unified)
+static animFlags_t PANG_Animationstyletable(const pmove_t* pm)
+{
+	animFlags_t flags{};
+	if (!pm || !pm->gent || !pm->gent->client)
+	{
+		Com_Printf("PANG_Animationstyletable: pm or pm->gent->client is null\n");
+		return flags;
+	}
+
+	const int style = pm->gent->client->animationstyle;
+	const int cvarStyle = (g_AnimationStyle ? g_AnimationStyle->integer : -1);
+
+	// Helper macro: match either client style or cvar override
+#define MATCH(s) ((style == (s)) || (cvarStyle == (s)))
+
+	if (MATCH(CS_DEFAULT))        flags.isDefault = qtrue;
+	if (MATCH(CS_ANAKIN))         flags.isAnakin = qtrue;
+	if (MATCH(CS_BATTLEDROID))    flags.isBattleDroid = qtrue;
+	if (MATCH(CS_BENKENOBI))      flags.isBenKenobi = qtrue;
+	if (MATCH(CS_CAL_KESTIS))     flags.isCalKestis = qtrue;
+	if (MATCH(CS_CLONETROOPER))   flags.isCloneTrooper = qtrue;
+	if (MATCH(CS_DARKFORCES2))    flags.isDarkForces2 = qtrue;
+	if (MATCH(CS_COUNT_DOOKU))    flags.isCountDooku = qtrue;
+	if (MATCH(CS_GALEN_MAREK))    flags.isGalenMarek = qtrue;
+	if (MATCH(CS_QUI_GON_JINN))   flags.isQuiGonJinn = qtrue;
+	if (MATCH(CS_GRIEVOUS))       flags.isGrievous = qtrue;
+	if (MATCH(CS_JANGO))          flags.isJango = qtrue;
+	if (MATCH(CS_KOTOR))          flags.isKotor = qtrue;
+	if (MATCH(CS_LUKE_SKYWALKER)) flags.isLukeSkywalker = qtrue;
+	if (MATCH(CS_MACE_WINDU))     flags.isMaceWindu = qtrue;
+	if (MATCH(CS_MAUL))           flags.isMaul = qtrue;
+	if (MATCH(CS_MOVIEDUELS))     flags.isMovieDuels = qtrue;
+	if (MATCH(CS_OBIWAN))         flags.isObiWan = qtrue;
+	if (MATCH(CS_OBIWAN_EP3))     flags.isObiWanEP3 = qtrue;
+	if (MATCH(CS_PALPATINE))      flags.isPalpatine = qtrue;
+	if (MATCH(CS_REBELS))         flags.isRebels = qtrue;
+	if (MATCH(CS_KYLO_REN))       flags.isKyloRen = qtrue;
+	if (MATCH(CS_REY))            flags.isRey = qtrue;
+	if (MATCH(CS_VADER))          flags.isVader = qtrue;
+	if (MATCH(CS_YODA))           flags.isYoda = qtrue;
+
+#undef MATCH
+
+	return flags;
+}
+
 extern void CG_SetClientViewAngles(vec3_t angles, qboolean override_view_ent);
 extern qboolean PM_InAnimForSaberMove(int anim, int saberMove);
 extern qboolean PM_InForceGetUp(const playerState_t* ps);
@@ -1772,6 +1823,18 @@ void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, 
 			}
 		}
 	}
+	else if (gent && gent->client)
+	{
+		//the pilot of a walker looks up and down as far as its head turns (lookPitch, as in MP). The branch for riders
+		//above is never reached - a rider is not a vehicle - and would lock the yaw of every rider if it were.
+		const Vehicle_t* riding = G_IsRidingVehicle(gent);
+		if (riding && riding->m_pVehicleInfo && riding->m_pVehicleInfo->type == VH_WALKER
+			&& riding->m_pVehicleInfo->lookPitch > 0.0f && riding->m_pVehicleInfo->lookPitch < pitch_max)
+		{
+			pitch_max = riding->m_pVehicleInfo->lookPitch;
+			pitch_min = -pitch_max;
+		}
+	}
 
 	const short pitch_clamp_min = ANGLE2SHORT(root_pitch + pitch_min);
 	const short pitch_clamp_max = ANGLE2SHORT(root_pitch + pitch_max);
@@ -2131,7 +2194,21 @@ void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, 
 							}
 							else
 							{
-								anim = BOTH_BLOCK_R_STAFF;
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (PANG_Animationstyletable(pm).isGalenMarek == qtrue)
+									{
+										anim = BOTH_BLOCK_R_STAFF_GALEN;
+									}
+									else
+									{
+										anim = BOTH_BLOCK_R_STAFF;
+									}
+								}
+								else
+								{
+									anim = BOTH_BLOCK_R_STAFF;
+								}
 							}
 						}
 						else
@@ -2168,7 +2245,21 @@ void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, 
 							}
 							else
 							{
-								anim = BOTH_BLOCK_L_STAFF;
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (PANG_Animationstyletable(pm).isGalenMarek == qtrue)
+									{
+										anim = BOTH_BLOCK_L_STAFF_GALEN;
+									}
+									else
+									{
+										anim = BOTH_BLOCK_L_STAFF;
+									}
+								}
+								else
+								{
+									anim = BOTH_BLOCK_L_STAFF;
+								}
 							}
 						}
 						else
@@ -2204,7 +2295,23 @@ void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, 
 						{
 							//already in a dodge
 							//use the hold pose, don't start it all over again
-							anim = BOTH_BLOCK_HOLD_L_STAFF + (anim - BOTH_BLOCK_L_STAFF);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (PANG_Animationstyletable(pm).isGalenMarek == qtrue)
+								{
+									// Galen has no staff hold poses: the base hold pose of the same side (his anims are
+									// not next to the base ones in the enum, so no "hold = block + offset" arithmetic)
+									anim = (anim == BOTH_BLOCK_R_STAFF_GALEN || anim == BOTH_BLOCK_R_STAFF) ? BOTH_BLOCK_HOLD_R_STAFF : BOTH_BLOCK_HOLD_L_STAFF;
+								}
+								else
+								{
+									anim = BOTH_BLOCK_HOLD_L_STAFF + (anim - BOTH_BLOCK_L_STAFF);
+								}
+							}
+							else
+							{
+								anim = BOTH_BLOCK_HOLD_L_STAFF + (anim - BOTH_BLOCK_L_STAFF);
+							}
 							extra_hold_time = 100;
 						}
 					}

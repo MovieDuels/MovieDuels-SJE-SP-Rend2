@@ -559,6 +559,7 @@ void SP_misc_teleporter_dest(gentity_t* self);
 void SP_misc_model(gentity_t* ent);
 void SP_misc_model_static(gentity_t* ent);
 void SP_misc_turret(gentity_t* base);
+void SP_misc_turretG2(gentity_t* base);
 void SP_misc_ns_turret(gentity_t* base);
 void SP_laser_arm(gentity_t* base);
 void SP_misc_ion_cannon(gentity_t* ent);
@@ -818,6 +819,7 @@ spawn_t spawns[] = {
 	{"misc_model", SP_misc_model},
 	{"misc_model_static", SP_misc_model_static},
 	{"misc_turret", SP_misc_turret},
+	{"misc_turretG2", SP_misc_turretG2},
 	{"misc_ns_turret", SP_misc_ns_turret},
 	{"misc_laser_arm", SP_laser_arm},
 	{"misc_ion_cannon", SP_misc_ion_cannon},

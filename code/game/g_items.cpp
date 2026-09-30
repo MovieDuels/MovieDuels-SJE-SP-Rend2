@@ -492,6 +492,11 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 							//but only if already playing the pickup with left hand anim...
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 						}
+						else if (flags.isGalenMarek == qtrue)
+						{
+							//but only if already playing the pickup with left hand anim...
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 						else
 						{
 							//but only if already playing the pickup with left hand anim...
@@ -553,7 +558,8 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 			if (self->client->ps.torsoAnim == BOTH_BUTTON_HOLD
 				|| self->client->ps.torsoAnim == BOTH_SABERPULL
 				|| self->client->ps.torsoAnim == BOTH_SABERPULL_YODA
-				|| self->client->ps.torsoAnim == BOTH_SABERPULL_VADER)
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_VADER
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_GALEN)
 			{
 				//don't let them attack right away, force them to finish the anim
 				self->client->ps.weaponTime = self->client->ps.torsoAnimTimer;
@@ -2564,7 +2570,7 @@ void ItemUse_Barrier_with_saber(gentity_t* ent)
 
 void ItemUse_Grapple(gentity_t* ent)
 {
-	constexpr int anim = BOTH_GRAPPLE_FIRE;
+	const int anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && GI_Animationstyletable(ent).isGalenMarek == qtrue) ? (BOTH_GRAPPLE_FIRE_GALEN) : (BOTH_GRAPPLE_FIRE);
 
 	if (!ent->client->ps.inventory[INV_GRAPPLEHOOK])
 	{

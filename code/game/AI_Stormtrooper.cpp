@@ -4320,7 +4320,7 @@ void NPC_BSST_Attack(void)
 			&& NPC->client->playerTeam == TEAM_ENEMY
 			&& !PM_InKnockDown(&NPC->client->ps))
 		{
-			if (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+			if ((NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) || (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 			{
 				shoot = qfalse;
 				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
@@ -4389,7 +4389,7 @@ void NPC_BSST_Attack(void)
 			&& NPC->client->playerTeam == TEAM_PLAYER
 			&& !PM_InKnockDown(&NPC->client->ps))
 		{
-			if (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+			if ((NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) || (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 			{
 				shoot = qfalse;
 				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)

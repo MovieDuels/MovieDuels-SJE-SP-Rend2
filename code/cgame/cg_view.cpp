@@ -653,13 +653,14 @@ static void CG_UpdateThirdPersonTargetDamp()
 	// Automatically get the ideal target, to avoid jittering.
 	CG_CalcIdealThirdPersonViewTarget();
 
-	//if (cg.predictedPlayerState.hyperSpaceTime
-	//	&& (cg.time - cg.predictedPlayerState.hyperSpaceTime) < HYPERSPACE_TIME)
-	//{//hyperspacing, no damp
-	//	VectorCopy(cameraIdealTarget, cameraCurTarget);
-	//}
-	//else
-	if (CG_OnMovingPlat(&cg.snap->ps))
+	const playerState_t* veh_ps = CG_MyVehiclePS(); // hyperspace time is on the vehicle (MP: predictedVehicleState)
+	if (veh_ps && veh_ps->hyperSpaceTime
+		&& cg.time - veh_ps->hyperSpaceTime < HYPERSPACE_TIME)
+	{
+		//hyperspacing, no damp
+		VectorCopy(cameraIdealTarget, cameraCurTarget);
+	}
+	else if (CG_OnMovingPlat(&cg.snap->ps))
 	{
 		//if moving on a plat, camera is *tight*
 		VectorCopy(cameraIdealTarget, cameraCurTarget);
@@ -767,13 +768,19 @@ static void CG_UpdateThirdPersonCameraDamp()
 	// First thing we do is calculate the appropriate damping factor for the camera.
 	float dampfactor = 0.0f;
 
-	//if (cg.predictedPlayerState.hyperSpaceTime
-	//	&& (cg.time - cg.predictedPlayerState.hyperSpaceTime) < HYPERSPACE_TIME)
-	//{//hyperspacing - don't damp camera
-	//	dampfactor = 1.0f;
-	//}
-	//else
-	if (CG_OnMovingPlat(&cg.snap->ps))
+	const playerState_t* veh_ps = CG_MyVehiclePS(); // hyperspace time is on the vehicle (MP: predictedVehicleState)
+	if (veh_ps && veh_ps->hyperSpaceTime
+		&& cg.time - veh_ps->hyperSpaceTime < HYPERSPACE_TIME)
+	{
+		//hyperspacing - don't damp camera
+		dampfactor = 1.0f;
+	}
+	else if (cg.predictedPlayerState.m_iVehicleNum)
+	{
+		//in a vehicle the camera does not lag behind, as in MP (it fell back as far again as its range in a turbo)
+		dampfactor = 1.0f;
+	}
+	else if (CG_OnMovingPlat(&cg.snap->ps))
 	{
 		//if moving on a plat, camera is *tight*
 		dampfactor = 1.0f;
@@ -1882,6 +1889,68 @@ void CG_SaberClashFlare()
 
 /*
 ===============
+CG_WalkerViewOrigin
+
+What the camera of a walker's pilot looks at. The pilot sits on the driver tag in the walker's head, and the head
+rocks from side to side and up and down with every step: a camera that looks at the pilot rocks with it. It looks
+at where the head is on average instead - the tag's place relative to the walker, smoothed over a good second.
+A walker also goes up a step all at once, as anything that walks here does; the camera follows that over a moment
+(as it does for a player on foot) instead of jumping with it.
+===============
+*/
+constexpr auto WALKER_VIEW_SMOOTH_MSEC = 1200.0f;
+constexpr auto WALKER_STEP_SMOOTH_MSEC = 140.0f;
+constexpr auto WALKER_STEP_MAX = 48.0f; // a change in height beyond this is no step (a fall, a lift): follow at once
+
+static void CG_WalkerViewOrigin(const centity_t* walker, const qboolean boarding, const vec3_t pilot_org, vec3_t view_org)
+{
+	static int last_walker = ENTITYNUM_NONE;
+	static int last_time = 0;
+	static vec3_t smoothed = { 0.0f, 0.0f, 0.0f }; // the pilot from the walker's origin: forward, right, up
+	static float smoothed_height = 0.0f; // of the walker
+
+	const vec3_t yaw_angles = { 0.0f, walker->lerpAngles[YAW], 0.0f };
+	vec3_t fwd, right, delta, local;
+
+	AngleVectors(yaw_angles, fwd, right, nullptr);
+	VectorSubtract(pilot_org, walker->lerpOrigin, delta);
+	VectorSet(local, DotProduct(delta, fwd), DotProduct(delta, right), delta[2]);
+
+	const int elapsed = cg.time - last_time;
+	if (last_walker != walker->currentState.number || boarding || elapsed < 0 || elapsed > 500 || cg.thisFrameTeleport)
+	{
+		//getting in (the pilot is not on the tag yet), or a loaded game: start from where the pilot is
+		VectorCopy(local, smoothed);
+		smoothed_height = walker->lerpOrigin[2];
+	}
+	else
+	{
+		const float frac = 1.0f - expf(-static_cast<float>(elapsed) / WALKER_VIEW_SMOOTH_MSEC);
+		for (int i = 0; i < 3; i++)
+		{
+			smoothed[i] += (local[i] - smoothed[i]) * frac;
+		}
+
+		if (fabsf(walker->lerpOrigin[2] - smoothed_height) > WALKER_STEP_MAX)
+		{
+			smoothed_height = walker->lerpOrigin[2];
+		}
+		else
+		{
+			smoothed_height += (walker->lerpOrigin[2] - smoothed_height)
+				* (1.0f - expf(-static_cast<float>(elapsed) / WALKER_STEP_SMOOTH_MSEC));
+		}
+	}
+	last_walker = walker->currentState.number;
+	last_time = cg.time;
+
+	VectorMA(walker->lerpOrigin, smoothed[0], fwd, view_org);
+	VectorMA(view_org, smoothed[1], right, view_org);
+	view_org[2] = smoothed_height + smoothed[2];
+}
+
+/*
+===============
 CG_CalcViewValues
 
 Sets cg.refdef view values
@@ -1924,9 +1993,18 @@ static qboolean CG_CalcViewValues()
 	cg.xyspeed = sqrt(ps->velocity[0] * ps->velocity[0] +
 		ps->velocity[1] * ps->velocity[1]);
 
-	if (G_IsRidingVehicle(&g_entities[0]))
+	const Vehicle_t* riding = G_IsRidingVehicle(&g_entities[0]);
+	if (riding)
 	{
-		VectorCopy(ps->origin, cg.refdef.vieworg);
+		if (riding->m_pVehicleInfo && riding->m_pVehicleInfo->type == VH_WALKER)
+		{
+			CG_WalkerViewOrigin(&cg_entities[g_entities[0].owner->s.number], static_cast<qboolean>(riding->m_iBoarding != 0),
+				ps->origin, cg.refdef.vieworg);
+		}
+		else
+		{
+			VectorCopy(ps->origin, cg.refdef.vieworg);
+		}
 		VectorCopy(cg_entities[g_entities[0].owner->s.number].lerpAngles, cg.refdefViewAngles);
 		if (!(ps->eFlags & EF_NODRAW))
 		{
@@ -2489,6 +2567,70 @@ static qboolean Holding_Saber_And_Its_Turned_On(const gentity_t* self)
 
 /*
 =================
+CG_VehicleStickLook
+
+How fast a stick turns the view in a vehicle, as a fraction of its speed on foot (cg_vehicleStickPitch/Yaw).
+A stick is bound to the look keys, so it is either at rest or turning at full speed. To make small corrections
+possible, a turn starts at a part of its speed and comes up to all of it over cg_vehicleStickEaseIn milliseconds.
+=================
+*/
+constexpr auto STICK_EASE_START = 0.35f; // the part of its speed a turn starts at;
+constexpr auto STICK_TURN_GAP = 120; // msec without turning after which the next turn is a new one;
+
+static void CG_VehicleStickLook(float* pitch_scale, float* yaw_scale)
+{
+	static int last_angle[2] = { 0, 0 };
+	static int turn_start[2] = { 0, 0 };
+	static int turn_time[2] = { 0, 0 };
+	const float full_speed[2] = { cg_vehicleStickPitch.value, cg_vehicleStickYaw.value };
+	float* const scale[2] = { pitch_scale, yaw_scale };
+	usercmd_t cmd;
+
+	cgi_GetUserCmd(cgi_GetCurrentCmdNumber(), &cmd);
+
+	for (int axis = PITCH; axis <= YAW; axis++)
+	{
+		float frac = 1.0f;
+
+		if (cg.time < turn_time[axis])
+		{
+			//a new level, a loaded game: time started again
+			turn_time[axis] = turn_start[axis] = 0;
+		}
+		if (cmd.angles[axis] != last_angle[axis])
+		{
+			//turning
+			if (cg.time - turn_time[axis] > STICK_TURN_GAP)
+			{
+				turn_start[axis] = cg.time;
+			}
+			turn_time[axis] = cg.time;
+			last_angle[axis] = cmd.angles[axis];
+		}
+
+		if (cg_vehicleStickEaseIn.value > 0.0f)
+		{
+			if (cg.time - turn_time[axis] > STICK_TURN_GAP)
+			{
+				frac = STICK_EASE_START;
+			}
+			else
+			{
+				float eased = static_cast<float>(cg.time - turn_start[axis]) / cg_vehicleStickEaseIn.value;
+				if (eased > 1.0f)
+				{
+					eased = 1.0f;
+				}
+				frac = STICK_EASE_START + (1.0f - STICK_EASE_START) * eased;
+			}
+		}
+
+		*scale[axis] = Com_Clamp(0.02f, 2.0f, full_speed[axis]) * frac;
+	}
+}
+
+/*
+=================
 CG_DrawActiveFrame
 
 Generates and draws a game scene and status information at the given time.
@@ -2590,6 +2732,8 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 	// Optional per‑vehicle mouse sensitivity overrides.
 	float mPitchOverride = 0.0f;
 	float mYawOverride = 0.0f;
+	float keyPitchScale = 0.0f; // the look keys, which a stick is bound to (0 = five times the mouse override)
+	float keyYawScale = 0.0f;
 
 	if (cg.snap->ps.clientNum == 0 && cg_scaleVehicleSensitivity.integer != 0)
 	{
@@ -2663,6 +2807,11 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 		}
 	}
 
+	// In a vehicle the stick has a speed of its own: the mouse overrides above are not made for it.
+	const float vehicle_pitch_override = mPitchOverride;
+	const float vehicle_yaw_override = mYawOverride;
+	const auto vehicle_look = static_cast<qboolean>(mPitchOverride != 0.0f || mYawOverride != 0.0f);
+
 	// ---------------------------------------------------------
 	// Precision mode for joystick: slow aim when WALK held
 	// ---------------------------------------------------------
@@ -2691,8 +2840,22 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 		}
 	}
 
+	if (vehicle_look && in_joystick->integer
+		&& mPitchOverride == vehicle_pitch_override && mYawOverride == vehicle_yaw_override) // no precision mode
+	{
+		CG_VehicleStickLook(&keyPitchScale, &keyYawScale);
+		if (!mPitchOverride)
+		{
+			keyPitchScale = 0.0f;
+		}
+		if (!mYawOverride)
+		{
+			keyYawScale = 0.0f;
+		}
+	}
+
 	// Send weapon selection, speed, and mouse overrides to the engine.
-	cgi_SetUserCmdValue(cg.weaponSelect, speed, mPitchOverride, mYawOverride);
+	cgi_SetUserCmdValue(cg.weaponSelect, speed, mPitchOverride, mYawOverride, keyPitchScale, keyYawScale);
 
 	// This counter will be bumped for every valid scene we generate.
 	cg.clientFrame++;

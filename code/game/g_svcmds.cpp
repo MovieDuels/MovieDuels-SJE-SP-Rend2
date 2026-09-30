@@ -539,7 +539,21 @@ static void Svcmd_SaberAttackCycle_f()
 						WP_SaberAddG2SaberModels(self, qfalse);
 					}
 					WP_SaberAddHolsteredG2SaberModels(self, qtrue);
-					NPC_SetAnim(self, SETANIM_TORSO, BOTH_S6_S1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (SVC_Animationstyletable(self).isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_S6_S1_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_S6_S1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_S6_S1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 			}
 			else if (!self->client->ps.saber[0].ActiveManualOnly())

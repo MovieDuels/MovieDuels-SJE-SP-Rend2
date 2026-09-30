@@ -202,7 +202,8 @@ constexpr auto MAX_WALL_RUN_Z_NORMAL = 0.4f; //was 0.0f;
 
 //KNOCKDOWN HOLD
 constexpr auto PLAYER_KNOCKDOWN_HOLD_EXTRA_TIME = 300;
-constexpr auto NPC_KNOCKDOWN_HOLD_EXTRA_TIME = 400;
+//how long an NPC stays on the ground after a kick or a push (G_Knockdown) knocked it down, before it gets up
+constexpr auto NPC_KNOCKDOWN_HOLD_EXTRA_TIME = 1500;
 //KNOCKOVERHOLD
 constexpr auto PLAYER_KNOCKOVER_HOLD_EXTRA_TIME = 300;
 constexpr auto NPC_KNOCKOVER_HOLD_EXTRA_TIME = 400;
@@ -345,8 +346,10 @@ using saberMoveName_t = enum saberMoveName_t
 	LS_DRAW,
 	LS_DRAW_YODA,
 	LS_DRAW_VADER,
+	LS_DRAW_GALEN,
 	LS_PUTAWAY,
 	LS_PUTAWAY_VADER,
+	LS_PUTAWAY_GALEN,
 	LS_PUTAWAY_YODA, // keep last of the draw/putaway moves: code uses "> LS_PUTAWAY_YODA" for "past them"
 
 	// Attacks

@@ -44,6 +44,10 @@ constexpr auto HEAD_ANGLE_RANGE = 90;
 
 constexpr auto SPF_TURRETG2_TURBO = 4;
 constexpr auto SPF_TURRETG2_LEAD_ENEMY = 8;
+// misc_turretG2 only. That is the MP turret entity; its map spawnflags (START_OFF 1, UPSIDE_DOWN 2, CANRESPAWN 4,
+// TURBO 8, LEAD 16, SHOWRADAR 32) are turned into the flags of this file by SP_misc_turretG2.
+constexpr auto SPF_TURRETG2_CANRESPAWN = 16;
+constexpr auto SPF_TURRETG2_MP_RULES = 32; // works as in MP: finds its own enemies (also as a turbolaser), can be destroyed
 
 #define name "models/map_objects/imp_mine/turret_canon.glm"
 #define name2 "models/map_objects/imp_mine/turret_damage.md3"
@@ -104,7 +108,13 @@ void turret_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 
 	if (self->spawnflags & SPF_TURRETG2_TURBO)
 	{
-		G_PlayEffect(G_EffectIndex("explosions/fighter_explosion2"), self->currentOrigin, self->currentAngles);
+		//(a direction is wanted here; it was given the turret's angles, which are 0 0 0 for most: no direction at all)
+		vec3_t up = { 0, 0, 1 };
+		if (self->spawnflags & 2)
+		{
+			up[2] = -1;
+		}
+		G_PlayEffect(G_EffectIndex("explosions/fighter_explosion2"), self->currentOrigin, up);
 	}
 	else
 	{
@@ -140,10 +150,60 @@ void turret_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 		{
 			G_UseTargets(self, attacker);
 		}
+
+		if (self->spawnflags & SPF_TURRETG2_CANRESPAWN)
+		{
+			//a misc_turretG2 that comes back after "count" ms (turret_base_think)
+			self->e_ThinkFunc = thinkF_turret_base_think;
+			self->nextthink = level.time + self->count;
+		}
 	}
 	else
 	{
 		ObjectDie(self, attacker);
+	}
+}
+
+// A destroyed misc_turretG2 with CANRESPAWN is back: working model, full health, on.
+static void turretG2_respawn(gentity_t* self)
+{
+	self->e_UseFunc = useF_turret_base_use;
+	self->e_PainFunc = painF_TurretPain;
+	self->e_DieFunc = dieF_turret_die;
+	self->takedamage = qtrue;
+	self->health = self->max_health;
+	self->enemy = nullptr;
+
+	self->s.modelindex = G_ModelIndex(name); //the damage model was swapped in when it died
+	if (self->s.eFlags & EF_SHADER_ANIM)
+	{
+		self->s.frame = 0; // glow
+	}
+	self->s.weapon = WP_TURRET; // crosshair code uses this to mark crosshair red
+
+	self->nextthink = level.time + FRAMETIME;
+}
+
+// The team a turret sees a target as: a ship counts as its pilot's.
+static team_t turret_target_team(const gentity_t* target)
+{
+	if (target->m_pVehicle && target->m_pVehicle->m_pPilot && target->m_pVehicle->m_pPilot->client)
+	{
+		return target->m_pVehicle->m_pPilot->client->playerTeam;
+	}
+	return target->client->playerTeam;
+}
+
+// Where a turret aims at / looks for a target: a ship has no eyes, use its middle.
+static void turret_target_point(const gentity_t* target, vec3_t point)
+{
+	if (target->client && !target->m_pVehicle)
+	{
+		VectorCopy(target->client->renderInfo.eyePoint, point);
+	}
+	else
+	{
+		VectorCopy(target->currentOrigin, point);
 	}
 }
 
@@ -200,7 +260,7 @@ static void turret_fire(gentity_t* ent, vec3_t start, vec3_t dir)
 	if (ent->spawnflags & SPF_TURRETG2_TURBO)
 	{
 		//muzzle flash
-		G_PlayEffect(G_EffectIndex("turret/turb_muzzle_flash"), org, ang);
+		G_PlayEffect(G_EffectIndex("turret/turb_muzzle_flash"), org, dir); //(was given the angles as a direction)
 		G_SoundOnEnt(ent, CHAN_LESS_ATTEN, "sound/vehicles/weapons/turbolaser/fire1");
 
 		WP_FireTurboLaserMissile(ent, start, dir);
@@ -363,14 +423,7 @@ static void turret_aim(gentity_t* self)
 		vec3_t enemy_dir;
 		// ...then we'll calculate what new aim adjustments we should attempt to make this frame
 		// Aim at enemy
-		if (self->enemy->client)
-		{
-			VectorCopy(self->enemy->client->renderInfo.eyePoint, org);
-		}
-		else
-		{
-			VectorCopy(self->enemy->currentOrigin, org);
-		}
+		turret_target_point(self->enemy, org);
 		if (self->spawnflags & 2)
 		{
 			org[2] -= 15;
@@ -378,6 +431,23 @@ static void turret_aim(gentity_t* self)
 		else
 		{
 			org[2] -= 5;
+		}
+
+		if (self->spawnflags & SPF_TURRETG2_LEAD_ENEMY && self->spawnflags & SPF_TURRETG2_MP_RULES && self->mass > 0)
+		{
+			//aim ahead of a moving target, by as much as it moves while the shot is on its way (as in MP)
+			vec3_t diff, velocity;
+			VectorSubtract(org, self->s.origin, diff);
+			const float dist = VectorNormalize(diff);
+			if (self->enemy->client)
+			{
+				VectorCopy(self->enemy->client->ps.velocity, velocity);
+			}
+			else
+			{
+				VectorCopy(self->enemy->s.pos.trDelta, velocity);
+			}
+			VectorMA(org, dist / self->mass, velocity, org);
 		}
 		mdxaBone_t bolt_matrix;
 
@@ -472,7 +542,9 @@ static void turret_aim(gentity_t* self)
 
 	if (diff_yaw || diff_pitch)
 	{
-		self->s.loopSound = G_SoundIndex("sound/chars/turret/move.wav");
+		self->s.loopSound = G_SoundIndex(self->spawnflags & SPF_TURRETG2_TURBO
+			? "sound/vehicles/weapons/turbolaser/turn.wav"
+			: "sound/chars/turret/move.wav");
 	}
 	else
 	{
@@ -496,7 +568,10 @@ static void turret_turnoff(gentity_t* self)
 	}
 
 	// shut-down sound
-	G_Sound(self, G_SoundIndex("sound/chars/turret/shutdown.wav"));
+	if (!(self->spawnflags & SPF_TURRETG2_TURBO))
+	{
+		G_Sound(self, G_SoundIndex("sound/chars/turret/shutdown.wav"));
+	}
 
 	// make turret play ping sound for 5 seconds
 	self->aimDebounceTime = level.time + 5000;
@@ -516,8 +591,9 @@ static qboolean turret_find_enemies(gentity_t* self)
 		return qfalse;
 	}
 
-	// HACK for t2_wedge!!!
-	if ((self->spawnflags & SPF_TURRETG2_TURBO) != 0)
+	// HACK for t2_wedge!!! (misc_turret turbolasers get their enemies from scripts; a misc_turretG2 finds its own)
+	const auto mp_rules = static_cast<qboolean>((self->spawnflags & SPF_TURRETG2_MP_RULES) != 0);
+	if ((self->spawnflags & SPF_TURRETG2_TURBO) != 0 && !mp_rules)
 	{
 		return qfalse;
 	}
@@ -542,7 +618,10 @@ static qboolean turret_find_enemies(gentity_t* self)
 	{
 		if (self->painDebounceTime < level.time)
 		{
-			G_Sound(self, G_SoundIndex("sound/chars/turret/ping.wav"));
+			if (!(self->spawnflags & SPF_TURRETG2_TURBO))
+			{
+				G_Sound(self, G_SoundIndex("sound/chars/turret/ping.wav"));
+			}
 			self->painDebounceTime = level.time + 1000;
 		}
 	}
@@ -586,7 +665,32 @@ static qboolean turret_find_enemies(gentity_t* self)
 		}
 
 		// Team filtering
-		if (target->client->playerTeam == self->noDamageTeam)
+		if (mp_rules)
+		{
+			if (target->m_pVehicle)
+			{
+				//a ship: only with someone in it, and he counts (his team, notarget)
+				const gentity_t* pilot = target->m_pVehicle->m_pPilot;
+				if (!pilot || pilot->flags & FL_NOTARGET)
+				{
+					continue;
+				}
+			}
+			else if (target->s.m_iVehicleNum)
+			{
+				//someone inside a closed ship: the ship is the target
+				const gentity_t* veh = &g_entities[target->s.m_iVehicleNum];
+				if (veh->m_pVehicle && veh->m_pVehicle->m_pVehicleInfo->hideRider)
+				{
+					continue;
+				}
+			}
+			if (turret_target_team(target) == self->noDamageTeam)
+			{
+				continue;
+			}
+		}
+		else if (target->client->playerTeam == self->noDamageTeam)
 		{
 			continue;
 		}
@@ -600,7 +704,7 @@ static qboolean turret_find_enemies(gentity_t* self)
 		// -----------------------------------------------------------------
 		// Aim at target's eye point
 		// -----------------------------------------------------------------
-		VectorCopy(target->client->renderInfo.eyePoint, org);
+		turret_target_point(target, org);
 
 		if ((self->spawnflags & 2) != 0)
 		{
@@ -632,7 +736,10 @@ static qboolean turret_find_enemies(gentity_t* self)
 				// Startup sound if turret was idle
 				if (self->attackDebounceTime < level.time)
 				{
-					G_Sound(self, G_SoundIndex("sound/chars/turret/startup.wav"));
+					if (!(self->spawnflags & SPF_TURRETG2_TURBO))
+					{
+						G_Sound(self, G_SoundIndex("sound/chars/turret/startup.wav"));
+					}
 					self->attackDebounceTime = level.time + 1400;
 				}
 
@@ -674,6 +781,16 @@ void turret_base_think(gentity_t* self)
 
 	self->nextthink = level.time + FRAMETIME;
 
+	if (self->health <= 0)
+	{
+		//destroyed: only a misc_turretG2 that can respawn still thinks, when its time is up (turret_die)
+		if (self->spawnflags & SPF_TURRETG2_CANRESPAWN)
+		{
+			turretG2_respawn(self);
+		}
+		return;
+	}
+
 	if (self->spawnflags & 1)
 	{
 		// not turned on
@@ -706,35 +823,32 @@ void turret_base_think(gentity_t* self)
 			if (enemy_dist < self->radius * self->radius)
 			{
 				// was in valid radius
-				if (gi.inPVS(self->currentOrigin, self->enemy->currentOrigin))
+				vec3_t org2;
+
+				// Look from where turret_find_enemies looks from, a little way out of the base, and not from the origin.
+				// That is where the turret is mounted, on (or in) the ceiling, or the floor for an upside-down one, so
+				// it can be on the solid side. Nothing is in the PVS of a point in solid: such a turret gave up the
+				// enemy it had just found every two seconds, found it again at once and took its 1.4 seconds to start
+				// up again.
+				VectorCopy(self->currentOrigin, org2);
+				if (!(self->spawnflags & SPF_TURRETG2_TURBO) || self->spawnflags & SPF_TURRETG2_MP_RULES)
 				{
-					vec3_t org2;
+					//(not the turbolaser a script aims: that one never looks for an enemy, and is left as it was)
+					org2[2] += self->spawnflags & 2 ? 20.0f : -20.0f;
+				}
+
+				if (gi.inPVS(org2, self->enemy->currentOrigin))
+				{
 					vec3_t org;
 					// Every now and again, check to see if we can even trace to the enemy
 					trace_t tr;
 
-					if (self->enemy->client)
-					{
-						VectorCopy(self->enemy->client->renderInfo.eyePoint, org);
-					}
-					else
-					{
-						VectorCopy(self->enemy->currentOrigin, org);
-					}
-					VectorCopy(self->currentOrigin, org2);
-					if (self->spawnflags & 2)
-					{
-						org2[2] += 10;
-					}
-					else
-					{
-						org2[2] -= 10;
-					}
+					turret_target_point(self->enemy, org);
 					gi.trace(&tr, org2, nullptr, nullptr, org, self->s.number, MASK_SHOT, static_cast<EG2_Collision>(0),
 						0);
 
-					if (self->spawnflags & SPF_TURRETG2_TURBO || !tr.allsolid && !tr.startsolid && tr.entityNum == self
-						->enemy->s.number)
+					if (self->spawnflags & SPF_TURRETG2_TURBO && !(self->spawnflags & SPF_TURRETG2_MP_RULES)
+						|| !tr.allsolid && !tr.startsolid && tr.entityNum == self->enemy->s.number)
 					{
 						turn_off = qfalse; // Can see our enemy
 					}
@@ -912,6 +1026,236 @@ void SP_misc_turret(gentity_t* base)
 		base->s.genericenemyindex = G_IconIndex(s);
 	}
 	base->s.eFlags |= EF_SHADER_ANIM;
+}
+
+static void turretG2_set_models(gentity_t* self, qboolean dying)
+{
+	if (dying)
+	{
+		if (!(self->spawnflags & SPF_TURRETG2_TURBO))
+		{
+			self->s.modelindex = G_ModelIndex(name2);
+			self->s.modelindex2 = G_ModelIndex(name);
+		}
+
+		gi.G2API_RemoveGhoul2Model(self->ghoul2, 0);
+	}
+	else
+	{
+		if (!(self->spawnflags & SPF_TURRETG2_TURBO))
+		{
+			self->s.modelindex = G_ModelIndex(name);
+			self->s.modelindex2 = G_ModelIndex(name2);
+			//set the new onw
+			gi.G2API_InitGhoul2Model(self->ghoul2,
+				name,
+				0, //base->s.modelindex,
+				//note, this is not the same kind of index - this one's referring to the actual
+				//index of the model in the g2 instance, whereas modelindex is the index of a
+				//configstring -rww
+				0,
+				0,
+				0,
+				0);
+		}
+		else
+		{
+			self->s.modelindex = G_ModelIndex(name3);
+			//set the new onw
+			gi.G2API_InitGhoul2Model(self->ghoul2,
+				name3,
+				0, //base->s.modelindex,
+				//note, this is not the same kind of index - this one's referring to the actual
+				//index of the model in the g2 instance, whereas modelindex is the index of a
+				//configstring -rww
+				0,
+				0,
+				0,
+				0);
+		}
+
+		/*self->s.modelGhoul2 = 1;
+		if ( (self->spawnflags&SPF_TURRETG2_TURBO) )
+		{//larger
+			self->s.g2radius = 128;
+		}
+		else
+		{
+			self->s.g2radius = 80;
+		}*/
+
+		if ((self->spawnflags & SPF_TURRETG2_TURBO))
+		{//different pitch bone and muzzle flash points
+			turret_SetBoneAngles(self, "pitch", vec3_origin);
+			//self->genericValue11 = gi.G2API_AddBolt( self->ghoul2, 0, "*muzzle1" );
+			//self->genericValue12 = gi.G2API_AddBolt( self->ghoul2, 0, "*muzzle2" );
+		}
+		else
+		{
+			turret_SetBoneAngles(self, "Bone_body", vec3_origin);
+			//self->genericValue11 = gi.G2API_AddBolt( self->ghoul2, 0, "*flash03" );
+		}
+	}
+}
+
+/*QUAKED misc_turretG2 (1 0 0) (-8 -8 -22) (8 8 0) START_OFF UPSIDE_DOWN CANRESPAWN TURBO LEAD SHOWRADAR
+The turret of the MP maps, working here as it does there: it finds its own enemies (also as a turbolaser), it can be
+destroyed, and it takes the MP keys.
+
+  START_OFF - Starts off
+  UPSIDE_DOWN - make it rest on a surface/floor instead of hanging from the ceiling
+  CANRESPAWN - will respawn after being killed (use count). Not the turbolaser: that one is gone for good.
+  TURBO - Big-ass, Boxy Death Star Turbo Laser version
+  LEAD - Turret will aim ahead of moving targets ("lead" them)
+  SHOWRADAR - show on radar
+
+  radius - How far away an enemy can be for it to pick it up (default 512, turbolaser 32768)
+  wait	- Time between shots (default 150 ms, turbolaser 1000)
+  dmg	- How much damage each shot does (default 5, turbolaser 500)
+  health - How much damage it can take before exploding (default 100, turbolaser 2000)
+  count - if CANRESPAWN spawnflag, decides how long it is before gun respawns (in ms) - defaults to 20000 (20 seconds)
+  random - random error (in degrees) of projectile direction when it comes out of the muzzle (turbolaser only, default 2)
+  shotspeed - the speed of the missile a turbolaser fires (default 20000)
+
+  splashDamage - How much damage the explosion does
+  splashRadius - The radius of the explosion
+
+  targetname - Toggles it on/off
+  target - What to use when destroyed
+  target2 - What to use when it decides to start shooting at an enemy
+
+  alliedTeam - team that this turret won't target and takes no damage from (teamnodmg is read the same way)
+	0 - none given: "team", else the enemy's
+	1 - red: the enemy's
+	2 - blue: the player's
+
+  customscale - custom scaling size. 100 is normal size, 1024 is the max scaling. this will change the bounding box size, so be careful of starting in solid!
+
+"icon" - icon that represents the objective on the radar
+*/
+//-----------------------------------------------------
+void SP_misc_turretG2(gentity_t* base)
+//-----------------------------------------------------
+{
+	char* s;
+	int custom_scale, allied_team;
+
+	//the map has the MP spawnflags; from here on the turret code wants its own
+	const int map_flags = base->spawnflags;
+	const auto turbo = static_cast<qboolean>((map_flags & 8) != 0);
+	const auto show_radar = static_cast<qboolean>((map_flags & 32) != 0);
+
+	base->spawnflags = map_flags & 3 | SPF_TURRETG2_MP_RULES;
+	if (turbo)
+	{
+		base->spawnflags |= SPF_TURRETG2_TURBO;
+	}
+	if (map_flags & 16)
+	{
+		base->spawnflags |= SPF_TURRETG2_LEAD_ENEMY;
+	}
+	if (map_flags & 4)
+	{
+		base->spawnflags |= SPF_TURRETG2_CANRESPAWN;
+	}
+
+	//finish_spawning_turret has the SP turbolaser's values as defaults, and uses count for something else
+	const int respawn_time = base->count ? base->count : 20000;
+	const auto map_wait = static_cast<qboolean>(base->wait != 0);
+	const auto map_damage = static_cast<qboolean>(base->damage != 0);
+
+	turretG2_set_models(base, qfalse);
+
+	if (!turbo)
+	{
+		base->torsoBolt = gi.G2API_AddBolt(&base->ghoul2[0], "*flash03");
+	}
+
+	G_SpawnString("icon", "", &s);
+
+	if (s && s[0])
+	{
+		// We have an icon, so index it now.  We are reusing the genericenemyindex
+		// variable rather than adding a new one to the entity state.
+		base->s.genericenemyindex = G_IconIndex(s);
+	}
+	finish_spawning_turret(base);
+
+	base->count = respawn_time;
+
+	G_SpawnInt("alliedTeam", "0", &allied_team);
+	if (!allied_team)
+	{
+		G_SpawnInt("teamnodmg", "0", &allied_team);
+	}
+	if (allied_team == 1)
+	{
+		base->noDamageTeam = TEAM_ENEMY;
+	}
+	else if (allied_team == 2)
+	{
+		base->noDamageTeam = TEAM_PLAYER;
+	}
+
+	G_SpawnInt("customscale", "0", &custom_scale);
+	if (custom_scale > 1023)
+	{
+		custom_scale = 1023;
+	}
+	const float scale = custom_scale > 0 ? custom_scale / 100.0f : 1.0f;
+
+	if (turbo)
+	{
+		//the SP turbolaser is scenery that a script aims: twice the size, no team, can't be hurt
+		G_SpawnFloat("shotspeed", "20000", &base->mass);
+		if (!map_wait)
+		{
+			base->wait = 1000;
+		}
+		if (!map_damage)
+		{
+			base->damage = 500;
+		}
+
+		if (allied_team != 1 && allied_team != 2)
+		{
+			base->noDamageTeam = TEAM_ENEMY;
+		}
+		base->flags &= ~FL_DMG_BY_HEAVY_WEAP_ONLY;
+		base->takedamage = qtrue;
+
+		VectorSet(base->maxs, 64.0f, 64.0f, 30.0f);
+		VectorSet(base->mins, -64.0f, -64.0f, -30.0f);
+		base->s.radius = 128 * scale;
+	}
+	else
+	{
+		base->mass = 1100; //what its bolt flies at (turret_fire), for leading a target
+	}
+
+	if (custom_scale > 0 || turbo)
+	{
+		//the scale is for what is drawn (s.) and for where the muzzle is
+		VectorSet(base->s.modelScale, scale, scale, scale);
+		VectorSet(base->modelScale, scale, scale, scale);
+		VectorScale(base->mins, scale, base->mins);
+		VectorScale(base->maxs, scale, base->maxs);
+		gi.linkentity(base);
+	}
+
+	if (base->spawnflags & 1) // Start_Off
+	{
+		base->s.frame = 1; // black
+	}
+	else
+	{
+		base->s.frame = 0; // glow
+	}
+	base->s.eFlags |= EF_SHADER_ANIM;
+	if (show_radar)
+	{
+		base->s.eFlags2 |= EF2_RADAROBJECT;
+	}
 }
 
 //-----------------------------------------------------

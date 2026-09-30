@@ -41,6 +41,7 @@ cvar_t* in_joystick = nullptr;
 static cvar_t* in_joystickThreshold = nullptr;
 static cvar_t* in_joystickNo = nullptr;
 static cvar_t* in_joystickUseAnalog = nullptr;
+static cvar_t* in_joystickMenuSpeed = nullptr;
 
 cvar_t* j_pitch;
 cvar_t* j_yaw;
@@ -719,6 +720,8 @@ static void IN_InitJoystick(void)
 	// ---------------------------------------------------------
 	in_joystickUseAnalog = Cvar_Get("in_joystickUseAnalog", "0", CVAR_ARCHIVE_ND);
 	in_joystickThreshold = Cvar_Get("joy_threshold", "0.378125", CVAR_ARCHIVE_ND);
+	// how fast a stick moves the menu pointer when pushed all the way: menu pixels (640x480) per second
+	in_joystickMenuSpeed = Cvar_Get("in_joystickMenuSpeed", "520", CVAR_ARCHIVE_ND);
 
 	j_pitch = Cvar_Get("j_pitch", "0.022", CVAR_ARCHIVE_ND);
 	j_yaw = Cvar_Get("j_yaw", "-0.022", CVAR_ARCHIVE_ND);
@@ -1119,6 +1122,31 @@ static void IN_ProcessEvents()
 			}
 			break;
 
+		case SDL_JOYDEVICEADDED:
+		case SDL_CONTROLLERDEVICEADDED:
+			// a controller was plugged in while the game runs: use it, if none is in use
+			// (SDL also sends these at startup for the ones that are already there)
+			if (in_joystick && in_joystick->integer && !stick)
+			{
+				IN_InitJoystick();
+				if (stick)
+				{
+					Com_Printf("Controller connected: %s\n", SDL_JoystickName(stick));
+				}
+			}
+			break;
+
+		case SDL_JOYDEVICEREMOVED:
+		case SDL_CONTROLLERDEVICEREMOVED:
+			// ours was unplugged: let go of whatever it held down, and fall back to another one if there is one
+			if (stick && !SDL_JoystickGetAttached(stick))
+			{
+				Com_Printf("Controller disconnected.\n");
+				Key_ClearStates();
+				IN_InitJoystick();
+			}
+			break;
+
 		default:
 			break;
 		}
@@ -1195,6 +1223,73 @@ static qboolean KeyToAxisAndSign(int keynum, int* outAxis, int* outSign)
 
 /*
 ===============
+IN_GamepadMenuPointer
+
+While a menu is up, a stick moves its pointer the way a mouse does: either stick, and the further it is
+pushed, the faster. (The buttons become clicks and menu keys in the UI itself: see UI_GamepadMenuKey.)
+===============
+*/
+static void IN_GamepadMenuPointer()
+{
+	static int last_time = 0;
+	static float rest_x = 0.0f, rest_y = 0.0f; // fractions of a pixel, carried over to the next frame
+
+	const int now = Sys_Milliseconds();
+	float seconds = static_cast<float>(now - last_time) * 0.001f;
+	last_time = now;
+	if (seconds > 0.1f)
+	{
+		seconds = 0.1f; // first frame, or a hitch: no jump
+	}
+
+	if (seconds <= 0.0f || !(Key_GetCatcher() & KEYCATCH_UI) || Key_GetCatcher() & KEYCATCH_CONSOLE)
+	{
+		rest_x = rest_y = 0.0f;
+		return;
+	}
+
+	// the stick that is pushed further
+	float x = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTX)) / 32767.0f;
+	float y = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTY)) / 32767.0f;
+	const float rx = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTX)) / 32767.0f;
+	const float ry = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTY)) / 32767.0f;
+	if (rx * rx + ry * ry > x * x + y * y)
+	{
+		x = rx;
+		y = ry;
+	}
+
+	const float tilt = sqrtf(x * x + y * y);
+	const float dead = in_joystickThreshold->value;
+	if (tilt <= dead || dead >= 1.0f)
+	{
+		rest_x = rest_y = 0.0f;
+		return;
+	}
+
+	// 0..1 outside the dead zone, squared: a small push moves the pointer slowly enough to aim at a button
+	float amount = (tilt - dead) / (1.0f - dead);
+	if (amount > 1.0f)
+	{
+		amount = 1.0f;
+	}
+	const float speed = in_joystickMenuSpeed->value * amount * amount; // menu pixels (640x480) per second
+
+	rest_x += x / tilt * speed * seconds;
+	rest_y += y / tilt * speed * seconds;
+	const int dx = static_cast<int>(rest_x);
+	const int dy = static_cast<int>(rest_y);
+	rest_x -= static_cast<float>(dx);
+	rest_y -= static_cast<float>(dy);
+
+	if (dx || dy)
+	{
+		Sys_QueEvent(0, SE_MOUSE, dx, dy, 0, nullptr);
+	}
+}
+
+/*
+===============
 IN_GamepadMove
 ===============
 */
@@ -1210,6 +1305,8 @@ static void IN_GamepadMove(void)
 	}
 
 	SDL_GameControllerUpdate();
+
+	IN_GamepadMenuPointer();
 
 	// check buttons
 	for (i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++)

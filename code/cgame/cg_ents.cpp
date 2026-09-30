@@ -1594,7 +1594,7 @@ constexpr auto DOOR_CLOSING = 2;
 constexpr auto DOOR_OPEN = 3;
 constexpr auto DOOR_CLOSED = 4;
 
-static void CG_Mover(const centity_t* cent)
+static void CG_Mover(centity_t* cent)
 {
 	refEntity_t ent;
 
@@ -1603,57 +1603,50 @@ static void CG_Mover(const centity_t* cent)
 	// create the render entity
 	memset(&ent, 0, sizeof ent);
 
-	//if ((cent->currentState.eFlags2 & EF2_HYPERSPACE))
-	//{
-	//	//I'm the hyperspace brush
-	//	constexpr qboolean drawMe = qfalse;
+	if (cent->currentState.eFlags2 & EF2_HYPERSPACE)
+	{
+		//I'm the hyperspace brush: only drawn while my vehicle is in hyperspace (ported from
+		//SerenityJediEngine2026; it was commented out, so the brush was always drawn)
+		qboolean draw_me = qfalse;
+		// Hyperspace time and flag live on the vehicle I ride (MP: cg.predictedVehicleState), not on this brush
+		const playerState_t* veh_ps = CG_MyVehiclePS();
 
-	//	//if (cg.predictedPlayerState.m_iVehicleNum
-	//	//	&& cent->gent->s.hyperSpaceTime
-	//	//	&& (cg.time - cent->gent->s.hyperSpaceTime) < HYPERSPACE_TIME
-	//	//	&& (cg.time - cent->gent->s.hyperSpaceTime) > 1000)
-	//	//{
-	//	//	if ((cent->gent->s.eFlags2 & EF2_HYPERSPACE))
-	//	//	{//actually hyperspacing now
-	//	//		float timeFrac = ((float)(cg.time - cent->gent->s.hyperSpaceTime - 1000)) / (HYPERSPACE_TIME - 1000);
-	//	//		if (timeFrac < (HYPERSPACE_TELEPORT_FRAC + 0.1f))
-	//	//		{//still in hyperspace or just popped out
-	//	//			const float	alpha = timeFrac < 0.5f ? timeFrac / 0.5f : 1.0f;
-	//	//			drawMe = qtrue;
-	//	//			VectorMA(cg.refdef.vieworg, 1000.0f + ((1.0f - timeFrac) * 1000.0f), cg.refdef.viewaxis[0], cent->lerpOrigin);
-	//	//			VectorSet(cent->lerpAngles, cg.refdef.viewangles[PITCH], cg.refdef.viewangles[YAW] - 90.0f, 0);
-	//	//			ent.shaderRGBA[0] = ent.shaderRGBA[1] = ent.shaderRGBA[2] = 255;
-	//	//			ent.shaderRGBA[3] = alpha * 255;
-	//	//		}
-	//	//	}
-	//	//}
-
-	//	//if (cg.predictedPlayerState.m_iVehicleNum
-	//	//	&& cg.predictedVehicleState.hyperSpaceTime
-	//	//	&& (cg.time - cg.predictedVehicleState.hyperSpaceTime) < HYPERSPACE_TIME
-	//	//	&& (cg.time - cg.predictedVehicleState.hyperSpaceTime) > 1000)
-	//	//{
-	//	//	if ((cg.predictedVehicleState.eFlags2 & EF2_HYPERSPACE))
-	//	//	{//actually hyperspacing now
-	//	//		float timeFrac = ((float)(cg.time - cg.predictedVehicleState.hyperSpaceTime - 1000)) / (HYPERSPACE_TIME - 1000);
-	//	//		if (timeFrac < (HYPERSPACE_TELEPORT_FRAC + 0.1f))
-	//	//		{//still in hyperspace or just popped out
-	//	//			const float	alpha = timeFrac < 0.5f ? timeFrac / 0.5f : 1.0f;
-	//	//			drawMe = qtrue;
-	//	//			VectorMA(cg.refdef.vieworg, 1000.0f + ((1.0f - timeFrac) * 1000.0f), cg.refdef.viewaxis[0], cent->lerpOrigin);
-	//	//			VectorSet(cent->lerpAngles, cg.refdef.viewangles[PITCH], cg.refdef.viewangles[YAW] - 90.0f, 0);
-	//	//			ent.shaderRGBA[0] = ent.shaderRGBA[1] = ent.shaderRGBA[2] = 255;
-	//	//			ent.shaderRGBA[3] = alpha * 255;
-	//	//		}
-	//	//	}
-	//	//}
-
-	//	if (!drawMe)
-	//	{
-	//		//else, never draw
-	//		return;
-	//	}
-	//}
+		if (veh_ps
+			&& veh_ps->hyperSpaceTime
+			&& cg.time - veh_ps->hyperSpaceTime < HYPERSPACE_TIME
+			&& cg.time - veh_ps->hyperSpaceTime > 1000)
+		{
+			if (cg.snap
+				&& cg.snap->ps.pm_type == PM_INTERMISSION)
+			{
+				//in the intermission, stop drawing hyperspace ent
+			}
+			else if (veh_ps->eFlags2 & EF2_HYPERSPACE)
+			{
+				//actually hyperspacing now
+				const float time_frac = static_cast<float>(cg.time - veh_ps->hyperSpaceTime - 1000) / (
+					HYPERSPACE_TIME - 1000);
+				if (time_frac < HYPERSPACE_TELEPORT_FRAC + 0.1f)
+				{
+					//still in hyperspace or just popped out
+					const float alpha = time_frac < 0.5f ? time_frac / 0.5f : 1.0f;
+					draw_me = qtrue;
+					VectorMA(cg.refdef.vieworg, 1000.0f + (1.0f - time_frac) * 1000.0f, cg.refdef.viewaxis[0],
+						cent->lerpOrigin);
+					// cg.refdefViewAngles: SP never fills in cg.refdef.viewangles (MP does), so the tunnel
+					// pointed along the map's X axis instead of along the view
+					VectorSet(cent->lerpAngles, cg.refdefViewAngles[PITCH], cg.refdefViewAngles[YAW] - 90.0f, 0);
+					ent.shaderRGBA[0] = ent.shaderRGBA[1] = ent.shaderRGBA[2] = 255;
+					ent.shaderRGBA[3] = alpha * 255;
+				}
+			}
+		}
+		if (!draw_me)
+		{
+			//else, never draw
+			return;
+		}
+	}
 
 	if (cent->currentState.eFlags2 & EF2_RADAROBJECT)
 	{

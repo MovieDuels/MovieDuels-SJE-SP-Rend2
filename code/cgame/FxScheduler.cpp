@@ -1858,6 +1858,11 @@ void CFxScheduler::CreateEffect(CPrimitiveTemplate* fx, const vec3_t origin, vec
 		// I'm calling this function ( at least for now ) because it handles projecting
 		//	the decal mark onto the surfaces properly.  This is especially important for large marks.
 		// The downside is that it's much less flexible....
+		if (VectorCompare(ax[0], vec3_origin))
+		{
+			//no direction to project it along (an impact that started inside something has no surface normal)
+			break;
+		}
 		CG_ImpactMark(fx->mMediaHandles.GetHandle(), org, ax[0], fx->mRotation.GetVal(),
 			s_rgb[0], s_rgb[1], s_rgb[2], fx->mAlphaStart.GetVal(),
 			qtrue, fx->mSizeStart.GetVal(), qfalse);

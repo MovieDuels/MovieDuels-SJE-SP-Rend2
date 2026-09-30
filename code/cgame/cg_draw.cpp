@@ -3487,7 +3487,13 @@ static void CG_DrawVehicleArmor(const Vehicle_t* p_veh)
 	}
 }
 
-static void CG_DrawVehicleAmmo(const Vehicle_t* p_veh)
+// A weapon of the vehicle is out of ammo (EV_NOAMMO): its bar flashes red for half a second, as in MP.
+int cg_vehicleAmmoWarning = 0;
+int cg_vehicleAmmoWarningTime = 0;
+
+// One ammo bar of the vehicle HUD: a background and its tics, for one of the two weapons.
+static void CG_DrawVehicleAmmoBar(const Vehicle_t* p_veh, const int weapon_num, const char* background_item,
+	const char* tic_item, const int num_tics)
 {
 	int x_pos, y_pos, width, height;
 	qhandle_t background;
@@ -3495,7 +3501,7 @@ static void CG_DrawVehicleAmmo(const Vehicle_t* p_veh)
 
 	if (cgi_UI_GetMenuItemInfo(
 		"swoopvehiclehud",
-		"ammobackground",
+		background_item,
 		&x_pos,
 		&y_pos,
 		&width,
@@ -3507,13 +3513,13 @@ static void CG_DrawVehicleAmmo(const Vehicle_t* p_veh)
 		CG_DrawPic(x_pos, y_pos, width, height, background);
 	}
 
-	const float max_ammo = p_veh->m_pVehicleInfo->weapon[0].ammoMax;
-	float curr_value = p_veh->weaponStatus[0].ammo;
+	const float max_ammo = p_veh->m_pVehicleInfo->weapon[weapon_num].ammoMax;
+	float curr_value = p_veh->weaponStatus[weapon_num].ammo;
 	const float inc = static_cast<float>(max_ammo) / MAX_VHUD_AMMO_TICS;
-	for (int i = 1; i <= MAX_VHUD_AMMO_TICS; i++)
+	for (int i = 1; i <= num_tics; i++)
 	{
 		char item_name[64];
-		Com_sprintf(item_name, sizeof item_name, "ammo_tic%d", i);
+		Com_sprintf(item_name, sizeof item_name, "%s%d", tic_item, i);
 
 		if (!cgi_UI_GetMenuItemInfo(
 			"swoopvehiclehud",
@@ -3528,16 +3534,24 @@ static void CG_DrawVehicleAmmo(const Vehicle_t* p_veh)
 			continue;
 		}
 
-		memcpy(calc_color, color, sizeof(vec4_t));
-
-		if (curr_value <= 0) // don't show tic
+		if (cg_vehicleAmmoWarningTime > cg.time && cg_vehicleAmmoWarning == weapon_num)
 		{
-			break;
+			memcpy(calc_color, colorTable[CT_RED], sizeof(vec4_t));
+			calc_color[3] = sin(cg.time * 0.005) * 0.5f + 0.5f;
 		}
-		if (curr_value < inc) // partial tic (alpha it out)
+		else
 		{
-			const float percent = curr_value / inc;
-			calc_color[3] *= percent; // Fade it out
+			memcpy(calc_color, color, sizeof(vec4_t));
+
+			if (curr_value <= 0) // don't show tic
+			{
+				break;
+			}
+			if (curr_value < inc) // partial tic (alpha it out)
+			{
+				const float percent = curr_value / inc;
+				calc_color[3] *= percent; // Fade it out
+			}
 		}
 
 		cgi_R_SetColor(calc_color);
@@ -3547,6 +3561,296 @@ static void CG_DrawVehicleAmmo(const Vehicle_t* p_veh)
 	}
 }
 
+// The ammo of the vehicle, as MP draws it: one bar for a vehicle with one weapon, an upper and a lower one for two.
+static void CG_DrawVehicleAmmo(const Vehicle_t* p_veh)
+{
+	if (p_veh->m_pVehicleInfo->weapon[0].ID && p_veh->m_pVehicleInfo->weapon[1].ID)
+	{
+		//(MP draws one tic less on these two bars than the menu has; kept, so that both look alike)
+		CG_DrawVehicleAmmoBar(p_veh, 0, "ammoupperbackground", "ammoupper_tic", MAX_VHUD_AMMO_TICS - 1);
+		CG_DrawVehicleAmmoBar(p_veh, 1, "ammolowerbackground", "ammolower_tic", MAX_VHUD_AMMO_TICS - 1);
+	}
+	else if (p_veh->m_pVehicleInfo->weapon[0].ID)
+	{
+		CG_DrawVehicleAmmoBar(p_veh, 0, "ammobackground", "ammo_tic", MAX_VHUD_AMMO_TICS);
+	}
+}
+
+// The "weapons linked" light of the vehicle HUD.
+static void CG_DrawVehicleWeaponsLinked(const Vehicle_t* p_veh)
+{
+	static qboolean cg_drawLink = qfalse;
+	auto draw_link = static_cast<qboolean>(p_veh->m_pVehicleInfo->weapon[0].linkable == 2
+		|| p_veh->m_pVehicleInfo->weapon[1].linkable == 2 //weapon is always linked
+		|| p_veh->weaponStatus[0].linked || p_veh->weaponStatus[1].linked);
+
+	if (cg_drawLink != draw_link)
+	{
+		//state changed, play sound
+		cg_drawLink = draw_link;
+		cgi_S_StartSound(nullptr, cg.snap->ps.clientNum, CHAN_LOCAL,
+			cgi_S_RegisterSound("sound/vehicles/common/linkweaps.wav"));
+	}
+
+	if (draw_link)
+	{
+		int x_pos, y_pos, width, height;
+		qhandle_t background;
+		vec4_t color;
+
+		if (cgi_UI_GetMenuItemInfo("swoopvehiclehud", "weaponslinked", &x_pos, &y_pos, &width, &height, color,
+			&background))
+		{
+			cgi_R_SetColor(colorTable[CT_CYAN]);
+			CG_DrawPic(x_pos, y_pos, width, height, cgs.media.whiteShader);
+		}
+	}
+}
+
+/*
+The ship's damage indicator, as in MP: a ring with the ship in four parts (green, yellow, red, grey as each part is hit)
+and its shields over it. One for the ship the player flies ("vehicledamagehud") and one for the ship under his crosshair
+("enemyvehicledamagehud").
+*/
+enum
+{
+	VEH_DAMAGE_FRONT = 0,
+	VEH_DAMAGE_BACK,
+	VEH_DAMAGE_LEFT,
+	VEH_DAMAGE_RIGHT,
+};
+
+struct veh_damage_t
+{
+	const char* itemName;
+	short heavyDamage;
+	short lightDamage;
+};
+
+static const veh_damage_t vehDamageData[4] =
+{
+	{"vehicle_front", SHIPSURF_DAMAGE_FRONT_HEAVY, SHIPSURF_DAMAGE_FRONT_LIGHT},
+	{"vehicle_back", SHIPSURF_DAMAGE_BACK_HEAVY, SHIPSURF_DAMAGE_BACK_LIGHT},
+	{"vehicle_left", SHIPSURF_DAMAGE_LEFT_HEAVY, SHIPSURF_DAMAGE_LEFT_LIGHT},
+	{"vehicle_right", SHIPSURF_DAMAGE_RIGHT_HEAVY, SHIPSURF_DAMAGE_RIGHT_LIGHT},
+};
+
+// A HUD image of a vehicle. The game reads the .veh file and cannot register shaders, so it keeps the name.
+static qhandle_t CG_VehicleHudShader(const char* shader_name)
+{
+	if (!shader_name || !shader_name[0])
+	{
+		return 0;
+	}
+	return cgi_R_RegisterShaderNoMip(shader_name);
+}
+
+// Draw health graphic for given part of vehicle
+static void CG_DrawVehicleDamage(const Vehicle_t* p_veh, const int broken_limbs, const char* menu_name, const float alpha,
+	const int index)
+{
+	int x_pos, y_pos, width, height;
+	vec4_t color;
+	qhandle_t background;
+
+	if (!cgi_UI_GetMenuItemInfo(menu_name, vehDamageData[index].itemName, &x_pos, &y_pos, &width, &height, color,
+		&background))
+	{
+		return;
+	}
+
+	int color_i;
+	if (broken_limbs & 1 << vehDamageData[index].heavyDamage)
+	{
+		color_i = CT_RED;
+		if (broken_limbs & 1 << vehDamageData[index].lightDamage)
+		{
+			color_i = CT_DKGREY;
+		}
+	}
+	else if (broken_limbs & 1 << vehDamageData[index].lightDamage)
+	{
+		color_i = CT_YELLOW;
+	}
+	else
+	{
+		color_i = CT_GREEN;
+	}
+
+	VectorCopy4(colorTable[color_i], color);
+	color[3] = alpha;
+	cgi_R_SetColor(color);
+
+	const char* graphic = nullptr;
+	switch (index)
+	{
+	case VEH_DAMAGE_FRONT:
+		graphic = p_veh->m_pVehicleInfo->iconFront;
+		break;
+	case VEH_DAMAGE_BACK:
+		graphic = p_veh->m_pVehicleInfo->iconBack;
+		break;
+	case VEH_DAMAGE_LEFT:
+		graphic = p_veh->m_pVehicleInfo->iconLeft;
+		break;
+	case VEH_DAMAGE_RIGHT:
+		graphic = p_veh->m_pVehicleInfo->iconRight;
+		break;
+	default:;
+	}
+
+	const qhandle_t graphic_handle = CG_VehicleHudShader(graphic);
+	if (graphic_handle)
+	{
+		CG_DrawPic(x_pos, y_pos, width, height, graphic_handle);
+	}
+}
+
+// Used on both damage indicators :  player vehicle and the vehicle the player is locked on
+static void CG_DrawVehicleDamageHUD(const Vehicle_t* p_veh, const float perc_shields, const char* menu_name,
+	const float alpha)
+{
+	int x_pos, y_pos, width, height;
+	vec4_t item_color, color;
+	qhandle_t background;
+	const gentity_t* veh = p_veh->m_pParentEntity;
+
+	if (!veh || !veh->client)
+	{
+		return;
+	}
+	const int broken_limbs = veh->client->ps.brokenLimbs;
+
+	qhandle_t shader = CG_VehicleHudShader(p_veh->m_pVehicleInfo->dmgIndicBackground);
+	if (shader && cgi_UI_GetMenuItemInfo(menu_name, "background", &x_pos, &y_pos, &width, &height, item_color,
+		&background))
+	{
+		const centity_t* veh_cent = &cg_entities[veh->s.number];
+		if (veh_cent->damageTime > cg.time)
+		{
+			//ship shields currently taking damage
+			float perc = 1.0f - (veh_cent->damageTime - cg.time) / 2000.0f/*MIN_SHIELD_TIME*/;
+			if (perc < 0.0f)
+			{
+				perc = 0.0f;
+			}
+			else if (perc > 1.0f)
+			{
+				perc = 1.0f;
+			}
+			color[0] = item_color[0]; //flash red
+			color[1] = item_color[1] * perc; //fade other colors back in over time
+			color[2] = item_color[2] * perc; //fade other colors back in over time
+			color[3] = item_color[3] * alpha;
+		}
+		else
+		{
+			VectorCopy4(item_color, color);
+			color[3] *= alpha;
+		}
+		cgi_R_SetColor(color);
+		CG_DrawPic(x_pos, y_pos, width, height, shader);
+	}
+
+	shader = CG_VehicleHudShader(p_veh->m_pVehicleInfo->dmgIndicFrame);
+	if (shader && cgi_UI_GetMenuItemInfo(menu_name, "outer_frame", &x_pos, &y_pos, &width, &height, item_color,
+		&background))
+	{
+		item_color[3] *= alpha;
+		cgi_R_SetColor(item_color);
+		CG_DrawPic(x_pos, y_pos, width, height, shader);
+	}
+
+	shader = CG_VehicleHudShader(p_veh->m_pVehicleInfo->dmgIndicShield);
+	if (shader && cgi_UI_GetMenuItemInfo(menu_name, "shields", &x_pos, &y_pos, &width, &height, item_color,
+		&background))
+	{
+		VectorCopy4(colorTable[CT_HUD_GREEN], color);
+		color[3] = perc_shields * alpha;
+		cgi_R_SetColor(color);
+		CG_DrawPic(x_pos, y_pos, width, height, shader);
+	}
+
+	//FIXME: when ship explodes, either stop drawing ship or draw all parts black
+	CG_DrawVehicleDamage(p_veh, broken_limbs, menu_name, alpha, VEH_DAMAGE_FRONT);
+	CG_DrawVehicleDamage(p_veh, broken_limbs, menu_name, alpha, VEH_DAMAGE_BACK);
+	CG_DrawVehicleDamage(p_veh, broken_limbs, menu_name, alpha, VEH_DAMAGE_LEFT);
+	CG_DrawVehicleDamage(p_veh, broken_limbs, menu_name, alpha, VEH_DAMAGE_RIGHT);
+
+	cgi_R_SetColor(nullptr);
+}
+
+// How full a ship's shields are, 0 to 1.
+static float CG_VehicleShieldFraction(const Vehicle_t* p_veh)
+{
+	if (p_veh->m_pVehicleInfo->shields <= 0)
+	{
+		return 0.0f;
+	}
+	const float perc = static_cast<float>(p_veh->m_iShields) / static_cast<float>(p_veh->m_pVehicleInfo->shields);
+	return perc < 0.0f ? 0.0f : perc > 1.0f ? 1.0f : perc;
+}
+
+static int cg_targVeh = ENTITYNUM_NONE;
+static int cg_targVehLastTime = 0;
+
+// The ship the player has targeted: the one his missile is locked on, or the one under (or lately under) his crosshair.
+static const Vehicle_t* CG_CheckTargetVehicle(const Vehicle_t* my_veh, float* alpha)
+{
+	int target_num = ENTITYNUM_NONE;
+
+	*alpha = 1.0f;
+
+	if (g_rocketLockEntNum > 0 && g_rocketLockEntNum < ENTITYNUM_WORLD)
+	{
+		target_num = g_rocketLockEntNum;
+	}
+	else if (g_crosshairEntNum > 0 && g_crosshairEntNum < ENTITYNUM_WORLD)
+	{
+		target_num = g_crosshairEntNum;
+	}
+
+	if (target_num < ENTITYNUM_WORLD)
+	{
+		const gentity_t* target = &g_entities[target_num];
+		if (target->inuse && target->client && !target->m_pVehicle && target->s.m_iVehicleNum)
+		{
+			//someone in a vehicle
+			target_num = target->s.m_iVehicleNum;
+			target = &g_entities[target_num];
+		}
+		if (target->inuse && target->client && target->health > 0
+			&& target->m_pVehicle && target->m_pVehicle != my_veh
+			&& target->m_pVehicle->m_pVehicleInfo
+			&& target->m_pVehicle->m_pVehicleInfo->type == VH_FIGHTER)
+		{
+			//it's a ship
+			cg_targVeh = target_num;
+			cg_targVehLastTime = cg.time;
+			return target->m_pVehicle;
+		}
+	}
+
+	if (cg_targVehLastTime && cg_targVeh < ENTITYNUM_WORLD
+		&& cg.time >= cg_targVehLastTime && cg.time - cg_targVehLastTime < 3000)
+	{
+		const gentity_t* target = &g_entities[cg_targVeh];
+		if (target->inuse && target->client && target->m_pVehicle && target->m_pVehicle != my_veh
+			&& target->m_pVehicle->m_pVehicleInfo)
+		{
+			//stay at full alpha for 1 sec after lose them from crosshair, then fade out over 2 secs
+			if (cg.time - cg_targVehLastTime >= 1000)
+			{
+				*alpha = 1.0f - (cg.time - cg_targVehLastTime - 1000) / 2000.0f;
+			}
+			return target->m_pVehicle;
+		}
+	}
+	cg_targVeh = ENTITYNUM_NONE;
+	cg_targVehLastTime = 0;
+	return nullptr;
+}
+
 static void CG_DrawVehicleHud(const centity_t* cent, const Vehicle_t* p_veh)
 {
 	int x_pos, y_pos, width, height;
@@ -3554,6 +3858,7 @@ static void CG_DrawVehicleHud(const centity_t* cent, const Vehicle_t* p_veh)
 	qhandle_t background;
 
 	CG_DrawVehicleTurboRecharge(p_veh);
+	CG_DrawVehicleWeaponsLinked(p_veh);
 
 	// Draw frame
 	if (cgi_UI_GetMenuItemInfo(
@@ -3591,6 +3896,21 @@ static void CG_DrawVehicleHud(const centity_t* cent, const Vehicle_t* p_veh)
 	CG_DrawVehicleArmor(p_veh);
 
 	CG_DrawVehicleAmmo(p_veh);
+
+	// If he's hidden, he must be in a ship
+	if (p_veh->m_pVehicleInfo->hideRider)
+	{
+		float alpha;
+
+		CG_DrawVehicleDamageHUD(p_veh, CG_VehicleShieldFraction(p_veh), "vehicledamagehud", 1.0f);
+
+		// Has he targeted an enemy?
+		const Vehicle_t* target_veh = CG_CheckTargetVehicle(p_veh, &alpha);
+		if (target_veh)
+		{
+			CG_DrawVehicleDamageHUD(target_veh, CG_VehicleShieldFraction(target_veh), "enemyvehicledamagehud", alpha);
+		}
+	}
 }
 
 static void CG_DrawTauntaunHud(const Vehicle_t* p_veh)
@@ -6434,6 +6754,18 @@ CROSSHAIR
 ================================================================================
 */
 
+extern Vehicle_t* G_IsRidingVehicle(const gentity_t* ent);
+
+// The ship the player is flying, if he sits hidden inside one: its guns are what the crosshair is for then.
+static const Vehicle_t* CG_PlayerInsideVehicle()
+{
+	if (cg_entities[0].gent && cg_entities[0].currentState.eFlags & EF_NODRAW)
+	{
+		return G_IsRidingVehicle(cg_entities[0].gent);
+	}
+	return nullptr;
+}
+
 /*
 =================
 CG_DrawCrosshair
@@ -6458,7 +6790,12 @@ static void CG_DrawCrosshair(vec3_t world_point)
 		return;
 	}
 
-	if (cg_adaptiveCrosshair.integer == 1 &&
+	//the adaptive crosshair hides it for a saber or empty hands; not in a ship, where those are not what is aimed
+	const Vehicle_t* ship = CG_PlayerInsideVehicle();
+	const auto in_ship = static_cast<qboolean>(ship != nullptr);
+	qhandle_t ship_reticle = 0;
+
+	if (cg_adaptiveCrosshair.integer == 1 && !in_ship &&
 		(cg.snap->ps.weapon == WP_SABER))
 	{
 		if ((holding_block == qfalse &&
@@ -6470,7 +6807,7 @@ static void CG_DrawCrosshair(vec3_t world_point)
 		}
 	}
 
-	if (cg_adaptiveCrosshair.integer == 1 &&
+	if (cg_adaptiveCrosshair.integer == 1 && !in_ship &&
 		(cg.snap->ps.weapon == WP_MELEE || cg.snap->ps.weapon == WP_NONE))
 	{
 		if ((holding_block_button == qfalse || holding_walking_button == qfalse) ||
@@ -6671,7 +7008,13 @@ static void CG_DrawCrosshair(vec3_t world_point)
 		}
 	}
 
-	if ((cg.snap->ps.weapon == WP_DUAL_PISTOL ||
+	if (in_ship)
+	{
+		//the ship's own reticle if it has one, and bigger in any ship, as in MP
+		ship_reticle = CG_VehicleHudShader(ship->m_pVehicleInfo->crosshairShader);
+		w = h = cg_crosshairSize.value * 2.0f;
+	}
+	else if ((cg.snap->ps.weapon == WP_DUAL_PISTOL ||
 		cg.snap->ps.weapon == WP_DUAL_CLONEPISTOL ||
 		cg.snap->ps.weapon == WP_BLASTER_PISTOL ||
 		cg.snap->ps.weapon == WP_REY ||
@@ -6727,6 +7070,10 @@ static void CG_DrawCrosshair(vec3_t world_point)
 			cgi_R_DrawStretchPic(x + cg.refdef.x + 320 - w, y + cg.refdef.y + 240 - h, w * 2, h * 2, 0, 0, 1, 1,
 				cgs.media.turretCrossHairShader);
 		}
+	}
+	else if (ship_reticle)
+	{
+		cgi_R_DrawStretchPic(x + cg.refdef.x + 0.5 * (640 - w), y + cg.refdef.y + 0.5 * (480 - h), w, h, 0, 0, 1, 1, ship_reticle);
 	}
 	else if ((cg.snap->ps.weapon == WP_DUAL_PISTOL ||
 		cg.snap->ps.weapon == WP_DUAL_CLONEPISTOL ||
@@ -7040,6 +7387,10 @@ CG_ScanForCrosshairEntity
 =================
 */
 extern float forcePushPullRadius[];
+
+// How far ahead of a ship the crosshair looks for what is under it (on foot: 4096).
+constexpr auto SHIP_CROSSHAIR_RANGE = 32768.0f;
+
 static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 {
 	trace_t trace;
@@ -7047,6 +7398,7 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 	vec3_t start, end;
 	int ignoreEnt = cg.snap->ps.clientNum;
 	const Vehicle_t* p_veh;
+	float range = 4096; //was 8192
 
 	//FIXME: debounce this to about 10fps?
 
@@ -7058,9 +7410,10 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 		vec3_t d_f, d_rt, d_up;
 
 		// If you're riding a vehicle and not being drawn.
-		if ((p_veh = G_IsRidingVehicle(cg_entities[0].gent)) != nullptr && cg_entities[0].currentState.eFlags &
-			EF_NODRAW)
+		if ((p_veh = CG_PlayerInsideVehicle()) != nullptr)
 		{
+			//the trace starts inside the ship
+			ignoreEnt = p_veh->m_pParentEntity->s.number;
 			VectorCopy(cg_entities[p_veh->m_pParentEntity->s.number].lerpOrigin, start);
 			AngleVectors(cg_entities[p_veh->m_pParentEntity->s.number].lerpAngles, d_f, d_rt, d_up);
 		}
@@ -7190,11 +7543,13 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 			//100% accurate
 			vec3_t d_f, d_rt, d_up;
 			// If you're riding a vehicle and not being drawn.
-			if ((p_veh = G_IsRidingVehicle(cg_entities[0].gent)) != nullptr && cg_entities[0].currentState.eFlags &
-				EF_NODRAW)
+			if ((p_veh = CG_PlayerInsideVehicle()) != nullptr)
 			{
+				//the trace starts inside the ship
+				ignoreEnt = p_veh->m_pParentEntity->s.number;
 				VectorCopy(cg_entities[p_veh->m_pParentEntity->s.number].lerpOrigin, start);
 				AngleVectors(cg_entities[p_veh->m_pParentEntity->s.number].lerpAngles, d_f, d_rt, d_up);
+				range = SHIP_CROSSHAIR_RANGE;
 			}
 			else if (cg.snap->ps.weapon == WP_NONE || cg.snap->ps.weapon == WP_SABER || cg.snap->ps.weapon ==
 				WP_STUN_BATON)
@@ -7226,7 +7581,7 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 			}
 			//VectorCopy( g_entities[0].client->renderInfo.muzzlePoint, start );
 			//FIXME: increase this?  Increase when zoom in?
-			VectorMA(start, 4096, d_f, end); //was 8192
+			VectorMA(start, range, d_f, end);
 		}
 		else
 		{
@@ -7268,7 +7623,7 @@ static void CG_ScanForCrosshairEntity(const qboolean scan_all)
 	CG_DrawCrosshair(trace.endpos);
 
 	g_crosshairEntNum = trace.entityNum;
-	g_crosshairEntDist = 4096 * trace.fraction;
+	g_crosshairEntDist = range * trace.fraction;
 
 	if (!traceEnt)
 	{

@@ -1028,9 +1028,11 @@ void PlayerStateToEntityState(playerState_t* ps, entityState_t* s);
 
 qboolean BG_PlayerTouchesItem(const playerState_t* ps, const entityState_t* item, int at_time);
 
-constexpr auto HYPERSPACE_TIME = 4000; //For hyperspace triggers;
+constexpr auto HYPERSPACE_TIME = 8000; //For hyperspace triggers (was 4000);
 constexpr auto HYPERSPACE_TELEPORT_FRAC = 0.75f;
-constexpr auto HYPERSPACE_SPEED = 10000.0f; //was 30000;
+//half of what it was (10000; 30000 before that): with twice the time (8000, was 4000) the ship would fly twice as
+//far before it is teleported, out of the far end of the trigger_hyperspace boxes of the maps, and never arrive
+constexpr auto HYPERSPACE_SPEED = 5000.0f;
 constexpr auto HYPERSPACE_TURN_RATE = 45.0f;
 
 qboolean PM_InLedgeMove(int anim);

@@ -1293,6 +1293,14 @@ static const netField_t playerStateFields[] =
 	{PSF(SaberSmashLastStartTime), 32 },
 	{PSF(Smash_Count), 32 },
 
+	// vehicles/hyperspace, as in SerenityJediEngine2026 and MP
+	{PSF(hyperSpaceTime), 32},
+	{PSF(hyperSpaceAngles[0]), 0},
+	{PSF(hyperSpaceAngles[1]), 0},
+	{PSF(hyperSpaceAngles[2]), 0},
+	// the vehicle this player rides (pilot) / the pilot number + 1 (vehicle), as in MP; cgame needs it
+	{PSF(m_iVehicleNum), GENTITYNUM_BITS},
+
 #endif // !JK2_MODE
 };
 

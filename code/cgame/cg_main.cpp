@@ -428,6 +428,9 @@ vmCvar_t cg_fovViewmodelAdjust;
 
 vmCvar_t cg_scaleVehicleSensitivity;
 vmCvar_t cg_scaleJoystickSensitivity;
+vmCvar_t cg_vehicleStickYaw;
+vmCvar_t cg_vehicleStickPitch;
+vmCvar_t cg_vehicleStickEaseIn;
 
 vmCvar_t cg_SFXSabers;
 vmCvar_t cg_SFXSabersGlowSize;
@@ -654,6 +657,11 @@ static cvarTable_t cvarTable[] = {
 
 	{&cg_scaleVehicleSensitivity, "cg_scaleVehicleSensitivity", "1", CVAR_ARCHIVE},
 	{&cg_scaleJoystickSensitivity, "cg_scaleJoystickSensitivity", "0", CVAR_ARCHIVE},
+	//how fast a stick (the look keys) turns the view in a vehicle, as a fraction of its speed on foot, and how many
+	//milliseconds a turn takes to come up to that speed (0 = at once)
+	{&cg_vehicleStickYaw, "cg_vehicleStickYaw", "0.3", CVAR_ARCHIVE},
+	{&cg_vehicleStickPitch, "cg_vehicleStickPitch", "0.22", CVAR_ARCHIVE},
+	{&cg_vehicleStickEaseIn, "cg_vehicleStickEaseIn", "400", CVAR_ARCHIVE},
 
 	{&cg_SFXSabers, "cg_SFXSabers", "4", CVAR_ARCHIVE},
 	{&cg_SFXSabersGlowSize, "cg_SFXSabersGlowSize", "1.0", CVAR_ARCHIVE},

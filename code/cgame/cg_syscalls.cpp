@@ -499,10 +499,10 @@ qboolean cgi_GetUserCmd(const int cmdNumber, usercmd_t* ucmd)
 }
 
 void cgi_SetUserCmdValue(const int stateValue, const float sensitivityScale, const float mPitchOverride,
-	const float mYawOverride)
+	const float mYawOverride, const float keyPitchScale, const float keyYawScale)
 {
 	Q_syscall(CG_SETUSERCMDVALUE, stateValue, PASSFLOAT(sensitivityScale), PASSFLOAT(mPitchOverride),
-		PASSFLOAT(mYawOverride));
+		PASSFLOAT(mYawOverride), PASSFLOAT(keyPitchScale), PASSFLOAT(keyYawScale), CG_USERCMDVALUE_KEYLOOK);
 }
 
 void cgi_SetUserCmdAngles(const float pitchOverride, const float yawOverride, const float rollOverride)

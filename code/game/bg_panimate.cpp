@@ -205,8 +205,10 @@ saber_moveData_t saberMoveData[LS_MOVE_MAX] = {
 	{"Draw", BOTH_STAND1TO2, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW,
 	{"Draw_YODA", BOTH_STAND1TO2_YODA, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW_YODA,
 	{"Draw_VADER", BOTH_STAND1TO2_VADER, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW_VADER,
+	{"Draw_GALEN", BOTH_STAND1TO2_GALEN, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_DRAW_GALEN,
 	{"Putaway", BOTH_STAND2TO1, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY,
 	{"Putaway_VADER", BOTH_STAND2TO1_VADER, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY_VADER,
+	{"Putaway_GALEN", BOTH_STAND2TO1_GALEN, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY_GALEN,
 	{"Putaway_YODA", BOTH_STAND2TO1_YODA, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0}, // LS_PUTAWAY_YODA,
 
 	// Attacks
@@ -701,8 +703,12 @@ qboolean PM_VelocityForBlockedMove(const playerState_t* ps, vec3_t throw_dir)
 	return qtrue;
 }
 
-static int PM_AnimLevelForSaberAnim(const int anim)
+// Character saber-move anims -> the base anim they replace (defined above PM_InAnimForSaberMove)
+int PM_StyleSaberAnimToBase(int anim);
+
+static int PM_AnimLevelForSaberAnim(const int anim_in)
 {
+	const int anim = PM_StyleSaberAnimToBase(anim_in); // character overridden anims count as the base anim
 	if (anim >= BOTH_A1_T__B_ && anim <= BOTH_D1_B____)
 	{
 		return FORCE_LEVEL_1;
@@ -722,12 +728,7 @@ static int PM_AnimLevelForSaberAnim(const int anim)
 	}
 	if (anim >= BOTH_A5_T__B_ && anim <= BOTH_D5_B____)
 	{
-		//tavion
-		return FORCE_LEVEL_5;
-	}
-	if (anim == BOTH_A5_T__B__YODA)
-	{
-		//YODA
+		//tavion (and Yoda's A5 anims, mapped to these above)
 		return FORCE_LEVEL_5;
 	}
 	if (anim >= BOTH_A6_T__B_ && anim <= BOTH_D6_B____)
@@ -750,7 +751,13 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 		return FORCE_LEVEL_0;
 	}
 
-	int anim = ps->torsoAnim;
+	if (ps->torsoAnim == BOTH_A5_T__B__YODA)
+	{
+		//YODA: his top-down swing hits harder than Tavion's (checked before the anim is mapped to BOTH_A5_T__B_)
+		return FORCE_LEVEL_5;
+	}
+
+	int anim = PM_StyleSaberAnimToBase(ps->torsoAnim); // character overridden anims count as the base anim
 	// Avoid entity-table animation dereferences here: this function is hit during
 	// transitional states where client animation data may be stale.
 	int anim_time_elapsed = 0;
@@ -788,11 +795,6 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	{
 		//tavion
 		return FORCE_LEVEL_2;
-	}
-	if (anim == BOTH_A5_T__B__YODA)
-	{
-		//YODA
-		return FORCE_LEVEL_5;
 	}
 	if (anim >= BOTH_A6_T__B_ && anim <= BOTH_D6_B____)
 	{
@@ -889,9 +891,11 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	case BOTH_K1_S1_T_: //# knockaway saber top
 	case BOTH_K1_S1_TR: //# knockaway saber top right
 	case BOTH_K1_S1_TR_MD: //# knockaway saber top right
+	case BOTH_K1_S1_TR_MD_GALEN:
 	case BOTH_K1_S1_TR_PB: //# knockaway saber top right
 	case BOTH_K1_S1_TL: //# knockaway saber top left
 	case BOTH_K1_S1_TL_MD: //# knockaway saber top left
+	case BOTH_K1_S1_TL_MD_GALEN:
 	case BOTH_K1_S1_TL_PB: //# knockaway saber top left
 	case BOTH_K1_S1_BL: //# knockaway saber bottom left
 	case BOTH_K1_S1_B_: //# knockaway saber bottom
@@ -1104,6 +1108,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 		return FORCE_LEVEL_3;
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		if (ps->torsoAnimTimer < 1000)
 		{
 			//end of anim
@@ -1328,8 +1333,71 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	return FORCE_LEVEL_0;
 }
 
+// Character saber-move anims (swapped in by PM_ApplySaberAnimOverride) -> the base anim they replace,
+// so the saber move checks, which work on the base anims, still recognise them.
+int PM_StyleSaberAnimToBase(const int anim)
+{
+	switch (anim)
+	{
+		// Yoda
+	case BOTH_A5__L__R_YODA: return BOTH_A5__L__R;
+	case BOTH_A5__R__L_YODA: return BOTH_A5__R__L;
+	case BOTH_A5_BL_TR_YODA: return BOTH_A5_BL_TR;
+	case BOTH_A5_BR_TL_YODA: return BOTH_A5_BR_TL;
+	case BOTH_A5_T__B__YODA: return BOTH_A5_T__B_;
+	case BOTH_A5_TL_BR_YODA: return BOTH_A5_TL_BR;
+	case BOTH_A5_TR_BL_YODA: return BOTH_A5_TR_BL;
+	case BOTH_T5__L__R_YODA: return BOTH_T5__L__R;
+	case BOTH_T5__R__L_YODA: return BOTH_T5__R__L;
+	case BOTH_T5_BL__R_YODA: return BOTH_T5_BL__R;
+	case BOTH_T5_BL_TR_YODA: return BOTH_T5_BL_TR;
+	case BOTH_T5_BR_TL_YODA: return BOTH_T5_BR_TL;
+	case BOTH_T5_TL_BR_YODA: return BOTH_T5_TL_BR;
+		// Galen
+	case BOTH_A7_BL_TR_GALEN: return BOTH_A7_BL_TR;
+	case BOTH_A7_BR_TL_GALEN: return BOTH_A7_BR_TL;
+	case BOTH_A7_SLAP_L_GALEN: return BOTH_A7_SLAP_L;
+	case BOTH_A7_SLAP_R_GALEN: return BOTH_A7_SLAP_R;
+	case BOTH_A7_TL_BR_GALEN: return BOTH_A7_TL_BR;
+	case BOTH_A7_TR_BL_GALEN: return BOTH_A7_TR_BL;
+	case BOTH_A7_T__B__GALEN: return BOTH_A7_T__B_;
+	case BOTH_A7__L__R_GALEN: return BOTH_A7__L__R;
+	case BOTH_A7__R__L_GALEN: return BOTH_A7__R__L;
+	case BOTH_S7_S7_BL_GALEN: return BOTH_S7_S7_BL;
+	case BOTH_S7_S7_BR_GALEN: return BOTH_S7_S7_BR;
+	case BOTH_S7_S7_TL_GALEN: return BOTH_S7_S7_TL;
+	case BOTH_S7_S7_TR_GALEN: return BOTH_S7_S7_TR;
+	case BOTH_S7_S7_T__GALEN: return BOTH_S7_S7_T_;
+	case BOTH_S7_S7__L_GALEN: return BOTH_S7_S7__L;
+	case BOTH_S7_S7__R_GALEN: return BOTH_S7_S7__R;
+	case BOTH_R7_BL_S7_GALEN: return BOTH_R7_BL_S7;
+	case BOTH_R7_BR_S7_GALEN: return BOTH_R7_BR_S7;
+	case BOTH_R7_B__S7_GALEN: return BOTH_R7_B__S7;
+	case BOTH_R7_TL_S7_GALEN: return BOTH_R7_TL_S7;
+	case BOTH_R7_TR_S7_GALEN: return BOTH_R7_TR_S7;
+	case BOTH_R7__L_S7_GALEN: return BOTH_R7__L_S7;
+	case BOTH_R7__R_S7_GALEN: return BOTH_R7__R_S7;
+	case BOTH_P1_S1_B__GALEN: return BOTH_P1_S1_B_;
+	case BOTH_P6_S1_B__GALEN: return BOTH_P6_S1_B_;
+	case BOTH_P7_S1_B__GALEN: return BOTH_P7_S1_B_;
+	case BOTH_P7_S7_BL_MD_GALEN: return BOTH_P7_S7_BL_MD;
+	case BOTH_P7_S7_BR_MD_GALEN: return BOTH_P7_S7_BR_MD;
+	case BOTH_P7_S7_TL_MD_GALEN: return BOTH_P7_S7_TL_MD;
+	case BOTH_P7_S7_TR_MD_GALEN: return BOTH_P7_S7_TR_MD;
+	case BOTH_P7_S7_T__MD_GALEN: return BOTH_P7_S7_T__MD;
+	case BOTH_K1_S1_TL_MD_GALEN: return BOTH_K1_S1_TL_MD;
+	case BOTH_K1_S1_TR_MD_GALEN: return BOTH_K1_S1_TR_MD;
+	case BOTH_KICK_F_MD_GALEN: return BOTH_KICK_F_MD;
+	case BOTH_SWEEP_KICK_GALEN: return BOTH_SWEEP_KICK;
+	case BOTH_FLYING_KICK_GALEN: return BOTH_FLYING_KICK;
+	case BOTH_GRAPPLE_FIRE_GALEN: return BOTH_GRAPPLE_FIRE;
+	default: return anim;
+	}
+}
+
 qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 {
+	anim = PM_StyleSaberAnimToBase(anim);
 	switch (anim)
 	{
 		//special case anims
@@ -1358,8 +1426,10 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	case BOTH_FORCELONGLEAP_ATTACK:
 	case BOTH_A7_KICK_F:
 	case BOTH_KICK_F_MD:
+	case BOTH_KICK_F_MD_GALEN:
 	case BOTH_A7_KICK_B:
 	case BOTH_SWEEP_KICK:
+	case BOTH_SWEEP_KICK_GALEN:
 	case BOTH_A7_KICK_R:
 	case BOTH_A7_KICK_L:
 	case BOTH_A7_KICK_S:
@@ -1367,6 +1437,7 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	case BOTH_A7_KICK_RL:
 	case BOTH_A7_KICK_F_AIR:
 	case BOTH_FLYING_KICK:
+	case BOTH_FLYING_KICK_GALEN:
 	case BOTH_A7_KICK_B_AIR:
 	case BOTH_A7_KICK_R_AIR:
 	case BOTH_A7_KICK_L_AIR:
@@ -1402,7 +1473,9 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	case BOTH_SLAP_L:
 	case BOTH_SLAP_R:
 	case BOTH_A7_SLAP_R:
+	case BOTH_A7_SLAP_R_GALEN:
 	case BOTH_A7_SLAP_L:
+	case BOTH_A7_SLAP_L_GALEN:
 	case BOTH_LK_S_DL_S_SB_1_W:
 	case BOTH_LK_S_DL_T_SB_1_W:
 	case BOTH_LK_S_ST_S_SB_1_W:
@@ -1423,12 +1496,13 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	case BOTH_LK_ST_S_T_SB_1_W:
 	case BOTH_HANG_ATTACK:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qtrue;
 	default:;
 	}
 	if (PM_SaberDrawPutawayAnim(anim))
 	{
-		if (saberMove == LS_DRAW || saberMove == LS_PUTAWAY || saberMove == LS_PUTAWAY_YODA || saberMove == LS_PUTAWAY_VADER || saberMove == LS_DRAW_YODA || saberMove == LS_DRAW_VADER)
+		if (saberMove == LS_DRAW || saberMove == LS_PUTAWAY || saberMove == LS_PUTAWAY_YODA || saberMove == LS_PUTAWAY_VADER || saberMove == LS_PUTAWAY_GALEN || saberMove == LS_DRAW_YODA || saberMove == LS_DRAW_VADER || saberMove == LS_DRAW_GALEN)
 		{
 			return qtrue;
 		}
@@ -1636,6 +1710,7 @@ qboolean PM_SaberDoDamageAnim(const int anim)
 	case BOTH_LK_ST_S_T_SB_1_W:
 	case BOTH_HANG_ATTACK:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -1651,9 +1726,11 @@ qboolean PM_SaberInIdle(const int move)
 	case LS_DRAW:
 	case LS_DRAW_YODA:
 	case LS_DRAW_VADER:
+	case LS_DRAW_GALEN:
 	case LS_PUTAWAY:
 	case LS_PUTAWAY_YODA:
 	case LS_PUTAWAY_VADER:
+	case LS_PUTAWAY_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -1677,8 +1754,9 @@ qboolean PM_BounceAnim(const int anim)
 	return qfalse;
 }
 
-qboolean PM_SaberReturnAnim(const int anim)
+qboolean PM_SaberReturnAnim(const int anim_in)
 {
+	const int anim = PM_StyleSaberAnimToBase(anim_in); // character overridden anims count as the base anim
 	if (anim >= BOTH_R1_B__S1 && anim <= BOTH_R1_TR_S1
 		|| anim >= BOTH_R2_B__S1 && anim <= BOTH_R2_TR_S1
 		|| anim >= BOTH_R3_B__S1 && anim <= BOTH_R3_TR_S1
@@ -1721,8 +1799,10 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 	case BOTH_VT_ATL_S:
 	case BOTH_A7_KICK_F:
 	case BOTH_KICK_F_MD:
+	case BOTH_KICK_F_MD_GALEN:
 	case BOTH_A7_KICK_B:
 	case BOTH_SWEEP_KICK:
+	case BOTH_SWEEP_KICK_GALEN:
 	case BOTH_A7_KICK_R:
 	case BOTH_A7_KICK_L:
 	case BOTH_A7_KICK_S:
@@ -1730,6 +1810,7 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 	case BOTH_A7_KICK_RL:
 	case BOTH_A7_KICK_F_AIR:
 	case BOTH_FLYING_KICK:
+	case BOTH_FLYING_KICK_GALEN:
 	case BOTH_A7_KICK_B_AIR:
 	case BOTH_A7_KICK_R_AIR:
 	case BOTH_A7_KICK_L_AIR:
@@ -1765,7 +1846,9 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 	case BOTH_SLAP_L:
 	case BOTH_SLAP_R:
 	case BOTH_A7_SLAP_R:
+	case BOTH_A7_SLAP_R_GALEN:
 	case BOTH_A7_SLAP_L:
+	case BOTH_A7_SLAP_L_GALEN:
 	case BOTH_LK_S_DL_S_SB_1_W:
 	case BOTH_LK_S_DL_T_SB_1_W:
 	case BOTH_LK_S_ST_S_SB_1_W:
@@ -1786,6 +1869,7 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 	case BOTH_LK_ST_S_T_SB_1_W:
 	case BOTH_HANG_ATTACK:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -1916,6 +2000,7 @@ qboolean PM_SaberInnonblockableAttack(const int anim)
 	case BOTH_A6_FB:
 	case BOTH_A6_LR:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -2100,6 +2185,7 @@ qboolean PM_IsInBlockingAnim(const int move)
 	case BOTH_P1_S1_TL:
 	case BOTH_P1_S1_TR:
 	case BOTH_P1_S1_B_:
+	case BOTH_P1_S1_B__GALEN:
 	case BOTH_P1_S1_B1_:
 
 	case BOTH_P6_S6_T_:
@@ -2108,6 +2194,7 @@ qboolean PM_IsInBlockingAnim(const int move)
 	case BOTH_P6_S6_TL:
 	case BOTH_P6_S6_TR:
 	case BOTH_P6_S1_B_:
+	case BOTH_P6_S1_B__GALEN:
 	case BOTH_P6_S1_B1_:
 
 	case BOTH_P7_S7_T_:
@@ -2116,6 +2203,7 @@ qboolean PM_IsInBlockingAnim(const int move)
 	case BOTH_P7_S7_TL:
 	case BOTH_P7_S7_TR:
 	case BOTH_P7_S1_B_:
+	case BOTH_P7_S1_B__GALEN:
 	case BOTH_P7_S1_B1_:
 		return qtrue;
 	default:;
@@ -2516,6 +2604,7 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 	case BOTH_LK_ST_S_T_SB_1_W:
 	case BOTH_HANG_ATTACK:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qfalse;
 	default:;
 	}
@@ -3532,8 +3621,10 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_VADER
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN
@@ -3542,37 +3633,49 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_VADER
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_VADER
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_VADER
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_VADER
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_GALEN
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT
 					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN
+					|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_GALEN
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_ANI
@@ -3582,13 +3685,14 @@ qboolean PM_CheckLungeAttackMove()
 					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_ANI
 					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_VADER
+					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_GALEN
 					|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_BEN
 					|| pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE
-					|| pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE_JKA
+					|| (pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE_JKA || pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE_JKA_GALEN)
 					|| pm->ps->legsAnim == BOTH_SABERSTAFF_STANCE_BEN
-					|| pm->ps->legsAnim == BOTH_SABERSTAFF_WALK_STANCE
+					|| (pm->ps->legsAnim == BOTH_SABERSTAFF_WALK_STANCE || pm->ps->legsAnim == BOTH_SABERSTAFF_WALK_STANCE_GALEN)
 					|| pm->ps->legsAnim == BOTH_SABERDUAL_STANCE
-					|| pm->ps->legsAnim == BOTH_SABERDUAL_STANCE_JKA
+					|| (pm->ps->legsAnim == BOTH_SABERDUAL_STANCE_JKA || pm->ps->legsAnim == BOTH_SABERDUAL_STANCE_JKA_GALEN)
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA
 					|| pm->ps->legsAnim == BOTH_SABERTAVION_STANCE_JKA_BEN
@@ -4097,8 +4201,10 @@ static qboolean PM_CheckJumpForwardAttackMove()
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_VADER
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN
@@ -4107,42 +4213,55 @@ static qboolean PM_CheckJumpForwardAttackMove()
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_VADER
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_VADER
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_VADER
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_VADER
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_GALEN
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT
 								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN
+								|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_GALEN
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_ANI
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_BEN
 								|| pm->ps->legsAnim == BOTH_SABERFAST_STANCE_JKA_VADER
 								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_VADER
+								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_GALEN
 								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE
 								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA
 								|| pm->ps->legsAnim == BOTH_SABERSLOW_STANCE_JKA_ANI
@@ -4383,14 +4502,16 @@ qboolean PM_CheckFlipOverAttackMove(const qboolean check_enemy)
 						|| pm->ps->legsAnim == BOTH_JUMP1_ANI
 						|| pm->ps->legsAnim == BOTH_JUMP1_YODA
 						|| pm->ps->legsAnim == BOTH_JUMP1_VADER
+						|| pm->ps->legsAnim == BOTH_JUMP1_GALEN
 						|| pm->ps->legsAnim == BOTH_FORCEJUMP1
 						|| pm->ps->legsAnim == BOTH_FORCEJUMP1_VADER
 						|| pm->ps->legsAnim == BOTH_INAIR1
 						|| pm->ps->legsAnim == BOTH_INAIR1_ANI
 						|| pm->ps->legsAnim == BOTH_INAIR1_YODA
 						|| pm->ps->legsAnim == BOTH_INAIR1_VADER
+						|| pm->ps->legsAnim == BOTH_INAIR1_GALEN
 						|| pm->ps->legsAnim == BOTH_FORCEINAIR1
-						|| pm->ps->legsAnim == BOTH_GRAPPLE_PULL)
+						|| (pm->ps->legsAnim == BOTH_GRAPPLE_PULL || pm->ps->legsAnim == BOTH_GRAPPLE_PULL_GALEN))
 					{
 						//in a non-flip forward jump
 						try_move = qtrue;
@@ -6010,11 +6131,12 @@ extern qboolean PM_InSaberAnim(int anim);
 // 2) Parentheses around fatigue flag tests
 //======================================================================
 void PM_SaberStartTransAnim(const int saberAnimLevel,
-	const int anim,
+	const int anim_in,
 	float* animSpeed,
 	const gentity_t* gent,
 	const int fatigued)
 {
+	const int anim = PM_StyleSaberAnimToBase(anim_in); // character overridden anims get the base anim's speed
 	char buf[128];
 
 	// Read global saber animation speed multiplier
@@ -6936,6 +7058,7 @@ qboolean BG_SprintAnim(const int anim)
 	case BOTH_SPRINT_BEN:
 	case BOTH_SPRINT_YODA:
 	case BOTH_SPRINT_VADER:
+	case BOTH_SPRINT_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -6950,11 +7073,14 @@ qboolean BG_SaberSprintAnim(const int anim)
 	case BOTH_SPRINT_STAFF_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER:
 	case BOTH_SPRINT_DUAL_LIGHTSABER_BEN:
+	case BOTH_SPRINT_DUAL_LIGHTSABER_GALEN:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_ANI:
 	case BOTH_SPRINT_STAFF_LIGHTSABER_ANI:
+	case BOTH_SPRINT_STAFF_LIGHTSABER_GALEN:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_BEN:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_YODA:
 	case BOTH_SPRINT_SINGLE_LIGHTSABER_VADER:
+	case BOTH_SPRINT_SINGLE_LIGHTSABER_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -7006,17 +7132,21 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER,       BOTH_SPRINT_SINGLE_LIGHTSABER,      qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,   BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,  qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,   BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,  qtrue, qfalse, qfalse, qtrue, 0 },
-	{ BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,   BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_YODA,  BOTH_SPRINT_SINGLE_LIGHTSABER_YODA, qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER_VADER, BOTH_SPRINT_SINGLE_LIGHTSABER_VADER,qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_GALEN, BOTH_SPRINT_SINGLE_LIGHTSABER_GALEN,qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_STAFF_LIGHTSABER_ANI,    BOTH_SPRINT_STAFF_LIGHTSABER_ANI,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_STAFF_LIGHTSABER_GALEN,  BOTH_SPRINT_STAFF_LIGHTSABER_GALEN,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_STAFF_LIGHTSABER,        BOTH_SPRINT_STAFF_LIGHTSABER,       qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_DUAL_LIGHTSABER,         BOTH_SPRINT_DUAL_LIGHTSABER,        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_DUAL_LIGHTSABER_BEN,     BOTH_SPRINT_DUAL_LIGHTSABER_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_DUAL_LIGHTSABER_GALEN,   BOTH_SPRINT_DUAL_LIGHTSABER_GALEN,     qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_SPRINT,                         BOTH_SPRINT,                        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_BEN,                     BOTH_SPRINT_BEN,                    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_YODA,                    BOTH_SPRINT_YODA,                   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_VADER,                   BOTH_SPRINT_VADER,                  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SPRINT_GALEN,                   BOTH_SPRINT_GALEN,                                   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_BAZOOKA,                 BOTH_SPRINT_BAZOOKA,                qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_BLASTER,                 BOTH_SPRINT_BLASTER,                qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SPRINT_DOUBLE_PISTOL,           BOTH_SPRINT_DOUBLE_PISTOL,          qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7027,6 +7157,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 
 	{ BOTH_RUN2,                           BOTH_RUN2,                          qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_RUN2_ANI,                       BOTH_RUN2_ANI,                      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN2_GALEN,                     BOTH_RUN2_GALEN,                                         qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_RUN2_BEN,                       BOTH_RUN2_BEN,                      qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_RUN2_YODA,                      BOTH_RUN2_YODA,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_RUN4,                           BOTH_RUN4,                          qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7037,21 +7168,30 @@ static const TorsoMapEntry g_torsoMap[] = {
 
 	{ BOTH_RUN_DUAL,                       BOTH_RUN_DUAL,                      qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_RUN_DUAL_ANI,                   BOTH_RUN_DUAL_ANI,                  qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_RUN_DUAL_GALEN,                 BOTH_RUN_DUAL_GALEN,                                 qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_RUN_DUAL_BEN,                   BOTH_RUN_DUAL_BEN,                  qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_JOG_BAZOOKA,                    BOTH_JOG_BAZOOKA,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_BAZOOKA_GALEN,                    BOTH_JOG_BAZOOKA_GALEN,                   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JOG_BLASTER,                    BOTH_JOG_BLASTER,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_BLASTER_GALEN,                    BOTH_JOG_BLASTER_GALEN,                   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JOG_DOUBLE_PISTOL,              BOTH_JOG_DOUBLE_PISTOL,             qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_DOUBLE_PISTOL_GALEN,              BOTH_JOG_DOUBLE_PISTOL_GALEN,             qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JOG_GRENADE,                    BOTH_JOG_GRENADE,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_GRENADE_GALEN,                    BOTH_JOG_GRENADE_GALEN,                   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JOG_HEAVY,                      BOTH_JOG_HEAVY,                     qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_HEAVY_GALEN,                      BOTH_JOG_HEAVY_GALEN,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JOG_MINIGUN,                    BOTH_JOG_HEAVY,                     qtrue, qfalse, qfalse, qtrue, 0 }, // fallback
+	{ BOTH_JOG_MINIGUN_GALEN,                    BOTH_JOG_HEAVY_GALEN,                     qtrue, qfalse, qfalse, qtrue, 0 }, // fallback
 	{ BOTH_JOG_PISTOL,                     BOTH_JOG_PISTOL,                    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JOG_PISTOL_GALEN,                     BOTH_JOG_PISTOL_GALEN,                    qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_WALK1,                          BOTH_WALK1,                         qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK1_ANI,                      BOTH_WALK1_ANI,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK1_BEN,                      BOTH_WALK1_BEN,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK1_YODA,                     BOTH_WALK1_YODA,                    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK1_VADER,                    BOTH_WALK1_VADER,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK1_GALEN,                    BOTH_WALK1_GALEN,                                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK_BAZOOKA,                   BOTH_WALK_BAZOOKA,                  qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK_BLASTER,                   BOTH_WALK_BLASTER,                  qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK_DOUBLE_PISTOL,             BOTH_WALK_DOUBLE_PISTOL,            qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7079,9 +7219,11 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_STAND_BLOCKING_ON_BEN,          BOTH_STAND_BLOCKING_ON_BEN,         qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_YODA,         BOTH_STAND_BLOCKING_ON_YODA,        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_VADER,        BOTH_STAND_BLOCKING_ON_VADER,       qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_GALEN,        BOTH_STAND_BLOCKING_ON_GALEN,             qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL,         BOTH_STAND_BLOCKING_ON_DUAL,        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_BEN,     BOTH_STAND_BLOCKING_ON_DUAL_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_ANI,     BOTH_STAND_BLOCKING_ON_DUAL_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_GALEN,   BOTH_STAND_BLOCKING_ON_DUAL_GALEN,     qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_STAFF,        BOTH_STAND_BLOCKING_ON_STAFF,       qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_STAFF_BEN,    BOTH_STAND_BLOCKING_ON_STAFF_BEN,   qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7091,35 +7233,44 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_ANI,  BOTH_STAND_BLOCKING_ON_FORWARD_ANI, qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_YODA, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_VADER, BOTH_STAND_BLOCKING_ON_FORWARD_VADER, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_GALEN, BOTH_STAND_BLOCKING_ON_FORWARD_GALEN, qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_BACK,         BOTH_STAND_BLOCKING_ON_BACK,        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_BEN,     BOTH_STAND_BLOCKING_ON_BACK_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_ANI,     BOTH_STAND_BLOCKING_ON_BACK_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_YODA,    BOTH_STAND_BLOCKING_ON_BACK_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_VADER,   BOTH_STAND_BLOCKING_ON_BACK_VADER,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_GALEN,   BOTH_STAND_BLOCKING_ON_BACK_GALEN,     qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_RIGHT,        BOTH_STAND_BLOCKING_ON_RIGHT,       qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_BEN,    BOTH_STAND_BLOCKING_ON_RIGHT_BEN,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_YODA,    BOTH_STAND_BLOCKING_ON_RIGHT_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_VADER,  BOTH_STAND_BLOCKING_ON_RIGHT_VADER,   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_GALEN,  BOTH_STAND_BLOCKING_ON_RIGHT_GALEN,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT,         BOTH_STAND_BLOCKING_ON_LEFT,        qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_BEN,     BOTH_STAND_BLOCKING_ON_LEFT_BEN,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_YODA,    BOTH_STAND_BLOCKING_ON_LEFT_YODA,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_VADER,   BOTH_STAND_BLOCKING_ON_LEFT_VADER,    qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_GALEN,   BOTH_STAND_BLOCKING_ON_LEFT_GALEN,     qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_LEFT_ANI,     BOTH_STAND_BLOCKING_ON_LEFT_ANI,    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_ANI,    BOTH_STAND_BLOCKING_ON_RIGHT_ANI,   qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN, qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK,    BOTH_STAND_BLOCKING_ON_DUAL_BACK,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,qtrue,qfalse,qfalse,qtrue,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN,qtrue,qfalse,qfalse,qtrue,0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,   BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,  qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,qtrue,qfalse,qfalse,qtrue,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN,qtrue,qfalse,qfalse,qtrue,0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT,    BOTH_STAND_BLOCKING_ON_DUAL_LEFT,   qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,qtrue,qfalse,qfalse,qtrue,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN,qtrue,qfalse,qfalse,qtrue,0 },
 
 	{ BOTH_SABERDUALCROUCH,                BOTH_SABERDUALCROUCH,               qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_SABERDUALCROUCH_GALEN,                BOTH_SABERDUALCROUCH_GALEN,               qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_SABERSTAFFCROUCH,               BOTH_SABERSTAFFCROUCH,              qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_WALK2,                          BOTH_WALK2,                         qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7127,6 +7278,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_WALK2_BEN,                      BOTH_WALK2_BEN,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK2_YODA,                     BOTH_WALK2_YODA,                    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK2_VADER,                    BOTH_WALK2_VADER,                   qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK2_GALEN,                    BOTH_WALK2_GALEN,                                     qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_WALK_STAFF,                     BOTH_WALK_STAFF,                    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK_STAFF_AMD,                 BOTH_WALK_STAFF_AMD,                qtrue, qfalse, qfalse, qtrue, 0 },
@@ -7134,6 +7286,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 
 	{ BOTH_WALK_DUAL,                      BOTH_WALK_DUAL,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK_DUAL_ANI,                  BOTH_WALK_DUAL_ANI,                 qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_WALK_DUAL_GALEN,                BOTH_WALK_DUAL_GALEN,                               qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_WALK_DUAL_AMD,                  BOTH_WALK_DUAL_AMD,                 qtrue, qfalse, qfalse, qtrue, 0 },
 
 	{ BOTH_CROUCH1IDLE,                    -1,                                 qtrue, qtrue,  qfalse, qtrue, 0 }, // lightsaber path: only set saberMove if clientNum != 0
@@ -7142,6 +7295,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_JUMP1_ANI,                      BOTH_JUMP1_ANI,                     qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JUMP1_YODA,                     BOTH_JUMP1_YODA,                    qtrue, qfalse, qfalse, qtrue, 0 },
 	{ BOTH_JUMP1_VADER,                    BOTH_JUMP1_VADER,                                      qtrue, qfalse, qfalse, qtrue, 0 },
+	{ BOTH_JUMP1_GALEN,                    BOTH_JUMP1_GALEN,                                                        qtrue, qfalse, qfalse, qtrue, 0 },
 
 	// -----------------------
 	// Weapon-aware-only entries (original PM_TorsoAnimFromLegs when !weaponBusy)
@@ -7156,17 +7310,21 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER,       BOTH_SPRINT_SINGLE_LIGHTSABER,      qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,   BOTH_SPRINT_SINGLE_LIGHTSABER_ANI,  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_STAFF_LIGHTSABER_ANI,    BOTH_SPRINT_STAFF_LIGHTSABER_ANI,   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_STAFF_LIGHTSABER_GALEN,  BOTH_SPRINT_STAFF_LIGHTSABER_GALEN,   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,   BOTH_SPRINT_SINGLE_LIGHTSABER_BEN,  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER_YODA,  BOTH_SPRINT_SINGLE_LIGHTSABER_YODA, qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_SINGLE_LIGHTSABER_VADER, BOTH_SPRINT_SINGLE_LIGHTSABER_VADER,qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_SINGLE_LIGHTSABER_GALEN, BOTH_SPRINT_SINGLE_LIGHTSABER_GALEN,qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_STAFF_LIGHTSABER,        BOTH_SPRINT_STAFF_LIGHTSABER,       qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_DUAL_LIGHTSABER,         BOTH_SPRINT_DUAL_LIGHTSABER,        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_DUAL_LIGHTSABER_BEN,     BOTH_SPRINT_DUAL_LIGHTSABER_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_DUAL_LIGHTSABER_GALEN,   BOTH_SPRINT_DUAL_LIGHTSABER_GALEN,     qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_SPRINT,                         BOTH_SPRINT,                        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_BEN,                     BOTH_SPRINT_BEN,                    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_YODA,                    BOTH_SPRINT_YODA,                   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_VADER,                   BOTH_SPRINT_VADER,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SPRINT_GALEN,                   BOTH_SPRINT_GALEN,                                   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_BAZOOKA,                 BOTH_SPRINT_BAZOOKA,                qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_BLASTER,                 BOTH_SPRINT_BLASTER,                qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SPRINT_DOUBLE_PISTOL,           BOTH_SPRINT_DOUBLE_PISTOL,          qfalse, qfalse, qtrue, qfalse, 0 },
@@ -7177,6 +7335,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 
 	{ BOTH_RUN2,                           BOTH_RUN2,                          qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_RUN2_ANI,                       BOTH_RUN2_ANI,                      qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN2_GALEN,                     BOTH_RUN2_GALEN,                                         qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_RUN2_BEN,                       BOTH_RUN2_BEN,                      qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_RUN2_YODA,                      BOTH_RUN2_YODA,                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_RUN4,                           BOTH_RUN4,                          qfalse, qfalse, qtrue, qfalse, 0 },
@@ -7187,21 +7346,30 @@ static const TorsoMapEntry g_torsoMap[] = {
 
 	{ BOTH_RUN_DUAL,                       BOTH_RUN_DUAL,                      qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_RUN_DUAL_ANI,                   BOTH_RUN_DUAL_ANI,                  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_RUN_DUAL_GALEN,                 BOTH_RUN_DUAL_GALEN,                                 qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_RUN_DUAL_BEN,                   BOTH_RUN_DUAL_BEN,                  qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_JOG_BAZOOKA,                    BOTH_JOG_BAZOOKA,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_BAZOOKA_GALEN,                    BOTH_JOG_BAZOOKA_GALEN,                   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_JOG_BLASTER,                    BOTH_JOG_BLASTER,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_BLASTER_GALEN,                    BOTH_JOG_BLASTER_GALEN,                   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_JOG_DOUBLE_PISTOL,              BOTH_JOG_DOUBLE_PISTOL,             qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_DOUBLE_PISTOL_GALEN,              BOTH_JOG_DOUBLE_PISTOL_GALEN,             qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_JOG_GRENADE,                    BOTH_JOG_GRENADE,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_GRENADE_GALEN,                    BOTH_JOG_GRENADE_GALEN,                   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_JOG_HEAVY,                      BOTH_JOG_HEAVY,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_HEAVY_GALEN,                      BOTH_JOG_HEAVY_GALEN,                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_JOG_MINIGUN,                    BOTH_JOG_HEAVY,                     qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_MINIGUN_GALEN,                    BOTH_JOG_HEAVY_GALEN,                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_JOG_PISTOL,                     BOTH_JOG_PISTOL,                    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_JOG_PISTOL_GALEN,                     BOTH_JOG_PISTOL_GALEN,                    qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_WALK1,                          BOTH_WALK1,                         qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK1_ANI,                      BOTH_WALK1_ANI,                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK1_BEN,                      BOTH_WALK1_BEN,                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK1_YODA,                     BOTH_WALK1_YODA,                    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK1_VADER,                    BOTH_WALK1_VADER,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK1_GALEN,                    BOTH_WALK1_GALEN,                                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK_BAZOOKA,                   BOTH_WALK_BAZOOKA,                  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK_BLASTER,                   BOTH_WALK_BLASTER,                  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK_DOUBLE_PISTOL,             BOTH_WALK_DOUBLE_PISTOL,            qfalse, qfalse, qtrue, qfalse, 0 },
@@ -7218,9 +7386,11 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_STAND_BLOCKING_ON_BEN,          BOTH_STAND_BLOCKING_ON_BEN,         qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_YODA,         BOTH_STAND_BLOCKING_ON_YODA,        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_VADER,        BOTH_STAND_BLOCKING_ON_VADER,       qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_GALEN,        BOTH_STAND_BLOCKING_ON_GALEN,             qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL,         BOTH_STAND_BLOCKING_ON_DUAL,        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_BEN,     BOTH_STAND_BLOCKING_ON_DUAL_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_ANI,     BOTH_STAND_BLOCKING_ON_DUAL_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_GALEN,   BOTH_STAND_BLOCKING_ON_DUAL_GALEN,     qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_STAFF,        BOTH_STAND_BLOCKING_ON_STAFF,       qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_STAFF_BEN,    BOTH_STAND_BLOCKING_ON_STAFF_BEN,   qfalse, qfalse, qtrue, qfalse, 0 },
@@ -7230,35 +7400,44 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_ANI,  BOTH_STAND_BLOCKING_ON_FORWARD_ANI, qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_YODA, BOTH_STAND_BLOCKING_ON_FORWARD_YODA, qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_FORWARD_VADER, BOTH_STAND_BLOCKING_ON_FORWARD_VADER, qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_FORWARD_GALEN, BOTH_STAND_BLOCKING_ON_FORWARD_GALEN, qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_BACK,         BOTH_STAND_BLOCKING_ON_BACK,        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_BEN,     BOTH_STAND_BLOCKING_ON_BACK_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_ANI,     BOTH_STAND_BLOCKING_ON_BACK_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_YODA,    BOTH_STAND_BLOCKING_ON_BACK_YODA,   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_BACK_VADER,   BOTH_STAND_BLOCKING_ON_BACK_VADER,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_BACK_GALEN,   BOTH_STAND_BLOCKING_ON_BACK_GALEN,     qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_RIGHT,        BOTH_STAND_BLOCKING_ON_RIGHT,       qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_BEN,    BOTH_STAND_BLOCKING_ON_RIGHT_BEN,   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_YODA,   BOTH_STAND_BLOCKING_ON_RIGHT_YODA,  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_VADER,  BOTH_STAND_BLOCKING_ON_RIGHT_VADER,  qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_RIGHT_GALEN,  BOTH_STAND_BLOCKING_ON_RIGHT_GALEN,  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT,         BOTH_STAND_BLOCKING_ON_LEFT,        qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_BEN,     BOTH_STAND_BLOCKING_ON_LEFT_BEN,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_YODA,    BOTH_STAND_BLOCKING_ON_LEFT_YODA,   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_LEFT_VADER,   BOTH_STAND_BLOCKING_ON_LEFT_VADER,    qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_STAND_BLOCKING_ON_LEFT_GALEN,   BOTH_STAND_BLOCKING_ON_LEFT_GALEN,     qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_LEFT_ANI,     BOTH_STAND_BLOCKING_ON_LEFT_ANI,    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_RIGHT_ANI,    BOTH_STAND_BLOCKING_ON_RIGHT_ANI,   qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD, qfalse,qfalse,qtrue,qfalse,0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN, qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN, qfalse,qfalse,qtrue,qfalse,0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK,    BOTH_STAND_BLOCKING_ON_DUAL_BACK,   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN,qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN,qfalse,qfalse,qtrue,qfalse,0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,   BOTH_STAND_BLOCKING_ON_DUAL_RIGHT,  qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN,qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN,qfalse,qfalse,qtrue,qfalse,0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT,    BOTH_STAND_BLOCKING_ON_DUAL_LEFT,   qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN,qfalse,qfalse,qtrue,qfalse,0 },
+	{ BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN, BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN,qfalse,qfalse,qtrue,qfalse,0 },
 
 	{ BOTH_SABERDUALCROUCH,                BOTH_SABERDUALCROUCH,               qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_SABERDUALCROUCH_GALEN,                BOTH_SABERDUALCROUCH_GALEN,               qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SABERSTAFFCROUCH,               BOTH_SABERSTAFFCROUCH,              qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_WALK2,                          BOTH_WALK2,                         qfalse, qfalse, qtrue, qfalse, 0 },
@@ -7266,6 +7445,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_WALK2_BEN,                      BOTH_WALK2_BEN,                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK2_YODA,                     BOTH_WALK2_YODA,                    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK2_VADER,                    BOTH_WALK2_VADER,                   qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK2_GALEN,                    BOTH_WALK2_GALEN,                                     qfalse, qfalse, qtrue, qfalse, 0 },
 
 	{ BOTH_WALK_STAFF,                     BOTH_WALK_STAFF,                    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK_STAFF_AMD,                 BOTH_WALK_STAFF_AMD,                qfalse, qfalse, qtrue, qfalse, 0 },
@@ -7273,6 +7453,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 
 	{ BOTH_WALK_DUAL,                      BOTH_WALK_DUAL,                     qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK_DUAL_ANI,                  BOTH_WALK_DUAL_ANI,                 qfalse, qfalse, qtrue, qfalse, 0 },
+	{ BOTH_WALK_DUAL_GALEN,                BOTH_WALK_DUAL_GALEN,                               qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_WALK_DUAL_AMD,                  BOTH_WALK_DUAL_AMD,                 qfalse, qfalse, qtrue, qfalse, 0 },
 
 	// Jumps/swim for weaponBusy path
@@ -7280,6 +7461,7 @@ static const TorsoMapEntry g_torsoMap[] = {
 	{ BOTH_JUMP1_ANI,                      BOTH_JUMP1_ANI,                     qfalse, qfalse, qtrue, qfalse, 100 },
 	{ BOTH_JUMP1_YODA,                     BOTH_JUMP1_YODA,                    qfalse, qfalse, qtrue, qfalse, 100 },
 	{ BOTH_JUMP1_VADER,                    BOTH_JUMP1_VADER,                                      qfalse, qfalse, qtrue, qfalse, 100 },
+	{ BOTH_JUMP1_GALEN,                    BOTH_JUMP1_GALEN,                                                        qfalse, qfalse, qtrue, qfalse, 100 },
 	{ BOTH_SWIM_IDLE1,                     BOTH_SWIM_IDLE1,                    qfalse, qfalse, qtrue, qfalse, 0 },
 	{ BOTH_SWIMFORWARD,                    BOTH_SWIMFORWARD,                   qfalse, qfalse, qtrue, qfalse, 0 },
 };
@@ -7449,6 +7631,17 @@ static void PM_TorsoAnimLightsaber()
 							PM_SetSaberMove(LS_DRAW_VADER);
 						}
 					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							//PM_SetSaberMove(LS_DRAW);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_DRAW_GALEN);
+						}
+					}
 					else
 					{
 						PM_SetSaberMove(LS_DRAW);
@@ -7495,6 +7688,17 @@ static void PM_TorsoAnimLightsaber()
 										PM_SetSaberMove(LS_DRAW_VADER);
 									}
 								}
+								else if (flags.isGalenMarek == qtrue)
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim))
+									{
+										//PM_SetSaberMove(LS_DRAW);
+									}
+									else
+									{
+										PM_SetSaberMove(LS_DRAW_GALEN);
+									}
+								}
 								else
 								{
 									PM_SetSaberMove(LS_DRAW);
@@ -7510,7 +7714,7 @@ static void PM_TorsoAnimLightsaber()
 							if ((pm->ps->legsAnim == BOTH_WALK_STAFF
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL
 								|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
-								|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
+								|| (pm->ps->legsAnim == BOTH_WALKBACK_DUAL || pm->ps->legsAnim == BOTH_WALKBACK_DUAL_GALEN)
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
@@ -7518,16 +7722,19 @@ static void PM_TorsoAnimLightsaber()
 								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALK1_VADER
+								|| pm->ps->legsAnim == BOTH_WALK1_GALEN
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
 								|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALK2_YODA
 								|| pm->ps->legsAnim == BOTH_WALK2_VADER
+								|| pm->ps->legsAnim == BOTH_WALK2_GALEN
 								//////////////////////////////////////////
 									// ANAKIN
 								|| pm->ps->legsAnim == BOTH_WALK1_ANI
 								|| pm->ps->legsAnim == BOTH_WALK2_ANI
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_ANI
+								|| pm->ps->legsAnim == BOTH_WALK_DUAL_GALEN
 								//////////////////////////////////////////
 									// BENKENOBI
 								|| pm->ps->legsAnim == BOTH_WALK1_BEN
@@ -7612,6 +7819,17 @@ static void PM_TorsoAnimLightsaber()
 										PM_SetSaberMove(LS_DRAW_VADER);
 									}
 								}
+								else if (flags.isGalenMarek == qtrue)
+								{
+									if (PM_RunningAnim(pm->ps->legsAnim))
+									{
+										//PM_SetSaberMove(LS_DRAW);
+									}
+									else
+									{
+										PM_SetSaberMove(LS_DRAW_GALEN);
+									}
+								}
 								else
 								{
 									PM_SetSaberMove(LS_DRAW);
@@ -7627,24 +7845,27 @@ static void PM_TorsoAnimLightsaber()
 							if ((pm->ps->legsAnim == BOTH_WALK_STAFF
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL
 								|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
-								|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
+								|| (pm->ps->legsAnim == BOTH_WALKBACK_DUAL || pm->ps->legsAnim == BOTH_WALKBACK_DUAL_GALEN)
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
 								|| pm->ps->legsAnim == BOTH_WALK1_VADER
+								|| pm->ps->legsAnim == BOTH_WALK1_GALEN
 								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
 								|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALK2_VADER
+								|| pm->ps->legsAnim == BOTH_WALK2_GALEN
 								|| pm->ps->legsAnim == BOTH_WALK2_YODA
 								//////////////////////////////////////////
 									// ANAKIN
 								|| pm->ps->legsAnim == BOTH_WALK1_ANI
 								|| pm->ps->legsAnim == BOTH_WALK2_ANI
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_ANI
+								|| pm->ps->legsAnim == BOTH_WALK_DUAL_GALEN
 								//////////////////////////////////////////
 									// BENKENOBI
 								|| pm->ps->legsAnim == BOTH_WALK1_BEN
@@ -7730,6 +7951,17 @@ static void PM_TorsoAnimLightsaber()
 									PM_SetSaberMove(LS_DRAW_VADER);
 								}
 							}
+							else if (flags.isGalenMarek == qtrue)
+							{
+								if (PM_RunningAnim(pm->ps->legsAnim))
+								{
+									//PM_SetSaberMove(LS_DRAW);
+								}
+								else
+								{
+									PM_SetSaberMove(LS_DRAW_GALEN);
+								}
+							}
 							else
 							{
 								PM_SetSaberMove(LS_DRAW);
@@ -7745,24 +7977,27 @@ static void PM_TorsoAnimLightsaber()
 						if ((pm->ps->legsAnim == BOTH_WALK_STAFF
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL
 							|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
-							|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
+							|| (pm->ps->legsAnim == BOTH_WALKBACK_DUAL || pm->ps->legsAnim == BOTH_WALKBACK_DUAL_GALEN)
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 							|| pm->ps->legsAnim == BOTH_WALK1
 							|| pm->ps->legsAnim == BOTH_WALK1_VADER
+							|| pm->ps->legsAnim == BOTH_WALK1_GALEN
 							|| pm->ps->legsAnim == BOTH_WALK1_YODA
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
 							|| pm->ps->legsAnim == BOTH_WALKBACK1
 							|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 							|| pm->ps->legsAnim == BOTH_WALK2
 							|| pm->ps->legsAnim == BOTH_WALK2_VADER
+							|| pm->ps->legsAnim == BOTH_WALK2_GALEN
 							|| pm->ps->legsAnim == BOTH_WALK2_YODA
 							//////////////////////////////////////////
 								// ANAKIN
 							|| pm->ps->legsAnim == BOTH_WALK1_ANI
 							|| pm->ps->legsAnim == BOTH_WALK2_ANI
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_ANI
+							|| pm->ps->legsAnim == BOTH_WALK_DUAL_GALEN
 							//////////////////////////////////////////
 								// BENKENOBI
 							|| pm->ps->legsAnim == BOTH_WALK1_BEN
@@ -7849,6 +8084,17 @@ static void PM_TorsoAnimLightsaber()
 							PM_SetSaberMove(LS_PUTAWAY_VADER);
 						}
 					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						if (PM_RunningAnim(pm->ps->legsAnim))
+						{
+							//PM_SetSaberMove(LS_PUTAWAY);
+						}
+						else
+						{
+							PM_SetSaberMove(LS_PUTAWAY_GALEN);
+						}
+					}
 					else
 					{
 						PM_SetSaberMove(LS_PUTAWAY);
@@ -7887,6 +8133,17 @@ static void PM_TorsoAnimLightsaber()
 								PM_SetSaberMove(LS_PUTAWAY_VADER);
 							}
 						}
+						else if (flags.isGalenMarek == qtrue)
+						{
+							if (PM_RunningAnim(pm->ps->legsAnim))
+							{
+								//PM_SetSaberMove(LS_PUTAWAY);
+							}
+							else
+							{
+								PM_SetSaberMove(LS_PUTAWAY_GALEN);
+							}
+						}
 						else
 						{
 							PM_SetSaberMove(LS_PUTAWAY);
@@ -7917,6 +8174,10 @@ static void PM_TorsoAnimLightsaber()
 										else if (flags.isVader == qtrue)
 										{
 											PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+										}
+										else if (flags.isGalenMarek == qtrue)
+										{
+											PM_SetAnim(pm, SETANIM_TORSO, BOTH_STAND1IDLE1_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 										}
 										else
 										{
@@ -8005,24 +8266,27 @@ static void PM_TorsoAnimLightsaber()
 						if ((pm->ps->legsAnim == BOTH_WALK_STAFF
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL
 							|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
-							|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
+							|| (pm->ps->legsAnim == BOTH_WALKBACK_DUAL || pm->ps->legsAnim == BOTH_WALKBACK_DUAL_GALEN)
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
 							|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 							|| pm->ps->legsAnim == BOTH_WALK1
 							|| pm->ps->legsAnim == BOTH_WALK1_VADER
+							|| pm->ps->legsAnim == BOTH_WALK1_GALEN
 							|| pm->ps->legsAnim == BOTH_WALK1_YODA
 							|| pm->ps->legsAnim == BOTH_WALK1_MDA
 							|| pm->ps->legsAnim == BOTH_WALKBACK1
 							|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 							|| pm->ps->legsAnim == BOTH_WALK2
 							|| pm->ps->legsAnim == BOTH_WALK2_VADER
+							|| pm->ps->legsAnim == BOTH_WALK2_GALEN
 							|| pm->ps->legsAnim == BOTH_WALK2_YODA
 							//////////////////////////////////////////
 								// ANAKIN
 							|| pm->ps->legsAnim == BOTH_WALK1_ANI
 							|| pm->ps->legsAnim == BOTH_WALK2_ANI
 							|| pm->ps->legsAnim == BOTH_WALK_DUAL_ANI
+							|| pm->ps->legsAnim == BOTH_WALK_DUAL_GALEN
 							//////////////////////////////////////////
 								// BENKENOBI
 							|| pm->ps->legsAnim == BOTH_WALK1_BEN
@@ -8120,6 +8384,7 @@ static void PM_TorsoAnimLightsaber()
 		else if (pm->ps->legsAnim == BOTH_STAND1IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_YODA
 			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_VADER
+			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE
@@ -8128,6 +8393,7 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_VADER
+			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_BEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE2
 			|| pm->ps->legsAnim == BOTH_STAND3IDLE1
@@ -8144,15 +8410,17 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_SABERSINGLECROUCH
 			|| pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_ANI
 			|| pm->ps->legsAnim == BOTH_SABERSINGLECROUCH_VADER
-			|| pm->ps->legsAnim == BOTH_SABERDUALCROUCH
+			|| (pm->ps->legsAnim == BOTH_SABERDUALCROUCH || pm->ps->legsAnim == BOTH_SABERDUALCROUCH_GALEN)
 			|| pm->ps->legsAnim == BOTH_SABERSTAFFCROUCH
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_VADER
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_ANI
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BEN
@@ -8161,37 +8429,49 @@ static void PM_TorsoAnimLightsaber()
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_VADER
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_FORWARD_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_VADER
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_BACK_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_VADER
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_BEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_YODA
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_VADER
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_LEFT_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_RIGHT_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_BACK_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT
-			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN)
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN
+			|| pm->ps->legsAnim == BOTH_STAND_BLOCKING_ON_STAFF_LEFT_GALEN)
 		{
 			PM_SetAnim(pm, SETANIM_TORSO, pm->ps->legsAnim, SETANIM_FLAG_NORMAL);
 			pm->ps->saberMove = LS_READY;
@@ -8253,6 +8533,10 @@ static void PM_TorsoAnimLightsaber()
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 							}
+							else if (flags.isGalenMarek == qtrue)
+							{
+								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -8305,24 +8589,27 @@ static void PM_TorsoAnimLightsaber()
 							if ((pm->ps->legsAnim == BOTH_WALK_STAFF
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL
 								|| pm->ps->legsAnim == BOTH_WALKBACK_STAFF
-								|| pm->ps->legsAnim == BOTH_WALKBACK_DUAL
+								|| (pm->ps->legsAnim == BOTH_WALKBACK_DUAL || pm->ps->legsAnim == BOTH_WALKBACK_DUAL_GALEN)
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_AMD
 								|| pm->ps->legsAnim == BOTH_WALK_STAFF_BEN
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_AMD
 								|| pm->ps->legsAnim == BOTH_WALK1
 								|| pm->ps->legsAnim == BOTH_WALK1_VADER
+								|| pm->ps->legsAnim == BOTH_WALK1_GALEN
 								|| pm->ps->legsAnim == BOTH_WALK1_YODA
 								|| pm->ps->legsAnim == BOTH_WALK1_MDA
 								|| pm->ps->legsAnim == BOTH_WALKBACK1
 								|| pm->ps->legsAnim == BOTH_WALKBACK1_VADER
 								|| pm->ps->legsAnim == BOTH_WALK2
 								|| pm->ps->legsAnim == BOTH_WALK2_VADER
+								|| pm->ps->legsAnim == BOTH_WALK2_GALEN
 								|| pm->ps->legsAnim == BOTH_WALK2_YODA
 								//////////////////////////////////////////
 									// ANAKIN
 								|| pm->ps->legsAnim == BOTH_WALK1_ANI
 								|| pm->ps->legsAnim == BOTH_WALK2_ANI
 								|| pm->ps->legsAnim == BOTH_WALK_DUAL_ANI
+								|| pm->ps->legsAnim == BOTH_WALK_DUAL_GALEN
 								//////////////////////////////////////////
 									// BENKENOBI
 								|| pm->ps->legsAnim == BOTH_WALK1_BEN
@@ -8647,10 +8934,11 @@ void PM_TorsoAnimation()
 					&& (!pm->ps->dualSabers //not using 2 sabers
 						|| !pm->ps->saber[1].Active() //left one off
 						|| pm->ps->torsoAnim == BOTH_SABERDUAL_STANCE //not attacking
-						|| pm->ps->torsoAnim == BOTH_SABERDUAL_STANCE_JKA //not attacking
+						|| (pm->ps->torsoAnim == BOTH_SABERDUAL_STANCE_JKA || pm->ps->torsoAnim == BOTH_SABERDUAL_STANCE_JKA_GALEN) //not attacking
 						|| pm->ps->torsoAnim == BOTH_SABERPULL //not attacking
 						|| pm->ps->torsoAnim == BOTH_SABERPULL_YODA //not attacking
 						|| pm->ps->torsoAnim == BOTH_SABERPULL_VADER //not attacking
+						|| pm->ps->torsoAnim == BOTH_SABERPULL_GALEN //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND1 //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON //not attacking
 						|| pm->ps->torsoAnim == BOTH_STAND_SABER_ON_DUELS //not attacking
@@ -8675,6 +8963,10 @@ void PM_TorsoAnimation()
 								else if (flags.isVader == qtrue)
 								{
 									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else if (flags.isGalenMarek == qtrue)
+								{
+									PM_SetAnim(pm, SETANIM_TORSO, BOTH_SABERPULL_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 								}
 								else
 								{
@@ -9325,6 +9617,7 @@ void PM_TorsoAnimation()
 		else if (pm->ps->legsAnim == BOTH_STAND1IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_YODA
 			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_VADER
+			|| pm->ps->legsAnim == BOTH_STAND1IDLE1_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND9IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND_SABER_ON_IDLE
@@ -9333,6 +9626,7 @@ void PM_TorsoAnimation()
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_ANI
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_VADER
+			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_GALEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE1_BEN
 			|| pm->ps->legsAnim == BOTH_STAND2IDLE2
 			|| pm->ps->legsAnim == BOTH_STAND3IDLE1
@@ -10316,6 +10610,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND1IDLE1: //# Random standing idle
 	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND1IDLE1_VADER:
+	case BOTH_STAND1IDLE1_GALEN:
 	case BOTH_STAND2: //# Standing idle with a weapon
 	case BOTH_STAND2_JKA: //# Standing idle with a weapon
 	case BOTH_STAND_BLOCKING_ON:
@@ -10323,8 +10618,10 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_BEN:
 	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_VADER:
+	case BOTH_STAND_BLOCKING_ON_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
@@ -10334,37 +10631,49 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_VADER:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_GALEN:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
 	case BOTH_STAND_BLOCKING_ON_BACK_VADER:
+	case BOTH_STAND_BLOCKING_ON_BACK_GALEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_VADER:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
 	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
 	case BOTH_STAND_BLOCKING_ON_LEFT_VADER:
+	case BOTH_STAND_BLOCKING_ON_LEFT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT:
 	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BACK:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BACK_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_GALEN:
 		//
 	case BOTH_SABERFAST_STANCE:
 	case BOTH_SABERFAST_STANCE_JKA:
@@ -10376,6 +10685,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
 	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE_JKA_VADER:
+	case BOTH_SABERSLOW_STANCE_JKA_GALEN:
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
@@ -10387,6 +10697,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND2IDLE1: //# Random standing idle
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
 	case BOTH_STAND2IDLE1_VADER:
+	case BOTH_STAND2IDLE1_GALEN:
 	case BOTH_STAND2IDLE1_BEN: //# Random standing idle
 	case BOTH_STAND2IDLE2: //# Random standing idle
 	case BOTH_STAND3: //# Standing hands behind back: at ease: etc.
@@ -10422,6 +10733,7 @@ int PM_GetTurnAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERSINGLECROUCH_ANI:
 	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
+	case BOTH_SABERDUALCROUCH_GALEN:
 	case BOTH_SABERSTAFFCROUCH:
 	{
 		if (PM_HasAnimation(gent, LEGS_TURN1))
@@ -10472,6 +10784,7 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND1IDLE1: //# Random standing idle
 	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND1IDLE1_VADER:
+	case BOTH_STAND1IDLE1_GALEN:
 	case BOTH_STAND_SABER_ON_IDLE:
 	case BOTH_STAND_SABER_ON_IDLE_DUELS:
 	case BOTH_STAND_SABER_ON_IDLE_STAFF:
@@ -10500,6 +10813,7 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
@@ -10507,43 +10821,56 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND_BLOCKING_ON_BEN:
 	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_VADER:
+	case BOTH_STAND_BLOCKING_ON_GALEN:
 		//
 	case BOTH_STAND_BLOCKING_ON_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_ANI:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_BEN:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_YODA:
 	case BOTH_STAND_BLOCKING_ON_FORWARD_VADER:
+	case BOTH_STAND_BLOCKING_ON_FORWARD_GALEN:
 	case BOTH_STAND_BLOCKING_ON_BACK:
 	case BOTH_STAND_BLOCKING_ON_BACK_ANI:
 	case BOTH_STAND_BLOCKING_ON_BACK_BEN:
 	case BOTH_STAND_BLOCKING_ON_BACK_YODA:
 	case BOTH_STAND_BLOCKING_ON_BACK_VADER:
+	case BOTH_STAND_BLOCKING_ON_BACK_GALEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_BEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_YODA:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_VADER:
+	case BOTH_STAND_BLOCKING_ON_RIGHT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_LEFT:
 	case BOTH_STAND_BLOCKING_ON_LEFT_ANI:
 	case BOTH_STAND_BLOCKING_ON_LEFT_BEN:
 	case BOTH_STAND_BLOCKING_ON_LEFT_YODA:
 	case BOTH_STAND_BLOCKING_ON_LEFT_VADER:
+	case BOTH_STAND_BLOCKING_ON_LEFT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_RIGHT_ANI:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_FORWARD_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BACK_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_BACK_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_RIGHT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT:
 	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_BEN:
+	case BOTH_STAND_BLOCKING_ON_DUAL_LEFT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD:
 	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_FORWARD_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BACK:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BACK_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_BACK_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT:
 	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_RIGHT_GALEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT:
 	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_BEN:
+	case BOTH_STAND_BLOCKING_ON_STAFF_LEFT_GALEN:
 		//
 	case BOTH_SABERFAST_STANCE_JKA:
 	case BOTH_SABERFAST_STANCE_JKA_ANI:
@@ -10554,6 +10881,7 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
 	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE_JKA_VADER:
+	case BOTH_SABERSLOW_STANCE_JKA_GALEN:
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
@@ -10565,12 +10893,14 @@ int PM_TurnAnimForLegsAnim(const gentity_t* gent, const int anim)
 	case BOTH_STAND2IDLE1: //# Random standing idle
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
 	case BOTH_STAND2IDLE1_VADER:
+	case BOTH_STAND2IDLE1_GALEN:
 	case BOTH_STAND2IDLE1_BEN: //# Random standing idle
 	case BOTH_STAND2IDLE2: //# Random standing idle
 	case BOTH_SABERSINGLECROUCH:
 	case BOTH_SABERSINGLECROUCH_ANI:
 	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
+	case BOTH_SABERDUALCROUCH_GALEN:
 	case BOTH_SABERSTAFFCROUCH:
 	{
 		if (PM_HasAnimation(gent, BOTH_TURNSTAND2))
@@ -11032,8 +11362,10 @@ qboolean PM_StandingAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON_ANI:
 	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_VADER:
+	case BOTH_STAND_BLOCKING_ON_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
@@ -11053,8 +11385,10 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON_ANI:
 	case BOTH_STAND_BLOCKING_ON_YODA:
 	case BOTH_STAND_BLOCKING_ON_VADER:
+	case BOTH_STAND_BLOCKING_ON_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
@@ -11067,12 +11401,16 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
 	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE_JKA_VADER:
+	case BOTH_SABERSLOW_STANCE_JKA_GALEN:
 	case BOTH_SABERSTAFF_STANCE: //saber staff style
 	case BOTH_SABERSTAFF_STANCE_BEN:
 	case BOTH_SABERSTAFF_STANCE_JKA: //saber staff style
+	case BOTH_SABERSTAFF_STANCE_JKA_GALEN:
 	case BOTH_SABERSTAFF_WALK_STANCE: //saber staff style
+	case BOTH_SABERSTAFF_WALK_STANCE_GALEN:
 	case BOTH_SABERDUAL_STANCE: //dual saber style
 	case BOTH_SABERDUAL_STANCE_JKA: //dual saber style
+	case BOTH_SABERDUAL_STANCE_JKA_GALEN:
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
@@ -11085,6 +11423,7 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND1IDLE1_VADER:
+	case BOTH_STAND1IDLE1_GALEN:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI: //# Random standing idle
 	case BOTH_STAND2:
@@ -11093,6 +11432,7 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_STAND2IDLE1_BEN:
 	case BOTH_STAND2IDLE1_ANI: //# Random standing idle
 	case BOTH_STAND2IDLE1_VADER:
+	case BOTH_STAND2IDLE1_GALEN:
 	case BOTH_STAND2IDLE2:
 	case BOTH_STAND3:
 	case BOTH_STAND3IDLE1:
@@ -11124,6 +11464,7 @@ qboolean PM_StandingidleAnim(const int anim)
 	case BOTH_SABERSINGLECROUCH_ANI:
 	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
+	case BOTH_SABERDUALCROUCH_GALEN:
 	case BOTH_SABERSTAFFCROUCH:
 		return qtrue;
 	default:;
@@ -11141,8 +11482,10 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_STAND_BLOCKING_ON_BEN:
 	case BOTH_STAND_BLOCKING_ON_ANI:
 	case BOTH_STAND_BLOCKING_ON_VADER:
+	case BOTH_STAND_BLOCKING_ON_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL:
 	case BOTH_STAND_BLOCKING_ON_DUAL_ANI:
+	case BOTH_STAND_BLOCKING_ON_DUAL_GALEN:
 	case BOTH_STAND_BLOCKING_ON_DUAL_BEN:
 	case BOTH_STAND_BLOCKING_ON_STAFF:
 	case BOTH_STAND_BLOCKING_ON_STAFF_BEN:
@@ -11155,12 +11498,16 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_SABERSLOW_STANCE_JKA_ANI:
 	case BOTH_SABERSLOW_STANCE_JKA_BEN:
 	case BOTH_SABERSLOW_STANCE_JKA_VADER:
+	case BOTH_SABERSLOW_STANCE_JKA_GALEN:
 	case BOTH_SABERSTAFF_STANCE: //saber staff style
 	case BOTH_SABERSTAFF_STANCE_BEN:
 	case BOTH_SABERSTAFF_STANCE_JKA: //saber staff style
+	case BOTH_SABERSTAFF_STANCE_JKA_GALEN:
 	case BOTH_SABERSTAFF_WALK_STANCE: //saber staff style
+	case BOTH_SABERSTAFF_WALK_STANCE_GALEN:
 	case BOTH_SABERDUAL_STANCE: //dual saber style
 	case BOTH_SABERDUAL_STANCE_JKA: //dual saber style
+	case BOTH_SABERDUAL_STANCE_JKA_GALEN:
 	case BOTH_SABERTAVION_STANCE: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA: //tavion saberstyle
 	case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
@@ -11173,6 +11520,7 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_STAND1IDLE1:
 	case BOTH_STAND1IDLE1_YODA:
 	case BOTH_STAND1IDLE1_VADER:
+	case BOTH_STAND1IDLE1_GALEN:
 	case BOTH_STAND9IDLE1:
 	case BOTH_STAND9IDLE1_ANI:
 	case BOTH_STAND2:
@@ -11181,6 +11529,7 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_STAND2IDLE1_BEN:
 	case BOTH_STAND2IDLE1_ANI:
 	case BOTH_STAND2IDLE1_VADER:
+	case BOTH_STAND2IDLE1_GALEN:
 	case BOTH_STAND2IDLE2:
 	case BOTH_STAND3:
 	case BOTH_STAND3IDLE1:
@@ -11208,6 +11557,7 @@ qboolean PM_StandingAtReadyAnim(const int anim)
 	case BOTH_SABERSINGLECROUCH_ANI:
 	case BOTH_SABERSINGLECROUCH_VADER:
 	case BOTH_SABERDUALCROUCH:
+	case BOTH_SABERDUALCROUCH_GALEN:
 	case BOTH_SABERSTAFFCROUCH:
 		return qtrue;
 	default:;
@@ -11221,6 +11571,7 @@ qboolean PM_InAirKickingAnim(const int anim)
 	{
 	case BOTH_A7_KICK_F_AIR:
 	case BOTH_FLYING_KICK:
+	case BOTH_FLYING_KICK_GALEN:
 	case BOTH_A7_KICK_B_AIR:
 	case BOTH_A7_KICK_R_AIR:
 	case BOTH_A7_KICK_L_AIR:
@@ -11236,8 +11587,10 @@ qboolean PM_KickingAnim(const int anim)
 	{
 	case BOTH_A7_KICK_F:
 	case BOTH_KICK_F_MD:
+	case BOTH_KICK_F_MD_GALEN:
 	case BOTH_A7_KICK_B:
 	case BOTH_SWEEP_KICK:
+	case BOTH_SWEEP_KICK_GALEN:
 	case BOTH_A7_KICK_R:
 	case BOTH_A7_KICK_L:
 	case BOTH_A7_KICK_S:
@@ -11248,7 +11601,9 @@ qboolean PM_KickingAnim(const int anim)
 	case BOTH_SLAP_L:
 	case BOTH_SLAP_R:
 	case BOTH_A7_SLAP_R:
+	case BOTH_A7_SLAP_R_GALEN:
 	case BOTH_A7_SLAP_L:
+	case BOTH_A7_SLAP_L_GALEN:
 		//NOT kicks, but do kick traces anyway
 	case BOTH_GETUP_BROLL_B:
 	case BOTH_GETUP_BROLL_F:
@@ -11385,11 +11740,14 @@ qboolean PM_ForceUsingSaberAnim(const int anim)
 	case BOTH_FORCELANDRIGHT1:
 	case BOTH_FLIP_F:
 	case BOTH_FLIP_F_ANI:
+	case BOTH_FLIP_F_GALEN:
 	case BOTH_FLIP_B:
 	case BOTH_FLIP_L:
 	case BOTH_FLIP_L_ANI:
+	case BOTH_FLIP_L_GALEN:
 	case BOTH_FLIP_R:
 	case BOTH_FLIP_R_ANI:
+	case BOTH_FLIP_R_GALEN:
 	case BOTH_ALORA_FLIP_1:
 	case BOTH_ALORA_FLIP_2:
 	case BOTH_ALORA_FLIP_3:
@@ -11429,9 +11787,13 @@ qboolean PM_ForceUsingSaberAnim(const int anim)
 	case BOTH_DEFLECTSLASH__R__L_FIN:
 	case BOTH_ARIAL_F1:
 	case BOTH_DASH_L:
+	case BOTH_DASH_L_GALEN:
 	case BOTH_DASH_R:
+	case BOTH_DASH_R_GALEN:
 	case BOTH_GRAPPLE_PULL:
+	case BOTH_GRAPPLE_PULL_GALEN:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -12127,9 +12489,12 @@ qboolean PM_Bobaspecialanim(const int anim)
 	case BOTH_READY_DUAL:
 		//
 	case BOTH_FLAMETHROWER:
+	case BOTH_FLAMETHROWER_GALEN:
 	case BOTH_PULL_IMPALE_STAB:
 	case BOTH_FORCELIGHTNING_HOLD:
+	case BOTH_FORCELIGHTNING_HOLD_GALEN:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qtrue;
 	default:;
 	}

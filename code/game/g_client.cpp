@@ -1681,6 +1681,15 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 						ent->m_pVehicle->m_iMuzzleTag[i] = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], str_temp);
 					}
 				}
+
+				// Setup the Turret gunner views (as MP). Was never set in SP: 0 is a real bolt, -1 means none.
+				for (int i = 0; i < MAX_VEHICLE_TURRETS; i++)
+				{
+					const char* view_tag = ent->m_pVehicle->m_pVehicleInfo->turret[i].gunnerViewTag;
+					ent->m_pVehicle->m_iGunnerViewTag[i] = view_tag && view_tag[0]
+						? gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], view_tag)
+						: -1;
+				}
 			}
 			else if (ent->client && ent->client->NPC_class == CLASS_HOWLER)
 			{

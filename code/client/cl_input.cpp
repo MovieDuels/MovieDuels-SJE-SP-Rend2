@@ -36,6 +36,11 @@ unsigned frame_msec;
 int old_com_frameTime;
 float cl_mPitchOverride = 0.0f;
 float cl_mYawOverride = 0.0f;
+// How fast the look keys (and a stick bound to them) turn the view, as a fraction of cl_pitchspeed / cl_yawspeed.
+// Set by the cgame next to the mouse overrides above; 0 = not set, the keys then turn at five times the mouse
+// override, as they always did.
+float cl_keyPitchScale = 0.0f;
+float cl_keyYawScale = 0.0f;
 
 /*
 ===============================================================================
@@ -447,7 +452,13 @@ static void CL_AdjustAngles()
 
 	if (!in_strafe.active)
 	{
-		if (cl_mYawOverride)
+		if (cl_keyYawScale > 0.0f)
+		{
+			//the cgame gave the keys a speed of their own (a vehicle: the mouse override is far too slow for a stick)
+			cl.viewangles[YAW] -= cl_keyYawScale * speed * cl_yawspeed->value * CL_KeyState(&in_right);
+			cl.viewangles[YAW] += cl_keyYawScale * speed * cl_yawspeed->value * CL_KeyState(&in_left);
+		}
+		else if (cl_mYawOverride)
 		{
 			cl.viewangles[YAW] -= cl_mYawOverride * 5.0f * speed * cl_yawspeed->value * CL_KeyState(&in_right);
 			cl.viewangles[YAW] += cl_mYawOverride * 5.0f * speed * cl_yawspeed->value * CL_KeyState(&in_left);
@@ -459,7 +470,12 @@ static void CL_AdjustAngles()
 		}
 	}
 
-	if (cl_mPitchOverride)
+	if (cl_keyPitchScale > 0.0f)
+	{
+		cl.viewangles[PITCH] -= cl_keyPitchScale * speed * cl_pitchspeed->value * CL_KeyState(&in_lookup);
+		cl.viewangles[PITCH] += cl_keyPitchScale * speed * cl_pitchspeed->value * CL_KeyState(&in_lookdown);
+	}
+	else if (cl_mPitchOverride)
 	{
 		cl.viewangles[PITCH] -= cl_mPitchOverride * 5.0f * speed * cl_pitchspeed->value * CL_KeyState(&in_lookup);
 		cl.viewangles[PITCH] += cl_mPitchOverride * 5.0f * speed * cl_pitchspeed->value * CL_KeyState(&in_lookdown);

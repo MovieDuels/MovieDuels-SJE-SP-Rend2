@@ -819,7 +819,9 @@ static void WP_RocketLock(const gentity_t* ent, const float lock_dist)
 
 constexpr auto VEH_HOMING_MISSILE_THINK_TIME = 100;
 
-static void WP_FireVehicleWeapon(gentity_t* ent, vec3_t start, vec3_t dir, const vehWeaponInfo_t* veh_weapon)
+//(not static: the turrets of a ship fire through it too, g_vehicleTurret.cpp)
+void WP_FireVehicleWeapon(gentity_t* ent, vec3_t start, vec3_t dir, const vehWeaponInfo_t* veh_weapon,
+	const qboolean is_turret_weap)
 {
 	if (!veh_weapon)
 	{
@@ -911,7 +913,9 @@ static void WP_FireVehicleWeapon(gentity_t* ent, vec3_t start, vec3_t dir, const
 		}
 
 		//set veh as cgame side owner for purpose of fx overrides
-		if (ent->m_pVehicle && ent->m_pVehicle->m_pPilot)
+		//(a turret's shot stays the ship's own, as in MP: a missile passes through its owner, and the turrets sit on the
+		//hull - owned by the pilot, their shots hit the ship they came from)
+		if (ent->m_pVehicle && ent->m_pVehicle->m_pPilot && !is_turret_weap)
 		{
 			missile->owner = ent->m_pVehicle->m_pPilot;
 		}
@@ -1245,7 +1249,7 @@ static void FireVehicleWeapon(gentity_t* ent, const qboolean alt_fire)
 						G_PlayEffect(veh_weapon->iMuzzleFX, p_veh->m_Muzzles[i].m_vMuzzlePos,
 							p_veh->m_Muzzles[i].m_vMuzzleDir);
 					}
-					WP_FireVehicleWeapon(ent, start, dir, veh_weapon);
+					WP_FireVehicleWeapon(ent, start, dir, veh_weapon, qfalse);
 				}
 
 				if (linked_firing)
@@ -1449,6 +1453,109 @@ extern void CG_ChangeWeapon(int num);
 extern qboolean IsHoldingReloadableGun(const gentity_t* ent);
 extern qboolean PM_PainAnim(const int anim);
 extern void G_RemoveGunnerAimFlagEnt(gentity_t* ent, qboolean removeFlag);
+
+// NPC gunners: shoot from the muzzle at the enemy's chest, instead of along the view angles.
+// The view angles point from the NPC's eyes at the enemy's eyes. Fired from the gun, which is beside and below
+// the eyes, that line passes just beside the enemy's head: even at point blank range a stormtrooper missed a
+// target that stood still most of the time.
+// The aim error is an angle, so the miss distance grows with the range: the closer the target, the more shots
+// hit. It depends on the NPC's aim (currentAim: up to its "aim" stat, building up while it keeps a clear shot,
+// dropping when it loses sight of the enemy) and on the skill level. The weapon's own spread comes on top.
+constexpr float NPC_AIM_ERROR_BASE = 0.4f;      // degrees, with the best aim
+constexpr float NPC_AIM_ERROR_PER_POINT = 0.3f; // degrees more for every point of aim below 6
+constexpr float NPC_AIM_ERROR_MAX = 5.0f;       // degrees
+constexpr float NPC_AIM_CORRECT_YAW = 20.0f;    // only correct the aim when already facing the enemy this closely
+constexpr float NPC_AIM_CORRECT_PITCH = 45.0f;
+
+static qboolean WP_NPCAimsGun(const int weapon)
+{
+	switch (weapon)
+	{
+	case WP_NONE:
+	case WP_SABER:
+	case WP_MELEE:
+	case WP_STUN_BATON:
+	case WP_TUSKEN_STAFF:
+	case WP_SCEPTER:
+	case WP_THERMAL:
+	case WP_TRIP_MINE:
+	case WP_DET_PACK:
+	case WP_DISRUPTOR: //snipers have their own aiming (AI_Sniper)
+	case WP_ROCKET_LAUNCHER:
+	case WP_CONCUSSION:
+	case WP_RAPID_FIRE_CONC:
+	case WP_ATST_MAIN:
+	case WP_ATST_SIDE:
+	case WP_EMPLACED_GUN:
+	case WP_BOT_LASER:
+	case WP_TURRET:
+	case WP_TIE_FIGHTER:
+		return qfalse;
+	default:
+		return qtrue;
+	}
+}
+
+// Call after the muzzle point is known: replaces forward_vec (and vright_vec, up).
+static void WP_NPCAimAtEnemy(const gentity_t* ent)
+{
+	if (!ent->NPC || !ent->enemy || ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent) || !WP_NPCAimsGun(ent->s.weapon))
+	{
+		return;
+	}
+
+	const gentity_t* enemy = ent->enemy;
+	vec3_t target;
+	if (enemy->client)
+	{
+		//chest height: about two thirds up the body
+		VectorCopy(enemy->currentOrigin, target);
+		target[2] += enemy->mins[2] + (enemy->maxs[2] - enemy->mins[2]) * 0.65f;
+	}
+	else
+	{
+		VectorAdd(enemy->absmin, enemy->absmax, target);
+		VectorScale(target, 0.5f, target);
+	}
+
+	vec3_t to_enemy, aim_angles, view_angles;
+	VectorSubtract(target, muzzle, to_enemy);
+	if (VectorNormalize(to_enemy) < 1.0f)
+	{
+		return;
+	}
+	vectoangles(to_enemy, aim_angles);
+	vectoangles(forward_vec, view_angles);
+
+	//this corrects the aim of an NPC that is facing its enemy: it does not let one hit what it is not looking at
+	if (fabs(AngleDelta(aim_angles[YAW], view_angles[YAW])) > NPC_AIM_CORRECT_YAW
+		|| fabs(AngleDelta(aim_angles[PITCH], view_angles[PITCH])) > NPC_AIM_CORRECT_PITCH)
+	{
+		return;
+	}
+
+	float error = NPC_AIM_ERROR_BASE + static_cast<float>(6 - ent->NPC->currentAim) * NPC_AIM_ERROR_PER_POINT;
+	if (g_spskill->integer == 0)
+	{
+		error *= 1.5f;
+	}
+	else if (g_spskill->integer >= 2)
+	{
+		error *= 0.75f;
+	}
+	if (error < NPC_AIM_ERROR_BASE * 0.75f)
+	{
+		error = NPC_AIM_ERROR_BASE * 0.75f;
+	}
+	else if (error > NPC_AIM_ERROR_MAX)
+	{
+		error = NPC_AIM_ERROR_MAX;
+	}
+
+	aim_angles[PITCH] += Q_flrand(-1.0f, 1.0f) * error;
+	aim_angles[YAW] += Q_flrand(-1.0f, 1.0f) * error;
+	AngleVectors(aim_angles, forward_vec, vright_vec, up);
+}
 
 //---------------------------------------------------------
 void FireWeapon(gentity_t* ent, const qboolean alt_fire)
@@ -1707,6 +1814,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 		else
 		{
 			CalcMuzzlePoint(ent, forward_vec, muzzle, 0);
+			WP_NPCAimAtEnemy(ent);
 
 			if (!cg_trueguns.integer && !cg.renderingThirdPerson && (ent->client->ps.eFlags & EF2_JANGO_DUALS || ent->client->ps.eFlags & EF2_DUAL_CLONE_PISTOLS || ent->client->ps.eFlags & EF2_DUAL_PISTOLS))
 			{

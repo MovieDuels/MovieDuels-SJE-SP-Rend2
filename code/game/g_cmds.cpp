@@ -2640,11 +2640,39 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			{
 				if (PM_WalkingAnim(ent->client->ps.legsAnim) || PM_RunningAnim(ent->client->ps.legsAnim))
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 				else
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 			}
 			else if (ent->client->ps.saber[0].combatstanceAnim != -1)
@@ -2667,13 +2695,41 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					break;
 				case SS_MEDIUM:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					break;
 				case SS_STRONG:
 					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					break;
 				case SS_DESANN:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					break;
 				case SS_DUAL:
 					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -2801,9 +2857,11 @@ static void Cmd_SaberDrop_f(gentity_t* ent, const int saberNum)
 		&& ent->client->ps.saberMove != LS_PUTAWAY
 		&& ent->client->ps.saberMove != LS_PUTAWAY_YODA
 		&& ent->client->ps.saberMove != LS_PUTAWAY_VADER
+		&& ent->client->ps.saberMove != LS_PUTAWAY_GALEN
 		&& ent->client->ps.saberMove != LS_DRAW
 		&& ent->client->ps.saberMove != LS_DRAW_YODA
 		&& ent->client->ps.saberMove != LS_DRAW_VADER
+		&& ent->client->ps.saberMove != LS_DRAW_GALEN
 		&& ent->client->ps.saberMove != LS_NONE)
 	{
 		return;

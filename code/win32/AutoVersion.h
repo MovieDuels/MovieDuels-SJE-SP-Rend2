@@ -30,10 +30,10 @@ This file is part of Jedi Academy.
 #define __AUTO_VERSION_HEADER
 
 #define VERSION_MAJOR_RELEASE		26  // Build year
-#define VERSION_MINOR_RELEASE		08  // Build month
-#define VERSION_INTERNAL_BUILD		12  // Build number
+#define VERSION_MINOR_RELEASE		09  // Build month
+#define VERSION_INTERNAL_BUILD		13  // Build number
 
-#define VERSION_STRING				"Day-29,Month-09,Year-26,BuildNum-12" // build date
-#define VERSION_STRING_DOTTED		"Day-29.Month-09.Year-26.BuildNum-12" // build date
+#define VERSION_STRING				"Day-30,Month-09,Year-26,BuildNum-13" // build date
+#define VERSION_STRING_DOTTED		"Day-30.Month-09.Year-26.BuildNum-13" // build date
 
 #endif // __AUTO_VERSION_HEADER

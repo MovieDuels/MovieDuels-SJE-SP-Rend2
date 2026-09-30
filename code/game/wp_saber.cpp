@@ -17666,13 +17666,55 @@ qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc)
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -17792,13 +17834,55 @@ qboolean WP_SaberBlockNonRandom(gentity_t* self, vec3_t hitloc, const qboolean m
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18111,13 +18195,55 @@ qboolean WP_SaberMBlockDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 		{
 			//BACK
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18136,7 +18262,21 @@ qboolean WP_SaberMBlockDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TR___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18153,7 +18293,21 @@ qboolean WP_SaberMBlockDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TL___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18194,7 +18348,21 @@ qboolean WP_SaberMBlockDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TR___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18211,7 +18379,21 @@ qboolean WP_SaberMBlockDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TL___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18348,13 +18530,55 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 		{
 			//BACK
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18373,7 +18597,21 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TR___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18390,7 +18628,21 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TL___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18400,7 +18652,21 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_T__MD, SETANIM_AFLAG_BLOCKPACE);
@@ -18430,7 +18696,21 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TR___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18447,7 +18727,21 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_B6_TL___, SETANIM_AFLAG_BLOCKPACE);
 				break;
 			default:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			}
 			self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18457,7 +18751,21 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_T__MD, SETANIM_AFLAG_BLOCKPACE);
@@ -18582,13 +18890,55 @@ qboolean WP_SaberFatigueDirection(gentity_t* self, vec3_t hitloc, const qboolean
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -18810,13 +19160,55 @@ qboolean WP_SaberBounceDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19044,13 +19436,55 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19062,7 +19496,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_TR_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19070,7 +19518,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			default:
 				if (self->client && NPC_IsOversized(self))
 				{
-					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+						}
+						else
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
 				}
 				else
 				{
@@ -19092,7 +19554,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_TL_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19100,7 +19576,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			default:
 				if (self->client && NPC_IsOversized(self))
 				{
-					NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+						}
+						else
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_K1_S1_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
 				}
 				else
 				{
@@ -19122,7 +19612,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_T__MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19147,6 +19651,10 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 						else if (flags.isVader == qtrue)
 						{
 							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_VADER, SETANIM_AFLAG_BLOCKPACE);
+						}
+						else if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_GALEN, SETANIM_AFLAG_BLOCKPACE);
 						}
 						else
 						{
@@ -19185,7 +19693,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_TR_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19208,7 +19730,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_TL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_TL_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19231,7 +19767,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_T__MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19257,7 +19807,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_BR_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19280,7 +19844,21 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_BL_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19375,13 +19953,55 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19393,7 +20013,21 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R6_TR_S6, SETANIM_AFLAG_BLOCKPACE);
@@ -19409,7 +20043,21 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R6_TL_S6, SETANIM_AFLAG_BLOCKPACE);
@@ -19448,7 +20096,21 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TR_S7, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R6_TR_S6, SETANIM_AFLAG_BLOCKPACE);
@@ -19464,7 +20126,21 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_R7_TL_S7, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_R6_TL_S6, SETANIM_AFLAG_BLOCKPACE);
@@ -19499,7 +20175,21 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BR_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_BR_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19515,7 +20205,21 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 			switch (self->client->ps.saberAnimLevel)
 			{
 			case SS_STAFF:
-				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD_GALEN, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S7_BL_MD, SETANIM_AFLAG_BLOCKPACE);
+				}
 				break;
 			case SS_DUAL:
 				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S6_BL_MD, SETANIM_AFLAG_BLOCKPACE);
@@ -19603,13 +20307,55 @@ qboolean WP_SaberFatiguedParryDirection(gentity_t* self, vec3_t hitloc, const qb
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -19832,13 +20578,55 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 		switch (self->client->ps.saberAnimLevel)
 		{
 		case SS_STAFF:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P7_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		case SS_DUAL:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P6_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		default:
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B__GALEN, SETANIM_AFLAG_BLOCKPACE);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_P1_S1_B_, SETANIM_AFLAG_BLOCKPACE);
+			}
 			break;
 		}
 		self->client->ps.weaponTime = Q_irand(300, 600);
@@ -23978,6 +24766,10 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 			{
 				anim = BOTH_FORCEPULL_VADER;
 			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_FORCEPULL_GALEN;
+			}
 			else
 			{
 				anim = BOTH_FORCEPULL;
@@ -24008,6 +24800,10 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 			else if (flags.isVader == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_VADER;
+			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_GALEN;
 			}
 			else
 			{
@@ -25450,6 +26246,10 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 			{
 				anim = BOTH_FORCEPULL_VADER;
 			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_FORCEPULL_GALEN;
+			}
 			else
 			{
 				anim = BOTH_FORCEPULL;
@@ -25477,7 +26277,21 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 			//2-handed PUSH
 			if (self->client->ps.groundEntityNum == ENTITYNUM_NONE && self->client->NPC_class == CLASS_GALEN)
 			{
-				anim = BOTH_FORCE_REPULSE;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_FORCE_REPULSE_GALEN;
+					}
+					else
+					{
+						anim = BOTH_FORCE_REPULSE;
+					}
+				}
+				else
+				{
+					anim = BOTH_FORCE_REPULSE;
+				}
 			}
 			else
 			{
@@ -25493,6 +26307,10 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 						{
 							anim = BOTH_FORCEPUSH_VADER;
 						}
+						else if (flags.isGalenMarek == qtrue)
+						{
+							anim = BOTH_FORCEPUSH_GALEN;
+						}
 						else
 						{
 							anim = BOTH_FORCEPUSH;
@@ -25505,7 +26323,21 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 				}
 				else
 				{
-					anim = BOTH_DUAL_PUSH;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							anim = BOTH_DUAL_PUSH_GALEN;
+						}
+						else
+						{
+							anim = BOTH_DUAL_PUSH;
+						}
+					}
+					else
+					{
+						anim = BOTH_DUAL_PUSH;
+					}
 				}
 			}
 		}
@@ -25520,6 +26352,10 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 				else if (flags.isVader == qtrue)
 				{
 					anim = BOTH_FORCEPUSH_VADER;
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_FORCEPUSH_GALEN;
 				}
 				else
 				{
@@ -27032,6 +27868,10 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 			{
 				anim = BOTH_FORCEPULL_VADER;
 			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_FORCEPULL_GALEN;
+			}
 			else
 			{
 				anim = BOTH_FORCEPULL;
@@ -27059,7 +27899,21 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 			//2-handed PUSH
 			if (self->client->ps.groundEntityNum == ENTITYNUM_NONE && self->client->NPC_class == CLASS_GALEN)
 			{
-				anim = BOTH_FORCE_REPULSE;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_FORCE_REPULSE_GALEN;
+					}
+					else
+					{
+						anim = BOTH_FORCE_REPULSE;
+					}
+				}
+				else
+				{
+					anim = BOTH_FORCE_REPULSE;
+				}
 			}
 			else
 			{
@@ -27075,6 +27929,10 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 						{
 							anim = BOTH_FORCEPUSH_VADER;
 						}
+						else if (flags.isGalenMarek == qtrue)
+						{
+							anim = BOTH_FORCEPUSH_GALEN;
+						}
 						else
 						{
 							anim = BOTH_FORCEPUSH;
@@ -27087,7 +27945,21 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 				}
 				else
 				{
-					anim = BOTH_DUAL_PUSH;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							anim = BOTH_DUAL_PUSH_GALEN;
+						}
+						else
+						{
+							anim = BOTH_DUAL_PUSH;
+						}
+					}
+					else
+					{
+						anim = BOTH_DUAL_PUSH;
+					}
 				}
 			}
 		}
@@ -27102,6 +27974,10 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 				else if (flags.isVader == qtrue)
 				{
 					anim = BOTH_FORCEPUSH_VADER;
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_FORCEPUSH_GALEN;
 				}
 				else
 				{
@@ -29986,7 +30862,21 @@ static void ForceRepulseThrow(gentity_t* self, int charge_time)
 		return;
 	}
 	//make sure this plays and that you cannot press fire for about 1 second after this
-	anim = BOTH_FORCE_REPULSE;
+	if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+	{
+		if (W_Animationstyletable(self).isGalenMarek == qtrue)
+		{
+			anim = BOTH_FORCE_REPULSE_GALEN;
+		}
+		else
+		{
+			anim = BOTH_FORCE_REPULSE;
+		}
+	}
+	else
+	{
+		anim = BOTH_FORCE_REPULSE;
+	}
 	sound_index = G_SoundIndex("sound/weapons/force/repulsepush.mp3");
 	hold = 650;
 
@@ -30901,19 +31791,75 @@ void ForceDashAnimDash(gentity_t* self)
 
 	if (self->client->pers.cmd.rightmove > 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_R, setAnimOverride);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_R_GALEN, setAnimOverride);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_R, setAnimOverride);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_R, setAnimOverride);
+		}
 	}
 	else if (self->client->pers.cmd.rightmove < 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_L, setAnimOverride);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_L_GALEN, setAnimOverride);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_L, setAnimOverride);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_L, setAnimOverride);
+		}
 	}
 	else if (self->client->pers.cmd.forwardmove < 0)
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_B, setAnimOverride);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_B_GALEN, setAnimOverride);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_B, setAnimOverride);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_B, setAnimOverride);
+		}
 	}
 	else
 	{
-		NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_F, setAnimOverride);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_F_GALEN, setAnimOverride);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_F, setAnimOverride);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_F, setAnimOverride);
+		}
 	}
 }
 
@@ -32103,15 +33049,43 @@ static void ForceLightningAnim(gentity_t* self)
 
 	//one-handed lightning 2 and above
 	int start_anim = BOTH_FORCELIGHTNING_START;
-	int hold_anim = BOTH_FORCELIGHTNING_HOLD;
-	constexpr int bobahold_anim = BOTH_FLAMETHROWER;
+	int hold_anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && W_Animationstyletable(self).isGalenMarek == qtrue) ? (BOTH_FORCELIGHTNING_HOLD_GALEN) : (BOTH_FORCELIGHTNING_HOLD);
+	const int bobahold_anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && W_Animationstyletable(self).isGalenMarek == qtrue) ? (BOTH_FLAMETHROWER_GALEN) : (BOTH_FLAMETHROWER);
 
 	if (self->client->ps.forcePowerLevel[FP_LIGHTNING] >= FORCE_LEVEL_3
 		&& ForceLightningCheck2Handed(self))
 	{
 		//empty handed lightning 3
-		start_anim = BOTH_FORCE_2HANDEDLIGHTNING_START;
-		hold_anim = BOTH_FORCE_2HANDEDLIGHTNING_HOLD;
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				start_anim = BOTH_FORCE_2HANDEDLIGHTNING_START_GALEN;
+			}
+			else
+			{
+				start_anim = BOTH_FORCE_2HANDEDLIGHTNING_START;
+			}
+		}
+		else
+		{
+			start_anim = BOTH_FORCE_2HANDEDLIGHTNING_START;
+		}
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				hold_anim = BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN;
+			}
+			else
+			{
+				hold_anim = BOTH_FORCE_2HANDEDLIGHTNING_HOLD;
+			}
+		}
+		else
+		{
+			hold_anim = BOTH_FORCE_2HANDEDLIGHTNING_HOLD;
+		}
 	}
 
 	//FIXME: if standing still, play on whole body?  Especially 2-handed version
@@ -33609,7 +34583,7 @@ void ForceLightningStrike(gentity_t* self)
 		WP_ForcePowerStop(self, FP_ABSORB);
 	}
 
-	constexpr int anim = BOTH_FORCELIGHTNING;
+	const int anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && W_Animationstyletable(self).isGalenMarek == qtrue) ? (BOTH_FORCELIGHTNING_GALEN) : (BOTH_FORCELIGHTNING);
 	const int sound_index = G_SoundIndex("sound/weapons/force/strike.wav");
 
 	int parts = SETANIM_TORSO;
@@ -33730,7 +34704,21 @@ void ForceLightning(gentity_t* self)
 	//make sure this plays and that you cannot press fire for about 1 second after this
 	if (self->client->ps.forcePowerLevel[FP_LIGHTNING] < FORCE_LEVEL_2)
 	{
-		NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
 	}
 	else
 	{
@@ -33858,7 +34846,21 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 				&& !PM_RunningAnim(traceEnt->client->ps.legsAnim)
 				&& InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35))
 			{
-				NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+				}
 				traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 				lightning_blocked = qtrue;
 
@@ -33945,12 +34947,12 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 						dmg += 1;
 					}
 				}
-				if (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING
+				if ((self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_GALEN)
 					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_OLD
 					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_NEW
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START_GALEN)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE_GALEN))
 				{
 					//jackin' 'em up, Palpatine-style
 					dmg *= 2;
@@ -34064,7 +35066,21 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 					{
 						if (Manual_Hand_Block_Lightning_NPC(self, traceEnt, FP_LIGHTNING))
 						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+								}
+								else
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							}
 							traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 							lightning_blocked = qtrue;
 
@@ -34292,7 +35308,21 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 						&& InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35)
 						&& traceEnt->client->ps.forcePower > 20)
 					{
-						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+						}
 						traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 						lightning_blocked = qtrue;
 
@@ -34597,7 +35627,21 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 				&& !PM_RunningAnim(traceEnt->client->ps.legsAnim)
 				&& InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35))
 			{
-				NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+				}
 				traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 				lightning_blocked = qtrue;
 
@@ -34684,12 +35728,12 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						dmg += 1;
 					}
 				}
-				if (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING
+				if ((self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_GALEN)
 					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_OLD
 					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_NEW
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START_GALEN)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE_GALEN))
 				{
 					//jackin' 'em up, Palpatine-style
 					dmg *= 2;
@@ -34810,7 +35854,21 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 					{
 						if (Manual_Hand_Block_Lightning_NPC(self, traceEnt, FP_LIGHTNING))
 						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+								}
+								else
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							}
 							traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 							lightning_blocked = qtrue;
 
@@ -34905,14 +35963,42 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						case SS_STAFF:
 							if (is_holding_block_button_and_attack)
 							{
-								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+									{
+										NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD_GALEN, SETANIM_AFLAG_PACE);
+									}
+									else
+									{
+										NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+									}
+								}
+								else
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+								}
 								traceEnt->client->IsBlockingLightning = qtrue;
 							}
 							else
 							{
 								if (g_RealisticBlockingMode->integer)
 								{
-									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD_GALEN, SETANIM_AFLAG_PACE);
+										}
+										else
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+										}
+									}
+									else
+									{
+										NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+									}
 								}
 								else
 								{
@@ -34971,6 +36057,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_VADER, SETANIM_AFLAG_PACE);
 										}
+										else if (flags.isGalenMarek == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_GALEN, SETANIM_AFLAG_PACE);
+										}
 										else
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON, SETANIM_AFLAG_PACE);
@@ -35016,6 +36106,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 										else if (flags.isVader == qtrue)
 										{
 											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_VADER, SETANIM_AFLAG_PACE);
+										}
+										else if (flags.isGalenMarek == qtrue)
+										{
+											NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_STAND_BLOCKING_ON_GALEN, SETANIM_AFLAG_PACE);
 										}
 										else
 										{
@@ -35150,7 +36244,21 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P6_S6_T__MD, SETANIM_AFLAG_PACE);
 							break;
 						case SS_STAFF:
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD_GALEN, SETANIM_AFLAG_PACE);
+								}
+								else
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_P7_S7_T__MD, SETANIM_AFLAG_PACE);
+							}
 							break;
 						case SS_FAST:
 						case SS_TAVION:
@@ -35190,7 +36298,21 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 						&& InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35)
 						&& traceEnt->client->ps.forcePower > 20)
 					{
-						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+						}
 						traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 						lightning_blocked = qtrue;
 
@@ -35503,7 +36625,21 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 				&& !PM_RunningAnim(traceEnt->client->ps.legsAnim)
 				&& InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35))
 			{
-				NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+				}
 				traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 				lightning_blocked = qtrue;
 
@@ -35590,12 +36726,12 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 						dmg += 1;
 					}
 				}
-				if (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING
+				if ((self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_GALEN)
 					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_OLD
 					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_NEW
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD
-					|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START_GALEN)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN)
+					|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE_GALEN))
 				{
 					//jackin' 'em up, Palpatine-style
 					dmg *= 2;
@@ -35707,7 +36843,21 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 					{
 						if (Manual_Hand_Block_Lightning_NPC(self, traceEnt, FP_LIGHTNING))
 						{
-							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+								}
+								else
+								{
+									NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							}
 							traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 							lightning_blocked = qtrue;
 
@@ -35942,7 +37092,21 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 						&& InFOV(self->currentOrigin, traceEnt->currentOrigin, traceEnt->client->ps.viewangles, 20, 35)
 						&& traceEnt->client->ps.forcePower > 20)
 					{
-						NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (W_Animationstyletable(traceEnt).isGalenMarek == qtrue)
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN, SETANIM_AFLAG_PACE);
+							}
+							else
+							{
+								NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(traceEnt, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD, SETANIM_AFLAG_PACE);
+						}
 						traceEnt->client->ps.weaponTime = Q_irand(300, 600);
 						lightning_blocked = qtrue;
 
@@ -37936,6 +39100,10 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 					{
 						anim = BOTH_FLIP_F_ANI;
 					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_FLIP_F_GALEN;
+					}
 					else
 					{
 						anim = BOTH_FLIP_F;
@@ -37969,6 +39137,10 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 				{
 					anim = BOTH_FLIP_B_ANI;
 				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_FLIP_B_GALEN;
+				}
 				else
 				{
 					anim = BOTH_FLIP_B;
@@ -38000,6 +39172,10 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 				if (flags.isAnakin == qtrue)
 				{
 					anim = BOTH_FLIP_R_ANI;
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_FLIP_R_GALEN;
 				}
 				else
 				{
@@ -38033,6 +39209,10 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 				{
 					anim = BOTH_FLIP_L_ANI;
 				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_FLIP_L_GALEN;
+				}
 				else
 				{
 					anim = BOTH_FLIP_L;
@@ -38059,6 +39239,10 @@ void ForceJump(gentity_t* self, const usercmd_t* ucmd)
 			else if (flags.isVader == qtrue)
 			{
 				anim = BOTH_JUMP1_VADER;
+			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_JUMP1_GALEN;
 			}
 			else
 			{
@@ -38229,7 +39413,21 @@ void ForceDestruction(gentity_t* self)
 		//2-handed PUSH
 		if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 		{
-			anim = BOTH_DUAL_PUSH;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_DUAL_PUSH_GALEN;
+				}
+				else
+				{
+					anim = BOTH_DUAL_PUSH;
+				}
+			}
+			else
+			{
+				anim = BOTH_DUAL_PUSH;
+			}
 
 			if (self->handLBolt != -1)
 			{
@@ -38257,6 +39455,10 @@ void ForceDestruction(gentity_t* self)
 					{
 						anim = BOTH_FORCEPUSH_VADER;
 					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_GALEN;
+					}
 					else
 					{
 						anim = BOTH_FORCEPUSH;
@@ -38275,7 +39477,21 @@ void ForceDestruction(gentity_t* self)
 			}
 			else
 			{
-				anim = BOTH_DUAL_PUSH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_DUAL_PUSH_GALEN;
+					}
+					else
+					{
+						anim = BOTH_DUAL_PUSH;
+					}
+				}
+				else
+				{
+					anim = BOTH_DUAL_PUSH;
+				}
 
 				if (self->handLBolt != -1)
 				{
@@ -38302,6 +39518,10 @@ void ForceDestruction(gentity_t* self)
 			else if (flags.isVader == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_VADER;
+			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_GALEN;
 			}
 			else
 			{
@@ -38376,7 +39596,21 @@ static void forcestasis_anim(gentity_t* self)
 		//2-handed PUSH
 		if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 		{
-			anim = BOTH_FORCE_REPULSE;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_FORCE_REPULSE_GALEN;
+				}
+				else
+				{
+					anim = BOTH_FORCE_REPULSE;
+				}
+			}
+			else
+			{
+				anim = BOTH_FORCE_REPULSE;
+			}
 
 			if (self->handLBolt != -1)
 			{
@@ -38404,6 +39638,10 @@ static void forcestasis_anim(gentity_t* self)
 					{
 						anim = BOTH_FORCEPUSH_VADER;
 					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_GALEN;
+					}
 					else
 					{
 						anim = BOTH_FORCEPUSH;
@@ -38422,7 +39660,21 @@ static void forcestasis_anim(gentity_t* self)
 			}
 			else
 			{
-				anim = BOTH_DUAL_PUSH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_DUAL_PUSH_GALEN;
+					}
+					else
+					{
+						anim = BOTH_DUAL_PUSH;
+					}
+				}
+				else
+				{
+					anim = BOTH_DUAL_PUSH;
+				}
 
 				if (self->handLBolt != -1)
 				{
@@ -38449,6 +39701,10 @@ static void forcestasis_anim(gentity_t* self)
 			else if (flags.isVader == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_VADER;
+			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_GALEN;
 			}
 			else
 			{
@@ -39906,7 +41162,21 @@ void ForceBlast(gentity_t* self)
 		//2-handed PUSH
 		if (self->client->ps.groundEntityNum == ENTITYNUM_NONE)
 		{
-			anim = BOTH_DUAL_PUSH;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					anim = BOTH_DUAL_PUSH_GALEN;
+				}
+				else
+				{
+					anim = BOTH_DUAL_PUSH;
+				}
+			}
+			else
+			{
+				anim = BOTH_DUAL_PUSH;
+			}
 
 			if (self->handLBolt != -1)
 			{
@@ -39934,6 +41204,10 @@ void ForceBlast(gentity_t* self)
 					{
 						anim = BOTH_FORCEPUSH_VADER;
 					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_FORCEPUSH_GALEN;
+					}
 					else
 					{
 						anim = BOTH_FORCEPUSH;
@@ -39952,7 +41226,21 @@ void ForceBlast(gentity_t* self)
 			}
 			else
 			{
-				anim = BOTH_DUAL_PUSH;
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isGalenMarek == qtrue)
+					{
+						anim = BOTH_DUAL_PUSH_GALEN;
+					}
+					else
+					{
+						anim = BOTH_DUAL_PUSH;
+					}
+				}
+				else
+				{
+					anim = BOTH_DUAL_PUSH;
+				}
 
 				if (self->handLBolt != -1)
 				{
@@ -39979,6 +41267,10 @@ void ForceBlast(gentity_t* self)
 			else if (flags.isVader == qtrue)
 			{
 				anim = BOTH_FORCEPUSH_VADER;
+			}
+			else if (flags.isGalenMarek == qtrue)
+			{
+				anim = BOTH_FORCEPUSH_GALEN;
 			}
 			else
 			{
@@ -40972,6 +42264,10 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 				{
 					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -40988,16 +42284,46 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 		{
 			TIMER_Set(self, "holdLightning", -level.time);
 		}
-		if (self->client->ps.torsoAnim == BOTH_FORCELIGHTNING_HOLD || self->client->ps.torsoAnim == BOTH_FLAMETHROWER
+		if ((self->client->ps.torsoAnim == BOTH_FORCELIGHTNING_HOLD || self->client->ps.torsoAnim == BOTH_FORCELIGHTNING_HOLD_GALEN) || self->client->ps.torsoAnim == BOTH_FLAMETHROWER
 			|| self->client->ps.torsoAnim == BOTH_FORCELIGHTNING_START)
 		{
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING_RELEASE_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCELIGHTNING_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
-		else if (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD
-			|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START)
+		else if ((self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN)
+			|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START_GALEN))
 		{
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_RELEASE,
-				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_RELEASE_GALEN,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_RELEASE,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_RELEASE,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 		if (self->client->ps.forcePowerLevel[force_power] < FORCE_LEVEL_2)
 		{
@@ -41078,7 +42404,8 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 						else
 						{
 							if (drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH && drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_YODA
-								&& drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_VADER)
+								&& drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_VADER
+								&& drain_ent->client->ps.torsoAnim != BOTH_FORCEPUSH_GALEN)
 							{
 								//don't stop the push
 								drain_ent->client->ps.torsoAnimTimer = 0;
@@ -41297,6 +42624,10 @@ void WP_ForcePowerStop(gentity_t* self, const forcePowers_t force_power)
 				if (flags.isAnakin == qtrue)
 				{
 					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(self, SETANIM_BOTH, BOTH_FORCEGRIP_RELEASE_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
@@ -42116,12 +43447,12 @@ static void wp_force_power_run(gentity_t* self, forcePowers_t force_power, userc
 		else
 		{
 			ForceShootLightning(self);
-			if (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING
+			if ((self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_GALEN)
 				|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_OLD
 				|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_NEW
-				|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START
-				|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD
-				|| self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE)
+				|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START_GALEN)
+				|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN)
+				|| (self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE || self->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE_GALEN))
 			{
 				//jackin' 'em up, Palpatine-style
 				//extra cost
@@ -44334,35 +45665,177 @@ qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc)
 	if (!in_front)
 	{
 		// Attack from behind → forward dash
-		NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_F, SETANIM_AFLAG_PACE);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (W_Animationstyletable(self).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_F_GALEN, SETANIM_AFLAG_PACE);
+			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_F, SETANIM_AFLAG_PACE);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_F, SETANIM_AFLAG_PACE);
+		}
 	}
 	else if (zdiff > -5.0f)
 	{
 		// Horizontal attacks
 		if (rightdot > 0.3f)
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+				}
+			}
 		else if (rightdot < -0.3f)
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+				}
+			}
 		else
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+				}
+			}
 	}
 	else if (zdiff > -22.0f)
 	{
 		// Mid‑height attacks
 		if (rightdot > 0.1f)
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+				}
+			}
 		else if (rightdot < -0.1f)
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+				}
+			}
 		else
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+				}
+			}
 	}
 	else
 	{
 		// Low attacks
 		if (rightdot >= 0.0f)
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+				}
+			}
 		else
-			NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+			{
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (W_Animationstyletable(self).isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
+					}
+					else
+					{
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+				}
+			}
 	}
 
 	// ============================

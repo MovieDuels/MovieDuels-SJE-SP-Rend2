@@ -232,6 +232,29 @@ static animFlags_t Jedi_Animationstyletable(const gentity_t* NPC)
 	return flags;
 }
 
+extern qboolean PM_HasAnimation(const gentity_t* ent, int animation);
+
+// For anims picked at random or by a switch before they are played (melee slaps and kicks): Galen's
+// version when the animation style is on, the NPC uses Galen's style and his model has the anim.
+static int Jedi_GalenAnim(const gentity_t* self, const int anim)
+{
+	if (!g_ActivateAnimationStyle || g_ActivateAnimationStyle->integer != 1 || Jedi_Animationstyletable(self).isGalenMarek != qtrue)
+	{
+		return anim;
+	}
+	int galen_anim;
+	switch (anim)
+	{
+	case BOTH_A7_SLAP_L: galen_anim = BOTH_A7_SLAP_L_GALEN; break;
+	case BOTH_A7_SLAP_R: galen_anim = BOTH_A7_SLAP_R_GALEN; break;
+	case BOTH_SWEEP_KICK: galen_anim = BOTH_SWEEP_KICK_GALEN; break;
+	case BOTH_KICK_F_MD: galen_anim = BOTH_KICK_F_MD_GALEN; break;
+	case BOTH_FLYING_KICK: galen_anim = BOTH_FLYING_KICK_GALEN; break;
+	default: return anim;
+	}
+	return PM_HasAnimation(self, galen_anim) ? galen_anim : anim;
+}
+
 static qboolean enemy_in_striking_range = qfalse;
 static int jediSpeechDebounceTime[TEAM_NUM_TEAMS]; //used to stop several jedi from speaking all at once
 
@@ -1418,6 +1441,10 @@ static void jedi_aggression_erosion(const int amt)
 					{
 						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					else
 					{
 						NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_STAND2TO1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -2495,10 +2522,10 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 	int anim = ps->torsoAnim;
 
 	qboolean in_slap_anim = (qboolean)
-		(anim == BOTH_A7_SLAP_R ||
-			anim == BOTH_A7_SLAP_L ||
+		((anim == BOTH_A7_SLAP_R || anim == BOTH_A7_SLAP_R_GALEN) ||
+			(anim == BOTH_A7_SLAP_L || anim == BOTH_A7_SLAP_L_GALEN) ||
 			anim == BOTH_A7_KICK_B ||
-			anim == BOTH_SWEEP_KICK ||
+			(anim == BOTH_SWEEP_KICK || anim == BOTH_SWEEP_KICK_GALEN) ||
 			anim == BOTH_A7_HILT);
 
 	if (in_slap_anim == qtrue)
@@ -2552,6 +2579,7 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 				(NPC->health > BLOCKPOINTS_HALF)
 				? Q_irand(BOTH_A7_SLAP_L, BOTH_A7_SLAP_R)
 				: BOTH_A7_HILT;
+			swing_anim = Jedi_GalenAnim(NPC, swing_anim);
 
 			G_Sound(enemy, G_SoundIndex(va("sound/weapons/melee/swing%d", Q_irand(1, 4))));
 			G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 12000);
@@ -2582,6 +2610,7 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 		if (TIMER_Done(NPC, "attackDelay") == qtrue)
 		{
 			int swing_anim = Q_irand(BOTH_A7_KICK_B, BOTH_SWEEP_KICK);
+			swing_anim = Jedi_GalenAnim(NPC, swing_anim);
 
 			G_Sound(enemy, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
 			G_AddVoiceEvent(NPC, Q_irand(EV_COMBAT1, EV_COMBAT3), 12000);
@@ -4945,12 +4974,16 @@ static qboolean jedi_in_no_ai_anim(const gentity_t* self)
 	case BOTH_BUTTERFLY_FR1:
 	case BOTH_FLIP_F:
 	case BOTH_FLIP_F_ANI:
+	case BOTH_FLIP_F_GALEN:
 	case BOTH_FLIP_B:
 	case BOTH_FLIP_B_ANI:
+	case BOTH_FLIP_B_GALEN:
 	case BOTH_FLIP_L:
 	case BOTH_FLIP_L_ANI:
+	case BOTH_FLIP_L_GALEN:
 	case BOTH_FLIP_R:
 	case BOTH_FLIP_R_ANI:
+	case BOTH_FLIP_R_GALEN:
 	case BOTH_DODGE_FL:
 	case BOTH_DODGE_FR:
 	case BOTH_DODGE_BL:
@@ -4980,8 +5013,11 @@ static qboolean jedi_in_no_ai_anim(const gentity_t* self)
 	case BOTH_SLAP_R:
 	case BOTH_SLAP_L:
 	case BOTH_DASH_L:
+	case BOTH_DASH_L_GALEN:
 	case BOTH_DASH_R:
+	case BOTH_DASH_R_GALEN:
 	case BOTH_GRAPPLE_FIRE:
+	case BOTH_GRAPPLE_FIRE_GALEN:
 		return qtrue;
 	default:;
 	}
@@ -7298,7 +7334,7 @@ static void Jedi_FaceEnemy(const qboolean do_pitch)
 			NPC->client->ps.legsAnim == BOTH_CROUCHATTACKBACK1 ||
 			NPC->client->ps.legsAnim == BOTH_ATTACK_BACK ||
 			NPC->client->ps.legsAnim == BOTH_A7_KICK_B ||
-			NPC->client->ps.legsAnim == BOTH_SWEEP_KICK))
+			(NPC->client->ps.legsAnim == BOTH_SWEEP_KICK || NPC->client->ps.legsAnim == BOTH_SWEEP_KICK_GALEN)))
 	{
 		// Point away from enemy
 		GetAnglesForDirection(enemy_eyes, eyes, angles);
@@ -8613,6 +8649,10 @@ static qboolean Jedi_TryJump(const gentity_t* goal)
 											{
 												jump_anim = BOTH_FLIP_F_ANI;
 											}
+											else if (flags.isGalenMarek == qtrue)
+											{
+												jump_anim = BOTH_FLIP_F_GALEN;
+											}
 											else
 											{
 												jump_anim = BOTH_FLIP_F;
@@ -9328,6 +9368,10 @@ static void jedi_combat()
 						&& Distance(NPC->enemy->currentOrigin, NPC->currentOrigin) <= 64
 						&& (NPC->client->ps.weapon == WP_SABER)
 						&& NPC->next_kick_time <= level.time
+						&& NPC->client->ps.groundEntityNum != ENTITYNUM_NONE
+						&& !PM_InKnockDown(&NPC->client->ps) //lying on the ground or getting up: finish that first
+						&& !PM_InGetUp(&NPC->client->ps)
+						&& !PM_InRoll(&NPC->client->ps)
 						&& irand(0, 100) > 75)
 					{// Close range - switch to melee... KICK!
 						if (d_JediAI->integer || g_DebugSaberCombat->integer)
@@ -9345,6 +9389,7 @@ static void jedi_combat()
 						case 4: desiredAnim = BOTH_A7_HILT; break;
 						default: desiredAnim = BOTH_A7_KICK_F; break;
 						}
+						desiredAnim = Jedi_GalenAnim(NPC, desiredAnim);
 
 						NPC_SetAnim(NPC, SETANIM_BOTH, desiredAnim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 
@@ -11884,6 +11929,7 @@ static void Jedi_Attack(void)
 				{
 					if (NPC->client->ps.legsAnim == BOTH_FLIP_F ||
 						NPC->client->ps.legsAnim == BOTH_FLIP_F_ANI ||
+						NPC->client->ps.legsAnim == BOTH_FLIP_F_GALEN ||
 						NPC->client->ps.legsAnim == BOTH_ALORA_FLIP_1 ||
 						NPC->client->ps.legsAnim == BOTH_ALORA_FLIP_2 ||
 						NPC->client->ps.legsAnim == BOTH_ALORA_FLIP_3)
@@ -12140,8 +12186,24 @@ static qboolean kothos_heal_rosh()
 				NPC->s.number, MASK_OPAQUE))
 		{
 			//NPC_FaceEntity( NPC->client->leader, qtrue );
-			NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD,
-				SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (Jedi_Animationstyletable(NPC).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD,
+						SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCE_2HANDEDLIGHTNING_HOLD,
+					SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 			NPC->client->ps.torsoAnimTimer = 1000;
 
 			//FIXME: unique effect and sound
@@ -12226,7 +12288,21 @@ static void kothos_power_rosh()
 				NPC->s.number, MASK_OPAQUE))
 		{
 			NPC_FaceEntity(NPC->client->leader, qtrue);
-			NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCELIGHTNING_HOLD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (Jedi_Animationstyletable(NPC).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCELIGHTNING_HOLD_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCELIGHTNING_HOLD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(NPC, SETANIM_TORSO, BOTH_FORCELIGHTNING_HOLD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 			NPC->client->ps.torsoAnimTimer = 500;
 			//FIXME: unique effect and sound
 			//NPC->client->ps.eFlags |= EF_POWERING_ROSH;

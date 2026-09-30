@@ -894,7 +894,9 @@ static void P_WorldEffects(gentity_t* ent)
 			if (ent->client->inSpaceSuffocation < level.time)
 			{
 				//suffocate!
-				if (ent->health > 0 && ent->takedamage)
+				//(not a vehicle: it is in space for its gravity only. In MP this runs for players alone; here it runs for
+				//every NPC, and a ship lost 20 to 40 points every second or two it spent in a trigger_space)
+				if (ent->health > 0 && ent->takedamage && ent->client->NPC_class != CLASS_VEHICLE)
 				{
 					//if they're still alive..
 					G_Damage(ent, spacetrigger, spacetrigger, nullptr, ent->client->ps.origin, Q_irand(20, 40),
@@ -1707,13 +1709,12 @@ static void G_TouchTriggersLerped(gentity_t* ent)
 	VectorSubtract(ent->currentOrigin, ent->lastOrigin, diff);
 	dist = VectorNormalize(diff);
 
-#ifdef _DEBUG
-	assert(dist < 1024 && "insane distance in G_TouchTriggersLerped!");
-#endif // _DEBUG
-
+	// Hard safety clamp: don't step along huge moves (teleports, hitches, hyperspace at 10000 u/s),
+	// but still test the end position, so a fast vehicle can't skip a trigger (e.g. trigger_hyperspace exit)
+	// (a Debug assert here stopped the game on every hyperspace jump)
 	if (dist > 1024)
 	{
-		return;
+		dist = 0.0f;
 	}
 
 	memset(touched, qfalse, sizeof(touched));
@@ -2761,6 +2762,8 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// 3. NON-ABSORB: KICK / SLAP / SWEEP / HILT HIT
 	// ============================================================
 	// To keep this readable, we collapse repeated patterns:
+	// (a knocked down NPC stays on the ground for NPC_KNOCKDOWN_HOLD_EXTRA_TIME before it gets up:
+	//  the knockdown anim alone is over almost as soon as they hit the floor)
 #define HANDLE_RESIST_OR_KNOCKDOWN(KNOCK_ANIM_MIN, KNOCK_ANIM_MAX) \
         if (kickResistant) { \
             G_MawStagger(hitEnt); \
@@ -2768,6 +2771,10 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
             if (kickResistant) jedi_play_blocked_push_sound(hitEnt); \
         } else { \
             NPC_SetAnim(hitEnt, SETANIM_BOTH, Q_irand((KNOCK_ANIM_MIN),(KNOCK_ANIM_MAX)), SETANIM_AFLAG_PACE); \
+            if (isNPCSide) { \
+                hitEnt->client->ps.legsAnimTimer += NPC_KNOCKDOWN_HOLD_EXTRA_TIME; \
+                hitEnt->client->ps.torsoAnimTimer += NPC_KNOCKDOWN_HOLD_EXTRA_TIME; \
+            } \
             if (hitEnt->client->ps.SaberActive()) WP_DeactivateLightSaber(hitEnt, qtrue); \
         }
 
@@ -2782,7 +2789,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// FRONT KICK / TUSKEN
 	// -------------------------
 	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_F ||
-		pusher->client->ps.legsAnim == BOTH_KICK_F_MD ||
+		(pusher->client->ps.legsAnim == BOTH_KICK_F_MD || pusher->client->ps.legsAnim == BOTH_KICK_F_MD_GALEN) ||
 		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK1 ||
 		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK2 ||
 		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK3)
@@ -2818,7 +2825,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// -------------------------
 	// SWEEP KICK
 	// -------------------------
-	if (pusher->client->ps.legsAnim == BOTH_SWEEP_KICK)
+	if ((pusher->client->ps.legsAnim == BOTH_SWEEP_KICK || pusher->client->ps.legsAnim == BOTH_SWEEP_KICK_GALEN))
 	{
 		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_KNOCKDOWN3, BOTH_KNOCKDOWN3);
 		APPLY_DRAIN();
@@ -2835,7 +2842,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// RIGHT SLAP / RIGHT KICK
 	// -------------------------
 	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_R ||
-		pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R ||
+		(pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R || pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
 		pusher->client->ps.torsoAnim == BOTH_SLAP_R)
 	{
 		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNRIGHT);
@@ -2853,7 +2860,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// LEFT SLAP / LEFT KICK
 	// -------------------------
 	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_L ||
-		pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L ||
+		(pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L || pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN) ||
 		pusher->client->ps.torsoAnim == BOTH_SLAP_L)
 	{
 		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_SLAPDOWNLEFT, BOTH_SLAPDOWNLEFT);
@@ -3025,8 +3032,8 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 					if (ent->client->ps.torsoAnim == BOTH_A7_HILT ||
 						ent->client->ps.torsoAnim == BOTH_SLAP_L ||
 						ent->client->ps.torsoAnim == BOTH_SLAP_R ||
-						ent->client->ps.torsoAnim == BOTH_A7_SLAP_R ||
-						ent->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+						(ent->client->ps.torsoAnim == BOTH_A7_SLAP_R || ent->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
+						(ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 					{
 						//hit in head
 						if (hitEnt->health > 0)
@@ -3184,8 +3191,8 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 						}
 						else if (ent->client->ps.torsoAnim == BOTH_SLAP_L ||
 							ent->client->ps.torsoAnim == BOTH_SLAP_R ||
-							ent->client->ps.torsoAnim == BOTH_A7_SLAP_R ||
-							ent->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_R || ent->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
+							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 						{
 							G_Sound(ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
 							G_PlayEffect(G_EffectIndex("melee/kick_impact.efx"), trace.endpos, trace.plane.normal);
@@ -3639,8 +3646,14 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 
 	if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) && g_saberLockCinematicCamera->integer)
 	{
+		//who the saber lock camera is on (ENTITYNUM_NONE: nobody). Its overrides are only taken back from him: this
+		//used to clear them every frame for the player and for whatever he controls - a ship he flies lost its camera
+		//range and FOV that way, and the camera sat on top of it.
+		static int saber_lock_camera_ent = ENTITYNUM_NONE;
+
 		if (ent->client->ps.communicatingflags & (1 << CF_SABERLOCKING))
 		{
+			saber_lock_camera_ent = ent->s.number;
 			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_CDP | CG_OVERRIDE_3RD_PERSON_HOF;
 
 			cg.overrides.thirdPersonRange = 82.5f;
@@ -3648,8 +3661,9 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			cg.overrides.thirdPersonHorzOffset = -25.5f;
 			cg.overrides.fov = 31;
 		}
-		else
+		else if (saber_lock_camera_ent == ent->s.number)
 		{
+			saber_lock_camera_ent = ENTITYNUM_NONE;
 			cg.overrides.active &= ~(CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_CDP | CG_OVERRIDE_3RD_PERSON_HOF);
 			cg.overrides.thirdPersonRange = cg.overrides.thirdPersonCameraDamp = cg.overrides.thirdPersonHorzOffset = 0;
 		}
@@ -4736,6 +4750,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_FLYING_KICK:
+			case BOTH_FLYING_KICK_GALEN:
 			case BOTH_A7_KICK_F_AIR:
 				kick_push = Q_flrand(150.0f, 250.0f);
 				kick_sound_on_walls = qtrue;
@@ -4783,6 +4798,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_KICK_F_MD:
+			case BOTH_KICK_F_MD_GALEN:
 				kick_sound_on_walls = qtrue;
 				//FIXME: push forward?
 				if (elapsed_time >= 250 && remaining_time >= 250)
@@ -4853,6 +4869,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_SWEEP_KICK:
+			case BOTH_SWEEP_KICK_GALEN:
 				kick_sound_on_walls = qtrue;
 				if (elapsed_time >= 250 && remaining_time >= 250)
 				{
@@ -4973,6 +4990,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				//	break;
 			case BOTH_SLAP_R:
 			case BOTH_A7_SLAP_R:
+			case BOTH_A7_SLAP_R_GALEN:
 				kick_sound_on_walls = qtrue;
 
 				if (level.framenum & 1)
@@ -5152,10 +5170,11 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_A7_SLAP_L:
+			case BOTH_A7_SLAP_L_GALEN:
 				if (level.framenum & 1)
 				{
 					//back
-					int hand_bolt = ent->client->ps.torsoAnim == BOTH_A7_SLAP_L ? ent->handRBolt : ent->handLBolt;
+					int hand_bolt = (ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN) ? ent->handRBolt : ent->handLBolt;
 					//mirrored anims
 					do_kick = qtrue;
 					kick_dist = 80;
@@ -5713,7 +5732,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		ucmd->upmove = 0;
 		ucmd->forwardmove = 0;
 	}
-	else if (ent->client->ps.legsAnim == BOTH_PULL_IMPALE_STAB || ent->client->ps.legsAnim == BOTH_GRAPPLE_FIRE)
+	else if (ent->client->ps.legsAnim == BOTH_PULL_IMPALE_STAB || (ent->client->ps.legsAnim == BOTH_GRAPPLE_FIRE || ent->client->ps.legsAnim == BOTH_GRAPPLE_FIRE_GALEN))
 	{
 		//can't move during a pull stab
 		ucmd->rightmove = 0;
@@ -5997,10 +6016,10 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		ent->client->ps.legsAnim == BOTH_HOP_L ||
 		ent->client->ps.legsAnim == BOTH_HOP_B ||
 		ent->client->ps.legsAnim == BOTH_HOP_F ||
-		ent->client->ps.legsAnim == BOTH_DASH_R ||
-		ent->client->ps.legsAnim == BOTH_DASH_L ||
-		ent->client->ps.legsAnim == BOTH_DASH_B ||
-		ent->client->ps.legsAnim == BOTH_DASH_F) && ent->client->ps.legsAnimTimer > 0)
+		(ent->client->ps.legsAnim == BOTH_DASH_R || ent->client->ps.legsAnim == BOTH_DASH_R_GALEN) ||
+		(ent->client->ps.legsAnim == BOTH_DASH_L || ent->client->ps.legsAnim == BOTH_DASH_L_GALEN) ||
+		(ent->client->ps.legsAnim == BOTH_DASH_B || ent->client->ps.legsAnim == BOTH_DASH_B_GALEN) ||
+		(ent->client->ps.legsAnim == BOTH_DASH_F || ent->client->ps.legsAnim == BOTH_DASH_F_GALEN)) && ent->client->ps.legsAnimTimer > 0)
 	{
 		ucmd->upmove = 0;
 	}
@@ -6010,7 +6029,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		//ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 	}
 	else if (ent->client->ps.forcePowersActive & 1 << FP_REPULSE && (ent->client->ps.torsoAnim ==
-		BOTH_FORCE_PROTECT_FAST || ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE))
+		BOTH_FORCE_PROTECT_FAST || (ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE || ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE_GALEN)))
 	{
 		ucmd->rightmove = 0;
 		ucmd->upmove = 0;
@@ -6034,7 +6053,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 		overridAngles = PM_LockAngles(ent, ucmd) ? qtrue : overridAngles;
 	}
-	else if (ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE)
+	else if ((ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE || ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE_GALEN))
 	{
 		ucmd->rightmove = 0;
 		ucmd->upmove = 0;
@@ -6442,6 +6461,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
 			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STAND_SABER_ON_IDLE:
@@ -6451,6 +6471,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI: //# Random standing idle
 			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6466,6 +6487,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
 			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
 			case BOTH_STAND_SABER_ON_IDLE:
@@ -6475,6 +6497,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
 			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6510,6 +6533,10 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 				else if (flags.isVader == qtrue)
 				{
 					idle_anim = BOTH_STAND1IDLE1_VADER;
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_GALEN;
 				}
 				else
 				{
@@ -6556,6 +6583,7 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERSLOW_STANCE_JKA_ANI:
 		case BOTH_SABERSLOW_STANCE_JKA_BEN:
 		case BOTH_SABERSLOW_STANCE_JKA_VADER:
+		case BOTH_SABERSLOW_STANCE_JKA_GALEN:
 		case BOTH_SABERSINGLECROUCH:
 		case BOTH_SABERSINGLECROUCH_ANI:
 		case BOTH_SABERSINGLECROUCH_VADER:
@@ -6564,12 +6592,15 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			break;
 		case BOTH_SABERDUAL_STANCE:
 		case BOTH_SABERDUAL_STANCE_JKA:
+		case BOTH_SABERDUAL_STANCE_JKA_GALEN:
 		case BOTH_SABERDUALCROUCH:
+		case BOTH_SABERDUALCROUCH_GALEN:
 		case BOTH_STAND_SABER_ON_DUELS:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE_DUELS;
 			break;
 		case BOTH_SABERSTAFF_STANCE:
 		case BOTH_SABERSTAFF_STANCE_JKA:
+		case BOTH_SABERSTAFF_STANCE_JKA_GALEN:
 		case BOTH_SABERSTAFF_STANCE_BEN:
 		case BOTH_SABERSTAFFCROUCH:
 		case BOTH_STAND_SABER_ON_STAFF:
@@ -6622,6 +6653,10 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 				else if (flags.isVader == qtrue)
 				{
 					idle_anim = BOTH_STAND1IDLE1_VADER;
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_GALEN;
 				}
 				else
 				{
@@ -6720,10 +6755,40 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			idle_anim = BOTH_SABERDESANN_STANCE_JKA_ANI;
 			break;
 		case BOTH_SABERSTAFF_STANCE_JKA:
-			idle_anim = BOTH_SABERSTAFF_STANCE_JKA;
+		case BOTH_SABERSTAFF_STANCE_JKA_GALEN:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_GALEN;
+				}
+				else
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_SABERSTAFF_STANCE_JKA;
+			}
 			break;
 		case BOTH_SABERDUAL_STANCE_JKA:
-			idle_anim = BOTH_SABERDUAL_STANCE_JKA;
+		case BOTH_SABERDUAL_STANCE_JKA_GALEN:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_GALEN;
+				}
+				else
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_SABERDUAL_STANCE_JKA;
+			}
 			break;
 		case BOTH_SABERFAST_STANCE_JKA:
 			idle_anim = BOTH_SABERFAST_STANCE_JKA;
@@ -6742,6 +6807,9 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			break;
 		case BOTH_SABERSLOW_STANCE_JKA_VADER:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA_VADER;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_GALEN:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_GALEN;
 			break;
 		case BOTH_SABERSLOW_STANCE_JKA_BEN:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA_BEN;
@@ -6894,10 +6962,12 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
 			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
 			case BOTH_STAND2IDLE1:
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
 			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6921,10 +6991,12 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			case BOTH_STAND1IDLE1:
 			case BOTH_STAND1IDLE1_YODA:
 			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
 			case BOTH_STAND2IDLE1:
 			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
 			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
 			case BOTH_STAND5IDLE1:
@@ -6958,8 +7030,9 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 
 		constexpr int idle_anim_YODA = BOTH_STAND1IDLE1_YODA;
 		constexpr int idle_anim_VADER = BOTH_STAND1IDLE1_VADER;
+		constexpr int idle_anim_GALEN = BOTH_STAND1IDLE1_GALEN;
 
-		if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER))
+		if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER) || PM_HasAnimation(ent, idle_anim_GALEN))
 		{
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
@@ -6970,6 +7043,10 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 				else if (flags.isVader == qtrue)
 				{
 					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
@@ -7076,8 +7153,9 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			constexpr int idle_anim = BOTH_STAND1IDLE1;
 			constexpr int idle_anim_YODA = BOTH_STAND1IDLE1_YODA;
 			constexpr int idle_anim_VADER = BOTH_STAND1IDLE1_VADER;
+			constexpr int idle_anim_GALEN = BOTH_STAND1IDLE1_GALEN;
 
-			if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER))
+			if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER) || PM_HasAnimation(ent, idle_anim_GALEN))
 			{
 				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
@@ -7088,6 +7166,10 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 					else if (flags.isVader == qtrue)
 					{
 						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					}
 					else
 					{
@@ -7205,12 +7287,40 @@ static void CommandNPCtoAttack(gentity_t* caller, gentity_t* ourFriend)
 		G_SetEnemy(ourFriend, tracedEnemy);
 	}
 
-	NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+	{
+		if (G_Animationstyletable(player).isGalenMarek == qtrue)
+		{
+			NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+		else
+		{
+			NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+	}
+	else
+	{
+		NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	}
 
 	if (Distance(ourFriend->currentOrigin, tracedEnemy->currentOrigin) >= 512)
 	{// if the enemy is far away, use a long range callout
 		G_AddEvent(caller, Q_irand(EV_CHASE1, EV_CHASE3), 0);
-		NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (G_Animationstyletable(ourFriend).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
 	}
 	else
 	{// if the enemy is close, use a short range callout
@@ -7221,12 +7331,40 @@ static void CommandNPCtoAttack(gentity_t* caller, gentity_t* ourFriend)
 		if (angle >= 0.2 && angle <= 1.0)
 		{// enemy is in front of us, use a front callout
 			G_AddEvent(caller, Q_irand(EV_ANGER1, EV_ANGER3), 0);
-			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (G_Animationstyletable(ourFriend).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 		else
 		{// enemy is behind us, use a back callout
 			G_AddEvent(caller, Q_irand(EV_LOOK1, EV_LOOK2), 0);
-			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (G_Animationstyletable(ourFriend).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 	}
 	tracedEnemy->markTime = level.time + 5000;
@@ -9189,6 +9327,14 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 				VectorScale(client->ps.velocity, 0.8f, client->ps.velocity);
 			}
 		}
+		else if (ent->m_pVehicle && client->ps.hyperSpaceTime
+			&& level.time - client->ps.hyperSpaceTime < HYPERSPACE_TIME)
+		{
+			//a ship going to hyperspace flies dead straight, also when the jump starts over a planet. (In MP the
+			//fighter code zeroes the gravity inside pmove; here this runs after it and put the full gravity
+			//back: the ship sank out of the bottom of the trigger_hyperspace and was never teleported.)
+			client->ps.gravity = 0.0f;
+		}
 		else
 		{
 			if (client->ps.eFlags2 & EF2_SHIP_DEATH)
@@ -9921,11 +10067,11 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		{
 			// Vehicle Camera Overrides
 			//--------------------------
-			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_VOF |
-				CG_OVERRIDE_3RD_PERSON_POF;
+			//(not the FOV: MP does not use the .veh cameraFOV, it keeps cg_fov, and the ships are made to look right with
+			//that. With it - 100 for most fighters - the same ship at the same range looked a good deal smaller here.)
+			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_3RD_PERSON_VOF | CG_OVERRIDE_3RD_PERSON_POF;
 
 			cg.overrides.thirdPersonRange = p_player_veh->m_pVehicleInfo->cameraRange;
-			cg.overrides.fov = p_player_veh->m_pVehicleInfo->cameraFOV;
 			cg.overrides.thirdPersonVertOffset = p_player_veh->m_pVehicleInfo->cameraVertOffset;
 			cg.overrides.thirdPersonPitchOffset = p_player_veh->m_pVehicleInfo->cameraPitchOffset;
 
@@ -10267,7 +10413,21 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 							if (ent->client->usercmd.buttons & BUTTON_BLOCK && ent->s.groundEntityNum != ENTITYNUM_NONE)
 							{
 								//holding attack
-								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (G_Animationstyletable(ent).isGalenMarek == qtrue)
+									{
+										NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									}
+									else
+									{
+										NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									}
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+								}
 							}
 
 							G_SoundOnEnt(ent, CHAN_ITEM, "sound/weapons/grapple/hookfire.wav");
@@ -10333,7 +10493,21 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 								if (ent->client->usercmd.buttons & BUTTON_BLOCK && ent->s.groundEntityNum != ENTITYNUM_NONE)
 								{
 									//holding attack
-									NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (G_Animationstyletable(ent).isGalenMarek == qtrue)
+										{
+											NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+										}
+										else
+										{
+											NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+										}
+									}
+									else
+									{
+										NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									}
 									//gi.Printf(S_COLOR_YELLOW"g_active grapple attack\n");
 								}
 

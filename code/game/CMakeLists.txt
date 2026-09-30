@@ -151,6 +151,7 @@ set(SPGameGameFiles
 	"${SPDir}/game/bg_vehicleLoad.cpp"
 	"${SPDir}/game/FighterNPC.cpp"
 	"${SPDir}/game/g_vehicles.cpp"
+	"${SPDir}/game/g_vehicleTurret.cpp"
 	"${SPDir}/game/SpeederNPC.cpp"
 	"${SPDir}/game/WalkerNPC.cpp"
 	"${SPDir}/game/ai.h"

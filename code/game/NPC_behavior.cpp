@@ -866,6 +866,10 @@ void NPC_BSJump()
 				{
 					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
 				else
 				{
 					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -899,6 +903,11 @@ void NPC_BSJump()
 				{
 					//still in air, but done with jump anim, play inair anim
 					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_VADER, SETANIM_FLAG_OVERRIDE);
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_GALEN, SETANIM_FLAG_OVERRIDE);
 				}
 				else
 				{

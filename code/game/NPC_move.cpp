@@ -417,6 +417,7 @@ static void NPC_JumpAnimation()
 	int jumpAnim_ANI = BOTH_JUMP1_ANI;
 	int jumpAnim_YODA = BOTH_JUMP1_YODA;
 	int jumpAnim_VADER = BOTH_JUMP1_VADER;
+	int jumpAnim_GALEN = BOTH_JUMP1_GALEN;
 
 	animFlags_t flags = NPCMove_Animationstyletable(NPC);
 
@@ -458,6 +459,10 @@ static void NPC_JumpAnimation()
 				{
 					jumpAnim = BOTH_FLIP_F_ANI;
 				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					jumpAnim = BOTH_FLIP_F_GALEN;
+				}
 				else
 				{
 					jumpAnim = BOTH_FLIP_F;
@@ -482,6 +487,10 @@ static void NPC_JumpAnimation()
 		else if (flags.isVader == qtrue)
 		{
 			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+		else if (flags.isGalenMarek == qtrue)
+		{
+			NPC_SetAnim(NPC, SETANIM_BOTH, jumpAnim_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 		}
 		else
 		{
