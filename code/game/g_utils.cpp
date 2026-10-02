@@ -1510,8 +1510,28 @@ void G_AddEvent(gentity_t* ent, int event, int event_parm)
 G_Sound
 =============
 */
+// Sound index 0 is "no sound" (a sound field left empty): it reached the cgame as an empty sound name ("s_find_name:
+// empty name!"). It is not sent; with developer 1 it says who asked for it, so the empty field can be found.
+static qboolean G_NoSound(const gentity_t* ent, const int sound_index)
+{
+	if (sound_index)
+	{
+		return qfalse;
+	}
+	if (g_developer && g_developer->integer)
+	{
+		gi.Printf("G_Sound: no sound (index 0) for %s %d\n", ent && ent->classname ? ent->classname : "?",
+			ent ? ent->s.number : -1);
+	}
+	return qtrue;
+}
+
 void G_Sound(const gentity_t* ent, const int sound_index)
 {
+	if (G_NoSound(ent, sound_index))
+	{
+		return;
+	}
 	gentity_t* te = G_TempEntity(ent->currentOrigin, EV_GENERAL_SOUND);
 	te->s.eventParm = sound_index;
 }
@@ -1523,6 +1543,10 @@ G_Sound
 */
 void G_SoundAtSpot(vec3_t org, const int sound_index, const qboolean broadcast)
 {
+	if (G_NoSound(nullptr, sound_index))
+	{
+		return;
+	}
 	gentity_t* te = G_TempEntity(org, EV_GENERAL_SOUND);
 	te->s.eventParm = sound_index;
 	if (broadcast)
@@ -1540,6 +1564,10 @@ G_SoundBroadcast
 */
 void G_SoundBroadcast(const gentity_t* ent, const int sound_index)
 {
+	if (G_NoSound(ent, sound_index))
+	{
+		return;
+	}
 	gentity_t* te = G_TempEntity(ent->currentOrigin, EV_GLOBAL_SOUND); //full volume
 	te->s.eventParm = sound_index;
 	te->svFlags |= SVF_BROADCAST;

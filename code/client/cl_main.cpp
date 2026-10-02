@@ -417,9 +417,12 @@ void CL_Vid_Restart_f()
 {
 	S_StopAllSounds(); // don't let them loop during the restart
 	S_BeginRegistration(); // all sound handles are now invalid
-	CL_ShutdownRef(qtrue);
+	// the UI and the cgame first, while the renderer is still there, as when quitting (CL_Shutdown): they free
+	// ghoul2 models the renderer holds (cg_holster.cpp's holstered guns), and a call into an unloaded renderer
+	// crashed (switching renderer with vid_restart)
 	CL_ShutdownUI();
 	CL_ShutdownCGame();
+	CL_ShutdownRef(qtrue);
 
 	//rww - sof2mp does this here, but it seems to cause problems in this codebase.
 	//	CM_ClearMap();

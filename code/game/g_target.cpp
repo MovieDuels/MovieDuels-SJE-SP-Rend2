@@ -138,11 +138,34 @@ If "private", only the activator gets the message.  If no checks, all clients ge
 */
 void Use_Target_Print(gentity_t* ent, gentity_t* other, const gentity_t* activator)
 {
+	// an MP map's prints (mp/siege_destroyer2: "the turbolasers are under attack") are fired by what is hit, a turret
+	// or a breakable, not by a client, and say so at most every "wait" ms, as in MP. They are for the player, unless
+	// "private" (4): then only for the one who set it off, as SP prints are.
+	const auto mp_map = static_cast<qboolean>(!Q_stricmpn(level.mapname, "mp/", 3));
+	if (mp_map && ent->wait > 0.0f)
+	{
+		if (ent->painDebounceTime > level.time)
+		{
+			return;
+		}
+		ent->painDebounceTime = level.time + static_cast<int>(ent->wait);
+	}
+
 	G_ActivateBehavior(ent, BSET_USE);
+	if (g_developer && g_developer->integer)
+	{
+		gi.Printf("target_print '%s' used by %s %d: \"%s\"\n", ent->targetname ? ent->targetname : "",
+			activator && activator->classname ? activator->classname : "?", activator ? activator->s.number : -1,
+			ent->message ? ent->message : "(no message)");
+	}
 
 	if (activator && activator->client)
 	{
 		gi.SendServerCommand(activator - g_entities, "cp \"%s\"", ent->message);
+	}
+	else if (mp_map && !(ent->spawnflags & 4))
+	{
+		gi.SendServerCommand(0, "cp \"%s\"", ent->message);
 	}
 }
 

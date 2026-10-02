@@ -665,6 +665,12 @@ static void CG_UpdateThirdPersonTargetDamp()
 		//if moving on a plat, camera is *tight*
 		VectorCopy(cameraIdealTarget, cameraCurTarget);
 	}
+	else if (cg.thisFrameTeleport || cg.predictedPlayerState.m_iVehicleNum)
+	{
+		//in a vehicle the target does not lag behind either, as in MP (the camera itself is not damped there: a
+		//damped target trailing a fast ship made the view jump about)
+		VectorCopy(cameraIdealTarget, cameraCurTarget);
+	}
 	else if (cg.overrides.active & CG_OVERRIDE_3RD_PERSON_TDP)
 	{
 		if (cg.overrides.thirdPersonTargetDamp >= 1.0)

@@ -1812,4 +1812,4 @@ void IN_Restart()
 {
 	IN_ShutdownJoystick();
 	IN_Init(SDL_window);
-}
+}

@@ -1893,4 +1893,4 @@ void G_SpawnEntitiesFromString(const char* entity_string)
 		assert(0);
 		G_Error("Errors loading map, check the console for them.");
 	}
-}
+}

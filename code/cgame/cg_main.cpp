@@ -468,6 +468,7 @@ vmCvar_t cg_IsSaberDoingAttackDamage;
 vmCvar_t cg_DebugSaberCombat;
 
 vmCvar_t cg_drawRadar;
+vmCvar_t cg_drawVehLeadIndicator; // flying a fighter: where to aim at a moving enemy ship (CG_DrawVehicleTargets)
 
 vmCvar_t cg_drawSelectionScrollBar;
 
@@ -706,6 +707,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE},
 
 	{&cg_drawRadar, "cg_drawRadar", "0", CVAR_ARCHIVE},
+	{&cg_drawVehLeadIndicator, "cg_drawVehLeadIndicator", "1", CVAR_ARCHIVE},
 
 	{&cg_drawSelectionScrollBar, "cg_drawSelectionScrollBar", "0", CVAR_ARCHIVE},
 

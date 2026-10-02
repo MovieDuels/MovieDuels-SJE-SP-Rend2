@@ -54,6 +54,7 @@ static constexpr float FIGHTER_FIRE_CONE = 6.0f; // degrees off the aim point it
 static constexpr float FIGHTER_FIRE_RANGE = 7000.0f;
 static constexpr float FIGHTER_BREAK_DIST = 450.0f; // closer than this to its target, it breaks away
 static constexpr float FIGHTER_MAX_PITCH = 70.0f; // a rider's pitch is clamped to about 75
+static int fighter_jump_wait[MAX_GENTITIES]; // a pilot turning his ship to a hyperspace jump: since when
 
 static cvar_t* g_spaceBattle;
 static cvar_t* g_spaceWingmen;
@@ -869,6 +870,65 @@ qboolean NPC_FighterAI()
 	VectorCopy(ship->currentOrigin, my_pos);
 	const float speed = VectorLength(ship->client->ps.velocity);
 
+	// going into hyperspace (a trigger_hyperspace: the Rebels' hangar on siege_destroyer2 is far off, in one): the ship
+	// follows its pilot's view, roll and all, until it faces the jump. The rider's pmove turns the view there
+	// (PM_VehFaceHyperspacePoint), but the pilot's own turning (the launch, his target) took it back every think, and a
+	// ship that came out of its hangar tilted never lined up: it hung outside the hangar for good. So the pilot turns
+	// it himself, as fast (90 degrees a second), and one still not there after a while is put there. Turbo as that
+	// does for a player (a ship standing still does not turn).
+	if (ship->client->ps.hyperSpaceTime&& level.time - ship->client->ps.hyperSpaceTime < HYPERSPACE_TIME)
+	{
+		ucmd.upmove = 127;
+		if (!fighter_jump_wait[NPC->s.number])
+		{
+			fighter_jump_wait[NPC->s.number] = level.time;
+		}
+		const bool snap = level.time - fighter_jump_wait[NPC->s.number] > 5000;
+		const float step = 90.0f * FIGHTER_THINK_SECONDS;
+		vec3_t view;
+		for (int axis = PITCH; axis <= ROLL; axis++)
+		{
+			const float want = ship->client->ps.hyperSpaceAngles[axis];
+			const float delta = AngleSubtract(want, client->ps.viewangles[axis]);
+			view[axis] = snap || fabs(delta) <= step ? want : client->ps.viewangles[axis] + (delta > 0.0f ? step : -step);
+			view[axis] = axis == YAW ? AngleNormalize360(view[axis]) : AngleNormalize180(view[axis]);
+		}
+		SetClientViewAngle(NPC, view);
+		for (int axis = PITCH; axis <= ROLL; axis++)
+		{
+			ucmd.angles[axis] = ANGLE2SHORT(view[axis]) - client->ps.delta_angles[axis];
+		}
+		// (between thinks NPC_UpdateAngles turns the view to these: the jump's, not back to where it was)
+		NPCInfo->desiredYaw = AngleNormalize360(ship->client->ps.hyperSpaceAngles[YAW]);
+		NPCInfo->desiredPitch = AngleNormalize180(ship->client->ps.hyperSpaceAngles[PITCH]);
+		if (snap)
+		{
+			VectorCopy(ship->client->ps.hyperSpaceAngles, p_veh->m_vOrientation); // and the ship with it
+		}
+
+		// facing the jump: ready to go. Until then the jump's clock waits, as in PM_VehFaceHyperspacePoint: the ship
+		// has to fly its full time through the trigger before it is moved, or it comes out far off the map.
+		if (!(ship->client->ps.eFlags2 & EF2_HYPERSPACE)
+			&& static_cast<float>(level.time - ship->client->ps.hyperSpaceTime) / HYPERSPACE_TIME <
+			HYPERSPACE_TELEPORT_FRAC)
+		{
+			bool facing = true;
+			for (int axis = PITCH; axis <= ROLL; axis++)
+			{
+				if (fabs(AngleSubtract(ship->client->ps.hyperSpaceAngles[axis], p_veh->m_vOrientation[axis])) > 2.0f)
+				{
+					facing = false;
+				}
+			}
+			ship->client->ps.hyperSpaceTime = level.time;
+			if (facing)
+			{
+				ship->client->ps.eFlags2 |= EF2_HYPERSPACE;
+			}
+		}
+		return qtrue;
+	}
+	fighter_jump_wait[NPC->s.number] = 0;
 	// out of the hangar first: straight on, full throttle (taking off if it stands on the floor)
 	if (!TIMER_Done(NPC, "fighterLaunch"))
 	{

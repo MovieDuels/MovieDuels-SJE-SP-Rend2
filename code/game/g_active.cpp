@@ -11545,4 +11545,4 @@ qboolean NPC_IsNotHavingEnoughForceSight(const gentity_t* self)
 	}
 
 	return qfalse;
-}
+}

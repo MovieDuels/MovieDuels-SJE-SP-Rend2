@@ -5443,4 +5443,4 @@ static void ClearAllNavStructures()
 		i->clear();
 	}
 	mEntEdgeMap.clear();
-}
+}

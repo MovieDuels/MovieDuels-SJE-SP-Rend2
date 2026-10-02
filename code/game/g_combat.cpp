@@ -10076,4 +10076,4 @@ void AddNPCBlockPointBonus(const gentity_t* self)
 	{
 		self->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
 	}
-}
+}

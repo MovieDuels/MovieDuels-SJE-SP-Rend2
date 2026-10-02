@@ -46840,157 +46840,157 @@ qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc)
 	{
 		// Horizontal attacks
 		if (rightdot > 0.3f)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
 				}
 			}
-		else if (rightdot < -0.3f)
+			else
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+			}
+		}
+		else if (rightdot < -0.3f)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
 				}
 			}
-		else
+			else
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+			}
+		}
+		else
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
 				}
 			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+			}
+		}
 	}
 	else if (zdiff > -22.0f)
 	{
 		// Mid‑height attacks
 		if (rightdot > 0.1f)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
 				}
 			}
-		else if (rightdot < -0.1f)
+			else
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+			}
+		}
+		else if (rightdot < -0.1f)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
 				}
 			}
-		else
+			else
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+			}
+		}
+		else
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
 				}
 			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_B, SETANIM_AFLAG_PACE);
+			}
+		}
 	}
 	else
 	{
 		// Low attacks
 		if (rightdot >= 0.0f)
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
 				}
 			}
-		else
+			else
 			{
-				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_L, SETANIM_AFLAG_PACE);
+			}
+		}
+		else
+		{
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (W_Animationstyletable(self).isGalenMarek == qtrue)
 				{
-					if (W_Animationstyletable(self).isGalenMarek == qtrue)
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
-					}
-					else
-					{
-						NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
-					}
+					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R_GALEN, SETANIM_AFLAG_PACE);
 				}
 				else
 				{
 					NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
 				}
 			}
+			else
+			{
+				NPC_SetAnim(self, SETANIM_TORSO, BOTH_DASH_R, SETANIM_AFLAG_PACE);
+			}
+		}
 	}
 
 	// ============================

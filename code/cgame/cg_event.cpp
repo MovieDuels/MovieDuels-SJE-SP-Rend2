@@ -1005,6 +1005,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		break;
 
 	case EV_GENERAL_SOUND:
+		if (!es->eventParm)
+		{
+			break; // sound index 0 is "no sound": its config string is empty
+		}
 		DEBUGNAME("EV_GENERAL_SOUND");
 		if (cgs.sound_precache[es->eventParm])
 		{
@@ -1018,6 +1022,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		break;
 
 	case EV_GLOBAL_SOUND: // play from the player's head so it never diminishes
+		if (!es->eventParm)
+		{
+			break; // sound index 0 is "no sound": its config string is empty
+		}
 		DEBUGNAME("EV_GLOBAL_SOUND");
 		if (cgs.sound_precache[es->eventParm])
 		{

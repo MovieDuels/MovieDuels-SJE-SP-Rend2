@@ -2032,4 +2032,4 @@ void CTaskManager::Load(CIcarus* icarus)
 	m_curGroup = cur_group_id == -1 ? nullptr : m_taskGroupIDMap[cur_group_id];
 
 	delete[] task_i_ds;
-}
+}

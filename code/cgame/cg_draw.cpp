@@ -9753,6 +9753,126 @@ CG_Draw2D
 extern void CG_SaberClashFlare();
 
 extern int cg_pazaakPrintTime;
+static void CG_VehDottedLine(const float x1, const float y1, const float x2, const float y2, const int num_dots,
+	const vec4_t color)
+{
+	const vec4_t dot_color = { color[0], color[1], color[2], 0.5f };
+	cgi_R_SetColor(dot_color);
+	for (int i = 0; i < num_dots; i++)
+	{
+		CG_DrawPic(x1 + (x2 - x1) * i / num_dots - 0.5f, y1 + (y2 - y1) * i / num_dots - 0.5f, 1, 1,
+			cgs.media.whiteShader);
+	}
+}
+
+/*
+==================
+CG_DrawVehicleTargets
+
+Flying a fighter, as in MP: brackets on the other piloted ships (red: enemies, green: the player's side), and for a
+moving enemy one, where to aim so the shots meet it (the lead indicator, cg_drawVehLeadIndicator).
+==================
+*/
+static void CG_DrawVehicleTargets()
+{
+	const gentity_t* my_ship = cg.snap->ps.m_iVehicleNum ? &g_entities[cg.snap->ps.m_iVehicleNum] : nullptr;
+	if (!my_ship || !my_ship->client || !my_ship->m_pVehicle || !my_ship->m_pVehicle->m_pVehicleInfo
+		|| my_ship->m_pVehicle->m_pVehicleInfo->type != VH_FIGHTER || !player || !player->client)
+	{
+		return;
+	}
+	// my primary weapon's shot speed, for the lead (a straight, fast shot only)
+	float shot_speed = 0.0f;
+	const int weap = my_ship->m_pVehicle->m_pVehicleInfo->weapon[0].ID;
+	if (weap > VEH_WEAPON_BASE)
+	{
+		const vehWeaponInfo_t* veh_weapon = &g_vehWeaponInfo[weap];
+		if (veh_weapon->bIsProjectile && !veh_weapon->bHasGravity && !veh_weapon->fHoming && veh_weapon->fSpeed > 0.0f)
+		{
+			shot_speed = veh_weapon->fSpeed;
+		}
+	}
+
+	for (int n = 0; n < cg.snap->numEntities; n++)
+	{
+		const centity_t* cent = &cg_entities[cg.snap->entities[n].number];
+		const gentity_t* ship = cent->gent;
+		if (!ship || ship == my_ship || !ship->client || ship->client->NPC_class != CLASS_VEHICLE || !ship->m_pVehicle
+			|| !ship->m_pVehicle->m_pVehicleInfo || ship->health <= 0)
+		{
+			continue;
+		}
+		const gentity_t* pilot = reinterpret_cast<const gentity_t*>(ship->m_pVehicle->m_pPilot);
+		if (!pilot || !pilot->client)
+		{
+			continue; // an empty ship is nobody's
+		}
+		const qboolean is_enemy = static_cast<qboolean>(pilot->client->playerTeam != player->client->playerTeam);
+
+		vec3_t dif;
+		VectorSubtract(cent->lerpOrigin, cg.refdef.vieworg, dif);
+		const float len = VectorNormalize(dif);
+		if (cg.crosshairclientNum != ship->s.number)
+		{
+			// the one under the crosshair always, the others not too near and only when they can be seen
+			if (len < 2000.0f)
+			{
+				continue;
+			}
+			trace_t tr;
+			CG_Trace(&tr, cg.refdef.vieworg, nullptr, nullptr, cent->lerpOrigin, -1, CONTENTS_OPAQUE);
+			if (tr.fraction < 1.0f)
+			{
+				continue;
+			}
+		}
+		float x, y;
+		vec3_t org;
+		VectorCopy(cent->lerpOrigin, org);
+		if (!CG_WorldCoordToScreenCoordFloat(org, &x, &y))
+		{
+			continue; // off the screen
+		}
+
+		const float* color = g_color_table[ColorIndex(is_enemy ? COLOR_RED : COLOR_GREEN)];
+		cgi_R_SetColor(color);
+		const float radius = ship->m_pVehicle->m_pVehicleInfo->g2radius
+			? static_cast<float>(ship->m_pVehicle->m_pVehicleInfo->g2radius)
+			: 64.0f;
+		const float size = Q_max(1.0f, len <= 1.0f ? radius * 400.0f : radius * (400.0f / len));
+		const float line_length = Q_max(0.5f, size * 0.1f);
+		const float bx = x - size * 0.5f;
+		const float by = y - size * 0.5f;
+		// the four corners
+		CG_DrawPic(bx, by, line_length, 1, cgs.media.whiteShader);
+		CG_DrawPic(bx, by, 1, line_length, cgs.media.whiteShader);
+		CG_DrawPic(bx + size - line_length, by, line_length, 1, cgs.media.whiteShader);
+		CG_DrawPic(bx + size - 1, by, 1, line_length, cgs.media.whiteShader);
+		CG_DrawPic(bx, by + size - 1, line_length, 1, cgs.media.whiteShader);
+		CG_DrawPic(bx, by + size - line_length, 1, line_length, cgs.media.whiteShader);
+		CG_DrawPic(bx + size - line_length, by + size - 1, line_length, 1, cgs.media.whiteShader);
+		CG_DrawPic(bx + size - 1, by + size - line_length, 1, line_length, cgs.media.whiteShader);
+
+		// the lead: where it will be when a shot gets there, with a dotted line to it from the ship
+		if (cg_drawVehLeadIndicator.integer && is_enemy && shot_speed > 0.0f
+			&& VectorLengthSquared(ship->client->ps.velocity) > 1.0f)
+		{
+			vec3_t lead_pos;
+			const float eta = Distance(cent->lerpOrigin, my_ship->currentOrigin) / shot_speed;
+			VectorMA(cent->lerpOrigin, eta, ship->client->ps.velocity, lead_pos);
+			float lead_x, lead_y;
+			const qboolean on_screen = CG_WorldCoordToScreenCoordFloat(lead_pos, &lead_x, &lead_y);
+			CG_VehDottedLine(x, y, lead_x, lead_y, 10, g_color_table[ColorIndex(COLOR_RED)]);
+			if (on_screen)
+			{
+				cgi_R_SetColor(g_color_table[ColorIndex(COLOR_RED)]);
+				CG_DrawPic(lead_x - 8, lead_y - 8, 16, 16, cgi_R_RegisterShader("gfx/menus/radar/lead"));
+			}
+		}
+	}
+	cgi_R_SetColor(nullptr);
+}
+
 static void CG_Draw2D()
 {
 	char text[1024] = { 0 };
@@ -9982,6 +10102,8 @@ static void CG_Draw2D()
 		CG_DrawCrosshairNames();
 
 		CG_DrawCrosshairItem();
+
+		CG_DrawVehicleTargets();
 
 		CG_RunRocketLocking();
 

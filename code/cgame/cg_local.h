@@ -707,6 +707,7 @@ extern vmCvar_t cg_vehicleStickPitch;
 extern vmCvar_t cg_vehicleStickEaseIn;
 
 extern vmCvar_t cg_drawRadar;
+extern vmCvar_t cg_drawVehLeadIndicator;
 
 extern vmCvar_t cg_drawSelectionScrollBar;
 

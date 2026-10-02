@@ -869,7 +869,9 @@ void WP_FireVehicleWeapon(gentity_t* ent, vec3_t start, vec3_t dir, const vehWea
 
 		//FIXME: externalize some of these properties?
 
-		missile->dflags = DAMAGE_DEATH_KNOCKBACK;
+		// a ship's guns count as heavy weapons, as in MP (MOD_VEHICLE): what only those can hurt (FL_DMG_BY_HEAVY_WEAP_ONLY,
+		// e.g. the reactor, shield domes and comm array of mp/siege_destroyer2) took no damage from them
+		missile->dflags = DAMAGE_DEATH_KNOCKBACK | DAMAGE_HEAVY_WEAP_CLASS;
 
 		missile->clipmask = MASK_SHOT;
 		//Maybe by checking flags...?
@@ -2491,4 +2493,4 @@ void Weapon_HookFree(gentity_t* ent)
 	ent->parent->client->hook = nullptr;
 	ent->parent->client->ps.pm_flags &= ~PMF_GRAPPLE_PULL;
 	G_FreeEntity(ent);
-}
+}

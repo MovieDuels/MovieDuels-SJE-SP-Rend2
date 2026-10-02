@@ -2883,4 +2883,4 @@ void SP_misc_security_panel(gentity_t* self)
 		self->svFlags |= SVF_INACTIVE;
 	}
 	self->e_UseFunc = useF_security_panel_use;
-}
+}

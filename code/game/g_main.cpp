@@ -40,7 +40,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "qcommon/md_animsets.h"
 #include <rd-common/mdx_format.h>
 
-
 extern void WP_SaberLoadParms();
 extern qboolean G_PlayerSpawned();
 
@@ -2939,4 +2938,4 @@ void G_LoadSave_ReadMiscData()
 IGhoul2InfoArray& TheGameGhoul2InfoArray()
 {
 	return gi.TheGhoul2InfoArray();
-}
+}

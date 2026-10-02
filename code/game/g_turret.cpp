@@ -78,6 +78,19 @@ void TurretPain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 	}
 
 	G_PlayEffect("sparks/spark_exp_nosnd", point, dir);
+
+	// the map's target to fire when it is hurt (an MP map's "paintarget", at most every "painwait" ms, kept in
+	// fx_time: on mp/siege_destroyer2 the turbolasers have it said that they are under attack)
+	if (self->paintarget && self->paintarget[0] && self->disconnectDebounceTime <= level.time)
+	{
+		if (g_developer && g_developer->integer)
+		{
+			gi.Printf("turret %d hurt by %d: fires its paintarget '%s'\n", self->s.number, attacker ? attacker->s.number : -1,
+				self->paintarget);
+		}
+		G_UseTargets2(self, self, self->paintarget);
+		self->disconnectDebounceTime = level.time + self->fx_time;
+	}
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -1127,7 +1140,7 @@ destroyed, and it takes the MP keys.
   alliedTeam - team that this turret won't target and takes no damage from (teamnodmg is read the same way)
 	0 - none given: "team", else the enemy's
 	1 - red / siege team 1: the player's (the player starts at that team's spawn points, g_client.cpp
-	    SelectMultiplayerSpawnPoint)
+		SelectMultiplayerSpawnPoint)
 	2 - blue / siege team 2: the enemy's
 
   customscale - custom scaling size. 100 is normal size, 1024 is the max scaling. this will change the bounding box size, so be careful of starting in solid!
@@ -1183,6 +1196,13 @@ void SP_misc_turretG2(gentity_t* base)
 	finish_spawning_turret(base);
 
 	base->count = respawn_time;
+	G_SpawnInt("painwait", "0", &base->fx_time); // ms between firing its paintarget (TurretPain)
+	base->disconnectDebounceTime = 0;
+	if (g_developer && g_developer->integer && base->paintarget && base->paintarget[0])
+	{
+		gi.Printf("turret %d: paintarget '%s' every %d ms, health %d\n", base->s.number, base->paintarget, base->fx_time,
+			base->health);
+	}
 
 	G_SpawnInt("alliedTeam", "0", &allied_team);
 	if (!allied_team)

@@ -1128,7 +1128,7 @@ qboolean G2API_SetBoneAnimIndex(
 	// ------------------------------------------------------------
 	if (ghlInfo == NULL)
 	{
-		Com_Printf("G2API_SetBoneAnimIndex: WARNING - ghlInfo is NULL\n");
+		if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - ghlInfo is NULL\n");
 		return qfalse;
 	}
 
@@ -1152,27 +1152,27 @@ qboolean G2API_SetBoneAnimIndex(
 		// --------------------------------------------------------
 		if (startFrame < 0)
 		{
-			Com_Printf("G2API_SetBoneAnimIndex: WARNING - startFrame < 0\n");
+			if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - startFrame < 0\n");
 		}
 		if (startFrame >= ghlInfo->aHeader->numFrames)
 		{
-			Com_Printf("G2API_SetBoneAnimIndex: WARNING - startFrame >= numFrames\n");
+			if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - startFrame >= numFrames\n");
 		}
 		if (endFrame <= 0)
 		{
-			Com_Printf("G2API_SetBoneAnimIndex: WARNING - endFrame <= 0\n");
+			if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - endFrame <= 0\n");
 		}
 		if (endFrame > ghlInfo->aHeader->numFrames)
 		{
-			Com_Printf("G2API_SetBoneAnimIndex: WARNING - endFrame > numFrames\n");
+			if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - endFrame > numFrames\n");
 		}
 		if (set_frame >= ghlInfo->aHeader->numFrames)
 		{
-			Com_Printf("G2API_SetBoneAnimIndex: WARNING - set_frame >= numFrames\n");
+			if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - set_frame >= numFrames\n");
 		}
 		if (!(set_frame == -1.0f || set_frame >= 0.0f))
 		{
-			Com_Printf("G2API_SetBoneAnimIndex: WARNING - set_frame < 0 and not -1\n");
+			if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - set_frame < 0 and not -1\n");
 		}
 
 		// --------------------------------------------------------
@@ -1203,14 +1203,14 @@ qboolean G2API_SetBoneAnimIndex(
 		// --------------------------------------------------------
 		if (index < 0 || index >= static_cast<int>(ghlInfo->mBlist.size()))
 		{
-			Com_Printf("G2API_SetBoneAnimIndex: WARNING - Bone index out of range (%s)\n",
+			if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - Bone index out of range (%s)\n",
 				ghlInfo->mFileName);
 		}
 		else
 		{
 			if (ghlInfo->mBlist[index].boneNumber < 0)
 			{
-				Com_Printf("G2API_SetBoneAnimIndex: WARNING - Bone index not active (%s)\n",
+				if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - Bone index not active (%s)\n",
 					ghlInfo->mFileName);
 			}
 			else
@@ -1239,7 +1239,7 @@ qboolean G2API_SetBoneAnimIndex(
 	// ------------------------------------------------------------
 	if (ret == qfalse)
 	{
-		Com_Printf("G2API_SetBoneAnimIndex: WARNING - Failed (%s)\n", ghlInfo->mFileName);
+		if (ri.Cvar_VariableIntegerValue("developer")) Com_Printf("G2API_SetBoneAnimIndex: WARNING - Failed (%s)\n", ghlInfo->mFileName);
 	}
 
 	return ret;

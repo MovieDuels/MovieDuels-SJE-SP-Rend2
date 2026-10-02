@@ -16263,7 +16263,7 @@ void CG_Player(centity_t* cent)
 		vec3_t g2_angles = { 0, tempAngles[YAW], 0 };
 
 		// the guns he carries but is not holding, on his body (holster_mp.cfg)
-		CG_HolsteredWeapons(cent, g2_angles, ent.origin, ent.renderfx);
+		CG_HolsteredWeapons(cent, g2_angles, ent.origin, ent.renderfx, ent.shadowPlane);
 
 		// the barrel of the Z6 rotary cannon in his hand spins
 		CG_Z6SpinBarrel(cent);

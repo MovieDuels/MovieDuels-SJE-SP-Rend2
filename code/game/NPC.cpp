@@ -2612,4 +2612,4 @@ qboolean NPC_IsOversized(const gentity_t* self)
 	}
 
 	return qfalse;
-}
+}

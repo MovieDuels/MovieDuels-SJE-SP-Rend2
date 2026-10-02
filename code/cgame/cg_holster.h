@@ -9,7 +9,8 @@ Holstered guns (singleplayer), see cg_holster.cpp
 
 // Draws the guns this character carries but is not holding on his body (after his model is added,
 // with the angles and origin his model was drawn with)
-void CG_HolsteredWeapons(centity_t* cent, const vec3_t g2Angles, const vec3_t origin, int playerRenderfx);
+void CG_HolsteredWeapons(centity_t* cent, const vec3_t g2Angles, const vec3_t origin, int playerRenderfx,
+	float shadowPlane);
 
 // Whether a gun has the left or right hip place of this character (the holstered saber then goes to the
 // front of that hip, wp_saber.cpp)

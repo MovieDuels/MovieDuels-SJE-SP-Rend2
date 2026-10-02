@@ -434,4 +434,4 @@ void GEntity_DieFunc(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	}
 }
 
-//////////////////// eof /////////////////////
+//////////////////// eof /////////////////////

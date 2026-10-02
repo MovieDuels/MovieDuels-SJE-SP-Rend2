@@ -1580,8 +1580,9 @@ static void ProcessOrientCommands(Vehicle_t* p_veh)
 	}
 	else
 	{
-		//add in strafing roll
-		const float strafe_roll = p_veh->m_fStrafeTime / MAX_STRAFE_TIME * p_veh->m_pVehicleInfo->rollLimit;
+		//add in strafing roll, banked the way it goes: a strafe to the left (m_ucmd.rightmove < 0) counts the
+		//strafe time up, and a positive roll banks to the right (turning, cur_roll -= yaw delta, banks into the turn)
+		const float strafe_roll = -p_veh->m_fStrafeTime / MAX_STRAFE_TIME * p_veh->m_pVehicleInfo->rollLimit;
 		//p_veh->m_pVehicleInfo->bankingSpeed*
 		const float strafe_dif = AngleSubtract(strafe_roll, p_veh->m_vOrientation[ROLL]);
 		p_veh->m_vOrientation[ROLL] += strafe_dif * 0.1f * p_veh->m_fTimeModifier;
@@ -1768,4 +1769,4 @@ void G_CreateFighterNPC(Vehicle_t** p_veh, const char* str_type)
 #undef Q_flrand
 
 #undef MOD_EXPLOSIVE
-#endif
+#endif

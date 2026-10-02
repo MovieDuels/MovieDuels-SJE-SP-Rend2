@@ -80,7 +80,6 @@ extern cvar_t* g_noIgniteTwirl;
 extern qboolean IsSurrendering(const gentity_t* self);
 extern qboolean PM_InKataAnim(int anim);
 
-
 extern cvar_t* g_ActivateAnimationStyle;
 extern cvar_t* g_AnimationStyle;
 // -----------------------------------------------------------------------------
