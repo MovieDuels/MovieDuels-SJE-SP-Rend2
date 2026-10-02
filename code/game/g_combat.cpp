@@ -9543,6 +9543,21 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 				targ->enemy = attacker;
 			}
 
+			if (!already_dead && g_developer && g_developer->integer && targ->client
+				&& targ->client->NPC_class == CLASS_VEHICLE && targ->m_pVehicle && targ->m_pVehicle->m_pPilot
+				&& targ->m_pVehicle->m_pPilot->classname
+				&& !Q_stricmp(targ->m_pVehicle->m_pPilot->classname, "fighter_pilot"))
+			{
+				// an AI fighter (AI_Fighter.cpp) is lost: what got it
+				const gentity_t* pilot = targ->m_pVehicle->m_pPilot;
+				gi.Printf("fighter AI: %s %d destroyed by %s %d (%s) mod %d at %s, %.0f from home, %.1f s after boarding, speed %.0f\n",
+					targ->NPC_type, targ->s.number,
+					attacker && attacker->classname ? attacker->classname : "?", attacker ? attacker->s.number : -1,
+					attacker && attacker->NPC_type ? attacker->NPC_type : "", mod, vtos(targ->currentOrigin),
+					Distance(targ->currentOrigin, pilot->pos4), (level.time - pilot->painDebounceTime) / 1000.0f,
+					VectorLength(targ->client->ps.velocity));
+			}
+
 			GEntity_DieFunc(targ, inflictor, attacker, take, mod, dflags, hit_loc);
 		}
 		else
@@ -10061,4 +10076,4 @@ void AddNPCBlockPointBonus(const gentity_t* self)
 	{
 		self->client->ps.saberFatigueChainCount = MISHAPLEVEL_LIGHT;
 	}
-}
+}

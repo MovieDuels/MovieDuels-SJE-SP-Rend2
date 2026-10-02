@@ -1254,7 +1254,16 @@ void DoImpact(gentity_t* self, gentity_t* other, const qboolean damage_self, con
 				}
 				else
 				{
-					G_Damage(self, player, player, nullptr, self->currentOrigin, magnitude, veh_d_flags, MOD_FALLING);
+					// (a crash counts as the player's doing - the ships chasing him - except for the MP space maps' AI
+					// fighters, AI_Fighter.cpp, which fly their own battle: theirs is the world's)
+					gentity_t* crash_attacker = player;
+					if (p_self_veh->m_pPilot && p_self_veh->m_pPilot->classname
+						&& !Q_stricmp(p_self_veh->m_pPilot->classname, "fighter_pilot"))
+					{
+						crash_attacker = &g_entities[ENTITYNUM_WORLD];
+					}
+					G_Damage(self, crash_attacker, crash_attacker, nullptr, self->currentOrigin, magnitude, veh_d_flags,
+						MOD_FALLING);
 				}
 			}
 
@@ -11536,4 +11545,4 @@ qboolean NPC_IsNotHavingEnoughForceSight(const gentity_t* self)
 	}
 
 	return qfalse;
-}
+}

@@ -159,12 +159,15 @@ using thinkFunc_t = enum
 	thinkF_wp_stasis_missile_blow,
 
 	thinkF_WP_SaberBallisticsThink,
+
+	thinkF_G_VehicleSpawn, // an MP map's ship spawner replacing a lost ship after its "delay" (NPC_VehicleSpawnUse)
 };
 
 // THINK functions...
 //
 extern void teleporter_think(gentity_t* ent);
 extern void funcBBrushDieGo(gentity_t* self);
+extern void G_VehicleSpawn(gentity_t* self);
 extern void ExplodeDeath(gentity_t* self);
 extern void RespawnItem(gentity_t* ent);
 extern void G_FreeEntity(gentity_t* ent);

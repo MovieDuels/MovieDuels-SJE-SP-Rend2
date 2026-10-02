@@ -1704,9 +1704,15 @@ extern bool Pilot_MasterUpdate();
 extern qboolean G_ControlledByPlayer(const gentity_t* self);
 extern qboolean droideka_npc(const gentity_t* ent);
 extern qboolean Calo_Nord(const gentity_t* self);
+extern qboolean NPC_FighterAI();
 
 static void NPC_RunBehavior(const int team, const int b_state)
 {
+	// flying a fighter (AI_Fighter.cpp: the MP space maps' ships)
+	if (NPC_FighterAI())
+	{
+		return;
+	}
 	if (b_state == BS_FOLLOW_OVERRIDE)
 	{
 		NPC_BSFollowLeader();
@@ -2606,4 +2612,4 @@ qboolean NPC_IsOversized(const gentity_t* self)
 	}
 
 	return qfalse;
-}
+}

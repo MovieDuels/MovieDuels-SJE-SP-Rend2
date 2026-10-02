@@ -246,6 +246,10 @@ void G_VehicleSpawn(gentity_t* self)
 		//die without pilot
 		vehEnt->m_pVehicle->m_iPilotTime = level.time + vehEnt->endFrame;
 	}
+
+	// an MP map's ship: its side, and maybe an AI pilot (AI_Fighter.cpp)
+	extern void G_FighterAI_VehicleSpawned(const gentity_t* spawner, gentity_t* veh);
+	G_FighterAI_VehicleSpawned(self, vehEnt);
 #endif
 	//return vehEnt;
 }
@@ -2943,4 +2947,4 @@ void G_SetSharedVehicleFunctions(vehicleInfo_t* pVehInfo)
 #undef sqrtf
 
 #undef MOD_EXPLOSIVE
-#endif
+#endif

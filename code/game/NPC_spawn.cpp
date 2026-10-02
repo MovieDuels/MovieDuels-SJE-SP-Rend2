@@ -3147,6 +3147,13 @@ SAFE - Won't spawn if an entity is within 64 units
 */
 void NPC_VehicleSpawnUse(gentity_t* self, gentity_t* other, gentity_t* activator)
 {
+	if (self->noDamageTeam != TEAM_FREE && self->delay > 0)
+	{
+		// an MP map's ship spawner (it has a side): its "delay" is in seconds, a lost ship is replaced after it
+		self->e_ThinkFunc = thinkF_G_VehicleSpawn;
+		self->nextthink = level.time + self->delay * 1000;
+		return;
+	}
 	G_VehicleSpawn(self);
 }
 
@@ -3165,6 +3172,24 @@ void SP_NPC_Vehicle(gentity_t* self)
 	G_SetOrigin(self, self->s.origin);
 	G_SetAngles(self, self->s.angles);
 	G_SpawnString("skin", "", &self->soundSet);
+
+	// MP maps: the side its ships are on, "teamowner" 1 (red / siege team 1: the player's, he starts at that team's
+	// spawn points) or 2 (blue / siege team 2: the enemy), kept in noDamageTeam (a spawner takes no damage), see
+	// G_FighterAI_VehicleSpawned. There spawnflag 1 is "die without a pilot", not this "die out of the player's
+	// sight": the ships waiting in a hangar would keep blowing up and being replaced
+	int team_owner = 0;
+	if (G_SpawnInt("teamowner", "0", &team_owner) && (team_owner == 1 || team_owner == 2))
+	{
+		self->noDamageTeam = team_owner == 1 ? TEAM_PLAYER : TEAM_ENEMY;
+		self->spawnflags &= ~1;
+	}
+	// "dropTime": a SUSPENDED (docked) ship let go drops like a rock this many seconds first (as in MP); its
+	// ships get it as fly_sound_debounce_time (NPC_Spawn_Do), Board starts it
+	float drop_time = 0.0f;
+	if (G_SpawnFloat("dropTime", "0", &drop_time) && drop_time > 0.0f)
+	{
+		self->fly_sound_debounce_time = static_cast<int>(ceil(drop_time * 1000.0f));
+	}
 
 	//grab this from the spawner
 	if (self->spawnflags & 1)
@@ -5892,4 +5917,4 @@ void Svcmd_NPC_f()
 			}
 		}
 	}
-}
+}

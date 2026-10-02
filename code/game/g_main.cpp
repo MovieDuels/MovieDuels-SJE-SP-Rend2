@@ -1091,6 +1091,8 @@ static void InitGame(const char* mapname, const char* spawntarget, const int che
 
 	Rail_Initialize();
 	Troop_Initialize();
+	extern void G_FighterRoute_Load();
+	G_FighterRoute_Load(); // the ships' route on an MP space map (AI_Fighter.cpp)
 
 	player = &g_entities[0];
 
@@ -2541,6 +2543,8 @@ void G_RunFrame(const int level_time)
 	Rail_Update();
 	Troop_Update();
 	Pilot_Update();
+	extern void G_FighterRoute_Frame();
+	G_FighterRoute_Frame(); // ship_wp_show
 
 	if (player && gi.WE_IsShaking(player->currentOrigin))
 	{
@@ -2935,4 +2939,4 @@ void G_LoadSave_ReadMiscData()
 IGhoul2InfoArray& TheGameGhoul2InfoArray()
 {
 	return gi.TheGhoul2InfoArray();
-}
+}
