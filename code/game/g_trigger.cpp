@@ -1643,7 +1643,18 @@ void hyperspace_touch(const gentity_t* self, gentity_t* other, trace_t* trace)
 		{
 			//they've started the hyperspace but haven't been teleported yet
 			const float timeFrac = static_cast<float>(level.time - other->client->ps.hyperSpaceTime) / HYPERSPACE_TIME;
-			if (timeFrac >= HYPERSPACE_TELEPORT_FRAC)
+			//A ship is only sent through while it is in here. If it is about to fly out of the far side before its time
+			//(it came in deep, or the jump is long for the size of this box) send it now, and move its clock on to that
+			//point: it used to fly on in hyperspace, into the ship boundary of the map, which turned it back and killed it.
+			vec3_t next_org;
+			VectorMA(other->client->ps.origin, 0.15f, other->client->ps.velocity, next_org);
+			const auto leaving = static_cast<qboolean>(timeFrac < HYPERSPACE_TELEPORT_FRAC
+				&& !G_PointInBounds(next_org, self->absmin, self->absmax));
+			if (leaving)
+			{
+				other->client->ps.hyperSpaceTime = level.time - static_cast<int>(HYPERSPACE_TIME * HYPERSPACE_TELEPORT_FRAC);
+			}
+			if (timeFrac >= HYPERSPACE_TELEPORT_FRAC || leaving)
 			{
 				//half-way, now teleport them!
 				vec3_t diff, fwd, right, up, newOrg;

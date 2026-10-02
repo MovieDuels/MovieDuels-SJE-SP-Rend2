@@ -423,6 +423,56 @@ static gentity_t* SelectRandomDeathmatchSpawnPoint()
 }
 
 /*
+================
+SelectMultiplayerSpawnPoint
+
+A multiplayer map played in singleplayer has no info_player_start / info_player_deathmatch, only the
+spawn points of its game type: a random one of those (the first kind the map has, one that doesn't
+telefrag if there is one; spots that are targeted, i.e. switched on later, only if there is nothing else)
+================
+*/
+static gentity_t* SelectMultiplayerSpawnPoint()
+{
+	static const char* const classnames[] =
+	{
+		"info_player_siegeteam1", "info_player_siegeteam2",
+		"team_CTF_redplayer", "team_CTF_blueplayer", "team_CTF_redspawn", "team_CTF_bluespawn",
+		"info_player_duel", "info_player_duel1", "info_player_duel2",
+		"info_player_start_red", "info_player_start_blue",
+	};
+
+	for (const char* classname : classnames)
+	{
+		gentity_t* spots[MAX_SPAWN_POINTS]{};
+		int count = 0;
+		gentity_t* fallback = nullptr;
+		gentity_t* spot = nullptr;
+
+		while ((spot = G_Find(spot, FOFS(classname), classname)) != nullptr && count < MAX_SPAWN_POINTS)
+		{
+			if (!fallback)
+			{
+				fallback = spot;
+			}
+			if (spot->targetname != nullptr || SpotWouldTelefrag(spot, TEAM_FREE))
+			{
+				continue;
+			}
+			spots[count++] = spot;
+		}
+		if (count)
+		{
+			return spots[rand() % count];
+		}
+		if (fallback)
+		{
+			return fallback;
+		}
+	}
+	return nullptr;
+}
+
+/*
 ===========
 SelectSpawnPoint
 
@@ -454,6 +504,12 @@ gentity_t* SelectSpawnPoint(vec3_t avoid_point, vec3_t origin, vec3_t angles)
 			// roll again if it would be real close to point of death
 			spot = SelectRandomDeathmatchSpawnPoint();
 		}
+	}
+
+	if (!spot)
+	{
+		// a multiplayer map (siege, CTF, duel) without singleplayer / deathmatch starts: use its own spawn points
+		spot = SelectMultiplayerSpawnPoint();
 	}
 
 	// find a single player start spot
@@ -1681,6 +1737,15 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 						ent->m_pVehicle->m_iMuzzleTag[i] = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], str_temp);
 					}
 				}
+
+				// Setup the Turret gunner views (as MP). Was never set in SP: 0 is a real bolt, -1 means none.
+				for (int i = 0; i < MAX_VEHICLE_TURRETS; i++)
+				{
+					const char* view_tag = ent->m_pVehicle->m_pVehicleInfo->turret[i].gunnerViewTag;
+					ent->m_pVehicle->m_iGunnerViewTag[i] = view_tag && view_tag[0]
+						? gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], view_tag)
+						: -1;
+				}
 			}
 			else if (ent->client && ent->client->NPC_class == CLASS_HOWLER)
 			{
@@ -2568,6 +2633,118 @@ void G_InitPlayerFromCvars(gentity_t* ent)
 	}
 }
 
+extern void NPC_GetSurfaceParms(const char* npc_name, char* surf_off, int off_size, char* surf_on, int on_size);
+
+// Gives ent (a force projection) the player's look as it is right now: his model and skin (from his ghoul2 model,
+// so also after a character change in game or a save game load), the surfaces his NPC file turns on / off, his
+// tint, scale, sounds, animation style and sabers. qfalse if the player has no model to copy.
+qboolean G_InitPlayerLookFromPlayer(gentity_t* ent)
+{
+	const gentity_t* pl = &g_entities[0];
+	if (!ent || !ent->client || !pl->inuse || !pl->client || pl->playerModel < 0 || pl->ghoul2.size() <= pl->playerModel)
+	{
+		return qfalse;
+	}
+	const CGhoul2Info& g2 = pl->ghoul2[pl->playerModel];
+
+	// the model: models/players/<model>/model.glm
+	constexpr int prefix_len = sizeof "models/players/" - 1;
+	if (Q_stricmpn(g2.mFileName, "models/players/", prefix_len))
+	{
+		return qfalse;
+	}
+	char model_name[MAX_QPATH];
+	Q_strncpyz(model_name, g2.mFileName + prefix_len, sizeof model_name);
+	char* slash = strchr(model_name, '/');
+	if (!slash)
+	{
+		return qfalse;
+	}
+	*slash = '\0';
+
+	// the skin, as g_set_g2_player_model registered it: models/players/<model>/model_<skin>.skin or
+	// models/players/<model>/|head|torso|legs
+	char skin_path[MAX_QPATH] = {};
+	char skin[MAX_QPATH] = {};
+	const char* custom_skin = nullptr;
+	if (g2.mCustomSkin > 0 && g2.mCustomSkin < MAX_CHARSKINS)
+	{
+		gi.GetConfigstring(CS_CHARSKINS + g2.mCustomSkin, skin_path, sizeof skin_path);
+	}
+	const char* folder = va("models/players/%s/", model_name);
+	if (skin_path[0] && !Q_stricmpn(skin_path, folder, static_cast<int>(strlen(folder))))
+	{
+		const char* rest = skin_path + strlen(folder);
+		if (rest[0] == '|')
+		{
+			Q_strncpyz(skin, rest + 1, sizeof skin); // three part skin
+			custom_skin = skin;
+		}
+		else if (!Q_stricmpn(rest, "model_", 6))
+		{
+			Q_strncpyz(skin, rest + 6, sizeof skin);
+			COM_StripExtension(skin, skin, sizeof skin);
+			if (Q_stricmp(skin, "default"))
+			{
+				custom_skin = skin;
+			}
+		}
+	}
+
+	// the surfaces the player's NPC file turns off / on (not for the new-game character or a "model|skin" change)
+	char surf_off[1024] = {};
+	char surf_on[1024] = {};
+	if (pl->NPC_type && Q_stricmp(pl->NPC_type, "player") && !strchr(pl->NPC_type, '|'))
+	{
+		NPC_GetSurfaceParms(pl->NPC_type, surf_off, sizeof surf_off, surf_on, sizeof surf_on);
+	}
+
+	G_RemovePlayerModel(ent);
+	G_RemoveWeaponModels(ent);
+	G_RemoveHolsterModels(ent);
+	g_set_g2_player_model(ent, model_name, custom_skin, surf_off[0] ? surf_off : nullptr, surf_on[0] ? surf_on : nullptr);
+
+	VectorCopy(pl->s.modelScale, ent->s.modelScale);
+	for (int i = 0; i < 4; i++)
+	{
+		ent->client->renderInfo.customRGBA[i] = pl->client->renderInfo.customRGBA[i];
+	}
+	ent->client->animationstyle = pl->client->animationstyle;
+
+	if (ent->client->clientInfo.customBasicSoundDir && gi.bIsFromZone(ent->client->clientInfo.customBasicSoundDir, TAG_G_ALLOC))
+	{
+		gi.Free(ent->client->clientInfo.customBasicSoundDir);
+	}
+	ent->client->clientInfo.customBasicSoundDir = pl->client->clientInfo.customBasicSoundDir
+		? G_NewString(pl->client->clientInfo.customBasicSoundDir)
+		: nullptr;
+
+	// the player's sabers, with his blade colours (G_MatchPlayerWeapon then gives the weapon and blade states)
+	for (int s = 0; s < MAX_SABERS; s++)
+	{
+		const saberInfo_t& from = pl->client->ps.saber[s];
+		if (from.name && from.name[0])
+		{
+			WP_SaberParseParms(from.name, &ent->client->ps.saber[s]);
+			for (int b = 0; b < MAX_BLADES; b++)
+			{
+				ent->client->ps.saber[s].blade[b].color = from.blade[b].color;
+			}
+		}
+		else if (s > 0)
+		{
+			WP_RemoveSaber(ent, s);
+		}
+	}
+	ent->client->ps.dualSabers = pl->client->ps.dualSabers;
+	ent->client->ps.saberStylesKnown |= pl->client->ps.saberStylesKnown;
+
+	G_AddWeaponModels(ent);
+	NPC_SetAnim(ent, SETANIM_LEGS, ent->client->ps.legsAnim, SETANIM_FLAG_NORMAL | SETANIM_FLAG_RESTART);
+	NPC_SetAnim(ent, SETANIM_TORSO, ent->client->ps.torsoAnim, SETANIM_FLAG_NORMAL | SETANIM_FLAG_RESTART);
+	return qtrue;
+}
+
 static qboolean AllowedDualPistol(const gentity_t* ent)
 {
 	switch (ent->s.weapon)
@@ -2617,7 +2794,10 @@ static void G_ForceSafeModelChangeState(gentity_t* ent)
 
 	if (ent->client->ps.communicatingflags & (1u << CF_AIMINGGUN))
 	{
-		PM_RemoveGunnerAimFlag(qtrue);
+		// Clear it on this entity; PM_RemoveGunnerAimFlag works on the global pm, which is not this entity
+		// (or is null/stale) outside Pmove.
+		ent->client->ps.communicatingflags &= ~(1 << CF_AIMINGGUN);
+		ent->client->IsAiming = qfalse;
 	}
 
 	// ----------------------------------------------------------------------

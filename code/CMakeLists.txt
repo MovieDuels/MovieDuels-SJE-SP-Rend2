@@ -87,13 +87,13 @@ if(BuildSPEngine OR BuildJK2SPEngine)
 			set(SPEngineLibraries
 				${SPEngineLibraries}
 				${OpenJKLibDir}/SDL2/lib/x86/SDL2main.lib
-				${OpenJKLibDir}/SDL2/lib/x86/SDL2.lib
+				${OpenJKLibDir}/SDL2/lib/x86/MovieDuels-SDL2.lib
 				)
 		else()
 			set(SPEngineLibraries
 				${SPEngineLibraries}
 				${OpenJKLibDir}/SDL2/lib/x64/SDL2main.lib
-				${OpenJKLibDir}/SDL2/lib/x64/SDL2.lib
+				${OpenJKLibDir}/SDL2/lib/x64/MovieDuels-SDL2.lib
 				)
 		endif()
 
@@ -173,6 +173,7 @@ if(BuildSPEngine OR BuildJK2SPEngine)
 
 		"${SPDir}/qcommon/q_shared.cpp"
 		"${SPDir}/qcommon/q_shared.h"
+		"${SPDir}/qcommon/md_animsets.h"
 
 		"${SPDir}/qcommon/sstring.h"
 		"${SPDir}/qcommon/stringed_ingame.cpp"
@@ -304,6 +305,10 @@ if(BuildSPEngine OR BuildJK2SPEngine)
 	# UI files
 	set(SPEngineUIFiles
 		"${SPDir}/ui/ui_atoms.cpp"
+		"${SPDir}/ui/ui_pazaak.cpp"
+		"${SPDir}/ui/ui_pazaak.h"
+		"${SPDir}/ui/pazaak_core.cpp"
+		"${SPDir}/ui/pazaak_core.h"
 		"${SPDir}/ui/ui_connect.cpp"
 		"${SPDir}/ui/ui_main.cpp"
 		"${SPDir}/ui/ui_saber.cpp"
@@ -400,11 +405,11 @@ if(BuildSPEngine OR BuildJK2SPEngine)
 			if(UseInternalSDL2)
 				if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 					set(SPEngineExtraInstallFiles
-						${OpenJKLibDir}/SDL2/bin/x86/SDL2.dll
+						${OpenJKLibDir}/SDL2/bin/x86/MovieDuels-SDL2.dll
 						)
 				else()
 					set(SPEngineExtraInstallFiles
-						${OpenJKLibDir}/SDL2/bin/x64/SDL2.dll
+						${OpenJKLibDir}/SDL2/bin/x64/MovieDuels-SDL2.dll
 						)
 				endif()
 			endif()

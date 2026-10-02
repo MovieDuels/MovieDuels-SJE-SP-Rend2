@@ -381,13 +381,13 @@ if(BuildMPEngine)
 			set(MPEngineLibraries
 				${MPEngineLibraries}
 				${OpenJKLibDir}/SDL2/lib/x86/SDL2main.lib
-				${OpenJKLibDir}/SDL2/lib/x86/SDL2.lib
+				${OpenJKLibDir}/SDL2/lib/x86/MovieDuels-SDL2.lib
 				)
 		else()
 			set(MPEngineLibraries
 				${MPEngineLibraries}
 				${OpenJKLibDir}/SDL2/lib/x64/SDL2main.lib
-				${OpenJKLibDir}/SDL2/lib/x64/SDL2.lib
+				${OpenJKLibDir}/SDL2/lib/x64/MovieDuels-SDL2.lib
 				)
 		endif()
 
@@ -561,11 +561,11 @@ if(BuildMPEngine)
 		if(UseInternalSDL2)
 			if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 				set(MPEngineExtraInstallFiles
-					${OpenJKLibDir}/SDL2/bin/x86/SDL2.dll
+					${OpenJKLibDir}/SDL2/bin/x86/MovieDuels-SDL2.dll
 					)
 			else()
 				set(MPEngineExtraInstallFiles
-					${OpenJKLibDir}/SDL2/bin/x64/SDL2.dll
+					${OpenJKLibDir}/SDL2/bin/x64/MovieDuels-SDL2.dll
 					)
 			endif()
 		endif()

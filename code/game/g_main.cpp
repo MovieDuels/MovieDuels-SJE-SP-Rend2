@@ -22,6 +22,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "g_local.h"
+#include "g_pazaak.h"
 #include "g_functions.h"
 #include "Q3_Interface.h"
 #include "g_roff.h"
@@ -36,9 +37,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 //rww - RAGDOLL_END
 
 #include "qcommon/ojk_saved_game_helper.h"
+#include "qcommon/md_animsets.h"
 #include <rd-common/mdx_format.h>
 
-#include "g_pazaak.h"
 
 extern void WP_SaberLoadParms();
 extern qboolean G_PlayerSpawned();
@@ -333,15 +334,28 @@ cvar_t* g_npc_is_smart_range;
 
 cvar_t* g_jkoeffects;
 cvar_t* g_HitTracking;
-cvar_t* g_ActivateAnimationStyle;
-cvar_t* g_AnimationStyle;
-cvar_t* g_AllowSmashDown;
+cvar_t* g_ActivateAnimationStyle; // the animation style in use for this map (g_animationStyleActive, read-only). 0 = classic, 1 = master
+cvar_t* g_ActivateAnimationStyleSetting; // the player's choice (g_ActivateAnimationStyle, menu/console). Used from the next map load
+cvar_t* g_PlayerAnimationStyle;       // the player's own animation style with the Master set ("default", "anakin"... menu/console)
+cvar_t* md_update;                // which MovieDuels update the assets are (8, 9, ...). Read-only: set by ui/main.menu ("uiScript mdUpdate 8")
+cvar_t* g_AnimationStyle;         // select between 0 -28 for specific style
+cvar_t* g_NPCAnimationStyle;      // turns npc range based stance on/off
+cvar_t* g_AllowSmashDown;         // allow smashdown attacks for NPCs and players. 0 = off, 1 = on
 
 extern char* G_GetLocationForEnt(const gentity_t* ent);
 extern void CP_FindCombatPointWaypoints();
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
 
 void G_RunFrame(int level_time);
+extern void WP_SaberHolsterCheckGuns(gentity_t* ent);
+void G_EnforceUpdateSettings();
+static void G_LatchAnimationStyle();
+static void G_CheckAnimationStyleChange();
+static void G_RestartAnimsAfterLoad();
+static int g_animRestartCount = 0;                    // characters whose animation set changed in the last loaded save
+static qboolean g_animRestartPending[MAX_GENTITIES]; // which ones (G_RefreshAnimFileSetsAfterLoad)
+static void G_ApplyPlayerAnimationStyle();
+static qboolean g_playerAnimStyleApplied = qfalse;    // g_PlayerAnimationStyle given to the player on this map
 void ClearNPCGlobals();
 extern void AI_UpdateGroups();
 
@@ -959,13 +973,18 @@ static void G_InitCvars()
 
 	g_HitTracking = gi.cvar("g_HitTracking", "0", CVAR_ARCHIVE);
 
-	g_ActivateAnimationStyle = gi.cvar("g_activateanimationstyle", "0", CVAR_ARCHIVE);
+	g_ActivateAnimationStyleSetting = gi.cvar("g_activateanimationstyle", "0", CVAR_ARCHIVE);
+	g_ActivateAnimationStyle = gi.cvar(MD_ANIMSTYLE_ACTIVE_CVAR, "0", CVAR_ROM); // set by G_LatchAnimationStyle
+	g_PlayerAnimationStyle = gi.cvar("g_playeranimationstyle", "default", CVAR_ARCHIVE);
+	md_update = gi.cvar("md_update", "8", CVAR_ROM); // default 8 so a start without the main menu (devmap) is Update 8 too
 	// CVAR_INIT will be used for release, but CVAR_ARCHIVE will be used for testing and development.
 	//This is to allow the user to change the animation style without having to restart the game.
 
 	g_AnimationStyle = gi.cvar("g_animationstyle", "0", CVAR_ARCHIVE | CVAR_SAVEGAME); //Alternate animationstyle
 
 	g_AllowSmashDown = gi.cvar("g_allowsmashdown", "0", CVAR_ARCHIVE);
+
+	g_NPCAnimationStyle = gi.cvar("g_npcanimationstyle", "0", CVAR_ARCHIVE);
 }
 
 /*
@@ -1003,6 +1022,9 @@ static void InitGame(const char* mapname, const char* spawntarget, const int che
 	srand(randomSeed);
 
 	G_InitCvars();
+	G_EnforceUpdateSettings();
+	G_LatchAnimationStyle(); // before any model or animation.cfg of this map is loaded
+	g_playerAnimStyleApplied = qfalse; // give the player g_PlayerAnimationStyle again once spawned
 
 	G_InitMemory();
 
@@ -1043,6 +1065,7 @@ static void InitGame(const char* mapname, const char* spawntarget, const int che
 	WP_SaberLoadParms();
 	//Set up NPC init data
 	NPC_InitGame();
+	G_Pazaak_Init();
 
 	TIMER_Clear();
 	Rail_Reset();
@@ -1144,11 +1167,39 @@ and global variables
 */
 extern int PM_ValidateAnimRange(int startFrame, int endFrame, float animSpeed);
 
+#ifndef _WIN32
+extern "C"
+{
+	using __cxa_atexit_func_t = void (*)(void*);
+	extern int __cxa_atexit(__cxa_atexit_func_t func, void* arg, void* dso);
+}
+#endif
+
+// Runs before any static destructor on module teardown (library unload or
+// process exit): static destructors are registered at load time, this one is
+// registered below in GetGameAPI, so LIFO ordering puts it first. It marks
+// the engine as unavailable so Ghoul2 cleanup in static destructors (e.g.
+// the g_entities array) cannot call into an already-unloaded renderer.
+#ifdef _WIN32
+static void GameModuleMarkTeardown()
+#else
+static void GameModuleMarkTeardown(void*)
+#endif
+{
+	g_ghoul2EngineTeardown = true;
+}
+
 extern "C" Q_EXPORT game_export_t* QDECL GetGameAPI(const game_import_t* import)
 {
 	gameinfo_import_t gameinfo_import{};
 
 	gi = *import;
+
+#ifdef _WIN32
+	atexit(GameModuleMarkTeardown);
+#else
+	__cxa_atexit(GameModuleMarkTeardown, nullptr, &__dso_handle);
+#endif
 
 	globals.apiversion = GAME_API_VERSION;
 	globals.Init = InitGame;
@@ -2249,8 +2300,224 @@ constexpr auto BARRIER_DEFUEL_RATE = 100; //approx. 50 seconds of idle use from 
 constexpr auto BARRIER_REFUEL_RATE = 200; //seems fair;
 constexpr auto DROIDEKA_BARRIER_DEFUEL_RATE = 1000;
 
+// Update 8 assets have no animations for the new animation system (that is Update 9), so keep it off
+// even if it was typed in the console or saved in a config. Runs at every map start and every frame,
+// before the setting is copied into the active style.
+void G_EnforceUpdateSettings()
+{
+	if (md_update && md_update->integer < 9 && g_ActivateAnimationStyleSetting && g_ActivateAnimationStyleSetting->integer != 0)
+	{
+		gi.cvar_set("g_activateanimationstyle", "0");
+		gi.Printf(S_COLOR_YELLOW "g_ActivateAnimationStyle is not available in MovieDuels Update %i, it stays 0.\n", md_update->integer);
+	}
+}
+
+// The models (renderer: which .gla), the animation.cfg of every character and the animation code must
+// all use the same style, and the models are only loaded at map load. So the player's setting is copied
+// into the active style once, at map load (new map, map change or loaded save), and the game and the
+// renderers only read the active style. A change in the middle of a map waits for the next map load.
+static void G_LatchAnimationStyle()
+{
+	const int style = g_ActivateAnimationStyleSetting->integer == 1 ? 1 : 0;
+	gi.cvar_set(MD_ANIMSTYLE_ACTIVE_CVAR, va("%i", style));
+}
+
+extern qboolean GameAllowedToSaveHere();
+
+// The setting was changed in the middle of a map (menu or console) and no longer matches the style in
+// use: ask the engine to save the game and load it straight back (MD_ANIMSTYLE_RELOAD_CMD, sv_savegame.cpp).
+// The load uses the new style. While the game can't be saved (cutscene, dying...), wait and ask again.
+static void G_CheckAnimationStyleChange()
+{
+	static int announced_setting = -1;
+	static int next_request_time = 0;
+	static int save_allowed_since = 0;
+
+	const int setting = g_ActivateAnimationStyleSetting->integer == 1 ? 1 : 0;
+
+	if (setting == g_ActivateAnimationStyle->integer)
+	{
+		announced_setting = -1; // back in step (changed back, or reloaded with the new style)
+		next_request_time = 0;
+		save_allowed_since = 0;
+		return;
+	}
+	if (setting != announced_setting)
+	{
+		announced_setting = setting;
+		gi.Printf(S_COLOR_YELLOW "Animation Style %s: the game will be saved and reloaded to switch the animations.\n",
+			setting ? "Master" : "Classic");
+	}
+
+	const gentity_t* player_ent = &g_entities[0];
+	if (!player_ent->client || player_ent->health <= 0 || !GameAllowedToSaveHere())
+	{
+		save_allowed_since = 0; // try again on a later frame
+		return;
+	}
+	// A cutscene switches the camera off for a moment between two shots: only save once saving has been
+	// allowed for a while, so the game is never saved in the middle of a cutscene.
+	if (!save_allowed_since || save_allowed_since > level.time)
+	{
+		save_allowed_since = level.time;
+	}
+	if (level.time - save_allowed_since < 1500 || level.time < next_request_time)
+	{
+		return;
+	}
+	next_request_time = level.time + 3000; // if the engine could not save now, ask again in 3 seconds
+	gi.SendConsoleCommand(MD_ANIMSTYLE_RELOAD_CMD "\n");
+}
+
+extern void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name);
+extern qboolean PM_HasAnimation(const gentity_t* ent, int animation);
+extern qboolean ValidAnimFileIndex(int index);
+
+// Hold a dead body in the last frame of its death animation (so it does not fall down again).
+static void G_FreezeOnLastFrame(gentity_t* ent, const int anim)
+{
+	if (anim < 0 || anim >= MAX_ANIMATIONS)
+	{
+		return;
+	}
+	const animation_t& cur_anim = level.knownAnimFileSets[ent->client->clientInfo.animFileIndex].animations[anim];
+	if (cur_anim.numFrames <= 0)
+	{
+		return;
+	}
+	const int last_frame = cur_anim.firstFrame + cur_anim.numFrames - 1;
+	const int time = cg.time ? cg.time : level.time;
+
+	gi.G2API_SetAnimIndex(&ent->ghoul2[ent->playerModel], cur_anim.glaIndex);
+	for (const int bone : { ent->rootBone, ent->lowerLumbarBone, ent->motionBone })
+	{
+		if (bone != -1)
+		{
+			gi.G2API_SetBoneAnimIndex(&ent->ghoul2[ent->playerModel], bone, last_frame, last_frame + 1,
+				BONE_ANIM_OVERRIDE_FREEZE, 1.0f, time, last_frame, 0);
+		}
+	}
+}
+
+// A save stores each character's animation set (animFileIndex) and the frames its bones are playing,
+// but the models load their .gla with the style of this map load (G_LatchAnimationStyle). If the style
+// was changed before loading the save, they no longer match.
+// Part 1, called at the end of ReadLevel (all characters are loaded, the player's ClientSpawn has not
+// run yet): pick the animation set again for every character and remember the ones that changed.
+void G_RefreshAnimFileSetsAfterLoad()
+{
+	g_animRestartCount = 0;
+	memset(g_animRestartPending, 0, sizeof g_animRestartPending);
+
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		gentity_t* ent = &g_entities[i];
+
+		if (!ent->inuse || !ent->client || !ent->NPC_type || !ent->NPC_type[0]
+			|| ent->playerModel < 0 || !ent->ghoul2.IsValid())
+		{
+			continue;
+		}
+
+		const int old_index = ent->client->clientInfo.animFileIndex;
+		G_LoadAnimFileSet(ent, ent->NPC_type);
+		const int new_index = ent->client->clientInfo.animFileIndex;
+
+		if (!ValidAnimFileIndex(new_index))
+		{
+			ent->client->clientInfo.animFileIndex = old_index; // keep what worked before
+			continue;
+		}
+		if (new_index != old_index)
+		{
+			g_animRestartPending[i] = qtrue;
+			g_animRestartCount++;
+		}
+	}
+}
+
+// Part 2, on the first frame after the load (level.time is set): restart the current animations of
+// those characters with the frames of their new animation set.
+static void G_RestartAnimsAfterLoad()
+{
+	const int changed = g_animRestartCount;
+	g_animRestartCount = 0;
+
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		if (!g_animRestartPending[i])
+		{
+			continue;
+		}
+		g_animRestartPending[i] = qfalse;
+
+		gentity_t* ent = &g_entities[i];
+		if (!ent->inuse || !ent->client || ent->playerModel < 0 || !ent->ghoul2.IsValid()
+			|| !ValidAnimFileIndex(ent->client->clientInfo.animFileIndex))
+		{
+			continue;
+		}
+		if (ent->client->isRagging)
+		{
+			continue; // the ragdoll moves the bones, not the animation
+		}
+		if (ent->health <= 0)
+		{
+			G_FreezeOnLastFrame(ent, ent->client->ps.legsAnim);
+			continue;
+		}
+
+		// Same animations as before (the anim numbers are the same in every set), new frames.
+		// No blend: the old frames belong to the other set.
+		const int legs_anim = PM_HasAnimation(ent, ent->client->ps.legsAnim) ? ent->client->ps.legsAnim : BOTH_STAND1;
+		const int torso_anim = PM_HasAnimation(ent, ent->client->ps.torsoAnim) ? ent->client->ps.torsoAnim : BOTH_STAND1;
+		NPC_SetAnim(ent, SETANIM_LEGS, legs_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART, 0);
+		NPC_SetAnim(ent, SETANIM_TORSO, torso_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_RESTART, 0);
+	}
+
+	gi.Printf("Animation Style %s: %i character(s) switched to the new animations.\n",
+		g_ActivateAnimationStyle->integer == 1 ? "Master" : "Classic", changed);
+}
+
+// With the Master style the player picks which character's animations they use ("Select Animation Style"
+// in the setup menus, or the "animationstyle" console command, which also sets g_PlayerAnimationStyle).
+// Given to the player once they are in the map, and again every time the choice changes.
+static void G_ApplyPlayerAnimationStyle()
+{
+	static int applied_modification = -1;
+
+	if (g_ActivateAnimationStyle->integer != 1)
+	{
+		return; // Classic: every character keeps its own animations
+	}
+	gentity_t* player_ent = &g_entities[0];
+	if (!player_ent->inuse || !player_ent->client)
+	{
+		return; // not spawned yet
+	}
+	if (g_playerAnimStyleApplied && applied_modification == g_PlayerAnimationStyle->modificationCount)
+	{
+		return; // nothing new
+	}
+	g_playerAnimStyleApplied = qtrue;
+	applied_modification = g_PlayerAnimationStyle->modificationCount;
+
+	const int style = GetIDForString(AnimationstylesTable, g_PlayerAnimationStyle->string);
+	if (style < CS_DEFAULT || style >= CS_NUM_ANIMATION_STYLES)
+	{
+		gi.Printf(S_COLOR_RED "g_PlayerAnimationStyle: unknown animation style \"%s\", type animationstyle for the list.\n",
+			g_PlayerAnimationStyle->string);
+		return;
+	}
+	player_ent->client->animationstyle = static_cast<Animationstyles_t>(style);
+}
+
 void G_RunFrame(const int level_time)
 {
+	G_EnforceUpdateSettings();
+	G_CheckAnimationStyleChange();
+	G_ApplyPlayerAnimationStyle();
+
 	gentity_t* ent;
 	int ents_inuse = 0; // someone's gonna be pissed I put this here...
 #if	AI_TIMERS
@@ -2261,10 +2528,13 @@ void G_RunFrame(const int level_time)
 	level.framenum++;
 	level.previousTime = level.time;
 	level.time = level_time;
+	G_Pazaak_RunFrame(); // a Pazaak match starts once the player sits
 	g_entities[0].nearAllies = ENTITYNUM_NONE;
 
-	// advance Pazaak state machine
-	G_Pazaak_RunFrame(level_time);
+	if (g_animRestartCount)
+	{
+		G_RestartAnimsAfterLoad(); // after a loaded save changed characters' animation sets
+	}
 
 	//ResetTeamCounters();
 	NAV::DecayDangerSenses();
@@ -2570,6 +2840,15 @@ void G_RunFrame(const int level_time)
 		G_RunThink(ent); // be aware that ent may be free after returning from here, at least one func frees them
 		ClearNPCGlobals(); //	but these 2 funcs are ok
 		//UpdateTeamCounters( ent );	//	   to call anyway on a freed ent.
+	}
+
+	// holstered sabers make room for the holstered guns on the hips (wp_saber.cpp)
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		if (g_entities[i].inuse && g_entities[i].client)
+		{
+			WP_SaberHolsterCheckGuns(&g_entities[i]);
+		}
 	}
 
 	// perform final fixups on the player

@@ -702,12 +702,20 @@ extern vmCvar_t cg_fovViewmodelAdjust;
 
 extern vmCvar_t cg_scaleVehicleSensitivity;
 extern vmCvar_t cg_scaleJoystickSensitivity;
+extern vmCvar_t cg_vehicleStickYaw;
+extern vmCvar_t cg_vehicleStickPitch;
+extern vmCvar_t cg_vehicleStickEaseIn;
 
 extern vmCvar_t cg_drawRadar;
 
 extern vmCvar_t cg_drawSelectionScrollBar;
 
 extern vmCvar_t cg_trueguns;
+extern vmCvar_t cg_holsteredweapons;
+extern vmCvar_t cg_holsterdebug;
+extern vmCvar_t cg_holsterdebug_boneindex;
+extern vmCvar_t cg_holsterdebug_posoffset;
+extern vmCvar_t cg_holsterdebug_angoffset;
 extern vmCvar_t cg_fpls;
 
 extern vmCvar_t cg_trueroll;
@@ -840,6 +848,7 @@ void CG_AddGhoul2Mark(const int type, const float size, vec3_t hitloc, vec3_t hi
 	vec3_t model_scale, const int life_time = 0, const int first_model = 0, const vec3_t uaxis = nullptr);
 
 void CG_Player(centity_t* cent);
+const playerState_t* CG_MyVehiclePS(); // playerState of the vehicle the local player rides (MP: predictedVehicleState)
 void CG_ResetPlayerEntity(centity_t* cent);
 void CG_AddRefEntityWithPowerups(refEntity_t* ent, int powerups, centity_t* cent);
 void CG_GetTagWorldPosition(refEntity_t* model, const char* tag, vec3_t pos, vec3_t axis[3]);
@@ -1174,7 +1183,8 @@ int cgi_GetCurrentCmdNumber();
 qboolean cgi_GetUserCmd(int cmdNumber, usercmd_t* ucmd);
 
 // used for the weapon select and zoom
-void cgi_SetUserCmdValue(int stateValue, float sensitivityScale, float mPitchOverride, float mYawOverride);
+void cgi_SetUserCmdValue(int stateValue, float sensitivityScale, float mPitchOverride, float mYawOverride,
+	float keyPitchScale, float keyYawScale);
 void cgi_SetUserCmdAngles(float pitchOverride, float yawOverride, float rollOverride);
 
 void cgi_S_UpdateAmbientSet(const char* name, vec3_t origin);

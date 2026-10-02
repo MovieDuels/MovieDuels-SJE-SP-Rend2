@@ -22,6 +22,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "cg_media.h"
+#include "cg_holster.h"
 #include "FxScheduler.h"
 
 #include "../client/vmachine.h"
@@ -428,6 +429,9 @@ vmCvar_t cg_fovViewmodelAdjust;
 
 vmCvar_t cg_scaleVehicleSensitivity;
 vmCvar_t cg_scaleJoystickSensitivity;
+vmCvar_t cg_vehicleStickYaw;
+vmCvar_t cg_vehicleStickPitch;
+vmCvar_t cg_vehicleStickEaseIn;
 
 vmCvar_t cg_SFXSabers;
 vmCvar_t cg_SFXSabersGlowSize;
@@ -468,6 +472,11 @@ vmCvar_t cg_drawRadar;
 vmCvar_t cg_drawSelectionScrollBar;
 
 vmCvar_t cg_trueguns;
+vmCvar_t cg_holsteredweapons; // cg_holster.cpp: 0 = off, 1 = the player only, 2 = everyone
+vmCvar_t cg_holsterdebug;
+vmCvar_t cg_holsterdebug_boneindex;
+vmCvar_t cg_holsterdebug_posoffset;
+vmCvar_t cg_holsterdebug_angoffset;
 vmCvar_t cg_fpls;
 
 vmCvar_t cg_trueroll;
@@ -654,6 +663,11 @@ static cvarTable_t cvarTable[] = {
 
 	{&cg_scaleVehicleSensitivity, "cg_scaleVehicleSensitivity", "1", CVAR_ARCHIVE},
 	{&cg_scaleJoystickSensitivity, "cg_scaleJoystickSensitivity", "0", CVAR_ARCHIVE},
+	//how fast a stick (the look keys) turns the view in a vehicle, as a fraction of its speed on foot, and how many
+	//milliseconds a turn takes to come up to that speed (0 = at once)
+	{&cg_vehicleStickYaw, "cg_vehicleStickYaw", "0.3", CVAR_ARCHIVE},
+	{&cg_vehicleStickPitch, "cg_vehicleStickPitch", "0.22", CVAR_ARCHIVE},
+	{&cg_vehicleStickEaseIn, "cg_vehicleStickEaseIn", "400", CVAR_ARCHIVE},
 
 	{&cg_SFXSabers, "cg_SFXSabers", "4", CVAR_ARCHIVE},
 	{&cg_SFXSabersGlowSize, "cg_SFXSabersGlowSize", "1.0", CVAR_ARCHIVE},
@@ -686,7 +700,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_ignitionSpeed, "cg_ignitionSpeed", "1", CVAR_ARCHIVE},
 	{&cg_ignitionSpeedstaff, "cg_ignitionSpeedstaff", "1", CVAR_ARCHIVE},
 
-	{&cg_SerenityJediEngineMode, "g_SerenityJediEngineMode", "1", CVAR_ARCHIVE},
+	{&cg_SerenityJediEngineMode, "g_SerenityJediEngineMode", "0", CVAR_ARCHIVE}, // default 0 everywhere (game, cgame, ui)
 	{&cg_SerenityJediEngineHudMode, "g_SerenityJediEngineHudMode", "5", CVAR_ARCHIVE},
 	{&cg_SaberInnonblockableAttackWarning, "g_SaberInnonblockableAttackWarning", "0", CVAR_ARCHIVE},
 	{&cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE},
@@ -696,6 +710,11 @@ static cvarTable_t cvarTable[] = {
 	{&cg_drawSelectionScrollBar, "cg_drawSelectionScrollBar", "0", CVAR_ARCHIVE},
 
 	{&cg_trueguns, "cg_trueguns", "1", CVAR_ARCHIVE},
+	{&cg_holsteredweapons, "cg_holsteredweapons", "2", CVAR_ARCHIVE},
+	{&cg_holsterdebug, "cg_holsterdebug", "0", 0},
+	{&cg_holsterdebug_boneindex, "cg_holsterdebug_boneindex", "0", 0},
+	{&cg_holsterdebug_posoffset, "cg_holsterdebug_posoffset", "0.0 0.0 0.0", 0},
+	{&cg_holsterdebug_angoffset, "cg_holsterdebug_angoffset", "0.0 0.0 0.0", 0},
 	{&cg_fpls, "cg_fpls", "0", CVAR_ARCHIVE},
 	{&cg_trueroll, "cg_trueroll", "1", CVAR_ARCHIVE},
 	{&cg_trueflip, "cg_trueflip", "1", CVAR_ARCHIVE},
@@ -3359,6 +3378,7 @@ void CG_Shutdown()
 {
 	in_camera = false;
 	FX_Free();
+	CG_HolsterShutdown();
 }
 
 //// DEBUG STUFF

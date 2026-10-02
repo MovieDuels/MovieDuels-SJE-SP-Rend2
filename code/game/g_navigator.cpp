@@ -1628,10 +1628,12 @@ bool NAV::LoadFromEntitiesAndSaveToFile(const char* filename, int checksum)
 			nameFinder = mNodeNames.find(tgtName);
 			if (nameFinder == mNodeNames.end())
 			{
-#ifdef _DEBUG
-				gi.Printf(S_COLOR_YELLOW "WARNING: nav unable to locate target (%s) from node (%s)\n", tgtNameStr,
-					atNameStr);
-#endif // _DEBUG
+				// a mistake in the map's waypoints, for the map maker: only with developer 1
+				if (g_developer && g_developer->integer)
+				{
+					gi.Printf(S_COLOR_YELLOW "WARNING: nav unable to locate target (%s) from node (%s)\n", tgtName.c_str(),
+						at->mName.empty() ? mLocStringA : at->mName.c_str());
+				}
 				continue;
 			}
 
@@ -1927,18 +1929,15 @@ bool NAV::LoadFromEntitiesAndSaveToFile(const char* filename, int checksum)
 		CWayEdge& way_edge = mGraph.get_edge((*ToBeRemoved)[RemIndex]);
 		if (way_edge.mFlags.get_bit(CWayEdge::WE_DESIGNERPLACED))
 		{
-#ifdef _DEBUG
-			hstring		aHstr = mGraph.get_node(way_edge.mNodeA).mName;
-			hstring		bHstr = mGraph.get_node(way_edge.mNodeB).mName;
-#endif // _DEBUG
-
 			mGraph.get_node(way_edge.mNodeA).mPoint.ToStr(mLocStringA);
 			mGraph.get_node(way_edge.mNodeB).mPoint.ToStr(mLocStringB);
 
-#ifdef _DEBUG
-			gi.Printf(S_COLOR_RED "ERROR: Nav connect failed: %s@%s <-> %s@%s\n", aHstr.c_str(), mLocStringA,
-				bHstr.c_str(), mLocStringB);
-#endif // _DEBUG
+			if (g_developer && g_developer->integer)
+			{
+				gi.Printf(S_COLOR_RED "ERROR: Nav connect failed: %s@%s <-> %s@%s\n",
+					mGraph.get_node(way_edge.mNodeA).mName.c_str(), mLocStringA,
+					mGraph.get_node(way_edge.mNodeB).mName.c_str(), mLocStringB);
+			}
 			delayedShutDown = level.time + 100;
 		}
 		mGraph.remove_edge(way_edge.mNodeA, way_edge.mNodeB);
@@ -1962,7 +1961,10 @@ bool NAV::LoadFromEntitiesAndSaveToFile(const char* filename, int checksum)
 			if (at->mType == PT_COMBATNODE)
 			{
 #ifndef FINAL_BUILD
-				gi.Printf(S_COLOR_RED"ERROR: Combat Point %s@%s Is Not Connected To Anything\n", at->mName.c_str(), mLocStringA);
+				if (g_developer && g_developer->integer)
+				{
+					gi.Printf(S_COLOR_RED"ERROR: Combat Point %s@%s Is Not Connected To Anything\n", at->mName.c_str(), mLocStringA);
+				}
 				delayedShutDown = level.time + 100;
 #endif
 			}
@@ -1975,7 +1977,10 @@ bool NAV::LoadFromEntitiesAndSaveToFile(const char* filename, int checksum)
 				if (!ViewTrace(at->mPoint, Down))
 				{
 #ifndef FINAL_BUILD
-					gi.Printf(S_COLOR_RED"ERROR: Nav Goal %s@%s Is Not Connected To Anything\n", at->mName.c_str(), mLocStringA);
+					if (g_developer && g_developer->integer)
+					{
+						gi.Printf(S_COLOR_RED"ERROR: Nav Goal %s@%s Is Not Connected To Anything\n", at->mName.c_str(), mLocStringA);
+					}
 					delayedShutDown = level.time + 100;
 #endif
 				}
@@ -2242,7 +2247,10 @@ void NAV::SpawnedPoint(gentity_t* ent, const EPointType type)
 		if (!MoveTrace(Start, Stop, Mins, Maxs, 0, true, false))
 		{
 			//assert("ERROR: Nav in solid!" == 0);
-			gi.Printf(S_COLOR_RED"ERROR: Nav(%d) in solid: %s@%s\n", type, pointName, mLocStringA);
+			if (g_developer && g_developer->integer)
+			{
+				gi.Printf(S_COLOR_RED"ERROR: Nav(%d) in solid: %s@%s\n", type, pointName, mLocStringA);
+			}
 			//delayedShutDown = level.time + 100;
 			return;
 		}
@@ -4039,6 +4047,11 @@ void STEER::Activate(const gentity_t* actor)
 			continue;
 		}
 
+		// mNeighbors has a fixed size (MAX_NEIGHBORS); push_back on a full list writes past its end
+		if (suser.mNeighbors.full())
+		{
+			break;
+		}
 		suser.mNeighbors.push_back(neighbor);
 	}
 
@@ -5430,4 +5443,4 @@ static void ClearAllNavStructures()
 		i->clear();
 	}
 	mEntEdgeMap.clear();
-}
+}

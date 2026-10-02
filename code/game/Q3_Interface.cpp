@@ -35,6 +35,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_nav.h"
 #include "../cgame/cg_camera.h"
 #include "../game/objectives.h"
+#include "g_pazaak.h"
 #include "g_roff.h"
 #include "../cgame/cg_local.h"
 #include "wp_saber.h"
@@ -704,6 +705,11 @@ stringID_table_t setTable[] =
 	ENUM2STRING(SET_ENDLESS_ST),
 
 	ENUM2STRING(SET_ANIMATION_STYLE),
+
+	ENUM2STRING(SET_PAZAAK_PLAY),
+	ENUM2STRING(SET_PAZAAK_WAGER),
+	ENUM2STRING(SET_PAZAAK_ALLOWED),
+	ENUM2STRING(SET_PAZAAK_END),
 
 	{"", SET_}
 };
@@ -10491,6 +10497,22 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 		}
 	}
 	break;
+
+	case SET_PAZAAK_PLAY:
+		G_Pazaak_StartScripted(data);
+		break;
+
+	case SET_PAZAAK_WAGER:
+		G_Pazaak_SetScriptWager(atoi(data));
+		break;
+
+	case SET_PAZAAK_ALLOWED:
+		gi.cvar_set("g_pazaakAllowed", Q_stricmp("false", data) == 0 || Q_stricmp("0", data) == 0 ? "0" : "1");
+		break;
+
+	case SET_PAZAAK_END:
+		G_Pazaak_SetEndScript(entID, data);
+		break;
 
 	default:
 		SetVar(taskID, entID, type_name, data);

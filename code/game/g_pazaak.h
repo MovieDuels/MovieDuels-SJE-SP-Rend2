@@ -1,24 +1,19 @@
-/* g_pazaak.h
- * Declarations for Pazaak server hooks. Use C linkage for cross-file calls.
- */
+/*
+===========================================================================
+Pazaak - singleplayer game module side (see g_pazaak.cpp)
+===========================================================================
+*/
+
 #ifndef G_PAZAAK_H
 #define G_PAZAAK_H
 
-#include "g_local.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void G_Pazaak_Init(void);
-bool G_Pazaak_Start(gentity_t* p1, gentity_t* p2);
-void G_Pazaak_Stop(void);
-void G_Pazaak_ProcessClientCommand(gentity_t* ent);
-bool G_Pazaak_PlaceBet(gentity_t* who, int amount);
-void G_Pazaak_RunFrame(int level_time);
-
-#ifdef __cplusplus
-}
-#endif
+void G_Pazaak_Init();
+qboolean G_Pazaak_ClientCommand(gentity_t* ent, const char* cmd);
+qboolean G_Pazaak_StartVsNPC(gentity_t* player, gentity_t* npc, int wager);
+void G_Pazaak_RunFrame();
+qboolean G_Pazaak_IsNPCPlaying(const gentity_t* ent);	// the opponent NPC sits at the match (NPC.cpp)
+void G_Pazaak_StartScripted(const char* who);			// SET_PAZAAK_PLAY
+void G_Pazaak_SetScriptWager(int wager);				// SET_PAZAAK_WAGER
+void G_Pazaak_SetEndScript(int entNum, const char* script);	// SET_PAZAAK_END
 
 #endif // G_PAZAAK_H

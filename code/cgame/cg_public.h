@@ -35,6 +35,9 @@ constexpr auto CMD_BACKUP = 64;
 
 constexpr auto MAX_ENTITIES_IN_SNAPSHOT = 512;
 
+// Last argument of CG_SETUSERCMDVALUE when the cgame also sends the key look scales (a newer addition to the call)
+constexpr auto CG_USERCMDVALUE_KEYLOOK = 0x4B4C4B31;
+
 #define	SNAPFLAG_RATE_DELAYED		1		// the server withheld a packet to save bandwidth
 #define	SNAPFLAG_DROPPED_COMMANDS	2		// the server lost some cmds coming from the client
 

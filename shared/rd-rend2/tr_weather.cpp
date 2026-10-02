@@ -988,9 +988,19 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 	}
 	else
 	{
+		// Maps send names this renderer does not handle (fx_wind "swirlingwind", fx_snow "lightsnow"/
+		// "heavysnow", fx_lava "lightlava"/"heavylava"). With r_weather 0 they fell into the "clear"
+		// preset below and wiped the lava, fog and wind the map had already set up. Ignore them; the
+		// presets stay for the console/menu path ("r_weather", "weather <number>").
+		//----------------------------------------------------
+		if (g_Weather->integer == 0 && token[0] && !(token[0] >= '0' && token[0] <= '9') && token[0] != '-')
+		{
+			ri.Printf(PRINT_DEVELOPER, "R_WorldEffectCommand: unknown command '%s' ignored\n", token);
+		}
+
 		// Clear - Removes All Particle Clouds And Wind Zones
 		//----------------------------------------------------
-		if (g_Weather->integer == 0)
+		else if (g_Weather->integer == 0)
 		{
 			for (int i = 0; i < NUM_WEATHER_TYPES; i++)
 				tr.weatherSystem->weatherSlots[i].active = false;
@@ -1293,7 +1303,7 @@ void RB_SurfaceWeather(srfWeather_t* surf)
 
 	vec2_t zoneOffsets[9]{};
 	GLint  zoneMapping[9]{};
-	int		centerZoneIndex;
+	int		centerZoneIndex = 4; // x == 0 && y == 0 in the loop below
 	{
 		int chunkIndex = 0;
 		int currentIndex = 0;
@@ -1332,6 +1342,10 @@ void RB_SurfaceWeather(srfWeather_t* surf)
 		weatherObject_t* weatherObject = &ws.weatherSlots[weatherType];
 		if (!weatherObject->active)
 			continue;
+
+		// The particle VBO holds maxWeatherTypeParticles per chunk; never simulate or draw more than that.
+		if (weatherObject->particleCount > maxWeatherTypeParticles[weatherType])
+			weatherObject->particleCount = maxWeatherTypeParticles[weatherType];
 
 		if (weatherObject->vbo == nullptr)
 			GenerateRainModel(

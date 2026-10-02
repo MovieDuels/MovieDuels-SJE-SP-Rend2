@@ -46,6 +46,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <cassert>
 #include <string.h>
+#include "../qcommon/md_animsets.h"
 
 extern void WP_RemoveSaber(gentity_t* ent, int saberNum);
 extern qboolean NPCsPrecached;
@@ -1377,6 +1378,8 @@ void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name)
 	}
 
 	const char* stripped_name;
+	// Must live for the whole function: stripped_name points into it and is used after the if/else below.
+	char anim_name[MAX_QPATH];
 
 	if (!gla_name)
 	{
@@ -1385,7 +1388,6 @@ void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name)
 	}
 	else
 	{
-		char anim_name[MAX_QPATH];
 		Q_strncpyz(anim_name, gla_name, sizeof(anim_name));
 
 		char* slash = strrchr(anim_name, '/');
@@ -1394,6 +1396,10 @@ void G_LoadAnimFileSet(gentity_t* ent, const char* p_model_name)
 
 		stripped_name = COM_SkipPath(anim_name);
 	}
+
+	// g_ActivateAnimationStyle 1: nothing to do here. gla_name is the GLA the model really loaded, so for a
+	// humanoid set the renderer switched to the master set it is already models/players/_humanoid/..., and
+	// for a model whose skeleton does not fit the master set it is still its own (md_animsets.h).
 
 	ent->client->clientInfo.animFileIndex = G_ParseAnimFileSet(stripped_name, model_name);
 
@@ -1506,7 +1512,9 @@ void NPC_PrecacheAnimationCFG(const char* npc_type)
 					{
 						*slash = 0;
 					}
-					const char* stripped_name = COM_SkipPath(anim_name);
+					const char* stripped_name = g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && MD_IsMasterHumanoidSet(gla_name)
+						? MD_MASTER_HUMANOID_DIR // master _humanoid set (md_animsets.h)
+						: COM_SkipPath(anim_name);
 
 					//must copy data out of this pointer into a different part of memory because the funcs we're about to call will call COM_ParseExt
 					Q_strncpyz(filename, value, sizeof filename);
@@ -2137,6 +2145,69 @@ static void NPC_BuildRandom()
 extern void G_MatchPlayerWeapon(gentity_t* ent);
 extern void G_InitPlayerFromCvars(gentity_t* ent);
 extern void g_set_g2_player_model(gentity_t* ent, const char* model_name, const char* customSkin, const char* surf_off, const char* surf_on);
+
+// The surfOff / surfOn lists of an NPC's block in the .npc files ("" when it has none, or no such NPC), the way
+// NPC_ParseParms collects them (comma separated).
+void NPC_GetSurfaceParms(const char* npc_name, char* surf_off, const int off_size, char* surf_on, const int on_size)
+{
+	surf_off[0] = surf_on[0] = '\0';
+	if (!npc_name || !npc_name[0])
+	{
+		return;
+	}
+
+	const char* p = NPCParms;
+	COM_BeginParseSession();
+	while (p)
+	{
+		const char* token = COM_ParseExt(&p, qtrue);
+		if (!token[0])
+		{
+			COM_EndParseSession();
+			return;
+		}
+		if (!Q_stricmp(token, npc_name))
+		{
+			break;
+		}
+		SkipBracedSection(&p);
+	}
+	if (!p || G_ParseLiteral(&p, "{"))
+	{
+		COM_EndParseSession();
+		return;
+	}
+
+	while (true)
+	{
+		const char* token = COM_ParseExt(&p, qtrue);
+		if (!token[0] || !Q_stricmp(token, "}"))
+		{
+			break;
+		}
+		const qboolean off = static_cast<qboolean>(!Q_stricmp(token, "surfOff"));
+		if (off || !Q_stricmp(token, "surfOn"))
+		{
+			const char* value;
+			if (COM_ParseString(&p, &value))
+			{
+				continue;
+			}
+			char* list = off ? surf_off : surf_on;
+			const int size = off ? off_size : on_size;
+			if (list[0])
+			{
+				Q_strcat(list, size, ",");
+			}
+			Q_strcat(list, size, value);
+			continue;
+		}
+		SkipRestOfLine(&p);
+	}
+	COM_EndParseSession();
+}
+
+extern qboolean G_InitPlayerLookFromPlayer(gentity_t* ent);
 
 qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 {
@@ -4551,8 +4622,12 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 		npc->weaponModel[0] = -1;
 		if (Q_stricmp("player", player_model) == 0)
 		{
-			//set the model from the console cvars
-			G_InitPlayerFromCvars(npc);
+			// a force projection is the player exactly as he looks now (he may have changed character in game, the
+			// cvars only hold the one chosen for a new game); otherwise set the model from the console cvars
+			if (npc->client->NPC_class != CLASS_PROJECTION || !G_InitPlayerLookFromPlayer(npc))
+			{
+				G_InitPlayerFromCvars(npc);
+			}
 			//now set the weapon, etc.
 			G_MatchPlayerWeapon(npc);
 			//NPC->NPC->aiFlags |= NPCAI_MATCHPLAYERWEAPON;//FIXME: may not always want this

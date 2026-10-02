@@ -110,12 +110,12 @@ static bool BG_FighterUpdate(Vehicle_t* p_veh, const usercmd_t* pUcmd, vec3_t tr
 	vec3_t bottom;
 	// Make sure the riders are not visible or collide able.
 	p_veh->m_pVehicleInfo->Ghost(p_veh, p_veh->m_pPilot);
-	playerState_t* parent_ps = &p_veh->m_pParentEntity->client->ps;
-
-	if (!parent_ps)
+	// check the client, not &client->ps (which can never be NULL; a NULL client crashed first)
+	if (!p_veh->m_pParentEntity || !p_veh->m_pParentEntity->client)
 	{
-		Com_Error(ERR_DROP, "NULL PS in BG_FighterUpdate (%s)", p_veh->m_pVehicleInfo->name);
+		Com_Error(ERR_DROP, "NULL client in BG_FighterUpdate (%s)", p_veh->m_pVehicleInfo->name);
 	}
+	playerState_t* parent_ps = &p_veh->m_pParentEntity->client->ps;
 
 	// If we have a pilot, take out gravity (it's a flying craft...).
 	if (p_veh->m_pPilot)
@@ -173,30 +173,31 @@ static bool Update(Vehicle_t* p_veh, const usercmd_t* p_ucmd)
 		return false;
 	}
 
-	// Exhaust Effects Start And Stop When The Accelerator Is Pressed
+	// Trail Effects Start And Stop When The Accelerator Is Pressed
+	// (the exhaust itself is drawn by the cgame, see CG_VehicleEffects)
 	//----------------------------------------------------------------
-	if (p_veh->m_pVehicleInfo->iTurboFX)
+	if (p_veh->m_pVehicleInfo->iExhaustFX)
 	{
 		// Start It On Each Exhaust Bolt
 		//-------------------------------
-		if (p_veh->m_ucmd.forwardmove && !(p_veh->m_ulFlags & VEH_ACCELERATORON))
+		if (p_veh->m_ucmd.forwardmove > 0 && !(p_veh->m_ulFlags & VEH_ACCELERATORON))
 		{
 			p_veh->m_ulFlags |= VEH_ACCELERATORON;
-			for (int i = 0; i < MAX_VEHICLE_EXHAUSTS && p_veh->m_iExhaustTag[i] != -1; i++)
+			for (int i = 0; p_veh->m_pVehicleInfo->iTrailFX && i < MAX_VEHICLE_EXHAUSTS && p_veh->m_iExhaustTag[i] != -1; i++)
 			{
-				G_PlayEffect(p_veh->m_pVehicleInfo->iTurboFX, parent->playerModel, p_veh->m_iExhaustTag[i],
+				G_PlayEffect(p_veh->m_pVehicleInfo->iTrailFX, parent->playerModel, p_veh->m_iExhaustTag[i],
 					parent->s.number, parent->currentOrigin, 1, qtrue);
 			}
 		}
 
 		// Stop It On Each Exhaust Bolt
 		//------------------------------
-		else if (!p_veh->m_ucmd.forwardmove && p_veh->m_ulFlags & VEH_ACCELERATORON)
+		else if (p_veh->m_ucmd.forwardmove <= 0 && p_veh->m_ulFlags & VEH_ACCELERATORON)
 		{
 			p_veh->m_ulFlags &= ~VEH_ACCELERATORON;
-			for (int i = 0; i < MAX_VEHICLE_EXHAUSTS && p_veh->m_iExhaustTag[i] != -1; i++)
+			for (int i = 0; p_veh->m_pVehicleInfo->iTrailFX && i < MAX_VEHICLE_EXHAUSTS && p_veh->m_iExhaustTag[i] != -1; i++)
 			{
-				G_StopEffect(p_veh->m_pVehicleInfo->iTurboFX, parent->playerModel, p_veh->m_iExhaustTag[i],
+				G_StopEffect(p_veh->m_pVehicleInfo->iTrailFX, parent->playerModel, p_veh->m_iExhaustTag[i],
 					parent->s.number);
 			}
 		}
@@ -442,13 +443,14 @@ static void ProcessMoveCommands(Vehicle_t* p_veh)
 								qtrue);
 						}
 					}
+					// play the hyperspace sound once, when the jump starts (as MP does); it restarted every frame
+					if (p_veh->m_pVehicleInfo->soundHyper)
+					{
+						G_SoundIndexOnEnt(p_veh->m_pParentEntity, CHAN_AUTO, p_veh->m_pVehicleInfo->soundHyper);
+					}
 				}
 
 				parent_ps->speed = HYPERSPACE_SPEED;
-				if (p_veh->m_pVehicleInfo->soundHyper)
-				{
-					G_SoundIndexOnEnt(p_veh->m_pParentEntity, CHAN_AUTO, p_veh->m_pVehicleInfo->soundHyper);
-				}
 			}
 		}
 		else
@@ -464,6 +466,9 @@ static void ProcessMoveCommands(Vehicle_t* p_veh)
 		}
 		return;
 	}
+	//Not hyperspacing (any more). A ship that left the trigger before its teleport keeps the flag; clear it, or
+	//its next jump would skip turning to face the jump direction.
+	parent_ps->eFlags2 &= ~EF2_HYPERSPACE;
 
 	if (p_veh->m_iDropTime >= curTime)
 	{
@@ -522,37 +527,11 @@ static void ProcessMoveCommands(Vehicle_t* p_veh)
 		return;
 	}
 
-	// Exhaust Effects Start And Stop When The Accelerator Is Pressed
-	//----------------------------------------------------------------
-	if (p_veh->m_pVehicleInfo->iExhaustFX && p_veh->m_pVehicleInfo->Inhabited(p_veh))
-	{
-		for (int i = 0; i < MAX_VEHICLE_EXHAUSTS && p_veh->m_iExhaustTag[i] != -1; i++)
-		{
-			G_PlayEffect(p_veh->m_pVehicleInfo->iExhaustFX, parent->playerModel, p_veh->m_iExhaustTag[i],
-				parent->s.number, parent->currentOrigin, 1, qtrue);
+	// (The exhaust, and the turbo exhaust, are drawn by the cgame: CG_VehicleEffects.)
 
-			if (p_veh->m_ucmd.forwardmove > 0)
-			{
-				if (p_veh->m_pVehicleInfo->iTrailFX)
-				{
-					G_PlayEffect(p_veh->m_pVehicleInfo->iTrailFX, p_veh->m_pParentEntity->playerModel,
-						p_veh->m_iExhaustTag[i], p_veh->m_pParentEntity->s.number,
-						p_veh->m_pParentEntity->currentOrigin, p_veh->m_pVehicleInfo->turboDuration, qtrue);
-				}
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < MAX_VEHICLE_EXHAUSTS && p_veh->m_iExhaustTag[i] != -1; i++)
-		{
-			G_StopEffect(p_veh->m_pVehicleInfo->iExhaustFX, parent->playerModel, p_veh->m_iExhaustTag[i],
-				parent->s.number);
-		}
-	}
-
+	//turbo: the jump button, as in MP (it used to want forward held as well)
 	if (p_veh->m_pPilot &&
-		(p_veh->m_ucmd.upmove > 0 && p_veh->m_ucmd.forwardmove > 0 && p_veh->m_pVehicleInfo->turboSpeed))
+		(p_veh->m_ucmd.upmove > 0 && p_veh->m_pVehicleInfo->turboSpeed))
 	{
 		if (curTime - p_veh->m_iTurboTime > p_veh->m_pVehicleInfo->turboRecharge)
 		{
@@ -567,15 +546,6 @@ static void ProcessMoveCommands(Vehicle_t* p_veh)
 					G_PlayEffect(p_veh->m_pVehicleInfo->iTurboStartFX, p_veh->m_pParentEntity->playerModel,
 						p_veh->m_iExhaustTag[i], p_veh->m_pParentEntity->s.number,
 						p_veh->m_pParentEntity->currentOrigin);
-
-					// Start The Looping Effect
-					//--------------------------
-					if (p_veh->m_pVehicleInfo->iTurboFX)
-					{
-						G_PlayEffect(p_veh->m_pVehicleInfo->iTurboFX, p_veh->m_pParentEntity->playerModel,
-							p_veh->m_iExhaustTag[i], p_veh->m_pParentEntity->s.number,
-							p_veh->m_pParentEntity->currentOrigin, p_veh->m_pVehicleInfo->turboDuration, qtrue);
-					}
 
 #else
 #ifdef QAGAME
@@ -1091,7 +1061,7 @@ static void FighterDamageRoutine(Vehicle_t* p_veh, const playerState_t* parent_p
 				p_veh->m_vOrientation[PITCH] -= p_veh->m_fTimeModifier;
 				if (!BG_UnrestrainedPitchRoll(rider_ps, p_veh))
 				{
-					if (p_veh->m_vOrientation[PITCH] > -60.0f)
+					if (p_veh->m_vOrientation[PITCH] < -60.0f) // clamp the downward pitch (">" snapped any angle to -60)
 					{
 						p_veh->m_vOrientation[PITCH] = -60.0f;
 					}
@@ -1139,7 +1109,7 @@ static void FighterDamageRoutine(Vehicle_t* p_veh, const playerState_t* parent_p
 				p_veh->m_vOrientation[PITCH] -= p_veh->m_fTimeModifier;
 				if (!BG_UnrestrainedPitchRoll(rider_ps, p_veh))
 				{
-					if (p_veh->m_vOrientation[PITCH] > -60.0f)
+					if (p_veh->m_vOrientation[PITCH] < -60.0f) // clamp the downward pitch (">" snapped any angle to -60)
 					{
 						p_veh->m_vOrientation[PITCH] = -60.0f;
 					}

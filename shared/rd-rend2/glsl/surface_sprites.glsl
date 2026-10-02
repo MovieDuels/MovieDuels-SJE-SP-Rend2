@@ -296,7 +296,9 @@ vec4 CalcFog(in vec3 viewOrigin, in vec3 position, in Fog fog)
 	vec3 V = position - viewOrigin;
 
 	// fogPlane is inverted in tr_bsp for some reason.
-	float t = -(fog.plane.w + dot(viewOrigin, -fog.plane.xyz)) / dot(V, -fog.plane.xyz);
+	// A view ray parallel to the fog plane made this divide by 0 (t = inf/NaN -> NaN fog -> white blobs with HDR).
+	float denom = dot(V, -fog.plane.xyz);
+	float t = abs(denom) > 1e-6 ? -(fog.plane.w + dot(viewOrigin, -fog.plane.xyz)) / denom : -1.0;
 
 	bool intersects = (t > 0.0 && t <= 1.0);
 	if (inFog == intersects)
@@ -306,11 +308,11 @@ vec4 CalcFog(in vec3 viewOrigin, in vec3 position, in Fog fog)
 	float distToIntersectionFromViewOrigin = t * distToVertexFromViewOrigin;
 
 	float distOutsideFog = max(distToVertexFromViewOrigin - distToIntersectionFromViewOrigin, 0.0);
-	float distThroughFog = mix(distOutsideFog, distToVertexFromViewOrigin, inFog);
+	float distThroughFog = (inFog ? distToVertexFromViewOrigin : distOutsideFog);
 
 	float z = fog.depthToOpaque * distThroughFog;
 #if defined(USE_VOLUMETRIC_FOG)
-	vec3 startPosition = mix((V * t) + viewOrigin, viewOrigin, vec3(inFog));
+	vec3 startPosition = (inFog ? viewOrigin : (V * t) + viewOrigin);
 	vec3 endPosition = (normalize(V) * distThroughFog) + startPosition;
 	vec3 color = CalcVolumetricFogColor(startPosition, endPosition, fog);
 	return vec4(color * fog.color.rgb, 1.0 - clamp(exp(-z), 0.0, 1.0));

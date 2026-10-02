@@ -411,31 +411,40 @@ static void sab_beh_animate_attack_bounce(gentity_t* attacker)
 	}
 }
 
+// Mishap values never go below MISHAPLEVEL_NONE.
+static void sab_beh_clamp_mishap(const gentity_t* ent)
+{
+	if (ent->client->ps.blockPoints < MISHAPLEVEL_NONE)
+	{
+		ent->client->ps.blockPoints = MISHAPLEVEL_NONE;
+	}
+	if (ent->client->ps.forcePower < MISHAPLEVEL_NONE)
+	{
+		ent->client->ps.forcePower = MISHAPLEVEL_NONE;
+	}
+	if (ent->client->ps.saberFatigueChainCount <= MISHAPLEVEL_NONE)
+	{
+		ent->client->ps.saberFatigueChainCount = g_debugFatigueBars->integer ? MISHAPLEVEL_MIN : MISHAPLEVEL_NONE;
+	}
+}
+
+// The higher the mishap level, the more likely a mishap: a roll of MISHAPLEVEL_MIN..MISHAPLEVEL_MAX
+// at or below the level. MISHAPLEVEL_NONE (0) = never, MISHAPLEVEL_MIN (1) = 1 in 15,
+// MISHAPLEVEL_HEAVY (8) = 8 in 15, MISHAPLEVEL_MAX (15) = always.
+// (Before, the clamps above cancelled the mishap, so an exhausted fighter never got one.)
+static qboolean sab_beh_roll_mishap(const gentity_t* ent)
+{
+	return Q_irand(MISHAPLEVEL_MIN, MISHAPLEVEL_MAX) <= ent->client->ps.saberFatigueChainCount ? qtrue : qfalse;
+}
+
 static void sab_beh_add_mishap_attacker(gentity_t* attacker, const int saberNum)
 {
-	if (attacker->client->ps.blockPoints <= MISHAPLEVEL_NONE)
+	sab_beh_clamp_mishap(attacker);
+
+	if (sab_beh_roll_mishap(attacker))
 	{
-		attacker->client->ps.blockPoints = MISHAPLEVEL_NONE;
-	}
-	else if (attacker->client->ps.forcePower <= MISHAPLEVEL_NONE)
-	{
-		attacker->client->ps.forcePower = MISHAPLEVEL_NONE;
-	}
-	else if (attacker->client->ps.saberFatigueChainCount <= MISHAPLEVEL_NONE)
-	{
-		if (g_debugFatigueBars->integer)
-		{
-			attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_MIN;
-		}
-		else
-		{
-			attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_NONE;
-		}
-	}
-	else
-	{
-		//overflowing causes a full mishap.
-		const int rand_num = Q_irand(0, 2);
+		// mishap: stagger or disarm
+		const int rand_num = Q_irand(0, 1);
 
 		switch (rand_num)
 		{
@@ -483,29 +492,12 @@ static void sab_beh_add_mishap_attacker(gentity_t* attacker, const int saberNum)
 
 static void sab_beh_add_mishap_Fake_attacker(gentity_t* attacker, const gentity_t* blocker, const int saberNum)
 {
-	if (attacker->client->ps.blockPoints <= MISHAPLEVEL_NONE)
+	sab_beh_clamp_mishap(attacker);
+
+	if (sab_beh_roll_mishap(attacker))
 	{
-		attacker->client->ps.blockPoints = MISHAPLEVEL_NONE;
-	}
-	else if (attacker->client->ps.forcePower <= MISHAPLEVEL_NONE)
-	{
-		attacker->client->ps.forcePower = MISHAPLEVEL_NONE;
-	}
-	else if (attacker->client->ps.saberFatigueChainCount <= MISHAPLEVEL_NONE)
-	{
-		if (g_debugFatigueBars->integer)
-		{
-			attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_MIN;
-		}
-		else
-		{
-			attacker->client->ps.saberFatigueChainCount = MISHAPLEVEL_NONE;
-		}
-	}
-	else
-	{
-		//overflowing causes a full mishap.
-		const int rand_num = Q_irand(0, 2);
+		// mishap: stagger or disarm
+		const int rand_num = Q_irand(0, 1);
 
 		switch (rand_num)
 		{
@@ -680,29 +672,12 @@ static qboolean sab_beh_attack_blocked(gentity_t* attacker, gentity_t* blocker, 
 
 static void sab_beh_add_mishap_blocker(gentity_t* blocker, const int saberNum)
 {
-	if (blocker->client->ps.blockPoints <= MISHAPLEVEL_NONE)
+	sab_beh_clamp_mishap(blocker);
+
+	if (sab_beh_roll_mishap(blocker))
 	{
-		blocker->client->ps.blockPoints = MISHAPLEVEL_NONE;
-	}
-	else if (blocker->client->ps.forcePower <= MISHAPLEVEL_NONE)
-	{
-		blocker->client->ps.forcePower = MISHAPLEVEL_NONE;
-	}
-	else if (blocker->client->ps.saberFatigueChainCount <= MISHAPLEVEL_NONE)
-	{
-		if (g_debugFatigueBars->integer)
-		{
-			blocker->client->ps.saberFatigueChainCount = MISHAPLEVEL_MIN;
-		}
-		else
-		{
-			blocker->client->ps.saberFatigueChainCount = MISHAPLEVEL_NONE;
-		}
-	}
-	else
-	{
-		//overflowing causes a full mishap.
-		const int rand_num = Q_irand(0, 2);
+		// mishap: stagger or disarm
+		const int rand_num = Q_irand(0, 1);
 
 		switch (rand_num)
 		{
@@ -1127,20 +1102,15 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							SabBeh_SaberShouldBeDisarmedBlocker(blocker, saberNum);
 						}
 
-						if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
+						// The blocker recovers a little if he still holds his saber (a disarm already gives the disarmed
+						// fighter these points). This gave them to the attacker whenever the attacker was an NPC.
+						if (!blocker->client->ps.saberInFlight)
 						{
-							WP_BlockPointsRegenerate(attacker, BLOCKPOINTS_FATIGUE);
-						}
-						else
-						{
-							if (!blocker->client->ps.saberInFlight)
-							{
-								WP_BlockPointsRegenerate(blocker, BLOCKPOINTS_FATIGUE);
-							}
+							WP_BlockPointsRegenerate(blocker, BLOCKPOINTS_FATIGUE);
 						}
 
-						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
-							G_ControlledByPlayer(blocker))
+						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS ||
+							G_ControlledByPlayer(blocker)))
 						{
 							gi.Printf(S_COLOR_CYAN"Blocker was disarmed with very low bp, recharge bp 20bp\n");
 						}
@@ -1209,8 +1179,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 
 							G_Sound(blocker, G_SoundIndex(va("sound/weapons/saber/saber_perfectblock%d.mp3", Q_irand(1, 3))));
 
-							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS
-								|| G_ControlledByPlayer(blocker))
+							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS
+								|| G_ControlledByPlayer(blocker)))
 							{
 								gi.Printf(S_COLOR_CYAN"Blocker Perfect blocked reward 15\n");
 							}
@@ -1264,8 +1234,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 								CGCam_BlockShakeSP(0.45f, 100);
 							}
 
-							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS
-								|| G_ControlledByPlayer(blocker))
+							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS
+								|| G_ControlledByPlayer(blocker)))
 							{
 								gi.Printf(S_COLOR_CYAN"Blocker Spamming block + attack cost 5\n");
 							}
@@ -1319,8 +1289,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						{
 							CGCam_BlockShakeSP(0.45f, 100);
 						}
-						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
-							G_ControlledByPlayer(blocker))
+						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS ||
+							G_ControlledByPlayer(blocker)))
 						{
 							gi.Printf(S_COLOR_CYAN"Blocker Holding block button only (spamming block) cost 5\n");
 						}
@@ -1407,8 +1377,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						{
 							PM_AddBlockFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
 						}
-						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
-							G_ControlledByPlayer(blocker))
+						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS ||
+							G_ControlledByPlayer(blocker)))
 						{
 							gi.Printf(S_COLOR_CYAN"Blocker Not holding block drain 10\n");
 						}
@@ -1485,20 +1455,15 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							SabBeh_SaberShouldBeDisarmedBlocker(blocker, saberNum);
 						}
 
-						if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
+						// The blocker recovers a little if he still holds his saber (a disarm already gives the disarmed
+						// fighter these points). This gave them to the attacker whenever the attacker was an NPC.
+						if (!blocker->client->ps.saberInFlight)
 						{
-							WP_ForcePowerRegenerate(attacker, BLOCKPOINTS_FATIGUE);
-						}
-						else
-						{
-							if (!blocker->client->ps.saberInFlight)
-							{
-								WP_ForcePowerRegenerate(blocker, BLOCKPOINTS_FATIGUE);
-							}
+							WP_ForcePowerRegenerate(blocker, BLOCKPOINTS_FATIGUE);
 						}
 
-						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
-							G_ControlledByPlayer(blocker))
+						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS ||
+							G_ControlledByPlayer(blocker)))
 						{
 							gi.Printf(S_COLOR_CYAN"Blocker was disarmed with very low bp, recharge bp 20fp\n");
 						}
@@ -1570,8 +1535,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							G_Sound(blocker, G_SoundIndex(va("sound/weapons/saber/saber_perfectblock%d.mp3",
 								Q_irand(1, 3))));
 
-							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS
-								|| G_ControlledByPlayer(blocker))
+							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS
+								|| G_ControlledByPlayer(blocker)))
 							{
 								gi.Printf(S_COLOR_CYAN"Blocker Perfect blocked reward 15fp\n");
 							}
@@ -1632,8 +1597,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 								CGCam_BlockShakeSP(0.45f, 100);
 							}
 
-							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS
-								|| G_ControlledByPlayer(blocker))
+							if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS
+								|| G_ControlledByPlayer(blocker)))
 							{
 								gi.Printf(S_COLOR_CYAN"Blocker Spamming block + attack cost 5\n");
 							}
@@ -1673,7 +1638,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 
 						if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
 						{
-							if (attacker->client->ps.blockPoints <= BLOCKPOINTS_FATIGUE)
+							if (attacker->client->ps.forcePower <= BLOCKPOINTS_FATIGUE)
 							{
 								WP_ForcePowerRegenerate(attacker, BLOCKPOINTS_FATIGUE);
 							}
@@ -1687,8 +1652,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						{
 							CGCam_BlockShakeSP(0.45f, 100);
 						}
-						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
-							G_ControlledByPlayer(blocker))
+						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS ||
+							G_ControlledByPlayer(blocker)))
 						{
 							gi.Printf(S_COLOR_CYAN"Blocker Holding block button only (spamming block) cost 5\n");
 						}
@@ -1711,7 +1676,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						}
 						else if (blocker->client->ps.forcePower <= BLOCKPOINTS_MISSILE)
 						{
-							if (blocker->client->ps.blockPoints <= BLOCKPOINTS_FOURTY)
+							if (blocker->client->ps.forcePower <= BLOCKPOINTS_FOURTY)
 							{
 								WP_SaberFatiguedParry(blocker, attacker, saberNum, bladeNum, hit_loc);
 
@@ -1770,8 +1735,8 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 						sab_beh_add_mishap_blocker(blocker, saberNum);
 
 						PM_AddFatigue(&blocker->client->ps, BLOCKPOINTS_TEN);
-						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && blocker->s.number < MAX_CLIENTS ||
-							G_ControlledByPlayer(blocker))
+						if ((d_blockinfo->integer || g_DebugSaberCombat->integer) && (blocker->s.number < MAX_CLIENTS ||
+							G_ControlledByPlayer(blocker)))
 						{
 							gi.Printf(S_COLOR_CYAN"Blocker Not holding block drain 10\n");
 						}
@@ -1816,7 +1781,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 				else
 				{
 					//This must be Unblockable
-					if (blocker->client->ps.blockPoints < BLOCKPOINTS_TEN)
+					if (blocker->client->ps.forcePower < BLOCKPOINTS_TEN)
 					{
 						//Low points = bad blocks
 						SabBeh_SaberShouldBeDisarmedBlocker(blocker, saberNum);

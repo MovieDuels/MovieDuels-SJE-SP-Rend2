@@ -549,21 +549,22 @@ vehField_t vehicleFields[] =
 	{"droidNPC", VFOFS(droidNPC), VF_STRING}, //NPC to attach to *droidunit tag (if it exists in the model)
 
 	{"radarIcon", VFOFS(radarIconHandle), VF_SHADER_NOMIP}, //what icon to show on radar in MP
-	{"dmgIndicFrame", VFOFS(dmgIndicFrameHandle), VF_SHADER_NOMIP},
+	{"dmgIndicFrame", VFOFS(dmgIndicFrame), VF_STRING}, //(kept as a name: the cgame registers it)
 	//what image to use for the frame of the damage indicator
-	{"dmgIndicShield", VFOFS(dmgIndicShieldHandle), VF_SHADER_NOMIP},
+	{"dmgIndicShield", VFOFS(dmgIndicShield), VF_STRING}, //(kept as a name: the cgame registers it)
 	//what image to use for the shield of the damage indicator
-	{"dmgIndicBackground", VFOFS(dmgIndicBackgroundHandle), VF_SHADER_NOMIP},
+	{"dmgIndicBackground", VFOFS(dmgIndicBackground), VF_STRING}, //(kept as a name: the cgame registers it)
 	//what image to use for the background of the damage indicator
-	{"icon_front", VFOFS(iconFrontHandle), VF_SHADER_NOMIP},
+	{"icon_front", VFOFS(iconFront), VF_STRING}, //(kept as a name: the cgame registers it)
 	//what image to use for the front of the ship on the damage indicator
-	{"icon_back", VFOFS(iconBackHandle), VF_SHADER_NOMIP},
+	{"icon_back", VFOFS(iconBack), VF_STRING}, //(kept as a name: the cgame registers it)
 	//what image to use for the back of the ship on the damage indicator
-	{"icon_right", VFOFS(iconRightHandle), VF_SHADER_NOMIP},
+	{"icon_right", VFOFS(iconRight), VF_STRING}, //(kept as a name: the cgame registers it)
 	//what image to use for the right of the ship on the damage indicator
-	{"icon_left", VFOFS(iconLeftHandle), VF_SHADER_NOMIP},
+	{"icon_left", VFOFS(iconLeft), VF_STRING}, //(kept as a name: the cgame registers it)
 	//what image to use for the left of the ship on the damage indicator
-	{"crosshairShader", VFOFS(crosshairShaderHandle), VF_SHADER_NOMIP}, //what image to use as the crosshair
+	//kept as a name: the game reads this file and cannot register a shader, the cgame does that when it draws
+	{"crosshairShader", VFOFS(crosshairShader), VF_STRING}, //what image to use as the crosshair
 	{"shieldShader", VFOFS(shieldShaderHandle), VF_SHADER}, //What shader to use when drawing the shield shell
 
 	//individual "area" health -rww
@@ -614,8 +615,8 @@ vehField_t vehicleFields[] =
 	{"soundShift6", VFOFS(soundShift6), VF_SOUND}, //sound to play when changing speeds
 	{"soundShift7", VFOFS(soundShift7), VF_SOUND}, //sound to play when changing speeds
 	{"soundShift8", VFOFS(soundShift8), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift9", VFOFS(soundShift7), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift10", VFOFS(soundShift8), VF_SOUND}, //sound to play when changing speeds
+	{"soundShift9", VFOFS(soundShift9), VF_SOUND}, //sound to play when changing speeds
+	{"soundShift10", VFOFS(soundShift10), VF_SOUND}, //sound to play when changing speeds
 
 	{"exhaustFX", VFOFS(iExhaustFX), VF_EFFECT_CLIENT}, //exhaust effect, played from "*exhaust" bolt(s)
 	{"turboFX", VFOFS(iTurboFX), VF_EFFECT_CLIENT},

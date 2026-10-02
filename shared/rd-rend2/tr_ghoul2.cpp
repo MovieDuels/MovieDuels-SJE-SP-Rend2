@@ -17,6 +17,7 @@
 #include "qcommon/disablewarnings.h"
 #endif // !REND2_SP
 #include "tr_cache.h"
+#include "qcommon/md_animsets.h"
 
 #define	LL(x) x=LittleLong(x)
 
@@ -4094,7 +4095,19 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	}
 
 	// first up, go load in the animation file we need that has the skeletal animation info for this model
-	mdxm->animIndex = RE_RegisterModel(va("%s.gla", mdxm->animName));
+	// (MovieDuels: with g_ActivateAnimationStyle 1 the humanoid sets use the master _humanoid set, md_animsets.h)
+	const char* anim_set = MD_AnimSetGLA(mdxm->animName, ri.Cvar_VariableIntegerValue(MD_ANIMSTYLE_ACTIVE_CVAR) == 1);
+	mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+	if (anim_set != mdxm->animName && mdxm->animIndex)
+	{
+		const model_t* master_model = R_GetModelByHandle(mdxm->animIndex);
+		if (master_model && master_model->data.gla
+			&& !MD_SkeletonFitsMaster(mdxm->numBones, master_model->data.gla->numBones, mdxm->animName))
+		{
+			anim_set = mdxm->animName; // the master skeleton does not fit this mesh: keep its own set
+			mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+		}
+	}
 
 	char  animGLAName[MAX_QPATH];
 	char* strippedName;
@@ -4108,7 +4121,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 			mapname = strrchr(mapname, '/') + 1;
 		}
 		//stripped name of GLA for this model
-		Q_strncpyz(animGLAName, mdxm->animName, sizeof(animGLAName));
+		Q_strncpyz(animGLAName, anim_set, sizeof(animGLAName));
 		slash = strrchr(animGLAName, '/');
 		if (slash)
 		{
@@ -4141,6 +4154,23 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 		return qfalse;
 	}
 
+#ifndef JK2_MODE
+	// Same check as rd-vanilla: a mesh whose bone count does not match its skeleton (GLA) must not be
+	// used. Its surfaces/bolts reference bones the skeleton does not have, and G2_ProcessSurfaceBolt2 ->
+	// G2_TransformBone later reads outside the bone cache (crash). Old JK2 meshes (72 bones on
+	// _humanoid) are still allowed, they are converted.
+	{
+		const model_t* anim_model = R_GetModelByHandle(mdxm->animIndex);
+		if (anim_model && anim_model->data.gla && anim_model->data.gla->numBones != mdxm->numBones
+			&& !isAnOldModelFile)
+		{
+			ri.Printf(PRINT_WARNING, "R_LoadMDXM: %s has different bones than anim (%i != %i)\n", mod_name,
+				mdxm->numBones, anim_model->data.gla->numBones);
+			return qfalse;
+		}
+	}
+#endif
+
 	mod->numLods = mdxm->numLODs - 1;	//copy this up to the model for ease of use - it wil get inced after this.
 
 	surfInfo = reinterpret_cast<mdxmSurfHierarchy_t*>(reinterpret_cast<byte*>(mdxm) + mdxm->ofsSurfHierarchy);
@@ -4151,7 +4181,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 
 		Q_strlwr(surfInfo->name);	//just in case
 
-		if (!strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off"))
+		if (strlen(surfInfo->name) >= 4 && !strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off"))
 		{
 			surfInfo->name[strlen(surfInfo->name) - 4] = 0;	//remove "_off" from name
 		}

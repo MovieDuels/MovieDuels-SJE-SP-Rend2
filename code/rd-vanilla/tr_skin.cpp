@@ -302,7 +302,7 @@ qhandle_t RE_RegisterIndividualSkin(const char* name, const qhandle_t h_skin)
 		token = CommaParse(&text_p);
 
 #ifndef JK2_MODE
-		if (strcmp(&surf_name[strlen(surf_name) - 4], "_off") == 0)
+		if (strlen(surf_name) >= 4 && strcmp(&surf_name[strlen(surf_name) - 4], "_off") == 0)
 		{
 			if (strcmp(token, "*off") == 0)
 			{

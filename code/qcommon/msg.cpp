@@ -1158,8 +1158,10 @@ static const netField_t playerStateFields[] =
 	{PSF(eventSequence), 16},
 	{PSF(events[0]), 8},
 	{PSF(events[1]), 8},
-	{PSF(eventParms[0]), -9},
-	{PSF(eventParms[1]), -9},
+	// 11 signed bits: event parms carry sound indexes up to MAX_SOUNDS (512). With 9 bits,
+	// sound 256+ arrived negative (e.g. the barrier sounds on kejim_post were silent).
+	{PSF(eventParms[0]), -11},
+	{PSF(eventParms[1]), -11},
 	{PSF(externalEvent), 8},
 	{PSF(externalEventParm), 8},
 	{PSF(clientNum), 32},
@@ -1290,6 +1292,14 @@ static const netField_t playerStateFields[] =
 	{PSF(SaberSmashStartTime), 32 },
 	{PSF(SaberSmashLastStartTime), 32 },
 	{PSF(Smash_Count), 32 },
+
+	// vehicles/hyperspace, as in SerenityJediEngine2026 and MP
+	{PSF(hyperSpaceTime), 32},
+	{PSF(hyperSpaceAngles[0]), 0},
+	{PSF(hyperSpaceAngles[1]), 0},
+	{PSF(hyperSpaceAngles[2]), 0},
+	// the vehicle this player rides (pilot) / the pilot number + 1 (vehicle), as in MP; cgame needs it
+	{PSF(m_iVehicleNum), GENTITYNUM_BITS},
 
 #endif // !JK2_MODE
 };

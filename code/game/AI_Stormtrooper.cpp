@@ -3396,7 +3396,7 @@ static void ST_Commander(void)
 							VectorSubtract(NPC->currentOrigin, group->enemy->currentOrigin, e_dir2_me);
 							VectorNormalize(e_dir2_me);
 
-							VectorSubtract(level.combatPoints[NPCInfo->combatPoint].origin,
+							VectorSubtract(level.combatPoints[cp].origin,
 								group->enemy->currentOrigin, e_dir2_cp);
 							VectorNormalize(e_dir2_cp);
 
@@ -4320,7 +4320,7 @@ void NPC_BSST_Attack(void)
 			&& NPC->client->playerTeam == TEAM_ENEMY
 			&& !PM_InKnockDown(&NPC->client->ps))
 		{
-			if (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+			if ((NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) || (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 			{
 				shoot = qfalse;
 				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
@@ -4389,7 +4389,7 @@ void NPC_BSST_Attack(void)
 			&& NPC->client->playerTeam == TEAM_PLAYER
 			&& !PM_InKnockDown(&NPC->client->ps))
 		{
-			if (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+			if ((NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) || (NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L || NPC->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 			{
 				shoot = qfalse;
 				if (TIMER_Done(NPC, "smackTime") && !NPCInfo->blockedDebounceTime)
@@ -5087,23 +5087,14 @@ static qboolean Gunner_Move(gentity_t* goal, const qboolean retreat)
 		return qfalse;
 	}
 
-	// Attempt to move toward goal using NAV system
-	const qboolean moved = (NPC_MoveToGoal(qtrue) == qtrue) ? qtrue : qfalse;
-
-	// Mark that we are performing combat movement
+	// Set the goal BEFORE moving: NPC_MoveToGoal moves toward NPCInfo->goalEntity. It used to be set after
+	// the move, so the move went to the old goal (often none) and failed, and the failure below cleared the
+	// goal again - the NPC stood still until other code happened to give it a goal.
 	NPCInfo->combatMove = qtrue;
 	NPCInfo->goalEntity = goal;
 
-	// Retreat: invert movement direction
-	if (retreat == qtrue)
-	{
-		// Reverse forward/right movement safely
-		ucmd.forwardmove = -ucmd.forwardmove;
-		ucmd.rightmove = -ucmd.rightmove;
-
-		// Reverse actual movement direction vector
-		VectorScale(NPC->client->ps.moveDir, -1.0f, NPC->client->ps.moveDir);
-	}
+	// Attempt to move toward goal using NAV system
+	const qboolean moved = (NPC_MoveToGoal(qtrue) == qtrue) ? qtrue : qfalse;
 
 	// Retrieve last navigation info
 	navInfo_t info;
@@ -5131,7 +5122,20 @@ static qboolean Gunner_Move(gentity_t* goal, const qboolean retreat)
 		Gunner_HoldPosition();
 		return qfalse;
 	}
-	ST_Move();
+
+	// Retreat: invert movement direction. Done last: this used to be followed by ST_Move(), which ran
+	// NPC_MoveToGoal again and replaced the reversed move with a forward one, so a retreating NPC
+	// alternated between backing off and advancing (stutter).
+	if (retreat == qtrue)
+	{
+		ucmd.forwardmove = -ucmd.forwardmove;
+		ucmd.rightmove = -ucmd.rightmove;
+		VectorScale(NPC->client->ps.moveDir, -1.0f, NPC->client->ps.moveDir);
+	}
+
+	// First successful move: say what we're doing (what ST_Move did here)
+	NPC_ST_SayMovementSpeech();
+
 	// Movement succeeded
 	return qtrue;
 }
@@ -5208,84 +5212,59 @@ static float GunnerDistanceToEnemy(gentity_t* self)
 	return VectorLength(diff);
 }
 
-static qboolean GunnerInAttackRange(gentity_t* self, float minDist, float maxDist)
+// Can we hit the enemy from here? (Same test the normal stormtrooper AI uses: the shot trace hits the
+// enemy, one of the enemy's team, or something minor/breakable in between.)
+static qboolean Gunner_HasClearShot(void)
 {
-	const float dist = GunnerDistanceToEnemy(self);
-	return (dist >= minDist && dist <= maxDist) ? qtrue : qfalse;
+	if (NPC == nullptr || NPC->enemy == nullptr || NPC->client == nullptr || NPC->client->ps.weapon == WP_NONE)
+	{
+		return qfalse;
+	}
+
+	// Roughly facing the enemy: don't fire while still turning towards him
+	if (!InFront(NPC->enemy->currentOrigin, NPC->currentOrigin, NPC->client->ps.viewangles, 0.7f))
+	{
+		return qfalse;
+	}
+
+	vec3_t impact_pos;
+	const int hit = NPC_ShotEntity(NPC->enemy, impact_pos);
+	const gentity_t* hit_ent = &g_entities[hit];
+
+	return (hit == NPC->enemy->s.number
+		|| (hit_ent->client && hit_ent->client->playerTeam == NPC->client->enemyTeam)
+		|| (hit_ent->takedamage && ((hit_ent->svFlags & SVF_GLASS_BRUSH) || hit_ent->health < 40))) ? qtrue : qfalse;
 }
 
-static qboolean GunnerShouldAttack(gentity_t* self)
+// Advanced (g_npc_is_smart) gunners shoot whenever they have a clear shot within their weapon's range,
+// also while moving. They used to fire only inside 64-192 units, so at mid range they stood and waited.
+static void Gunner_FireIfClearShot(const float enemy_dist)
 {
-	// Safety: ensure NPC, NPCInfo, and enemy exist
-	if (self == nullptr || self->enemy == nullptr || NPC == nullptr || NPCInfo == nullptr)
+	float max_fire_dist = NPCInfo->stats.visrange;
+	if (max_fire_dist > 2048.0f)
 	{
-		return qfalse;
+		max_fire_dist = 2048.0f;
 	}
 
-	// Check line of sight to enemy
-	const qboolean hasLOS =
-		(NPC_ClearLOS(self->enemy) == qtrue) ? qtrue : qfalse;
-
-	// If too far away, move toward the enemy (closing gap behaviour)
-	const qboolean enemyExists = (self->enemy != nullptr) ? qtrue : qfalse;
-
-	if (enemyExists == qtrue)
+	if (enemy_dist > max_fire_dist || TIMER_Done(NPC, "attackDelay") == qfalse)
 	{
-		const float dist = GunnerDistanceToEnemy(self);
+		return;
+	}
 
-		if (dist > 192.0f)
+	if (Gunner_HasClearShot() == qtrue)
+	{
+		NPC_AimAdjust(2); // aim improves while we keep a clear shot, as in the normal AI
+		VectorCopy(NPC->enemy->currentOrigin, NPCInfo->enemyLastSeenLocation);
+		WeaponThink();
+		if (d_combatinfo->integer)
 		{
-			// Move forward to close the gap
-			ucmd.forwardmove = 64;
-
-			// Face the enemy
-			Gunner_FaceEnemy(qtrue);
-			NPC_UpdateAngles(qtrue, qtrue);
+			gi.Printf("Gunner fires\n");
 		}
 	}
-
-	// Must be on the ground
-	const qboolean selfOnGround =
-		(self->client->ps.groundEntityNum != ENTITYNUM_NONE) ? qtrue : qfalse;
-
-	if (selfOnGround == qfalse)
+	else
 	{
-		return qfalse;
+		NPC_AimAdjust(-1);
 	}
-
-	// Enemy must also be on the ground
-	const qboolean enemyHasClient =
-		(self->enemy->client != nullptr) ? qtrue : qfalse;
-
-	if (enemyHasClient == qtrue)
-	{
-		const qboolean enemyOnGround =
-			(self->enemy->client->ps.groundEntityNum != ENTITYNUM_NONE) ? qtrue : qfalse;
-
-		if (enemyOnGround == qfalse)
-		{
-			return qfalse;
-		}
-	}
-
-	// Must have line of sight
-	if (hasLOS == qfalse)
-	{
-		return qfalse;
-	}
-
-	// Must be within preferred attack range
-	// (tight enough to hit, far enough to avoid clipping)
-	const qboolean inRange =
-		(GunnerInAttackRange(self, 64.0f, 192.0f) == qtrue) ? qtrue : qfalse;
-
-	if (inRange == qfalse)
-	{
-		return qfalse;
-	}
-
-	// All conditions satisfied: attack allowed
-	return qtrue;
 }
 
 static void Enhanced_Gunner_SetEnemyInfo(vec3_t enemy_dest,
@@ -5341,11 +5320,15 @@ static void Enhanced_Gunner_SetEnemyInfo(vec3_t enemy_dest,
 	// Compute direction from NPC to predicted enemy position
 	VectorSubtract(enemy_dest, NPC->currentOrigin, enemy_dir);
 
-	// Compute distance minus muzzle offset (weapon tip)
-	const float muzzleOffset =
-		(NPC->client->renderInfo.muzzlePoint[0] +
-			NPC->maxs[0] * 1.5f +
-			16.0f);
+	// Compute distance minus muzzle offset (weapon tip). This used muzzlePoint[0], the muzzle's world X
+	// coordinate, as if it were an offset, so the distance (and advance/attack/retreat choice) depended on
+	// where on the map the NPC stood. Use the muzzle's horizontal distance from the NPC instead.
+	float muzzleReach = sqrtf(DistanceHorizontalSquared(NPC->client->renderInfo.muzzlePoint, NPC->currentOrigin));
+	if (muzzleReach > 64.0f)
+	{
+		muzzleReach = 0.0f; // muzzle point not updated yet (still at the origin of the map)
+	}
+	const float muzzleOffset = muzzleReach + NPC->maxs[0] * 1.5f + 16.0f;
 
 	*enemy_dist = VectorNormalize(enemy_dir) - muzzleOffset;
 }
@@ -5529,113 +5512,103 @@ static void Gunner_CombatTimersUpdate(const int enemy_dist)
 	}
 }
 
-static qboolean Gunner_CheckCombatMove(void)
+extern void G_UcmdMoveForDir(const gentity_t* self, usercmd_t* cmd, vec3_t dir);
+
+// Straight move towards (or away from) the enemy when the nav system has no route (e.g. maps without
+// waypoints). Uses the world direction to the enemy, not our view, so it is right while we are still
+// turning to face him.
+static void Gunner_DirectMove(const qboolean away)
 {
-	// Safety: ensure NPC, NPCInfo, and enemy exist
-	if (NPC == nullptr || NPCInfo == nullptr)
+	vec3_t dir;
+	VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, dir);
+	dir[2] = 0.0f;
+	if (VectorNormalize(dir) < 1.0f)
 	{
-		return qfalse;
+		return;
+	}
+	if (away == qtrue)
+	{
+		VectorScale(dir, -1.0f, dir);
 	}
 
-	// Case 1: goalEntity is the enemy OR combatMove flag is set
-	const qboolean hasGoalEntity = (NPCInfo->goalEntity != nullptr) ? qtrue : qfalse;
-	const qboolean hasEnemy = (NPC->enemy != nullptr) ? qtrue : qfalse;
-
-	if (hasGoalEntity == qtrue || hasEnemy == qtrue)
+	usercmd_t test = ucmd;
+	G_UcmdMoveForDir(NPC, &test, dir);
+	if (NPC_MoveDirClear(test.forwardmove, test.rightmove, qfalse) == qtrue)
 	{
-		if (NPCInfo->goalEntity == NPC->enemy)
-		{
-			return qtrue;
-		}
+		ucmd.forwardmove = test.forwardmove;
+		ucmd.rightmove = test.rightmove;
 	}
-
-	if (NPCInfo->combatMove == qtrue)
-	{
-		return qtrue;
-	}
-
-	// Case 2: goalEntity exists AND watchTarget exists AND they differ
-	const qboolean hasWatchTarget = (NPCInfo->watchTarget != nullptr) ? qtrue : qfalse;
-
-	if (hasGoalEntity == qtrue && hasWatchTarget == qtrue)
-	{
-		if (NPCInfo->goalEntity != NPCInfo->watchTarget)
-		{
-			return qtrue;
-		}
-	}
-
-	// Default: no combat movement
-	return qfalse;
 }
 
+// Movement for advanced gunners. The choice (advance, back off, or hold and strafe) is kept for a
+// short time instead of being re-made every frame: re-deciding every frame is what made them stand and
+// stutter. Timers "gunnerAdvance"/"gunnerRetreat"/"gunnerHold" hold the current choice.
 static void Gunner_CombatDistance(const float enemy_dist)
 {
-	// Safety: ensure NPC, NPCInfo, and enemy exist
 	if (NPC == nullptr || NPCInfo == nullptr || NPC->enemy == nullptr)
 	{
 		return;
 	}
 
-	// Far range: > 256 units
-	if (enemy_dist > 256.0f)
+	const bool advancing = TIMER_Done(NPC, "gunnerAdvance") == qfalse;
+	const bool retreating = TIMER_Done(NPC, "gunnerRetreat") == qfalse;
+	const bool holding = TIMER_Done(NPC, "gunnerHold") == qfalse;
+
+	if (!advancing && !retreating && !holding)
 	{
-		// Very far: > 384 units
-		if (enemy_dist > 384.0f)
+		// Pick a new move. Aggressive NPCs (smart mode raises aggression during the fight) push in more.
+		const int aggression = NPCInfo->stats.aggression;
+
+		if (enemy_dist > 512.0f)
 		{
-			// Only move if combatMove or goalEntity conditions allow it
-			const qboolean canCombatMove = (Gunner_CheckCombatMove() == qtrue) ? qtrue : qfalse;
-
-			if (canCombatMove == qtrue)
-			{
-				// Advance toward enemy (no retreat)
-				Gunner_Move(NPC->enemy, qfalse);
-				if (d_combatinfo->integer)
-				{
-					gi.Printf("Advance toward enemy\n");
-				}
-			}
+			TIMER_Set(NPC, "gunnerAdvance", Q_irand(1000, 2000));
 		}
-
-		return;
+		else if (enemy_dist < 128.0f && aggression < 5)
+		{
+			TIMER_Set(NPC, "gunnerRetreat", Q_irand(600, 1200));
+		}
+		else if (Q_irand(0, 9) < aggression + 2)
+		{
+			TIMER_Set(NPC, "gunnerAdvance", Q_irand(700, 1500));
+		}
+		else
+		{
+			TIMER_Set(NPC, "gunnerHold", Q_irand(700, 1500));
+		}
 	}
 
-	// Mid/close range: <= 256 units
-	// If we are in attack range and conditions allow attacking
-	if (GunnerShouldAttack(NPC) == qtrue)
+	if (TIMER_Done(NPC, "gunnerAdvance") == qfalse)
 	{
-		// Face enemy and fire
-		Gunner_FaceEnemy(qtrue);
-		WeaponThink();
+		if (enemy_dist < 96.0f)
+		{
+			// Close enough: stop pushing (don't run into him), let strafing take over
+			TIMER_Set(NPC, "gunnerAdvance", 0);
+			TIMER_Set(NPC, "gunnerHold", Q_irand(500, 1000));
+		}
+		else if (Gunner_Move(NPC->enemy, qfalse) == qfalse)
+		{
+			Gunner_DirectMove(qfalse);
+		}
 		if (d_combatinfo->integer)
 		{
-			gi.Printf("GunnerShouldAttacks\n");
+			gi.Printf("Gunner advance\n");
 		}
-		return;
 	}
-
-	// Not close enough to attack, but not far enough to be safe
-	// Decide based on aggression level
-	const int aggression = NPCInfo->stats.aggression;
-
-	if (aggression < 4)
+	else if (TIMER_Done(NPC, "gunnerRetreat") == qfalse)
 	{
-		// Low aggression: retreat / defend
-		Gunner_Move(NPC->enemy, qtrue);
+		if (Gunner_Move(NPC->enemy, qtrue) == qfalse)
+		{
+			Gunner_DirectMove(qtrue);
+		}
 		if (d_combatinfo->integer)
 		{
-			gi.Printf("Low aggression: retreat\n");
+			gi.Printf("Gunner back off\n");
 		}
 	}
-	else if (aggression > 5)
-	{
-		// High aggression: advance / close distance
-		Gunner_Move(NPC->enemy, qfalse);
-		if (d_combatinfo->integer)
-		{
-			gi.Printf("High aggression: advance\n");
-		}
-	}
+	// else hold: stay put and let the strafe timers (Gunner_CombatTimersUpdate) move us sideways
+
+	Gunner_FaceEnemy(qtrue);
+	Gunner_FireIfClearShot(enemy_dist);
 }
 
 static void Enhanced_Gunner_Combat(void)
@@ -5926,6 +5899,13 @@ static qboolean NPC_CanUseAdvancedFighting(void)
 		max_view_dist = 4096.0f;
 	}
 
+	// Hysteresis: once in advanced mode, stay in it a bit further out, so an NPC near the limit
+	// doesn't switch between the advanced and normal AI (which move it differently) every frame.
+	if (TIMER_Done(NPC, "advTactics") == qfalse)
+	{
+		max_view_dist *= 1.25f;
+	}
+
 	// Compute melee/lunge range
 	const float bounds_min = NPC->maxs[0] + NPC->enemy->maxs[0];
 	const float lunge_range = bounds_min + 120.0f;
@@ -6011,6 +5991,7 @@ void NPC_BSST_Default()
 			{
 				if (NPC_CanUseAdvancedFighting())
 				{
+					TIMER_Set(NPC, "advTactics", 2000);
 					NPC_CheckGetNewWeapon();
 					NPC_BSST_AttackAdvanced();
 					if (d_combatinfo->integer)

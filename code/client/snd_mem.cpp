@@ -684,7 +684,8 @@ static qboolean S_LoadSound_FileLoadAndNameAdjuster(char* ps_filename, byte** p_
 		{
 			strncpy(psVoice, "chr_f", 5);	// same number of letters as "chars"
 		}
-		else if (s_language && Q_stricmp("ESPANOL", s_language->string) == 0)
+		else if (s_language && (Q_stricmp("ESPANOL", s_language->string) == 0
+			|| Q_stricmp("ESPANYOL", s_language->string) == 0)) // the MD settings menu writes "espanyol"
 		{
 			strncpy(psVoice, "chr_e", 5);	// same number of letters as "chars"
 		}
@@ -796,8 +797,9 @@ static qboolean S_LoadSound_Actual(sfx_t* sfx)
 	//
 	// Ensure name has an extension (which it must have, but you never know), and get ptr to it...
 	//
-	const char* ps_ext = &s_load_name[strlen(s_load_name) - 4];
-	if (*ps_ext != '.')
+	// Names shorter than an extension would make strlen - 4 point before the buffer.
+	const char* ps_ext = strlen(s_load_name) >= 4 ? &s_load_name[strlen(s_load_name) - 4] : s_load_name;
+	if (strlen(s_load_name) < 4 || *ps_ext != '.')
 	{
 		//Com_Printf( "WARNING: soundname '%s' does not have 3-letter extension\n",sLoadName);
 		COM_DefaultExtension(s_load_name, sizeof s_load_name, ".wav");	// so psExt below is always valid

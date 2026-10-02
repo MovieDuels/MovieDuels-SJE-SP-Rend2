@@ -30,6 +30,7 @@ extern void CG_MiscModelExplosion(vec3_t mins, vec3_t maxs, int size, material_t
 extern void CG_Chunks(int owner, vec3_t origin, const vec3_t mins, const vec3_t maxs, float speed, int num_chunks, material_t chunk_type, int custom_chunk, float base_scale, int custom_sound = 0);
 extern void G_SetEnemy(gentity_t* self, gentity_t* enemy);
 extern gentity_t* G_CreateObject(gentity_t* owner, vec3_t origin, vec3_t angles, int modelIndex, int frame, trType_t tr_type, int effect_id);
+extern void G_SpawnModel2Scale(gentity_t* ent);
 
 extern qboolean player_locked;
 
@@ -153,6 +154,11 @@ void funcBBrushDieGo(gentity_t* self)
 	{
 		// we are allowed to explode
 		CG_MiscModelExplosion(self->absmin, self->absmax, size, chunk_type);
+	}
+	if (self->fxID)
+	{
+		// the map's own effect for it breaking ("playfx", MP maps)
+		G_PlayEffect(self->fxID, org, up);
 	}
 
 	if (self->splashDamage > 0 && self->splashRadius > 0)
@@ -282,6 +288,7 @@ static void InitBBrush(gentity_t* ent)
 	if (ent->model2)
 	{
 		ent->s.modelindex2 = G_ModelIndex(ent->model2);
+		G_SpawnModel2Scale(ent);
 	}
 
 	// if the "color" or "light" keys are set, setup constantLight
@@ -412,6 +419,16 @@ void SP_func_breakable(gentity_t* self)
 
 	G_SoundIndex("sound/weapons/explosions/cargoexplode.wav"); //precaching
 	G_SpawnFloat("radius", "1", &self->radius); // used to scale chunk code if desired by a designer
+
+	// MP maps: "numchunks" scales the number of chunks as "radius" does, "playfx" is an effect played when it breaks
+	float num_chunks = 1.0f;
+	if (G_SpawnFloat("numchunks", "1", &num_chunks) && num_chunks > 0.0f)
+	{
+		self->radius *= num_chunks;
+	}
+	char* death_fx;
+	G_SpawnString("playfx", "", &death_fx);
+	self->fxID = death_fx && death_fx[0] ? G_EffectIndex(death_fx) : 0;
 	G_SpawnInt("material", "0", reinterpret_cast<int*>(&self->material));
 	CacheChunkEffects(self->material);
 
@@ -1577,4 +1594,4 @@ qboolean G_EntIsBreakable(const int entityNum, const gentity_t* breaker)
 	}
 
 	return qfalse;
-}
+}

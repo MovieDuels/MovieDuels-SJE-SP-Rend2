@@ -613,6 +613,12 @@ void RB_UpdateVBOs(unsigned int attribBits)
 	{
 		R_NewFrameSync();
 		RE_BeginFrame(tr.refdef.stereoFrame);
+
+		// RE_BeginFrame switched backEndData->currentFrame to a fresh frame; use its (now empty) buffers.
+		// Keeping the old frame here re-tested the full buffer, asserted and dropped the geometry.
+		currentFrame = backEndData->currentFrame;
+		frameVbo = currentFrame->dynamicVbo;
+		frameIbo = currentFrame->dynamicIbo;
 	}
 
 	// update the default VBO

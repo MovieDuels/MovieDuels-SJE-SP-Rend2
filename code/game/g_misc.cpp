@@ -3115,7 +3115,7 @@ void misc_atst_use(gentity_t* self, gentity_t* other, gentity_t* activator)
 	{
 		//get out of ATST
 		const int legsAnim = activator->client->ps.legsAnim;
-		if (legsAnim != BOTH_STAND1 && legsAnim != BOTH_STANDYODA_STICK && legsAnim != BOTH_STAND_SABER_ON
+		if ((legsAnim != BOTH_STAND1 && legsAnim != BOTH_STAND1_BDROID) && legsAnim != BOTH_STANDYODA_STICK && legsAnim != BOTH_STAND_SABER_ON
 			&& !PM_InSlopeAnim(legsAnim)
 			&& legsAnim != BOTH_TURN_RIGHT1 && legsAnim != BOTH_TURN_LEFT1)
 		{

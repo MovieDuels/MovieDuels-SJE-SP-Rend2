@@ -667,6 +667,16 @@ using setType_t = enum //# setType_e
 
 	SET_ANIMATION_STYLE,
 
+	//# #sep Pazaak (g_pazaak.cpp)
+	SET_PAZAAK_PLAY,
+	//## %s="" # Pazaak match: the player and the NPC with this targetname (or the AI under this name). Then float pazaak_result (1 won, 2 lost, 0 off) and signal pazaak_done
+	SET_PAZAAK_WAGER,
+	//## %d="0" # Credits the player wagers on the next SET_PAZAAK_PLAY match
+	SET_PAZAAK_ALLOWED,
+	//## %t="BOOL_TYPES" # Whether the player's Play Pazaak key works
+	SET_PAZAAK_END,
+	//## %s="NULL" !!"W:\game\base\scripts\!!#*.txt" # Script to run when the next Pazaak match is over (pazaak_result is set by then)
+
 	SET_
 };
 
@@ -934,6 +944,9 @@ private:
 public:
 	// Static Singleton Instance.
 	static CQuake3GameInterface* m_pInstance;
+
+	// Sets a global float a script declared (nothing if it did not): the Pazaak result (g_pazaak.cpp)
+	int SetDeclaredFloat(const char* name, const float value) { return SetFloatVariable(name, value); }
 
 	// Variable enums
 	enum { VTYPE_NONE = 0, VTYPE_FLOAT, VTYPE_STRING, VTYPE_VECTOR, MAX_VARIABLES = 32 };

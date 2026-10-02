@@ -100,6 +100,7 @@ IGhoul2InfoArray& _TheGhoul2InfoArray()
 
 static void CL_ShutdownRef(qboolean restarting);
 void CL_InitRef();
+static void CL_InitRenderer();
 void CL_CheckForResend();
 
 /*
@@ -370,6 +371,23 @@ static void CL_ForwardToServer_f()
 
 /*
 ==================
+CL_Pazaak_f
+
+The Pazaak key (bind "pazaak"): the game module starts the match (g_pazaak.cpp). Pressed while a
+level is still loading there is nothing to play yet, so it is dropped quietly instead of giving
+"Unknown command".
+==================
+*/
+static void CL_Pazaak_f()
+{
+	if (cls.state == CA_ACTIVE)
+	{
+		CL_ForwardCommandToServer();
+	}
+}
+
+/*
+==================
 CL_Disconnect_f
 ==================
 */
@@ -408,7 +426,12 @@ void CL_Vid_Restart_f()
 
 	CL_InitRef();
 
-	cls.rendererStarted = qfalse;
+	// Start the new renderer right away instead of in the next CL_Frame: Com_Frame
+	// runs SV_Frame first, and the game's ghoul2 calls (e.g. an NPC changing its
+	// saber model) would reach a renderer that is loaded but not initialised yet.
+	cls.rendererStarted = qtrue;
+	CL_InitRenderer();
+
 	cls.uiStarted = qfalse;
 	cls.cgameStarted = qfalse;
 	cls.soundRegistered = qfalse;
@@ -1413,6 +1436,7 @@ void CL_Init()
 	Cmd_AddCommand("uimenu", CL_GenericMenu_f);
 	Cmd_AddCommand("datapad", CL_DataPad_f);
 	Cmd_AddCommand("endscreendissolve", CL_EndScreenDissolve_f);
+	Cmd_AddCommand("pazaak", CL_Pazaak_f);
 
 	CL_InitRef();
 
@@ -1468,6 +1492,7 @@ void CL_Shutdown()
 	Cmd_RemoveCommand("uimenu");
 	Cmd_RemoveCommand("datapad");
 	Cmd_RemoveCommand("endscreendissolve");
+	Cmd_RemoveCommand("pazaak");
 
 	Cvar_Set("cl_running", "0");
 

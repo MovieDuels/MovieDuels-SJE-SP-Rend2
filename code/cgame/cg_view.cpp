@@ -575,10 +575,10 @@ static void CG_CalcIdealThirdPersonViewLocation()
 
 		const float length =
 			FORCE_SPEED_DURATION *
-			forceSpeedValue[player->client->ps.forcePowerLevel[FP_SPEED]];
+			forceSpeedValue[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
 
 		const float amt =
-			forceSpeedRangeMod[player->client->ps.forcePowerLevel[FP_SPEED]];
+			forceSpeedRangeMod[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
 
 		if (time_left < 500.0f)
 		{
@@ -653,13 +653,14 @@ static void CG_UpdateThirdPersonTargetDamp()
 	// Automatically get the ideal target, to avoid jittering.
 	CG_CalcIdealThirdPersonViewTarget();
 
-	//if (cg.predictedPlayerState.hyperSpaceTime
-	//	&& (cg.time - cg.predictedPlayerState.hyperSpaceTime) < HYPERSPACE_TIME)
-	//{//hyperspacing, no damp
-	//	VectorCopy(cameraIdealTarget, cameraCurTarget);
-	//}
-	//else
-	if (CG_OnMovingPlat(&cg.snap->ps))
+	const playerState_t* veh_ps = CG_MyVehiclePS(); // hyperspace time is on the vehicle (MP: predictedVehicleState)
+	if (veh_ps && veh_ps->hyperSpaceTime
+		&& cg.time - veh_ps->hyperSpaceTime < HYPERSPACE_TIME)
+	{
+		//hyperspacing, no damp
+		VectorCopy(cameraIdealTarget, cameraCurTarget);
+	}
+	else if (CG_OnMovingPlat(&cg.snap->ps))
 	{
 		//if moving on a plat, camera is *tight*
 		VectorCopy(cameraIdealTarget, cameraCurTarget);
@@ -767,13 +768,19 @@ static void CG_UpdateThirdPersonCameraDamp()
 	// First thing we do is calculate the appropriate damping factor for the camera.
 	float dampfactor = 0.0f;
 
-	//if (cg.predictedPlayerState.hyperSpaceTime
-	//	&& (cg.time - cg.predictedPlayerState.hyperSpaceTime) < HYPERSPACE_TIME)
-	//{//hyperspacing - don't damp camera
-	//	dampfactor = 1.0f;
-	//}
-	//else
-	if (CG_OnMovingPlat(&cg.snap->ps))
+	const playerState_t* veh_ps = CG_MyVehiclePS(); // hyperspace time is on the vehicle (MP: predictedVehicleState)
+	if (veh_ps && veh_ps->hyperSpaceTime
+		&& cg.time - veh_ps->hyperSpaceTime < HYPERSPACE_TIME)
+	{
+		//hyperspacing - don't damp camera
+		dampfactor = 1.0f;
+	}
+	else if (cg.predictedPlayerState.m_iVehicleNum)
+	{
+		//in a vehicle the camera does not lag behind, as in MP (it fell back as far again as its range in a turbo)
+		dampfactor = 1.0f;
+	}
+	else if (CG_OnMovingPlat(&cg.snap->ps))
 	{
 		//if moving on a plat, camera is *tight*
 		dampfactor = 1.0f;
@@ -866,6 +873,52 @@ static void CG_UpdateThirdPersonCameraDamp()
 	// for the sake of camera collision, since it wasn't calced per frame.  Now it is calculated every frame.
 	// This has the benefit that the camera is a lot smoother now (before it lerped between tested points),
 	// however two full volume traces each frame is a bit scary to think about.
+}
+
+// Gunner aim camera (CF_AIMINGGUN) blend: 0 = normal third-person camera, 1 = aiming camera.
+// It moves towards the target over AIM_CAMERA_BLEND_MS instead of switching in one frame.
+extern vmCvar_t cg_thirdPersonAlpha;
+static constexpr float AIM_CAMERA_BLEND_MS = 250.0f;
+static float cg_aimBlend = 0.0f;
+static int cg_aimBlendLastTime = 0;
+
+static float CG_UpdateAimBlend()
+{
+	const bool aiming = cg.renderingThirdPerson
+		&& (cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN))
+		&& cg_AimingCinematicCamera.integer;
+
+	if (!cg.renderingThirdPerson || !cg_AimingCinematicCamera.integer)
+	{
+		cg_aimBlend = 0.0f; // first person or camera option off: no blending
+	}
+	else
+	{
+		// clamp the step so a time jump (map or save load) doesn't skip the blend
+		int msec = cg.time - cg_aimBlendLastTime;
+		if (msec < 0 || msec > 100)
+		{
+			msec = 0;
+		}
+		const float step = msec / AIM_CAMERA_BLEND_MS;
+		cg_aimBlend = aiming ? Q_min(1.0f, cg_aimBlend + step) : Q_max(0.0f, cg_aimBlend - step);
+		if (aiming && cg_aimBlend <= 0.0f)
+		{
+			cg_aimBlend = 0.001f; // start blending on the first aiming frame
+		}
+	}
+	cg_aimBlendLastTime = cg.time;
+	return cg_aimBlend;
+}
+
+static float CG_AimBlendEase()
+{
+	return cg_aimBlend * cg_aimBlend * (3.0f - 2.0f * cg_aimBlend); // smoothstep: eases in and out
+}
+
+static float CG_AimLerp(const float normal, const float aimed, const float s)
+{
+	return normal + (aimed - normal) * s;
 }
 
 /*
@@ -964,21 +1017,23 @@ static void CG_OffsetThirdPersonView()
 		cameraFocusAngles[YAW] += (cg.overrides.thirdPersonAngle = 40.5f);
 		cameraFocusAngles[PITCH] += (cg.overrides.thirdPersonPitchOffset = -11.25f);
 	}
-	// Aiming weapon
-	else if (cg.renderingThirdPerson &&
-		(cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN)) &&
-		cg_AimingCinematicCamera.integer)
+	// Aiming weapon (also while the camera is still blending back out of aim mode)
+	else if (CG_UpdateAimBlend() > 0.0f)
 	{
-		// Shoulder camera tuning
-		cg.overrides.thirdPersonAngle = 0.0f;			// yaw inward
-		cg.overrides.thirdPersonAlpha = 1.0f;			// tighter camera
-		cg.overrides.thirdPersonPitchOffset = 0.0f;		// slight downward pitch
-		cg.overrides.thirdPersonHorzOffset = -20.0f;	// softer shoulder shift
-		cg.overrides.thirdPersonVertOffset = 4.0f;		// slight upward shift
-		cg.overrides.thirdPersonCameraDamp = 1.0f;		// tighter camera damping
-		cg.overrides.thirdPersonTargetDamp = 1.0f;		// tighter target damping
-		cg.overrides.thirdPersonRange = 50.0f;			// closer to the player
-		cg.overrides.fov = 60.0f;						// closer FOV
+		// Shoulder camera tuning, eased in and out: each value goes from the normal
+		// third-person setting (s = 0) to the aiming setting (s = 1)
+		const float s = CG_AimBlendEase();
+		cg.overrides.thirdPersonAngle = CG_AimLerp(cg_thirdPersonAngle.value, 0.0f, s);				// yaw inward
+		cg.overrides.thirdPersonAlpha = CG_AimLerp(cg_thirdPersonAlpha.value, 1.0f, s);				// fully visible player
+		cg.overrides.thirdPersonPitchOffset = CG_AimLerp(cg_thirdPersonPitchOffset.value, 0.0f, s);	// no pitch offset
+		cg.overrides.thirdPersonHorzOffset = CG_AimLerp(cg_thirdPersonHorzOffset.value, -20.0f, s);	// shoulder shift
+		cg.overrides.thirdPersonVertOffset = CG_AimLerp(cg_thirdPersonVertOffset.value, 4.0f, s);	// slight upward shift
+		// No damping during the whole blend: the blend already eases the camera. Blending the damping
+		// too made the camera trail behind and then snap into place when it reached 1.
+		cg.overrides.thirdPersonCameraDamp = 1.0f;
+		cg.overrides.thirdPersonTargetDamp = 1.0f;
+		cg.overrides.thirdPersonRange = CG_AimLerp(cg_thirdPersonRange.value, 50.0f, s);			// closer to the player
+		cg.overrides.fov = CG_AimLerp(cg_fov.value, 60.0f, s);										// closer FOV
 
 		cameraFocusAngles[YAW] += cg.overrides.thirdPersonAngle;
 		cameraFocusAngles[PITCH] += cg.overrides.thirdPersonPitchOffset;
@@ -1558,8 +1613,8 @@ float CG_ForceSpeedFOV()
 {
 	float fov;
 	const float time_left = player->client->ps.forcePowerDuration[FP_SPEED] - cg.time;
-	const float length = FORCE_SPEED_DURATION * forceSpeedValue[player->client->ps.forcePowerLevel[FP_SPEED]];
-	const float amt = forceSpeedFOVMod[player->client->ps.forcePowerLevel[FP_SPEED]];
+	const float length = FORCE_SPEED_DURATION * forceSpeedValue[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
+	const float amt = forceSpeedFOVMod[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
 	if (time_left < 500)
 	{
 		//start going back
@@ -1809,7 +1864,9 @@ void CG_SaberClashFlare()
 		return;
 	}
 
-	vec3_t color;
+	// RGBA: R_SetColor reads 4 floats. This was a vec3_t, so the alpha came from past the end of
+	// the array (ASan stack-buffer-overflow on every saber clash flare).
+	const vec4_t color = { 0.8f, 0.8f, 0.8f, 1.0f };
 	int x, y;
 	float len = VectorNormalize(dif);
 
@@ -1823,12 +1880,73 @@ void CG_SaberClashFlare()
 
 	CG_WorldCoordToScreenCoord(g_saberFlashPos, &x, &y);
 
-	VectorSet(color, 0.8f, 0.8f, 0.8f);
 	cgi_R_SetColor(color);
 
 	CG_DrawPic(x - v * 300 * cgs.widthRatioCoef, y - v * 300,
 		v * 600 * cgs.widthRatioCoef, v * 600,
 		cgi_R_RegisterShader("gfx/effects/saberFlare"));
+}
+
+/*
+===============
+CG_WalkerViewOrigin
+
+What the camera of a walker's pilot looks at. The pilot sits on the driver tag in the walker's head, and the head
+rocks from side to side and up and down with every step: a camera that looks at the pilot rocks with it. It looks
+at where the head is on average instead - the tag's place relative to the walker, smoothed over a good second.
+A walker also goes up a step all at once, as anything that walks here does; the camera follows that over a moment
+(as it does for a player on foot) instead of jumping with it.
+===============
+*/
+constexpr auto WALKER_VIEW_SMOOTH_MSEC = 1200.0f;
+constexpr auto WALKER_STEP_SMOOTH_MSEC = 140.0f;
+constexpr auto WALKER_STEP_MAX = 48.0f; // a change in height beyond this is no step (a fall, a lift): follow at once
+
+static void CG_WalkerViewOrigin(const centity_t* walker, const qboolean boarding, const vec3_t pilot_org, vec3_t view_org)
+{
+	static int last_walker = ENTITYNUM_NONE;
+	static int last_time = 0;
+	static vec3_t smoothed = { 0.0f, 0.0f, 0.0f }; // the pilot from the walker's origin: forward, right, up
+	static float smoothed_height = 0.0f; // of the walker
+
+	const vec3_t yaw_angles = { 0.0f, walker->lerpAngles[YAW], 0.0f };
+	vec3_t fwd, right, delta, local;
+
+	AngleVectors(yaw_angles, fwd, right, nullptr);
+	VectorSubtract(pilot_org, walker->lerpOrigin, delta);
+	VectorSet(local, DotProduct(delta, fwd), DotProduct(delta, right), delta[2]);
+
+	const int elapsed = cg.time - last_time;
+	if (last_walker != walker->currentState.number || boarding || elapsed < 0 || elapsed > 500 || cg.thisFrameTeleport)
+	{
+		//getting in (the pilot is not on the tag yet), or a loaded game: start from where the pilot is
+		VectorCopy(local, smoothed);
+		smoothed_height = walker->lerpOrigin[2];
+	}
+	else
+	{
+		const float frac = 1.0f - expf(-static_cast<float>(elapsed) / WALKER_VIEW_SMOOTH_MSEC);
+		for (int i = 0; i < 3; i++)
+		{
+			smoothed[i] += (local[i] - smoothed[i]) * frac;
+		}
+
+		if (fabsf(walker->lerpOrigin[2] - smoothed_height) > WALKER_STEP_MAX)
+		{
+			smoothed_height = walker->lerpOrigin[2];
+		}
+		else
+		{
+			smoothed_height += (walker->lerpOrigin[2] - smoothed_height)
+				* (1.0f - expf(-static_cast<float>(elapsed) / WALKER_STEP_SMOOTH_MSEC));
+		}
+	}
+	last_walker = walker->currentState.number;
+	last_time = cg.time;
+
+	VectorMA(walker->lerpOrigin, smoothed[0], fwd, view_org);
+	VectorMA(view_org, smoothed[1], right, view_org);
+	view_org[2] = smoothed_height + smoothed[2];
 }
 
 /*
@@ -1875,9 +1993,18 @@ static qboolean CG_CalcViewValues()
 	cg.xyspeed = sqrt(ps->velocity[0] * ps->velocity[0] +
 		ps->velocity[1] * ps->velocity[1]);
 
-	if (G_IsRidingVehicle(&g_entities[0]))
+	const Vehicle_t* riding = G_IsRidingVehicle(&g_entities[0]);
+	if (riding)
 	{
-		VectorCopy(ps->origin, cg.refdef.vieworg);
+		if (riding->m_pVehicleInfo && riding->m_pVehicleInfo->type == VH_WALKER)
+		{
+			CG_WalkerViewOrigin(&cg_entities[g_entities[0].owner->s.number], static_cast<qboolean>(riding->m_iBoarding != 0),
+				ps->origin, cg.refdef.vieworg);
+		}
+		else
+		{
+			VectorCopy(ps->origin, cg.refdef.vieworg);
+		}
 		VectorCopy(cg_entities[g_entities[0].owner->s.number].lerpAngles, cg.refdefViewAngles);
 		if (!(ps->eFlags & EF_NODRAW))
 		{
@@ -2440,6 +2567,70 @@ static qboolean Holding_Saber_And_Its_Turned_On(const gentity_t* self)
 
 /*
 =================
+CG_VehicleStickLook
+
+How fast a stick turns the view in a vehicle, as a fraction of its speed on foot (cg_vehicleStickPitch/Yaw).
+A stick is bound to the look keys, so it is either at rest or turning at full speed. To make small corrections
+possible, a turn starts at a part of its speed and comes up to all of it over cg_vehicleStickEaseIn milliseconds.
+=================
+*/
+constexpr auto STICK_EASE_START = 0.35f; // the part of its speed a turn starts at;
+constexpr auto STICK_TURN_GAP = 120; // msec without turning after which the next turn is a new one;
+
+static void CG_VehicleStickLook(float* pitch_scale, float* yaw_scale)
+{
+	static int last_angle[2] = { 0, 0 };
+	static int turn_start[2] = { 0, 0 };
+	static int turn_time[2] = { 0, 0 };
+	const float full_speed[2] = { cg_vehicleStickPitch.value, cg_vehicleStickYaw.value };
+	float* const scale[2] = { pitch_scale, yaw_scale };
+	usercmd_t cmd;
+
+	cgi_GetUserCmd(cgi_GetCurrentCmdNumber(), &cmd);
+
+	for (int axis = PITCH; axis <= YAW; axis++)
+	{
+		float frac = 1.0f;
+
+		if (cg.time < turn_time[axis])
+		{
+			//a new level, a loaded game: time started again
+			turn_time[axis] = turn_start[axis] = 0;
+		}
+		if (cmd.angles[axis] != last_angle[axis])
+		{
+			//turning
+			if (cg.time - turn_time[axis] > STICK_TURN_GAP)
+			{
+				turn_start[axis] = cg.time;
+			}
+			turn_time[axis] = cg.time;
+			last_angle[axis] = cmd.angles[axis];
+		}
+
+		if (cg_vehicleStickEaseIn.value > 0.0f)
+		{
+			if (cg.time - turn_time[axis] > STICK_TURN_GAP)
+			{
+				frac = STICK_EASE_START;
+			}
+			else
+			{
+				float eased = static_cast<float>(cg.time - turn_start[axis]) / cg_vehicleStickEaseIn.value;
+				if (eased > 1.0f)
+				{
+					eased = 1.0f;
+				}
+				frac = STICK_EASE_START + (1.0f - STICK_EASE_START) * eased;
+			}
+		}
+
+		*scale[axis] = Com_Clamp(0.02f, 2.0f, full_speed[axis]) * frac;
+	}
+}
+
+/*
+=================
 CG_DrawActiveFrame
 
 Generates and draws a game scene and status information at the given time.
@@ -2541,6 +2732,8 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 	// Optional per‑vehicle mouse sensitivity overrides.
 	float mPitchOverride = 0.0f;
 	float mYawOverride = 0.0f;
+	float keyPitchScale = 0.0f; // the look keys, which a stick is bound to (0 = five times the mouse override)
+	float keyYawScale = 0.0f;
 
 	if (cg.snap->ps.clientNum == 0 && cg_scaleVehicleSensitivity.integer != 0)
 	{
@@ -2614,6 +2807,11 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 		}
 	}
 
+	// In a vehicle the stick has a speed of its own: the mouse overrides above are not made for it.
+	const float vehicle_pitch_override = mPitchOverride;
+	const float vehicle_yaw_override = mYawOverride;
+	const auto vehicle_look = static_cast<qboolean>(mPitchOverride != 0.0f || mYawOverride != 0.0f);
+
 	// ---------------------------------------------------------
 	// Precision mode for joystick: slow aim when WALK held
 	// ---------------------------------------------------------
@@ -2642,8 +2840,22 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 		}
 	}
 
+	if (vehicle_look && in_joystick->integer
+		&& mPitchOverride == vehicle_pitch_override && mYawOverride == vehicle_yaw_override) // no precision mode
+	{
+		CG_VehicleStickLook(&keyPitchScale, &keyYawScale);
+		if (!mPitchOverride)
+		{
+			keyPitchScale = 0.0f;
+		}
+		if (!mYawOverride)
+		{
+			keyYawScale = 0.0f;
+		}
+	}
+
 	// Send weapon selection, speed, and mouse overrides to the engine.
-	cgi_SetUserCmdValue(cg.weaponSelect, speed, mPitchOverride, mYawOverride);
+	cgi_SetUserCmdValue(cg.weaponSelect, speed, mPitchOverride, mYawOverride, keyPitchScale, keyYawScale);
 
 	// This counter will be bumped for every valid scene we generate.
 	cg.clientFrame++;

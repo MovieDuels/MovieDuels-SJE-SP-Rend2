@@ -282,15 +282,12 @@ static bool Update(Vehicle_t* p_veh, const usercmd_t* p_ucmd)
 			{
 				G_StopEffect(p_veh->m_pVehicleInfo->iExhaustFX, parent->playerModel, p_veh->m_iExhaustTag[i],
 					parent->s.number);
+			}
 
-				// breaking
-				if (speed > 100.0f)
-				{
-					if (p_veh->m_pVehicleInfo->soundBraking)
-					{
-						G_SoundIndexOnEnt(p_veh->m_pParentEntity, CHAN_AUTO, p_veh->m_pVehicleInfo->soundBraking);
-					}
-				}
+			// braking: one sound per release (it was inside the exhaust loop: one per exhaust at once)
+			if (speed > 100.0f && p_veh->m_pVehicleInfo->soundBraking)
+			{
+				G_SoundIndexOnEnt(p_veh->m_pParentEntity, CHAN_AUTO, p_veh->m_pVehicleInfo->soundBraking);
 			}
 		}
 		else
@@ -342,7 +339,7 @@ static bool Update(Vehicle_t* p_veh, const usercmd_t* p_ucmd)
 							G_SoundIndexOnEnt(p_veh->m_pParentEntity, CHAN_AUTO, shift_sound);
 						}
 					}
-					return true;
+					// (a "return true" here skipped the armor-low flag and armor-gone fire below while cruising)
 				}
 			}
 		}

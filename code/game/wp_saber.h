@@ -202,7 +202,8 @@ constexpr auto MAX_WALL_RUN_Z_NORMAL = 0.4f; //was 0.0f;
 
 //KNOCKDOWN HOLD
 constexpr auto PLAYER_KNOCKDOWN_HOLD_EXTRA_TIME = 300;
-constexpr auto NPC_KNOCKDOWN_HOLD_EXTRA_TIME = 400;
+//how long an NPC stays on the ground after a kick or a push (G_Knockdown) knocked it down, before it gets up
+constexpr auto NPC_KNOCKDOWN_HOLD_EXTRA_TIME = 1500;
 //KNOCKOVERHOLD
 constexpr auto PLAYER_KNOCKOVER_HOLD_EXTRA_TIME = 300;
 constexpr auto NPC_KNOCKOVER_HOLD_EXTRA_TIME = 400;
@@ -258,6 +259,16 @@ enum
 
 #define	FORCE_LEVEL_4 (FORCE_LEVEL_3+1)
 #define	FORCE_LEVEL_5 (FORCE_LEVEL_4+1)
+
+// The per-level tables (forceJumpHeight[], mindTrickTime[], forceGripDamage[], ...) only have entries for
+// FORCE_LEVEL_0..FORCE_LEVEL_3, but levels 4 and 5 exist (NPC files allow up to 5, setForceMindTrick and
+// setforceall give level 4). Indexing a table with those read past its end into the next table (a level-4
+// mind trick got stasisTime[0] = 0 ms). Clamp the index; levels above 3 use the level-3 value, as the
+// switch statements elsewhere already do.
+inline int FP_TableLevel(const int level)
+{
+	return level < FORCE_LEVEL_0 ? FORCE_LEVEL_0 : level > FORCE_LEVEL_3 ? FORCE_LEVEL_3 : level;
+}
 
 enum
 {
@@ -333,7 +344,25 @@ using saberMoveName_t = enum saberMoveName_t
 	// General movements with saber
 	LS_READY,
 	LS_DRAW,
+	LS_DRAW_YODA,
+	LS_DRAW_VADER,
+	LS_DRAW_GALEN,
+	LS_DRAW_MAUL,
+	LS_DRAW_DOOKU,
+	LS_DRAW_PAL,
+	LS_DRAW_GRIEV,
+	LS_DRAW_CAL,
+	LS_DRAW_REN,
 	LS_PUTAWAY,
+	LS_PUTAWAY_VADER,
+	LS_PUTAWAY_GALEN,
+	LS_PUTAWAY_MAUL,
+	LS_PUTAWAY_DOOKU,
+	LS_PUTAWAY_PAL,
+	LS_PUTAWAY_GRIEV,
+	LS_PUTAWAY_CAL,
+	LS_PUTAWAY_REN,
+	LS_PUTAWAY_YODA, // keep last of the draw/putaway moves: code uses "> LS_PUTAWAY_YODA" for "past them"
 
 	// Attacks
 	LS_A_TL2BR,

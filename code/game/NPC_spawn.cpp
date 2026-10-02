@@ -558,7 +558,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 		ent->NPC->scriptFlags |= SCF_DONT_FLEE | SCF_IGNORE_ALERTS;
 		ent->NPC->ignorePain = qtrue;
 	}
-	if (Q_stricmp("chewie", ent->NPC_type))
+	if (Q_stricmp("chewie", ent->NPC_type) == 0) // was missing "== 0": every NPC except Chewie had heavy melee (4x punch damage + dismemberment)
 	{
 		//in case chewie ever loses his gun...
 		ent->NPC->aiFlags |= NPCAI_HEAVY_MELEE;
@@ -1624,6 +1624,87 @@ static void NPC_SetFX_SpawnStates(const gentity_t* ent)
 //--------------------------------------------------------------
 extern qboolean stop_icarus;
 
+gentity_t* NPC_Spawn_Do(gentity_t* ent, qboolean fullSpawnNow);
+
+/*
+-------------------------
+NPC_SpawnDroidUnit
+
+A vehicle with a *droidunit tag gets its droid (R2/R5) NPC, as in MP (NPC_Begin in codemp NPC_spawn.c):
+type from the spawner's model2, else the .veh droidNPC; "random"/"default" = r2d2 or r5d2.
+The droid rides the vehicle (AttachRiders keeps it on the tag) and can't die on its own.
+-------------------------
+*/
+static void NPC_SpawnDroidUnit(gentity_t* veh)
+{
+	Vehicle_t* p_veh = veh->m_pVehicle;
+	if (!p_veh || !p_veh->m_pVehicleInfo || p_veh->m_iDroidUnitTag == -1 || p_veh->m_pDroidUnit)
+	{
+		return;
+	}
+
+	const char* droid_type = nullptr;
+	if (veh->model2 && veh->model2[0])
+	{
+		droid_type = veh->model2; //specified on the NPC_Vehicle spawner
+	}
+	else if (p_veh->m_pVehicleInfo->droidNPC && p_veh->m_pVehicleInfo->droidNPC[0])
+	{
+		droid_type = p_veh->m_pVehicleInfo->droidNPC; //specified in the .veh file
+	}
+	if (!droid_type)
+	{
+		return;
+	}
+	if (!Q_stricmp("random", droid_type) || !Q_stricmp("default", droid_type))
+	{
+		droid_type = Q_irand(0, 1) ? "r2d2" : "r5d2";
+	}
+
+	// spawn it right now through a one-shot spawner (count 1 frees it); not solid, or it would
+	// "telefrag"-block against the vehicle it sits in and never begin
+	gentity_t* spawner = G_Spawn();
+	if (!spawner)
+	{
+		return;
+	}
+	G_SetOrigin(spawner, veh->currentOrigin);
+	VectorCopy(veh->currentAngles, spawner->s.angles);
+	spawner->NPC_type = G_NewString(droid_type);
+	spawner->count = 1;
+	spawner->spawnflags |= SFB_NOTSOLID;
+	gentity_t* droid = NPC_Spawn_Do(spawner, qtrue);
+	if (!droid)
+	{
+		return;
+	}
+	if (!droid->client)
+	{
+		G_FreeEntity(droid);
+		return;
+	}
+
+	droid->s.m_iVehicleNum = veh->s.number;
+	droid->client->ps.m_iVehicleNum = veh->s.number;
+	droid->owner = veh;
+	p_veh->m_pDroidUnit = droid;
+	if (veh->client)
+	{
+		droid->client->playerTeam = veh->client->playerTeam;
+		droid->client->enemyTeam = veh->client->enemyTeam;
+	}
+	G_SetOrigin(droid, veh->currentOrigin);
+	VectorCopy(veh->currentOrigin, droid->client->ps.origin);
+	G_SetAngles(droid, veh->currentAngles);
+	if (droid->NPC)
+	{
+		droid->NPC->desiredYaw = veh->currentAngles[YAW];
+		droid->NPC->desiredPitch = veh->currentAngles[PITCH];
+	}
+	droid->flags |= FL_UNDYING;
+	gi.linkentity(droid);
+}
+
 void NPC_Begin(gentity_t* ent)
 {
 	vec3_t spawn_origin, spawn_angles;
@@ -1990,6 +2071,12 @@ void NPC_Begin(gentity_t* ent)
 				g_entities[0].client->sess.missionStats.enemiesSpawned++;
 			}
 		}
+	}
+
+	// a vehicle: give it its droid unit (R2/R5) if the model and .veh want one (as MP)
+	if (ent->m_pVehicle)
+	{
+		NPC_SpawnDroidUnit(ent);
 	}
 }
 

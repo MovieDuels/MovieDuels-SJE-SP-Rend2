@@ -460,7 +460,7 @@ void NPC_BSSD_Default()
 		{
 			NPC->client->ps.SaberActivate();
 			if (NPC->client->ps.legsAnim == BOTH_TURNOFF
-				|| NPC->client->ps.legsAnim == BOTH_STAND1)
+				|| (NPC->client->ps.legsAnim == BOTH_STAND1 || NPC->client->ps.legsAnim == BOTH_STAND1_BDROID))
 			{
 				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_TURNON, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}

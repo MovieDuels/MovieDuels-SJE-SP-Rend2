@@ -294,6 +294,7 @@ Ghoul2 Insert End
 void SV_LoadGame_f();
 void SV_LoadTransition_f();
 void SV_SaveGame_f();
+void SV_AnimStyleReload_f(); // MovieDuels: save and reload after an Animation Style change
 void SV_WipeGame_f();
 qboolean SV_TryLoadTransition(const char* mapname);
 qboolean SG_WriteSavegame(const char* psPathlessBaseName, qboolean qbAutosave);
@@ -310,7 +311,7 @@ void SG_TestSave();
 // What it's used for is for things like mission pack etc if we need to distinguish "street-copy" savegames from
 //	any new enhanced ones that need to ask for new chunks during loading.
 //
-#define iSAVEGAME_VERSION 1
+#define iSAVEGAME_VERSION 2 // 2: playerState m_iVehicleNum saved (SP vehicle/hyperspace port)
 int SG_Version(); // call this to know what version number a successfully-opened savegame file was
 //
 extern SavedGameJustLoaded_e e_saved_game_just_loaded;

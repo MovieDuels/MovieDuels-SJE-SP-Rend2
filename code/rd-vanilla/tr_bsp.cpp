@@ -1116,6 +1116,57 @@ static void R_LoadLightGrid(const lump_t* l, world_t& worldData)
 
 /*
 ================
+R_FindCompilerGridSize
+
+Big maps: q3map2 makes the light grid coarser (16 units more on one axis after the other) until it
+fits, and older versions don't write the grid size they ended up with into the worldspawn
+("gridsize"). Finds that size again from the number of grid points in the map (qfalse: none fits)
+and sets the grid up with it.
+================
+*/
+static qboolean R_FindCompilerGridSize(world_t* w, const int numElements)
+{
+	vec3_t size;
+	VectorCopy(w->lightGridSize, size);
+	const float* w_mins = w->bmodels[0].bounds[0];
+	const float* w_maxs = w->bmodels[0].bounds[1];
+
+	for (int step = 0; step < 4096; step++)
+	{
+		vec3_t origin;
+		int bounds[3];
+		long long count = 1;
+		for (int i = 0; i < 3; i++)
+		{
+			origin[i] = size[i] * ceil(w_mins[i] / size[i]);
+			const float maxs = size[i] * floor(w_maxs[i] / size[i]);
+			bounds[i] = static_cast<int>((maxs - origin[i]) / size[i] + 1);
+			count *= bounds[i];
+		}
+		if (count == numElements)
+		{
+			for (int i = 0; i < 3; i++)
+			{
+				w->lightGridSize[i] = size[i];
+				w->lightGridInverseSize[i] = 1.0f / size[i];
+				w->lightGridOrigin[i] = origin[i];
+				w->lightGridBounds[i] = bounds[i];
+			}
+			w->numGridArrayElements = numElements;
+			ri.Printf(PRINT_DEVELOPER, "light grid: the map was lit with gridsize %g %g %g\n", size[0], size[1], size[2]);
+			return qtrue;
+		}
+		if (count < numElements)
+		{
+			return qfalse;
+		}
+		size[step % 3] += 16;
+	}
+	return qfalse;
+}
+
+/*
+================
 R_LoadLightGridArray
 
 ================
@@ -1131,7 +1182,8 @@ static void R_LoadLightGridArray(const lump_t* l, world_t& worldData)
 
 	w->numGridArrayElements = w->lightGridBounds[0] * w->lightGridBounds[1] * w->lightGridBounds[2];
 
-	if (l->filelen != static_cast<int>(w->numGridArrayElements * sizeof * w->lightGridArray)) {
+	if (l->filelen != static_cast<int>(w->numGridArrayElements * sizeof * w->lightGridArray)
+		&& !R_FindCompilerGridSize(w, l->filelen / static_cast<int>(sizeof * w->lightGridArray))) {
 		if (l->filelen > 0)//don't warn if not even lit
 			ri.Printf(PRINT_WARNING, "WARNING: light grid array mismatch\n");
 		w->lightGridData = nullptr;

@@ -1387,8 +1387,13 @@ static int CG_MapTorsoToWeaponFrame(const clientInfo_t* ci, const int frame, con
 	{
 	case TORSO_WEAPONREADY1:
 	case TORSO_WEAPONREADY2:
+	case TORSO_WEAPONREADY2_JANGO:
+	case TORSO_WEAPONREADY2_CLO:
+	case TORSO_WEAPONREADY2_REB:
 	case TORSO_WEAPONREADY3:
+	case TORSO_WEAPONREADY3_BDROID:
 	case TORSO_WEAPONREADY4:
+	case TORSO_WEAPONREADY4_BDROID:
 	case TORSO_WEAPONREADY10:
 		ret = 0;
 		break;
@@ -1409,10 +1414,17 @@ static int CG_MapTorsoToWeaponFrame(const clientInfo_t* ci, const int frame, con
 
 	case BOTH_ATTACK1:
 	case BOTH_ATTACK2:
+	case BOTH_ATTACK2_JANGO:
+	case BOTH_ATTACK2_CLO:
+	case BOTH_ATTACK2_REB:
 	case BOTH_ATTACK3:
 	case BOTH_ATTACK4:
+	case BOTH_ATTACK3_BDROID:
+	case BOTH_ATTACK4_BDROID:
 	case BOTH_ATTACK_DUAL:
+	case BOTH_ATTACK_DUAL_JANGO:
 	case BOTH_ATTACK_FP:
+	case BOTH_ATTACK_FP_JANGO:
 	case BOTH_PF_GRENADE:
 		if (frame >= animations[anim_num].firstFrame && frame < animations[anim_num].firstFrame + 6)
 		{
@@ -1716,134 +1728,6 @@ static void CG_DoMuzzleFlash(centity_t* cent, vec3_t org, vec3_t dir, const weap
 	}
 }
 
-static void CG_DrawZ6TruegunsBarrel(const playerState_t* ps)
-{
-	// Validate input
-	if (!ps)
-	{
-		CG_Printf("CG_DrawZ6TruegunsBarrel: NULL playerState\n");
-		return;
-	}
-
-	const weaponInfo_t* wi = &cg_weapons[WP_Z6_ROTARY_CANNON];
-	centity_t* cent = &cg_entities[cg.predictedPlayerState.clientNum];
-
-	// Safety: weaponInfo must exist
-	if (!wi || !wi->handsModel)
-	{
-		CG_Printf("CG_DrawZ6TruegunsBarrel: Missing weaponInfo or handsModel\n");
-		return;
-	}
-
-	refEntity_t hand;
-	refEntity_t barrel;
-	vec3_t ang = { 0.0f, 0.0f, 0.0f };
-
-	// Clear entities
-	memset(&hand, 0, sizeof(hand));
-	memset(&barrel, 0, sizeof(barrel));
-
-	// Precompute hand transform once per frame
-	CG_CalculateWeaponPosition(hand.origin, ang);
-
-	VectorMA(hand.origin, cg_gun_x.value, cg.refdef.viewaxis[0], hand.origin);
-	VectorMA(hand.origin, cg_gun_y.value, cg.refdef.viewaxis[1], hand.origin);
-	VectorMA(hand.origin, cg_gun_z.value, cg.refdef.viewaxis[2], hand.origin);
-
-	AnglesToAxis(ang, hand.axis);
-	hand.hModel = wi->handsModel;
-	hand.renderfx = (RF_DEPTHHACK | RF_FIRST_PERSON);
-
-	// Draw the hand model once
-	CG_AddWeaponWithPowerups(&hand);
-
-	// Loop through barrels
-	for (int i = 0; i < weaponData[WP_Z6_ROTARY_CANNON].numBarrels; i++)
-	{
-		memset(&barrel, 0, sizeof(barrel));
-
-		// Apply spin angle
-		ang[ROLL] = CG_MachinegunSpinAngle(cent);
-		AnglesToAxis(ang, barrel.axis);
-
-		barrel.hModel = wi->barrelModel[i];
-		barrel.renderfx = (RF_DEPTHHACK | RF_FIRST_PERSON);
-
-		// Attach barrel to tag
-		CG_PositionRotatedEntityOnTag(
-			&barrel,
-			&hand,
-			wi->handsModel,
-			(i == 0) ? "tag_barrel" : va("tag_barrel%d", i + 1),
-			nullptr
-		);
-
-		CG_AddWeaponWithPowerups(&barrel);
-	}
-}
-
-// Draw only the spinning barrel (trueguns = 0 case)
-static void CG_DrawZ6SpinningBarrelOnly(const playerState_t* ps)
-{
-	// Safety check
-	if (!ps)
-	{
-		CG_Printf("CG_DrawZ6SpinningBarrelOnly: NULL playerState\n");
-		return;
-	}
-
-	const weaponInfo_t* wi = &cg_weapons[WP_Z6_ROTARY_CANNON];
-	centity_t* cent = &cg_entities[cg.predictedPlayerState.clientNum];
-
-	if (!wi || !wi->handsModel || !wi->barrelModel[0])
-	{
-		CG_Printf("CG_DrawZ6SpinningBarrelOnly: Missing weaponInfo or barrel model\n");
-		return;
-	}
-
-	refEntity_t hand;
-	refEntity_t barrel;
-	vec3_t ang = { 0.0f, 0.0f, 0.0f };
-
-	memset(&hand, 0, sizeof(hand));
-	memset(&barrel, 0, sizeof(barrel));
-
-	// Compute hand transform once
-	CG_CalculateWeaponPosition(hand.origin, ang);
-
-	VectorMA(hand.origin, cg_gun_x.value, cg.refdef.viewaxis[0], hand.origin);
-	VectorMA(hand.origin, cg_gun_y.value, cg.refdef.viewaxis[1], hand.origin);
-	VectorMA(hand.origin, cg_gun_z.value, cg.refdef.viewaxis[2], hand.origin);
-
-	AnglesToAxis(ang, hand.axis);
-	hand.hModel = wi->handsModel;
-	hand.renderfx = (RF_DEPTHHACK | RF_FIRST_PERSON);
-
-	// Draw the hand (already drawn in trueguns=0, but harmless)
-	CG_AddWeaponWithPowerups(&hand);
-
-	// --- Draw spinning barrel (index 0 only) ---
-	memset(&barrel, 0, sizeof(barrel));
-
-	// Apply spin
-	ang[ROLL] = CG_MachinegunSpinAngle(cent);
-	AnglesToAxis(ang, barrel.axis);
-
-	barrel.hModel = wi->barrelModel[0];
-	barrel.renderfx = (RF_DEPTHHACK | RF_FIRST_PERSON);
-
-	// Attach to tag_barrel
-	CG_PositionRotatedEntityOnTag(
-		&barrel,
-		&hand,
-		wi->handsModel,
-		"tag_barrel",
-		nullptr
-	);
-
-	CG_AddWeaponWithPowerups(&barrel);
-}
-
 /*
 ==============
 CG_AddViewWeapon
@@ -1901,13 +1785,12 @@ void CG_AddViewWeapon(playerState_t* ps)
 		return;
 	}
 
-	// Hide gun if disabled or using trueguns (but not for Z6 - we handle it specially)
-	if ((!cg_drawGun.integer ||
+	// Hide gun if disabled or using trueguns (the Z6's spinning barrel is drawn with the gun below)
+	if (!cg_drawGun.integer ||
 		cg.zoomMode ||
 		cg_trueguns.integer ||
 		ps->weapon == WP_SABER ||
 		ps->weapon == WP_MELEE)
-		&& !(ps->weapon == WP_Z6_ROTARY_CANNON && !cg_trueguns.integer && cg_SpinningBarrels.integer))
 	{
 		if (ps->eFlags & EF_FIRING)
 		{
@@ -2432,12 +2315,6 @@ void CG_AddViewWeapon(playerState_t* ps)
 			cent->muzzleOverheatTime = 0;
 		}
 		CG_AddViewWeaponDuals(ps);
-	}
-
-	// Special case: Z6 with trueguns OFF and spinning barrels - add spinning barrel to normal md3 weapon
-	if (ps->weapon == WP_Z6_ROTARY_CANNON && !cg_trueguns.integer && cg_SpinningBarrels.integer)
-	{
-		CG_DrawZ6SpinningBarrelOnly(ps);
 	}
 }
 

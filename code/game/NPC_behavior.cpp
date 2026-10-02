@@ -609,8 +609,9 @@ static bool NPC_BSFollowLeader_CanAttack()
 static bool NPC_BSFollowLeader_InFullBodyAttack()
 {
 	return NPC->client->ps.legsAnim == BOTH_ATTACK1 ||
-		NPC->client->ps.legsAnim == BOTH_ATTACK2 ||
+		(NPC->client->ps.legsAnim == BOTH_ATTACK2 || NPC->client->ps.legsAnim == BOTH_ATTACK2_JANGO || NPC->client->ps.legsAnim == BOTH_ATTACK2_REB || NPC->client->ps.legsAnim == BOTH_ATTACK2_CLO) ||
 		NPC->client->ps.legsAnim == BOTH_ATTACK3 ||
+		NPC->client->ps.legsAnim == BOTH_ATTACK3_BDROID ||
 		NPC->client->ps.legsAnim == BOTH_MELEE1 ||
 		NPC->client->ps.legsAnim == BOTH_MELEE2;
 }
@@ -810,6 +811,11 @@ void NPC_BSJump()
 
 		//Now we have the apex, aim for it
 		height = apex[2] - NPC->currentOrigin[2];
+		if (NPC->client->ps.gravity <= 0 || height <= 0)
+		{
+			// gravity is still 0 before the NPC's first Pmove: the jump velocity below would be NaN
+			return;
+		}
 		time = sqrt(height / (.5 * NPC->client->ps.gravity));
 		if (!time)
 		{
@@ -844,13 +850,29 @@ void NPC_BSJump()
 		if (NPC->s.groundEntityNum != ENTITYNUM_NONE)
 		{
 			//Landed, start landing anim
-			//FIXME: if the
 			VectorClear(NPC->client->ps.velocity);
+
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
 				if (flags.isAnakin == qtrue)
 				{
 					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_ANI, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isVader == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isMaul == qtrue)
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1_MAUL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
@@ -862,7 +884,6 @@ void NPC_BSJump()
 				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_LAND1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 			NPCInfo->jumpState = JS_LANDING;
-			//FIXME: landsound?
 		}
 		else if (NPC->client->ps.legsAnimTimer > 0)
 		{
@@ -876,6 +897,26 @@ void NPC_BSJump()
 				{
 					//still in air, but done with jump anim, play inair anim
 					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_ANI, SETANIM_FLAG_OVERRIDE);
+				}
+				else if (flags.isYoda == qtrue)
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_YODA, SETANIM_FLAG_OVERRIDE);
+				}
+				else if (flags.isVader == qtrue)
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_VADER, SETANIM_FLAG_OVERRIDE);
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_GALEN, SETANIM_FLAG_OVERRIDE);
+				}
+				else if (flags.isMaul == qtrue)
+				{
+					//still in air, but done with jump anim, play inair anim
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_INAIR1_MAUL, SETANIM_FLAG_OVERRIDE);
 				}
 				else
 				{
@@ -1033,7 +1074,25 @@ void NPC_BSSearch()
 			}
 			else
 			{
-				NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_IDLE1, SETANIM_FLAG_NORMAL);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (NPCBehaviour_Animationstyletable(NPC).isBattleDroid == qtrue)
+					{
+						NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_IDLE1_BDROID, SETANIM_FLAG_NORMAL);
+					}
+					else if (NPCBehaviour_Animationstyletable(NPC).isJango == qtrue)
+					{
+						NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_IDLE1_JANGO, SETANIM_FLAG_NORMAL);
+					}
+					else
+					{
+						NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_IDLE1, SETANIM_FLAG_NORMAL);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_IDLE1, SETANIM_FLAG_NORMAL);
+				}
 			}
 			NPCInfo->investigateDebounceTime = level.time + Q_irand(3000, 10000);
 		}

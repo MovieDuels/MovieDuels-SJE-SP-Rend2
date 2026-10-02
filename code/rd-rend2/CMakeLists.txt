@@ -108,6 +108,7 @@ set(SPRend2Files ${SPRend2Files} ${SPRend2RdCommonFiles})
 set(SPRend2CommonFiles
 	"${SPDir}/qcommon/matcomp.cpp"
 	"${SPDir}/qcommon/q_shared.cpp"
+	"${SPDir}/qcommon/md_animsets.h"
 	"${SharedCommonFiles}")
 source_group("common" FILES ${SPRend2CommonFiles})
 set(SPRend2Files ${SPRend2Files} ${SPRend2CommonFiles})

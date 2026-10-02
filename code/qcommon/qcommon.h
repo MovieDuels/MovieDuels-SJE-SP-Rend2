@@ -113,7 +113,9 @@ constexpr auto PACKET_BACKUP = 32; // number of old messages that must be kept o
 // server for delta compression and ping estimation
 #define	PACKET_MASK		(PACKET_BACKUP-1)
 
-constexpr auto MAX_PACKET_USERCMDS = 256; // max number of usercmd_t in a packet;
+// the command count is sent as one byte and the client only keeps CMD_BACKUP (64) commands,
+// so this must stay below both (256 was sent as 0 and made the server drop the client)
+constexpr auto MAX_PACKET_USERCMDS = 32; // max number of usercmd_t in a packet;
 
 constexpr auto PORT_ANY = -1;
 
@@ -463,6 +465,7 @@ qboolean FS_FileExists(const char* file);
 char* FS_BuildOSPath(const char* base, const char* game, const char* qpath);
 
 int FS_GetFileList(const char* path, const char* extension, char* listbuf, int bufsize);
+int FS_Generation();
 int FS_GetModList(char* listbuf, int bufsize);
 
 // will properly create any needed paths and deal with seperater character issues

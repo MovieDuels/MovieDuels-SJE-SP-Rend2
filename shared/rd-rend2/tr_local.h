@@ -2774,6 +2774,11 @@ struct glconfigExt_t
 
 extern backEndState_t	backEnd;
 extern trGlobals_t	tr;
+
+// SSAO buffers are only created at renderer start when r_ssao was on; r_ssao can be changed later (e.g. from the
+// menu) before a vid_restart, so per-frame code must check the buffers exist instead of trusting the cvar.
+static inline bool R_SsaoAvailable() { return tr.screenSsaoFbo != nullptr && tr.hdrDepthFbo != nullptr; }
+static inline int R_SsaoActive() { return R_SsaoAvailable() ? r_ssao->integer : 0; }
 extern glstate_t	glState;		// outside of TR since it shouldn't be cleared during ref re-init
 extern glRefConfig_t glRefConfig;
 extern window_t		window;

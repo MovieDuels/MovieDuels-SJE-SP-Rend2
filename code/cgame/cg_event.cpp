@@ -320,6 +320,10 @@ qboolean CG_UnsafeEventType(const int event_type)
 	}
 }
 
+extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
+extern int cg_vehicleAmmoWarning; // cg_draw.cpp
+extern int cg_vehicleAmmoWarningTime;
+
 //set the local timing bar
 extern int cg_genericTimerBar;
 extern int cg_genericTimerDur;
@@ -675,7 +679,31 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		//cgi_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.noAmmoSound );
 		if (es->number == cg.snap->ps.clientNum)
 		{
-			CG_OutOfAmmoChange();
+			const Vehicle_t* p_veh = G_IsRidingVehicle(cg_entities[0].gent);
+			if (p_veh && (es->eventParm == 0 || es->eventParm == 1))
+			{
+				//just letting us know our vehicle is out of ammo (as MP): the weapon's "no ammo" sound, and its bar
+				//of the HUD flashes. There is no other weapon to change to.
+				if (p_veh->m_pVehicleInfo->weapon[es->eventParm].soundNoAmmo)
+				{
+					cgi_S_StartSound(nullptr, cg.snap->ps.clientNum, CHAN_AUTO,
+						cgs.sound_precache[p_veh->m_pVehicleInfo->weapon[es->eventParm].soundNoAmmo]);
+				}
+				else
+				{
+					cgi_S_StartSound(nullptr, cg.snap->ps.clientNum, CHAN_AUTO, cgs.media.noAmmoSound);
+				}
+				if (cg_vehicleAmmoWarningTime < cg.time || cg_vehicleAmmoWarning != es->eventParm)
+				{
+					//if there's already one going, don't interrupt it (unless they tried another weapon that's out)
+					cg_vehicleAmmoWarning = es->eventParm;
+					cg_vehicleAmmoWarningTime = cg.time + 500;
+				}
+			}
+			else
+			{
+				CG_OutOfAmmoChange();
+			}
 		}
 		break;
 	case EV_CHANGE_WEAPON:

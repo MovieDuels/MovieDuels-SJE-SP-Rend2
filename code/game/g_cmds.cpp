@@ -26,6 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "wp_saber.h"
 #include "g_vehicles.h"
 #include "g_functions.h"
+#include "g_pazaak.h"
 #include "../cgame/cg_local.h"
 #include "b_local.h"
 
@@ -79,8 +80,6 @@ extern cvar_t* g_noIgniteTwirl;
 extern qboolean IsSurrendering(const gentity_t* self);
 extern qboolean PM_InKataAnim(int anim);
 
-// Pazaak client command handler (pzk ...)
-#include "g_pazaak.h"
 
 extern cvar_t* g_ActivateAnimationStyle;
 extern cvar_t* g_AnimationStyle;
@@ -463,7 +462,11 @@ static void G_Give(gentity_t* ent, const char* name, const char* args, const int
 
 	if (!give_all && !Q_stricmp(name, "weaponnum"))
 	{
-		ent->client->ps.weapons[atoi(args)] = 1;
+		const int weapon_num = atoi(args);
+		if (weapon_num >= 0 && weapon_num < MAX_WEAPONS)
+		{
+			ent->client->ps.weapons[weapon_num] = 1;
+		}
 		return;
 	}
 
@@ -1300,6 +1303,11 @@ static void Cmd_SetObjective_f(const gentity_t* ent)
 	if (gi.argc() == 2)
 	{
 		objectiveI = atoi(gi.argv(1));
+		if (objectiveI < 0 || objectiveI >= MAX_MISSION_OBJ)
+		{
+			gi.Printf("objective #%d out of range (0-%d)\n", objectiveI, MAX_MISSION_OBJ - 1);
+			return;
+		}
 		gi.Printf("objective #%d  display status=%d, status=%d\n", objectiveI,
 			ent->client->sess.mission_objectives[objectiveI].display,
 			ent->client->sess.mission_objectives[objectiveI].status
@@ -1319,6 +1327,11 @@ static void Cmd_SetObjective_f(const gentity_t* ent)
 	}
 
 	objectiveI = atoi(gi.argv(1));
+	if (objectiveI < 0 || objectiveI >= MAX_MISSION_OBJ)
+	{
+		gi.Printf("objective #%d out of range (0-%d)\n", objectiveI, MAX_MISSION_OBJ - 1);
+		return;
+	}
 	const int displayStatus = atoi(gi.argv(2));
 	const int status = atoi(gi.argv(3));
 
@@ -1341,6 +1354,11 @@ static void Cmd_ViewObjective_f(const gentity_t* ent)
 	}
 
 	const int objectiveI = atoi(gi.argv(1));
+	if (objectiveI < 0 || objectiveI >= MAX_MISSION_OBJ)
+	{
+		gi.SendServerCommand(ent - g_entities, va("print \"objective #%d out of range (0-%d)\n\"", objectiveI, MAX_MISSION_OBJ - 1));
+		return;
+	}
 
 	gi.SendServerCommand(ent - g_entities, va("print \"Objective %d   Display Status(1=show): %d  Status:%d\n\"",
 		objectiveI, ent->client->sess.mission_objectives[objectiveI].display,
@@ -1939,7 +1957,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				{
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -1959,7 +1991,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				{
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -1978,7 +2024,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			}
 			else if (ent->client->friendlyfaction == FACTION_NEUTRAL) {
 				// No force powers so do basic taunt
-				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isCountDooku == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
 			}
 			else if (ent->client->ps.saber[0].tauntAnim != -1)
 			{
@@ -2011,7 +2071,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				case SS_MEDIUM:
 				case SS_STRONG:
 				case SS_DESANN:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isCountDooku == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					break;
 				case SS_DUAL:
 					ent->client->ps.SaberActivate();
@@ -2072,7 +2146,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				{//TORSO ONLY
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2152,7 +2240,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					//TORSO ONLY
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2172,7 +2274,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				{
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2191,9 +2307,24 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			}
 			else if (ent->client->friendlyfaction == FACTION_NEUTRAL)
 			{
-				if (flags.isBenKenobi == qtrue)
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (flags.isBenKenobi == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isObiWanEP3 == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_OBI3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isKyloRen == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_REN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 				else
 				{
@@ -2222,9 +2353,24 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					{
 					case SS_FAST:
 					case SS_TAVION:
-						if (flags.isBenKenobi == qtrue)
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (flags.isBenKenobi == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else if (flags.isObiWanEP3 == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_OBI3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else if (flags.isKyloRen == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST_REN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
@@ -2253,9 +2399,24 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					{
 					case SS_FAST:
 					case SS_TAVION:
-						if (flags.isBenKenobi == qtrue)
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (flags.isBenKenobi == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else if (flags.isObiWanEP3 == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST_OBI3, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else if (flags.isKyloRen == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST_REN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_SHOWOFF_FAST, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
@@ -2296,7 +2457,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					//TORSO ONLY
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2316,7 +2491,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				{
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2450,7 +2639,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					//TORSO ONLY
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2470,7 +2673,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				{
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2501,7 +2718,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					//TORSO ONLY
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2512,7 +2743,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 				{
 					if (ent->client->NPC_class == CLASS_VADER || ent->client->NPC_class == CLASS_DESANN)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isCountDooku == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					else
 					{
@@ -2570,7 +2815,21 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			case SS_MEDIUM:
 			case SS_STRONG:
 			case SS_DESANN:
-				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isCountDooku == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT_DOOKU, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ENGAGETAUNT, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
 				break;
 			case SS_DUAL:
 				ent->client->ps.SaberActivate();
@@ -2600,11 +2859,39 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			{
 				if (PM_WalkingAnim(ent->client->ps.legsAnim) || PM_RunningAnim(ent->client->ps.legsAnim))
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 				else
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 			}
 			else if (ent->client->ps.saber[0].combatstanceAnim != -1)
@@ -2627,13 +2914,41 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					break;
 				case SS_MEDIUM:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					break;
 				case SS_STRONG:
 					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 					break;
 				case SS_DESANN:
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isGalenMarek == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					break;
 				case SS_DUAL:
 					NPC_SetAnim(ent, SETANIM_TORSO, TORSO_HANDSIGNAL1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -2654,7 +2969,7 @@ static void G_SetTauntAnim(gentity_t* ent, const int taunt)
 			{
 				int parts = SETANIM_TORSO;
 
-				if (anim != BOTH_ENGAGETAUNT)
+				if ((anim != BOTH_ENGAGETAUNT && anim != BOTH_ENGAGETAUNT_DOOKU))
 				{
 					parts = SETANIM_BOTH;
 					VectorClear(ent->client->ps.velocity);
@@ -2759,7 +3074,25 @@ static void Cmd_SaberDrop_f(gentity_t* ent, const int saberNum)
 
 	if (ent->client->ps.saberMove != LS_READY
 		&& ent->client->ps.saberMove != LS_PUTAWAY
+		&& ent->client->ps.saberMove != LS_PUTAWAY_YODA
+		&& ent->client->ps.saberMove != LS_PUTAWAY_VADER
+		&& ent->client->ps.saberMove != LS_PUTAWAY_GALEN
+		&& ent->client->ps.saberMove != LS_PUTAWAY_MAUL
+		&& ent->client->ps.saberMove != LS_PUTAWAY_DOOKU
+		&& ent->client->ps.saberMove != LS_PUTAWAY_PAL
+		&& ent->client->ps.saberMove != LS_PUTAWAY_GRIEV
+		&& ent->client->ps.saberMove != LS_PUTAWAY_CAL
+		&& ent->client->ps.saberMove != LS_PUTAWAY_REN
 		&& ent->client->ps.saberMove != LS_DRAW
+		&& ent->client->ps.saberMove != LS_DRAW_YODA
+		&& ent->client->ps.saberMove != LS_DRAW_VADER
+		&& ent->client->ps.saberMove != LS_DRAW_GALEN
+		&& ent->client->ps.saberMove != LS_DRAW_MAUL
+		&& ent->client->ps.saberMove != LS_DRAW_DOOKU
+		&& ent->client->ps.saberMove != LS_DRAW_PAL
+		&& ent->client->ps.saberMove != LS_DRAW_GRIEV
+		&& ent->client->ps.saberMove != LS_DRAW_CAL
+		&& ent->client->ps.saberMove != LS_DRAW_REN
 		&& ent->client->ps.saberMove != LS_NONE)
 	{
 		return;
@@ -2829,6 +3162,11 @@ void ClientCommand(const int clientNum)
 	}
 
 	const char* cmd = gi.argv(0);
+
+	if (G_Pazaak_ClientCommand(ent, cmd))
+	{
+		return; // pazaak, pazaak_result
+	}
 
 	if (Q_stricmp(cmd, "spawn") == 0)
 	{
@@ -3110,10 +3448,6 @@ void ClientCommand(const int clientNum)
 	else if (Q_stricmp(cmd, "victory") == 0)
 	{
 		G_Victory(ent);
-	}
-	else if (Q_stricmp(cmd, "pzk") == 0)
-	{
-		G_Pazaak_ProcessClientCommand(ent);
 	}
 	else if (Q_stricmp(cmd, "NPCdrive") == 0)
 	{

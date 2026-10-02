@@ -6191,11 +6191,14 @@ void G_Slapdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, flo
 		return;
 	}
 
-	if (Boba_StopKnockdown(self, attacker, push_dir))
+	//already on the ground: too late to dodge it, or they would flip straight up off the floor
+	const qboolean already_down = PM_InKnockDown(&self->client->ps);
+
+	if (!already_down && Boba_StopKnockdown(self, attacker, push_dir))
 	{
 		return;
 	}
-	if (jedi_stop_knockdown(self, push_dir))
+	if (!already_down && jedi_stop_knockdown(self, push_dir))
 	{
 		//They can sometimes backflip instead of be knocked down
 		return;
@@ -6404,11 +6407,14 @@ void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 		return;
 	}
 
-	if (Boba_StopKnockdown(self, attacker, push_dir))
+	//already on the ground: too late to dodge it, or they would flip straight up off the floor
+	const qboolean already_down = PM_InKnockDown(&self->client->ps);
+
+	if (!already_down && Boba_StopKnockdown(self, attacker, push_dir))
 	{
 		return;
 	}
-	if (jedi_stop_knockdown(self, push_dir))
+	if (!already_down && jedi_stop_knockdown(self, push_dir))
 	{
 		//They can sometimes backflip instead of be knocked down
 		return;
@@ -6567,7 +6573,8 @@ void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 				}
 				else
 				{
-					add_time = Q_irand(-200, 200);
+					//stay down for a while first: the knockdown anim alone is over almost as soon as they hit the floor
+					add_time = NPC_KNOCKDOWN_HOLD_EXTRA_TIME + Q_irand(-200, 200);
 				}
 				self->client->ps.legsAnimTimer += add_time;
 				self->client->ps.torsoAnimTimer += add_time;
@@ -6607,6 +6614,14 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 		return;
 	}
 
+	if (!self->s.number && strength < 300)
+	{
+		//player only knocked down if pushed *hard*
+		//(checked first: further down it came after the saber was switched off and the pain event,
+		// so a weak knockover turned the player's saber off without knocking him down)
+		return;
+	}
+
 	if (self->client->NPC_class == CLASS_ROCKETTROOPER)
 	{
 		return;
@@ -6618,11 +6633,14 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 		return;
 	}
 
-	if (Boba_StopKnockdown(self, attacker, push_dir, qfalse))
+	//already on the ground: too late to dodge it, or they would flip straight up off the floor
+	const qboolean already_down = PM_InKnockDown(&self->client->ps);
+
+	if (!already_down && Boba_StopKnockdown(self, attacker, push_dir, qfalse))
 	{
 		return;
 	}
-	if (jedi_stop_knockdown(self, push_dir))
+	if (!already_down && jedi_stop_knockdown(self, push_dir))
 	{
 		//They can sometimes backflip instead of be knocked down
 		return;
@@ -6688,11 +6706,6 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 			&& !PM_InKnockDown(&self->client->ps))
 		{
 			int knock_anim = BOTH_KNOCKDOWN1;
-			if (!self->s.number && strength < 300)
-			{
-				//player only knocked down if pushed *hard*
-				return;
-			}
 			if (PM_CrouchAnim(self->client->ps.legsAnim))
 			{
 				//crouched knockdown
@@ -6823,11 +6836,14 @@ void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 		return;
 	}
 
-	if (Boba_StopKnockdown(self, attacker, push_dir, qfalse))
+	//already on the ground: too late to dodge it, or they would flip straight up off the floor
+	const qboolean already_down = PM_InKnockDown(&self->client->ps);
+
+	if (!already_down && Boba_StopKnockdown(self, attacker, push_dir, qfalse))
 	{
 		return;
 	}
-	if (jedi_stop_knockdown(self, push_dir))
+	if (!already_down && jedi_stop_knockdown(self, push_dir))
 	{
 		//They can sometimes backflip instead of be knocked down
 		return;
@@ -9052,7 +9068,8 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		}
 	}
 
-	if (targ->client && attacker->client && targ->health > 0 &&
+	// point can be NULL (e.g. G_KillBox telefrag damage) - the head shot code below reads point[2]
+	if (point && targ->client && attacker->client && targ->health > 0 &&
 		g_standard_humanoid(targ) && !NPC_IsNotDismemberable(targ))
 	{
 		// do head shots
@@ -9627,7 +9644,10 @@ G_RadiusDamage
 */
 void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage, float radius, const gentity_t* ignore, const int mod)
 {
-	static gentity_t* entity_list[MAX_GENTITIES];
+	// Filled into a static buffer (MAX_GENTITIES pointers are too big for the stack) and then
+	// copied: G_Damage below can kill an explosive object whose die function calls G_RadiusDamage
+	// again (chain explosion), which refills the static buffer while this loop still walks it.
+	static gentity_t* entity_scratch[MAX_GENTITIES];
 	vec3_t mins{}, maxs{};
 	vec3_t v{};
 	vec3_t dir;
@@ -9655,7 +9675,8 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 		dflags |= DAMAGE_NO_KNOCKBACK;
 	}
 
-	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_list, MAX_GENTITIES);
+	const int num_listed_entities = gi.EntitiesInBox(mins, maxs, entity_scratch, MAX_GENTITIES);
+	const std::vector<gentity_t*> entity_list(entity_scratch, entity_scratch + num_listed_entities);
 
 	for (int e = 0; e < num_listed_entities; e++)
 	{

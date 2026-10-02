@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cache.h"
 #include <qcommon/sstring.h>
 #include <qcommon/matcomp.h>
+#include <qcommon/md_animsets.h>
 
 #define	LL(x) x=LittleLong(x)
 
@@ -112,9 +113,8 @@ static qhandle_t R_RegisterMD3(const char* name, model_t* mod)
 		return mod->index;
 	}
 
-#ifdef _DEBUG
-	ri.Printf(PRINT_WARNING, "R_RegisterMD3: couldn't load %s\n", name);
-#endif
+	// models are tried as .md3, .glm and .gla in turn, so most of these are expected: only with developer 1
+	ri.Printf(PRINT_DEVELOPER, "R_RegisterMD3: couldn't load %s\n", name);
 
 	mod->type = MOD_BAD;
 	return 0;
@@ -553,7 +553,19 @@ static qboolean R_LoadMDXM_Server(model_t* mod, void* buffer, const char* mod_na
 	}
 
 	// first up, go load in the animation file we need that has the skeletal animation info for this model
-	mdxm->animIndex = RE_RegisterServerModel(va("%s.gla", mdxm->animName));
+	// (MovieDuels: with g_ActivateAnimationStyle 1 the humanoid sets use the master _humanoid set, md_animsets.h)
+	const char* anim_set = MD_AnimSetGLA(mdxm->animName, ri.Cvar_VariableIntegerValue(MD_ANIMSTYLE_ACTIVE_CVAR) == 1);
+	mdxm->animIndex = RE_RegisterServerModel(va("%s.gla", anim_set));
+	if (anim_set != mdxm->animName && mdxm->animIndex)
+	{
+		const model_t* master_model = R_GetModelByHandle(mdxm->animIndex);
+		if (master_model && master_model->data.gla
+			&& !MD_SkeletonFitsMaster(mdxm->numBones, master_model->data.gla->numBones, mdxm->animName))
+		{
+			// the master skeleton does not fit this mesh: keep its own set
+			mdxm->animIndex = RE_RegisterServerModel(va("%s.gla", mdxm->animName));
+		}
+	}
 	if (!mdxm->animIndex)
 	{
 		return qfalse;

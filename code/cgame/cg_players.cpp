@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #define	CG_PLAYERS_CPP
 #include "cg_media.h"
+#include "cg_holster.h"
 #include "FxScheduler.h"
 #include "../game/ghoul2_shared.h"
 #include "../game/anims.h"
@@ -2189,7 +2190,7 @@ static void CG_ATSTLegsYaw(centity_t* cent, vec3_t trailing_legs_angles)
 	if (moving || legs_anim == BOTH_TURN_LEFT1 || legs_anim == BOTH_TURN_RIGHT1 || fabs(leg_angle_diff) > 45)
 	{
 		//moving or turning or beyond the turn allowance
-		if (legs_anim == BOTH_STAND1 && !moving)
+		if ((legs_anim == BOTH_STAND1 || legs_anim == BOTH_STAND1_BDROID) && !moving)
 		{
 			//standing
 			if (leg_angle_diff > 0)
@@ -3018,7 +3019,7 @@ static void CG_G2PlayerAngles(centity_t* cent, vec3_t legs[], vec3_t angles)
 					VectorSubtract(cg_entities[cent->gent->enemy->s.number].lerpOrigin, look_from, e_dir);
 					vectoangles(e_dir, e_angles);
 					view_angles[PITCH] = AngleNormalize180(e_angles[0]);
-					if (cent->gent->client->ps.legsAnim == BOTH_ATTACK2)
+					if ((cent->gent->client->ps.legsAnim == BOTH_ATTACK2 || cent->gent->client->ps.legsAnim == BOTH_ATTACK2_JANGO || cent->gent->client->ps.legsAnim == BOTH_ATTACK2_REB || cent->gent->client->ps.legsAnim == BOTH_ATTACK2_CLO))
 					{
 						//swinging at something on the ground
 						if (view_angles[PITCH] > 0.0f)
@@ -3139,7 +3140,18 @@ static void CG_G2PlayerAngles(centity_t* cent, vec3_t legs[], vec3_t angles)
 			{
 				cent->gent->client->renderInfo.legsYaw = cent->lerpAngles[YAW];
 			}
-			AnglesToAxis(cent->lerpAngles, legs);
+			if (cent->gent->m_pVehicle && cent->gent->m_pVehicle->m_pVehicleInfo
+				&& cent->gent->m_pVehicle->m_pVehicleInfo->type == VH_WALKER)
+			{
+				//a walker stands level at its yaw, only its head looks up and down (a bone, set in the vehicle's
+				//Update), as in MP. The whole model used to tip over with the pilot's view, its feet the pivot.
+				const vec3_t walker_angles = { 0.0f, cent->lerpAngles[YAW], 0.0f };
+				AnglesToAxis(walker_angles, legs);
+			}
+			else
+			{
+				AnglesToAxis(cent->lerpAngles, legs);
+			}
 			if (cent->gent->m_pVehicle)
 			{
 				if (cent->gent->m_pVehicle->m_pVehicleInfo)
@@ -5245,6 +5257,115 @@ static void CG_ForceElectrocution(const centity_t* cent, const vec3_t origin, ve
 }
 
 int cg_lastHyperSpaceEffectTime = 0;
+
+/*
+===============
+CG_MyVehiclePS
+
+The playerState of the vehicle the local player rides, or nullptr. This is SP's counterpart of
+MP's cg.predictedVehicleState: hyperspace time/flags live on the VEHICLE, not on the pilot.
+(ported from SerenityJediEngine2026)
+===============
+*/
+const playerState_t* CG_MyVehiclePS()
+{
+	const int veh_num = cg.predictedPlayerState.m_iVehicleNum;
+	if (veh_num <= 0 || veh_num >= ENTITYNUM_WORLD)
+	{
+		return nullptr;
+	}
+	const gentity_t* veh = cg_entities[veh_num].gent;
+	if (!veh || !veh->client || !veh->m_pVehicle)
+	{
+		return nullptr;
+	}
+	return &veh->client->ps;
+}
+
+// The hyperspace stars around my vehicle while it jumps (MP CG_VehicleEffects; from SerenityJediEngine2026)
+static void CG_VehicleHyperspaceStars(const centity_t* cent)
+{
+	const playerState_t* veh_ps = CG_MyVehiclePS();
+	if (veh_ps
+		&& cent->currentState.number == cg.predictedPlayerState.m_iVehicleNum //my vehicle
+		&& veh_ps->eFlags2 & EF2_HYPERSPACE //hyperspacing
+		&& veh_ps->hyperSpaceTime && cg.time - veh_ps->hyperSpaceTime < HYPERSPACE_TIME)
+	{
+		if (!cg_lastHyperSpaceEffectTime || cg.time - cg_lastHyperSpaceEffectTime > HYPERSPACE_TIME + 500)
+		{
+			//can't be from the last time we were in hyperspace, so play the effect!
+			//bolted to the ship's model, bolt 0, as MP does
+			if (cent->gent && cent->gent->playerModel >= 0)
+			{
+				CG_PlayEffectBolted("ships/hyperspace_stars", cent->gent->playerModel, 0,
+					cent->currentState.number, const_cast<float*>(cent->lerpOrigin), 0, qtrue);
+			}
+			cg_lastHyperSpaceEffectTime = cg.time;
+		}
+	}
+}
+
+static int vehExhaustFxTime[MAX_GENTITIES] = { 0 }; //when a ship next draws its exhaust
+constexpr auto VEH_EXHAUST_FX_DELAY = 50;
+
+// A ship's exhaust (MP CG_VehicleEffects; from SerenityJediEngine2026)
+static void CG_VehicleExhaust(const centity_t* cent)
+{
+	const Vehicle_t* p_veh = cent->gent->m_pVehicle;
+	if (!p_veh || !p_veh->m_pVehicleInfo)
+	{
+		return;
+	}
+
+	//EXHAUST of a ship, drawn as MP draws it: a burst on every exhaust bolt, twenty times a second, while the ship
+	//moves; the turbo exhaust while it boosts. (The game used to start one looping effect per bolt. That repeats three
+	//times a second, which is next to nothing, and the turbo exhaust was only started by ships that also have a
+	//turboStartFX - none of the fighters has one.)
+	if (p_veh->m_pVehicleInfo->type == VH_FIGHTER
+		&& cent->gent->health > 0
+		&& cent->gent->client->ps.speed > 0
+		&& cent->gent->playerModel >= 0 && cent->gent->ghoul2.size()
+		&& !cent->gent->client->ps.powerups[PW_CLOAKED])
+	{
+		int& next_time = vehExhaustFxTime[cent->currentState.number];
+		if (next_time <= cg.time || next_time > cg.time + VEH_EXHAUST_FX_DELAY)
+		{
+			const playerState_t* parent_ps = &cent->gent->client->ps;
+			int fx = p_veh->m_pVehicleInfo->iExhaustFX;
+			if (parent_ps->eFlags & EF_JETPACK_ACTIVE && p_veh->m_pVehicleInfo->iTurboFX)
+			{
+				//cheap way of telling us the vehicle is in "turbo" mode
+				fx = p_veh->m_pVehicleInfo->iTurboFX;
+			}
+			next_time = cg.time + VEH_EXHAUST_FX_DELAY;
+
+			for (int i = 0; fx && i < MAX_VEHICLE_EXHAUSTS && p_veh->m_iExhaustTag[i] != -1; i++)
+			{
+				if (parent_ps->brokenLimbs & 1 << SHIPSURF_DAMAGE_BACK_HEAVY)
+				{
+					//engine has taken heavy damage
+					if (!Q_irand(0, 1))
+					{
+						//50% chance of not drawing this engine glow this frame
+						continue;
+					}
+				}
+				else if (parent_ps->brokenLimbs & 1 << SHIPSURF_DAMAGE_BACK_LIGHT)
+				{
+					//engine has taken light damage
+					if (!Q_irand(0, 4))
+					{
+						//20% chance of not drawing this engine glow this frame
+						continue;
+					}
+				}
+				CG_PlayEffectIDBolted(fx, cent->gent->playerModel, p_veh->m_iExhaustTag[i], cent->currentState.number,
+					const_cast<float*>(cent->lerpOrigin), 0, true);
+			}
+		}
+	}
+}
+
 constexpr auto FLYBYSOUNDTIME = 2000;
 constexpr auto TURN_ON = 0x00000000;
 constexpr auto TURN_OFF = 0x00000100;
@@ -14543,7 +14664,8 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 						fx->mVerts[3].destST[1] = 0.99f;
 
 						//				fx->SetFlags( FX_USE_ALPHA );
-						FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), duration); //SABER_TRAIL_TIME );
+						CEffect* base_fx = fx;
+						FX_AddPrimitive(&base_fx, duration); //SABER_TRAIL_TIME );
 					}
 				}
 
@@ -15017,7 +15139,13 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 			fx->mVerts[3].destST[0] = 4.0f;
 			fx->mVerts[3].destST[1] = 4.0f;
 
-			FX_AddPrimitive(reinterpret_cast<CEffect**>(&fx), 0);
+			CEffect* base_fx = fx;
+			FX_AddPrimitive(&base_fx, 0);
+		}
+		else
+		{
+			// not handed to the FX system (it only frees what it owns): the verts were only used as scratch
+			delete fx;
 		}
 
 		if (client->ps.saber[saberNum].saberFlags2 & SFL2_NO_BLADE)
@@ -15056,11 +15184,26 @@ void CG_AddSaberBlade(centity_t* cent, centity_t* scent, const int renderfx, con
  ================
  */
  //Get the point in the leg animation and return a percentage of the current point in the anim between 0 and the total anim length (0.0f - 1.0f)
+// the view entity may have no gent / ghoul2 model (cameras, right after loading)
+static bool CG_ViewEntityHasModel()
+{
+	if (!cg.snap || cg.snap->ps.viewEntity < 0 || cg.snap->ps.viewEntity >= MAX_GENTITIES)
+	{
+		return false;
+	}
+	const gentity_t* gent = cg_entities[cg.snap->ps.viewEntity].gent;
+	return gent && gent->playerModel >= 0 && gent->playerModel < gent->ghoul2.size();
+}
+
 static float CG_GetSelfLegAnimPoint()
 {
 	float current = 0.0f;
 	int end = 0;
 	int start = 0;
+	if (!CG_ViewEntityHasModel())
+	{
+		return 0.0f;
+	}
 	if (!!gi.G2API_GetBoneAnimIndex(&
 		cg_entities[cg.snap->ps.viewEntity].gent->ghoul2[cg_entities[cg.snap->ps.viewEntity]
 		.gent->playerModel],
@@ -15073,7 +15216,7 @@ static float CG_GetSelfLegAnimPoint()
 		nullptr,
 		nullptr))
 	{
-		const float percent_complete = (current - start) / (end - start);
+		const float percent_complete = end != start ? (current - start) / (end - start) : 0.0f;
 
 		return percent_complete;
 	}
@@ -15093,6 +15236,10 @@ float CG_GetSelfTorsoAnimPoint()
 	float current = 0.0f;
 	int end = 0;
 	int start = 0;
+	if (!CG_ViewEntityHasModel())
+	{
+		return 0.0f;
+	}
 	if (!!gi.G2API_GetBoneAnimIndex(&
 		cg_entities[cg.snap->ps.viewEntity].gent->ghoul2[cg_entities[cg.snap->ps.viewEntity]
 		.gent->playerModel],
@@ -15105,7 +15252,7 @@ float CG_GetSelfTorsoAnimPoint()
 		nullptr,
 		nullptr))
 	{
-		const float percent_complete = (current - start) / (end - start);
+		const float percent_complete = end != start ? (current - start) / (end - start) : 0.0f;
 
 		return percent_complete;
 	}
@@ -15156,6 +15303,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 			//Use simple roll for the more complicated rolls
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_L
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_L_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_L_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_L)
 			{
 				//Left rolls
@@ -15167,6 +15315,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 			}
 			else if (cg.snap->ps.legsAnim == BOTH_FLIP_R
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_R_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_R_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_R)
 			{
 				//Right rolls
@@ -15182,9 +15331,11 @@ static void SmoothTrueView(vec3_t eye_angles)
 			//You're here because you're using cg_trueroll.integer == 2
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_L
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_L_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_L_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_L
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_R
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_R_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_R_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_R)
 			{
 				//Roll animation, lock the eyemovement
@@ -15203,9 +15354,11 @@ static void SmoothTrueView(vec3_t eye_angles)
 		|| cg.snap->ps.legsAnim == BOTH_WALL_FLIP_RIGHT
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_L
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_L_ANI
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_L_GALEN
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_L
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_R
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_R_ANI
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_R_GALEN
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_R)
 	{
 		//you don't want rolling so use cg.refdef.viewangles as the view
@@ -15226,6 +15379,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 			//Use simple flip for the more complicated flips
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_F
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_F_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_F_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_F2
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F1
@@ -15240,6 +15394,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 			}
 			else if (cg.snap->ps.legsAnim == BOTH_FLIP_B
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_B_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_B_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_B
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK1
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK2
@@ -15258,12 +15413,14 @@ static void SmoothTrueView(vec3_t eye_angles)
 			//You're here because you're using cg_trueflip.integer = 2
 			if (cg.snap->ps.legsAnim == BOTH_FLIP_F
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_F_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_F_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_F2
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F1
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_F2
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_B
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_B_ANI
+				|| cg.snap->ps.legsAnim == BOTH_FLIP_B_GALEN
 				|| cg.snap->ps.legsAnim == BOTH_ROLL_B
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK1
 				|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK2
@@ -15278,12 +15435,14 @@ static void SmoothTrueView(vec3_t eye_angles)
 	else if (cg.snap->ps.legsAnim == BOTH_WALL_FLIP_BACK1
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_F
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_F_ANI
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_F_GALEN
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_F2
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_F
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_F1
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_F2
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_B
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_B_ANI
+		|| cg.snap->ps.legsAnim == BOTH_FLIP_B_GALEN
 		|| cg.snap->ps.legsAnim == BOTH_ROLL_B
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK1
 		|| cg.snap->ps.legsAnim == BOTH_FLIP_BACK2
@@ -15392,7 +15551,7 @@ static void SmoothTrueView(vec3_t eye_angles)
 		//you don't want spinning so use cg.refdef.viewangles as the view
 		use_ref_def = qtrue;
 	}
-	else if (cg.snap->ps.legsAnim == BOTH_JUMPATTACK6)
+	else if ((cg.snap->ps.legsAnim == BOTH_JUMPATTACK6 || cg.snap->ps.legsAnim == BOTH_JUMPATTACK6_GRIEV))
 	{
 		use_ref_def = qtrue;
 	}
@@ -15400,6 +15559,10 @@ static void SmoothTrueView(vec3_t eye_angles)
 	//Prevent camera flicker while landing.
 	if (cg.snap->ps.legsAnim == BOTH_LAND1
 		|| cg.snap->ps.legsAnim == BOTH_LAND1_ANI
+		|| cg.snap->ps.legsAnim == BOTH_LAND1_YODA
+		|| cg.snap->ps.legsAnim == BOTH_LAND1_VADER
+		|| cg.snap->ps.legsAnim == BOTH_LAND1_GALEN
+		|| cg.snap->ps.legsAnim == BOTH_LAND1_MAUL
 		|| cg.snap->ps.legsAnim == BOTH_LAND2
 		|| cg.snap->ps.legsAnim == BOTH_LANDBACK1
 		|| cg.snap->ps.legsAnim == BOTH_LANDLEFT1
@@ -15410,7 +15573,24 @@ static void SmoothTrueView(vec3_t eye_angles)
 
 	//Prevent the camera flicker while switching to the saber.
 	if (cg.snap->ps.torsoAnim == BOTH_STAND2TO1
-		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2)
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_YODA
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_VADER
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_GALEN
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_REN
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_CAL
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_PAL
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_DOOKU
+		|| cg.snap->ps.torsoAnim == BOTH_STAND2TO1_MAUL
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_YODA
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_VADER
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_GALEN
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_REN
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_CAL
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_GRIEV
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_PAL
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_DOOKU
+		|| cg.snap->ps.torsoAnim == BOTH_STAND1TO2_MAUL)
 	{
 		use_ref_def = qtrue;
 	}
@@ -15540,6 +15720,53 @@ int cg_saberOnSoundTime[MAX_GENTITIES] = { 0 };
 extern void CG_AddRadarEnt(const centity_t* cent);
 extern qboolean CG_InFighter();
 extern void CG_AddBracketedEnt(const centity_t* cent);
+extern float CG_MachinegunSpinAngle(centity_t* cent);
+
+// The Z6 rotary cannon in the hand of a Ghoul2 character (models/weapons2/z6_rotary/model.glm, G_CreateG2AttachedWeaponModel):
+// its barrel bone spins while he fires and coasts down after
+static void CG_Z6SpinBarrel(centity_t* cent)
+{
+	gentity_t* gent = cent->gent;
+	if (!gent || cent->currentState.weapon != WP_Z6_ROTARY_CANNON || gent->weaponModel[0] < 0
+		|| gent->weaponModel[0] >= gent->ghoul2.size())
+	{
+		return;
+	}
+	vec3_t angles = { 0.0f, 0.0f, 0.0f };
+	// with these orientations YAW turns bone_barrel around the length of the barrels
+	angles[YAW] = cg_SpinningBarrels.integer ? CG_MachinegunSpinAngle(cent) : 0.0f;
+	gi.G2API_SetBoneAngles(&gent->ghoul2[gent->weaponModel[0]], "bone_barrel", angles, BONE_ANGLES_POSTMULT,
+		POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, cg.time);
+
+	// In first person true view (cg_trueguns 1) the hand pose holds the gun lower down: turn it 90 degrees and move it
+	// so it lies in the palm like the other rifles (third person and other characters keep it as it is)
+	CGhoul2Info* g2 = &gent->ghoul2[gent->weaponModel[0]];
+	const qboolean trueView = cent->currentState.number == 0 && !cg.renderingThirdPerson && cg_trueguns.integer
+		? qtrue : qfalse;
+	static int rootSet = -1; // the weapon model that has the model_root override
+	if (trueView)
+	{
+		rootSet = gent->weaponModel[0];
+		constexpr vec3_t ang = { 90.0f, 0.0f, 0.0f };
+		constexpr vec3_t ofs = { 3.0f, 0.0f, 2.0f };
+		vec3_t axis[3];
+		AnglesToAxis(ang, axis);
+		mdxaBone_t matrix;
+		for (int i = 0; i < 3; i++)
+		{
+			matrix.matrix[i][0] = axis[0][i];
+			matrix.matrix[i][1] = axis[1][i];
+			matrix.matrix[i][2] = axis[2][i];
+			matrix.matrix[i][3] = ofs[i];
+		}
+		gi.G2API_SetBoneAnglesMatrix(g2, "model_root", matrix, BONE_ANGLES_PREMULT, nullptr, 0, cg.time);
+	}
+	else if (cent->currentState.number == 0 && rootSet == gent->weaponModel[0])
+	{
+		rootSet = -1;
+		gi.G2API_StopBoneAngles(g2, "model_root");
+	}
+}
 
 void CG_Player(centity_t* cent)
 {
@@ -15596,8 +15823,10 @@ void CG_Player(centity_t* cent)
 
 	if (cent->gent && cent->gent->client && cent->gent->client->NPC_class == CLASS_VEHICLE)
 	{
-		//add vehicles
-		CG_AddRadarEnt(cent);
+		CG_VehicleHyperspaceStars(cent);
+		CG_VehicleExhaust(cent);
+
+		// vehicles are already on the radar (CG_AddRadarEnt above adds every entity)
 		if (CG_InFighter())
 		{
 			//this is a vehicle, bracket it
@@ -15789,9 +16018,15 @@ void CG_Player(centity_t* cent)
 
 			centity_t* veh_ent = &cg_entities[cent->gent->owner->s.number];
 			CG_CalcEntityLerpPositions(veh_ent);
-			// Get the driver tag.
+			// Get the driver tag. The droid unit (R2/R5) has a socket of its own: it was put on the driver tag, which a
+			// closed ship does not have, and was drawn nowhere.
 			mdxaBone_t bolt_matrix;
-			gi.G2API_GetBoltMatrix(veh_ent->gent->ghoul2, veh_ent->gent->playerModel, veh_ent->gent->crotchBolt,
+			int rider_bolt = veh_ent->gent->crotchBolt;
+			if (p_veh->m_pDroidUnit == cent->gent && p_veh->m_iDroidUnitTag != -1)
+			{
+				rider_bolt = p_veh->m_iDroidUnitTag;
+			}
+			gi.G2API_GetBoltMatrix(veh_ent->gent->ghoul2, veh_ent->gent->playerModel, rider_bolt,
 				&bolt_matrix, veh_ent->lerpAngles, veh_ent->lerpOrigin,
 				cg.time ? cg.time : level.time, nullptr, veh_ent->currentState.modelScale);
 			gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, ent.origin);
@@ -16026,6 +16261,12 @@ void CG_Player(centity_t* cent)
 
 		mdxaBone_t bolt_matrix;
 		vec3_t g2_angles = { 0, tempAngles[YAW], 0 };
+
+		// the guns he carries but is not holding, on his body (holster_mp.cfg)
+		CG_HolsteredWeapons(cent, g2_angles, ent.origin, ent.renderfx);
+
+		// the barrel of the Z6 rotary cannon in his hand spins
+		CG_Z6SpinBarrel(cent);
 
 		if (cent->gent->handRBolt != -1)
 		{
@@ -16576,15 +16817,22 @@ void CG_Player(centity_t* cent)
 					// Get the Position and Direction of the Tag and use that as our Muzzles Properties.
 					mdxaBone_t matrix;
 					vec3_t velocity;
+					vec3_t muzzle_angles;
 					VectorCopy(cent->gent->client->ps.velocity, velocity);
 					velocity[2] = 0;
+					VectorCopy(cent->lerpAngles, muzzle_angles);
+					if (cent->gent->m_pVehicle->m_pVehicleInfo && cent->gent->m_pVehicle->m_pVehicleInfo->type == VH_WALKER)
+					{
+						//a walker's model stands level, its guns get their pitch from the head bone (as in MP)
+						muzzle_angles[PITCH] = muzzle_angles[ROLL] = 0.0f;
+					}
 					for (int i = 0; i < MAX_VEHICLE_MUZZLES; i++)
 					{
 						if (cent->gent->m_pVehicle->m_iMuzzleTag[i] != -1)
 						{
 							gi.G2API_GetBoltMatrix(cent->gent->ghoul2, cent->gent->playerModel,
 								cent->gent->m_pVehicle->m_iMuzzleTag[i], &matrix,
-								cent->lerpAngles, ent.origin, cg.time, cgs.model_draw,
+								muzzle_angles, ent.origin, cg.time, cgs.model_draw,
 								cent->currentState.modelScale);
 							gi.G2API_GiveMeVectorFromMatrix(matrix, ORIGIN,
 								cent->gent->m_pVehicle->m_Muzzles[i].m_vMuzzlePos);
@@ -16975,10 +17223,10 @@ void CG_Player(centity_t* cent)
 						theFxScheduler.PlayEffect(cgs.effects.forceLightningWide,
 							cent->gent->client->renderInfo.handLPoint, fx_axis);
 					}
-					if (cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING
-						|| cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START
-						|| cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD
-						|| cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE)
+					if ((cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_GALEN || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_PAL)
+						|| (cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START_GALEN || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_START_PAL)
+						|| (cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD_GALEN || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_HOLD_PAL)
+						|| (cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE_GALEN || cent->gent->client->ps.torsoAnim == BOTH_FORCE_2HANDEDLIGHTNING_RELEASE_PAL))
 					{
 						//jackin' 'em up, Palpatine-style
 						if (cg_SerenityJediEngineMode.integer == 2)

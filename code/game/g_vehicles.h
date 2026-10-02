@@ -224,6 +224,15 @@ using vehicleInfo_t = struct vehicleInfo_t
 	int iconRightHandle; //what image to use for the right of the ship on the damage indicator
 	int iconLeftHandle; //what image to use for the left of the ship on the damage indicator
 	int crosshairShaderHandle; //what image to use for the left of the ship on the damage indicator
+	char* crosshairShader; //what image to use as the crosshair while flying it (cgame registers it)
+	//the damage indicator of the HUD (cgame registers them too)
+	char* dmgIndicFrame; //what image to use for the frame of the damage indicator
+	char* dmgIndicShield; //what image to use for the shield of the damage indicator
+	char* dmgIndicBackground; //what image to use for the background of the damage indicator
+	char* iconFront; //what image to use for the front of the ship on the damage indicator
+	char* iconBack; //what image to use for the back of the ship on the damage indicator
+	char* iconRight; //what image to use for the right of the ship on the damage indicator
+	char* iconLeft; //what image to use for the left of the ship on the damage indicator
 	int shieldShaderHandle; //What shader to use when drawing the shield shell
 	char* droidNPC; //NPC to attach to *droidunit tag (if it exists in the model)
 
@@ -502,7 +511,8 @@ enum
 	VEH_STRAFERAM = 0x00000800,
 	VEH_ACCELERATORON = 0x00001000,
 	VEH_ARMORLOW = 0x00002000,
-	VEH_ARMORGONE = 0x00004000
+	VEH_ARMORGONE = 0x00004000,
+	VEH_EXHAUSTON = 0x00008000 // SP: looping exhaust FX started (so it is sent once, not every frame)
 };
 
 //externed functions

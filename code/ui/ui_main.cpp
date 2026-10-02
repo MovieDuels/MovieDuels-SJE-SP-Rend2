@@ -30,6 +30,7 @@ USER INTERFACE MAIN
 */
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "../server/exe_headers.h"
@@ -39,6 +40,7 @@ USER INTERFACE MAIN
 #include "menudef.h"
 
 #include "ui_shared.h"
+#include "ui_pazaak.h"
 
 #include "../game/bg_public.h"
 #include "../game/anims.h"
@@ -1769,6 +1771,7 @@ cvar_t* g_NPCsabertwocolor;
 vmCvar_t ui_com_kotor;
 vmCvar_t ui_com_rend2;
 vmCvar_t ui_ActivateAnimationStyle;
+vmCvar_t ui_md_update;
 vmCvar_t UI_AnimationStyle;
 
 static void UI_UpdateScreenshot()
@@ -1900,7 +1903,7 @@ static cvarTable_t cvarTable[] =
 	{&ui_SFXSabersGlowSizeMaul, "cg_SFXSabersGlowSizeMaul", "1.0", nullptr, CVAR_ARCHIVE},
 	{&ui_SFXSabersCoreSizeMaul, "cg_SFXSabersCoreSizeMaul", "1.0", nullptr, CVAR_ARCHIVE},
 
-	{&ui_SerenityJediEngineMode, "g_SerenityJediEngineMode", "1", nullptr, CVAR_ARCHIVE},
+	{&ui_SerenityJediEngineMode, "g_SerenityJediEngineMode", "0", nullptr, CVAR_ARCHIVE}, // default 0 everywhere (game, cgame, ui)
 
 	{&ui_char_model_angle, "ui_char_model_angle", "175", nullptr, 0},
 
@@ -1926,6 +1929,8 @@ static cvarTable_t cvarTable[] =
 
 	{ &ui_ActivateAnimationStyle, "g_ActivateAnimationStyle", "0", nullptr, CVAR_ARCHIVE },
 
+	{ &ui_md_update, "md_update", "8", nullptr, CVAR_ROM }, // set by ui/main.menu: uiScript mdUpdate 8
+
 	{ &UI_AnimationStyle, "g_AnimationStyle", "0", nullptr, CVAR_ARCHIVE },// I may need this later.
 };
 
@@ -1941,10 +1946,26 @@ int Key_GetCatcher();
 
 constexpr auto UI_FPS_FRAMES = 4;
 
+// Update 8 lock for g_ActivateAnimationStyle while no map is loaded (main menu). The game module does
+// the same check in a map (G_EnforceUpdateSettings), but it doesn't run until a map is loaded.
+static void UI_EnforceUpdateSettings()
+{
+	if (Cvar_VariableIntegerValue("md_update") < 9 && Cvar_VariableIntegerValue("g_ActivateAnimationStyle") != 0)
+	{
+		Cvar_Set("g_ActivateAnimationStyle", "0");
+		ui.Printf(S_COLOR_YELLOW "g_ActivateAnimationStyle is not available in MovieDuels Update %i, it stays 0.\n",
+			Cvar_VariableIntegerValue("md_update"));
+	}
+}
+
 void _UI_Refresh(const int realtime)
 {
 	static int index;
 	static int previousTimes[UI_FPS_FRAMES];
+
+	UI_Pazaak_Frame(); // the singleplayer Pazaak match
+
+	UI_EnforceUpdateSettings(); // every UI frame, including the main menu
 
 	if (!(Key_GetCatcher() & KEYCATCH_UI))
 	{
@@ -2533,6 +2554,10 @@ static qboolean UI_RunMenuScript(const char** args)
 
 	if (String_Parse(args, &name))
 	{
+		if (UI_Pazaak_Script(name, args))
+		{
+			return qtrue; // pzk_*
+		}
 #ifdef NEW_FEEDER_V1
 		int i = 0;
 #ifdef NEW_FEEDER_V6
@@ -2603,33 +2628,37 @@ static qboolean UI_RunMenuScript(const char** args)
 				if (menu) {
 #ifdef NEW_FEEDER_V3
 					itemDef_t* item = Menu_FindItemByName(menu, "modellist");
-					listBoxDef_t* list = static_cast<listBoxDef_t*>(item->typeData);
+					if (item) {
+						listBoxDef_t* list = static_cast<listBoxDef_t*>(item->typeData);
 #ifdef NEW_FEEDER_V7
-					if (list) {
-						list->cursorPos = positionM;
-					}
-					item->cursorPos = positionM;
+						if (list) {
+							list->cursorPos = positionM;
+						}
+						item->cursorPos = positionM;
 #else
-					if (list) {
-						list->cursorPos = 0;
-					}
-					item->cursorPos = 0;
+						if (list) {
+							list->cursorPos = 0;
+						}
+						item->cursorPos = 0;
 #endif
+					}
 #endif
 
 					itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
-					listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
+					if (itemFeeder) {
+						listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
 #ifdef NEW_FEEDER_V7
-					if (listPtr) {
-						listPtr->cursorPos = positionV;
-					}
-					itemFeeder->cursorPos = positionV;
+						if (listPtr) {
+							listPtr->cursorPos = positionV;
+						}
+						itemFeeder->cursorPos = positionV;
 #else
-					if (listPtr) {
-						listPtr->cursorPos = 0;
-					}
-					itemFeeder->cursorPos = 0;
+						if (listPtr) {
+							listPtr->cursorPos = 0;
+						}
+						itemFeeder->cursorPos = 0;
 #endif
+					}
 
 #ifdef NEW_FEEDER_V2
 					itemDef_t* itemDesc = Menu_FindItemByName(menu, "char_desc");
@@ -2643,7 +2672,24 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 #endif
 
-		if (Q_stricmp(name, "resetdefaults") == 0)
+		if (Q_stricmp(name, "mdUpdate") == 0)
+		{
+			// ui/main.menu tells the code which MovieDuels update its assets are: uiScript mdUpdate 8
+			// md_update is read-only, so only this script (not the console) can change it.
+			if (String_Parse(args, &name2))
+			{
+				const int update = atoi(name2);
+				if (update >= 8)
+				{
+					Cvar_Set("md_update", va("%i", update));
+					if (update < 9)
+					{
+						Cvar_Set("g_ActivateAnimationStyle", "0"); // the new animation system is Update 9
+					}
+				}
+			}
+		}
+		else if (Q_stricmp(name, "resetdefaults") == 0)
 		{
 			UI_ResetDefaults();
 		}
@@ -3778,12 +3824,11 @@ static void UI_CalcForceStatus()
 	{
 		return;
 	}
-	const playerState_t* pState = cl->gentity->client;
-
 	if (!cl->gentity || !cl->gentity->client)
 	{
 		return;
 	}
+	const playerState_t* pState = cl->gentity->client;
 
 	memset(value, 0, sizeof value);
 
@@ -4260,11 +4305,13 @@ static void UI_FeederSelection(const float feederID, const int index, itemDef_t*
 #ifdef NEW_FEEDER_V1
 			if (menu) {
 				itemDef_t* itemFeeder = Menu_FindItemByName(menu, "variantlist");
-				listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
-				if (listPtr) {
-					listPtr->cursorPos = 0;
+				if (itemFeeder) {
+					listBoxDef_t* listPtr = static_cast<listBoxDef_t*>(itemFeeder->typeData);
+					if (listPtr) {
+						listPtr->cursorPos = 0;
+					}
+					itemFeeder->cursorPos = 0;
 				}
-				itemFeeder->cursorPos = 0;
 			}
 #endif
 		}
@@ -4698,6 +4745,121 @@ static void UI_FreeAllSpecies()
 	uiInfo.playerSpecies = nullptr;
 }
 
+// Every level load restarts the UI, which rebuilt the player model list from the files (about half
+// a second with 600+ model folders, most of it failed PlayerChoice.txt lookups in every pk3). The list
+// only depends on the files, so in-game restarts reuse the list built last time as long as the file
+// system (FS_Generation) and the list of model folders are unchanged.
+static playerSpeciesInfo_t* ui_speciesCache = nullptr;
+static int ui_speciesCacheCount = 0;
+static int ui_speciesCacheMax = 0;
+static int ui_speciesCacheFsGeneration = -1;
+static std::string ui_speciesCacheDirs;
+
+template <typename T>
+static bool UI_CopySpeciesArray(T*& dst, const T* src, const int count, const int max)
+{
+	dst = nullptr;
+	if (src == nullptr || max <= 0)
+	{
+		return true;
+	}
+	dst = static_cast<T*>(malloc(static_cast<size_t>(max) * sizeof(T)));
+	if (dst == nullptr)
+	{
+		return false;
+	}
+	if (count > 0)
+	{
+		memcpy(dst, src, static_cast<size_t>(count) * sizeof(T));
+	}
+	return true;
+}
+
+static bool UI_CopySpecies(playerSpeciesInfo_t* dst, const playerSpeciesInfo_t* src)
+{
+	*dst = *src;
+	const bool ok = UI_CopySpeciesArray(dst->SkinHead, src->SkinHead, src->SkinHeadCount, src->SkinHeadMax)
+		& UI_CopySpeciesArray(dst->SkinTorso, src->SkinTorso, src->SkinTorsoCount, src->SkinTorsoMax)
+		& UI_CopySpeciesArray(dst->SkinLeg, src->SkinLeg, src->SkinLegCount, src->SkinLegMax)
+		& UI_CopySpeciesArray(dst->Color, src->Color, src->ColorCount, src->ColorMax);
+	if (!ok)
+	{
+		UI_FreeSpecies(dst);
+	}
+	return ok;
+}
+
+static void UI_FreeSpeciesCache()
+{
+	for (int i = 0; i < ui_speciesCacheCount; i++)
+	{
+		UI_FreeSpecies(&ui_speciesCache[i]);
+	}
+	free(ui_speciesCache);
+	ui_speciesCache = nullptr;
+	ui_speciesCacheCount = 0;
+	ui_speciesCacheFsGeneration = -1;
+	ui_speciesCacheDirs.clear();
+}
+
+static void UI_StoreSpeciesCache(const std::string& dirs)
+{
+	UI_FreeSpeciesCache();
+	if (uiInfo.playerSpeciesCount <= 0 || uiInfo.playerSpecies == nullptr)
+	{
+		return;
+	}
+	ui_speciesCache = static_cast<playerSpeciesInfo_t*>(calloc(static_cast<size_t>(uiInfo.playerSpeciesCount), sizeof(playerSpeciesInfo_t)));
+	if (ui_speciesCache == nullptr)
+	{
+		return;
+	}
+	for (int i = 0; i < uiInfo.playerSpeciesCount; i++)
+	{
+		if (!UI_CopySpecies(&ui_speciesCache[i], &uiInfo.playerSpecies[i]))
+		{
+			ui_speciesCacheCount = i;
+			UI_FreeSpeciesCache();
+			return;
+		}
+	}
+	ui_speciesCacheCount = uiInfo.playerSpeciesCount;
+	ui_speciesCacheMax = uiInfo.playerSpeciesMax;
+	ui_speciesCacheFsGeneration = FS_Generation();
+	ui_speciesCacheDirs = dirs;
+}
+
+// uiInfo.playerSpecies must be the freshly allocated, still empty list
+static bool UI_RestoreSpeciesCache(const std::string& dirs)
+{
+	if (ui_speciesCache == nullptr || ui_speciesCacheFsGeneration != FS_Generation() || ui_speciesCacheDirs != dirs)
+	{
+		return false;
+	}
+	auto* species = static_cast<playerSpeciesInfo_t*>(calloc(static_cast<size_t>(ui_speciesCacheMax), sizeof(playerSpeciesInfo_t)));
+	if (species == nullptr)
+	{
+		return false;
+	}
+	for (int i = 0; i < ui_speciesCacheCount; i++)
+	{
+		if (!UI_CopySpecies(&species[i], &ui_speciesCache[i]))
+		{
+			for (int k = 0; k < i; k++)
+			{
+				UI_FreeSpecies(&species[k]);
+			}
+			free(species);
+			return false;
+		}
+	}
+	free(uiInfo.playerSpecies);
+	uiInfo.playerSpecies = species;
+	uiInfo.playerSpeciesMax = ui_speciesCacheMax;
+	uiInfo.playerSpeciesCount = ui_speciesCacheCount;
+	return true;
+}
+
 /*
 =================
 PlayerModel_BuildList
@@ -4738,6 +4900,20 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 	int dirlen = 0;
 	const int numdirs = ui.FS_GetFileList("models/players", "/", dirlist, static_cast<int>(DIR_LIST_SIZE));
 	char* dirptr = dirlist;
+
+	// the folder names identify the list together with FS_Generation (see UI_RestoreSpeciesCache)
+	std::string dirSignature;
+	for (int i = 0, pos = 0; i < numdirs && pos < static_cast<int>(DIR_LIST_SIZE); i++)
+	{
+		const int len = static_cast<int>(strlen(dirlist + pos));
+		dirSignature.append(dirlist + pos, static_cast<size_t>(len) + 1);
+		pos += len + 1;
+	}
+	if (inGameLoad && building == 0 && UI_RestoreSpeciesCache(dirSignature))
+	{
+		free(dirlist);
+		return;
+	}
 
 	for (int i = 0; i < numdirs; i++, dirptr += dirlen + 1)
 	{
@@ -4997,6 +5173,10 @@ static void UI_BuildPlayerModel_List(const qboolean inGameLoad)
 		}
 	}
 
+	if (building == 0)
+	{
+		UI_StoreSpeciesCache(dirSignature);
+	}
 	free(dirlist);
 }
 
@@ -5033,6 +5213,8 @@ void _UI_Init(const qboolean inGameLoad)
 	uiInfo.inGameLoad = inGameLoad;
 
 	UI_RegisterCvars();
+	// (no UI_EnforceUpdateSettings here: the main menu hasn't set md_update yet, so an Update 9 install
+	//  would still read the default 8. The first UI frame, after the menu's "uiScript mdUpdate", does it.)
 
 	UI_InitMemory();
 
@@ -5210,7 +5392,7 @@ static void UI_RegisterCvars()
 UI_ParseMenu
 =================
 */
-static void UI_ParseMenu(const char* menuFile)
+void UI_ParseMenu(const char* menuFile) // not static: the Pazaak board loads its menu on demand (ui_pazaak.cpp)
 {
 	char* buffer, * holdBuffer;
 	//	pc_token_t token;
@@ -5383,9 +5565,9 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("---- Genuine MovieDuels SerenityJediEngine (Solaris Edition) ----\n");
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 20/09/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 09 ----------------------------\n");
+	Com_Printf("-------------------------- Update 9.0 ---------------------------\n");
+	Com_Printf("--------------------- Build Date 02/10/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 01 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -6351,6 +6533,11 @@ static void UI_OwnerDraw(float x, float y, float w, float h, const float text_x,
 	rect.w = w;
 	rect.h = h;
 
+	if (UI_Pazaak_OwnerDraw(ownerDraw, x, y, w, h, shader))
+	{
+		return;
+	}
+
 	switch (ownerDraw)
 	{
 	case UI_EFFECTS:
@@ -6585,8 +6772,44 @@ void _UI_MouseEvent(const int dx, const int dy)
 UI_KeyEvent
 =================
 */
-void _UI_KeyEvent(const int key, const qboolean down)
+// A game controller works the menus like a mouse and keyboard: a stick moves the pointer (IN_GamepadMenuPointer),
+// A clicks, X is the right mouse button, B and Start go back (Escape), Y is Enter, the D-pad is the arrow keys
+// and the shoulder buttons scroll like the mouse wheel.
+// Not while the controls menu waits for a key to bind: it needs the real button.
+static int UI_GamepadMenuKey(const int key)
 {
+	if (Display_KeyBindPending())
+	{
+		return key;
+	}
+
+	switch (key)
+	{
+	case A_PAD0_A: return A_MOUSE1;
+	case A_PAD0_X: return A_MOUSE2;
+	case A_PAD0_B:
+	case A_PAD0_START: return A_ESCAPE;
+	case A_PAD0_Y: return A_ENTER;
+	case A_PAD0_DPAD_UP: return A_CURSOR_UP;
+	case A_PAD0_DPAD_DOWN: return A_CURSOR_DOWN;
+	case A_PAD0_DPAD_LEFT: return A_CURSOR_LEFT;
+	case A_PAD0_DPAD_RIGHT: return A_CURSOR_RIGHT;
+	case A_PAD0_LEFTSHOULDER: return A_MWHEELUP;
+	case A_PAD0_RIGHTSHOULDER: return A_MWHEELDOWN;
+	default: return key;
+	}
+}
+
+void _UI_KeyEvent(const int pressed_key, const qboolean down)
+{
+	const int key = UI_GamepadMenuKey(pressed_key);
+
+	if (key == A_ESCAPE && down && UI_Pazaak_Active())
+	{
+		UI_Pazaak_OnEsc(); // the Pazaak board asks to forfeit or quit instead of closing
+		return;
+	}
+
 	/*	extern qboolean SwallowBadNumLockedKPKey( int iKey );
 		if (SwallowBadNumLockedKPKey(key)){
 			return;
@@ -7174,7 +7397,7 @@ static void UI_InitAllocForcePowers(const char* forceName)
 
 	// NOTE: this UIScript can be called outside the running game now, so handle that case
 	// by getting info frim UIInfo instead of PlayerState
-	if (cl)
+	if (cl && cl->gentity && cl->gentity->client)
 	{
 		const playerState_t* pState = cl->gentity->client;
 		forcelevel = pState->forcePowerLevel[powerEnums[forcePowerI].powerEnum];
@@ -7359,7 +7582,7 @@ static void UI_ViewWeaponWheel() {
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-	if (!cl)
+	if (!cl || !cl->gentity || !cl->gentity->client)
 	{
 		return; // No client, get out
 	}
@@ -7418,7 +7641,7 @@ static void UI_ViewForceWheel() {
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-	if (!cl)
+	if (!cl || !cl->gentity || !cl->gentity->client)
 	{
 		return; // No client, get out
 	}
@@ -7733,7 +7956,7 @@ static void UI_ShutdownForceHelp()
 		// Get player state
 		const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-		if (!cl) // No client, get out
+		if (!cl || !cl->gentity || !cl->gentity->client) // No client, get out
 		{
 			return;
 		}
@@ -8019,7 +8242,7 @@ static void UI_ShowForceLevelDesc(const char* forceName)
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 
-	if (!cl) // No client, get out
+	if (!cl || !cl->gentity || !cl->gentity->client) // No client, get out
 	{
 		return;
 	}
@@ -9640,7 +9863,7 @@ void UI_ResetDefaults()
 {
 	ui.Cmd_ExecuteText(EXEC_APPEND, "cvar_restart\n");
 	Controls_SetDefaults();
-	ui.Cmd_ExecuteText(EXEC_APPEND, "exec MD-SP-default.cfg\n");
+	ui.Cmd_ExecuteText(EXEC_APPEND, "exec MovieDuels-SP-default.cfg\n");
 	ui.Cmd_ExecuteText(EXEC_APPEND, "vid_restart\n");
 }
 

@@ -533,7 +533,7 @@ void NPC_BSHuntAndKill()
 		}
 
 		const int curAnim = NPC->client->ps.legsAnim;
-		if (curAnim != BOTH_ATTACK1 && curAnim != BOTH_ATTACK2 && curAnim != BOTH_ATTACK3 && curAnim != BOTH_MELEE1 &&
+		if (curAnim != BOTH_ATTACK1 && (curAnim != BOTH_ATTACK2 && curAnim != BOTH_ATTACK2_JANGO && curAnim != BOTH_ATTACK2_REB && curAnim != BOTH_ATTACK2_CLO) && curAnim != BOTH_ATTACK3 && curAnim != BOTH_ATTACK3_BDROID && curAnim != BOTH_MELEE1 &&
 			curAnim != BOTH_MELEE2)
 		{
 			vec3_t vec;

@@ -41,6 +41,7 @@ cvar_t* in_joystick = nullptr;
 static cvar_t* in_joystickThreshold = nullptr;
 static cvar_t* in_joystickNo = nullptr;
 static cvar_t* in_joystickUseAnalog = nullptr;
+static cvar_t* in_joystickMenuSpeed = nullptr;
 
 cvar_t* j_pitch;
 cvar_t* j_yaw;
@@ -620,6 +621,89 @@ struct stick_state_s
 
 /*
 ===============
+IN_ControllerType
+
+Which kind of controller the open one is, for the button names in the menus: the value of the read only cvar
+in_controllerType (see qcommon/q_padnames.h).
+===============
+*/
+// SDL_GameControllerType values: the SDL headers here are 2.0.12, a newer SDL2.dll also reports the later ones
+enum
+{
+	PADTYPE_XBOX360 = 1,
+	PADTYPE_XBOXONE = 2,
+	PADTYPE_PS3 = 3,
+	PADTYPE_PS4 = 4,
+	PADTYPE_SWITCH_PRO = 5,
+	PADTYPE_PS5 = 7,
+	PADTYPE_SWITCH_JOYCON_LEFT = 11,
+	PADTYPE_SWITCH_JOYCON_RIGHT = 12,
+	PADTYPE_SWITCH_JOYCON_PAIR = 13
+};
+
+static const char* IN_ControllerType(void)
+{
+	if (!stick)
+	{
+		return "";
+	}
+
+	// what SDL says it is
+	if (gamepad)
+	{
+		switch (static_cast<int>(SDL_GameControllerGetType(gamepad)))
+		{
+		case PADTYPE_XBOX360: return "xbox360";
+		case PADTYPE_XBOXONE: return "xbox";
+		case PADTYPE_PS3:
+		case PADTYPE_PS4: return "playstation";
+		case PADTYPE_PS5: return "ps5";
+		case PADTYPE_SWITCH_PRO:
+		case PADTYPE_SWITCH_JOYCON_LEFT:
+		case PADTYPE_SWITCH_JOYCON_RIGHT:
+		case PADTYPE_SWITCH_JOYCON_PAIR: return "switch";
+		default: break;
+		}
+	}
+
+	// its maker (USB vendor / product): also for a pad this SDL has no gamepad layout for, like a PS5 pad with
+	// SDL 2.0.12
+	const Uint16 vendor = SDL_JoystickGetVendor(stick);
+	const Uint16 product = SDL_JoystickGetProduct(stick);
+	if (vendor == 0x054C) // Sony
+	{
+		return product == 0x0CE6 || product == 0x0DF2 ? "ps5" : "playstation"; // DualSense, DualSense Edge
+	}
+	if (vendor == 0x045E) // Microsoft
+	{
+		return "xbox";
+	}
+	if (vendor == 0x057E) // Nintendo
+	{
+		return "switch";
+	}
+
+	// its name
+	const char* name = SDL_JoystickName(stick);
+	if (name)
+	{
+		if (Q_stristr(name, "DualSense") || Q_stristr(name, "PS5"))
+			return "ps5";
+		if (Q_stristr(name, "DualShock") || Q_stristr(name, "PS4") || Q_stristr(name, "PS3") || Q_stristr(name, "PlayStation"))
+			return "playstation";
+		if (Q_stristr(name, "Xbox 360"))
+			return "xbox360";
+		if (Q_stristr(name, "Xbox") || Q_stristr(name, "XInput"))
+			return "xbox";
+		if (Q_stristr(name, "Nintendo") || Q_stristr(name, "Switch") || Q_stristr(name, "Joy-Con"))
+			return "switch";
+	}
+
+	return gamepad ? "generic" : "joystick";
+}
+
+/*
+===============
 IN_InitJoystick
 ===============
 */
@@ -641,6 +725,7 @@ static void IN_InitJoystick(void)
 	}
 
 	Com_Memset(&stick_state, 0, sizeof(stick_state));
+	Cvar_Set("in_controllerType", "");
 
 	// ---------------------------------------------------------
 	// Ensure SDL joystick subsystems are initialized
@@ -719,6 +804,8 @@ static void IN_InitJoystick(void)
 	// ---------------------------------------------------------
 	in_joystickUseAnalog = Cvar_Get("in_joystickUseAnalog", "0", CVAR_ARCHIVE_ND);
 	in_joystickThreshold = Cvar_Get("joy_threshold", "0.378125", CVAR_ARCHIVE_ND);
+	// how fast a stick moves the menu pointer when pushed all the way: menu pixels (640x480) per second
+	in_joystickMenuSpeed = Cvar_Get("in_joystickMenuSpeed", "520", CVAR_ARCHIVE_ND);
 
 	j_pitch = Cvar_Get("j_pitch", "0.022", CVAR_ARCHIVE_ND);
 	j_yaw = Cvar_Get("j_yaw", "-0.022", CVAR_ARCHIVE_ND);
@@ -759,6 +846,9 @@ static void IN_InitJoystick(void)
 		gamepad = SDL_GameControllerOpen(in_joystickNo->integer);
 	}
 
+	// which kind it is, for the button names in the menus
+	Cvar_Set("in_controllerType", IN_ControllerType());
+
 	// ---------------------------------------------------------
 	// Log joystick info
 	// ---------------------------------------------------------
@@ -771,6 +861,7 @@ static void IN_InitJoystick(void)
 	Com_DPrintf("Use Analog: %s\n", (in_joystickUseAnalog->integer != 0) ? "Yes" : "No");
 	Com_DPrintf("Threshold:  %f\n", in_joystickThreshold->value);
 	Com_DPrintf("Is gamepad: %s\n", (gamepad != nullptr) ? "Yes" : "No");
+	Com_DPrintf("Type:       %s\n", Cvar_VariableString("in_controllerType"));
 
 	SDL_JoystickEventState(SDL_QUERY);
 	SDL_GameControllerEventState(SDL_QUERY);
@@ -791,6 +882,8 @@ void IN_Init(void* windowData)
 	in_keyboardDebug = Cvar_Get("in_keyboardDebug", "0", CVAR_ARCHIVE_ND);
 
 	in_joystick = Cvar_Get("in_joystick", "0", CVAR_ARCHIVE_ND | CVAR_LATCH);
+	// which kind of controller is in use (IN_ControllerType), for the button names in the menus
+	Cvar_Get("in_controllerType", "", CVAR_ROM);
 
 	// mouse variables
 	in_mouse = Cvar_Get("in_mouse", "1", CVAR_ARCHIVE);
@@ -1119,6 +1212,31 @@ static void IN_ProcessEvents()
 			}
 			break;
 
+		case SDL_JOYDEVICEADDED:
+		case SDL_CONTROLLERDEVICEADDED:
+			// a controller was plugged in while the game runs: use it, if none is in use
+			// (SDL also sends these at startup for the ones that are already there)
+			if (in_joystick && in_joystick->integer && !stick)
+			{
+				IN_InitJoystick();
+				if (stick)
+				{
+					Com_Printf("Controller connected: %s (%s)\n", SDL_JoystickName(stick), Cvar_VariableString("in_controllerType"));
+				}
+			}
+			break;
+
+		case SDL_JOYDEVICEREMOVED:
+		case SDL_CONTROLLERDEVICEREMOVED:
+			// ours was unplugged: let go of whatever it held down, and fall back to another one if there is one
+			if (stick && !SDL_JoystickGetAttached(stick))
+			{
+				Com_Printf("Controller disconnected.\n");
+				Key_ClearStates();
+				IN_InitJoystick();
+			}
+			break;
+
 		default:
 			break;
 		}
@@ -1195,6 +1313,73 @@ static qboolean KeyToAxisAndSign(int keynum, int* outAxis, int* outSign)
 
 /*
 ===============
+IN_GamepadMenuPointer
+
+While a menu is up, a stick moves its pointer the way a mouse does: either stick, and the further it is
+pushed, the faster. (The buttons become clicks and menu keys in the UI itself: see UI_GamepadMenuKey.)
+===============
+*/
+static void IN_GamepadMenuPointer()
+{
+	static int last_time = 0;
+	static float rest_x = 0.0f, rest_y = 0.0f; // fractions of a pixel, carried over to the next frame
+
+	const int now = Sys_Milliseconds();
+	float seconds = static_cast<float>(now - last_time) * 0.001f;
+	last_time = now;
+	if (seconds > 0.1f)
+	{
+		seconds = 0.1f; // first frame, or a hitch: no jump
+	}
+
+	if (seconds <= 0.0f || !(Key_GetCatcher() & KEYCATCH_UI) || Key_GetCatcher() & KEYCATCH_CONSOLE)
+	{
+		rest_x = rest_y = 0.0f;
+		return;
+	}
+
+	// the stick that is pushed further
+	float x = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTX)) / 32767.0f;
+	float y = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTY)) / 32767.0f;
+	const float rx = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTX)) / 32767.0f;
+	const float ry = static_cast<float>(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTY)) / 32767.0f;
+	if (rx * rx + ry * ry > x * x + y * y)
+	{
+		x = rx;
+		y = ry;
+	}
+
+	const float tilt = sqrtf(x * x + y * y);
+	const float dead = in_joystickThreshold->value;
+	if (tilt <= dead || dead >= 1.0f)
+	{
+		rest_x = rest_y = 0.0f;
+		return;
+	}
+
+	// 0..1 outside the dead zone, squared: a small push moves the pointer slowly enough to aim at a button
+	float amount = (tilt - dead) / (1.0f - dead);
+	if (amount > 1.0f)
+	{
+		amount = 1.0f;
+	}
+	const float speed = in_joystickMenuSpeed->value * amount * amount; // menu pixels (640x480) per second
+
+	rest_x += x / tilt * speed * seconds;
+	rest_y += y / tilt * speed * seconds;
+	const int dx = static_cast<int>(rest_x);
+	const int dy = static_cast<int>(rest_y);
+	rest_x -= static_cast<float>(dx);
+	rest_y -= static_cast<float>(dy);
+
+	if (dx || dy)
+	{
+		Sys_QueEvent(0, SE_MOUSE, dx, dy, 0, nullptr);
+	}
+}
+
+/*
+===============
 IN_GamepadMove
 ===============
 */
@@ -1211,8 +1396,11 @@ static void IN_GamepadMove(void)
 
 	SDL_GameControllerUpdate();
 
+	IN_GamepadMenuPointer();
+
 	// check buttons
-	for (i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++)
+	// (only the buttons there are pad keys for: a newer SDL has more, paddles and the touchpad)
+	for (i = 0; i < SDL_CONTROLLER_BUTTON_MAX && i <= A_PAD0_MISC1 - A_PAD0_A && i < static_cast<int>(std::size(stick_state.buttons)); i++)
 	{
 		qboolean pressed = SDL_GameControllerGetButton(gamepad, (SDL_GameControllerButton)(SDL_CONTROLLER_BUTTON_A + i)) == 1 ? qtrue : qfalse;
 		if (pressed != stick_state.buttons[i])
@@ -1596,6 +1784,7 @@ static void IN_ShutdownJoystick()
 		SDL_JoystickClose(stick);
 		stick = nullptr;
 	}
+	Cvar_Set("in_controllerType", "");
 
 	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 
@@ -1623,4 +1812,4 @@ void IN_Restart()
 {
 	IN_ShutdownJoystick();
 	IN_Init(SDL_window);
-}
+}

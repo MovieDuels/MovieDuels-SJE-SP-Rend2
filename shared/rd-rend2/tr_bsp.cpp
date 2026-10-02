@@ -359,7 +359,7 @@ static	void R_LoadLightmaps(world_t* worldData, lump_t* l, lump_t* surfs)
 			float* hdrL = NULL;
 			int lightmapWidth = tr.lightmapSize;
 			int lightmapHeight = tr.lightmapSize;
-			int bppc;
+			int bppc = 8;
 			bool foundLightmap = true;
 
 			if (!tr.worldInternalLightmapping)
@@ -2377,6 +2377,12 @@ static	void R_LoadSurfaces(world_t* worldData, lump_t* surfs, lump_t* verts, lum
 		switch (LittleLong(in->surfaceType)) {
 		case MST_PATCH:
 			ParseMesh(worldData, in, dv, tangentSpace, hdrVertColors, out);
+			if (*out->data == SF_SKIP)
+			{
+				// Nodraw patch (or failed alloc): data is only the 4-byte SF_SKIP marker, not a srfBspSurface_t.
+				out->cullinfo.type = CULLINFO_NONE;
+			}
+			else
 			{
 				srfBspSurface_t* surface = (srfBspSurface_t*)out->data;
 

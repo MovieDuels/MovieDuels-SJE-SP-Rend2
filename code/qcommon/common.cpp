@@ -1065,7 +1065,7 @@ Com_ExecuteCfg
 
 static void Com_ExecuteCfg()
 {
-	Cbuf_ExecuteText(EXEC_NOW, "exec MD-SP-default.cfg\n");
+	Cbuf_ExecuteText(EXEC_NOW, "exec MovieDuels-SP-default.cfg\n");
 	Cbuf_Execute(); // Always execute after exec to prevent text buffer overflowing
 
 	if (!Com_SafeMode())
@@ -1365,7 +1365,7 @@ void Com_WriteConfig_f()
 		return;
 	}
 
-	if (!FS_FilenameCompare(filename, "MD-SP-default.cfg") || !FS_FilenameCompare(filename, "MD-MP-default.cfg"))
+	if (!FS_FilenameCompare(filename, "MovieDuels-SP-default.cfg") || !FS_FilenameCompare(filename, "MD-MP-default.cfg"))
 	{
 		Com_Printf(S_COLOR_YELLOW "Com_WriteConfig_f: The filename \"%s\" is reserved! Please choose another name.\n",
 			filename);

@@ -76,6 +76,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #endif
 
 extern gentity_t* NPC_Spawn_Do(gentity_t* pEnt, qboolean fullSpawnNow);
+extern void VEH_TurretThink(Vehicle_t* p_veh, gentity_t* parent, int turret_num); // g_vehicleTurret.cpp
 extern qboolean G_ClearLineOfSight(const vec3_t point1, const vec3_t point2, int ignore, int clipmask);
 extern qboolean G_SetG2PlayerModelInfo(gentity_t* pEnt, const char* model_name, const char* surf_off, const char* surf_on);
 extern void G_RemovePlayerModel(gentity_t* pEnt);
@@ -147,16 +148,18 @@ float G_CanJumpToEnemyVeh(Vehicle_t* p_veh, const usercmd_t* pUcmd)
 		pUcmd->rightmove &&
 		fabsf(rider->enemy->currentOrigin[2] - rider->currentOrigin[2]) < 50.0f)
 	{
-		if (level.time < p_veh->m_safeJumpMountTime)
-		{
-			return p_veh->m_safeJumpMountRightDot;
-		}
-
 		// If The Enemy Is Riding Another Vehicle
 		//----------------------------------------
 		const Vehicle_t* enemyVeh = G_IsRidingVehicle(rider->enemy);
 		if (enemyVeh)
 		{
+			// the cached "safe to jump" window only counts while the enemy is still riding
+			// (it was returned before this check, and the caller then used a NULL enemy vehicle)
+			if (level.time < p_veh->m_safeJumpMountTime)
+			{
+				return p_veh->m_safeJumpMountRightDot;
+			}
+
 			vec3_t toEnemy;
 
 			// If He Is Close Enough And Going The Same Speed
@@ -247,12 +250,38 @@ void G_VehicleSpawn(gentity_t* self)
 	//return vehEnt;
 }
 
+// The angles a vehicle's model stands at, for working out where its tags are. A walker stands level at its yaw and
+// only its head - a bone - follows the pilot's pitch (as in MP); every other vehicle is its whole orientation.
+static void G_VehicleModelAngles(const Vehicle_t* p_veh, vec3_t angles)
+{
+	VectorCopy(p_veh->m_vOrientation, angles);
+	if (p_veh->m_pVehicleInfo && p_veh->m_pVehicleInfo->type == VH_WALKER)
+	{
+		angles[PITCH] = angles[ROLL] = 0.0f;
+	}
+}
+
+// A walker looks up and down with its head alone: the "thoracic" bone takes the pitch (as MP's BG_G2ATSTAngles).
+// The cgame draws this same ghoul2 model, so this is all it takes.
+static void G_WalkerHeadPitch(const Vehicle_t* p_veh, gentity_t* parent)
+{
+	if (!p_veh->m_pVehicleInfo || p_veh->m_pVehicleInfo->type != VH_WALKER
+		|| !parent->ghoul2.size() || parent->playerModel < 0)
+	{
+		return;
+	}
+	const vec3_t head_angles = { p_veh->m_vOrientation[PITCH], 0.0f, 0.0f };
+	gi.G2API_SetBoneAngles(&parent->ghoul2[parent->playerModel], "thoracic", head_angles, BONE_ANGLES_POSTMULT,
+		POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, cg.time ? cg.time : level.time);
+}
+
 // Attachs an entity to the vehicle it's riding (it's owner).
 void G_AttachToVehicle(gentity_t* pEnt, usercmd_t** ucmd)
 {
 	gentity_t* vehEnt;
 	mdxaBone_t bolt_matrix;
 	gentity_t* ent;
+	vec3_t model_angles;
 
 	if (!pEnt || !ucmd)
 		return;
@@ -265,8 +294,9 @@ void G_AttachToVehicle(gentity_t* pEnt, usercmd_t** ucmd)
 	if (!vehEnt->m_pVehicle)
 		return;
 	// Get the driver tag.
+	G_VehicleModelAngles(vehEnt->m_pVehicle, model_angles);
 	gi.G2API_GetBoltMatrix(vehEnt->ghoul2, vehEnt->playerModel, vehEnt->crotchBolt, &bolt_matrix,
-		vehEnt->m_pVehicle->m_vOrientation, vehEnt->currentOrigin,
+		model_angles, vehEnt->currentOrigin,
 		cg.time ? cg.time : level.time, nullptr, vehEnt->s.modelScale);
 	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, ent->client->ps.origin);
 	gi.linkentity(ent);
@@ -684,19 +714,18 @@ static bool Board(Vehicle_t* p_veh, bgEntity_t* pEnt)
 		ent->s.m_iVehicleNum = parent->s.number;
 		parent->owner = ent;
 
-#ifdef QAGAME
+		// was "#ifdef QAGAME", never defined in this file: SP never released docked ships (as SJE2026)
 		gentity_t* gParent = parent;
 
 		if ((gParent->spawnflags & 2))
 		{//was being suspended
 			gParent->spawnflags &= ~2;
-			G_Sound(gParent, CHAN_AUTO, G_SoundIndex("sound/vehicles/common/release.wav"));
+			G_Sound(gParent, G_SoundIndex("sound/vehicles/common/release.wav"));
 			if (gParent->fly_sound_debounce_time)
 			{//we should drop like a rock for a few seconds
 				p_veh->m_iDropTime = level.time + gParent->fly_sound_debounce_time;
 			}
 		}
-#endif
 	}
 	else
 	{
@@ -720,6 +749,15 @@ static bool Board(Vehicle_t* p_veh, bgEntity_t* pEnt)
 	ent->s.m_iVehicleNum = parent->s.number;
 	ent->owner = parent;
 	parent->s.m_iVehicleNum = ent->s.number + 1;
+	// Same playerState fields as MP: cgame uses them for "my vehicle" (hyperspace, camera, HUD)
+	if (ent->client)
+	{
+		ent->client->ps.m_iVehicleNum = parent->s.number;
+	}
+	if (parent->client)
+	{
+		parent->client->ps.m_iVehicleNum = ent->s.number + 1;
+	}
 
 	if (p_veh->m_pVehicleInfo->numHands == 2)
 	{
@@ -873,33 +911,27 @@ static bool VEH_TryEject(const Vehicle_t* p_veh,
 	return true;
 }
 
+// Take the droid unit (R2/R5) off the vehicle; kill it too if asked (vehicle died, killRiderOnDeath).
 static void G_EjectDroidUnit(Vehicle_t* p_veh, qboolean kill)
 {
-	p_veh->m_pDroidUnit->s.m_iVehicleNum = ENTITYNUM_NONE;
-#ifdef _JK2MP
-	p_veh->m_pDroidUnit->s.owner = ENTITYNUM_NONE;
-#else
-	p_veh->m_pDroidUnit->owner = nullptr;
-#endif
-	//	p_veh->m_pDroidUnit->s.otherentityNum2 = ENTITYNUM_NONE;
-#ifdef QAGAME
+	gentity_t* droidEnt = p_veh->m_pDroidUnit;
+	if (!droidEnt)
 	{
-		gentity_t* droidEnt = (gentity_t*)p_veh->m_pDroidUnit;
-		droidEnt->flags &= ~FL_UNDYING;
-		droidEnt->r.ownerNum = ENTITYNUM_NONE;
-		if (droidEnt->client)
-		{
-			droidEnt->client->ps.m_iVehicleNum = ENTITYNUM_NONE;
-		}
-		if (kill)
-		{//Kill them, too
-			//FIXME: proper origin, MOD and attacker (for credit/death message)?  Get from vehicle?
-			G_MuteSound(droidEnt->s.number, CHAN_VOICE);
-			G_Damage(droidEnt, nullptr, nullptr, nullptr, droidEnt->s.origin, 10000, 0, MOD_SUICIDE);//FIXME: proper MOD?  Get from vehicle?
-		}
+		return;
 	}
-#endif
 	p_veh->m_pDroidUnit = nullptr;
+
+	droidEnt->s.m_iVehicleNum = 0; // 0 = not in a vehicle (ENTITYNUM_NONE made "!= 0" checks look up entity 1023)
+	droidEnt->owner = nullptr;
+	droidEnt->flags &= ~FL_UNDYING;
+	if (droidEnt->client)
+	{
+		droidEnt->client->ps.m_iVehicleNum = 0;
+	}
+	if (kill && droidEnt->inuse && droidEnt->health > 0)
+	{//Kill them, too
+		G_Damage(droidEnt, nullptr, nullptr, nullptr, droidEnt->currentOrigin, 10000, 0, MOD_SUICIDE);
+	}
 }
 
 // Eject the pilot from the vehicle.
@@ -943,6 +975,14 @@ static bool Eject(Vehicle_t* p_veh, bgEntity_t* pEnt, const qboolean force_eject
 	{
 		return false;
 	}
+#ifndef _JK2MP
+	if (ent == p_veh->m_pDroidUnit)
+	{
+		// the droid unit leaves through its own path (MP checks this at the top of Eject too)
+		G_EjectDroidUnit(p_veh, qfalse);
+		return true;
+	}
+#endif
 	if (!force_eject)
 	{
 		if (!(p_veh->m_iBoarding == 0 || p_veh->m_iBoarding == -999 || p_veh->m_iBoarding < -3 && p_veh->m_iBoarding >= -
@@ -1123,6 +1163,10 @@ static bool Eject(Vehicle_t* p_veh, bgEntity_t* pEnt, const qboolean force_eject
 		parent->client->ps.m_iVehicleNum = 0;
 #else
 		parent->s.m_iVehicleNum = 0;
+		if (parent->client)
+		{
+			parent->client->ps.m_iVehicleNum = 0;
+		}
 #endif
 	}
 
@@ -1152,6 +1196,10 @@ static bool Eject(Vehicle_t* p_veh, bgEntity_t* pEnt, const qboolean force_eject
 	}
 #else
 	ent->owner = nullptr;
+	if (ent->client)
+	{
+		ent->client->ps.m_iVehicleNum = 0;
+	}
 #endif
 	ent->s.m_iVehicleNum = 0;
 
@@ -1183,33 +1231,23 @@ static bool EjectAll(Vehicle_t* p_veh)
 	// Throw them off.
 	if (p_veh->m_pPilot)
 	{
-#ifdef QAGAME
-		gentity_t* pilot = (gentity_t*)p_veh->m_pPilot;
-#endif
+		// killRiderOnDeath (.veh): these blocks were "#ifdef QAGAME", which this file never defines in SP,
+		// so SP ignored the setting. No attacker (as MP), so the player doesn't get the kill credit.
+		gentity_t* pilot = p_veh->m_pPilot;
 		p_veh->m_pVehicleInfo->Eject(p_veh, p_veh->m_pPilot, qtrue);
-#ifdef QAGAME
 		if (p_veh->m_pVehicleInfo->killRiderOnDeath && pilot)
 		{//Kill them, too
-			//FIXME: proper origin, MOD and attacker (for credit/death message)?  Get from vehicle?
-			G_MuteSound(pilot->s.number, CHAN_VOICE);
-			G_Damage(pilot, player, player, nullptr, pilot->s.origin, 10000, 0, MOD_SUICIDE);
+			G_Damage(pilot, nullptr, nullptr, nullptr, pilot->s.origin, 10000, 0, MOD_SUICIDE);
 		}
-#endif
 	}
 	if (p_veh->m_pOldPilot)
 	{
-#ifdef QAGAME
-		gentity_t* pilot = (gentity_t*)p_veh->m_pOldPilot;
-#endif
+		gentity_t* pilot = p_veh->m_pOldPilot;
 		p_veh->m_pVehicleInfo->Eject(p_veh, p_veh->m_pOldPilot, qtrue);
-#ifdef QAGAME
 		if (p_veh->m_pVehicleInfo->killRiderOnDeath && pilot)
 		{//Kill them, too
-			//FIXME: proper origin, MOD and attacker (for credit/death message)?  Get from vehicle?
-			G_MuteSound(pilot->s.number, CHAN_VOICE);
-			G_Damage(pilot, player, player, nullptr, pilot->s.origin, 10000, 0, MOD_SUICIDE);
+			G_Damage(pilot, nullptr, nullptr, nullptr, pilot->s.origin, 10000, 0, MOD_SUICIDE);
 		}
-#endif
 	}
 
 	if (p_veh->m_pDroidUnit)
@@ -1307,6 +1345,13 @@ static void DeathUpdate(Vehicle_t* p_veh)
 			trace_t trace;
 
 #ifndef _JK2MP
+			// The droid unit goes down with the ship (as MP); Inhabited() doesn't count it in SP,
+			// so it was left pointing at the freed vehicle
+			if (p_veh->m_pDroidUnit)
+			{
+				G_EjectDroidUnit(p_veh, qtrue);
+			}
+
 			// Kill All Client Side Looping Effects
 			//--------------------------------------
 			if (p_veh->m_pVehicleInfo->iExhaustFX)
@@ -1315,7 +1360,13 @@ static void DeathUpdate(Vehicle_t* p_veh)
 				{
 					G_StopEffect(p_veh->m_pVehicleInfo->iExhaustFX, parent->playerModel, p_veh->m_iExhaustTag[i],
 						parent->s.number);
+					if (p_veh->m_pVehicleInfo->iTrailFX)
+					{
+						G_StopEffect(p_veh->m_pVehicleInfo->iTrailFX, parent->playerModel, p_veh->m_iExhaustTag[i],
+							parent->s.number);
+					}
 				}
+				p_veh->m_ulFlags &= ~(VEH_EXHAUSTON | VEH_ACCELERATORON);
 			}
 			if (p_veh->m_pVehicleInfo->iArmorLowFX)
 			{
@@ -1409,9 +1460,7 @@ static bool Initialize(Vehicle_t* p_veh)
 	if (!parent || !parent->client)
 		return false;
 
-#ifdef _JK2MP
 	parent->client->ps.m_iVehicleNum = 0;
-#endif
 	parent->s.m_iVehicleNum = 0;
 	{
 		p_veh->m_iArmor = p_veh->m_pVehicleInfo->armor;
@@ -1428,7 +1477,7 @@ static bool Initialize(Vehicle_t* p_veh)
 	}
 	for (i = 0; i < MAX_VEHICLE_TURRETS; i++)
 	{
-		p_veh->turretStatus[i].nextMuzzle = p_veh->m_pVehicleInfo->turret[i].iMuzzle[i] - 1;
+		p_veh->turretStatus[i].nextMuzzle = p_veh->m_pVehicleInfo->turret[i].iMuzzle[0] - 1; // first muzzle (was iMuzzle[i]: turret 2 started on its 2nd muzzle, -1 if unset)
 		parent->client->ps.ammo[MAX_VEHICLE_WEAPONS + i] = p_veh->turretStatus[i].ammo = p_veh->m_pVehicleInfo->turret[i].
 			iAmmoMax;
 		if (p_veh->m_pVehicleInfo->turret[i].bAI)
@@ -1501,6 +1550,12 @@ void G_VehicleDamageBoxSizing(Vehicle_t* p_veh); //declared below
 #endif
 static bool Update(Vehicle_t* p_veh, const usercmd_t* pUmcd)
 {
+	// Validate first (as MP does): parent->client->ps is used right below, the old check came much later
+	if (!p_veh || !p_veh->m_pParentEntity || !p_veh->m_pParentEntity->client || !p_veh->m_pVehicleInfo)
+	{
+		return false;
+	}
+
 	auto parent = p_veh->m_pParentEntity;
 	//static float fMod = 1000.0f / 60.0f;
 	vec3_t vVehAngles;
@@ -1577,6 +1632,7 @@ static bool Update(Vehicle_t* p_veh, const usercmd_t* pUmcd)
 			parent_ps->stats[STAT_ARMOR] = p_veh->m_pVehicleInfo->shields;
 		}
 		p_veh->m_iShields = parent_ps->stats[STAT_ARMOR];
+		p_veh->lastShieldInc = pUmcd->serverTime; // was never set: shields regained +1 every frame
 	}
 
 #ifdef _JK2MP //sometimes this gets out of whack, probably init'ing
@@ -1857,6 +1913,12 @@ static bool Update(Vehicle_t* p_veh, const usercmd_t* pUmcd)
 		//so we don't hold it down and toggle it back and forth
 		p_veh->linkWeaponToggleHeld = qfalse;
 	}
+
+	// the turrets of the ship (YT-1300, Y-wing): they find their own enemies while it has a pilot
+	for (i = 0; i < MAX_VEHICLE_TURRETS; i++)
+	{
+		VEH_TurretThink(p_veh, parent, i);
+	}
 #ifdef _JK2MP
 	//now pass it over the network so cgame knows about it
 	//NOTE: SP can just cheat and check directly
@@ -1908,6 +1970,7 @@ static bool Update(Vehicle_t* p_veh, const usercmd_t* pUmcd)
 		}
 #endif
 	}
+	G_WalkerHeadPitch(p_veh, parent);
 
 	// Process the move commands.
 	prevSpeed = parent_ps->speed;
@@ -2193,7 +2256,8 @@ static bool UpdateRider(Vehicle_t* p_veh, bgEntity_t* pRider, usercmd_t* pUmcd)
 			// NOT IN MULTI PLAYER!
 			//===================================================================
 			const float riderRightDot = G_CanJumpToEnemyVeh(p_veh, pUmcd);
-			if (riderRightDot != 0.0f)
+			Vehicle_t* enemyVeh = riderRightDot != 0.0f && rider->enemy ? G_IsRidingVehicle(rider->enemy) : nullptr;
+			if (enemyVeh && enemyVeh->m_pVehicleInfo) // check the target vehicle BEFORE ejecting from ours
 			{
 				// Eject Player From Current Vehicle
 				//-----------------------------------
@@ -2215,7 +2279,6 @@ static bool UpdateRider(Vehicle_t* p_veh, bgEntity_t* pRider, usercmd_t* pUmcd)
 
 				// Start Boarding On Enemy's Vehicle
 				//-----------------------------------
-				Vehicle_t* enemyVeh = G_IsRidingVehicle(rider->enemy);
 				enemyVeh->m_iBoarding = riderRightDot > 0 ? VEH_MOUNT_THROW_RIGHT : VEH_MOUNT_THROW_LEFT;
 				enemyVeh->m_pVehicleInfo->Board(enemyVeh, rider);
 			}
@@ -2261,6 +2324,9 @@ static bool UpdateRider(Vehicle_t* p_veh, bgEntity_t* pRider, usercmd_t* pUmcd)
 // Attachs all the riders of this vehicle to their appropriate tag (*driver, *pass1, *pass2, whatever...).
 static void AttachRiders(Vehicle_t* p_veh)
 {
+	vec3_t model_angles;
+	G_VehicleModelAngles(p_veh, model_angles);
+
 	// If we have a pilot, attach him to the driver tag.
 	if (p_veh->m_pPilot)
 	{
@@ -2272,7 +2338,7 @@ static void AttachRiders(Vehicle_t* p_veh)
 
 		// Get the driver tag.
 		gi.G2API_GetBoltMatrix(parent->ghoul2, parent->playerModel, parent->crotchBolt, &bolt_matrix,
-			p_veh->m_vOrientation, parent->currentOrigin,
+			model_angles, parent->currentOrigin,
 			cg.time ? cg.time : level.time, nullptr, parent->s.modelScale);
 		gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, pilot->client->ps.origin);
 		G_SetOrigin(pilot, pilot->client->ps.origin);
@@ -2289,11 +2355,42 @@ static void AttachRiders(Vehicle_t* p_veh)
 
 		// Get the driver tag.
 		gi.G2API_GetBoltMatrix(parent->ghoul2, parent->playerModel, parent->crotchBolt, &bolt_matrix,
-			p_veh->m_vOrientation, parent->currentOrigin,
+			model_angles, parent->currentOrigin,
 			cg.time ? cg.time : level.time, nullptr, parent->s.modelScale);
 		gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, pilot->client->ps.origin);
 		G_SetOrigin(pilot, pilot->client->ps.origin);
 		gi.linkentity(pilot);
+	}
+
+	// Keep the droid unit (R2/R5) on its *droidunit tag (as MP; full vehicle orientation, like the pilot)
+	if (p_veh->m_pDroidUnit && p_veh->m_iDroidUnitTag != -1)
+	{
+		gentity_t* const parent = p_veh->m_pParentEntity;
+		gentity_t* const droid = p_veh->m_pDroidUnit;
+		if (parent && parent->ghoul2.size() && droid->inuse && droid->client)
+		{
+			mdxaBone_t boltMatrix;
+			vec3_t fwd;
+
+			gi.G2API_GetBoltMatrix(parent->ghoul2, parent->playerModel, p_veh->m_iDroidUnitTag, &boltMatrix,
+				p_veh->m_vOrientation, parent->currentOrigin,
+				cg.time ? cg.time : level.time, nullptr, parent->s.modelScale);
+			gi.G2API_GiveMeVectorFromMatrix(boltMatrix, ORIGIN, droid->client->ps.origin);
+			gi.G2API_GiveMeVectorFromMatrix(boltMatrix, NEGATIVE_Y, fwd);
+			vectoangles(fwd, droid->client->ps.viewangles);
+
+			G_SetOrigin(droid, droid->client->ps.origin);
+			G_SetAngles(droid, droid->client->ps.viewangles);
+			SetClientViewAngle(droid, droid->client->ps.viewangles);
+			gi.linkentity(droid);
+
+			if (droid->NPC)
+			{
+				NPC_SetAnim(droid, SETANIM_BOTH, BOTH_STAND2, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+				droid->client->ps.legsAnimTimer = 500;
+				droid->client->ps.torsoAnimTimer = 500;
+			}
+		}
 	}
 }
 

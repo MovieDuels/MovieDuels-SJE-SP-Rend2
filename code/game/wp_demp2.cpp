@@ -191,6 +191,12 @@ void DEMP2_AltRadiusDamage(gentity_t* ent)
 		// shock is still happening so continue letting it expand
 		ent->nextthink = level.time + 50;
 	}
+	else
+	{
+		// shock is done - free the entity, otherwise every charged shot stays in use forever
+		// and a long fight ends with "G_Spawn: no free entities"
+		G_FreeEntity(ent);
+	}
 }
 
 //---------------------------------------------------------

@@ -142,7 +142,10 @@ static const save_field_t savefields_gClient[] =
 	{nullptr, 0, F_IGNORE}
 };
 
-static std::list<sstring_t> strList;
+// std::string, not sstring_t: an sstring_t holds at most MAX_QPATH-1 chars, but GetStringNum() writes the
+// full strlen()+1 as chunk length. Any entity string longer than 63 chars (e.g. an NPC fullName) was saved
+// truncated and the save could never be loaded again ("SG: Not enough data").
+static std::list<std::string> strList;
 
 /////////// char * /////////////
 //
@@ -166,19 +169,19 @@ static char* GetStringPtr(const int iStrlen, char* psOriginal/*may be NULL*/)
 {
 	if (iStrlen != -1)
 	{
-		char sString[768]{}; // arb, inc if nec.
-
-		sString[0] = 0;
-
-		assert(iStrlen + 1 <= static_cast<int>(sizeof sString));
+		// sized to the saved length - a fixed buffer overflows for long strings
+		std::vector<char> buffer(iStrlen > 0 ? iStrlen : 1, '\0');
 
 		ojk::SavedGameHelper saved_game(
 			gi.saved_game);
 
 		saved_game.read_chunk(
 			INT_ID('S', 'T', 'R', 'G'),
-			sString,
+			buffer.data(),
 			iStrlen);
+
+		buffer.back() = '\0';
+		const char* sString = buffer.data();
 
 		// TAG_G_ALLOC is always blown away, we can never recycle
 		if (psOriginal && gi.bIsFromZone(psOriginal, TAG_G_ALLOC))
@@ -956,6 +959,59 @@ static void WriteGEntities(const qboolean qb_autosave)
 	}
 }
 
+// Only saber[].name is restored as a string (savefields_gClient). The other char*
+// fields were written as 32-bit placeholders, so after loading they hold truncated,
+// invalid pointers. G_ReloadSaberData() rebuilds them - but only for sabers that have
+// a name. Clear them first, otherwise e.g. G_FreeEntity() later calls
+// gi.bIsFromZone()/gi.Free() on a garbage saber model pointer and crashes (seen when
+// a dead NPC's body is removed after loading a save), or G_ChangePlayerModel() reads
+// the garbage holster model while a non-"player" character (e.g. boba_fett) is loaded.
+static void ClearSaberStringPointers(gclient_t* client)
+{
+	for (saberInfo_t& saber : client->ps.saber)
+	{
+		saber.fullName = nullptr;
+		saber.model = nullptr;
+		saber.skin = nullptr;
+		saber.brokenSaber1 = nullptr;
+		saber.brokenSaber2 = nullptr;
+	}
+}
+
+// Grapple hooks and stun projectiles are not safe to restore: their "parent" (the
+// shooter) is not saved, and gclient_t::hook/stun were written as 32-bit placeholders.
+// After a load the projectile has parent == NULL and G_MissileImpact_MD(),
+// Weapon_HookThink() or Weapon_HookFree() crash dereferencing it. Remove them and
+// reset the shooter state, as if the hook/stun had just been released.
+static void ClearGrappleAndStunAfterLoad()
+{
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		gentity_t* ent = &g_entities[i];
+
+		if (!ent->inuse)
+		{
+			continue;
+		}
+
+		if (ent->client)
+		{
+			ent->client->hook = nullptr;
+			ent->client->stun = nullptr;
+			ent->client->hookhasbeenfired = qfalse;
+			ent->client->stunhasbeenfired = qfalse;
+			ent->client->fireHeld = qfalse;
+			ent->client->stunHeld = qfalse;
+			ent->client->ps.pm_flags &= ~PMF_GRAPPLE_PULL;
+		}
+		else if (ent->classname
+			&& (!Q_stricmp(ent->classname, "hook") || !Q_stricmp(ent->classname, "stun")))
+		{
+			G_FreeEntity(ent);
+		}
+	}
+}
+
 static void ReadGEntities(const qboolean qbAutosave)
 {
 	int iCount = 0;
@@ -1055,6 +1111,8 @@ static void ReadGEntities(const qboolean qbAutosave)
 			*pEnt->client = *tempGClient;
 			delete tempGClient;
 
+			ClearSaberStringPointers(pEnt->client);
+
 			if (pEnt->s.number)
 			{
 				G_ReloadSaberData(pEnt);
@@ -1088,7 +1146,9 @@ static void ReadGEntities(const qboolean qbAutosave)
 		{
 			Vehicle_t* tempVehicle = new Vehicle_t;
 
-			BG_VehicleGetIndex(pEnt->NPC_type);
+			// (re)register the vehicle type by name - the index may differ from the one
+			// that was saved, because g_vehicleInfo is rebuilt in spawn order after a load
+			const int vehicleIndex = BG_VehicleGetIndex(pEnt->NPC_type);
 
 			EvaluateFields(savefields_gVHIC, tempVehicle,
 				reinterpret_cast<byte*>(pEntOriginal->m_pVehicle),
@@ -1106,6 +1166,15 @@ static void ReadGEntities(const qboolean qbAutosave)
 
 			*pEnt->m_pVehicle = *tempVehicle;
 			delete tempVehicle;
+
+			// The save only stores the g_vehicleInfo index. If another vehicle type was
+			// registered before it (e.g. a swoop that no longer exists), that index now
+			// points to an empty entry whose function pointers are NULL, and
+			// ClientThink_real crashes calling m_pVehicleInfo->Inhabited(). Re-hook by name.
+			if (vehicleIndex != VEHICLE_NONE)
+			{
+				pEnt->m_pVehicle->m_pVehicleInfo = &g_vehicleInfo[vehicleIndex];
+			}
 		}
 
 		// Ghoul2 block
@@ -1167,6 +1236,8 @@ static void ReadGEntities(const qboolean qbAutosave)
 	{
 		ReadInUseBits();
 	}
+
+	ClearGrappleAndStunAfterLoad();
 }
 
 extern void CG_WriteTheEvilCGHackStuff();
@@ -1241,6 +1312,9 @@ void ReadLevel(const qboolean qbAutosave, const qboolean qb_load_transition)
 			level.clients[0] = *GClient;   // struct copy
 			delete GClient;
 
+			// the player is not a "-2" client, so ReadGEntities() does not clear these
+			ClearSaberStringPointers(&level.clients[0]);
+
 			ReadLevelLocals();
 		}
 
@@ -1253,6 +1327,10 @@ void ReadLevel(const qboolean qbAutosave, const qboolean qb_load_transition)
 	Quake3Game()->VariableLoad();
 	G_LoadSave_ReadMiscData();
 	CG_ReadTheEvilCGHackStuff();
+
+	// the animation style may differ from when the save was made (g_main.cpp)
+	extern void G_RefreshAnimFileSetsAfterLoad();
+	G_RefreshAnimFileSetsAfterLoad();
 
 	static int iDONE = 1234;
 

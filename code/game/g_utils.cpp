@@ -1107,8 +1107,11 @@ gentity_t* G_Spawn(void)
 			return e;
 		}
 
-		// IMPORTANT FIX (same as MP):
-		if (i != globals.num_entities)
+		// Only take a recently freed slot (second pass) when the list cannot grow any more,
+		// as in OpenJK (MP compares with MAX_GENTITIES, its end of the list). After the loop
+		// i is always globals.num_entities, so comparing with that forced the second pass
+		// every time and a slot freed in this frame was handed out again at once.
+		if (i != ENTITYNUM_MAX_NORMAL)
 			break;
 	}
 

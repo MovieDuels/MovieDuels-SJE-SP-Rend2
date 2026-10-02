@@ -249,6 +249,7 @@ static searchpath_t* fs_searchpaths;
 static int			fs_readCount;			// total bytes read
 static int			fs_loadCount;			// total files read
 static int			fs_packFiles = 0;		// total number of files in packs
+static int			fs_generation = 0;		// bumped every time the search paths are rebuilt (FS_Startup)
 
 typedef union qfile_gus {
 	FILE* o;
@@ -556,6 +557,13 @@ void FS_CopyFile(char* fromOSPath, char* toOSPath, const qboolean qbSilent) {
 	// we are using direct malloc instead of Z_Malloc here, so it
 	// probably won't work on a mac... Its only for developers anyway...
 	const auto buf = static_cast<unsigned char*>(malloc(len));
+	if (buf == nullptr)
+	{
+		fclose(f);
+		if (qbSilent)
+			return;
+		Com_Error(ERR_FATAL, "FS_CopyFile: out of memory (%d bytes)\n", len);
+	}
 	if (fread(buf, 1, len, f) != static_cast<size_t>(len))
 	{
 		fclose(f);
@@ -2090,6 +2098,19 @@ void FS_FreeFileList(char** file_list) {
 
 /*
 ================
+FS_Generation
+
+Changes whenever the search paths are rebuilt (new game dir / pk3 set), so callers can
+tell whether data they built from the file system is still current.
+================
+*/
+int FS_Generation()
+{
+	return fs_generation;
+}
+
+/*
+================
 FS_GetFileList
 ================
 */
@@ -2748,6 +2769,7 @@ static void FS_Startup(const char* gameName)
 	Com_Printf("----- FS_Startup -----\n");
 
 	fs_packFiles = 0;
+	fs_generation++;
 
 	fs_debug = Cvar_Get("fs_debug", "0", 0);
 	fs_copyfiles = Cvar_Get("fs_copyfiles", "0", CVAR_INIT);
@@ -2875,11 +2897,11 @@ void FS_InitFilesystem() {
 	// try to start up normally
 	FS_Startup(BASEGAME);
 
-	// if we can't find MD-SP-default.cfg, assume that the paths are
+	// if we can't find MovieDuels-SP-default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
-	if (FS_ReadFile("MD-SP-default.cfg", nullptr) <= 0) {
-		Com_Error(ERR_FATAL, "Couldn't load MD-SP-default.cfg");
+	if (FS_ReadFile("MovieDuels-SP-default.cfg", nullptr) <= 0) {
+		Com_Error(ERR_FATAL, "Couldn't load MovieDuels-SP-default.cfg");
 		// bk001208 - SafeMode see below, FIXME?
 	}
 
@@ -2901,10 +2923,10 @@ void FS_Restart() {
 	// try to start up normally
 	FS_Startup(BASEGAME);
 
-	// if we can't find MD-SP-default.cfg, assume that the paths are
+	// if we can't find MovieDuels-SP-default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
-	if (FS_ReadFile("MD-SP-default.cfg", nullptr) <= 0) {
+	if (FS_ReadFile("MovieDuels-SP-default.cfg", nullptr) <= 0) {
 		// this might happen when connecting to a pure server not using BASEGAME/pak0.pk3
 		// (for instance a TA demo server)
 		if (lastValidBase[0]) {
@@ -2915,7 +2937,7 @@ void FS_Restart() {
 			FS_Restart();
 			Com_Error(ERR_DROP, "Invalid game folder");
 		}
-		Com_Error(ERR_FATAL, "Couldn't load MD-SP-default.cfg");
+		Com_Error(ERR_FATAL, "Couldn't load MovieDuels-SP-default.cfg");
 	}
 
 	if (Q_stricmp(fs_gamedirvar->string, lastValidGame)) {

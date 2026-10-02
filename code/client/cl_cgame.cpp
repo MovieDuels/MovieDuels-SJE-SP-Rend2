@@ -256,13 +256,18 @@ qboolean CL_GetDefaultState(const int index, entityState_t* state)
 
 extern float cl_mPitchOverride;
 extern float cl_mYawOverride;
+extern float cl_keyPitchScale;
+extern float cl_keyYawScale;
 
-void CL_SetUserCmdValue(const int userCmdValue, const float sensitivityScale, const float mPitchOverride, const float mYawOverride)
+void CL_SetUserCmdValue(const int userCmdValue, const float sensitivityScale, const float mPitchOverride, const float mYawOverride,
+	const float keyPitchScale, const float keyYawScale)
 {
 	cl.cgameUserCmdValue = userCmdValue;
 	cl.cgameSensitivity = sensitivityScale;
 	cl_mPitchOverride = mPitchOverride;
 	cl_mYawOverride = mYawOverride;
+	cl_keyPitchScale = keyPitchScale;
+	cl_keyYawScale = keyYawScale;
 }
 
 extern vec3_t cl_overriddenAngles;
@@ -1122,7 +1127,15 @@ intptr_t CL_CgameSystemCalls(intptr_t* args)
 	case CG_GETUSERCMD:
 		return CL_GetUserCmd(args[1], static_cast<usercmd_s*>(VMA(2)));
 	case CG_SETUSERCMDVALUE:
-		CL_SetUserCmdValue(args[1], VMF(2), VMF(3), VMF(4));
+		//(the key look scales are newer than the call: a cgame that does not send them has not sent the tag either)
+		if (static_cast<int>(args[7]) == CG_USERCMDVALUE_KEYLOOK)
+		{
+			CL_SetUserCmdValue(args[1], VMF(2), VMF(3), VMF(4), VMF(5), VMF(6));
+		}
+		else
+		{
+			CL_SetUserCmdValue(args[1], VMF(2), VMF(3), VMF(4), 0.0f, 0.0f);
+		}
 		return 0;
 	case CG_SETUSERCMDANGLES:
 		CL_SetUserCmdAngles(VMF(1), VMF(2), VMF(3));

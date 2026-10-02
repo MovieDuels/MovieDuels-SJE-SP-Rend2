@@ -1665,21 +1665,8 @@ void NPC_Use(gentity_t* self, gentity_t* other, gentity_t* activator)
 			char* u = strchr(buf, '_');
 			if (u) bet = atoi(u + 1);
 
-			// start Pazaak with this NPC as opponent
-			if (!G_Pazaak_Start(activator, self))
-			{
-				gi.SendServerCommand(activator - g_entities, "print \"Pazaak: failed to start game\n\"");
-			}
-			else
-			{
-				if (bet > 0)
-				{
-					if (!G_Pazaak_PlaceBet(activator, bet))
-					{
-						gi.SendServerCommand(activator - g_entities, "print \"Pazaak: insufficient funds\n\"");
-					}
-				}
-			}
+			// play Pazaak against this NPC (the match runs in the UI, see g_pazaak.cpp)
+			G_Pazaak_StartVsNPC(activator, self, bet);
 
 			RestoreNPCGlobals();
 			return;

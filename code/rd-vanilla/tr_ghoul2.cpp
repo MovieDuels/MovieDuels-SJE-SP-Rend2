@@ -42,6 +42,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #ifdef _G2_GORE
 #include "../ghoul2/ghoul2_gore.h"
 #endif
+#include "../qcommon/md_animsets.h"
 
 #define	LL(x) x=LittleLong(x)
 #define	LS(x) x=LittleShort(x)
@@ -2343,9 +2344,22 @@ void G2_GetBoltMatrixLow(CGhoul2Info& ghoul2, const int boltNum, const vec3_t sc
 	CBoneCache& boneCache = *ghoul2.mBoneCache;
 	assert(boneCache.mod);
 	boltInfo_v& boltList = ghoul2.mBltlist;
-	assert(boltNum >= 0 && boltNum < static_cast<int>(boltList.size()));
+	// a model bolted to this one can still point at a bolt index that this model no
+	// longer has (seen right after a weapon switch + vid_restart: boltNum 9, size 1);
+	// the assert does nothing in release builds, so check it like rd-rend2 does
+	if (boltNum < 0 || boltNum >= static_cast<int>(boltList.size()))
+	{
+		retMatrix = identityMatrix;
+		return;
+	}
 	if (boltList[boltNum].boneNumber >= 0)
 	{
+		// the bone must exist in the bone cache this model uses right now
+		if (boltList[boltNum].boneNumber >= boneCache.mNumBones)
+		{
+			retMatrix = identityMatrix;
+			return;
+		}
 		const mdxaSkelOffsets_t* offsets = reinterpret_cast<mdxaSkelOffsets_t*>((byte*)boneCache.header + sizeof(mdxaHeader_t));
 		const mdxaSkel_t* skel = reinterpret_cast<mdxaSkel_t*>((byte*)boneCache.header + sizeof(mdxaHeader_t) + offsets->offsets[boltList[boltNum]
 			.boneNumber]);
@@ -2371,6 +2385,13 @@ void G2_GetBoltMatrixLow(CGhoul2Info& ghoul2, const int boltNum, const vec3_t sc
 		if (!surface && surfInfo && surfInfo->surface < 10000)
 		{
 			surface = static_cast<mdxmSurface_t*>(G2_FindSurface(boneCache.mod, surfInfo->surface, 0));
+		}
+		// a model surface bolt needs a surface this model really has
+		// (generated surfaces find their own original surface)
+		if (!surface && !(surfInfo && surfInfo->offFlags == G2SURFACEFLAG_GENERATED))
+		{
+			retMatrix = identityMatrix;
+			return;
 		}
 		G2_ProcessSurfaceBolt2(boneCache, surface, boltNum, boltList, surfInfo, boneCache.mod, retMatrix);
 	}
@@ -3526,7 +3547,15 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	}
 
 	// first up, go load in the animation file we need that has the skeletal animation info for this model
-	mdxm->animIndex = RE_RegisterModel(va("%s.gla", mdxm->animName));
+	// (MovieDuels: with g_ActivateAnimationStyle 1 the humanoid sets use the master _humanoid set, md_animsets.h)
+	const char* anim_set = MD_AnimSetGLA(mdxm->animName, ri.Cvar_VariableIntegerValue(MD_ANIMSTYLE_ACTIVE_CVAR) == 1);
+	mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+	if (anim_set != mdxm->animName && mdxm->animIndex
+		&& !MD_SkeletonFitsMaster(mdxm->numBones, tr.models[mdxm->animIndex]->mdxa->numBones, mdxm->animName))
+	{
+		anim_set = mdxm->animName; // the master skeleton does not fit this mesh: keep its own set
+		mdxm->animIndex = RE_RegisterModel(va("%s.gla", anim_set));
+	}
 
 	char  animGLAName[MAX_QPATH];
 	char* strippedName;
@@ -3540,7 +3569,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 			mapname = strrchr(mapname, '/') + 1;
 		}
 		//stripped name of GLA for this model
-		Q_strncpyz(animGLAName, mdxm->animName, sizeof(animGLAName));
+		Q_strncpyz(animGLAName, anim_set, sizeof(animGLAName));
 		slash = strrchr(animGLAName, '/');
 		if (slash)
 		{
@@ -3624,7 +3653,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 
 		Q_strlwr(surfInfo->name);	//just in case
 
-		if (!strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off"))
+		if (strlen(surfInfo->name) >= 4 && !strcmp(&surfInfo->name[strlen(surfInfo->name) - 4], "_off"))
 		{
 			surfInfo->name[strlen(surfInfo->name) - 4] = 0;	//remove "_off" from name
 		}

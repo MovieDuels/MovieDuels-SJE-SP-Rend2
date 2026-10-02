@@ -30,6 +30,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "say.h"
 #include "Q3_Interface.h"
 #include "g_vehicles.h"
+#include "g_pazaak.h"
 #include "../cgame/cg_local.h"
 #include "bstate.h"
 #include "b_public.h"
@@ -2228,6 +2229,15 @@ void NPC_Think(gentity_t* ent) //, int msec )
 	}
 	if (debugNPCFreeze->integer || NPC->svFlags & SVF_ICARUS_FREEZE || ent && ent->client && ent->client->ps.
 		stasisJediTime > level.time)
+	{
+		NPC_UpdateAngles(qtrue, qtrue);
+		ClientThink(ent->s.number, &ucmd);
+		VectorCopy(ent->s.origin, ent->s.origin2);
+		return;
+	}
+
+	// sits at a Pazaak match with the player (g_pazaak.cpp): his AI and scripts rest, he keeps facing the player
+	if (G_Pazaak_IsNPCPlaying(ent))
 	{
 		NPC_UpdateAngles(qtrue, qtrue);
 		ClientThink(ent->s.number, &ucmd);

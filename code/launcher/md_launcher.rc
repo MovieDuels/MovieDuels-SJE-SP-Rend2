@@ -1,0 +1,13 @@
+#include "resource.h"
+
+// the SP icon in Mace Windu purple, so the launcher stands out (MD-work/launcher/make_icon.ps1)
+IDI_LAUNCHER        ICON    "art/MovieDuels-Launcher.ico"
+
+IDR_BG_IDLE         RCDATA  "art/bg_idle.jpg"
+IDR_BG_SP           RCDATA  "art/bg_sp.jpg"
+IDR_BG_MP           RCDATA  "art/bg_mp.jpg"
+
+IDR_SND_CLICK       RCDATA  "sound/button1.wav"
+IDR_SND_HOVER       RCDATA  "sound/menuroam.wav"
+IDR_SND_BACK        RCDATA  "sound/esc.wav"
+IDR_MUSIC           RCDATA  "sound/CTCMusic.mp3"

@@ -199,8 +199,8 @@ extern cvar_t* g_SaberPerfectBlockingTimerEasy;
 extern cvar_t* g_SaberPerfectBlockingTimerNormal;
 extern cvar_t* g_SaberPerfectBlockingTimerHard;
 extern void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps);
-extern void WP_SaberFatigueRegenerate(int override_amt);
-extern void WP_BlasterFatigueRegenerate(int override_amt);
+extern void WP_SaberFatigueRegenerate(playerState_t* ps, int override_amt);
+extern void WP_BlasterFatigueRegenerate(playerState_t* ps, int override_amt);
 
 extern bool in_camera;
 extern qboolean player_locked;
@@ -894,7 +894,9 @@ static void P_WorldEffects(gentity_t* ent)
 			if (ent->client->inSpaceSuffocation < level.time)
 			{
 				//suffocate!
-				if (ent->health > 0 && ent->takedamage)
+				//(not a vehicle: it is in space for its gravity only. In MP this runs for players alone; here it runs for
+				//every NPC, and a ship lost 20 to 40 points every second or two it spent in a trigger_space)
+				if (ent->health > 0 && ent->takedamage && ent->client->NPC_class != CLASS_VEHICLE)
 				{
 					//if they're still alive..
 					G_Damage(ent, spacetrigger, spacetrigger, nullptr, ent->client->ps.origin, Q_irand(20, 40),
@@ -1707,13 +1709,12 @@ static void G_TouchTriggersLerped(gentity_t* ent)
 	VectorSubtract(ent->currentOrigin, ent->lastOrigin, diff);
 	dist = VectorNormalize(diff);
 
-#ifdef _DEBUG
-	assert(dist < 1024 && "insane distance in G_TouchTriggersLerped!");
-#endif // _DEBUG
-
+	// Hard safety clamp: don't step along huge moves (teleports, hitches, hyperspace at 10000 u/s),
+	// but still test the end position, so a fast vehicle can't skip a trigger (e.g. trigger_hyperspace exit)
+	// (a Debug assert here stopped the game on every hyperspace jump)
 	if (dist > 1024)
 	{
-		return;
+		dist = 0.0f;
 	}
 
 	memset(touched, qfalse, sizeof(touched));
@@ -2112,11 +2113,11 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 			{
 				if (client->ps.BlasterAttackChainCount > BLASTERMISHAPLEVEL_FULL)
 				{
-					WP_BlasterFatigueRegenerate(4);
+					WP_BlasterFatigueRegenerate(&client->ps, 4);
 				}
 				else
 				{
-					WP_BlasterFatigueRegenerate(1);
+					WP_BlasterFatigueRegenerate(&client->ps, 1);
 				}
 			}
 		}
@@ -2156,11 +2157,11 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 					{
 						if (client->ps.saberFatigueChainCount > MISHAPLEVEL_HUDFLASH)
 						{
-							WP_SaberFatigueRegenerate(2);
+							WP_SaberFatigueRegenerate(&client->ps, 2);
 						}
 						else
 						{
-							WP_SaberFatigueRegenerate(1);
+							WP_SaberFatigueRegenerate(&client->ps, 1);
 						}
 					}
 				}
@@ -2188,7 +2189,7 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 					// Regenerate 1 point every 2 frames instead of every frame.
 					if ((level.time & 1) == 0)  // even frame → regen
 					{
-						WP_SaberFatigueRegenerate(1);
+						WP_SaberFatigueRegenerate(&client->ps, 1);
 					}
 				}
 			}
@@ -2761,6 +2762,8 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// 3. NON-ABSORB: KICK / SLAP / SWEEP / HILT HIT
 	// ============================================================
 	// To keep this readable, we collapse repeated patterns:
+	// (a knocked down NPC stays on the ground for NPC_KNOCKDOWN_HOLD_EXTRA_TIME before it gets up:
+	//  the knockdown anim alone is over almost as soon as they hit the floor)
 #define HANDLE_RESIST_OR_KNOCKDOWN(KNOCK_ANIM_MIN, KNOCK_ANIM_MAX) \
         if (kickResistant) { \
             G_MawStagger(hitEnt); \
@@ -2768,6 +2771,10 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
             if (kickResistant) jedi_play_blocked_push_sound(hitEnt); \
         } else { \
             NPC_SetAnim(hitEnt, SETANIM_BOTH, Q_irand((KNOCK_ANIM_MIN),(KNOCK_ANIM_MAX)), SETANIM_AFLAG_PACE); \
+            if (isNPCSide) { \
+                hitEnt->client->ps.legsAnimTimer += NPC_KNOCKDOWN_HOLD_EXTRA_TIME; \
+                hitEnt->client->ps.torsoAnimTimer += NPC_KNOCKDOWN_HOLD_EXTRA_TIME; \
+            } \
             if (hitEnt->client->ps.SaberActive()) WP_DeactivateLightSaber(hitEnt, qtrue); \
         }
 
@@ -2782,7 +2789,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// FRONT KICK / TUSKEN
 	// -------------------------
 	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_F ||
-		pusher->client->ps.legsAnim == BOTH_KICK_F_MD ||
+		(pusher->client->ps.legsAnim == BOTH_KICK_F_MD || pusher->client->ps.legsAnim == BOTH_KICK_F_MD_GALEN) ||
 		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK1 ||
 		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK2 ||
 		pusher->client->ps.torsoAnim == BOTH_TUSKENATTACK3)
@@ -2818,7 +2825,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// -------------------------
 	// SWEEP KICK
 	// -------------------------
-	if (pusher->client->ps.legsAnim == BOTH_SWEEP_KICK)
+	if ((pusher->client->ps.legsAnim == BOTH_SWEEP_KICK || pusher->client->ps.legsAnim == BOTH_SWEEP_KICK_GALEN))
 	{
 		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_KNOCKDOWN3, BOTH_KNOCKDOWN3);
 		APPLY_DRAIN();
@@ -2835,7 +2842,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// RIGHT SLAP / RIGHT KICK
 	// -------------------------
 	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_R ||
-		pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R ||
+		(pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R || pusher->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
 		pusher->client->ps.torsoAnim == BOTH_SLAP_R)
 	{
 		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_SLAPDOWNRIGHT, BOTH_SLAPDOWNRIGHT);
@@ -2853,7 +2860,7 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
 	// LEFT SLAP / LEFT KICK
 	// -------------------------
 	if (pusher->client->ps.legsAnim == BOTH_A7_KICK_L ||
-		pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L ||
+		(pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L || pusher->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN) ||
 		pusher->client->ps.torsoAnim == BOTH_SLAP_L)
 	{
 		HANDLE_RESIST_OR_KNOCKDOWN(BOTH_SLAPDOWNLEFT, BOTH_SLAPDOWNLEFT);
@@ -3025,8 +3032,8 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 					if (ent->client->ps.torsoAnim == BOTH_A7_HILT ||
 						ent->client->ps.torsoAnim == BOTH_SLAP_L ||
 						ent->client->ps.torsoAnim == BOTH_SLAP_R ||
-						ent->client->ps.torsoAnim == BOTH_A7_SLAP_R ||
-						ent->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+						(ent->client->ps.torsoAnim == BOTH_A7_SLAP_R || ent->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
+						(ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 					{
 						//hit in head
 						if (hitEnt->health > 0)
@@ -3184,8 +3191,8 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 						}
 						else if (ent->client->ps.torsoAnim == BOTH_SLAP_L ||
 							ent->client->ps.torsoAnim == BOTH_SLAP_R ||
-							ent->client->ps.torsoAnim == BOTH_A7_SLAP_R ||
-							ent->client->ps.torsoAnim == BOTH_A7_SLAP_L)
+							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_R || ent->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
+							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
 						{
 							G_Sound(ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
 							G_PlayEffect(G_EffectIndex("melee/kick_impact.efx"), trace.endpos, trace.plane.normal);
@@ -3639,8 +3646,14 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 
 	if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) && g_saberLockCinematicCamera->integer)
 	{
+		//who the saber lock camera is on (ENTITYNUM_NONE: nobody). Its overrides are only taken back from him: this
+		//used to clear them every frame for the player and for whatever he controls - a ship he flies lost its camera
+		//range and FOV that way, and the camera sat on top of it.
+		static int saber_lock_camera_ent = ENTITYNUM_NONE;
+
 		if (ent->client->ps.communicatingflags & (1 << CF_SABERLOCKING))
 		{
+			saber_lock_camera_ent = ent->s.number;
 			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_CDP | CG_OVERRIDE_3RD_PERSON_HOF;
 
 			cg.overrides.thirdPersonRange = 82.5f;
@@ -3648,8 +3661,9 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			cg.overrides.thirdPersonHorzOffset = -25.5f;
 			cg.overrides.fov = 31;
 		}
-		else
+		else if (saber_lock_camera_ent == ent->s.number)
 		{
+			saber_lock_camera_ent = ENTITYNUM_NONE;
 			cg.overrides.active &= ~(CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_CDP | CG_OVERRIDE_3RD_PERSON_HOF);
 			cg.overrides.thirdPersonRange = cg.overrides.thirdPersonCameraDamp = cg.overrides.thirdPersonHorzOffset = 0;
 		}
@@ -3767,13 +3781,13 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 	}
 
-	if (ent->client->ps.legsAnim == BOTH_JUMPATTACK6
+	if ((ent->client->ps.legsAnim == BOTH_JUMPATTACK6 || ent->client->ps.legsAnim == BOTH_JUMPATTACK6_GRIEV)
 		&& ent->client->ps.legsAnimTimer > 0)
 	{
 		ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 		//FIXME: don't slide off people/obstacles?
 		if (ent->client->ps.legsAnimTimer >= 100 //not at end
-			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, BOTH_JUMPATTACK6) - ent->client->ps.legsAnimTimer >=
+			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.legsAnim)) - ent->client->ps.legsAnimTimer >=
 			250) //not in beginning
 		{
 			//middle of anim
@@ -3782,10 +3796,10 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 
 		if (ent->client->ps.legsAnimTimer >= 900 //not at end
-			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, BOTH_JUMPATTACK6) - ent->client->ps.
+			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.legsAnim)) - ent->client->ps.
 			legsAnimTimer >= 950 //not in beginning
 			|| ent->client->ps.legsAnimTimer >= 1600
-			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, BOTH_JUMPATTACK6) - ent->client->ps.
+			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.legsAnim)) - ent->client->ps.
 			legsAnimTimer >= 400) //not in beginning
 		{
 			//one of the two jumps
@@ -3819,10 +3833,10 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 
 		//dynamically reduce bounding box to let character sail over heads of enemies
 		if (ent->client->ps.legsAnimTimer >= 1450
-			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, BOTH_JUMPATTACK6) - ent->client->ps.
+			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.legsAnim)) - ent->client->ps.
 			legsAnimTimer >= 400
 			|| ent->client->ps.legsAnimTimer >= 400
-			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, BOTH_JUMPATTACK6) - ent->client->ps.
+			&& PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(ent->client->ps.legsAnim)) - ent->client->ps.
 			legsAnimTimer >= 1100)
 		{
 			//in a part of the anim that we're pretty much sideways in, raise up the mins
@@ -4736,6 +4750,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_FLYING_KICK:
+			case BOTH_FLYING_KICK_GALEN:
 			case BOTH_A7_KICK_F_AIR:
 				kick_push = Q_flrand(150.0f, 250.0f);
 				kick_sound_on_walls = qtrue;
@@ -4783,6 +4798,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_KICK_F_MD:
+			case BOTH_KICK_F_MD_GALEN:
 				kick_sound_on_walls = qtrue;
 				//FIXME: push forward?
 				if (elapsed_time >= 250 && remaining_time >= 250)
@@ -4853,6 +4869,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_SWEEP_KICK:
+			case BOTH_SWEEP_KICK_GALEN:
 				kick_sound_on_walls = qtrue;
 				if (elapsed_time >= 250 && remaining_time >= 250)
 				{
@@ -4973,6 +4990,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				//	break;
 			case BOTH_SLAP_R:
 			case BOTH_A7_SLAP_R:
+			case BOTH_A7_SLAP_R_GALEN:
 				kick_sound_on_walls = qtrue;
 
 				if (level.framenum & 1)
@@ -5152,10 +5170,11 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 				}
 				break;
 			case BOTH_A7_SLAP_L:
+			case BOTH_A7_SLAP_L_GALEN:
 				if (level.framenum & 1)
 				{
 					//back
-					int hand_bolt = ent->client->ps.torsoAnim == BOTH_A7_SLAP_L ? ent->handRBolt : ent->handLBolt;
+					int hand_bolt = (ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN) ? ent->handRBolt : ent->handLBolt;
 					//mirrored anims
 					do_kick = qtrue;
 					kick_dist = 80;
@@ -5713,7 +5732,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		ucmd->upmove = 0;
 		ucmd->forwardmove = 0;
 	}
-	else if (ent->client->ps.legsAnim == BOTH_PULL_IMPALE_STAB || ent->client->ps.legsAnim == BOTH_GRAPPLE_FIRE)
+	else if (ent->client->ps.legsAnim == BOTH_PULL_IMPALE_STAB || (ent->client->ps.legsAnim == BOTH_GRAPPLE_FIRE || ent->client->ps.legsAnim == BOTH_GRAPPLE_FIRE_GALEN))
 	{
 		//can't move during a pull stab
 		ucmd->rightmove = 0;
@@ -5997,10 +6016,10 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		ent->client->ps.legsAnim == BOTH_HOP_L ||
 		ent->client->ps.legsAnim == BOTH_HOP_B ||
 		ent->client->ps.legsAnim == BOTH_HOP_F ||
-		ent->client->ps.legsAnim == BOTH_DASH_R ||
-		ent->client->ps.legsAnim == BOTH_DASH_L ||
-		ent->client->ps.legsAnim == BOTH_DASH_B ||
-		ent->client->ps.legsAnim == BOTH_DASH_F) && ent->client->ps.legsAnimTimer > 0)
+		(ent->client->ps.legsAnim == BOTH_DASH_R || ent->client->ps.legsAnim == BOTH_DASH_R_GALEN) ||
+		(ent->client->ps.legsAnim == BOTH_DASH_L || ent->client->ps.legsAnim == BOTH_DASH_L_GALEN) ||
+		(ent->client->ps.legsAnim == BOTH_DASH_B || ent->client->ps.legsAnim == BOTH_DASH_B_GALEN) ||
+		(ent->client->ps.legsAnim == BOTH_DASH_F || ent->client->ps.legsAnim == BOTH_DASH_F_GALEN)) && ent->client->ps.legsAnimTimer > 0)
 	{
 		ucmd->upmove = 0;
 	}
@@ -6010,7 +6029,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		//ucmd->forwardmove = ucmd->rightmove = ucmd->upmove = 0;
 	}
 	else if (ent->client->ps.forcePowersActive & 1 << FP_REPULSE && (ent->client->ps.torsoAnim ==
-		BOTH_FORCE_PROTECT_FAST || ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE))
+		BOTH_FORCE_PROTECT_FAST || (ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE || ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE_GALEN)))
 	{
 		ucmd->rightmove = 0;
 		ucmd->upmove = 0;
@@ -6034,7 +6053,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 		overridAngles = PM_LockAngles(ent, ucmd) ? qtrue : overridAngles;
 	}
-	else if (ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE)
+	else if ((ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE || ent->client->ps.torsoAnim == BOTH_FORCE_REPULSE_GALEN))
 	{
 		ucmd->rightmove = 0;
 		ucmd->upmove = 0;
@@ -6440,17 +6459,47 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			switch (ent->client->ps.legsAnim)
 			{
 			case BOTH_STAND1IDLE1:
+			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
+			case BOTH_STAND1IDLE1_JANGO:
+			case BOTH_STAND1IDLE1_BDROID:
+			case BOTH_STAND1IDLE1_CAL:
+			case BOTH_STAND1IDLE1_GRIEV:
+			case BOTH_STAND1IDLE1_PAL:
+			case BOTH_STAND1IDLE1_MAUL:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
+			case BOTH_STAND9IDLE1_MD:
 			case BOTH_STAND_SABER_ON_IDLE:
+			case BOTH_STAND_SABER_ON_IDLE_GRIEV:
+			case BOTH_STAND_SABER_ON_IDLE_MD:
 			case BOTH_STAND_SABER_ON_IDLE_DUELS:
 			case BOTH_STAND_SABER_ON_IDLE_STAFF:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI: //# Random standing idle
+			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
+			case BOTH_STAND2IDLE1_MD:
+			case BOTH_STAND2IDLE1_LUKE:
+			case BOTH_STAND2IDLE1_GON:
+			case BOTH_STAND2IDLE1_MACE:
+			case BOTH_STAND2IDLE1_OBI:
+			case BOTH_STAND2IDLE1_KOTOR:
+			case BOTH_STAND2IDLE1_DF2:
+			case BOTH_STAND2IDLE1_OBI3:
+			case BOTH_STAND2IDLE1_REN:
+			case BOTH_STAND2IDLE1_REY:
+			case BOTH_STAND2IDLE1_CAL:
+			case BOTH_STAND2IDLE1_PAL:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
+			case BOTH_STAND3IDLE1_BDROID:
+			case BOTH_STAND3IDLE1_JANGO:
 			case BOTH_STAND5IDLE1:
 			case BOTH_STANDYODAIDLE_STICK:
+			case BOTH_STANDYODAIDLE_STICK_YODA:
 			case BOTH_MENUIDLE1:
 				ent->client->ps.legsAnimTimer = 0;
 				break;
@@ -6459,17 +6508,47 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			switch (ent->client->ps.torsoAnim)
 			{
 			case BOTH_STAND1IDLE1:
+			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
+			case BOTH_STAND1IDLE1_JANGO:
+			case BOTH_STAND1IDLE1_BDROID:
+			case BOTH_STAND1IDLE1_CAL:
+			case BOTH_STAND1IDLE1_GRIEV:
+			case BOTH_STAND1IDLE1_PAL:
+			case BOTH_STAND1IDLE1_MAUL:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
+			case BOTH_STAND9IDLE1_MD:
 			case BOTH_STAND_SABER_ON_IDLE:
+			case BOTH_STAND_SABER_ON_IDLE_GRIEV:
+			case BOTH_STAND_SABER_ON_IDLE_MD:
 			case BOTH_STAND_SABER_ON_IDLE_DUELS:
 			case BOTH_STAND_SABER_ON_IDLE_STAFF:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
+			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
+			case BOTH_STAND2IDLE1_MD:
+			case BOTH_STAND2IDLE1_LUKE:
+			case BOTH_STAND2IDLE1_GON:
+			case BOTH_STAND2IDLE1_MACE:
+			case BOTH_STAND2IDLE1_OBI:
+			case BOTH_STAND2IDLE1_KOTOR:
+			case BOTH_STAND2IDLE1_DF2:
+			case BOTH_STAND2IDLE1_OBI3:
+			case BOTH_STAND2IDLE1_REN:
+			case BOTH_STAND2IDLE1_REY:
+			case BOTH_STAND2IDLE1_CAL:
+			case BOTH_STAND2IDLE1_PAL:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
+			case BOTH_STAND3IDLE1_BDROID:
+			case BOTH_STAND3IDLE1_JANGO:
 			case BOTH_STAND5IDLE1:
 			case BOTH_STANDYODAIDLE_STICK:
+			case BOTH_STANDYODAIDLE_STICK_YODA:
 			case BOTH_MENUIDLE1:
 				ent->client->ps.torsoAnimTimer = 0;
 				break;
@@ -6490,8 +6569,55 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		switch (ent->client->ps.legsAnim)
 		{
 		case BOTH_STAND1:
+		case BOTH_STAND1_BDROID:
 		case BOTH_STAND6:
-			idle_anim = BOTH_STAND1IDLE1;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isYoda == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_VADER;
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_GALEN;
+				}
+				else if (flags.isJango == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_JANGO;
+				}
+				else if (flags.isBattleDroid == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_BDROID;
+				}
+				else if (flags.isCalKestis == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_CAL;
+				}
+				else if (flags.isGrievous == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_GRIEV;
+				}
+				else if (flags.isPalpatine == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_PAL;
+				}
+				else if (flags.isMaul == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_MAUL;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND1IDLE1;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND1IDLE1;
+			}
 			break;
 		case BOTH_STAND9:
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
@@ -6499,6 +6625,10 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 				if (flags.isAnakin == qtrue)
 				{
 					idle_anim = BOTH_STAND9IDLE1_ANI;
+				}
+				else if (flags.isMovieDuels == qtrue)
+				{
+					idle_anim = BOTH_STAND9IDLE1_MD;
 				}
 				else
 				{
@@ -6513,32 +6643,113 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERTAVION_STANCE:
 		case BOTH_SABERTAVION_STANCE_JKA:
 		case BOTH_SABERTAVION_STANCE_JKA_BEN: //tavion saberstyle
+		case BOTH_SABERTAVION_STANCE_JKA_YODA: //tavion saberstyle
+		case BOTH_SABERTAVION_STANCE_JKA_VADER: //tavion saberstyle
+		case BOTH_SABERTAVION_STANCE_JKA_MAUL:
+		case BOTH_SABERTAVION_STANCE_JKA_MACE:
+		case BOTH_SABERTAVION_STANCE_JKA_DF2:
+		case BOTH_SABERTAVION_STANCE_JKA_OBI3:
+		case BOTH_SABERTAVION_STANCE_JKA_REN:
 		case BOTH_SABERDESANN_STANCE:
 		case BOTH_SABERDESANN_STANCE_JKA:
 		case BOTH_SABERDESANN_STANCE_JKA_ANI:
+		case BOTH_SABERDESANN_STANCE_JKA_DOOKU:
+		case BOTH_SABERDESANN_STANCE_JKA_MACE:
+		case BOTH_SABERDESANN_STANCE_JKA_DF2:
+		case BOTH_SABERDESANN_STANCE_JKA_CAL:
 		case BOTH_SABERFAST_STANCE:
 		case BOTH_SABERFAST_STANCE_JKA:
 		case BOTH_SABERFAST_STANCE_JKA_ANI:
 		case BOTH_SABERFAST_STANCE_JKA_BEN:
+		case BOTH_SABERFAST_STANCE_JKA_VADER:
+		case BOTH_SABERFAST_STANCE_JKA_PAL:
+		case BOTH_SABERFAST_STANCE_JKA_DOOKU:
+		case BOTH_SABERFAST_STANCE_JKA_MAUL:
+		case BOTH_SABERFAST_STANCE_JKA_LUKE:
+		case BOTH_SABERFAST_STANCE_JKA_MACE:
+		case BOTH_SABERFAST_STANCE_JKA_OBI:
+		case BOTH_SABERFAST_STANCE_JKA_KOTOR:
+		case BOTH_SABERFAST_STANCE_JKA_DF2:
+		case BOTH_SABERFAST_STANCE_JKA_OBI3:
+		case BOTH_SABERFAST_STANCE_JKA_REN:
+		case BOTH_SABERFAST_STANCE_JKA_REY:
+		case BOTH_SABERFAST_STANCE_JKA_CAL:
+		case BOTH_SABERFAST_STANCE_JKA_GRIEV:
 		case BOTH_SABERSLOW_STANCE:
 		case BOTH_SABERSLOW_STANCE_JKA:
 		case BOTH_SABERSLOW_STANCE_JKA_ANI:
 		case BOTH_SABERSLOW_STANCE_JKA_BEN:
+		case BOTH_SABERSLOW_STANCE_JKA_VADER:
+		case BOTH_SABERSLOW_STANCE_JKA_GALEN:
+		case BOTH_SABERSLOW_STANCE_JKA_LUKE:
+		case BOTH_SABERSLOW_STANCE_JKA_GON:
+		case BOTH_SABERSLOW_STANCE_JKA_OBI:
+		case BOTH_SABERSLOW_STANCE_JKA_KOTOR:
+		case BOTH_SABERSLOW_STANCE_JKA_DF2:
+		case BOTH_SABERSLOW_STANCE_JKA_OBI3:
+		case BOTH_SABERSLOW_STANCE_JKA_REN:
+		case BOTH_SABERSLOW_STANCE_JKA_REY:
+		case BOTH_SABERSLOW_STANCE_JKA_PAL:
+		case BOTH_SABERSLOW_STANCE_JKA_MAUL:
 		case BOTH_SABERSINGLECROUCH:
 		case BOTH_SABERSINGLECROUCH_ANI:
+		case BOTH_SABERSINGLECROUCH_VADER:
+		case BOTH_SABERSINGLECROUCH_OBI:
+		case BOTH_SABERSINGLECROUCH_DF2:
+		case BOTH_SABERSINGLECROUCH_OBI3:
+		case BOTH_SABERSINGLECROUCH_REN:
+		case BOTH_SABERSINGLECROUCH_REY:
 		case BOTH_STAND_SABER_ON:
-			idle_anim = BOTH_STAND_SABER_ON_IDLE;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGrievous == qtrue)
+				{
+					idle_anim = BOTH_STAND_SABER_ON_IDLE_GRIEV;
+				}
+				else if (flags.isMovieDuels == qtrue)
+				{
+					idle_anim = BOTH_STAND_SABER_ON_IDLE_MD;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND_SABER_ON_IDLE;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND_SABER_ON_IDLE;
+			}
 			break;
 		case BOTH_SABERDUAL_STANCE:
 		case BOTH_SABERDUAL_STANCE_JKA:
+		case BOTH_SABERDUAL_STANCE_JKA_GALEN:
+		case BOTH_SABERDUAL_STANCE_JKA_MD:
+		case BOTH_SABERDUAL_STANCE_JKA_KOTOR:
+		case BOTH_SABERDUAL_STANCE_JKA_DF2:
+		case BOTH_SABERDUAL_STANCE_JKA_CAL:
+		case BOTH_SABERDUAL_STANCE_JKA_GRIEV:
+		case BOTH_SABERDUAL_STANCE_JKA_PAL:
+		case BOTH_SABERDUAL_STANCE_JKA_MAUL:
 		case BOTH_SABERDUALCROUCH:
+		case BOTH_SABERDUALCROUCH_GALEN:
+		case BOTH_SABERDUALCROUCH_KOTOR:
+		case BOTH_SABERDUALCROUCH_DF2:
 		case BOTH_STAND_SABER_ON_DUELS:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE_DUELS;
 			break;
 		case BOTH_SABERSTAFF_STANCE:
 		case BOTH_SABERSTAFF_STANCE_JKA:
+		case BOTH_SABERSTAFF_STANCE_JKA_GALEN:
+		case BOTH_SABERSTAFF_STANCE_JKA_MD:
+		case BOTH_SABERSTAFF_STANCE_JKA_KOTOR:
+		case BOTH_SABERSTAFF_STANCE_JKA_DF2:
+		case BOTH_SABERSTAFF_STANCE_JKA_BDROID:
+		case BOTH_SABERSTAFF_STANCE_JKA_CAL:
+		case BOTH_SABERSTAFF_STANCE_JKA_MAUL:
 		case BOTH_SABERSTAFF_STANCE_BEN:
 		case BOTH_SABERSTAFFCROUCH:
+		case BOTH_SABERSTAFFCROUCH_BDROID:
+		case BOTH_SABERSTAFFCROUCH_KOTOR:
 		case BOTH_STAND_SABER_ON_STAFF:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE_STAFF;
 			break;
@@ -6547,13 +6758,35 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			idle_anim = BOTH_STAND2IDLE2;
 			break;
 		case BOTH_STAND3:
-			idle_anim = BOTH_STAND3IDLE1;
+		case BOTH_STAND3_BDROID:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isBattleDroid == qtrue)
+				{
+					idle_anim = BOTH_STAND3IDLE1_BDROID;
+				}
+				else if (flags.isJango == qtrue)
+				{
+					idle_anim = BOTH_STAND3IDLE1_JANGO;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND3IDLE1;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND3IDLE1;
+			}
 			break;
 		case BOTH_STAND5:
 			idle_anim = BOTH_STAND5IDLE1;
 			break;
 		case BOTH_STANDYODA_STICK:
 			idle_anim = BOTH_STANDYODAIDLE_STICK;
+			break;
+		case BOTH_STANDYODAIDLE_STICK_YODA:
+			idle_anim = BOTH_STANDYODAIDLE_STICK_YODA;
 			break;
 		case BOTH_MENUIDLE1:
 			idle_anim = BOTH_MENUIDLE1;
@@ -6576,8 +6809,55 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		switch (ent->client->ps.legsAnim)
 		{
 		case BOTH_STAND1:
+		case BOTH_STAND1_BDROID:
 		case BOTH_STAND6:
-			idle_anim = BOTH_STAND1IDLE1;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isYoda == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_YODA;
+				}
+				else if (flags.isVader == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_VADER;
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_GALEN;
+				}
+				else if (flags.isJango == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_JANGO;
+				}
+				else if (flags.isBattleDroid == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_BDROID;
+				}
+				else if (flags.isCalKestis == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_CAL;
+				}
+				else if (flags.isGrievous == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_GRIEV;
+				}
+				else if (flags.isPalpatine == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_PAL;
+				}
+				else if (flags.isMaul == qtrue)
+				{
+					idle_anim = BOTH_STAND1IDLE1_MAUL;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND1IDLE1;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND1IDLE1;
+			}
 			break;
 		case BOTH_STAND9:
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
@@ -6585,6 +6865,10 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 				if (flags.isAnakin == qtrue)
 				{
 					idle_anim = BOTH_STAND9IDLE1_ANI;
+				}
+				else if (flags.isMovieDuels == qtrue)
+				{
+					idle_anim = BOTH_STAND9IDLE1_MD;
 				}
 				else
 				{
@@ -6597,7 +6881,25 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			}
 			break;
 		case BOTH_STAND_SABER_ON:
-			idle_anim = BOTH_STAND_SABER_ON_IDLE;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGrievous == qtrue)
+				{
+					idle_anim = BOTH_STAND_SABER_ON_IDLE_GRIEV;
+				}
+				else if (flags.isMovieDuels == qtrue)
+				{
+					idle_anim = BOTH_STAND_SABER_ON_IDLE_MD;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND_SABER_ON_IDLE;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND_SABER_ON_IDLE;
+			}
 			break;
 		case BOTH_STAND_SABER_ON_DUELS:
 			idle_anim = BOTH_STAND_SABER_ON_IDLE_DUELS;
@@ -6610,13 +6912,35 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 			idle_anim = BOTH_STAND2IDLE2;
 			break;
 		case BOTH_STAND3:
-			idle_anim = BOTH_STAND3IDLE1;
+		case BOTH_STAND3_BDROID:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isBattleDroid == qtrue)
+				{
+					idle_anim = BOTH_STAND3IDLE1_BDROID;
+				}
+				else if (flags.isJango == qtrue)
+				{
+					idle_anim = BOTH_STAND3IDLE1_JANGO;
+				}
+				else
+				{
+					idle_anim = BOTH_STAND3IDLE1;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_STAND3IDLE1;
+			}
 			break;
 		case BOTH_STAND5:
 			idle_anim = BOTH_STAND5IDLE1;
 			break;
 		case BOTH_STANDYODA_STICK:
 			idle_anim = BOTH_STANDYODAIDLE_STICK;
+			break;
+		case BOTH_STANDYODAIDLE_STICK_YODA:
+			idle_anim = BOTH_STANDYODAIDLE_STICK_YODA;
 			break;
 		case BOTH_MENUIDLE1:
 			idle_anim = BOTH_MENUIDLE1;
@@ -6650,17 +6974,145 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERTAVION_STANCE_JKA_BEN:
 			idle_anim = BOTH_SABERTAVION_STANCE_JKA_BEN;
 			break;
+		case BOTH_SABERTAVION_STANCE_JKA_YODA:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_YODA;
+			break;
+		case BOTH_SABERTAVION_STANCE_JKA_VADER:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_VADER;
+			break;
+		case BOTH_SABERTAVION_STANCE_JKA_MAUL:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_MAUL;
+			break;
+		case BOTH_SABERTAVION_STANCE_JKA_MACE:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_MACE;
+			break;
+		case BOTH_SABERTAVION_STANCE_JKA_DF2:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_DF2;
+			break;
+		case BOTH_SABERTAVION_STANCE_JKA_OBI3:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_OBI3;
+			break;
+		case BOTH_SABERTAVION_STANCE_JKA_REN:
+			idle_anim = BOTH_SABERTAVION_STANCE_JKA_REN;
+			break;
 		case BOTH_SABERDESANN_STANCE_JKA:
 			idle_anim = BOTH_SABERDESANN_STANCE_JKA;
 			break;
 		case BOTH_SABERDESANN_STANCE_JKA_ANI:
 			idle_anim = BOTH_SABERDESANN_STANCE_JKA_ANI;
 			break;
+		case BOTH_SABERDESANN_STANCE_JKA_DOOKU:
+			idle_anim = BOTH_SABERDESANN_STANCE_JKA_DOOKU;
+			break;
+		case BOTH_SABERDESANN_STANCE_JKA_MACE:
+			idle_anim = BOTH_SABERDESANN_STANCE_JKA_MACE;
+			break;
+		case BOTH_SABERDESANN_STANCE_JKA_DF2:
+			idle_anim = BOTH_SABERDESANN_STANCE_JKA_DF2;
+			break;
+		case BOTH_SABERDESANN_STANCE_JKA_CAL:
+			idle_anim = BOTH_SABERDESANN_STANCE_JKA_CAL;
+			break;
 		case BOTH_SABERSTAFF_STANCE_JKA:
-			idle_anim = BOTH_SABERSTAFF_STANCE_JKA;
+		case BOTH_SABERSTAFF_STANCE_JKA_GALEN:
+		case BOTH_SABERSTAFF_STANCE_JKA_MD:
+		case BOTH_SABERSTAFF_STANCE_JKA_KOTOR:
+		case BOTH_SABERSTAFF_STANCE_JKA_DF2:
+		case BOTH_SABERSTAFF_STANCE_JKA_BDROID:
+		case BOTH_SABERSTAFF_STANCE_JKA_CAL:
+		case BOTH_SABERSTAFF_STANCE_JKA_MAUL:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_GALEN;
+				}
+				else if (flags.isMovieDuels == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_MD;
+				}
+				else if (flags.isKotor == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_KOTOR;
+				}
+				else if (flags.isDarkForces2 == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_DF2;
+				}
+				else if (flags.isBattleDroid == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_BDROID;
+				}
+				else if (flags.isCalKestis == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_CAL;
+				}
+				else if (flags.isMaul == qtrue)
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA_MAUL;
+				}
+				else
+				{
+					idle_anim = BOTH_SABERSTAFF_STANCE_JKA;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_SABERSTAFF_STANCE_JKA;
+			}
 			break;
 		case BOTH_SABERDUAL_STANCE_JKA:
-			idle_anim = BOTH_SABERDUAL_STANCE_JKA;
+		case BOTH_SABERDUAL_STANCE_JKA_GALEN:
+		case BOTH_SABERDUAL_STANCE_JKA_MD:
+		case BOTH_SABERDUAL_STANCE_JKA_KOTOR:
+		case BOTH_SABERDUAL_STANCE_JKA_DF2:
+		case BOTH_SABERDUAL_STANCE_JKA_CAL:
+		case BOTH_SABERDUAL_STANCE_JKA_GRIEV:
+		case BOTH_SABERDUAL_STANCE_JKA_PAL:
+		case BOTH_SABERDUAL_STANCE_JKA_MAUL:
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isGalenMarek == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_GALEN;
+				}
+				else if (flags.isMovieDuels == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_MD;
+				}
+				else if (flags.isKotor == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_KOTOR;
+				}
+				else if (flags.isDarkForces2 == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_DF2;
+				}
+				else if (flags.isCalKestis == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_CAL;
+				}
+				else if (flags.isGrievous == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_GRIEV;
+				}
+				else if (flags.isPalpatine == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_PAL;
+				}
+				else if (flags.isMaul == qtrue)
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA_MAUL;
+				}
+				else
+				{
+					idle_anim = BOTH_SABERDUAL_STANCE_JKA;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_SABERDUAL_STANCE_JKA;
+			}
 			break;
 		case BOTH_SABERFAST_STANCE_JKA:
 			idle_anim = BOTH_SABERFAST_STANCE_JKA;
@@ -6671,8 +7123,86 @@ static void G_CheckClientIdleSabers(gentity_t* ent, const usercmd_t* ucmd)
 		case BOTH_SABERFAST_STANCE_JKA_ANI:
 			idle_anim = BOTH_SABERFAST_STANCE_JKA_ANI;
 			break;
+		case BOTH_SABERFAST_STANCE_JKA_VADER:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_VADER;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_PAL:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_PAL;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_DOOKU:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_DOOKU;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_MAUL:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_MAUL;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_LUKE:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_LUKE;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_MACE:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_MACE;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_OBI:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_OBI;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_KOTOR:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_KOTOR;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_DF2:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_DF2;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_OBI3:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_OBI3;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_REN:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_REN;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_REY:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_REY;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_CAL:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_CAL;
+			break;
+		case BOTH_SABERFAST_STANCE_JKA_GRIEV:
+			idle_anim = BOTH_SABERFAST_STANCE_JKA_GRIEV;
+			break;
 		case BOTH_SABERSLOW_STANCE_JKA:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_VADER:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_VADER;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_GALEN:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_GALEN;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_LUKE:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_LUKE;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_GON:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_GON;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_OBI:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_OBI;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_KOTOR:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_KOTOR;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_DF2:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_DF2;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_OBI3:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_OBI3;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_REN:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_REN;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_REY:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_REY;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_PAL:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_PAL;
+			break;
+		case BOTH_SABERSLOW_STANCE_JKA_MAUL:
+			idle_anim = BOTH_SABERSLOW_STANCE_JKA_MAUL;
 			break;
 		case BOTH_SABERSLOW_STANCE_JKA_BEN:
 			idle_anim = BOTH_SABERSLOW_STANCE_JKA_BEN;
@@ -6823,20 +7353,59 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			switch (ent->client->ps.legsAnim)
 			{
 			case BOTH_STAND1IDLE1:
+			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
+			case BOTH_STAND1IDLE1_JANGO:
+			case BOTH_STAND1IDLE1_BDROID:
+			case BOTH_STAND1IDLE1_CAL:
+			case BOTH_STAND1IDLE1_GRIEV:
+			case BOTH_STAND1IDLE1_PAL:
+			case BOTH_STAND1IDLE1_MAUL:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
+			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
+			case BOTH_STAND2IDLE1_MD:
+			case BOTH_STAND2IDLE1_LUKE:
+			case BOTH_STAND2IDLE1_GON:
+			case BOTH_STAND2IDLE1_MACE:
+			case BOTH_STAND2IDLE1_OBI:
+			case BOTH_STAND2IDLE1_KOTOR:
+			case BOTH_STAND2IDLE1_DF2:
+			case BOTH_STAND2IDLE1_OBI3:
+			case BOTH_STAND2IDLE1_REN:
+			case BOTH_STAND2IDLE1_REY:
+			case BOTH_STAND2IDLE1_CAL:
+			case BOTH_STAND2IDLE1_PAL:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
+			case BOTH_STAND3IDLE1_BDROID:
+			case BOTH_STAND3IDLE1_JANGO:
 			case BOTH_STAND5IDLE1:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
+			case BOTH_STAND9IDLE1_MD:
 			case BOTH_STANDYODAIDLE_STICK:
+			case BOTH_STANDYODAIDLE_STICK_YODA:
 			case BOTH_MENUIDLE1:
 			case TORSO_WEAPONREST2:
+			case TORSO_WEAPONREST2_JANGO:
+			case TORSO_WEAPONREST2_CLO:
+			case TORSO_WEAPONREST2_REB:
 			case TORSO_WEAPONREST3:
+			case TORSO_WEAPONREST3_BDROID:
+			case TORSO_WEAPONREST3_JANGO:
 			case TORSO_WEAPONREST4:
+			case TORSO_WEAPONREST4_BDROID:
+			case TORSO_WEAPONREST4_JANGO:
 			case TORSO_WEAPONIDLE2:
+			case TORSO_WEAPONIDLE2_JANGO:
+			case TORSO_WEAPONIDLE2_CLO:
+			case TORSO_WEAPONIDLE2_REB:
 			case BOTH_WEAPONREST2P:
+			case BOTH_WEAPONREST2P_JANGO:
 			case BOTH_STANCE_MINIGUN_IDLE:
 				ent->client->ps.legsAnimTimer = 0;
 				break;
@@ -6845,20 +7414,59 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			switch (ent->client->ps.torsoAnim)
 			{
 			case BOTH_STAND1IDLE1:
+			case BOTH_STAND1IDLE1_YODA:
+			case BOTH_STAND1IDLE1_VADER:
+			case BOTH_STAND1IDLE1_GALEN:
+			case BOTH_STAND1IDLE1_JANGO:
+			case BOTH_STAND1IDLE1_BDROID:
+			case BOTH_STAND1IDLE1_CAL:
+			case BOTH_STAND1IDLE1_GRIEV:
+			case BOTH_STAND1IDLE1_PAL:
+			case BOTH_STAND1IDLE1_MAUL:
 			case BOTH_STAND2IDLE1:
+			case BOTH_STAND2IDLE1_BEN:
 			case BOTH_STAND2IDLE1_ANI:
+			case BOTH_STAND2IDLE1_VADER:
+			case BOTH_STAND2IDLE1_GALEN:
+			case BOTH_STAND2IDLE1_MD:
+			case BOTH_STAND2IDLE1_LUKE:
+			case BOTH_STAND2IDLE1_GON:
+			case BOTH_STAND2IDLE1_MACE:
+			case BOTH_STAND2IDLE1_OBI:
+			case BOTH_STAND2IDLE1_KOTOR:
+			case BOTH_STAND2IDLE1_DF2:
+			case BOTH_STAND2IDLE1_OBI3:
+			case BOTH_STAND2IDLE1_REN:
+			case BOTH_STAND2IDLE1_REY:
+			case BOTH_STAND2IDLE1_CAL:
+			case BOTH_STAND2IDLE1_PAL:
 			case BOTH_STAND2IDLE2:
 			case BOTH_STAND3IDLE1:
+			case BOTH_STAND3IDLE1_BDROID:
+			case BOTH_STAND3IDLE1_JANGO:
 			case BOTH_STAND5IDLE1:
 			case BOTH_STAND9IDLE1:
 			case BOTH_STAND9IDLE1_ANI:
+			case BOTH_STAND9IDLE1_MD:
 			case BOTH_STANDYODAIDLE_STICK:
+			case BOTH_STANDYODAIDLE_STICK_YODA:
 			case BOTH_MENUIDLE1:
 			case TORSO_WEAPONREST2:
+			case TORSO_WEAPONREST2_JANGO:
+			case TORSO_WEAPONREST2_CLO:
+			case TORSO_WEAPONREST2_REB:
 			case TORSO_WEAPONREST3:
+			case TORSO_WEAPONREST3_BDROID:
+			case TORSO_WEAPONREST3_JANGO:
 			case TORSO_WEAPONREST4:
+			case TORSO_WEAPONREST4_BDROID:
+			case TORSO_WEAPONREST4_JANGO:
 			case TORSO_WEAPONIDLE2:
+			case TORSO_WEAPONIDLE2_JANGO:
+			case TORSO_WEAPONIDLE2_CLO:
+			case TORSO_WEAPONIDLE2_REB:
 			case BOTH_WEAPONREST2P:
+			case BOTH_WEAPONREST2P_JANGO:
 			case BOTH_STANCE_MINIGUN_IDLE:
 				ent->client->ps.torsoAnimTimer = 0;
 				break;
@@ -6877,16 +7485,72 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 
 		constexpr int idle_anim = BOTH_STAND1IDLE1;
 
-		if (PM_HasAnimation(ent, idle_anim))
+		constexpr int idle_anim_YODA = BOTH_STAND1IDLE1_YODA;
+		constexpr int idle_anim_VADER = BOTH_STAND1IDLE1_VADER;
+		constexpr int idle_anim_GALEN = BOTH_STAND1IDLE1_GALEN;
+		constexpr int idle_anim_MAUL = BOTH_STAND1IDLE1_MAUL;
+		constexpr int idle_anim_PAL = BOTH_STAND1IDLE1_PAL;
+		constexpr int idle_anim_GRIEV = BOTH_STAND1IDLE1_GRIEV;
+		constexpr int idle_anim_CAL = BOTH_STAND1IDLE1_CAL;
+		constexpr int idle_anim_BDROID = BOTH_STAND1IDLE1_BDROID;
+		constexpr int idle_anim_JANGO = BOTH_STAND1IDLE1_JANGO;
+
+		if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER) || PM_HasAnimation(ent, idle_anim_GALEN) || PM_HasAnimation(ent, idle_anim_MAUL) || PM_HasAnimation(ent, idle_anim_PAL) || PM_HasAnimation(ent, idle_anim_GRIEV) || PM_HasAnimation(ent, idle_anim_CAL) || PM_HasAnimation(ent, idle_anim_BDROID) || PM_HasAnimation(ent, idle_anim_JANGO))
 		{
-			NPC_SetAnim(ent, SETANIM_BOTH, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isYoda == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isVader == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isJango == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_JANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isBattleDroid == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isCalKestis == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_CAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isGrievous == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_GRIEV, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isPalpatine == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_PAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isMaul == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_MAUL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(ent, SETANIM_BOTH, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 	}
 	else if (GunisSbd(ent) && level.time - ent->client->idleTime > 5000)
 	{
 		//been idle for 2 seconds
 
-		constexpr int idle_anim = TORSO_WEAPONIDLE2;
+		const int idle_anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isJango == qtrue) ? (TORSO_WEAPONIDLE2_JANGO) : (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isRebels == qtrue) ? (TORSO_WEAPONIDLE2_REB) : (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isCloneTrooper == qtrue) ? (TORSO_WEAPONIDLE2_CLO) : (TORSO_WEAPONIDLE2);
 
 		if (PM_HasAnimation(ent, idle_anim))
 		{
@@ -6901,12 +7565,48 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 		if (ent->weaponModel[1] > 0)
 		{
 			//dual pistols
-			idle_anim = BOTH_WEAPONREST2P;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isJango == qtrue)
+				{
+					idle_anim = BOTH_WEAPONREST2P_JANGO;
+				}
+				else
+				{
+					idle_anim = BOTH_WEAPONREST2P;
+				}
+			}
+			else
+			{
+				idle_anim = BOTH_WEAPONREST2P;
+			}
 		}
 		else
 		{
 			//single pistol
-			idle_anim = TORSO_WEAPONREST2;
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (flags.isJango == qtrue)
+				{
+					idle_anim = TORSO_WEAPONREST2_JANGO;
+				}
+				else if (flags.isCloneTrooper == qtrue)
+				{
+					idle_anim = TORSO_WEAPONREST2_CLO;
+				}
+				else if (flags.isRebels == qtrue)
+				{
+					idle_anim = TORSO_WEAPONREST2_REB;
+				}
+				else
+				{
+					idle_anim = TORSO_WEAPONREST2;
+				}
+			}
+			else
+			{
+				idle_anim = TORSO_WEAPONREST2;
+			}
 		}
 
 		if (idle_anim != -1 && PM_HasAnimation(ent, idle_anim))
@@ -6918,7 +7618,7 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 	{
 		//been idle for 2 seconds
 
-		constexpr int idle_anim = TORSO_WEAPONREST3;
+		const int idle_anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isBattleDroid == qtrue) ? (TORSO_WEAPONREST3_BDROID) : (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isJango == qtrue) ? (TORSO_WEAPONREST3_JANGO) : (TORSO_WEAPONREST3);
 
 		if (PM_HasAnimation(ent, idle_anim))
 		{
@@ -6929,7 +7629,7 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 	{
 		//been idle for 2 seconds
 
-		int idle_anim = TORSO_WEAPONREST4;
+		int idle_anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isBattleDroid == qtrue) ? (TORSO_WEAPONREST4_BDROID) : (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isJango == qtrue) ? (TORSO_WEAPONREST4_JANGO) : (TORSO_WEAPONREST4);
 
 		/*if (ent->s.weapon == WP_Z6_ROTARY_CANNON) {
 			idle_anim = BOTH_STANCE_MINIGUN_IDLE;
@@ -6947,6 +7647,7 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 		constexpr int idle_anim = BOTH_STAND9IDLE1;
 
 		constexpr int idle_anim_ani = BOTH_STAND9IDLE1_ANI;
+		constexpr int idle_anim_md = BOTH_STAND9IDLE1_MD;
 
 		if (PM_HasAnimation(ent, idle_anim))
 		{
@@ -6955,6 +7656,10 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 				if (flags.isAnakin == qtrue)
 				{
 					NPC_SetAnim(ent, SETANIM_TORSO, idle_anim_ani, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else if (flags.isMovieDuels == qtrue)
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, idle_anim_md, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 				}
 				else
 				{
@@ -6974,10 +7679,65 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 			//been idle for 2 seconds
 
 			constexpr int idle_anim = BOTH_STAND1IDLE1;
+			constexpr int idle_anim_YODA = BOTH_STAND1IDLE1_YODA;
+			constexpr int idle_anim_VADER = BOTH_STAND1IDLE1_VADER;
+			constexpr int idle_anim_GALEN = BOTH_STAND1IDLE1_GALEN;
+			constexpr int idle_anim_MAUL = BOTH_STAND1IDLE1_MAUL;
+			constexpr int idle_anim_PAL = BOTH_STAND1IDLE1_PAL;
+			constexpr int idle_anim_GRIEV = BOTH_STAND1IDLE1_GRIEV;
+			constexpr int idle_anim_CAL = BOTH_STAND1IDLE1_CAL;
+			constexpr int idle_anim_BDROID = BOTH_STAND1IDLE1_BDROID;
+			constexpr int idle_anim_JANGO = BOTH_STAND1IDLE1_JANGO;
 
-			if (PM_HasAnimation(ent, idle_anim))
+			if (PM_HasAnimation(ent, idle_anim) || PM_HasAnimation(ent, idle_anim_YODA) || PM_HasAnimation(ent, idle_anim_VADER) || PM_HasAnimation(ent, idle_anim_GALEN) || PM_HasAnimation(ent, idle_anim_MAUL) || PM_HasAnimation(ent, idle_anim_PAL) || PM_HasAnimation(ent, idle_anim_GRIEV) || PM_HasAnimation(ent, idle_anim_CAL) || PM_HasAnimation(ent, idle_anim_BDROID) || PM_HasAnimation(ent, idle_anim_JANGO))
 			{
-				NPC_SetAnim(ent, SETANIM_BOTH, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isYoda == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isVader == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isGalenMarek == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isJango == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_JANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isBattleDroid == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isCalKestis == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_CAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isGrievous == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_GRIEV, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isPalpatine == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_PAL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else if (flags.isMaul == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim_MAUL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_BOTH, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(ent, SETANIM_BOTH, idle_anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
 			}
 		}
 	}
@@ -7085,12 +7845,40 @@ static void CommandNPCtoAttack(gentity_t* caller, gentity_t* ourFriend)
 		G_SetEnemy(ourFriend, tracedEnemy);
 	}
 
-	NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+	{
+		if (G_Animationstyletable(player).isGalenMarek == qtrue)
+		{
+			NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+		else
+		{
+			NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
+	}
+	else
+	{
+		NPC_SetAnim(player, SETANIM_TORSO, BOTH_ATTACK_COMMAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	}
 
 	if (Distance(ourFriend->currentOrigin, tracedEnemy->currentOrigin) >= 512)
 	{// if the enemy is far away, use a long range callout
 		G_AddEvent(caller, Q_irand(EV_CHASE1, EV_CHASE3), 0);
-		NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+		{
+			if (G_Animationstyletable(ourFriend).isGalenMarek == qtrue)
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+			else
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
+		}
+		else
+		{
+			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		}
 	}
 	else
 	{// if the enemy is close, use a short range callout
@@ -7101,12 +7889,40 @@ static void CommandNPCtoAttack(gentity_t* caller, gentity_t* ourFriend)
 		if (angle >= 0.2 && angle <= 1.0)
 		{// enemy is in front of us, use a front callout
 			G_AddEvent(caller, Q_irand(EV_ANGER1, EV_ANGER3), 0);
-			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (G_Animationstyletable(ourFriend).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 		else
 		{// enemy is behind us, use a back callout
 			G_AddEvent(caller, Q_irand(EV_LOOK1, EV_LOOK2), 0);
-			NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+			{
+				if (G_Animationstyletable(ourFriend).isGalenMarek == qtrue)
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				else
+				{
+					NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+			}
+			else
+			{
+				NPC_SetAnim(ourFriend, SETANIM_TORSO, BOTH_ORDER_RECIVED, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+			}
 		}
 	}
 	tracedEnemy->markTime = level.time + 5000;
@@ -7128,6 +7944,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 {
 	gclient_t* client = ent->client;
 	const Vehicle_t* p_veh = nullptr;
+	animFlags_t flags = G_Animationstyletable(ent);
 
 	// Vehicle pointer for later checks
 	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
@@ -7329,9 +8146,43 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 			{
 				if ((ent->s.number < MAX_CLIENTS) || (G_ControlledByPlayer(ent) == qtrue))
 				{
-					if (client->NPC_class == CLASS_VADER) sprintMul *= 1.15f;
-					else if (client->NPC_class == CLASS_YODA) sprintMul *= 1.65f;
-					else sprintMul *= 1.60f;
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if ((flags.isYoda == qtrue) || (client->NPC_class == CLASS_YODA))
+						{
+							if (client->NPC_class == CLASS_YODA)
+							{
+								sprintMul *= 1.50f;
+							}
+							else
+							{
+								sprintMul *= 1.20f;
+							}
+						}
+						else if ((flags.isVader == qtrue) || (client->NPC_class == CLASS_VADER))
+						{
+							sprintMul *= 1.15f;
+						}
+						else
+						{
+							sprintMul *= 1.60f;
+						}
+					}
+					else
+					{
+						if (client->NPC_class == CLASS_VADER)
+						{
+							sprintMul *= 1.15f;
+						}
+						else if (client->NPC_class == CLASS_YODA)
+						{
+							sprintMul *= 1.65f;
+						}
+						else
+						{
+							sprintMul *= 1.60f;
+						}
+					}
 				}
 			}
 
@@ -8148,6 +8999,8 @@ static int magazine_size(const gentity_t* ent, const int ammo)
 
 void WP_ReloadGun(gentity_t* ent)
 {
+	animFlags_t flags = G_Animationstyletable(ent);
+
 	if (ent->reloadCooldown > level.time)
 	{
 		return;
@@ -8183,11 +9036,39 @@ void WP_ReloadGun(gentity_t* ent)
 			{
 				if (ent->weaponModel[1] > 0)
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isJango == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLFAIL_JANGO, SETANIM_AFLAG_BLOCKPACE);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+					}
 				}
 				else
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isJango == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLFAIL_JANGO, SETANIM_AFLAG_BLOCKPACE);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLFAIL, SETANIM_AFLAG_BLOCKPACE);
+					}
 				}
 			}
 			else if (ent->s.weapon == WP_ROCKET_LAUNCHER)
@@ -8204,7 +9085,21 @@ void WP_ReloadGun(gentity_t* ent)
 			}*/
 			else
 			{
-				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
+				if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+				{
+					if (flags.isBattleDroid == qtrue)
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL_BDROID, SETANIM_AFLAG_BLOCKPACE);
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
+					}
+				}
+				else
+				{
+					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLEFAIL, SETANIM_AFLAG_BLOCKPACE);
+				}
 			}
 
 			G_SoundOnEnt(ent, CHAN_WEAPON, "sound/weapons/reloadfail.mp3");
@@ -8240,13 +9135,45 @@ void WP_ReloadGun(gentity_t* ent)
 					{
 						if (ent->weaponModel[1] > 0)
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD_JANGO,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD,
+									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD_JANGO,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD,
+									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 					}
 					else if (ent->s.weapon == WP_DROIDEKA)
@@ -8259,7 +9186,21 @@ void WP_ReloadGun(gentity_t* ent)
 					}*/
 					else
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 
 					G_SoundOnEnt(ent, CHAN_WEAPON, "sound/weapons/reload.mp3");
@@ -8277,13 +9218,43 @@ void WP_ReloadGun(gentity_t* ent)
 					{
 						if (ent->weaponModel[1] > 0)
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE_JANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isBenKenobi == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE_JANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 					}
 					/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
@@ -8292,7 +9263,21 @@ void WP_ReloadGun(gentity_t* ent)
 					}*/
 					else
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					G_SoundOnEnt(ent, CHAN_WEAPON, "sound/weapons/recharge.mp3");
 				}
@@ -8308,14 +9293,42 @@ void WP_ReloadGun(gentity_t* ent)
 				{
 					ent->client->ps.ammo[AMMO_POWERCELL] += magazine_size(ent, AMMO_POWERCELL);
 
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBattleDroid == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 
 					G_SoundOnEnt(ent, CHAN_WEAPON, "sound/weapons/reload.mp3");
 					ent->reloadTime = level.time + ReloadTime(ent);
 				}
 				else
 				{
-					NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isBattleDroid == qtrue)
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 					G_SoundOnEnt(ent, CHAN_WEAPON, "sound/weapons/recharge.mp3");
 				}
 			}
@@ -8340,7 +9353,21 @@ void WP_ReloadGun(gentity_t* ent)
 						ent->s.weapon == WP_CLONECOMMANDO ||
 						ent->s.weapon == WP_Z6_ROTARY_CANNON)
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERELOAD, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
 					{
@@ -8350,13 +9377,45 @@ void WP_ReloadGun(gentity_t* ent)
 					{
 						if (ent->weaponModel[1] > 0)
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD_JANGO,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLRELOAD,
+									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD_JANGO,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD,
+										SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLRELOAD,
+									SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 					}
 					G_SoundOnEnt(ent, CHAN_WEAPON, "sound/weapons/reload.mp3");
@@ -8368,13 +9427,43 @@ void WP_ReloadGun(gentity_t* ent)
 					{
 						if (ent->weaponModel[1] > 0)
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE_JANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_2PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 						else
 						{
-							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE,
-								SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							{
+								if (flags.isBenKenobi == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE_BEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else if (flags.isJango == qtrue)
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE_JANGO, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+								}
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_PISTOLCHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
 						}
 					}
 					/*else if (ent->s.weapon == WP_Z6_ROTARY_CANNON)
@@ -8383,7 +9472,21 @@ void WP_ReloadGun(gentity_t* ent)
 					}*/
 					else
 					{
-						NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+						{
+							if (flags.isBattleDroid == qtrue)
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+							else
+							{
+								NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+							}
+						}
+						else
+						{
+							NPC_SetAnim(ent, SETANIM_TORSO, BOTH_RIFLERECHARGE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
 					}
 					G_SoundOnEnt(ent, CHAN_WEAPON, "sound/weapons/recharge.mp3");
 				}
@@ -8932,7 +10035,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 							renderingThirdPerson && !cg.zoomMode)
 						//or a player in third person, 25% of the time
 						&& ground_ent->client->playerTeam != ent->client->playerTeam //and not on the same team
-						&& ent->client->ps.legsAnim != BOTH_JUMPATTACK6) //not in the sideways-spinning jump attack
+						&& (ent->client->ps.legsAnim != BOTH_JUMPATTACK6 && ent->client->ps.legsAnim != BOTH_JUMPATTACK6_GRIEV)) //not in the sideways-spinning jump attack
 					{
 						int knock_anim = BOTH_KNOCKDOWN1;
 						if (PM_CrouchAnim(ground_ent->client->ps.legsAnim))
@@ -9007,6 +10110,14 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			{
 				VectorScale(client->ps.velocity, 0.8f, client->ps.velocity);
 			}
+		}
+		else if (ent->m_pVehicle && client->ps.hyperSpaceTime
+			&& level.time - client->ps.hyperSpaceTime < HYPERSPACE_TIME)
+		{
+			//a ship going to hyperspace flies dead straight, also when the jump starts over a planet. (In MP the
+			//fighter code zeroes the gravity inside pmove; here this runs after it and put the full gravity
+			//back: the ship sank out of the bottom of the trigger_hyperspace and was never teleported.)
+			client->ps.gravity = 0.0f;
 		}
 		else
 		{
@@ -9740,11 +10851,11 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		{
 			// Vehicle Camera Overrides
 			//--------------------------
-			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_VOF |
-				CG_OVERRIDE_3RD_PERSON_POF;
+			//(not the FOV: MP does not use the .veh cameraFOV, it keeps cg_fov, and the ships are made to look right with
+			//that. With it - 100 for most fighters - the same ship at the same range looked a good deal smaller here.)
+			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_3RD_PERSON_VOF | CG_OVERRIDE_3RD_PERSON_POF;
 
 			cg.overrides.thirdPersonRange = p_player_veh->m_pVehicleInfo->cameraRange;
-			cg.overrides.fov = p_player_veh->m_pVehicleInfo->cameraFOV;
 			cg.overrides.thirdPersonVertOffset = p_player_veh->m_pVehicleInfo->cameraVertOffset;
 			cg.overrides.thirdPersonPitchOffset = p_player_veh->m_pVehicleInfo->cameraPitchOffset;
 
@@ -10086,7 +11197,21 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 							if (ent->client->usercmd.buttons & BUTTON_BLOCK && ent->s.groundEntityNum != ENTITYNUM_NONE)
 							{
 								//holding attack
-								NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								{
+									if (G_Animationstyletable(ent).isGalenMarek == qtrue)
+									{
+										NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									}
+									else
+									{
+										NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									}
+								}
+								else
+								{
+									NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+								}
 							}
 
 							G_SoundOnEnt(ent, CHAN_ITEM, "sound/weapons/grapple/hookfire.wav");
@@ -10152,7 +11277,21 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 								if (ent->client->usercmd.buttons & BUTTON_BLOCK && ent->s.groundEntityNum != ENTITYNUM_NONE)
 								{
 									//holding attack
-									NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+									{
+										if (G_Animationstyletable(ent).isGalenMarek == qtrue)
+										{
+											NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+										}
+										else
+										{
+											NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+										}
+									}
+									else
+									{
+										NPC_SetAnim(ent, SETANIM_BOTH, BOTH_GRAPPLE_FIRE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
+									}
 									//gi.Printf(S_COLOR_YELLOW"g_active grapple attack\n");
 								}
 

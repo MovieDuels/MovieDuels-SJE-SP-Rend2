@@ -164,6 +164,7 @@ void CModelCacheManager::DeleteAll(void)
 
 	FileCache().swap(files);
 	AssetCache().swap(assets);
+	ClearHandleMemo();
 }
 
 /*
@@ -195,6 +196,7 @@ void CModelCacheManager::DumpNonPure(void)
 			if (assetIt != assets.end())
 			{
 				assets.erase(assetIt);
+				ClearHandleMemo();
 			}
 
 			it = files.erase(it);
@@ -217,8 +219,32 @@ CModelCacheManager::AssetCache::iterator CModelCacheManager::FindAsset(const cha
 		});
 }
 
+void CModelCacheManager::ClearHandleMemo()
+{
+	for (auto& memo : handleMemo)
+	{
+		memo.name[0] = '\0';
+	}
+}
+
 qhandle_t CModelCacheManager::GetModelHandle(const char* fileName)
 {
+	// exact (case-sensitive) name hash; names that do not fit are not memoised
+	unsigned int hash = 2166136261u;
+	size_t len = 0;
+	while (fileName[len] && len < MAX_QPATH)
+	{
+		hash = (hash ^ static_cast<unsigned char>(fileName[len])) * 16777619u;
+		len++;
+	}
+	HandleMemo* memo = nullptr;
+	if (len > 0 && len < MAX_QPATH)
+	{
+		memo = &handleMemo[hash & (HANDLE_MEMO_SIZE - 1)];
+		if (memo->name[0] && strcmp(memo->name, fileName) == 0)
+			return memo->handle;
+	}
+
 	char path[MAX_QPATH];
 	NormalizePath(path, fileName, sizeof(path));
 
@@ -226,6 +252,11 @@ qhandle_t CModelCacheManager::GetModelHandle(const char* fileName)
 	if (it == std::end(assets))
 		return -1; // asset not found
 
+	if (memo)
+	{
+		Q_strncpyz(memo->name, fileName, sizeof(memo->name));
+		memo->handle = it->handle;
+	}
 	return it->handle;
 }
 
@@ -268,6 +299,7 @@ qboolean CModelCacheManager::LevelLoadEnd(qboolean deleteUnusedByLevel)
 			if (assetIt != assets.end())
 			{
 				assets.erase(assetIt);
+				ClearHandleMemo();
 			}
 
 			it = files.erase(it);

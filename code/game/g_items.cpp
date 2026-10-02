@@ -58,18 +58,58 @@ extern cvar_t* g_saberPickuppableDroppedSabers;
 
 constexpr auto MAX_BACTA_HEAL_AMOUNT = 25;
 
-/*
+extern cvar_t* g_ActivateAnimationStyle;
+extern cvar_t* g_AnimationStyle;
+// -----------------------------------------------------------------------------
+// W_Animationstyletable
+// Weapon-system animation style resolver for any gentity_t.
+// Cleaned to match final animFlags_t and Animationstyles_t enum.
+// -----------------------------------------------------------------------------
+static animFlags_t GI_Animationstyletable(const gentity_t* self)
+{
+	animFlags_t flags{};
+	if (!self || !self->client)
+	{
+		Com_Printf("W_Animationstyletable: self or self->client is null\n");
+		return flags;
+	}
 
-  Items are any object that a player can touch to gain some effect.
+	const int style = self->client->animationstyle;
+	const int cvarStyle = (g_AnimationStyle ? g_AnimationStyle->integer : -1);
 
-  Pickup will return the number of seconds until they should respawn.
+	// Helper macro: match either entity style or cvar override
+#define MATCH(s) ((style == (s)) || (cvarStyle == (s)))
 
-  all items should pop when dropped in lava or slime
+	if (MATCH(CS_DEFAULT))        flags.isDefault = qtrue;
+	if (MATCH(CS_ANAKIN))         flags.isAnakin = qtrue;
+	if (MATCH(CS_BATTLEDROID))    flags.isBattleDroid = qtrue;
+	if (MATCH(CS_BENKENOBI))      flags.isBenKenobi = qtrue;
+	if (MATCH(CS_CAL_KESTIS))     flags.isCalKestis = qtrue;
+	if (MATCH(CS_CLONETROOPER))   flags.isCloneTrooper = qtrue;
+	if (MATCH(CS_DARKFORCES2))    flags.isDarkForces2 = qtrue;
+	if (MATCH(CS_COUNT_DOOKU))    flags.isCountDooku = qtrue;
+	if (MATCH(CS_GALEN_MAREK))    flags.isGalenMarek = qtrue;
+	if (MATCH(CS_QUI_GON_JINN))   flags.isQuiGonJinn = qtrue;
+	if (MATCH(CS_GRIEVOUS))       flags.isGrievous = qtrue;
+	if (MATCH(CS_JANGO))          flags.isJango = qtrue;
+	if (MATCH(CS_KOTOR))          flags.isKotor = qtrue;
+	if (MATCH(CS_LUKE_SKYWALKER)) flags.isLukeSkywalker = qtrue;
+	if (MATCH(CS_MACE_WINDU))     flags.isMaceWindu = qtrue;
+	if (MATCH(CS_MAUL))           flags.isMaul = qtrue;
+	if (MATCH(CS_MOVIEDUELS))     flags.isMovieDuels = qtrue;
+	if (MATCH(CS_OBIWAN))         flags.isObiWan = qtrue;
+	if (MATCH(CS_OBIWAN_EP3))     flags.isObiWanEP3 = qtrue;
+	if (MATCH(CS_PALPATINE))      flags.isPalpatine = qtrue;
+	if (MATCH(CS_REBELS))         flags.isRebels = qtrue;
+	if (MATCH(CS_KYLO_REN))       flags.isKyloRen = qtrue;
+	if (MATCH(CS_REY))            flags.isRey = qtrue;
+	if (MATCH(CS_VADER))          flags.isVader = qtrue;
+	if (MATCH(CS_YODA))           flags.isYoda = qtrue;
 
-  Respawnable items don't actually go away when picked up, they are
-  just made invisible and untouchable.  This allows them to ride
-  movers and respawn apropriately.
-*/
+#undef MATCH
+
+	return flags;
+}
 
 // Item Spawn flags
 constexpr auto ITMSF_SUSPEND = 1;
@@ -307,7 +347,8 @@ gentity_t* G_DropSaberItem(const char* saberType, const saber_colors_t saberColo
 			{
 				char rgbColor[8];
 				Com_sprintf(rgbColor, 8, "x%02x%02x%02x", saberColor & 0xff, saberColor >> 8 & 0xff, saberColor >> 16 & 0xff);
-				newItem->NPC_targetname = rgbColor;
+				// Copy it: the entity keeps this string after this function returns.
+				newItem->NPC_targetname = G_NewString(rgbColor);
 			}
 			else if (saberColor >= 0 && saberColor < SABER_RGB)
 			{
@@ -340,15 +381,13 @@ extern void G_SetSabersFromCVars(gentity_t* ent);
 
 static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pickUpSaber)
 {
-	//NOTE: loopAnim = saberSolo, alt_fire = saberLeftHand, NPC_type = saberType, NPC_targetname = saberColor
+	animFlags_t flags = GI_Animationstyletable(self);
 	qboolean foundIt = qfalse;
 
 	if (!pickUpSaber || !self || !self->client)
 	{
 		return qfalse;
 	}
-
-	//G_RemoveWeaponModels( ent );//???
 	if (Q_stricmp("player", pickUpSaber->NPC_type) == 0)
 	{
 		//"player" means use cvar info
@@ -441,8 +480,39 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 				//want to reach out with right hand
 				if (self->client->ps.torsoAnim == BOTH_BUTTON_HOLD)
 				{
-					//but only if already playing the pickup with left hand anim...
-					NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+					{
+						if (flags.isYoda == qtrue)
+						{
+							//but only if already playing the pickup with left hand anim...
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_YODA, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else if (flags.isVader == qtrue)
+						{
+							//but only if already playing the pickup with left hand anim...
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_VADER, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else if (flags.isGalenMarek == qtrue)
+						{
+							//but only if already playing the pickup with left hand anim...
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_GALEN, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else if (flags.isMaul == qtrue)
+						{
+							//but only if already playing the pickup with left hand anim...
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL_MAUL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+						else
+						{
+							//but only if already playing the pickup with left hand anim...
+							NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+						}
+					}
+					else
+					{
+						//but only if already playing the pickup with left hand anim...
+						NPC_SetAnim(self, SETANIM_TORSO, BOTH_SABERPULL, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					}
 				}
 				if (swapSabers)
 				{
@@ -491,7 +561,11 @@ static qboolean Pickup_Saber(gentity_t* self, qboolean hadSaber, gentity_t* pick
 				}
 			}
 			if (self->client->ps.torsoAnim == BOTH_BUTTON_HOLD
-				|| self->client->ps.torsoAnim == BOTH_SABERPULL)
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_YODA
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_VADER
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_GALEN
+				|| self->client->ps.torsoAnim == BOTH_SABERPULL_MAUL)
 			{
 				//don't let them attack right away, force them to finish the anim
 				self->client->ps.weaponTime = self->client->ps.torsoAnimTimer;
@@ -2251,7 +2325,6 @@ static qboolean HeHasGun(const gentity_t* ent)
 void RemoveBarrier(gentity_t* ent)
 {
 	static qboolean registered = qfalse;
-	const qboolean isKejim_post = (Q_stricmp(level.mapname, "kejim_post") == 0) ? qtrue : qfalse;
 
 	if (!registered)
 	{
@@ -2279,14 +2352,7 @@ void RemoveBarrier(gentity_t* ent)
 			}
 			else
 			{
-				if (isKejim_post)
-				{
-					// no sound on this map something in the map is causing the sound to be cut off
-				}
-				else
-				{
-					G_AddEvent(ent, EV_GENERAL_SOUND, shieldDeactivateSound);
-				}
+				G_AddEvent(ent, EV_GENERAL_SOUND, shieldDeactivateSound);
 				gi.G2API_SetSurfaceOnOff(&ent->ghoul2[ent->playerModel], "torso_shield_off", TURN_OFF);
 
 				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_FORCE_DRAIN_RELEASE, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
@@ -2338,7 +2404,6 @@ void barrier_update(gentity_t* ent);
 static void PlaceBarrier(gentity_t* ent)
 {
 	static qboolean registered = qfalse;
-	const qboolean isKejim_post = (Q_stricmp(level.mapname, "kejim_post") == 0) ? qtrue : qfalse;
 
 	if (!registered)
 	{
@@ -2368,27 +2433,13 @@ static void PlaceBarrier(gentity_t* ent)
 			}
 			else
 			{
-				if (isKejim_post)
-				{
-					// no sound on this map something in the map is causing the sound to be cut off
-				}
-				else
-				{
-					G_AddEvent(ent, EV_GENERAL_SOUND, shieldActivateSound);
-				}
+				G_AddEvent(ent, EV_GENERAL_SOUND, shieldActivateSound);
 				gi.G2API_SetSurfaceOnOff(&ent->ghoul2[ent->playerModel], "torso_shield_off", TURN_ON);
 
 				NPC_SetAnim(ent, SETANIM_TORSO, BOTH_ATTACK11, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 			}
 		}
-		if (isKejim_post)
-		{
-			// no sound on this map something in the map is causing the sound to be cut off
-		}
-		else
-		{
-			ent->s.loopSound = shieldLoopSound;
-		}
+		ent->s.loopSound = shieldLoopSound;
 	}
 }
 
@@ -2525,7 +2576,7 @@ void ItemUse_Barrier_with_saber(gentity_t* ent)
 
 void ItemUse_Grapple(gentity_t* ent)
 {
-	constexpr int anim = BOTH_GRAPPLE_FIRE;
+	const int anim = (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && GI_Animationstyletable(ent).isGalenMarek == qtrue) ? (BOTH_GRAPPLE_FIRE_GALEN) : (BOTH_GRAPPLE_FIRE);
 
 	if (!ent->client->ps.inventory[INV_GRAPPLEHOOK])
 	{

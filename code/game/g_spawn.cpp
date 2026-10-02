@@ -559,6 +559,7 @@ void SP_misc_teleporter_dest(gentity_t* self);
 void SP_misc_model(gentity_t* ent);
 void SP_misc_model_static(gentity_t* ent);
 void SP_misc_turret(gentity_t* base);
+void SP_misc_turretG2(gentity_t* base);
 void SP_misc_ns_turret(gentity_t* base);
 void SP_laser_arm(gentity_t* base);
 void SP_misc_ion_cannon(gentity_t* ent);
@@ -818,6 +819,7 @@ spawn_t spawns[] = {
 	{"misc_model", SP_misc_model},
 	{"misc_model_static", SP_misc_model_static},
 	{"misc_turret", SP_misc_turret},
+	{"misc_turretG2", SP_misc_turretG2},
 	{"misc_ns_turret", SP_misc_ns_turret},
 	{"misc_laser_arm", SP_laser_arm},
 	{"misc_ion_cannon", SP_misc_ion_cannon},
@@ -869,6 +871,7 @@ spawn_t spawns[] = {
 	{"shooter_plasma", SP_shooter_plasma},
 
 	{"ref_tag", SP_referenceTag},
+	{"ref_tag_huge", SP_referenceTag}, // MP maps: the same tag, only drawn bigger in the editor
 
 	//new NPC ents
 	{"NPC_spawner", SP_NPC_spawner},
@@ -1118,9 +1121,16 @@ static void G_ParseField(const char* key, const char* value, gentity_t* ent)
 			{
 				vec3_t vec{};
 				const int _iFieldsRead = sscanf(value, "%f %f %f", &vec[0], &vec[1], &vec[2]);
-				assert(_iFieldsRead == 3);
-				if (_iFieldsRead != 3)
+
+				if (_iFieldsRead == 1 && f->ofs == FOFS(s.angles))
 				{
+					// Mapper wrote "angles" "90" meaning "angle" (yaw); don't turn it into pitch.
+					vec[YAW] = vec[PITCH];
+					vec[PITCH] = 0.0f;
+				}
+				else if (_iFieldsRead != 3)
+				{
+					assert(_iFieldsRead == 3);
 					gi.Printf(
 						S_COLOR_YELLOW"G_ParseField: VEC3 sscanf() failed to read 3 floats ('angle' key bug?)\n");
 					delayedShutDown = level.time + 100;
@@ -1883,4 +1893,4 @@ void G_SpawnEntitiesFromString(const char* entity_string)
 		assert(0);
 		G_Error("Errors loading map, check the console for them.");
 	}
-}
+}
