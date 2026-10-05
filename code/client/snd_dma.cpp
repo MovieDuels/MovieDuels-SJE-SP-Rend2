@@ -2926,6 +2926,54 @@ static void S_GetSoundtime()
 	}
 }
 
+// video recording (cl_avi.cpp): SP's mixer repaints the mix-ahead window every frame, so the audio is taken from
+// the DMA buffer once it has been played (s_soundtime passed it), not where it is mixed
+qboolean CL_VideoRecording(void);
+void CL_WriteAVIAudioFrame(const byte* pcmBuffer, int size);
+
+static void S_CaptureVideoAudio()
+{
+	static int aviSoundTime = -1;
+
+	if (!CL_VideoRecording() || dma.samplebits != 16 || dma.channels != 2 || !dma.buffer)
+	{
+		aviSoundTime = -1;
+		return;
+	}
+	if (aviSoundTime < 0 || aviSoundTime > s_soundtime)
+	{// recording just started (or the sound time was reset): from now on
+		aviSoundTime = s_soundtime;
+		return;
+	}
+
+	const int ringFrames = dma.samples >> 1; // stereo sample pairs in the buffer
+	int count = s_soundtime - aviSoundTime;
+
+	if (count > ringFrames)
+	{// a long hitch: the buffer was overwritten, keep the sync with silence
+		static byte silence[4096];
+		int missing = (count - ringFrames) * 4;
+		while (missing > 0)
+		{
+			const int n = missing < static_cast<int>(sizeof silence) ? missing : static_cast<int>(sizeof silence);
+			CL_WriteAVIAudioFrame(silence, n);
+			missing -= n;
+		}
+		aviSoundTime = s_soundtime - ringFrames;
+		count = ringFrames;
+	}
+
+	const short* ring = reinterpret_cast<const short*>(dma.buffer);
+	while (count > 0)
+	{
+		const int pos = aviSoundTime & (ringFrames - 1);
+		const int n = count < ringFrames - pos ? count : ringFrames - pos;
+		CL_WriteAVIAudioFrame(reinterpret_cast<const byte*>(ring + pos * 2), n * 4);
+		aviSoundTime += n;
+		count -= n;
+	}
+}
+
 void S_Update_()
 {
 	if (!s_soundStarted || s_soundMuted)
@@ -3213,6 +3261,9 @@ void S_Update_()
 			endtime = s_soundtime + samps;
 
 		SNDDMA_BeginPainting();
+
+		// what was played since the last frame, before it is painted over
+		S_CaptureVideoAudio();
 
 		S_PaintChannels(endtime);
 

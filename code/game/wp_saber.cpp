@@ -2849,6 +2849,8 @@ extern float hitLocHealthPercentage[];
 extern qboolean PM_SaberInTransitionDamageMove(const playerState_t* ps);
 extern cvar_t* g_dismemberProbabilities;
 
+static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const vec3_t hit_dir);
+
 static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, const int base_d_flags,
 	const qboolean broken_parry, const int saberNum, const int bladeNum,
 	const qboolean thrown_saber)
@@ -3207,6 +3209,15 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 					}
 					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, dflags, MOD_SABER,
 						hitDismemberLoc[i]);
+					if (thrown_saber && g_DebugSaberCombat->integer)
+					{
+						Com_Printf("SABER BODY STICK: thrown hit %s for %d, health now %d%s\n", victim->classname, damage,
+							victim->health, dflags & DAMAGE_NO_KILL ? " (no-kill hit)" : "");
+					}
+					if (thrown_saber && vic_was_alive && victim->health <= 0)
+					{// the throw killed: the saber sticks in the body
+						WP_SaberTryStickInBody(ent, victim, dmgDir[i]);
+					}
 					if (damage > 0 && cg.time)
 					{
 						float sizeTimeScale = 1.0f;
@@ -4256,6 +4267,15 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 					}
 					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, dflags, MOD_SABER,
 						hitDismemberLoc[i]);
+					if (thrown_saber && g_DebugSaberCombat->integer)
+					{
+						Com_Printf("SABER BODY STICK: thrown hit %s for %d, health now %d%s\n", victim->classname, damage,
+							victim->health, dflags & DAMAGE_NO_KILL ? " (no-kill hit)" : "");
+					}
+					if (thrown_saber && vic_was_alive && victim->health <= 0)
+					{// the throw killed: the saber sticks in the body
+						WP_SaberTryStickInBody(ent, victim, dmgDir[i]);
+					}
 					if (damage > 0 && cg.time)
 					{
 						float sizeTimeScale = 1.0f;
@@ -8198,6 +8218,10 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 
 	if (ent->client->ps.saberInFlight)
 	{
+		if (saberNum == 0 && ent->client->ps.saberEntityState == SES_STUCK_BODY)
+		{//stuck in a body: the blade through the corpse does no damage
+			return;
+		}
 		//flying sabers are much more deadly
 		//unless you're dead
 		if (ent->health <= 0 && g_saberRealisticCombat->integer < 2)
@@ -9963,6 +9987,10 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 
 	if (ent->client->ps.saberInFlight)
 	{
+		if (saberNum == 0 && ent->client->ps.saberEntityState == SES_STUCK_BODY)
+		{//stuck in a body: the blade through the corpse does no damage
+			return;
+		}
 		//flying sabers are much more deadly
 		//unless you're dead
 		if (ent->health <= 0 && g_saberRealisticCombat->integer < 2)
@@ -11372,6 +11400,10 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 
 	if (ent->client->ps.saberInFlight)
 	{
+		if (saberNum == 0 && ent->client->ps.saberEntityState == SES_STUCK_BODY)
+		{//stuck in a body: the blade through the corpse does no damage
+			return;
+		}
 		//flying sabers are much more deadly
 		//unless you're dead
 		if (ent->health <= 0 && g_saberRealisticCombat->integer < 2)
@@ -13002,6 +13034,194 @@ static void WP_SaberFallFromWall(gentity_t* self, gentity_t* saber)
 	gi.linkentity(saber);
 }
 
+//===========================
+// Thrown saber stuck in the body of the enemy it killed (SES_STUCK_BODY)
+// saber->activator = the body, pos1 = the hilt and pos2 = the blade direction in the chest bone's axes,
+// attackDebounceTime = when it falls out, painDebounceTime = when a fallen-out saber comes back by itself
+//===========================
+constexpr float SABER_BODY_HILT_OFFSET = 10.0f; // hilt this far in front of the chest bone: the blade goes through the body and out the back
+
+static qboolean WP_SaberBodyBoneFrame(gentity_t* victim, vec3_t org_out, vec3_t axis_out[3])
+{
+	vec3_t org, axis[3];
+
+	if (!victim || !victim->inuse || !victim->client || !victim->ghoul2.size() || victim->playerModel < 0)
+	{
+		return qfalse;
+	}
+	const int bolt = victim->chestBolt >= 0 ? victim->chestBolt : victim->torsoBolt;
+	if (bolt < 0)
+	{
+		return qfalse;
+	}
+	mdxaBone_t bolt_matrix;
+	vec3_t angles, model_org;
+	if (victim->client->isRagging)
+	{//the ragdoll is placed with ps.origin and the entity's render angles (cgame calls G_RagDoll with lerpAngles every frame)
+		VectorCopy(cg_entities[victim->s.number].lerpAngles, angles);
+		VectorCopy(victim->client->ps.origin, model_org);
+	}
+	else
+	{
+		VectorSet(angles, 0, victim->currentAngles[YAW], 0);
+		VectorCopy(victim->currentOrigin, model_org);
+	}
+	gi.G2API_GetBoltMatrix(victim->ghoul2, victim->playerModel, bolt, &bolt_matrix, angles, model_org,
+		cg.time ? cg.time : level.time, nullptr, victim->s.modelScale);
+	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, org);
+	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, POSITIVE_X, axis[0]);
+	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, POSITIVE_Y, axis[1]);
+	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, POSITIVE_Z, axis[2]);
+	VectorCopy(org, org_out);
+	for (int i = 0; i < 3; i++)
+	{
+		VectorNormalize(axis[i]);
+		VectorCopy(axis[i], axis_out[i]);
+	}
+	return qtrue;
+}
+
+// puts the saber where it sits in the body now (the body moves, falls, ragdolls)
+static qboolean WP_SaberBodyStuckPlace(gentity_t* saber)
+{
+	vec3_t org, axis[3], hilt, blade_dir, angles;
+
+	if (!WP_SaberBodyBoneFrame(saber->activator, org, axis))
+	{
+		return qfalse;
+	}
+	VectorCopy(org, hilt);
+	VectorClear(blade_dir);
+	for (int i = 0; i < 3; i++)
+	{
+		VectorMA(hilt, saber->pos1[i], axis[i], hilt);
+		VectorMA(blade_dir, saber->pos2[i], axis[i], blade_dir);
+	}
+	VectorNormalize(blade_dir);
+
+	// the blade comes out of the hilt along the saber's up axis (as the wall stick): angles with up = blade_dir
+	const float horiz = sqrt(blade_dir[0] * blade_dir[0] + blade_dir[1] * blade_dir[1]);
+	angles[PITCH] = atan2(horiz, blade_dir[2]) * (180.0f / M_PI);
+	angles[YAW] = atan2(blade_dir[1], blade_dir[0]) * (180.0f / M_PI);
+	angles[ROLL] = 0;
+
+	G_SetOrigin(saber, hilt);
+	G_SetAngles(saber, angles);
+	gi.linkentity(saber);
+	return qtrue;
+}
+
+// the player's throw killed victim: the saber sticks in the body (hilt at the entry wound, blade out the back)
+static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const vec3_t hit_dir)
+{
+	vec3_t org, axis[3], flight, hilt, rel;
+
+	if (!owner || !owner->client || !victim || victim == owner)
+	{
+		return;
+	}
+	if (owner->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(owner))
+	{//players only
+		return;
+	}
+	if (g_DebugSaberCombat->integer)
+	{
+		Com_Printf("SABER BODY STICK: throw killed %s\n", victim->classname);
+	}
+	if (owner->client->ps.forcePowerLevel[FP_SABERTHROW] < FORCE_LEVEL_3
+		|| !owner->client->ps.saberInFlight
+		|| owner->client->ps.saberEntityNum <= 0 || owner->client->ps.saberEntityNum >= ENTITYNUM_WORLD
+		|| owner->client->ps.saberEntityState != SES_LEAVING && owner->client->ps.saberEntityState != SES_RETURNING)
+	{
+		if (g_DebugSaberCombat->integer)
+		{
+			Com_Printf("SABER BODY STICK: no - throw level %d, in flight %d, saber state %d\n",
+				owner->client->ps.forcePowerLevel[FP_SABERTHROW], owner->client->ps.saberInFlight,
+				owner->client->ps.saberEntityState);
+		}
+		return;
+	}
+	gentity_t* saber = &g_entities[owner->client->ps.saberEntityNum];
+	if (saber->s.pos.trType != TR_LINEAR)
+	{//not flying (dropped, stuck in a wall)
+		if (g_DebugSaberCombat->integer)
+		{
+			Com_Printf("SABER BODY STICK: no - saber not flying (trType %d)\n", saber->s.pos.trType);
+		}
+		return;
+	}
+	if (!WP_SaberBodyBoneFrame(victim, org, axis))
+	{
+		if (g_DebugSaberCombat->integer)
+		{
+			Com_Printf("SABER BODY STICK: no - no chest bone on %s\n", victim->classname);
+		}
+		return;
+	}
+	if (g_DebugSaberCombat->integer)
+	{
+		Com_Printf("SABER BODY STICK: stuck in %s at %i\n", victim->classname, level.time);
+	}
+
+	// the blade points the way the saber was flying
+	VectorCopy(saber->s.pos.trDelta, flight);
+	if (VectorNormalize(flight) < 1.0f)
+	{
+		VectorCopy(hit_dir, flight);
+		if (VectorNormalize(flight) < 0.1f)
+		{
+			return;
+		}
+	}
+	VectorMA(org, -SABER_BODY_HILT_OFFSET, flight, hilt);
+	VectorSubtract(hilt, org, rel);
+	for (int i = 0; i < 3; i++)
+	{
+		saber->pos1[i] = DotProduct(rel, axis[i]);
+		saber->pos2[i] = DotProduct(flight, axis[i]);
+	}
+
+	saber->activator = victim;
+	saber->attackDebounceTime = level.time + Q_irand(2000, 5000);
+	saber->painDebounceTime = 0;
+
+	VectorClear(saber->s.pos.trDelta);
+	VectorClear(saber->s.apos.trDelta);
+	saber->s.apos.trType = TR_STATIONARY;
+	saber->s.eFlags &= ~(EF_BOUNCE | EF_BOUNCE_HALF);
+	saber->s.eFlags |= EF_MISSILE_STICK;
+	saber->bounceCount = 0;
+
+	owner->client->ps.saberEntityState = SES_STUCK_BODY;
+	owner->client->ps.saberstuckinwalltimer = level.time; // same retrieve delay as the wall stick
+	owner->client->ps.saber[0].DeactivateTrail(75);
+
+	saber->e_ThinkFunc = thinkF_WP_SaberBallisticsThink;
+	saber->e_TouchFunc = touchF_NULL;
+	saber->nextthink = level.time + FRAMETIME;
+
+	if (!WP_SaberBodyStuckPlace(saber))
+	{
+		saber->activator = nullptr;
+	}
+}
+
+// out of the body: a dropped saber that comes back by itself after 5-10 seconds if not picked up
+static void WP_SaberFallFromBody(gentity_t* owner, gentity_t* saber)
+{
+	vec3_t org, axis[3];
+
+	// drop from inside the body: the hilt can be under a body lying on it, in the floor
+	if (WP_SaberBodyBoneFrame(saber->activator, org, axis)
+		&& !(gi.pointcontents(org, saber->s.number) & MASK_SOLID))
+	{
+		G_SetOrigin(saber, org);
+	}
+	saber->activator = nullptr;
+	WP_SaberFallFromWall(owner, saber);
+	saber->painDebounceTime = level.time + Q_irand(5000, 10000);
+}
+
 void WP_SaberBallisticsThink(gentity_t* ent)
 {
 	trace_t tr;
@@ -13013,6 +13233,15 @@ void WP_SaberBallisticsThink(gentity_t* ent)
 	if (!owner || !owner->client)
 	{
 		G_FreeEntity(ent);
+		return;
+	}
+
+	if (owner->client->ps.saberEntityState == SES_STUCK_BODY)
+	{//stuck in a body: move with it, fall out after its time (or when the body or the owner is gone)
+		if (owner->health <= 0 || level.time >= ent->attackDebounceTime || !WP_SaberBodyStuckPlace(ent))
+		{
+			WP_SaberFallFromBody(owner, ent);
+		}
 		return;
 	}
 
@@ -14404,6 +14633,9 @@ static qboolean WP_SaberLaunch(gentity_t* self, gentity_t* saber, const qboolean
 	}
 
 	//Take it out of my hand
+	WP_SwingHitsReset(self); // each throw is a new swing: it can hit the enemies the last throw or swing hit
+	saber->activator = nullptr;
+	saber->painDebounceTime = 0; // no auto-return timer left over from a saber that fell out of a body
 	self->client->ps.saberInFlight = qtrue;
 	self->client->ps.saberEntityState = SES_LEAVING;
 	self->client->ps.saberEntityDist = saberThrowDist[FP_TableLevel(self->client->ps.forcePowerLevel[FP_SABERTHROW])];
@@ -15239,12 +15471,33 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 
 		const int stuckTime = level.time - self->client->ps.saberstuckinwalltimer;
 
+		if (self->client->ps.saberEntityState == SES_STUCK_BODY)
+		{//stuck in a body: touching it pulls it out, else the wall stick's retrieve (attack after the delay)
+			vec3_t touch_mins, touch_maxs;
+			VectorSet(touch_mins, self->absmin[0] - 16, self->absmin[1] - 16, self->absmin[2] - 16);
+			VectorSet(touch_maxs, self->absmax[0] + 16, self->absmax[1] + 16, self->absmax[2] + 16);
+			if (self->health > 0 && G_PointInBounds(saberent->currentOrigin, touch_mins, touch_maxs))
+			{
+				saberent->activator = nullptr;
+				WP_SaberCatchFromWall(self, saberent, qtrue);
+				saberent->e_ThinkFunc = thinkF_NULL;
+				saberent->nextthink = 0;
+				return;
+			}
+			if (stuckTime < SES_STUCK_RETRIEVE_DELAY)
+			{
+				return;
+			}
+		}
+
 		//RETRIEVE DELAY
-		if (self->client->ps.saberEntityState == SES_STUCK && stuckTime >= SES_STUCK_RETRIEVE_DELAY)
+		if ((self->client->ps.saberEntityState == SES_STUCK || self->client->ps.saberEntityState == SES_STUCK_BODY)
+			&& stuckTime >= SES_STUCK_RETRIEVE_DELAY)
 		{
 			// Attack button?
 			if (ucmd->buttons & BUTTON_ATTACK)
 			{
+				saberent->activator = nullptr; // out of the body (stuck in a body)
 				gi.trace(&tr,
 					saberent->currentOrigin,
 					saberent->mins,
@@ -15283,6 +15536,23 @@ static void WP_SaberThrow(gentity_t* self, const usercmd_t* ucmd)
 			}
 
 			// No attack → do nothing, stay stuck
+			return;
+		}
+
+		if (saberent->painDebounceTime && level.time >= saberent->painDebounceTime
+			&& saberent->s.pos.trType != TR_LINEAR && self->health > 0)
+		{//fell out of a body and not picked up: back by itself after 5-10 s (also if it never came to rest)
+			saberent->painDebounceTime = 0;
+			gi.trace(&tr, saberent->currentOrigin, saberent->mins, saberent->maxs,
+				self->client->renderInfo.handRPoint, self->s.number, MASK_SOLID, static_cast<EG2_Collision>(0), 0);
+			if (tr.allsolid || tr.startsolid || tr.fraction < 1.0f)
+			{
+				WP_SaberCatch(self, saberent, qfalse);
+			}
+			else
+			{
+				WP_SaberPull(self, saberent);
+			}
 			return;
 		}
 
@@ -15952,6 +16222,29 @@ qboolean manual_running_and_saberblocking(const gentity_t* defender) //Is this g
 		return qfalse;
 	}
 	return qtrue;
+}
+
+qboolean manual_meleeblocking(const gentity_t* defender) //Is this guy blocking or not?
+{
+	const qboolean is_sprinting = ((defender->client->ps.PlayerEffectFlags & 1 << PEF_SPRINTING) != 0) ? qtrue : qfalse;
+
+	if (defender->client->ps.weapon == WP_MELEE
+		&& !defender->client->ps.inventory[INV_GRAPPLEHOOK] // MD: with a grappling hook (jetpack users) melee + block fires the hook instead
+		&& (!(defender->client->buttons & BUTTON_WALKING))
+		&& defender->client->buttons & BUTTON_BLOCK
+		&& !PM_KickMove(defender->client->ps.saberMove)
+		&& !PM_KickingAnim(defender->client->ps.torsoAnim)
+		&& !PM_KickingAnim(defender->client->ps.legsAnim)
+		&& !PM_InRoll(&defender->client->ps)
+		&& !PM_InKnockDown(&defender->client->ps)
+		&& !PM_RunningAnim(defender->client->ps.legsAnim)
+		&& !PM_WalkingAnim(defender->client->ps.legsAnim)
+		&& !is_sprinting
+		&& !(defender->client->ps.pm_flags & PMF_DUCKED))
+	{
+		return qtrue;
+	}
+	return qfalse;
 }
 
 qboolean manual_melee_dodging(const gentity_t* defender) //Is this guy dodgeing or not?

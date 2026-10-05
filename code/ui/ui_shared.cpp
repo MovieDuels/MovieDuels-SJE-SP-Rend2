@@ -5425,6 +5425,8 @@ static const char* g_bindCommands[] =
 	"cg_thirdperson !",
 	"datapad",
 	"exitview",
+	"recorddemo", // video recording (Controls binds)
+	"stoprecord",
 #ifndef JK2_MODE
 	"force_absorb",
 #endif

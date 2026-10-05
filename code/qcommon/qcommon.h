@@ -457,6 +457,9 @@ void FS_FreeFileList(char** file_list);
 void FS_Remove(const char* osPath);
 void FS_HomeRemove(const char* homePath);
 
+// AVI files have the start of pixel lines 4 byte-aligned (video recording, as MP)
+#define AVI_LINE_PADDING 4
+
 void FS_Rmdir(const char* osPath, qboolean recursive);
 void FS_HomeRmdir(const char* homePath, qboolean recursive);
 

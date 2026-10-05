@@ -972,9 +972,11 @@ static void G_InitCvars()
 
 	g_HitTracking = gi.cvar("g_HitTracking", "0", CVAR_ARCHIVE);
 
-	g_ActivateAnimationStyleSetting = gi.cvar("g_activateanimationstyle", "0", CVAR_ARCHIVE);
+	// CVAR_SAVEGAME: a save remembers both choices and loading it puts them back (before the map and its models
+	// load), so a save made with the Master style still loads with it after a restart or an Update 8 session.
+	g_ActivateAnimationStyleSetting = gi.cvar("g_activateanimationstyle", "0", CVAR_ARCHIVE | CVAR_SAVEGAME);
 	g_ActivateAnimationStyle = gi.cvar(MD_ANIMSTYLE_ACTIVE_CVAR, "0", CVAR_ROM); // set by G_LatchAnimationStyle
-	g_PlayerAnimationStyle = gi.cvar("g_playeranimationstyle", "default", CVAR_ARCHIVE);
+	g_PlayerAnimationStyle = gi.cvar("g_playeranimationstyle", "default", CVAR_ARCHIVE | CVAR_SAVEGAME);
 	md_update = gi.cvar("md_update", "8", CVAR_ROM); // default 8 so a start without the main menu (devmap) is Update 8 too
 	// CVAR_INIT will be used for release, but CVAR_ARCHIVE will be used for testing and development.
 	//This is to allow the user to change the animation style without having to restart the game.
@@ -1833,6 +1835,59 @@ extern qboolean G_RagDollDisallowedClass(const class_t npc_class);
 // rww - game interface for the ragdoll stuff.
 // Returns qtrue if the entity is now in a ragdoll state, otherwise qfalse.
 // (ported from MP's CG version)
+// A corpse held up by force grip (EF_FORCE_GRIPPED, or the player's grip on it)
+static qboolean G_RagGripped(const gentity_t* ent)
+{
+	if (ent->client->ps.eFlags & EF_FORCE_GRIPPED)
+	{
+		return qtrue;
+	}
+	const gentity_t* player = &g_entities[0];
+	return static_cast<qboolean>(player->inuse && player->client
+		&& player->client->ps.forcePowersActive & 1 << FP_GRIP
+		&& player->client->ps.forceGripEntityNum == ent->s.number);
+}
+
+// A force gripped corpse hangs by the head: the head (the ceyebrow effector) stays where it was when the ragdoll began,
+// moving with the grip, and the rest of the body dangles. Released, the head is let go and it falls as a normal ragdoll.
+static void G_RagGripHang(gentity_t* ent, vec3_t ragAngles)
+{
+	gclient_t* cl = ent->client;
+
+	if (!G_RagGripped(ent))
+	{
+		if (cl->ragGripHang)
+		{
+			gi.G2API_RagEffectorGoal(ent->ghoul2, "ceyebrow", nullptr);
+			gi.G2API_RagForceSolve(ent->ghoul2, qfalse);
+			cl->ragGripHang = qfalse;
+		}
+		return;
+	}
+
+	if (!cl->ragGripHang)
+	{
+		mdxaBone_t bolt_matrix;
+		vec3_t head;
+		const int bolt = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "ceyebrow");
+
+		if (bolt < 0)
+		{
+			return;
+		}
+		gi.G2API_GetBoltMatrix(ent->ghoul2, ent->playerModel, bolt, &bolt_matrix, ragAngles, cl->ps.origin,
+			cg.time ? cg.time : level.time, nullptr, ent->s.modelScale);
+		gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, head);
+		VectorSubtract(head, cl->ps.origin, cl->ragGripHead);
+		cl->ragGripHang = qtrue;
+	}
+
+	vec3_t goal;
+	VectorAdd(cl->ps.origin, cl->ragGripHead, goal);
+	gi.G2API_RagEffectorGoal(ent->ghoul2, "ceyebrow", goal);
+	gi.G2API_RagForceSolve(ent->ghoul2, qtrue);
+}
+
 qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 {
 	vec3_t    G2Angles;
@@ -1895,6 +1950,10 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 		// If held by a client, always allow rag
 		if (ent->client->ps.heldByClient <= ENTITYNUM_WORLD)
 		{
+			inSomething = qtrue;
+		}
+		else if (G_RagGripped(ent))
+		{// held up by force grip: hang by the head (G_RagGripHang)
 			inSomething = qtrue;
 		}
 		else if (ent->client->ps.groundEntityNum == ENTITYNUM_NONE)
@@ -2114,6 +2173,8 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 		}
 
 		gi.G2API_AnimateG2Models(ent->ghoul2, cg.time ? cg.time : level.time, &tuParms);
+
+		G_RagGripHang(ent, G2Angles);
 
 		// --------------------------------------------------------
 		// Handle being dragged by another entity

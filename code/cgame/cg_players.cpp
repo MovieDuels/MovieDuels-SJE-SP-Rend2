@@ -7726,6 +7726,9 @@ static void CG_DoSaberLight(const saberInfo_t* saber)
 }
 
 //Movie Sabers
+// set by CG_AddSaberBladeGo for the blade it is drawing: no ignition flare (a thrown saber stuck in a wall or body)
+static qboolean cg_saberNoIgniteFlare = qfalse;
+
 static void CG_DoEp1Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, vec3_t trail_tip, vec3_t trail_muz,
 	float length_max, float radius, saber_colors_t
 	color, int rfx, qboolean do_light)
@@ -8207,7 +8210,7 @@ static void CG_DoEp1Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -8764,7 +8767,7 @@ static void CG_DoEp2Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -9322,7 +9325,7 @@ static void CG_DoEp3Saber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -9871,7 +9874,7 @@ static void CG_DoSFXSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -10450,7 +10453,7 @@ static void CG_DoOTSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, ve
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		saber.renderfx = rfx;
 		saber.radius = ignite_radius;
@@ -10997,7 +11000,7 @@ static void CG_DoRotJSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, 
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -11545,7 +11548,7 @@ static void CG_DoTFASaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_tip, v
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -11763,7 +11766,7 @@ static void CG_DoCloakedSaber(vec3_t origin, vec3_t dir, float length, float len
 	//--------------------
 	//GR - Do the flares
 
-	if (length <= ignite_len)
+	if (length <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -11993,7 +11996,7 @@ static void CG_DoSaber(vec3_t origin, vec3_t dir, float length, float length_max
 	cgi_R_AddRefEntityToScene(&saber);
 
 	// Ignition flare
-	if (length <= ignite_len)
+	if (length <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 
@@ -12601,7 +12604,7 @@ static void CG_DoUnstableSaber(centity_t* cent, vec3_t blade_muz, vec3_t blade_t
 	//--------------------
 	//GR - Do the flares
 
-	if (blade_len <= ignite_len)
+	if (blade_len <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -12818,7 +12821,7 @@ static void CG_DoSaberUnstable(vec3_t origin, vec3_t dir, float length, float le
 	cgi_R_AddRefEntityToScene(&saber);
 
 	//Ignition Flare
-	if (length <= ignite_len)
+	if (length <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 		saber.renderfx = rfx;
@@ -13050,7 +13053,7 @@ static void CG_DoRebelsSaber(vec3_t origin, vec3_t dir, float length, float leng
 	cgi_R_AddRefEntityToScene(&saber);
 
 	// Ignition flare
-	if (length <= ignite_len)
+	if (length <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 
@@ -13302,7 +13305,7 @@ static void CG_DoCWSaber(vec3_t origin, vec3_t dir, float length, float length_m
 	cgi_R_AddRefEntityToScene(&saber);
 
 	// Ignition flare
-	if (length <= ignite_len)
+	if (length <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 
@@ -13554,7 +13557,7 @@ static void CG_DoMaulSaber(vec3_t origin, vec3_t dir, float length, float length
 	cgi_R_AddRefEntityToScene(&saber);
 
 	// Ignition flare
-	if (length <= ignite_len)
+	if (length <= ignite_len && !cg_saberNoIgniteFlare)
 	{
 		int i;
 
@@ -13876,6 +13879,11 @@ static void CG_AddSaberBladeGo(centity_t* cent, centity_t* scent, const int rend
 	{
 		return;
 	}
+
+	// a thrown saber stuck in a wall or a body: the wall / body cuts the blade short, that's no ignition
+	cg_saberNoIgniteFlare = saberNum == 0 && client->ps.saberInFlight
+		&& (client->ps.saberEntityState == SES_STUCK || client->ps.saberEntityState == SES_STUCK_BODY)
+		? qtrue : qfalse;
 	/*
 	Ghoul2 Insert Start
 	*/

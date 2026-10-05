@@ -97,6 +97,7 @@ set(SPRend2RdCommonFiles
 	"${SPDir}/rd-common/tr_font.h"
 	"${SPDir}/rd-common/tr_image_load.cpp"
 	"${SPDir}/rd-common/tr_image_jpg.cpp"
+	"${SPDir}/rd-common/tr_video_encoder.cpp"
 	"${SPDir}/rd-common/tr_image_tga.cpp"
 	"${SPDir}/rd-common/tr_image_png.cpp"
 	"${SPDir}/rd-common/tr_noise.cpp"

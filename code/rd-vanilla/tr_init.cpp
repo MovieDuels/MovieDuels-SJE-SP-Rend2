@@ -188,6 +188,7 @@ cvar_t* com_buildScript;
 
 cvar_t* r_environmentMapping;
 cvar_t* r_screenshotJpegQuality;
+cvar_t* r_aviMotionJpegQuality;
 
 cvar_t* g_Weather;
 
@@ -900,6 +901,46 @@ static void R_TakeScreenshot(const int x, const int y, const int width, const in
 	ri.FS_WriteFile(fileName, buffer, memcount + 18);
 
 	R_Free(allbuf);
+}
+
+/*
+==================
+RB_TakeVideoFrameCmd (as MP)
+==================
+*/
+const void* RB_TakeVideoFrameCmd(const void* data)
+{
+	GLint pack_align;
+
+	const auto cmd = static_cast<const videoFrameCommand_t*>(data);
+
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &pack_align);
+
+	const size_t linelen = cmd->width * 3;
+
+	// Alignment stuff for glReadPixels
+	const int padwidth = PAD(linelen, pack_align);
+	const int padlen = padwidth - linelen;
+	// the read back is done here; the compression and the writing run on workers (tr_video_encoder.cpp) - compressing
+	// here cost tens of milliseconds per captured frame
+	byte* frame = R_VideoEncoderBegin(static_cast<size_t>(padwidth) * cmd->height);
+
+	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, frame);
+
+	// gamma correct
+	if (glConfig.deviceSupportsGamma)
+		R_GammaCorrect(frame, padwidth * cmd->height);
+
+	R_VideoEncoderSubmit(cmd->width, cmd->height, padlen, r_aviMotionJpegQuality->integer, cmd->motionJpeg,
+		ri.CL_WriteAVIVideoFrame);
+
+	return cmd + 1;
+}
+
+// SP: every frame still being compressed is written (the client calls it before closing the AVI file)
+static void RE_FlushVideoFrames(void)
+{
+	R_VideoEncoderFlush(ri.CL_WriteAVIVideoFrame, qtrue);
 }
 
 /*
@@ -1698,6 +1739,8 @@ static void R_Register()
 	r_screenshotJpegQuality = ri.Cvar_Get("r_screenshotJpegQuality", "95", CVAR_ARCHIVE_ND);
 
 	ri.Cvar_CheckRange(r_screenshotJpegQuality, 10, 100, qtrue);
+	r_aviMotionJpegQuality = ri.Cvar_Get("r_aviMotionJpegQuality", "90", CVAR_ARCHIVE_ND);
+	ri.Cvar_CheckRange(r_aviMotionJpegQuality, 10, 100, qtrue);
 
 	for (const auto& command : commands)
 		ri.Cmd_AddCommand(command.cmd, command.func);
@@ -1811,6 +1854,8 @@ extern void R_ShutdownWorldEffects();
 
 void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 {
+	R_VideoEncoderShutdown(); // the recording workers (a recording's frames were flushed when its file closed)
+
 	for (size_t i = 0; i < numCommands; i++)
 		ri.Cmd_RemoveCommand(commands[i].cmd);
 
@@ -2062,6 +2107,8 @@ extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const re
 	REX(InitDissolve);
 
 	REX(GetScreenShot);
+	REX(TakeVideoFrame);
+	REX(FlushVideoFrames);
 #ifdef JK2_MODE
 	REX(SaveJPGToBuffer);
 	re.LoadJPGFromBuffer = LoadJPGFromBuffer;

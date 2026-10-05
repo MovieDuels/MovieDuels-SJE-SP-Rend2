@@ -1948,8 +1948,17 @@ constexpr auto UI_FPS_FRAMES = 4;
 
 // Update 8 lock for g_ActivateAnimationStyle while no map is loaded (main menu). The game module does
 // the same check in a map (G_EnforceUpdateSettings), but it doesn't run until a map is loaded.
+// md_update is the default 8 until the main menu's "uiScript mdUpdate" has run, so a check before that
+// (the UI frames of the intro video at startup) would turn an Update 9 player's setting off. So it only
+// starts once the main menu has opened (UI_MainMenu), then runs every UI frame.
+static qboolean ui_mainMenuOpened = qfalse;
+
 static void UI_EnforceUpdateSettings()
 {
+	if (!ui_mainMenuOpened)
+	{
+		return;
+	}
 	if (Cvar_VariableIntegerValue("md_update") < 9 && Cvar_VariableIntegerValue("g_ActivateAnimationStyle") != 0)
 	{
 		Cvar_Set("g_ActivateAnimationStyle", "0");
@@ -1965,7 +1974,7 @@ void _UI_Refresh(const int realtime)
 
 	UI_Pazaak_Frame(); // the singleplayer Pazaak match
 
-	UI_EnforceUpdateSettings(); // every UI frame, including the main menu
+	UI_EnforceUpdateSettings(); // every UI frame once the main menu has opened
 
 	if (!(Key_GetCatcher() & KEYCATCH_UI))
 	{
@@ -5214,7 +5223,7 @@ void _UI_Init(const qboolean inGameLoad)
 
 	UI_RegisterCvars();
 	// (no UI_EnforceUpdateSettings here: the main menu hasn't set md_update yet, so an Update 9 install
-	//  would still read the default 8. The first UI frame, after the menu's "uiScript mdUpdate", does it.)
+	//  would still read the default 8. It starts in UI_MainMenu, after the menu's "uiScript mdUpdate".)
 
 	UI_InitMemory();
 
@@ -5566,8 +5575,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 9.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 03/10/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 03 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 04/10/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 04 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -6935,6 +6944,8 @@ void UI_MainMenu()
 		//wha? try again
 		UI_LoadMenus("ui/menus.txt", qfalse);
 	}
+	ui_mainMenuOpened = qtrue; // the menu's onOpen ("uiScript mdUpdate") has set md_update
+	UI_EnforceUpdateSettings();
 	ui.Cvar_VariableStringBuffer("com_errorMessage", buf, sizeof buf);
 	if (strlen(buf))
 	{

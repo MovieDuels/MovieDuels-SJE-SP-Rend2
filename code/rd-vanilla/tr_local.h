@@ -1722,6 +1722,16 @@ using drawSurfsCommand_t = struct {
 	int		numDrawSurfs;
 };
 
+// video recording (as MP)
+using videoFrameCommand_t = struct {
+	int		commandId;
+	int		width;
+	int		height;
+	byte* captureBuffer;
+	byte* encodeBuffer;
+	qboolean	motionJpeg;
+};
+
 using renderCommand_t = enum {
 	RC_END_OF_LIST,
 	RC_SET_COLOR,
@@ -1733,6 +1743,7 @@ using renderCommand_t = enum {
 	RC_DRAW_BUFFER,
 	RC_SWAP_BUFFERS,
 	RC_WORLD_EFFECTS,
+	RC_VIDEOFRAME,
 };
 
 // these are sort of arbitrary limits.
@@ -1770,6 +1781,8 @@ void RE_LAGoggles(void);
 void RE_Scissor(const float x, const float y, const float w, const float h);
 void RE_BeginFrame(const stereoFrame_t stereoFrame);
 void RE_EndFrame(int* frontEndMsec, int* backEndMsec);
+void RE_TakeVideoFrame(int width, int height, byte* captureBuffer, byte* encodeBuffer, qboolean motionJpeg);
+const void* RB_TakeVideoFrameCmd(const void* data);
 qboolean	RE_ProcessDissolve();
 qboolean	RE_InitDissolve(qboolean bForceCircularExtroWipe);
 

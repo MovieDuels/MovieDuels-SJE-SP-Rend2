@@ -94,6 +94,7 @@ cvar_t* d_combatinfo;
 cvar_t* d_noGroupAI;
 cvar_t* d_asynchronousGroupAI;
 cvar_t* d_slowmodeath;
+cvar_t* g_longLeapCinematic;
 cvar_t* d_slowmoaction;
 cvar_t* d_SaberactionInfo;
 cvar_t* d_blockinfo;
@@ -2436,6 +2437,7 @@ static void NPC_InitAI()
 	//6 = also when kyle takes pain or enemy jedi dodges player saber swing or does an acrobatic evasion
 	// NOTE : I also create this in UI_Init()
 	d_slowmodeath = gi.cvar("d_slowmodeath", "3", CVAR_ARCHIVE); //save this setting
+	g_longLeapCinematic = gi.cvar("g_longLeapCinematic", "0", CVAR_ARCHIVE); // force long leap: 1 = SP's spinning slow motion camera, 0 = as MP (camera eases back)
 
 	d_saberCombat = gi.cvar("d_saberCombat", "0", CVAR_CHEAT);
 

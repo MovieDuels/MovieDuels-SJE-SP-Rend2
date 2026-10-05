@@ -370,6 +370,53 @@ CG_CalcIdealThirdPersonViewTarget
 
 ===============
 */
+#define LONG_LEAP_CAMERA_RANGE	70.0f	// force long leap: this much further back
+#define LONG_LEAP_CAMERA_DROP	16.0f	// and aimed this much lower (the body, not above the head)
+#define LONG_LEAP_CAMERA_SPEED	4.0f	// easing in and out: 1 / 4 s
+
+extern cvar_t* g_longLeapCinematic;
+
+/*
+===============
+CG_LongLeapCameraBlend
+
+0..1: how far the third person camera has eased into the force long leap view (the leap and its landing slide).
+In the flying pose the body lies below the usual (head height) camera, so the camera moves back and aims lower.
+As MP; off with g_longLeapCinematic 1 (SP's spinning slow motion camera instead).
+===============
+*/
+static float CG_LongLeapCameraBlend()
+{
+	static float blend = 0.0f;
+	static int lastTime = 0;
+	const int anim = cg.predictedPlayerState.legsAnim;
+	const qboolean leaping = static_cast<qboolean>(cg.renderingThirdPerson
+		&& !(g_longLeapCinematic && g_longLeapCinematic->integer)
+		&& (anim == BOTH_FORCELONGLEAP_START || anim == BOTH_FORCELONGLEAP_ATTACK || anim == BOTH_FORCELONGLEAP_ATTACK2
+			|| anim == BOTH_FORCELONGLEAP_LAND || anim == BOTH_FORCELONGLEAP_LAND2));
+
+	if (cg.time != lastTime)
+	{
+		float step = (cg.time - lastTime) * 0.001f * LONG_LEAP_CAMERA_SPEED;
+
+		if (step < 0.0f || step > 1.0f)
+		{// map change, pause
+			step = 1.0f;
+		}
+		lastTime = cg.time;
+		blend += leaping ? step : -step;
+		if (blend < 0.0f)
+		{
+			blend = 0.0f;
+		}
+		else if (blend > 1.0f)
+		{
+			blend = 1.0f;
+		}
+	}
+	return blend;
+}
+
 static void CG_CalcIdealThirdPersonViewTarget()
 {
 	// Ensure snapshot exists before dereferencing.
@@ -452,7 +499,7 @@ static void CG_CalcIdealThirdPersonViewTarget()
 	else
 	{
 		VectorCopy(cameraFocusLoc, cameraIdealTarget);
-		cameraIdealTarget[2] += cg_thirdPersonVertOffset.value;
+		cameraIdealTarget[2] += cg_thirdPersonVertOffset.value - CG_LongLeapCameraBlend() * LONG_LEAP_CAMERA_DROP;
 	}
 
 	// Crouch tweak
@@ -561,7 +608,7 @@ static void CG_CalcIdealThirdPersonViewLocation()
 	// Default third‑person range
 	else
 	{
-		VectorMA(cameraIdealTarget, -cg_thirdPersonRange.value, camerafwd, cameraIdealLoc);
+		VectorMA(cameraIdealTarget, -(cg_thirdPersonRange.value + CG_LongLeapCameraBlend() * LONG_LEAP_CAMERA_RANGE), camerafwd, cameraIdealLoc);
 	}
 
 	// Force speed camera modulation
@@ -881,18 +928,106 @@ static void CG_UpdateThirdPersonCameraDamp()
 	// however two full volume traces each frame is a bit scary to think about.
 }
 
-// Gunner aim camera (CF_AIMINGGUN) blend: 0 = normal third-person camera, 1 = aiming camera.
-// It moves towards the target over AIM_CAMERA_BLEND_MS instead of switching in one frame.
+// Cinematic camera blends (from MovieDuels): the gunner aim camera (CF_AIMINGGUN) and the saber lock camera
+// (CF_SABERLOCKING). Each blend goes from 0 = normal third-person camera to 1 = cinematic camera over
+// CAMERA_BLEND_MS (eased in and out) instead of switching in one frame. The camera values are written into
+// cg.overrides; the overrides that were there before (the game's own, e.g. a vehicle camera) are kept aside,
+// used as the normal values, and put back when both blends are back at 0.
 extern vmCvar_t cg_thirdPersonAlpha;
-static constexpr float AIM_CAMERA_BLEND_MS = 250.0f;
-static float cg_aimBlend = 0.0f;
-static int cg_aimBlendLastTime = 0;
+static constexpr float CAMERA_BLEND_MS = 250.0f;
+static constexpr int CAMERA_BLEND_OVERRIDES = CG_OVERRIDE_3RD_PERSON_ANG | CG_OVERRIDE_3RD_PERSON_APH |
+	CG_OVERRIDE_3RD_PERSON_POF | CG_OVERRIDE_3RD_PERSON_HOF | CG_OVERRIDE_3RD_PERSON_VOF | CG_OVERRIDE_3RD_PERSON_CDP |
+	CG_OVERRIDE_3RD_PERSON_TDP | CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV;
 
-static float CG_UpdateAimBlend()
+struct cameraBlendField_t
 {
-	const bool aiming = cg.renderingThirdPerson
-		&& (cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN))
-		&& cg_AimingCinematicCamera.integer;
+	int bit;
+	float overrides_t::* field;
+	const vmCvar_t* normal; // value without an override (nullptr: a damping, switched off during the blends)
+	float aim; // aiming camera
+	float lock; // saber lock camera
+	bool lockSets; // false: the saber lock camera keeps this value
+};
+
+static const cameraBlendField_t cameraBlendFields[] =
+{
+	{ CG_OVERRIDE_3RD_PERSON_ANG, &overrides_t::thirdPersonAngle, &cg_thirdPersonAngle, 0.0f, 40.5f, true },
+	{ CG_OVERRIDE_3RD_PERSON_APH, &overrides_t::thirdPersonAlpha, &cg_thirdPersonAlpha, 1.0f, 1.0f, false },
+	{ CG_OVERRIDE_3RD_PERSON_POF, &overrides_t::thirdPersonPitchOffset, &cg_thirdPersonPitchOffset, 0.0f, -11.25f, true },
+	{ CG_OVERRIDE_3RD_PERSON_HOF, &overrides_t::thirdPersonHorzOffset, &cg_thirdPersonHorzOffset, -20.0f, -25.5f, true },
+	{ CG_OVERRIDE_3RD_PERSON_VOF, &overrides_t::thirdPersonVertOffset, &cg_thirdPersonVertOffset, 4.0f, -15.5f, true },
+	// No damping during the whole blend: the blend already eases the camera. Blending the damping
+	// too made the camera trail behind and then snap into place when it reached 1.
+	{ CG_OVERRIDE_3RD_PERSON_CDP, &overrides_t::thirdPersonCameraDamp, nullptr, 1.0f, 1.0f, true },
+	{ CG_OVERRIDE_3RD_PERSON_TDP, &overrides_t::thirdPersonTargetDamp, nullptr, 1.0f, 1.0f, true },
+	{ CG_OVERRIDE_3RD_PERSON_RNG, &overrides_t::thirdPersonRange, &cg_thirdPersonRange, 50.0f, 82.5f, true },
+	{ CG_OVERRIDE_FOV, &overrides_t::fov, &cg_fov, 60.0f, 31.0f, true },
+};
+
+static float cg_aimBlend = 0.0f;
+static float cg_saberLockBlend = 0.0f;
+static int cg_cameraBlendLastTime = 0;
+static bool cg_cameraBlendOwned = false; // the blends have written into cg.overrides
+static overrides_t cg_cameraBlendSaved; // the overrides without the blends
+static overrides_t cg_cameraBlendWritten; // what the blends wrote last frame
+
+static float CG_StepCameraBlend(float blend, const bool wanted, const float step)
+{
+	blend = wanted ? Q_min(1.0f, blend + step) : Q_max(0.0f, blend - step);
+	if (wanted && blend <= 0.0f)
+	{
+		blend = 0.001f; // start blending on the first frame
+	}
+	return blend;
+}
+
+static float CG_CameraBlendEase(const float blend)
+{
+	return blend * blend * (3.0f - 2.0f * blend); // smoothstep: eases in and out
+}
+
+static float CG_CameraBlendLerp(const float normal, const float cinematic, const float s)
+{
+	return normal + (cinematic - normal) * s;
+}
+
+static bool CG_SaberLockCamera()
+{
+	if (cg.predictedPlayerState.communicatingflags & (1 << CF_SABERLOCKING))
+	{
+		return true;
+	}
+	// an NPC the player controls has the lock in its own playerState
+	const int view_ent = cg.snap ? cg.snap->ps.viewEntity : 0;
+	return view_ent > 0 && view_ent < ENTITYNUM_WORLD && g_entities[view_ent].client
+		&& g_entities[view_ent].client->ps.communicatingflags & (1 << CF_SABERLOCKING);
+}
+
+// Whatever the game changed in the overrides since the blends last wrote them is what it wants without the blends.
+static void CG_CameraBlendTakeGameChanges()
+{
+	for (const cameraBlendField_t& f : cameraBlendFields)
+	{
+		if ((cg.overrides.active ^ cg_cameraBlendWritten.active) & f.bit
+			|| cg.overrides.*f.field != cg_cameraBlendWritten.*f.field)
+		{
+			cg_cameraBlendSaved.active = (cg_cameraBlendSaved.active & ~f.bit) | (cg.overrides.active & f.bit);
+			cg_cameraBlendSaved.*f.field = cg.overrides.*f.field;
+		}
+	}
+}
+
+static void CG_UpdateCameraBlends()
+{
+	// clamp the step so a time jump (map or save load) doesn't skip the blend
+	int msec = cg.time - cg_cameraBlendLastTime;
+	if (msec < 0 || msec > 100)
+	{
+		msec = 0;
+	}
+	cg_cameraBlendLastTime = cg.time;
+	const float step = msec / CAMERA_BLEND_MS;
+	const bool can_blend = cg.predictedPlayerState.stats[STAT_HEALTH] > 0 && !cg.predictedPlayerState.m_iVehicleNum;
 
 	if (!cg.renderingThirdPerson || !cg_AimingCinematicCamera.integer)
 	{
@@ -900,31 +1035,67 @@ static float CG_UpdateAimBlend()
 	}
 	else
 	{
-		// clamp the step so a time jump (map or save load) doesn't skip the blend
-		int msec = cg.time - cg_aimBlendLastTime;
-		if (msec < 0 || msec > 100)
+		cg_aimBlend = CG_StepCameraBlend(cg_aimBlend,
+			can_blend && cg.predictedPlayerState.communicatingflags & (1 << CF_AIMINGGUN), step);
+	}
+
+	if (!cg_saberLockCinematicCamera.integer)
+	{
+		cg_saberLockBlend = 0.0f;
+	}
+	else
+	{
+		cg_saberLockBlend = CG_StepCameraBlend(cg_saberLockBlend, can_blend && CG_SaberLockCamera(), step);
+	}
+
+	if (cg_aimBlend <= 0.0f && cg_saberLockBlend <= 0.0f)
+	{
+		if (cg_cameraBlendOwned)
 		{
-			msec = 0;
+			// back to normal: put the overrides back as they were without the blends
+			CG_CameraBlendTakeGameChanges();
+			for (const cameraBlendField_t& f : cameraBlendFields)
+			{
+				cg.overrides.*f.field = cg_cameraBlendSaved.*f.field;
+			}
+			cg.overrides.active = (cg.overrides.active & ~CAMERA_BLEND_OVERRIDES) | (cg_cameraBlendSaved.active & CAMERA_BLEND_OVERRIDES);
+			cg_cameraBlendOwned = false;
 		}
-		const float step = msec / AIM_CAMERA_BLEND_MS;
-		cg_aimBlend = aiming ? Q_min(1.0f, cg_aimBlend + step) : Q_max(0.0f, cg_aimBlend - step);
-		if (aiming && cg_aimBlend <= 0.0f)
+		return;
+	}
+
+	if (!cg_cameraBlendOwned)
+	{
+		cg_cameraBlendSaved = cg.overrides;
+		cg_cameraBlendOwned = true;
+	}
+	else
+	{
+		CG_CameraBlendTakeGameChanges();
+	}
+
+	// each value goes from the normal setting (0) to the aiming setting and then to the saber lock setting
+	const float aim = CG_CameraBlendEase(cg_aimBlend);
+	const float lock = CG_CameraBlendEase(cg_saberLockBlend);
+	for (const cameraBlendField_t& f : cameraBlendFields)
+	{
+		if (f.normal == nullptr)
 		{
-			cg_aimBlend = 0.001f; // start blending on the first aiming frame
+			cg.overrides.*f.field = f.aim;
+		}
+		else
+		{
+			float value = cg_cameraBlendSaved.active & f.bit ? cg_cameraBlendSaved.*f.field : f.normal->value;
+			value = CG_CameraBlendLerp(value, f.aim, aim);
+			if (f.lockSets)
+			{
+				value = CG_CameraBlendLerp(value, f.lock, lock);
+			}
+			cg.overrides.*f.field = value;
 		}
 	}
-	cg_aimBlendLastTime = cg.time;
-	return cg_aimBlend;
-}
-
-static float CG_AimBlendEase()
-{
-	return cg_aimBlend * cg_aimBlend * (3.0f - 2.0f * cg_aimBlend); // smoothstep: eases in and out
-}
-
-static float CG_AimLerp(const float normal, const float aimed, const float s)
-{
-	return normal + (aimed - normal) * s;
+	cg.overrides.active |= CAMERA_BLEND_OVERRIDES;
+	cg_cameraBlendWritten = cg.overrides;
 }
 
 /*
@@ -935,6 +1106,76 @@ CG_OffsetThirdPersonView
 */
 extern qboolean MatrixMode;
 
+#define MEDITATE_CAMERA_RETURN	6.0f	// after meditating the camera swings back behind the player in about 1 / 6 s
+
+/*
+===============
+CG_MeditateCameraOrbit
+
+While meditating (the meditate anims, not their ends) the mouse orbits the third person camera around the player:
+the game holds the view angles there (PM_LockAngles, the body keeps facing), so the orbit is the mouse movement since
+the meditation began, read from the user commands. Afterwards the camera swings back behind the player. (As MP.)
+===============
+*/
+static void CG_MeditateCameraOrbit(float* yaw, float* pitch)
+{
+	static qboolean active = qfalse;
+	static short startYaw, startPitch;
+	static float orbitYaw = 0.0f, orbitPitch = 0.0f;
+	static int lastTime = 0;
+	const int anim = cg.predictedPlayerState.legsAnim;
+	const qboolean meditating = static_cast<qboolean>(cg.renderingThirdPerson
+		&& cg.predictedPlayerState.stats[STAT_HEALTH] > 0
+		&& (anim == BOTH_MEDITATE || anim == BOTH_MEDITATE1 || anim == BOTH_MEDITATE_SABER));
+	usercmd_t cmd;
+
+	cgi_GetUserCmd(cgi_GetCurrentCmdNumber(), &cmd);
+
+	if (meditating)
+	{
+		if (!active)
+		{
+			active = qtrue;
+			startYaw = static_cast<short>(cmd.angles[YAW] - ANGLE2SHORT(orbitYaw));
+			startPitch = static_cast<short>(cmd.angles[PITCH] - ANGLE2SHORT(orbitPitch));
+		}
+		orbitYaw = SHORT2ANGLE(static_cast<short>(cmd.angles[YAW] - startYaw));
+		orbitPitch = SHORT2ANGLE(static_cast<short>(cmd.angles[PITCH] - startPitch));
+		// keep the camera between below the chin and above the head
+		if (orbitPitch + cg.predictedPlayerState.viewangles[PITCH] > 70.0f)
+		{
+			orbitPitch = 70.0f - cg.predictedPlayerState.viewangles[PITCH];
+			startPitch = static_cast<short>(cmd.angles[PITCH] - ANGLE2SHORT(orbitPitch));
+		}
+		else if (orbitPitch + cg.predictedPlayerState.viewangles[PITCH] < -60.0f)
+		{
+			orbitPitch = -60.0f - cg.predictedPlayerState.viewangles[PITCH];
+			startPitch = static_cast<short>(cmd.angles[PITCH] - ANGLE2SHORT(orbitPitch));
+		}
+	}
+	else
+	{
+		float step = (cg.time - lastTime) * 0.001f * MEDITATE_CAMERA_RETURN;
+
+		if (step < 0.0f || step > 1.0f)
+		{// map change, pause
+			step = 1.0f;
+		}
+		active = qfalse;
+		orbitYaw = AngleNormalize180(orbitYaw);
+		orbitYaw -= orbitYaw * step;
+		orbitPitch -= orbitPitch * step;
+		if (fabs(orbitYaw) < 0.1f && fabs(orbitPitch) < 0.1f)
+		{
+			orbitYaw = orbitPitch = 0.0f;
+		}
+	}
+	lastTime = cg.time;
+
+	*yaw += orbitYaw;
+	*pitch += orbitPitch;
+}
+
 static void CG_OffsetThirdPersonView()
 {
 	// Ensure snapshot exists before dereferencing.
@@ -944,7 +1185,8 @@ static void CG_OffsetThirdPersonView()
 	}
 
 	vec3_t diff;
-	//static int aimLockTime = 0;
+
+	CG_UpdateCameraBlends();
 
 	camWaterAdjust = 0;
 	cameraStiffFactor = 0.0f;
@@ -1015,84 +1257,11 @@ static void CG_OffsetThirdPersonView()
 			cameraFocusAngles[YAW] = cg.predictedPlayerState.stats[STAT_DEAD_YAW];
 		}
 	}
-	// Saber lock cinematic
-	else if (cg.renderingThirdPerson &&
-		(cg.predictedPlayerState.communicatingflags & (1 << CF_SABERLOCKING)) &&
-		cg_saberLockCinematicCamera.integer)
+	// Saber lock or aiming cinematic camera (also while it is still blending in or out)
+	else if (cg.renderingThirdPerson && (cg_saberLockBlend > 0.0f || cg_aimBlend > 0.0f))
 	{
-		cameraFocusAngles[YAW] += (cg.overrides.thirdPersonAngle = 40.5f);
-		cameraFocusAngles[PITCH] += (cg.overrides.thirdPersonPitchOffset = -11.25f);
-	}
-	// Aiming weapon (also while the camera is still blending back out of aim mode)
-	else if (CG_UpdateAimBlend() > 0.0f)
-	{
-		// Shoulder camera tuning, eased in and out: each value goes from the normal
-		// third-person setting (s = 0) to the aiming setting (s = 1)
-		const float s = CG_AimBlendEase();
-		cg.overrides.thirdPersonAngle = CG_AimLerp(cg_thirdPersonAngle.value, 0.0f, s);				// yaw inward
-		cg.overrides.thirdPersonAlpha = CG_AimLerp(cg_thirdPersonAlpha.value, 1.0f, s);				// fully visible player
-		cg.overrides.thirdPersonPitchOffset = CG_AimLerp(cg_thirdPersonPitchOffset.value, 0.0f, s);	// no pitch offset
-		cg.overrides.thirdPersonHorzOffset = CG_AimLerp(cg_thirdPersonHorzOffset.value, -20.0f, s);	// shoulder shift
-		cg.overrides.thirdPersonVertOffset = CG_AimLerp(cg_thirdPersonVertOffset.value, 4.0f, s);	// slight upward shift
-		// No damping during the whole blend: the blend already eases the camera. Blending the damping
-		// too made the camera trail behind and then snap into place when it reached 1.
-		cg.overrides.thirdPersonCameraDamp = 1.0f;
-		cg.overrides.thirdPersonTargetDamp = 1.0f;
-		cg.overrides.thirdPersonRange = CG_AimLerp(cg_thirdPersonRange.value, 50.0f, s);			// closer to the player
-		cg.overrides.fov = CG_AimLerp(cg_fov.value, 60.0f, s);										// closer FOV
-
 		cameraFocusAngles[YAW] += cg.overrides.thirdPersonAngle;
 		cameraFocusAngles[PITCH] += cg.overrides.thirdPersonPitchOffset;
-
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_ANG;
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_APH;
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_POF;
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_HOF;
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_VOF;
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_CDP;
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_TDP;
-		cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG;
-		cg.overrides.active |= CG_OVERRIDE_FOV;
-
-		/*
-		Somehow need to add a smooth transition from normal third-person to these camera overrides.
-		Camera is now tight because I added CG_OVERRIDE_3RD_PERSON_TDP so don't really need the code below.
-			- Mike
-		*/
-
-		/*
-		// Start aim-lock timer
-		if (aimLockTime == 0)
-		{
-			aimLockTime = cg.time + 250;   // wait for zoom-in to finish
-		}
-
-		// Only apply dynamic shoulder tracking AFTER zoom-in
-		if (cg.time > aimLockTime)
-		{
-			float side = cg.predictedPlayerState.velocity[1];
-
-			// Only track sideways movement if actually strafing
-			if (fabs(side) > 5.0f)
-			{
-				float sideNorm = side / 200.0f;
-
-				if (sideNorm > 1.0f)  sideNorm = 1.0f;
-				if (sideNorm < -1.0f) sideNorm = -1.0f;
-
-				float baseShoulder = -14.0f;
-				cg.overrides.thirdPersonHorzOffset = baseShoulder + (-6.0f * sideNorm);
-
-				// Tight camera damp (keeps camera glued to shoulder)
-				cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_CDP;
-				cg.overrides.thirdPersonCameraDamp = 0.8f;
-			}
-			else
-			{
-				// NOT strafing → disable shoulder lock
-				cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_CDP;
-			}
-		}*/
 	}
 	// Normal third‑person angle
 	else
@@ -1105,6 +1274,7 @@ static void CG_OffsetThirdPersonView()
 		{
 			cameraFocusAngles[YAW] += cg_thirdPersonAngle.value;
 		}
+		CG_MeditateCameraOrbit(&cameraFocusAngles[YAW], &cameraFocusAngles[PITCH]);
 
 		if (cg.overrides.active & CG_OVERRIDE_3RD_PERSON_POF)
 		{
@@ -1114,17 +1284,6 @@ static void CG_OffsetThirdPersonView()
 		{
 			cameraFocusAngles[PITCH] += cg_thirdPersonPitchOffset.value;
 		}
-		// Not aiming → reset everything
-		//aimLockTime = 0;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_ANG;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_APH;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_POF;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_HOF;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_VOF;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_CDP;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_TDP;
-		cg.overrides.active &= ~CG_OVERRIDE_3RD_PERSON_RNG;
-		cg.overrides.active &= ~CG_OVERRIDE_FOV;
 	}
 
 	// First‑person saber handling

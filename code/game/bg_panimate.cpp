@@ -6346,6 +6346,13 @@ void PM_SaberStartTransAnim(const int saberAnimLevel,
 	const gentity_t* gent,
 	const int fatigued)
 {
+	// Wall-run (Fallen Order style): the run lasts as long as its animation, so it plays slower and longer (in MP the
+	// server timers and every client's playback both come through here, so they stay the same)
+	if (anim_in == BOTH_WALL_RUN_LEFT || anim_in == BOTH_WALL_RUN_RIGHT)
+	{
+		*animSpeed *= WALL_RUN_ANIM_SCALE;
+		return;
+	}
 	const int anim = PM_StyleSaberAnimToBase(anim_in); // character overridden anims get the base anim's speed
 	char buf[128];
 

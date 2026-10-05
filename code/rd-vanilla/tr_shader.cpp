@@ -1273,6 +1273,13 @@ static qboolean ParseStage(shaderStage_t* stage, const char** text)
 			stage->bundle[0].imageAnimationSpeed = atof(token);
 			stage->bundle[0].oneShotAnimMap = one_shot;
 
+			// several animMap lines in one stage add to the same frames (MD's TFA / unstable blades): keep the frames
+			// read so far, else they are lost (NULL = the flat default image)
+			if (stage->bundle[0].numImageAnimations > 0 && stage->bundle[0].image)
+			{
+				memcpy(images, stage->bundle[0].image, stage->bundle[0].numImageAnimations * sizeof(image_t*));
+			}
+
 			// parse up to max_image_animations animations
 			while (true) {
 				token = COM_ParseExt(text, qfalse);

@@ -378,6 +378,23 @@ void SCR_DrawSmallStringExt(int x, int y, const char* string, const float* setCo
 void SCR_DrawBigChar(int x, int y, int ch);
 void SCR_DrawSmallChar(int x, int y, int ch);
 
+//
+// cl_avi.cpp (video recording, as MP)
+//
+extern cvar_t* cl_aviFrameRate;
+extern cvar_t* cl_aviMotionJpeg;
+extern cvar_t* cl_avi2GBLimit;
+qboolean CL_OpenAVIForWriting(const char* fileName);
+void CL_TakeVideoFrame(void);
+void CL_WriteAVIVideoFrame(const byte* imageBuffer, int size);
+void CL_WriteAVIAudioFrame(const byte* pcmBuffer, int size);
+qboolean CL_CloseAVI(void);
+qboolean CL_VideoRecording(void);
+void CL_VideoRecordingFrame(void);
+void CL_DrawVideoRecordingStatus(void);
+void CL_InitVideoRecording(void);
+void CL_ShutdownVideoRecording(void);
+
 #ifdef JK2_MODE
 void	SCR_PrecacheScreenshot();
 #endif

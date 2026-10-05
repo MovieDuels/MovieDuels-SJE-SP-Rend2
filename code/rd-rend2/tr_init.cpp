@@ -1168,17 +1168,32 @@ RB_TakeVideoFrameCmd
 const void* RB_TakeVideoFrameCmd(const void* data)
 {
 	const videoFrameCommand_t* cmd;
-	/*byte* cBuf;
-	size_t				memcount, linelen;
-	int				padwidth, avipadwidth, padlen, avipadlen;
-	GLint packAlign;*/
+	size_t				linelen;
+	int				padwidth, padlen;
+	GLint packAlign;
 
 	// finish any 2D drawing if needed
 	if (tess.numIndexes)
 		RB_EndSurface();
 
 	cmd = (const videoFrameCommand_t*)data;
-#ifndef REND2_SP
+
+	// SP captures mid-frame (before the recording overlay is drawn): put the frame on the screen the way
+	// RB_SwapBuffers does (it blits again at the swap, then with the overlay), then read the screen
+	if (!backEnd.framePostProcessed)
+	{
+		if (tr.msaaResolveFbo && r_hdr->integer)
+		{
+			FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			FBO_FastBlit(tr.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		}
+		else if (tr.renderFbo)
+		{
+			FBO_FastBlit(tr.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		}
+	}
+	FBO_Bind(NULL);
+
 	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 
 	linelen = cmd->width * 3;
@@ -1186,59 +1201,26 @@ const void* RB_TakeVideoFrameCmd(const void* data)
 	// Alignment stuff for glReadPixels
 	padwidth = PAD(linelen, packAlign);
 	padlen = padwidth - linelen;
-	// AVI line padding
-	avipadwidth = PAD(linelen, AVI_LINE_PADDING);
-	avipadlen = avipadwidth - linelen;
+	// the read back is done here; the compression and the writing run on workers (tr_video_encoder.cpp) - compressing
+	// here cost tens of milliseconds per captured frame
+	byte* frame = R_VideoEncoderBegin(static_cast<size_t>(padwidth) * cmd->height);
 
-	cBuf = (byte*)(PADP(cmd->captureBuffer, packAlign));
-
-	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
-		GL_UNSIGNED_BYTE, cBuf);
-
-	memcount = padwidth * cmd->height;
+	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, frame);
 
 	// gamma correct
 	if (glConfig.deviceSupportsGamma)
-		R_GammaCorrect(cBuf, memcount);
+		R_GammaCorrect(frame, padwidth * cmd->height);
 
-	if (cmd->motionJpeg)
-	{
-		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height,
-			r_aviMotionJpegQuality->integer,
-			cmd->width, cmd->height, cBuf, padlen);
-		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
-	}
-	else
-	{
-		byte* lineend, * memend;
-		byte* srcptr, * destptr;
+	R_VideoEncoderSubmit(cmd->width, cmd->height, padlen, r_aviMotionJpegQuality->integer, cmd->motionJpeg,
+		ri.CL_WriteAVIVideoFrame);
 
-		srcptr = cBuf;
-		destptr = cmd->encodeBuffer;
-		memend = srcptr + memcount;
-
-		// swap R and B and remove line paddings
-		while (srcptr < memend)
-		{
-			lineend = srcptr + linelen;
-			while (srcptr < lineend)
-			{
-				*destptr++ = srcptr[2];
-				*destptr++ = srcptr[1];
-				*destptr++ = srcptr[0];
-				srcptr += 3;
-			}
-
-			Com_Memset(destptr, '\0', avipadlen);
-			destptr += avipadlen;
-
-			srcptr += padlen;
-		}
-
-		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, avipadwidth * cmd->height);
-	}
-#endif
 	return (const void*)(cmd + 1);
+}
+
+// SP: every frame still being compressed is written (the client calls it before closing the AVI file)
+static void RE_FlushVideoFrames(void)
+{
+	R_VideoEncoderFlush(ri.CL_WriteAVIVideoFrame, qtrue);
 }
 
 //============================================================================
@@ -2262,6 +2244,8 @@ RE_Shutdown
 */
 void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 {
+	R_VideoEncoderShutdown(); // the recording workers (a recording's frames were flushed when its file closed)
+
 	ri.Printf(PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow);
 
 	for (size_t i = 0; i < numCommands; i++)
@@ -2518,6 +2502,8 @@ extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const re
 	re.ProcessDissolve = RE_ProcessDissolve;
 	re.InitDissolve = RE_InitDissolve;
 	re.GetScreenShot = RE_GetScreenShot;
+	re.TakeVideoFrame = RE_TakeVideoFrame;
+	re.FlushVideoFrames = RE_FlushVideoFrames;
 
 #ifdef JK2_MODE
 	re.SaveJPGToBuffer = RE_SaveJPGToBuffer;

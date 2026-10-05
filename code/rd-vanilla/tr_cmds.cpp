@@ -505,3 +505,26 @@ void RE_EndFrame(int* frontEndMsec, int* backEndMsec)
 		i = false;
 	}
 }
+
+/*
+=============
+RE_TakeVideoFrame (as MP)
+=============
+*/
+void RE_TakeVideoFrame(const int width, const int height, byte* captureBuffer, byte* encodeBuffer, const qboolean motionJpeg)
+{
+	if (!tr.registered)
+		return;
+
+	videoFrameCommand_t* cmd = static_cast<videoFrameCommand_t*>(R_GetCommandBuffer(sizeof * cmd));
+	if (!cmd)
+		return;
+
+	cmd->commandId = RC_VIDEOFRAME;
+
+	cmd->width = width;
+	cmd->height = height;
+	cmd->captureBuffer = captureBuffer;
+	cmd->encodeBuffer = encodeBuffer;
+	cmd->motionJpeg = motionJpeg;
+}

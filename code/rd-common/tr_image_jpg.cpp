@@ -557,6 +557,50 @@ size_t RE_SaveJPGToBuffer(byte* buffer, size_t bufSize, int quality,
 	return outcount;
 }
 
+/*
+=================
+RE_SaveVideoJPGToBuffer
+
+RE_SaveJPGToBuffer for recorded video frames (tr_video_encoder.cpp): the fast DCT and the usual 2x2 chroma subsampling
+at any quality - per frame much quicker and smaller, and in moving video no visible difference. Rows bottom up.
+=================
+*/
+size_t RE_SaveVideoJPGToBuffer(byte* buffer, size_t bufSize, int quality,
+	int image_width, int image_height, byte* image_buffer, int padding)
+{
+	jpeg_compress_struct cinfo{};
+	jpeg_error_mgr jerr;
+	JSAMPROW row_pointer[1]{};
+
+	cinfo.err = jpeg_std_error(&jerr);
+	cinfo.err->error_exit = R_JPGErrorExit;
+	cinfo.err->output_message = R_JPGOutputMessage;
+	jpeg_create_compress(&cinfo);
+	jpegDest(&cinfo, buffer, bufSize);
+
+	cinfo.image_width = image_width;
+	cinfo.image_height = image_height;
+	cinfo.input_components = 3;
+	cinfo.in_color_space = JCS_RGB;
+	jpeg_set_defaults(&cinfo);
+	jpeg_set_quality(&cinfo, quality, TRUE);
+	cinfo.dct_method = JDCT_IFAST;
+
+	jpeg_start_compress(&cinfo, TRUE);
+	const int row_stride = image_width * cinfo.input_components + padding;
+	while (cinfo.next_scanline < cinfo.image_height)
+	{
+		row_pointer[0] = &image_buffer[(cinfo.image_height - cinfo.next_scanline - 1) * row_stride];
+		(void)jpeg_write_scanlines(&cinfo, row_pointer, 1);
+	}
+	jpeg_finish_compress(&cinfo);
+
+	const my_dest_ptr dest = reinterpret_cast<my_dest_ptr>(cinfo.dest);
+	const size_t outcount = dest->size - dest->pub.free_in_buffer;
+	jpeg_destroy_compress(&cinfo);
+	return outcount;
+}
+
 void RE_SaveJPG(const char* filename, const int quality, const int image_width, const int image_height, byte* image_buffer, const int padding)
 {
 	size_t bufSize = image_width * image_height * 3;

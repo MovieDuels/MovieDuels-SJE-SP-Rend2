@@ -217,6 +217,14 @@ void RB_DoShadowTessEnd(vec3_t light_pos)
 		return;
 	}
 
+	// No floor traced under this entity (no RF_SHADOW_PLANE): no shadow volume. With r_advancedlod, tr_ghoul2.cpp /
+	// tr_mesh.cpp hand every entity in here; measured from shadowPlane 0 (the world's origin height) or from the
+	// entity's origin, the shadows of weapons, saber blades, trails and effects went far off as long black lines.
+	if (!(backEnd.currentEntity->e.renderfx & RF_SHADOW_PLANE))
+	{
+		return;
+	}
+
 #if 1 //controlled method - try to keep shadows in range so they don't show through so much -rww
 	vec3_t	ent_light;
 

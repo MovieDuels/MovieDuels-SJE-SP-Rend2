@@ -109,6 +109,8 @@ extern qboolean PM_InReboundJump(int anim);
 extern qboolean PM_StabDownAnim(int anim);
 extern qboolean PM_DodgeAnim(int anim);
 extern qboolean PM_DodgeHoldAnim(int anim);
+extern qboolean PM_MeleeblockHoldAnim(int anim);
+extern qboolean PM_MeleeblockAnim(int anim);
 extern qboolean PM_InReboundHold(int anim);
 extern qboolean PM_InKnockDownNoGetup(const playerState_t* ps);
 extern qboolean PM_InGetUpNoRoll(const playerState_t* ps);
@@ -624,7 +626,7 @@ qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolea
 	if (levitationLevel == FORCE_LEVEL_2)
 	{
 		// Level 2: longer + faster
-		minWallRunTime = 300;       // longer usable window
+		minWallRunTime = 500;       // longer usable window (~1.9 s with the slower wall-run anim, level 3 ~2.35 s)
 		wallRunSpeedBase = 225.0f;    // faster
 		wallRunSpeedRun = 300.0f;    // faster
 	}
@@ -747,6 +749,19 @@ qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolea
 						zVel = forceJumpStrength[FORCE_LEVEL_2] / 2.0f;
 					}
 
+					// Fallen Order style: hold the height (no falling down the wall), only a slight sink at the end
+					if (ent->client->ps.legsAnimTimer - minWallRunTime > WALL_RUN_SINK_TIME)
+					{
+						if (zVel < 0.0f)
+						{
+							zVel = 0.0f;
+						}
+					}
+					else if (zVel > -WALL_RUN_SINK_SPEED)
+					{
+						zVel = -WALL_RUN_SINK_SPEED;
+					}
+
 					//pull toward wall
 					VectorScale(trace.plane.normal, -128.0f, ent->client->ps.velocity);
 
@@ -797,6 +812,61 @@ qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolea
 }
 
 extern int PM_AnimLength(const int index, const animNumber_t anim);
+
+// Wall-to-wall jump (Fallen Order style): after jumping off a wall-run (the WALL_RUN_*_FLIP), a wall close on the side
+// the player flies to starts a new wall-run on it, so wall-runs can be chained across a corridor.
+void PM_WallRunChain(gentity_t* ent, const usercmd_t* ucmd)
+{
+	if (!ent || !ent->client)
+	{
+		return;
+	}
+
+	const int legs_anim = ent->client->ps.legsAnim;
+	if (legs_anim != BOTH_WALL_RUN_LEFT_FLIP && legs_anim != BOTH_WALL_RUN_RIGHT_FLIP)
+	{
+		return;
+	}
+
+	if (ent->client->ps.groundEntityNum != ENTITYNUM_NONE
+		|| ent->client->ps.forcePowerLevel[FP_LEVITATION] < FORCE_LEVEL_2
+		|| ucmd->forwardmove <= 0)
+	{
+		return;
+	}
+
+	// not while still pushing off the old wall
+	const int flip_len = PM_AnimLength(ent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(legs_anim));
+	if (ent->client->ps.legsAnimTimer > flip_len - 150)
+	{
+		return;
+	}
+
+	vec3_t right, trace_to;
+	const vec3_t fwd_angles = { 0, ent->client->ps.viewangles[YAW], 0 };
+	const vec3_t maxs = { ent->maxs[0], ent->maxs[1], 24 };
+	const vec3_t mins = { ent->mins[0], ent->mins[1], 0 };
+	trace_t trace;
+
+	AngleVectors(fwd_angles, nullptr, right, nullptr);
+
+	// jumped off a wall on the left = flying to the right, and the other way round
+	const qboolean wall_on_right = static_cast<qboolean>(legs_anim == BOTH_WALL_RUN_LEFT_FLIP);
+	VectorMA(ent->currentOrigin, wall_on_right ? WALL_RUN_CHAIN_DIST : -WALL_RUN_CHAIN_DIST, right, trace_to);
+
+	gi.trace(&trace, ent->currentOrigin, mins, maxs, trace_to, ent->s.number, ent->clipmask, static_cast<EG2_Collision>(0), 0);
+
+	if (trace.fraction < 1.0f && trace.plane.normal[2] >= 0.0f && trace.plane.normal[2] <= 0.4f)
+	{
+		NPC_SetAnim(ent, SETANIM_BOTH, wall_on_right ? BOTH_WALL_RUN_RIGHT : BOTH_WALL_RUN_LEFT,
+			SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+		if (ent->client->ps.velocity[2] < 0.0f)
+		{
+			ent->client->ps.velocity[2] = 0.0f;
+		}
+		G_SoundOnEnt(ent, CHAN_BODY, "sound/weapons/force/jumpsmall.mp3");
+	}
+}
 
 qboolean PM_AdjustAnglesForSpinningFlip(gentity_t* ent, usercmd_t* ucmd, const qboolean angles_only)
 {
@@ -1656,6 +1726,7 @@ qboolean G_OkayToLean(const playerState_t* ps, const usercmd_t* cmd, const qbool
 			&& !PM_CrouchAnim(ps->legsAnim)
 			&& PM_DodgeAnim(ps->torsoAnim)
 			|| PM_BlockAnim(ps->torsoAnim) || PM_BlockDualAnim(ps->torsoAnim) || PM_BlockStaffAnim(ps->torsoAnim)
+			|| PM_MeleeblockAnim(ps->torsoAnim) //already leaning (as SJE: melee block stance)
 			|| !ps->weaponTime //not attacking or being prevented from attacking
 			&& !ps->legsAnimTimer //not in any held legs anim
 			&& !ps->torsoAnimTimer) //not in any held torso anim
@@ -2443,6 +2514,265 @@ void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, 
 				if (ps->leanofs > 0)
 				{
 					ps->leanofs = 0;
+				}
+			}
+		}
+	}
+
+	// as SJE: melee block stance (MBF_MELEEBLOCK) - lean into the direction pushed
+	if (gent
+		&& gent->client && gent->client->NPC_class != CLASS_DROIDEKA
+		&& gent->client->ps.ManualBlockingFlags & 1 << MBF_MELEEBLOCK)
+	{
+		//only in the real meleeblock pmove
+		if (cmd->rightmove || cmd->forwardmove) //pushing a direction
+		{
+			int anim = -1;
+
+			if (cmd->rightmove > 0)
+			{
+				//lean right
+				if (cmd->forwardmove > 0)
+				{
+					//lean forward right
+					if (ps->torsoAnim == MELEE_STANCE_HOLD_RT)
+					{
+						anim = ps->torsoAnim;
+					}
+					else
+					{
+						anim = MELEE_STANCE_RT;
+					}
+				}
+				else if (cmd->forwardmove < 0)
+				{
+					//lean backward right
+					if (ps->torsoAnim == MELEE_STANCE_HOLD_BR)
+					{
+						anim = ps->torsoAnim;
+					}
+					else
+					{
+						anim = MELEE_STANCE_BR;
+					}
+				}
+				else
+				{
+					//lean right
+					if (ps->torsoAnim == MELEE_STANCE_HOLD_RT)
+					{
+						anim = ps->torsoAnim;
+					}
+					else
+					{
+						anim = MELEE_STANCE_RT;
+					}
+				}
+			}
+			else if (cmd->rightmove < 0)
+			{
+				//lean left
+				if (cmd->forwardmove > 0)
+				{
+					//lean forward left
+					if (ps->torsoAnim == MELEE_STANCE_HOLD_LT)
+					{
+						anim = ps->torsoAnim;
+					}
+					else
+					{
+						anim = MELEE_STANCE_LT;
+					}
+				}
+				else if (cmd->forwardmove < 0)
+				{
+					//lean backward left
+					if (ps->torsoAnim == MELEE_STANCE_HOLD_BL)
+					{
+						anim = ps->torsoAnim;
+					}
+					else
+					{
+						anim = MELEE_STANCE_BL;
+					}
+				}
+				else
+				{
+					//lean left
+					if (ps->torsoAnim == MELEE_STANCE_HOLD_LT)
+					{
+						anim = ps->torsoAnim;
+					}
+					else
+					{
+						anim = MELEE_STANCE_LT;
+					}
+				}
+			}
+			else
+			{
+				//not pressing either side
+				if (cmd->forwardmove > 0)
+				{
+					//lean forward
+					if (PM_MeleeblockAnim(ps->torsoAnim))
+					{
+						anim = ps->torsoAnim;
+					}
+					else if (Q_irand(0, 1))
+					{
+						anim = MELEE_STANCE_T;
+					}
+					else
+					{
+						anim = MELEE_STANCE_T;
+					}
+				}
+				else if (cmd->forwardmove < 0)
+				{
+					//lean backward
+					if (PM_MeleeblockAnim(ps->torsoAnim))
+					{
+						anim = ps->torsoAnim;
+					}
+					else if (Q_irand(0, 1))
+					{
+						anim = MELEE_STANCE_B;
+					}
+					else
+					{
+						anim = MELEE_STANCE_B;
+					}
+				}
+			}
+			if (anim != -1)
+			{
+				int extra_hold_time = 0;
+				if (PM_MeleeblockAnim(ps->torsoAnim) && !PM_MeleeblockHoldAnim(ps->torsoAnim))
+				{
+					//already in a dodge
+					//use the hold pose, don't start it all over again
+					anim = MELEE_STANCE_HOLD_LT + (anim - MELEE_STANCE_LT);
+					extra_hold_time = 600;
+				}
+				if (anim == pm->ps->torsoAnim)
+				{
+					if (pm->ps->torsoAnimTimer < 600)
+					{
+						pm->ps->torsoAnimTimer = 600;
+					}
+				}
+				else
+				{
+					NPC_SetAnim(gent, SETANIM_TORSO, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+				}
+				if (extra_hold_time && ps->torsoAnimTimer < extra_hold_time)
+				{
+					ps->torsoAnimTimer += extra_hold_time;
+				}
+				if (ps->groundEntityNum != ENTITYNUM_NONE && !cmd->upmove)
+				{
+					NPC_SetAnim(gent, SETANIM_LEGS, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+					ps->legsAnimTimer = ps->torsoAnimTimer;
+				}
+				else
+				{
+					NPC_SetAnim(gent, SETANIM_LEGS, anim, SETANIM_FLAG_NORMAL);
+				}
+				ps->weaponTime = ps->torsoAnimTimer;
+				ps->leanStopDebounceTime = ceil(static_cast<float>(ps->torsoAnimTimer) / 50.0f); //20;
+			}
+		}
+		else if (!cg.zoomMode && cmd->rightmove != 0 && !cmd->forwardmove && cmd->upmove <= 0)
+		{
+			//Only lean if holding use button, strafing and not moving forward or back and not jumping
+			int leanofs = 0;
+			vec3_t viewangles;
+
+			if (cmd->rightmove > 0)
+			{
+				if (ps->leanofs <= 28)
+				{
+					leanofs = ps->leanofs + 4;
+				}
+				else
+				{
+					leanofs = 32;
+				}
+			}
+			else
+			{
+				if (ps->leanofs >= -28)
+				{
+					leanofs = ps->leanofs - 4;
+				}
+				else
+				{
+					leanofs = -32;
+				}
+			}
+
+			VectorCopy(ps->origin, start);
+			start[2] += ps->viewheight;
+			VectorCopy(ps->viewangles, viewangles);
+			viewangles[ROLL] = 0;
+			AngleVectors(ps->viewangles, nullptr, right, nullptr);
+			VectorNormalize(right);
+			right[2] = leanofs < 0 ? 0.25 : -0.25;
+			VectorMA(start, leanofs, right, end);
+			VectorSet(tmins, -8, -8, -4);
+			VectorSet(tmaxs, 8, 8, 4);
+			gi.trace(&trace, start, tmins, tmaxs, end, gent->s.number, MASK_PLAYERSOLID, static_cast<EG2_Collision>(0),
+				0);
+
+			ps->leanofs = floor(static_cast<float>(leanofs) * trace.fraction);
+
+			ps->leanStopDebounceTime = 20;
+		}
+		else
+		{
+			if (cmd->forwardmove || cmd->upmove > 0)
+			{
+				if (pm->ps->legsAnim == LEGS_LEAN_RIGHT1 ||
+					pm->ps->legsAnim == LEGS_LEAN_LEFT1)
+				{
+					pm->ps->legsAnimTimer = 0; //Force it to stop the anim
+				}
+
+				if (ps->leanofs > 0)
+				{
+					ps->leanofs -= 4;
+					if (ps->leanofs < 0)
+					{
+						ps->leanofs = 0;
+					}
+				}
+				else if (ps->leanofs < 0)
+				{
+					ps->leanofs += 4;
+					if (ps->leanofs > 0)
+					{
+						ps->leanofs = 0;
+					}
+				}
+			}
+			else //BUTTON_USE
+			{
+				if (ps->leanofs > 0)
+				{
+					ps->leanofs -= 4;
+					if (ps->leanofs < 0)
+					{
+						ps->leanofs = 0;
+					}
+				}
+				else if (ps->leanofs < 0)
+				{
+					ps->leanofs += 4;
+					if (ps->leanofs > 0)
+					{
+						ps->leanofs = 0;
+					}
 				}
 			}
 		}

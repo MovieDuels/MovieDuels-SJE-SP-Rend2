@@ -72,6 +72,7 @@ extern qboolean PM_AdjustAnglesToGripper(gentity_t* gent, usercmd_t* cmd);
 extern qboolean PM_AdjustAnglesToPuller(gentity_t* ent, const gentity_t* puller, usercmd_t* ucmd, qboolean face_away);
 extern qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, qboolean doMove);
 extern qboolean PM_AdjustAngleForWallRunUp(gentity_t* ent, usercmd_t* ucmd, qboolean doMove);
+extern void PM_WallRunChain(gentity_t* ent, const usercmd_t* ucmd);
 extern qboolean PM_AdjustAnglesForSpinningFlip(gentity_t* ent, usercmd_t* ucmd, qboolean angles_only);
 extern qboolean PM_AdjustAnglesForBackAttack(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_AdjustAnglesForSaberLock(gentity_t* ent, usercmd_t* ucmd);
@@ -147,6 +148,9 @@ extern int IsPressingDestructButton(const gentity_t* self);
 extern qboolean PM_Dyinganim(const playerState_t* ps);
 extern qboolean npc_is_projected(const gentity_t* self);
 extern qboolean manual_melee_dodging(const gentity_t* defender);
+extern qboolean manual_meleeblocking(const gentity_t* defender);
+extern qboolean PM_MeleeblockHoldAnim(int anim);
+extern qboolean PM_MeleeblockAnim(int anim);
 extern cvar_t* g_DebugSaberCombat;
 extern int G_FindLocalInterestPoint(gentity_t* self);
 extern float G_CanJumpToEnemyVeh(Vehicle_t* p_veh, const usercmd_t* pUmcd);
@@ -195,6 +199,7 @@ extern void Player_CheckBurn(const gentity_t* self);
 extern void Player_CheckFreeze(gentity_t* self);
 extern cvar_t* g_SerenityJediEngineMode;
 extern int IsPressingDashButton(const gentity_t* self);
+static qboolean s_dashHeld[MAX_GENTITIES]; // the dash button is still held since the last dash (one dash per press)
 extern cvar_t* g_SaberPerfectBlockingTimerEasy;
 extern cvar_t* g_SaberPerfectBlockingTimerNormal;
 extern cvar_t* g_SaberPerfectBlockingTimerHard;
@@ -3653,30 +3658,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 		}
 	}
 
-	if ((ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) && g_saberLockCinematicCamera->integer)
-	{
-		//who the saber lock camera is on (ENTITYNUM_NONE: nobody). Its overrides are only taken back from him: this
-		//used to clear them every frame for the player and for whatever he controls - a ship he flies lost its camera
-		//range and FOV that way, and the camera sat on top of it.
-		static int saber_lock_camera_ent = ENTITYNUM_NONE;
-
-		if (ent->client->ps.communicatingflags & (1 << CF_SABERLOCKING))
-		{
-			saber_lock_camera_ent = ent->s.number;
-			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_CDP | CG_OVERRIDE_3RD_PERSON_HOF;
-
-			cg.overrides.thirdPersonRange = 82.5f;
-			cg.overrides.thirdPersonCameraDamp = 1;
-			cg.overrides.thirdPersonHorzOffset = -25.5f;
-			cg.overrides.fov = 31;
-		}
-		else if (saber_lock_camera_ent == ent->s.number)
-		{
-			saber_lock_camera_ent = ENTITYNUM_NONE;
-			cg.overrides.active &= ~(CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV | CG_OVERRIDE_3RD_PERSON_CDP | CG_OVERRIDE_3RD_PERSON_HOF);
-			cg.overrides.thirdPersonRange = cg.overrides.thirdPersonCameraDamp = cg.overrides.thirdPersonHorzOffset = 0;
-		}
-	}
+	//the saber lock camera (range, FOV, offsets) is set in cgame now (CG_UpdateCameraBlends), so it can blend in and out
 
 	//check force drain
 	if (ent->client->ps.forcePowersActive & 1 << FP_DRAIN)
@@ -6005,6 +5987,17 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			ent->client->ps.forceJumpCharge = 0;
 		}
 		overridAngles = PM_LockAngles(ent, ucmd) ? qtrue : overridAngles;
+	}
+	else if (PM_MeleeblockHoldAnim(ent->client->ps.torsoAnim) || PM_MeleeblockAnim(ent->client->ps.torsoAnim))
+	{// as SJE: no moving while in a melee block stance
+		ucmd->rightmove = 0;
+		ucmd->upmove = 0;
+		ucmd->forwardmove = 0;
+		if (ent->NPC)
+		{
+			VectorClear(ent->client->ps.moveDir);
+			ent->client->ps.forceJumpCharge = 0;
+		}
 	} //stiffened up
 	else if (g_SerenityJediEngineMode->integer == 2
 		&& !in_camera
@@ -6192,6 +6185,7 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 	overridAngles = PM_AdjustAngleForWallJump(ent, ucmd, qtrue) ? qtrue : overridAngles;
 	overridAngles = PM_AdjustAngleForWallRunUp(ent, ucmd, qtrue) ? qtrue : overridAngles;
 	overridAngles = PM_AdjustAngleForWallRun(ent, ucmd, qtrue) ? qtrue : overridAngles;
+	PM_WallRunChain(ent, ucmd); // wall-to-wall jump: a new wall-run on the far wall
 
 	return overridAngles;
 }
@@ -10319,6 +10313,34 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		client->ps.ManualBlockingFlags &= ~(1 << MBF_MISSILESTASIS);
 	}
 
+	if (manual_meleeblocking(ent))
+	{// as SJE: melee block stance (PM_SetMeleeBlock)
+		if (client->ps.MeleeblockStartTime <= 0 && level.time - client->ps.MeleeblockLastStartTime >= 1000)
+		{
+			// They just pressed block. Mark the time...
+			client->ps.MeleeblockStartTime = level.time; //Blocking 2
+			client->ps.MeleeblockLastStartTime = level.time; //Blocking 3
+
+			if (!(client->ps.ManualBlockingFlags & 1 << MBF_MELEEBLOCK))
+			{
+				client->ps.ManualBlockingFlags |= 1 << MBF_MELEEBLOCK;
+			}
+		}
+		else
+		{
+			if (level.time - client->ps.MeleeblockStartTime >= 800) //Blocking 3
+			{
+				// the block stance lasts 800 ms per press
+				client->ps.MeleeblockStartTime = 0; //Blocking 2
+				client->ps.ManualBlockingFlags &= ~(1 << MBF_MELEEBLOCK);
+			}
+		}
+	}
+	else
+	{
+		client->ps.ManualBlockingFlags &= ~(1 << MBF_MELEEBLOCK);
+	}
+
 	if (manual_melee_dodging(ent))
 	{
 		if (client->ps.DodgeStartTime <= 0 && level.time - client->ps.DodgeLastStartTime >= 1300)
@@ -10479,6 +10501,11 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 
 		// CF_RESPECTING
+		// one dash per press: holding the dash button doesn't dash again until it is released and pressed again
+		if (!(client->buttons & BUTTON_DASH))
+		{
+			s_dashHeld[ent->s.number] = qfalse;
+		}
 		if (IsRESPECTING(ent) == qtrue)
 		{
 			client->ps.respectingtime = level.time;
@@ -10550,8 +10577,10 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			if (client->ps.Dash_Count < 2)
 			{
 				if ((client->ps.dashstartTime <= 0) &&
-					(level.time - client->ps.dashlaststartTime >= 100))
+					(level.time - client->ps.dashlaststartTime >= 100) &&
+					!s_dashHeld[ent->s.number])
 				{
+					s_dashHeld[ent->s.number] = qtrue;
 					client->ps.dashstartTime = level.time;
 					client->ps.dashlaststartTime = level.time;
 					client->ps.Dash_Count++;
@@ -10587,8 +10616,10 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			else
 			{
 				if ((client->ps.dashstartTime <= 0) &&
-					(level.time - client->ps.dashlaststartTime >= 2500))
+					(level.time - client->ps.dashlaststartTime >= 2500) &&
+					!s_dashHeld[ent->s.number])
 				{
+					s_dashHeld[ent->s.number] = qtrue;
 					client->ps.dashstartTime = level.time;
 					client->ps.dashlaststartTime = level.time;
 

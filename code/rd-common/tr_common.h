@@ -80,6 +80,13 @@ void LoadJPGFromBuffer(byte* inputBuffer, size_t len, byte** pic, int* width, in
 */
 // Convert raw image data to JPEG format and store in buffer.
 size_t RE_SaveJPGToBuffer(byte* buffer, size_t bufSize, int quality, int image_width, int image_height, byte* image_buffer, int padding, bool flip_vertical);
+size_t RE_SaveVideoJPGToBuffer(byte* buffer, size_t bufSize, int quality, int image_width, int image_height, byte* image_buffer, int padding);
+
+// video recording frames compressed on worker threads (tr_video_encoder.cpp)
+byte* R_VideoEncoderBegin(size_t bytes);
+void R_VideoEncoderSubmit(int width, int height, int padding, int quality, qboolean motionJpeg, void (*write)(const byte*, int));
+void R_VideoEncoderFlush(void (*write)(const byte*, int), qboolean all);
+void R_VideoEncoderShutdown(void);
 
 // Save raw image data as JPEG image file.
 void RE_SaveJPG(const char* filename, int quality, int image_width, int image_height, byte* image_buffer, int padding);

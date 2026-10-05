@@ -415,6 +415,12 @@ Restart the video subsystem
 */
 void CL_Vid_Restart_f()
 {
+	// the video size may change: stop recording now (as MP)
+	if (CL_VideoRecording())
+	{
+		CL_CloseAVI();
+	}
+
 	S_StopAllSounds(); // don't let them loop during the restart
 	S_BeginRegistration(); // all sound handles are now invalid
 	// the UI and the cgame first, while the renderer is still there, as when quitting (CL_Shutdown): they free
@@ -1296,6 +1302,7 @@ void CL_InitRef()
 	rit.gbUsingCachedMapDataRightNow = get_gbUsingCachedMapDataRightNow;
 	rit.gbAlreadyDoingLoad = get_gbAlreadyDoingLoad;
 	rit.com_frameTime = get_com_frameTime;
+	rit.CL_WriteAVIVideoFrame = CL_WriteAVIVideoFrame;
 
 	rit.SV_PointContents = SV_PointContents;
 
@@ -1432,6 +1439,7 @@ void CL_Init()
 	Cmd_AddCommand("clientinfo", CL_Clientinfo_f);
 	Cmd_AddCommand("snd_restart", CL_Snd_Restart_f);
 	Cmd_AddCommand("vid_restart", CL_Vid_Restart_f);
+	CL_InitVideoRecording();
 	Cmd_AddCommand("disconnect", CL_Disconnect_f);
 	Cmd_AddCommand("cinematic", CL_PlayCinematic_f);
 	Cmd_SetCommandCompletionFunc("cinematic", CL_CompleteCinematic);
@@ -1481,6 +1489,7 @@ void CL_Shutdown()
 	CL_ShutdownUI();
 	CL_Disconnect();
 
+	CL_ShutdownVideoRecording(); // finishes a video still recording
 	S_Shutdown();
 	CL_ShutdownRef(qfalse);
 

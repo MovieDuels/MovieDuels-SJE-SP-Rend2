@@ -44,6 +44,7 @@ constexpr auto SES_HOVERING = 2;
 constexpr auto SES_RETURNING = 3;
 constexpr auto SES_STUCK = 4;
 constexpr auto SES_STUCK_RETRIEVING = 5; //retrieving a stuck saber;
+constexpr auto SES_STUCK_BODY = 6; //thrown saber stuck in the body of the enemy it killed (falls out after 2-5 seconds)
 
 constexpr auto SES_STUCK_RETRIEVE_DELAY = 3000;   // 3 seconds. This will leave you nice and open if you lose your saber.
 constexpr auto SES_STUCK_TIME = 6000;               // it cant be stuck for more that 6 seconds or it will just be dropped to the ground for retrieval.;

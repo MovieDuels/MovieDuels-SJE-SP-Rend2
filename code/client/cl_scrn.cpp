@@ -490,6 +490,12 @@ static void SCR_DrawScreenField(const stereoFrame_t stereoFrame)
 	// the menu draws next
 	_UI_Refresh(cls.realtime);
 
+	// video recording: capture the frame here, without the console and the recording status
+	if (stereoFrame != STEREO_RIGHT)
+	{
+		CL_VideoRecordingFrame();
+	}
+
 	// console draws next
 	Con_DrawConsole();
 
@@ -498,6 +504,9 @@ static void SCR_DrawScreenField(const stereoFrame_t stereoFrame)
 	{
 		SCR_DrawDebugGraph();
 	}
+
+	// recording timer / where the video was saved
+	CL_DrawVideoRecordingStatus();
 }
 
 /*

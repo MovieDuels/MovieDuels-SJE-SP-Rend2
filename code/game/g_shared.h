@@ -809,6 +809,8 @@ public:
 
 	vec3_t ragLastOrigin; //keeping track of positions between rags while dragging corpses
 	int ragLastOriginTime;
+	vec3_t ragGripHead; //force grip hang: the head (ceyebrow) relative to the origin when it began
+	int ragGripHang; //hanging from a force grip (G_RagGripHang)
 
 	//push refraction effect vars
 	int pushEffectFadeTime;
@@ -965,6 +967,8 @@ public:
 		saved_game.write<int32_t>(overridingBones);
 		saved_game.write<float>(ragLastOrigin);
 		saved_game.write<int32_t>(ragLastOriginTime);
+		saved_game.write<float>(ragGripHead);
+		saved_game.write<int32_t>(ragGripHang);
 		saved_game.write<int32_t>(pushEffectFadeTime);
 		saved_game.write<float>(pushEffectOrigin);
 		saved_game.write<int32_t>(rocketLockIndex);
@@ -1094,6 +1098,8 @@ public:
 		saved_game.read<int32_t>(overridingBones);
 		saved_game.read<float>(ragLastOrigin);
 		saved_game.read<int32_t>(ragLastOriginTime);
+		saved_game.read<float>(ragGripHead);
+		saved_game.read<int32_t>(ragGripHang);
 		saved_game.read<int32_t>(pushEffectFadeTime);
 		saved_game.read<float>(pushEffectOrigin);
 		saved_game.read<int32_t>(rocketLockIndex);
