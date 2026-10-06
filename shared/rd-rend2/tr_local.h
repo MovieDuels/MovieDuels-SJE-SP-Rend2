@@ -1244,6 +1244,7 @@ enum
 	GENERICDEF_USE_FOG = 0x0004,
 	GENERICDEF_USE_RGBAGEN = 0x0008,
 	GENERICDEF_USE_SKELETAL_ANIMATION = 0x0010,
+	GENERICDEF_USE_FLARE_TEST = 0x0020, // rend2 cb494ecb
 	//GENERICDEF_USE_ALPHA_TEST = 0x0040,
 #ifdef REND2_SP_MD3
 	GENERICDEF_USE_VERTEX_ANIMATION = 0x0080,
@@ -2626,6 +2627,8 @@ typedef struct trGlobals_s {
 	//
 	// GPU shader programs
 	//
+	// Make sure splashScreenShader is the first shaderProgram_t or edit
+	// R_ClearTr to make sure shaderPrograms are cached correctly (rend2 36e13413)
 	shaderProgram_t splashScreenShader;
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
 	shaderProgram_t refractionShader[REFRACTIONDEF_COUNT];
@@ -2654,6 +2657,8 @@ typedef struct trGlobals_s {
 	shaderProgram_t smaaResolveShader;
 	shaderProgram_t smaaTemporalResolveShader;
 
+	// Make sure staticUbo is right behind all shaderProgram_t or edit
+	// R_ClearTr to make sure shaderPrograms are cached correctly (rend2 36e13413)
 	GLuint staticUbo;
 	GLuint spriteUbos[MAX_SUB_BSP + 1];
 	GLuint shaderInstanceUbo;
@@ -2661,7 +2666,6 @@ typedef struct trGlobals_s {
 	size_t entity2DUboOffset;
 	size_t camera2DUboOffset;
 	size_t entityFlareUboOffset;
-	size_t cameraFlareUboOffset;
 	size_t defaultLightsUboOffset;
 	size_t defaultSceneUboOffset;
 	size_t defaultFogsUboOffset;
@@ -3820,8 +3824,10 @@ struct gpuFrame_t
 
 #ifdef _G2_GORE
 	VBO_t* goreVBO;
+	void* goreVBOMemory; // rend2 c38bceb0: mapped gore buffers when the buffers are immutable
 	int						goreVBOCurrentIndex;
 	IBO_t* goreIBO;
+	void* goreIBOMemory;
 	int						goreIBOCurrentIndex;
 #endif
 

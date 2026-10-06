@@ -1292,7 +1292,8 @@ extern cvar_t* g_saber;
 extern cvar_t* com_outcast;
 extern cvar_t* g_debugItems;
 extern cvar_t* g_fixJOItems;
-
+extern cvar_t* g_developer;
+
 void FinishSpawningItem(gentity_t* ent)
 {
 	// ====================================================
@@ -1309,8 +1310,9 @@ void FinishSpawningItem(gentity_t* ent)
 		static int joItemWarnings = 0;
 		const int JO_MAX_WARNINGS = 10;
 
-		qboolean debugBoxes = (g_debugItems->integer == 0) ? qtrue : qfalse;
-		qboolean autoNudge = (g_fixJOItems->integer == 0) ? qtrue : qfalse;
+		// (these were inverted: g_debugItems 0 drew the debug boxes, g_fixJOItems 1 turned the nudge off)
+		const qboolean debugBoxes = g_debugItems->integer ? qtrue : qfalse;
+		const qboolean autoNudge = g_fixJOItems->integer ? qtrue : qfalse;
 
 		// ------------------------------------------------
 		// Map exception list (JO maps with known bad placements)
@@ -1423,40 +1425,56 @@ void FinishSpawningItem(gentity_t* ent)
 			);
 
 			// ------------------------------------------------
-			// 7A. Auto-nudge logic for JO maps
+			// 7A. Auto-nudge for JO maps: some JO items sit slightly inside the floor or a wall.
+			//     Try up to 24 units up, then small steps sideways (and a little up), and use the
+			//     first spot that is clear.
 			// ------------------------------------------------
 			if (tr.startsolid && (autoNudge || mapException))
 			{
+				static const float side_dirs[8][2] = {
+					{ 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
+					{ 0.7071f, 0.7071f }, { 0.7071f, -0.7071f }, { -0.7071f, 0.7071f }, { -0.7071f, -0.7071f }
+				};
 				vec3_t nudged;
-				VectorCopy(ent->s.origin, nudged);
+				qboolean found = qfalse;
 
-				for (int i = 0; i < 12; i++)
+				for (int up = 1; up <= 24 && !found; up++)
 				{
-					nudged[2] += 1.0f;
+					VectorCopy(ent->s.origin, nudged);
+					nudged[2] += up;
+					VectorSet(dest, nudged[0], nudged[1], MIN_WORLD_COORD);
+					gi.trace(&tr, nudged, ent->mins, ent->maxs, dest, ent->s.number, MASK_SOLID, G2_NOCOLLIDE, 0);
+					found = tr.startsolid ? qfalse : qtrue;
+				}
 
-					gi.trace(
-						&tr,
-						nudged,
-						ent->mins,
-						ent->maxs,
-						dest,
-						ent->s.number,
-						MASK_SOLID,
-						G2_NOCOLLIDE,
-						0
-					);
-
-					if (!tr.startsolid)
+				for (int dist = 4; dist <= 16 && !found; dist += 4)
+				{
+					for (int dir = 0; dir < 8 && !found; dir++)
 					{
-						VectorCopy(nudged, ent->s.origin);
-						break;
+						for (int up = 0; up <= 8 && !found; up += 4)
+						{
+							VectorCopy(ent->s.origin, nudged);
+							nudged[0] += side_dirs[dir][0] * dist;
+							nudged[1] += side_dirs[dir][1] * dist;
+							nudged[2] += up;
+							VectorSet(dest, nudged[0], nudged[1], MIN_WORLD_COORD);
+							gi.trace(&tr, nudged, ent->mins, ent->maxs, dest, ent->s.number, MASK_SOLID, G2_NOCOLLIDE, 0);
+							found = tr.startsolid ? qfalse : qtrue;
+						}
 					}
+				}
+
+				if (found)
+				{
+					VectorCopy(nudged, ent->s.origin);
 				}
 			}
 
 			// ------------------------------------------------
-			// 7B. Final startsolid check
+			// 7B. Final check: drop to the floor, or - if the item is still stuck - keep it where the
+			//     map put it (hanging in place) instead of deleting it, so the pickup isn't lost.
 			// ------------------------------------------------
+			VectorSet(dest, ent->s.origin[0], ent->s.origin[1], MIN_WORLD_COORD);
 			gi.trace(
 				&tr,
 				ent->s.origin,
@@ -1471,21 +1489,22 @@ void FinishSpawningItem(gentity_t* ent)
 
 			if (tr.startsolid)
 			{
-				if (joItemWarnings < JO_MAX_WARNINGS)
+				if (g_developer && g_developer->integer && joItemWarnings < JO_MAX_WARNINGS)
 				{
-					gi.Printf(S_COLOR_RED
-						"JO FinishSpawningItem: removing %s startsolid at %s\n",
+					gi.Printf(S_COLOR_YELLOW
+						"JO FinishSpawningItem: %s starts in solid at %s, left in place\n",
 						ent->classname, vtos(ent->s.origin));
 
 					joItemWarnings++;
 				}
 
-				G_FreeEntity(ent);
-				return;
+				G_SetOrigin(ent, ent->s.origin);
 			}
-
-			ent->s.groundEntityNum = tr.entityNum;
-			G_SetOrigin(ent, tr.endpos);
+			else
+			{
+				ent->s.groundEntityNum = tr.entityNum;
+				G_SetOrigin(ent, tr.endpos);
+			}
 		}
 
 		// ------------------------------------------------

@@ -159,4 +159,6 @@ set(CPACK_PACKAGE_DIRECTORY ${PACKAGE_DIR})
 set(CPACK_BINARY_ZIP ON) # always create at least a zip file
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0) # prevent additional directory in zip
 
-include(CPack)
+if(MakeInstallProjects)
+	include(CPack) # makes the PACKAGE project
+endif()

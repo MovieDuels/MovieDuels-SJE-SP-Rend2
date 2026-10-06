@@ -70,7 +70,9 @@ static void RB_CheckVBOandIBO(VBO_t* vbo, IBO_t* ibo)
 		tess.multiDrawPrimitives >= MAX_MULTIDRAW_PRIMITIVES)
 	{
 		RB_EndSurface();
+		int dlightBits = tess.dlightBits;
 		RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+		tess.dlightBits = dlightBits;
 
 		R_BindVBO(vbo);
 		R_BindIBO(ibo);

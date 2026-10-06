@@ -99,10 +99,8 @@ using uiimport_t = struct uiimport_s
 	// force a screen update, only used during gamestate load
 	void (*UpdateScreen)();
 
-#ifdef JK2_MODE
-	// stuff for savegame screenshots...
+	// stuff for savegame screenshots (JKO, com_outcast 1)...
 	void		(*PrecacheScreenshot)(void);
-#endif
 
 	//========= model collision ===============
 

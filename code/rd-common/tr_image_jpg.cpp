@@ -225,7 +225,7 @@ void LoadJPG(const char* filename, unsigned char** pic, int* width, int* height)
 	/* And we're done! */
 }
 
-#ifdef JK2_MODE
+// save game screenshots (JK2 / JKO: com_outcast 1)
 void LoadJPGFromBuffer(byte* inputBuffer, size_t len, unsigned char** pic, int* width, int* height) {
 	/* This struct contains the JPEG decompression parameters and pointers to
 	 * working space (which is allocated as needed by the JPEG library).
@@ -374,7 +374,6 @@ void LoadJPGFromBuffer(byte* inputBuffer, size_t len, unsigned char** pic, int* 
 
 	 /* And we're done! */
 }
-#endif
 
 /* Expanded data destination object for stdio output */
 

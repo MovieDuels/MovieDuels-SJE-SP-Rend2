@@ -296,6 +296,7 @@ extern cvar_t* g_CannonHolsteredSabers;
 extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_IsSaberDoingAttackDamage;
 extern cvar_t* g_DebugSaberCombat;
+extern cvar_t* g_saberscanstickinenemy;
 extern cvar_t* g_lightningdamage;
 extern cvar_t* com_outcast;
 extern cvar_t* g_SaberBounceOnWalls;
@@ -2849,7 +2850,8 @@ extern float hitLocHealthPercentage[];
 extern qboolean PM_SaberInTransitionDamageMove(const playerState_t* ps);
 extern cvar_t* g_dismemberProbabilities;
 
-static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const vec3_t hit_dir);
+static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const vec3_t hit_dir, int damage);
+static qboolean WP_SaberThrowerIsYoda(const gentity_t* owner);
 
 static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, const int base_d_flags,
 	const qboolean broken_parry, const int saberNum, const int bladeNum,
@@ -3207,6 +3209,7 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 					{
 						damage = ceil(totalDmg[i]);
 					}
+					const int vic_health_before = victim->health;
 					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, dflags, MOD_SABER,
 						hitDismemberLoc[i]);
 					if (thrown_saber && g_DebugSaberCombat->integer)
@@ -3214,9 +3217,10 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 						Com_Printf("SABER BODY STICK: thrown hit %s for %d, health now %d%s\n", victim->classname, damage,
 							victim->health, dflags & DAMAGE_NO_KILL ? " (no-kill hit)" : "");
 					}
-					if (thrown_saber && vic_was_alive && victim->health <= 0)
-					{// the throw killed: the saber sticks in the body
-						WP_SaberTryStickInBody(ent, victim, dmgDir[i]);
+					if (thrown_saber && vic_was_alive
+						&& (victim->health <= 0 || (victim->health < vic_health_before && WP_SaberThrowerIsYoda(ent))))
+					{// the throw killed (or Yoda's throw did damage): the saber sticks in the body
+						WP_SaberTryStickInBody(ent, victim, dmgDir[i], damage);
 					}
 					if (damage > 0 && cg.time)
 					{
@@ -4265,6 +4269,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 							WP_SwingAddHit(ent, victim);
 						}
 					}
+					const int vic_health_before = victim->health;
 					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, dflags, MOD_SABER,
 						hitDismemberLoc[i]);
 					if (thrown_saber && g_DebugSaberCombat->integer)
@@ -4272,9 +4277,10 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 						Com_Printf("SABER BODY STICK: thrown hit %s for %d, health now %d%s\n", victim->classname, damage,
 							victim->health, dflags & DAMAGE_NO_KILL ? " (no-kill hit)" : "");
 					}
-					if (thrown_saber && vic_was_alive && victim->health <= 0)
-					{// the throw killed: the saber sticks in the body
-						WP_SaberTryStickInBody(ent, victim, dmgDir[i]);
+					if (thrown_saber && vic_was_alive
+						&& (victim->health <= 0 || (victim->health < vic_health_before && WP_SaberThrowerIsYoda(ent))))
+					{// the throw killed (or Yoda's throw did damage): the saber sticks in the body
+						WP_SaberTryStickInBody(ent, victim, dmgDir[i], damage);
 					}
 					if (damage > 0 && cg.time)
 					{
@@ -13040,6 +13046,19 @@ static void WP_SaberFallFromWall(gentity_t* self, gentity_t* saber)
 // attackDebounceTime = when it falls out, painDebounceTime = when a fallen-out saber comes back by itself
 //===========================
 constexpr float SABER_BODY_HILT_OFFSET = 10.0f; // hilt this far in front of the chest bone: the blade goes through the body and out the back
+constexpr int SABER_BODY_DAMAGE_INTERVAL = 500; // Yoda's throw stuck in a living target: its hit repeats this often (ms)
+static int s_saberBodyDamage[MAX_GENTITIES]; // by saber entity: the damage that repeats (0 = none, a corpse)
+static int s_saberBodyNextDamage[MAX_GENTITIES]; // by saber entity: when it next repeats
+
+// Yoda's throw sticks in the target on every hit that does damage (not only a kill), and keeps hurting it
+static qboolean WP_SaberThrowerIsYoda(const gentity_t* owner)
+{
+	if (!owner || !owner->client)
+	{
+		return qfalse;
+	}
+	return owner->client->NPC_class == CLASS_YODA || W_Animationstyletable(owner).isYoda == qtrue ? qtrue : qfalse;
+}
 
 static qboolean WP_SaberBodyBoneFrame(gentity_t* victim, vec3_t org_out, vec3_t axis_out[3])
 {
@@ -13111,11 +13130,17 @@ static qboolean WP_SaberBodyStuckPlace(gentity_t* saber)
 	return qtrue;
 }
 
-// the player's throw killed victim: the saber sticks in the body (hilt at the entry wound, blade out the back)
-static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const vec3_t hit_dir)
+// the player's throw killed victim: the saber sticks in the body (hilt at the entry wound, blade out the back).
+// Yoda's throw (still the player's, Saber Throw 3) sticks on every hit that did damage: in a living target that hit
+// (damage) repeats until the saber falls out or is taken back (WP_SaberBodyStuckDamage)
+static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const vec3_t hit_dir, const int damage)
 {
 	vec3_t org, axis[3], flight, hilt, rel;
 
+	if (!g_saberscanstickinenemy->integer)
+	{//move lock: sabers never stick in an enemy
+		return;
+	}
 	if (!owner || !owner->client || !victim || victim == owner)
 	{
 		return;
@@ -13184,6 +13209,9 @@ static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const ve
 	saber->activator = victim;
 	saber->attackDebounceTime = level.time + Q_irand(2000, 5000);
 	saber->painDebounceTime = 0;
+	// still alive (Yoda's throw): the hit repeats while it is stuck
+	s_saberBodyDamage[saber->s.number] = victim->health > 0 && damage > 0 ? damage : 0;
+	s_saberBodyNextDamage[saber->s.number] = level.time + SABER_BODY_DAMAGE_INTERVAL;
 
 	VectorClear(saber->s.pos.trDelta);
 	VectorClear(saber->s.apos.trDelta);
@@ -13222,6 +13250,38 @@ static void WP_SaberFallFromBody(gentity_t* owner, gentity_t* saber)
 	saber->painDebounceTime = level.time + Q_irand(5000, 10000);
 }
 
+// Yoda's throw stuck in a living target: the hit that stuck repeats every SABER_BODY_DAMAGE_INTERVAL until the
+// saber falls out or is taken back; once the target is dead it is a corpse stick (no more damage)
+static void WP_SaberBodyStuckDamage(gentity_t* owner, gentity_t* saber)
+{
+	const int n = saber->s.number;
+	gentity_t* body = saber->activator;
+
+	if (s_saberBodyDamage[n] <= 0 || !body || !body->inuse || body->health <= 0)
+	{
+		s_saberBodyDamage[n] = 0;
+		return;
+	}
+	if (level.time < s_saberBodyNextDamage[n])
+	{
+		return;
+	}
+	s_saberBodyNextDamage[n] = level.time + SABER_BODY_DAMAGE_INTERVAL;
+
+	vec3_t dir;
+	VectorSubtract(body->currentOrigin, saber->currentOrigin, dir);
+	if (VectorNormalize(dir) < 0.1f)
+	{
+		VectorSet(dir, 0, 0, -1);
+	}
+	G_Damage(body, saber, owner, dir, saber->currentOrigin, s_saberBodyDamage[n], DAMAGE_NO_KNOCKBACK, MOD_SABER);
+	if (g_DebugSaberCombat->integer)
+	{
+		Com_Printf("SABER BODY STICK: stuck saber hurts %s for %d, health now %d\n", body->classname,
+			s_saberBodyDamage[n], body->health);
+	}
+}
+
 void WP_SaberBallisticsThink(gentity_t* ent)
 {
 	trace_t tr;
@@ -13241,6 +13301,10 @@ void WP_SaberBallisticsThink(gentity_t* ent)
 		if (owner->health <= 0 || level.time >= ent->attackDebounceTime || !WP_SaberBodyStuckPlace(ent))
 		{
 			WP_SaberFallFromBody(owner, ent);
+		}
+		else
+		{//Yoda's throw in a living target: keeps hurting it
+			WP_SaberBodyStuckDamage(owner, ent);
 		}
 		return;
 	}

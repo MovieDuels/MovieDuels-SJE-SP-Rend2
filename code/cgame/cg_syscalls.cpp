@@ -408,6 +408,12 @@ void cgi_R_SetColor(const float* rgba)
 	Q_syscall(CG_R_SETCOLOR, rgba);
 }
 
+// JK2 / JKO: draws the engine's save game screenshot (only if there is one - see CG_R_DRAWSCREENSHOT in cl_cgame.cpp)
+void cgi_R_DrawScreenShot(const float x, const float y, const float w, const float h)
+{
+	Q_syscall(CG_R_DRAWSCREENSHOT, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h));
+}
+
 void cgi_R_DrawStretchPic(const float x, const float y, const float w, const float h,
 	const float s1, const float t1, const float s2, const float t2, const qhandle_t hShader)
 {

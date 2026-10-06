@@ -62,6 +62,7 @@ void RE_GetScreenShot(byte* buffer, const int w, const int h)
 			dst[0] = r / 12;
 			dst[1] = g / 12;
 			dst[2] = b / 12;
+			dst[3] = 255; // OpenJK e791a477: DrawStretchRaw needs a solid alpha
 		}
 	}
 
@@ -281,11 +282,10 @@ static void RE_Blit(const float fX0, const float fY0, const float fX1, const flo
 	RB_BindUniformBlock(tr.staticUbo, UNIFORM_BLOCK_CAMERA, tr.camera2DUboOffset);
 	RB_BindUniformBlock(tr.staticUbo, UNIFORM_BLOCK_ENTITY, tr.entity2DUboOffset);
 
-	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	vec4_t vcolor = { 0.0f, 0.0f, 0.0f, 1.0f };
-	GLSL_SetUniformVec4(shaderProgram, UNIFORM_BASECOLOR, color);
-	GLSL_SetUniformVec4(shaderProgram, UNIFORM_VERTCOLOR, vcolor);
-	GLSL_SetUniformInt(shaderProgram, UNIFORM_ALPHA_TEST_TYPE, ALPHA_TEST_LT128);
+	// rend2 4d3177e5: dissolve wipes - only alpha test when asked to
+	GLSL_SetUniformVec4(shaderProgram, UNIFORM_BASECOLOR, colorWhite);
+	GLSL_SetUniformVec4(shaderProgram, UNIFORM_VERTCOLOR, colorBlack);
+	GLSL_SetUniformInt(shaderProgram, UNIFORM_ALPHA_TEST_TYPE, atest ? ALPHA_TEST_LT128 : ALPHA_TEST_NONE);
 
 	vec4_t quadVerts[4] = {
 		{fX0, fY0, 0.f},
@@ -623,6 +623,7 @@ qboolean RE_InitDissolve(const qboolean bForceCircularExtroWipe)
 		{
 			// read current screen image...  (GL_RGBA should work even on 3DFX in that the RGB parts will be valid at least)
 			//
+			qglReadBuffer(GL_FRONT_LEFT); // rend2 4d3177e5: read the front buffer (the last shown frame)
 			qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, pBuffer);
 			//
 			// now expand the pic over the top of itself so that it has a stride value of {PowerOf2(glConfig.vidWidth)}

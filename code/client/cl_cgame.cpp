@@ -1080,9 +1080,16 @@ intptr_t CL_CgameSystemCalls(intptr_t* args)
 		return 0;
 		// The below was commented out for whatever reason... /me shrugs
 	case CG_R_DRAWSCREENSHOT:
-		re.DrawStretchRaw(VMF(1), VMF(2), VMF(3), VMF(4), SG_SCR_WIDTH, SG_SCR_HEIGHT, SCR_GetScreenshot(nullptr), 0,
-			qtrue);
-		return 0;
+	{
+		// JKO save game screenshot: only draw a real picture (a save without one leaves the levelshot showing)
+		qboolean is_valid = qfalse;
+		const byte* screenshot = SCR_GetScreenshot(&is_valid);
+		if (is_valid)
+		{
+			re.DrawStretchRaw(VMF(1), VMF(2), VMF(3), VMF(4), SG_SCR_WIDTH, SG_SCR_HEIGHT, screenshot, 0, qtrue);
+		}
+	}
+	return 0;
 	case CG_R_MODELBOUNDS:
 		re.ModelBounds(args[1], static_cast<float*>(VMA(2)), static_cast<float*>(VMA(3)));
 		return 0;

@@ -388,9 +388,13 @@ void R_AddMD3Surfaces(trRefEntity_t* ent, int entityNum)
 	//
 	int fogNum = R_ComputeFogNum(model, ent);
 
-	int cubemapIndex = R_CubemapForPoint(ent->e.origin);
-	// FIX ME: not tested! Animated models might be handled incorrecly
-	int dlightBits = R_DLightsForPoint(ent->e.origin, model->frames[ent->e.frame].radius);
+	// rend2 2726df41: use the frame's bounds centre (and model scale) for the cubemap and dynamic lights
+	vec3_t origin;
+	R_LocalPointToWorld(model->frames[ent->e.frame].localOrigin, origin);
+	const float maxScale = MAX(1.f, MAX(ent->e.modelScale[0], MAX(ent->e.modelScale[1], ent->e.modelScale[2])));
+
+	int cubemapIndex = R_CubemapForPoint(origin);
+	int dlightBits = R_DLightsForPoint(origin, model->frames[ent->e.frame].radius * maxScale);
 
 	//
 	// draw all surfaces

@@ -2109,10 +2109,8 @@ extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const re
 	REX(GetScreenShot);
 	REX(TakeVideoFrame);
 	REX(FlushVideoFrames);
-#ifdef JK2_MODE
-	REX(SaveJPGToBuffer);
+	REX(SaveJPGToBuffer); // save game screenshots (JKO)
 	re.LoadJPGFromBuffer = LoadJPGFromBuffer;
-#endif
 	REX(TempRawImage_ReadFromFile);
 	REX(TempRawImage_CleanUp);
 

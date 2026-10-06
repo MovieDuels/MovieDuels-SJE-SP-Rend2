@@ -237,6 +237,9 @@ struct PNGFileReader
 			png_set_add_alpha(png_ptr, 0xff, PNG_FILLER_AFTER);
 		}
 
+		// interlaced PNGs: let libpng combine the passes (stops the 'Interlace handling should be turned on' warning)
+		png_set_interlace_handling(png_ptr);
+
 		png_read_update_info(png_ptr, info_ptr);
 
 		// We always assume there are 4 channels. RGB channels are expanded to RGBA when read.

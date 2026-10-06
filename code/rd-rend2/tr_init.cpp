@@ -1810,6 +1810,26 @@ static void R_InitGoreVertexData(gpuFrame_t* currentFrame)
 		sizeof(glIndex_t) * (MAX_GORE_RECORDS + 1) * MAX_GORE_INDECIES,
 		VBO_USAGE_DYNAMIC, va("Gore_%i", numGoreArrays));
 
+	// rend2 c38bceb0: immutable buffers can't take glBufferSubData, so map them once and write through the pointers
+	if (glRefConfig.immutableBuffers)
+	{
+		const GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+
+		R_BindVBO(currentFrame->goreVBO);
+		currentFrame->goreVBOMemory = qglMapBufferRange(GL_ARRAY_BUFFER, 0,
+			currentFrame->goreVBO->vertexesSize, mapFlags);
+
+		R_BindIBO(currentFrame->goreIBO);
+		currentFrame->goreIBOMemory = qglMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0,
+			currentFrame->goreIBO->indexesSize, mapFlags);
+	}
+	else
+	{
+		currentFrame->goreVBOMemory = nullptr;
+		currentFrame->goreIBOMemory = nullptr;
+	}
+
+	numGoreArrays++;
 	GL_CheckErrors();
 }
 #endif
@@ -1972,22 +1992,6 @@ static void R_InitStaticConstants()
 		GL_UNIFORM_BUFFER, tr.entityFlareUboOffset, sizeof(entityFlareBlock), &entityFlareBlock);
 	alignedBlockSize += (sizeof(EntityBlock) + alignment) & ~alignment;
 
-	// Setup static flare camera data
-	CameraBlock flareCameraBlock = {};
-	Matrix16Ortho(
-		0.0f,
-		glConfig.vidWidth,
-		glConfig.vidHeight,
-		0.0f,
-		-99999.0f,
-		99999.0f,
-		flareCameraBlock.viewProjectionMatrix);
-
-	tr.cameraFlareUboOffset = alignedBlockSize;
-	qglBufferSubData(
-		GL_UNIFORM_BUFFER, tr.cameraFlareUboOffset, sizeof(flareCameraBlock), &flareCameraBlock);
-	alignedBlockSize += (sizeof(CameraBlock) + alignment) & ~alignment;
-
 	// Setup default light block
 	LightsBlock lightsBlock = {};
 	lightsBlock.numLights = 0;
@@ -2053,6 +2057,14 @@ static void R_ShutdownBackEndFrameData()
 			R_BindIBO(frame->dynamicIbo);
 			qglUnmapBuffer(GL_ARRAY_BUFFER);
 			qglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+
+#ifdef _G2_GORE
+			// rend2 c38bceb0: unmap the gore buffers too
+			R_BindVBO(frame->goreVBO);
+			R_BindIBO(frame->goreIBO);
+			qglUnmapBuffer(GL_ARRAY_BUFFER);
+			qglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+#endif
 		}
 
 		for (int j = 0; j < MAX_GPU_TIMERS; j++)
@@ -2505,10 +2517,8 @@ extern "C" Q_EXPORT refexport_t* QDECL GetRefAPI(const int api_version, const re
 	re.TakeVideoFrame = RE_TakeVideoFrame;
 	re.FlushVideoFrames = RE_FlushVideoFrames;
 
-#ifdef JK2_MODE
-	re.SaveJPGToBuffer = RE_SaveJPGToBuffer;
+	re.SaveJPGToBuffer = RE_SaveJPGToBuffer; // save game screenshots (JKO)
 	re.LoadJPGFromBuffer = LoadJPGFromBuffer;
-#endif
 	re.TempRawImage_ReadFromFile = RE_TempRawImage_ReadFromFile;
 	re.TempRawImage_CleanUp = RE_TempRawImage_CleanUp;
 

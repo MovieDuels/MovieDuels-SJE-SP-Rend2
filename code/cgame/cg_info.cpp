@@ -824,6 +824,15 @@ static void CG_DrawLoadingScreen(const qhandle_t levelshot, const char* map_name
 	{
 		cgi_R_SetColor(color);
 		CG_DrawPic(x_pos, y_pos, width, height, levelshot);
+
+		extern SavedGameJustLoaded_e g_eSavedGameJustLoaded;
+		if (cg_com_outcast.integer == 1 && g_eSavedGameJustLoaded == eFULL)
+		{
+			// JKO (as JK2): a loaded save shows the picture taken when it was saved, over the levelshot
+			// (the engine draws nothing if the save has no picture, so the levelshot stays)
+			cgi_R_SetColor(nullptr);
+			cgi_R_DrawScreenShot(x_pos, y_pos, width, height);
+		}
 	}
 
 	// Get player weapons and force power info

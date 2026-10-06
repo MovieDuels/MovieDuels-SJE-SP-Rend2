@@ -157,6 +157,8 @@ extern void G_StartStasisEffect_FORCE_LEVEL_1(const gentity_t* ent, int me_flags
 extern cvar_t* d_slowmoaction;
 extern void G_SetWeapon(gentity_t* self, int wp);
 extern cvar_t* g_AllowLedgeGrab;
+extern cvar_t* g_candojumpdash;
+extern cvar_t* g_candodoublejump;
 extern cvar_t* g_allowslipping;
 extern qboolean PM_CheckLungeAttackMove();
 extern qboolean PM_FaceProtectAnim(int anim);
@@ -855,6 +857,11 @@ static void PM_Friction()
 							{
 								//free slide
 								friction *= 0.2f; //0.1f;
+							}
+							if (pm->ps->legsAnim == BOTH_FORCELONGLEAP_LAND)
+							{
+								//landing slide 20% shorter (slide distance scales with 1/friction: 1/0.8 = 1.25)
+								friction *= 1.25f;
 							}
 							pm->cmd.forwardmove = pm->cmd.rightmove = 0;
 							if (pml.groundPlane && pm->ps->legsAnim == BOTH_FORCELONGLEAP_LAND)
@@ -3797,7 +3804,8 @@ static void PM_CheckAirDash()
 		pm->ps->Dash_Count = 0;
 	}
 
-	if (!(pm->cmd.buttons & BUTTON_DASH)
+	if (!g_candojumpdash->integer // move lock: air dash turned off
+		|| !(pm->cmd.buttons & BUTTON_DASH)
 		|| pm->ps->pm_flags & (PMF_DASH_HELD | PMF_RESPAWNED | PMF_STUCK_TO_WALL | PMF_TRIGGER_PUSHED) // one press = one dash
 		// the same rules as the double jump: Force Jump 3, the jump more than half done (rising or already falling)
 		|| pm->ps->forcePowerLevel[FP_LEVITATION] < FORCE_LEVEL_3
@@ -3871,7 +3879,8 @@ static void PM_CheckDoubleJump(const int legs_anim_before)
 		return;
 	}
 
-	if (pm->ps->pm_flags & (PMF_DOUBLE_JUMPED | PMF_JUMP_HELD | PMF_RESPAWNED | PMF_TRIGGER_PUSHED)
+	if (!g_candodoublejump->integer // move lock: double jump turned off
+		|| pm->ps->pm_flags & (PMF_DOUBLE_JUMPED | PMF_JUMP_HELD | PMF_RESPAWNED | PMF_TRIGGER_PUSHED)
 		|| pm->cmd.upmove <= 0
 		|| pm->ps->velocity[2] <= 0.0f // not while falling: then the jump button is force fall
 		|| pm->ps->velocity[2] > DOUBLE_JUMP_MAX_RISE // the first jump must be more than half done (rising slower than half a jump)
@@ -3902,6 +3911,69 @@ static void PM_CheckDoubleJump(const int legs_anim_before)
 	PM_AddEvent(EV_JUMP);
 }
 
+// Cancel the long leap / air dash with +back while still in the air (pose BOTH_FORCELONGLEAP_START or _ATTACK):
+// the forward movement stops, the pose goes to BOTH_FORCEINAIR1 and the body only falls straight down until it lands:
+// no forward, back or side movement (no air control, no air dash, no double jump), normal gravity, the leap attack
+// ended, so force fall can be used while falling. Once the floor is touched (BOTH_FORCELONGLEAP_LAND and its slide)
+// it can't be cancelled: the slide plays out. Only while still moving forward, so a backwards air dash (dash + back)
+// doesn't cancel itself. Player only (s_leapCancelled is cleared on landing; not worth saving).
+static qboolean s_leapCancelled[MAX_CLIENTS];
+
+static void PM_CheckLeapCancel()
+{
+	if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
+	{
+		return;
+	}
+	const int idx = pm->ps->clientNum < MAX_CLIENTS ? pm->ps->clientNum : 0;
+
+	if (pm->ps->groundEntityNum != ENTITYNUM_NONE || pm->waterlevel > 1 || pm->ps->pm_type != PM_NORMAL)
+	{
+		s_leapCancelled[idx] = qfalse;
+		return;
+	}
+
+	if (!s_leapCancelled[idx])
+	{
+		if (pm->cmd.forwardmove >= 0
+			|| pm->ps->legsAnim != BOTH_FORCELONGLEAP_START && pm->ps->legsAnim != BOTH_FORCELONGLEAP_ATTACK)
+		{
+			return;
+		}
+
+		vec3_t fwd_angles, fwd, hvel;
+		VectorSet(fwd_angles, 0.0f, pm->ps->viewangles[YAW], 0.0f);
+		AngleVectors(fwd_angles, fwd, nullptr, nullptr);
+		VectorSet(hvel, pm->ps->velocity[0], pm->ps->velocity[1], 0.0f);
+		if (DotProduct(hvel, fwd) <= 0.0f)
+		{// not moving forward (a backwards dash, or already stopped)
+			return;
+		}
+
+		// cancel: stop all forward movement and drop
+		s_leapCancelled[idx] = qtrue;
+		pm->ps->velocity[0] = 0.0f;
+		pm->ps->velocity[1] = 0.0f;
+		pm->ps->pm_flags &= ~PMF_SLOW_MO_FALL; // normal gravity
+		pm->ps->pm_flags |= PMF_DOUBLE_JUMPED; // no double jump until landing
+		if (pm->ps->saberMove == LS_LEAP_ATTACK || PM_SaberInAttack(pm->ps->saberMove))
+		{// end the leap attack (force fall isn't allowed during a saber attack)
+			pm->ps->saberMove = LS_READY;
+			pm->ps->weaponTime = 0;
+		}
+		PM_SetAnim(pm, SETANIM_BOTH, BOTH_FORCEINAIR1, SETANIM_FLAG_OVERRIDE, 100);
+	}
+
+	// cancelled: only fall, no forward / back / side movement until landing (the jump button stays for force fall)
+	pm->cmd.forwardmove = 0;
+	pm->cmd.rightmove = 0;
+	pm->cmd.buttons &= ~BUTTON_DASH;
+	if (pm->ps->legsAnim == BOTH_INAIR1 || pm->ps->legsAnim == BOTH_JUMP1 || pm->ps->legsAnim == BOTH_FORCEJUMP1)
+	{// keep the falling pose
+		PM_SetAnim(pm, SETANIM_BOTH, BOTH_FORCEINAIR1, SETANIM_FLAG_OVERRIDE, 100);
+	}
+}
+
 static void PM_AirMove()
 {
 	vec3_t wishvel;
@@ -3910,6 +3982,8 @@ static void PM_AirMove()
 	float wishspeed;
 	usercmd_t cmd;
 	float grav_mod = 1.0f;
+
+	PM_CheckLeapCancel(); // +back cancels the long leap / air dash
 
 #if METROID_JUMP
 	{
@@ -5814,7 +5888,7 @@ static void PM_CrashLand()
 		{// the long leap / air dash pose always lands in BOTH_FORCELONGLEAP_LAND and its slide (as MP), crouched or not
 			if (pm->gent)
 			{
-				G_SoundOnEnt(pm->gent, CHAN_AUTO, "sound/player/slide.wav");
+				G_SoundOnEnt(pm->gent, CHAN_AUTO, "sound/player/sand_land.mp3");
 			}
 			PM_SetAnim(pm, SETANIM_BOTH, BOTH_FORCELONGLEAP_LAND, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 100);
 			// Only blend over 100ms
@@ -5890,7 +5964,7 @@ static void PM_CrashLand()
 						{
 							if (pm->gent)
 							{
-								G_SoundOnEnt(pm->gent, CHAN_AUTO, "sound/player/slide.wav");
+								G_SoundOnEnt(pm->gent, CHAN_AUTO, "sound/player/sand_land.mp3");
 							}
 							PM_SetAnim(pm, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 100);
 							// Only blend over 100ms
@@ -33439,6 +33513,10 @@ static void Pmove_Internal(pmove_t* pmove)
 	{
 		// landed: the double jump and the air dash can be used again
 		pm->ps->pm_flags &= ~(PMF_DOUBLE_JUMPED | PMF_AIR_DASHED);
+		if (pm->ps->clientNum < MAX_CLIENTS)
+		{
+			s_leapCancelled[pm->ps->clientNum] = qfalse; // the +back leap cancel ends on landing
+		}
 	}
 
 	// disable attacks when using grappling hook

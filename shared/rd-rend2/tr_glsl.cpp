@@ -1514,6 +1514,12 @@ static int GLSL_LoadGPUProgramGeneric(
 			Q_strcat(extradefines, sizeof(extradefines), "#define USE_RGBAGEN\n");
 		}
 
+		if (i & GENERICDEF_USE_FLARE_TEST) // rend2 cb494ecb
+		{
+			Q_strcat(name, sizeof(name), "_FLARE");
+			Q_strcat(extradefines, sizeof(extradefines), "#define USE_FLARE_TEST\n");
+		}
+
 		/*if (i & GENERICDEF_USE_ALPHA_TEST)
 			Q_strcat(extradefines, sizeof(extradefines), "#define USE_ALPHA_TEST\n");*/
 
@@ -1529,6 +1535,7 @@ static int GLSL_LoadGPUProgramGeneric(
 		GLSL_SetUniformInt(&tr.genericShader[i], UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP);
 		GLSL_SetUniformInt(&tr.genericShader[i], UNIFORM_LIGHTMAP, TB_LIGHTMAP);
 		GLSL_SetUniformInt(&tr.genericShader[i], UNIFORM_VOLUMETRICLIGHTMAP, 2);
+		GLSL_SetUniformInt(&tr.genericShader[i], UNIFORM_SCREENDEPTHMAP, TB_SHADOWMAP);
 		qglUseProgram(0);
 
 		GLSL_FinishGPUShader(&tr.genericShader[i]);
@@ -1889,18 +1896,18 @@ static int GLSL_LoadGPUProgramLightAll(
 				Q_strcat(extradefines, sizeof(extradefines), "#define USE_SPECULARMAP\n");
 				if (i & LIGHTDEF_USE_SPEC_GLOSS)
 				{
-					Q_strcat(name, sizeof(name), "_SPECGLOSS");
+					Q_strcat(name, sizeof(name), "_SG"); // rend2 1adec076: short names, no Q_strcat overflow
 					Q_strcat(extradefines, sizeof(extradefines), "#define USE_SPECGLOSS\n");
 				}
 				else
 				{
-					Q_strcat(name, sizeof(name), "_METALROUGH");
+					Q_strcat(name, sizeof(name), "_MR");
 				}
 			}
 
 			if (r_cubeMapping->integer)
 			{
-				Q_strcat(name, sizeof(name), "_CUBE");
+				Q_strcat(name, sizeof(name), "_ENV");
 				Q_strcat(extradefines, sizeof(extradefines), "#define USE_CUBEMAP\n");
 			}
 		}
@@ -3063,6 +3070,11 @@ shaderProgram_t* GLSL_GetGenericShaderProgram(int stage)
 	if (pStage->bundle[0].numTexMods)
 	{
 		shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
+	}
+
+	if (backEnd.currentEntity == &backEnd.entityFlare) // rend2 cb494ecb
+	{
+		shaderAttribs |= GENERICDEF_USE_FLARE_TEST;
 	}
 
 	/*if (pStage->glow)

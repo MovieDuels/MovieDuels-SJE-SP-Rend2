@@ -94,6 +94,10 @@ namespace ojk
 		// Clears error flag and message.
 		void clear_error() override;
 
+		// Returns true if the next chunk in the file has this id. The read position is not changed.
+		// Used for chunks only some saves have (the JKO save screenshot).
+		bool is_next_chunk(const uint32_t chunk_id);
+
 		// Calls Com_Error with last error message or with a generic one.
 		void throw_error() override;
 

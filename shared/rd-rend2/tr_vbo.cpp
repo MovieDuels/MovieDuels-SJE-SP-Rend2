@@ -723,12 +723,21 @@ void RB_UpdateGoreVertexData(gpuFrame_t* currentFrame, srfG2GoreSurface_t* goreS
 	}
 
 	R_BindVBO(currentFrame->goreVBO);
-	qglBufferSubData(
-		GL_ARRAY_BUFFER,
-		sizeof(g2GoreVert_t) * goreSurface->firstVert,
-		sizeof(g2GoreVert_t) * goreSurface->numVerts,
-		goreSurface->verts
-	);
+
+	if (glRefConfig.immutableBuffers) // rend2 c38bceb0
+	{
+		void* writePtr = (byte*)currentFrame->goreVBOMemory + sizeof(g2GoreVert_t) * goreSurface->firstVert;
+		memcpy(writePtr, (byte*)goreSurface->verts, sizeof(g2GoreVert_t) * goreSurface->numVerts);
+	}
+	else
+	{
+		qglBufferSubData(
+			GL_ARRAY_BUFFER,
+			sizeof(g2GoreVert_t) * goreSurface->firstVert,
+			sizeof(g2GoreVert_t) * goreSurface->numVerts,
+			goreSurface->verts
+		);
+	}
 
 	if (updateFirstVertAndIndex)
 	{
@@ -739,19 +748,30 @@ void RB_UpdateGoreVertexData(gpuFrame_t* currentFrame, srfG2GoreSurface_t* goreS
 	}
 
 	R_BindIBO(currentFrame->goreIBO);
-	qglBufferSubData(
-		GL_ELEMENT_ARRAY_BUFFER,
-		sizeof(glIndex_t) * goreSurface->firstIndex,
-		sizeof(glIndex_t) * goreSurface->numIndexes,
-		goreSurface->indexes
-	);
+
+	if (glRefConfig.immutableBuffers) // rend2 c38bceb0
+	{
+		void* writePtr = (byte*)currentFrame->goreIBOMemory + sizeof(glIndex_t) * goreSurface->firstIndex;
+		memcpy(writePtr, goreSurface->indexes, sizeof(glIndex_t) * goreSurface->numIndexes);
+	}
+	else
+	{
+		qglBufferSubData(
+			GL_ELEMENT_ARRAY_BUFFER,
+			sizeof(glIndex_t) * goreSurface->firstIndex,
+			sizeof(glIndex_t) * goreSurface->numIndexes,
+			goreSurface->indexes
+		);
+	}
 
 	if (updateFirstVertAndIndex)
 	{
 		currentFrame->goreIBOCurrentIndex += goreSurface->numIndexes;
 	}
 
-	goreSurface->cachedInFrame[backEndData->realFrameNumber % MAX_FRAMES] = true;
+	// rend2 05e4c5f4: only mark the gore data as cached when it is actually drawn
+	if (!updateFirstVertAndIndex)
+		goreSurface->cachedInFrame[backEndData->realFrameNumber % MAX_FRAMES] = true;
 }
 #endif
 

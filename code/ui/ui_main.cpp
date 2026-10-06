@@ -5575,8 +5575,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 9.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 04/10/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 04 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 06/10/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 05 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -6893,9 +6893,10 @@ UI_InGameMenu
 */
 void UI_InGameMenu(const char* menuID)
 {
-#ifdef JK2_MODE
-	ui.PrecacheScreenshot();
-#endif
+	if (com_outcast && com_outcast->integer == 1) // JKO: grab the game view (before the menu covers it) for the save game screenshot
+	{
+		ui.PrecacheScreenshot();
+	}
 	Menus_CloseByName("mainhud");
 
 	if (menuID)

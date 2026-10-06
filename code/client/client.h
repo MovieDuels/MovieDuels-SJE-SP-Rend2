@@ -395,9 +395,7 @@ void CL_DrawVideoRecordingStatus(void);
 void CL_InitVideoRecording(void);
 void CL_ShutdownVideoRecording(void);
 
-#ifdef JK2_MODE
-void	SCR_PrecacheScreenshot();
-#endif
+void	SCR_PrecacheScreenshot(); // JKO save game screenshots (com_outcast 1)
 
 //
 // cl_cin.c

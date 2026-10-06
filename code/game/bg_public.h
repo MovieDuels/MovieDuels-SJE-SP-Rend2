@@ -275,10 +275,10 @@ constexpr auto PMF_BLOCK_HELD = 1 << 21; //32768	// Holding down the attack butt
 constexpr auto PMF_GRAPPLE_PULL = 1 << 22;
 constexpr auto PMF_KICK_HELD = 1 << 23;
 constexpr auto PMF_DASH_HELD = 1 << 24; // Holding down the DASH button;
-constexpr auto PMF_ACCURATE_MISSILE_BLOCK_HELD = 1 << 24;
-constexpr auto PMF_WALKING_HELD = 1 << 25; // Holding down the walking button;
-constexpr auto PMF_DOUBLE_JUMPED = 1 << 28; // used the double jump (Fallen Order style) in this jump; cleared on landing
-constexpr auto PMF_AIR_DASHED = 1 << 29; // used the air dash (Jedi Survivor style) in this jump; cleared on landing
+constexpr auto PMF_ACCURATE_MISSILE_BLOCK_HELD = 1 << 25;
+constexpr auto PMF_WALKING_HELD = 1 << 26; // Holding down the walking button;
+constexpr auto PMF_DOUBLE_JUMPED = 1 << 27; // used the double jump (Fallen Order style) in this jump; cleared on landing
+constexpr auto PMF_AIR_DASHED = 1 << 28; // used the air dash (Jedi Survivor style) in this jump; cleared on landing
 
 #define	PMF_ALL_TIMES	(PMF_TIME_WATERJUMP|PMF_TIME_LAND|PMF_TIME_KNOCKBACK|PMF_TIME_NOFRICTION)
 

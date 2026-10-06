@@ -1358,9 +1358,6 @@ static void R_MipMapsRGB(byte* in, int inWidth, int inHeight)
 	int			outWidth, outHeight;
 	byte* temp;
 
-	if (r_simpleMipMaps->integer)
-		return;
-
 	outWidth = inWidth >> 1;
 	outHeight = inHeight >> 1;
 	temp = (byte*)Hunk_AllocateTempMemory(outWidth * outHeight * 4);
@@ -1404,16 +1401,12 @@ Operates in place, quartering the size of the texture
 ================
 */
 static void R_MipMap(byte* in, int width, int height) {
-	if (!r_simpleMipMaps->integer)
-		R_MipMap2(in, width, height);
+	R_MipMap2(in, width, height); // rend2 e802ed03: r_simpleMipMaps is handled by the callers
 }
 
 static void R_MipMapLuminanceAlpha(const byte* in, byte* out, int width, int height)
 {
 	int  i, j, row;
-
-	if (r_simpleMipMaps->integer)
-		return;
 
 	if (width == 1 && height == 1) {
 		return;
@@ -1450,9 +1443,6 @@ static void R_MipMapNormalHeight(const byte* in, byte* out, int width, int heigh
 	int		row;
 	int sx = swizzle ? 3 : 0;
 	int sa = swizzle ? 0 : 3;
-
-	if (r_simpleMipMaps->integer)
-		return;
 
 	if (width == 1 && height == 1) {
 		return;
@@ -2158,7 +2148,7 @@ static void Upload32(byte* data, int width, int height, imgType_t type, int flag
 		}
 		Com_Memcpy(scaledBuffer, data, width * height * 4);
 	}
-	else if (!r_simpleMipMaps->integer || (r_picmip->integer && (flags & IMGFLAG_PICMIP)))
+	else // rend2 78a610a6: always scale down to the clamped size (picmip / max texture size)
 	{
 		// use the normal mip-mapping function to go down from here
 		while (width > scaled_width || height > scaled_height) {
@@ -2679,7 +2669,7 @@ void R_UpdateSubImage(image_t* image, byte* pic, int x, int y, int width, int he
 		}
 		Com_Memcpy(scaledBuffer, data, width * height * 4);
 	}
-	else if (!r_simpleMipMaps->integer)
+	else // rend2 e802ed03
 	{
 		// use the normal mip-mapping function to go down from here
 		while (width > scaled_width || height > scaled_height) {
@@ -2704,10 +2694,6 @@ void R_UpdateSubImage(image_t* image, byte* pic, int x, int y, int width, int he
 			}
 		}
 		Com_Memcpy(scaledBuffer, data, width * height * 4);
-	}
-	else if (!r_simpleMipMaps->integer)
-	{
-		qglGenerateMipmap(GL_TEXTURE_2D);
 	}
 
 	if (!(image->flags & IMGFLAG_NOLIGHTSCALE))
@@ -3681,7 +3667,7 @@ void R_SetColorMappings(void) {
 		else {
 			inf = 255 * pow(i / 255.0f, 1.0f / g) + 0.5f;
 		}
-		inf <<= tr.overbrightBits;
+		// inf <<= tr.overbrightBits; // rend2 792feb58: overbright is applied through the exposure in post process now
 		if (inf < 0) {
 			inf = 0;
 		}

@@ -630,7 +630,7 @@ void SCR_SetScreenshot(const byte* pbData, const int w, const int h)
 	}
 }
 
-#ifdef JK2_MODE
+// (used by the JKO save game screenshots, com_outcast 1)
 // This is just a client-side wrapper for the function RE_TempRawImage_ReadFromFile() in the renderer code...
 //
 
@@ -645,4 +645,3 @@ void  SCR_TempRawImage_CleanUp()
 {
 	re.TempRawImage_CleanUp();
 }
-#endif

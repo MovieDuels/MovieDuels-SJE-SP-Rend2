@@ -109,7 +109,8 @@ RB_AddFlare
 This is called at surface tesselation time
 ==================
 */
-void RB_AddFlare(void* surface, int fogNum, vec3_t point, vec3_t color, vec3_t normal) {
+void RB_AddFlare(void* surface, int fogNum, vec3_t point, vec3_t color, vec3_t normal)
+{
 	int				i;
 	flare_t* f;
 	vec3_t			local;
@@ -233,7 +234,9 @@ void RB_AddDlightFlares(void) {
 		else
 			j = 0;
 
-		RB_AddFlare((void*)l, j, l->origin, l->color, NULL);
+		vec3_t normal;
+		VectorCopy(backEnd.viewParms.ori.axis[0], normal);
+		RB_AddFlare(nullptr, j, l->origin, l->color, normal);
 	}
 }
 
@@ -250,8 +253,9 @@ FLARE BACK END
 RB_TestFlare
 ==================
 */
-void RB_TestFlare(flare_t* f) {
-	float			depth;
+static void RB_TestFlare(flare_t* f)
+{
+	float			depth = 0.0;
 	qboolean		visible;
 	float			fade;
 	float			screenZ;
@@ -314,15 +318,22 @@ void RB_TestFlare(flare_t* f) {
 RB_RenderFlare
 ==================
 */
-void RB_RenderFlare(flare_t* f) {
-	vec4_t			color;
+static void RB_RenderFlare(flare_t* f)
+{
+	vec4_t			color{};
 
 	backEnd.pc.c_flareRenders++;
 
 	srfFlare_t* flare = (srfFlare_t*)f->surface;
 
-	backEnd.currentEntity = &tr.worldEntity;
-	shader_t* shader = (flare->shader->remappedShader) ? flare->shader->remappedShader : flare->shader;
+	backEnd.currentEntity = &backEnd.entityFlare;
+
+	shader_t* shader;
+	if (flare == nullptr)
+		shader = tr.flareShader;
+	else
+		shader = (flare->shader->remappedShader) ? flare->shader->remappedShader : flare->shader;
+
 	RB_BeginSurface(shader, f->fogNum, 0);
 
 	vec3_t		dir;
@@ -420,8 +431,7 @@ void RB_RenderFlares(void) {
 		f->drawIntensity = 0;
 		if (f->frameSceneNum == backEnd.viewParms.frameSceneNum
 			&& f->inPortal == backEnd.viewParms.isPortal) {
-			RB_TestFlare(f);
-			if (f->drawIntensity) {
+			if (true) { // draw all flares, testing happens in shaders
 				draw = qtrue;
 			}
 			else {
@@ -442,8 +452,7 @@ void RB_RenderFlares(void) {
 
 	for (f = r_activeFlares; f; f = f->next) {
 		if (f->frameSceneNum == backEnd.viewParms.frameSceneNum
-			&& f->inPortal == backEnd.viewParms.isPortal
-			&& f->drawIntensity) {
+			&& f->inPortal == backEnd.viewParms.isPortal) {
 			RB_RenderFlare(f);
 		}
 	}

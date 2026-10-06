@@ -662,6 +662,29 @@ namespace ojk
 		return true;
 	}
 
+	bool SavedGame::is_next_chunk(
+		const uint32_t chunk_id)
+	{
+		if (is_failed_ || file_handle_ == 0)
+		{
+			return false;
+		}
+
+		uint32_t next_chunk_id = 0;
+
+		const int read_size = FS_Read(
+			&next_chunk_id,
+			static_cast<int>(sizeof next_chunk_id),
+			file_handle_);
+
+		if (read_size > 0)
+		{
+			FS_Seek(file_handle_, -read_size, FS_SEEK_CUR); // put the read position back
+		}
+
+		return read_size == static_cast<int>(sizeof next_chunk_id) && next_chunk_id == chunk_id;
+	}
+
 	bool SavedGame::is_failed() const
 	{
 		return is_failed_;

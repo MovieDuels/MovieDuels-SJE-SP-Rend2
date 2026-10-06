@@ -754,9 +754,70 @@ char* Sys_StripAppBundle(char* dir)
 #	endif
 #endif
 
+#if defined(_WIN32) && defined(NDEBUG) && !defined(_DEBUG) && !defined(DEDICATED)
+// Release builds only start from the MovieDuels launcher: it sets MD_LAUNCHER_ENV on the game process. Started any
+// other way (the exe directly, a shortcut), the game starts the launcher from its own folder and quits.
+// Debug builds (and the dedicated server) start as normal. Keep MD_LAUNCHER_ENV / MD_LAUNCHER_TOKEN the same as
+// LauncherEnv / LauncherToken in the launcher's MainWindow.xaml.cs.
+#include <process.h>
+#include <SDL_messagebox.h>
+
+#define MD_LAUNCHER_EXE		"MovieDuels-Launcher.exe"
+#define MD_LAUNCHER_ENV		"MOVIEDUELS_LAUNCHER"
+#define MD_LAUNCHER_TOKEN	"md-launcher-7f3a9c21"
+
+static void Sys_RequireLauncher(void)
+{
+	const char* token = getenv(MD_LAUNCHER_ENV);
+	if (token && !strcmp(token, MD_LAUNCHER_TOKEN))
+	{// started by the launcher
+		return;
+	}
+
+	// the launcher sits next to the game exe
+	char folder[MAX_OSPATH] = { 0 };
+	char* pgm = nullptr;
+	if (_get_pgmptr(&pgm) == 0 && pgm)
+	{
+		Q_strncpyz(folder, pgm, sizeof(folder));
+	}
+	char* slash = strrchr(folder, '\\');
+	char* slash2 = strrchr(folder, '/');
+	if (slash2 > slash)
+	{
+		slash = slash2;
+	}
+	if (slash)
+	{
+		slash[1] = '\0';
+	}
+	else
+	{
+		folder[0] = '\0';
+	}
+
+	char launcher[MAX_OSPATH];
+	char launcherArg[MAX_OSPATH + 2];
+	Com_sprintf(launcher, sizeof(launcher), "%s%s", folder, MD_LAUNCHER_EXE);
+	Com_sprintf(launcherArg, sizeof(launcherArg), "\"%s\"", launcher);
+
+	if (_spawnl(_P_NOWAIT, launcher, launcherArg, (char*)nullptr) == -1)
+	{
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "MovieDuels",
+			"Please start MovieDuels with " MD_LAUNCHER_EXE ".\n\n"
+			MD_LAUNCHER_EXE " was not found in the game folder.", nullptr);
+	}
+	exit(0);
+}
+#endif
+
 int main(int argc, char* argv[])
 {
 	char commandLine[MAX_STRING_CHARS] = { 0 };
+
+#if defined(_WIN32) && defined(NDEBUG) && !defined(_DEBUG) && !defined(DEDICATED)
+	Sys_RequireLauncher(); // release builds: only from the MovieDuels launcher
+#endif
 
 	Sys_PlatformInit();
 	CON_Init();

@@ -319,9 +319,7 @@ mat4x3 GetBoneMatrix(uint index)
 }
 #endif
 
-const float etaR = 1.0 / 1.35;
-const float etaG = 1.0 / 1.20;
-const float etaB = 1.0 / 1.05;
+const float etaG = 1.0 / 1.30;
 
 void main()
 {
@@ -383,7 +381,7 @@ void main()
 	}
 
 	vec3 ws_Normal		= normalize(mat3(u_ModelMatrix) * normal);
-	vec3 ws_ViewDir		= (u_ViewForward + u_ViewLeft * -gl_Position.x) + u_ViewUp * gl_Position.y;
+	vec3 ws_ViewDir		= normalize((u_ViewForward + u_ViewLeft * -gl_Position.x) + u_ViewUp * gl_Position.y);
 
 	#if defined(USE_TCMOD)
 	float distance = u_Color.a * clamp(1.0 - distance(tex, var_DiffuseTex), 0.0, 1.0);

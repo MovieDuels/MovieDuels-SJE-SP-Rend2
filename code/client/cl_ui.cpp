@@ -285,9 +285,7 @@ void CL_InitUI()
 	uii.R_DrawStretchPic = re.DrawStretchPic;
 	uii.UpdateScreen = SCR_UpdateScreen;
 
-#ifdef JK2_MODE
-	uii.PrecacheScreenshot = SCR_PrecacheScreenshot;
-#endif
+	uii.PrecacheScreenshot = SCR_PrecacheScreenshot; // JKO save game screenshots
 
 	uii.R_LerpTag = re.LerpTag;
 
