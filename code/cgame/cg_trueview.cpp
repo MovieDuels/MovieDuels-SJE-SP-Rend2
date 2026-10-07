@@ -24,9 +24,10 @@
 
 constexpr auto SIEGECHAR_TAB = 9; //perhaps a bit hacky, but I don't think there's any define existing for "tab";
 
-constexpr auto MAX_TRUEVIEW_INFO_SIZE = 8192;
+constexpr auto MAX_TRUEVIEW_INFO_SIZE = 65536; // room for every playable model (was 8192: a longer file was ignored)
 char true_view_info[MAX_TRUEVIEW_INFO_SIZE];
 int true_view_valid;
+static char true_view_model[MAX_QPATH]; // the model the eye position was last set for (CG_TrueViewCheckModel)
 
 int BG_SiegeGetPairedValue(const char* buf, char* key, char* outbuf)
 {
@@ -209,7 +210,7 @@ void CG_TrueViewInit()
 		return;
 	}
 
-	if (len >= MAX_TRUEVIEW_INFO_SIZE)
+	if (len < 0 || len >= MAX_TRUEVIEW_INFO_SIZE - 1)
 	{
 		CG_Printf("Error: trueview.cfg is over the trueview.cfg filesize limit.\n");
 		gi.FS_FCloseFile(f);
@@ -218,6 +219,10 @@ void CG_TrueViewInit()
 	}
 
 	gi.FS_Read(true_view_info, len, f);
+	// end with a line break: a value on the last line with none after it was an "Unexpected EOF" error drop
+	true_view_info[len] = '\n';
+	true_view_info[len + 1] = 0;
+	true_view_model[0] = 0; // look the player's model up again
 
 	true_view_valid = 1;
 
@@ -247,4 +252,110 @@ void CG_AdjustEyePos(const char* model_name)
 		//The model eye position list is messed up.  Default to 0.0 for the eye position
 		gi.cvar_set("cg_trueeyeposition", "0");
 	}
+}
+
+// The player's model changed (or this is the first look at it): its True View eye position from trueview.cfg.
+// Called every frame from the True View camera code (cg_players.cpp), so it also catches playermodel changes,
+// NPC models and save / load, not only a new client info.
+void CG_TrueViewCheckModel(const char* model_name)
+{
+	if (!model_name)
+	{
+		model_name = "";
+	}
+	const char* key = model_name[0] ? model_name : "-"; // "-": no model name (so it is looked up once, not every frame)
+	if (!Q_stricmp(true_view_model, key))
+	{
+		return;
+	}
+	Q_strncpyz(true_view_model, key, sizeof(true_view_model));
+	CG_AdjustEyePos(model_name);
+}
+
+// "trueview_save [value]": saves the player's current model with cg_trueeyeposition (or the value given, which is
+// also applied) into trueview.cfg in the game's own folder (Documents\...), which is read before the pk3's copy.
+// Tuning: go into first person with the model, change cg_trueeyeposition until the view sits just in front of the
+// face, then trueview_save. When done, copy that trueview.cfg into the mod's pk3.
+void CG_TrueViewSave_f()
+{
+	static char new_info[MAX_TRUEVIEW_INFO_SIZE];
+	char value[32];
+	int n = 0;
+	qboolean done = qfalse;
+	fileHandle_t f;
+
+	if (!true_view_model[0] || !Q_stricmp(true_view_model, "-"))
+	{
+		CG_Printf("True View: no player model yet (look through his eyes in first person first).\n");
+		return;
+	}
+	if (cgi_Argc() > 1)
+	{
+		Q_strncpyz(value, CG_Argv(1), sizeof(value));
+		gi.cvar_set("cg_trueeyeposition", value);
+	}
+	else
+	{
+		Q_strncpyz(value, cg_trueeyeposition.string, sizeof(value));
+	}
+
+	// the current list with this model's line replaced (or added at the end)
+	const char* p = true_view_valid ? true_view_info : "";
+	while (*p)
+	{
+		const char* eol = strchr(p, '\n');
+		const int line_len = eol ? (int)(eol - p) + 1 : (int)strlen(p);
+		char key[MAX_QPATH];
+		int k = 0;
+		const char* q = p;
+
+		while (q < p + line_len && (*q == ' ' || *q == '\t'))
+		{
+			q++;
+		}
+		while (q < p + line_len && *q > ' ' && k < MAX_QPATH - 1)
+		{
+			key[k++] = *q++;
+		}
+		key[k] = 0;
+
+		if (!done && key[0] && !Q_stricmp(key, true_view_model))
+		{
+			n += Com_sprintf(new_info + n, sizeof(new_info) - n, "%-24s %s\n", true_view_model, value);
+			done = qtrue;
+		}
+		else if (n + line_len < (int)sizeof(new_info) - 64)
+		{
+			memcpy(new_info + n, p, line_len);
+			n += line_len;
+		}
+		p += line_len;
+	}
+	while (n > 1 && new_info[n - 1] == '\n' && new_info[n - 2] == '\n')
+	{
+		n--; // no growing run of blank lines at the end
+	}
+	if (!done)
+	{
+		if (n > 0 && new_info[n - 1] != '\n')
+		{
+			new_info[n++] = '\n';
+		}
+		n += Com_sprintf(new_info + n, sizeof(new_info) - n, "%-24s %s\n", true_view_model, value);
+	}
+	new_info[n] = 0;
+
+	gi.FS_FOpenFile("trueview.cfg", &f, FS_WRITE);
+	if (!f)
+	{
+		CG_Printf("True View: could not write trueview.cfg.\n");
+		return;
+	}
+	gi.FS_Write(new_info, n, f);
+	gi.FS_FCloseFile(f);
+
+	// use the new list straight away
+	memcpy(true_view_info, new_info, n + 1);
+	true_view_valid = 1;
+	CG_Printf("True View: saved %s %s to trueview.cfg (in your game folder).\n", true_view_model, value);
 }

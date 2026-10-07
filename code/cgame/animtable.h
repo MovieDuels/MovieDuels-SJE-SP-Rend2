@@ -3730,6 +3730,10 @@ stringID_table_t animTable[MAX_ANIMATIONS + 1] =
 	ENUM2STRING(BOTH_WALK1_STICK_YODA),
 	//////////////////////////////////////////
 
+	ENUM2STRING(BOTH_FORCEJUMPDASH_ATTACK),
+	ENUM2STRING(BOTH_FORCEJUMPDASH_LAND),
+	ENUM2STRING(BOTH_FORCEJUMPDASH_START),
+
 	//must be terminated
 	{nullptr, -1}
 };

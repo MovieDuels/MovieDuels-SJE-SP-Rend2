@@ -9885,6 +9885,253 @@ static void CG_DrawVehicleTargets()
 	cgi_R_SetColor(nullptr);
 }
 
+/*
+=====================
+Dynamic HUD (cg_dynamicHud 1)
+
+The HUD (health / armor / force / ammo / saber style frames and the weapon, force and inventory select bars) fades
+out when the player is not in action and comes back fast when he is: an enemy close by and in sight (or after him),
+damage or a health / armor / ammo pickup, the saber being ignited or used (swings, blocks, parries, putting it away),
+holding block, a gun being fired, charged or aimed, a weapon change, the Force being used, sprint / jetpack / cloak
+fuel being used, or a select bar being opened. The crosshair and the radar are not part of it.
+The renderer does the fading (r_hudAlpha scales the alpha of everything drawn in 2D while it is below 1), so the
+menu-built parts of the HUD fade with the rest; it is set back to 1 straight after the HUD is drawn.
+=====================
+*/
+constexpr int DYNAMIC_HUD_FADE_IN_MS = 150;
+constexpr int DYNAMIC_HUD_FADE_OUT_MS = 1000;
+constexpr int DYNAMIC_HUD_ENEMY_CHECK_MS = 250;
+
+constexpr int DYNAMIC_HUD_PICKUP_MIN = 5; // a rise this big at once is a pickup, not regeneration
+
+struct dynamicHud_t
+{
+	qboolean started;
+	qboolean valid;
+	int lastTime;
+	int wakeTime;
+	int nextEnemyCheck;
+	qboolean enemyNear;
+	float alpha;
+	int health;
+	int armor;
+	int weapon;
+	int ammo;
+	int forcePower;
+	int sprintFuel;
+	int jetpackFuel;
+	int cloakFuel;
+	int barrierFuel;
+	qboolean saberOn;
+};
+
+static dynamicHud_t dynamicHud;
+
+// an enemy close by: after the player, or in sight
+static qboolean CG_DynamicHudEnemyNear()
+{
+	const int player_num = cg.snap->ps.clientNum;
+	const gentity_t* player = &g_entities[player_num];
+	const float range = cg_dynamicHudRange.value > 0.0f ? cg_dynamicHudRange.value : 1024.0f;
+
+	if (!player->client)
+	{
+		return qfalse;
+	}
+
+	for (int i = 0; i < ENTITYNUM_WORLD; i++)
+	{
+		const gentity_t* ent = &g_entities[i];
+
+		if (i == player_num || !ent->inuse || !ent->client || ent->health <= 0)
+		{
+			continue;
+		}
+		if (ent->enemy != player
+			&& (player->client->enemyTeam == TEAM_FREE || ent->client->playerTeam != player->client->enemyTeam))
+		{
+			continue;
+		}
+
+		vec3_t spot;
+		VectorCopy(ent->currentOrigin, spot);
+		spot[2] += 16.0f;
+		if (Distance(cg.refdef.vieworg, spot) > range)
+		{
+			continue;
+		}
+		if (ent->enemy == player)
+		{
+			return qtrue;
+		}
+
+		trace_t tr;
+		CG_Trace(&tr, cg.refdef.vieworg, vec3_origin, vec3_origin, spot, player_num, CONTENTS_SOLID);
+		if (tr.fraction >= 1.0f || tr.entityNum == i)
+		{
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
+// the player is "in action" this frame (also notes the values that wake the HUD when they change)
+static qboolean CG_DynamicHudWake()
+{
+	playerState_t* ps = &cg.predictedPlayerState; // (SaberActive() is not const)
+	const int weapon = ps->weapon;
+	const int ammo = weapon > WP_NONE && weapon < WP_NUM_WEAPONS ? ps->ammo[weaponData[weapon].ammoIndex] : 0;
+	const qboolean saber_on = weapon == WP_SABER && ps->SaberActive() ? qtrue : qfalse;
+	qboolean wake = qfalse;
+
+	if (dynamicHud.valid)
+	{
+		if (cg.snap->ps.stats[STAT_HEALTH] < dynamicHud.health // damage
+			|| cg.snap->ps.stats[STAT_HEALTH] >= dynamicHud.health + DYNAMIC_HUD_PICKUP_MIN // a health pickup
+			|| cg.snap->ps.stats[STAT_ARMOR] < dynamicHud.armor
+			|| cg.snap->ps.stats[STAT_ARMOR] >= dynamicHud.armor + DYNAMIC_HUD_PICKUP_MIN
+			|| weapon != dynamicHud.weapon // weapon change
+			|| weapon == dynamicHud.weapon && ammo < dynamicHud.ammo // firing
+			|| weapon == dynamicHud.weapon && ammo >= dynamicHud.ammo + DYNAMIC_HUD_PICKUP_MIN // an ammo pickup
+			|| ps->forcePower < dynamicHud.forcePower // a Force power used
+			|| ps->sprintFuel < dynamicHud.sprintFuel
+			|| ps->jetpackFuel < dynamicHud.jetpackFuel
+			|| ps->cloakFuel < dynamicHud.cloakFuel
+			|| ps->BarrierFuel < dynamicHud.barrierFuel
+			|| saber_on && !dynamicHud.saberOn) // the saber ignited
+		{
+			wake = qtrue;
+		}
+	}
+	dynamicHud.valid = qtrue;
+	dynamicHud.health = cg.snap->ps.stats[STAT_HEALTH];
+	dynamicHud.armor = cg.snap->ps.stats[STAT_ARMOR];
+	dynamicHud.weapon = weapon;
+	dynamicHud.ammo = ammo;
+	dynamicHud.forcePower = ps->forcePower;
+	dynamicHud.sprintFuel = ps->sprintFuel;
+	dynamicHud.jetpackFuel = ps->jetpackFuel;
+	dynamicHud.cloakFuel = ps->cloakFuel;
+	dynamicHud.barrierFuel = ps->BarrierFuel;
+	dynamicHud.saberOn = saber_on;
+
+	// the saber in use (swings, blocks, parries, ignition / putting away) or block held
+	if (weapon == WP_SABER && ps->saberMove != LS_READY && ps->saberMove != LS_NONE)
+	{
+		wake = qtrue;
+	}
+	if (ps->ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK)
+	{
+		wake = qtrue;
+	}
+	// a gun fired, charged, aimed or being changed
+	if (weapon != WP_SABER && weapon != WP_NONE
+		&& (ps->weaponstate == WEAPON_FIRING
+			|| ps->weaponstate == WEAPON_CHARGING
+			|| ps->weaponstate == WEAPON_CHARGING_ALT
+			|| ps->communicatingflags & 1 << CF_AIMINGGUN))
+	{
+		wake = qtrue;
+	}
+	if (ps->weaponstate == WEAPON_RAISING || ps->weaponstate == WEAPON_DROPPING)
+	{
+		wake = qtrue;
+	}
+	// the Force in use
+	if (ps->forcePowersActive)
+	{
+		wake = qtrue;
+	}
+	// a select bar open
+	if (cg.weaponSelectTime + WEAPON_SELECT_TIME > cg.time
+		|| cg.inventorySelectTime + WEAPON_SELECT_TIME > cg.time
+		|| cg.forcepowerSelectTime + WEAPON_SELECT_TIME > cg.time)
+	{
+		wake = qtrue;
+	}
+	// an enemy close by (checked a few times a second)
+	if (cg.time >= dynamicHud.nextEnemyCheck || cg.time < dynamicHud.nextEnemyCheck - DYNAMIC_HUD_ENEMY_CHECK_MS)
+	{
+		dynamicHud.enemyNear = CG_DynamicHudEnemyNear();
+		dynamicHud.nextEnemyCheck = cg.time + DYNAMIC_HUD_ENEMY_CHECK_MS;
+	}
+	if (dynamicHud.enemyNear)
+	{
+		wake = qtrue;
+	}
+	return wake;
+}
+
+// the HUD's alpha this frame: 1 shown, 0 hidden
+static float CG_DynamicHudAlpha()
+{
+	if (!cg_dynamicHud.integer)
+	{
+		dynamicHud.valid = qfalse;
+		dynamicHud.alpha = 1.0f;
+		return 1.0f;
+	}
+	if (!dynamicHud.started || cg.time < dynamicHud.lastTime || cg.time < dynamicHud.wakeTime)
+	{
+		// first frame / new map / loaded game: start shown
+		memset(&dynamicHud, 0, sizeof dynamicHud);
+		dynamicHud.started = qtrue;
+		dynamicHud.alpha = 1.0f;
+		dynamicHud.wakeTime = cg.time;
+		dynamicHud.lastTime = cg.time;
+	}
+	if (CG_DynamicHudWake())
+	{
+		dynamicHud.wakeTime = cg.time;
+	}
+
+	int frame_ms = cg.time - dynamicHud.lastTime;
+	if (frame_ms > 100)
+	{
+		frame_ms = 100;
+	}
+	dynamicHud.lastTime = cg.time;
+
+	const int hold = cg_dynamicHudTime.integer > 0 ? cg_dynamicHudTime.integer : 0;
+	if (cg.time - dynamicHud.wakeTime <= hold)
+	{
+		dynamicHud.alpha += static_cast<float>(frame_ms) / DYNAMIC_HUD_FADE_IN_MS;
+	}
+	else
+	{
+		dynamicHud.alpha -= static_cast<float>(frame_ms) / DYNAMIC_HUD_FADE_OUT_MS;
+	}
+	if (dynamicHud.alpha > 1.0f)
+	{
+		dynamicHud.alpha = 1.0f;
+	}
+	else if (dynamicHud.alpha < 0.0f)
+	{
+		dynamicHud.alpha = 0.0f;
+	}
+	return dynamicHud.alpha;
+}
+
+// the renderer fades the 2D drawing between these two (r_hudAlpha); the colour is set again so the fade applies to
+// the next picture too
+static void CG_DynamicHudBegin(const float alpha)
+{
+	if (alpha > 0.0f && alpha < 1.0f)
+	{
+		cgi_Cvar_Set("r_hudAlpha", va("%.3f", alpha));
+		cgi_R_SetColor(nullptr);
+	}
+}
+
+static void CG_DynamicHudEnd(const float alpha)
+{
+	if (alpha > 0.0f && alpha < 1.0f)
+	{
+		cgi_Cvar_Set("r_hudAlpha", "1");
+		cgi_R_SetColor(nullptr);
+	}
+}
+
 static void CG_Draw2D()
 {
 	char text[1024] = { 0 };
@@ -10054,60 +10301,70 @@ static void CG_Draw2D()
 	// don't draw any status if dead
 	if (cg.snap->ps.stats[STAT_HEALTH] > 0)
 	{
-		if (!(cent->gent && cent->gent->s.eFlags & (EF_LOCKED_TO_WEAPON | EF_IN_ATST)) && !
-			G_IsRidingVehicle(cent->gent))
+		// the HUD: faded out when the player is not in action (cg_dynamicHud, as SJE)
+		const float hud_alpha = CG_DynamicHudAlpha();
+
+		if (hud_alpha > 0.0f)
 		{
-			if (cg_SerenityJediEngineMode.integer)
+			CG_DynamicHudBegin(hud_alpha);
+
+			if (!(cent->gent && cent->gent->s.eFlags & (EF_LOCKED_TO_WEAPON | EF_IN_ATST)) && !
+				G_IsRidingVehicle(cent->gent))
 			{
-				if (cg_SerenityJediEngineMode.integer == 2 && cg_SerenityJediEngineHudMode.integer == 1)
+				if (cg_SerenityJediEngineMode.integer)
 				{
-					CG_DrawSJEIconBackground();
+					if (cg_SerenityJediEngineMode.integer == 2 && cg_SerenityJediEngineHudMode.integer == 1)
+					{
+						CG_DrawSJEIconBackground();
+					}
+					else if (cg_SerenityJediEngineHudMode.integer == 2)
+					{
+						CG_DrawSJEIconBackground();
+					}
+					else if (cg_SerenityJediEngineMode.integer == 2 && cg_SerenityJediEngineHudMode.integer == 3)
+					{
+						CG_DrawSJEIconBackground();
+					}
+					else
+					{
+						CG_DrawIconBackground();
+					}
 				}
-				else if (cg_SerenityJediEngineHudMode.integer == 2)
+				CG_DrawInventorySelect();
+
+				if ((cg_SerenityJediEngineHudMode.integer == 4 || cg_SerenityJediEngineHudMode.integer == 5) && !
+					cg_drawSelectionScrollBar.integer)
 				{
-					CG_DrawSJEIconBackground();
-				}
-				else if (cg_SerenityJediEngineMode.integer == 2 && cg_SerenityJediEngineHudMode.integer == 3)
-				{
-					CG_DrawSJEIconBackground();
+					//
 				}
 				else
 				{
-					CG_DrawIconBackground();
+					CG_DrawForceSelect();
 				}
 			}
-			CG_DrawInventorySelect();
 
-			if ((cg_SerenityJediEngineHudMode.integer == 4 || cg_SerenityJediEngineHudMode.integer == 5) && !
-				cg_drawSelectionScrollBar.integer)
-			{
-				//
-			}
-			else
-			{
-				CG_DrawForceSelect();
-			}
-		}
-
-		if (cg_com_kotor.integer == 1) //playing kotor
-		{
-			CG_DrawWeaponSelect_kotor();
-		}
-		else
-		{
-			if (cent->gent->client->charKOTORWeapons == 1)
+			if (cg_com_kotor.integer == 1) //playing kotor
 			{
 				CG_DrawWeaponSelect_kotor();
 			}
 			else
 			{
-				CG_DrawWeaponSelect();
+				if (cent->gent->client->charKOTORWeapons == 1)
+				{
+					CG_DrawWeaponSelect_kotor();
+				}
+				else
+				{
+					CG_DrawWeaponSelect();
+				}
 			}
-		}
 
-		if (cg.zoomMode == 0)
-		{
-			CG_DrawStats();
+			if (cg.zoomMode == 0)
+			{
+				CG_DrawStats();
+			}
+
+			CG_DynamicHudEnd(hud_alpha);
 		}
 		CG_DrawAmmoWarning();
 

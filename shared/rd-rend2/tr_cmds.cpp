@@ -361,6 +361,18 @@ void	RE_SetColor(const float* rgba) {
 	cmd->color[1] = rgba[1];
 	cmd->color[2] = rgba[2];
 	cmd->color[3] = rgba[3];
+
+	// Dynamic HUD (cgame cg_dynamicHud): while cgame draws the HUD it sets r_hudAlpha below 1 and the HUD's 2D drawing
+	// fades with it (cgame sets it back to 1 straight after, so the crosshair, radar, console and menus are not touched)
+	static cvar_t* r_hudAlpha = nullptr;
+	if (!r_hudAlpha)
+	{
+		r_hudAlpha = ri.Cvar_Get("r_hudAlpha", "1", CVAR_TEMP);
+	}
+	if (r_hudAlpha && r_hudAlpha->value < 1.0f)
+	{
+		cmd->color[3] *= r_hudAlpha->value > 0.0f ? r_hudAlpha->value : 0.0f;
+	}
 }
 
 /*

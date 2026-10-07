@@ -33,7 +33,7 @@ This file is part of Jedi Academy.
 #define VERSION_MINOR_RELEASE		10  // Build month
 #define VERSION_INTERNAL_BUILD		05  // Build number
 
-#define VERSION_STRING				"Day-06,Month-10,Year-26,BuildNum-05" // build date
-#define VERSION_STRING_DOTTED		"Day-06.Month-10.Year-26.BuildNum-05" // build date
+#define VERSION_STRING				"Day-07,Month-10,Year-26,BuildNum-05" // build date
+#define VERSION_STRING_DOTTED		"Day-07.Month-10.Year-26.BuildNum-05" // build date
 
 #endif // __AUTO_VERSION_HEADER

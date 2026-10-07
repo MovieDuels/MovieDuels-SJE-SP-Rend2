@@ -267,6 +267,19 @@ extern qboolean PM_AdjustAnglesForSpinningFlip(gentity_t* ent, usercmd_t* ucmd, 
 extern qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd);
 extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
 
+// Meditating (the meditate anims, not their ends - as CG_MeditateCameraOrbit): the game holds the view (PM_LockAngles),
+// but the mouse input must not be reset to the held angles, or CG_MeditateCameraOrbit (cg_view.cpp) never sees the
+// mouse move and the third person camera can't orbit (MP doesn't reset it either)
+static qboolean CG_PlayerMeditating()
+{
+	if (!g_entities[0].inuse || !g_entities[0].client || g_entities[0].client->ps.stats[STAT_HEALTH] <= 0)
+	{
+		return qfalse;
+	}
+	const int anim = g_entities[0].client->ps.legsAnim;
+	return anim == BOTH_MEDITATE || anim == BOTH_MEDITATE1 || anim == BOTH_MEDITATE_SABER ? qtrue : qfalse;
+}
+
 qboolean CG_CheckModifyUCmd(usercmd_t* cmd, vec3_t viewangles)
 {
 	qboolean overridAngles = qfalse;
@@ -307,7 +320,10 @@ qboolean CG_CheckModifyUCmd(usercmd_t* cmd, vec3_t viewangles)
 		}
 		if (G_CheckClampUcmd(&g_entities[0], cmd))
 		{
-			CG_SetClientViewAngles(g_entities[0].client->ps.viewangles, qfalse);
+			if (!CG_PlayerMeditating()) // meditating: the view is held, the mouse is left for the camera orbit
+			{
+				CG_SetClientViewAngles(g_entities[0].client->ps.viewangles, qfalse);
+			}
 			if (viewangles)
 			{
 				VectorCopy(g_entities[0].client->ps.viewangles, viewangles);

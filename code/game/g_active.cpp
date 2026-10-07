@@ -4328,7 +4328,10 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 	}
 	else if (ent->client->ps.legsAnim == BOTH_FORCELONGLEAP_START
 		|| ent->client->ps.legsAnim == BOTH_FORCELONGLEAP_ATTACK
-		|| ent->client->ps.legsAnim == BOTH_FORCELONGLEAP_LAND)
+		|| ent->client->ps.legsAnim == BOTH_FORCELONGLEAP_LAND
+		|| ent->client->ps.legsAnim == BOTH_FORCEJUMPDASH_START // nor during the force jump dash
+		|| ent->client->ps.legsAnim == BOTH_FORCEJUMPDASH_ATTACK
+		|| ent->client->ps.legsAnim == BOTH_FORCEJUMPDASH_LAND)
 	{
 		//can't turn during force leap
 		if (ent->NPC)

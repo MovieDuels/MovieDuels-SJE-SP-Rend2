@@ -15,5 +15,7 @@ qboolean G_Pazaak_IsNPCPlaying(const gentity_t* ent);	// the opponent NPC sits a
 void G_Pazaak_StartScripted(const char* who);			// SET_PAZAAK_PLAY
 void G_Pazaak_SetScriptWager(int wager);				// SET_PAZAAK_WAGER
 void G_Pazaak_SetEndScript(int entNum, const char* script);	// SET_PAZAAK_END
+qboolean G_Pazaak_InterceptScript(const gentity_t* ent, const char* script);	// RunScript: held back for a challenge question
+bool G_Pazaak_HoldRun(int entNum, const char* script);	// icarus/Sequencer.cpp: a run( ) waits for a challenge question
 
 #endif // G_PAZAAK_H

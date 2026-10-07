@@ -47092,6 +47092,7 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 			return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
 		}
 	case BOTH_SPINATTACK7:             return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_FORCELONGLEAP_ATTACK:    return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
 	case BOTH_STABDOWN:                return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);
 	case BOTH_STABDOWN_STAFF:          return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.80);

@@ -24,6 +24,21 @@ Scripts (ICARUS, see Q3_Interface.cpp and PAZAAK_SCRIPTING.txt):
   "NULL" clears it); pazaak_result is already set then
 - when a match is over: the global float "pazaak_result" (if the script declared it) becomes
   1 = the player won, 2 = the opponent won, 0 = called off, then the signal "pazaak_done" is set
+
+Challenges before a map's own scripts (PZK_CHALLENGE_FILE, e.g. the bar of ns_streets): when a listed script is
+about to start, it is held back, once per map load, and
+the UI asks "challenge him to a pazaak match? Yes / No" (cinematic bars, the game paused, the cursor on:
+ui_pazaak.cpp "uipzk_challenge"). The answer comes back as "pazaak_challenge 1/0":
+- No: the held script runs as normal
+- Yes: a bar match: the player stands (BOTH_STAND1IDLE1, no meditating), the opponent stays as he is (his AI
+  rests), the sound is not muted; when it is over the held script runs
+Two ways a script starts, two ways to hold it:
+- RunScript (a trigger's or an entity's own script; G_Pazaak_InterceptScript from Q3_Interface.cpp): it is
+  not run, and run later (as SET_PAZAAK_END after a match)
+- an ICARUS run( ) inside a running script (G_Pazaak_HoldRun from icarus/Sequencer.cpp CheckRun): the sequencer
+  waits on the signal "pazaak_challenge" in front of the run, which is given after the answer (or the match),
+  so the script goes on exactly there (e.g. after Kyle's line, before the patrons answer)
+g_pazaakScriptLog 1 prints every script that starts, to find the name of the one to list.
 ===========================================================================
 */
 
@@ -58,6 +73,35 @@ static char pzkEndScript[MAX_QPATH];
 
 static cvar_t* g_pazaakAllowed;     // SET_PAZAAK_ALLOWED: 0 = the Play Pazaak key does nothing (saved with the game)
 
+// Challenges before a map's own scripts (see the top of the file)
+#define PZK_CHALLENGE_FILE	"ext_data/sje_pazaak_challenges.cfg"
+#define PZK_MAX_CHALLENGES	16
+#define PZK_BAR_RANGE		384	// "*": the opponent is the NPC nearest the player within this
+
+struct pzkChallenge_t
+{
+	char script[MAX_QPATH];   // without "scripts/" and the extension
+	char opponent[64];        // targetname, or "*": the NPC nearest the player
+	int wager;
+	qboolean asked;           // once per map load
+};
+
+static pzkChallenge_t pzkChallenges[PZK_MAX_CHALLENGES];
+static int pzkNumChallenges = 0;
+static char pzkChallengeMap[MAX_QPATH];  // the map the list was read for ("" = read it again)
+static int pzkPendingEnt = -1;           // the held script's entity (-1 = no question open)
+static char pzkPendingScript[MAX_QPATH];
+static int pzkPendingOpponent = -1;
+static int pzkPendingWager = 0;
+static qboolean pzkScriptBypass = qfalse; // running the held script ourselves
+static qboolean pzkBarMode = qfalse;      // the running match is a bar match (standing, sound on)
+static qboolean pzkPendingSignal = qfalse; // the question holds an ICARUS run( ) (answered with the signal)
+static qboolean pzkSignalAfterMatch = qfalse; // give the signal when the running match is over
+#define PZK_HOLD_SIGNAL	"pazaak_challenge"
+static cvar_t* g_pazaakScriptLog;         // 1: print every script that starts
+
+static void Pzk_RunHeldScript(int entNum, const char* script);
+
 void G_Pazaak_Init()
 {
 	pzkWager = 0;
@@ -70,7 +114,17 @@ void G_Pazaak_Init()
 	pzkScriptWager = 0;
 	pzkEndScriptEnt = -1;
 	pzkEndScript[0] = 0;
+	pzkNumChallenges = 0;
+	pzkChallengeMap[0] = 0;
+	pzkPendingEnt = -1;
+	pzkPendingScript[0] = 0;
+	pzkPendingOpponent = -1;
+	pzkScriptBypass = qfalse;
+	pzkBarMode = qfalse;
+	pzkPendingSignal = qfalse;
+	pzkSignalAfterMatch = qfalse;
 	g_pazaakAllowed = gi.cvar("g_pazaakAllowed", "1", CVAR_SAVEGAME);
+	g_pazaakScriptLog = gi.cvar("g_pazaakScriptLog", "0", 0);
 }
 
 static void Pzk_Print(const gentity_t* ent, const char* text)
@@ -247,7 +301,7 @@ static qboolean Pzk_NPCCanSit(const gentity_t* npc)
 // The opponent NPC of the match is sitting there (NPC.cpp lets his AI rest)
 qboolean G_Pazaak_IsNPCPlaying(const gentity_t* ent)
 {
-	return pzkRunning && pzkNPCSits && ent && ent->s.number == pzkOpponent ? qtrue : qfalse;
+	return pzkRunning && (pzkNPCSits || pzkBarMode) && ent && ent->s.number == pzkOpponent ? qtrue : qfalse;
 }
 
 // npc: the opponent (his name is used; npcSits: he sits down too), or nullptr: the AI as name
@@ -301,10 +355,16 @@ static void Pzk_RunEndScript()
 	Q_strncpyz(script, pzkEndScript, sizeof(script));
 	pzkEndScriptEnt = -1; // once: the script may set the next one
 	pzkEndScript[0] = 0;
-	const gentity_t* ent = &g_entities[entNum];
-	if (ent->inuse)
+	Pzk_RunHeldScript(entNum, script);
+}
+
+// Lets a script held by G_Pazaak_HoldRun go on (its sequencer waits on PZK_HOLD_SIGNAL)
+static void Pzk_ReleaseHeldRun()
+{
+	IIcarusInterface* icarus = IIcarusInterface::GetIcarus();
+	if (icarus)
 	{
-		Quake3Game()->RunScript(ent, script);
+		static_cast<CIcarus*>(icarus)->Signal(PZK_HOLD_SIGNAL);
 	}
 }
 
@@ -313,7 +373,23 @@ static void Pzk_Result(gentity_t* ent, const int winner)
 {
 	pzkRunning = qfalse;
 	pzkStartAt = 0;
-	Pzk_StandUp(ent, pzkHadGod);
+	if (pzkBarMode)
+	{// a bar match: he only stood there
+		if (!pzkHadGod)
+		{
+			ent->flags &= ~FL_GODMODE;
+		}
+		if (ent->client && ent->client->ps.legsAnim == BOTH_STAND1IDLE1)
+		{
+			ent->client->ps.legsAnimTimer = 0;
+			ent->client->ps.torsoAnimTimer = 0;
+		}
+		pzkBarMode = qfalse;
+	}
+	else
+	{
+		Pzk_StandUp(ent, pzkHadGod);
+	}
 	pzkHadGod = qfalse;
 	if (pzkNPCSits && pzkOpponent >= 0 && pzkOpponent < ENTITYNUM_WORLD)
 	{
@@ -353,6 +429,11 @@ static void Pzk_Result(gentity_t* ent, const int winner)
 	pzkOpponent = -1;
 	Pzk_TellScripts(winner);
 	Pzk_RunEndScript();
+	if (pzkSignalAfterMatch)
+	{// a bar match asked from inside a script: it goes on now
+		pzkSignalAfterMatch = qfalse;
+		Pzk_ReleaseHeldRun();
+	}
 }
 
 // Every frame: open the board once they sit
@@ -384,7 +465,7 @@ void G_Pazaak_RunFrame()
 	if (level.time >= pzkStartAt)
 	{
 		pzkStartAt = 0;
-		gi.SendConsoleCommand(va("uipzk_start \"%s\" %i %i\n", pzkName, pzkOpponent, pzkWager));
+		gi.SendConsoleCommand(va("uipzk_start \"%s\" %i %i %i\n", pzkName, pzkOpponent, pzkWager, pzkBarMode ? 1 : 0)); // 1: no mute
 	}
 }
 
@@ -485,6 +566,311 @@ void G_Pazaak_StartScripted(const char* who)
 	Pzk_Start(player, npc, wager, Pzk_NPCCanSit(npc), who);
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Challenges before a map's own scripts
+// ---------------------------------------------------------------------------------------------------------------
+
+// A script name as listed: no "scripts/" (or "scriptsjk2/"), no extension, '/' slashes
+static void Pzk_ScriptName(const char* in, char* out, const int size)
+{
+	char tmp[MAX_QPATH];
+	Q_strncpyz(tmp, in, sizeof(tmp));
+	for (char* c = tmp; *c; c++)
+	{
+		if (*c == '\\')
+		{
+			*c = '/';
+		}
+	}
+	const char* s = tmp;
+	if (!Q_stricmpn(s, "scripts/", 8))
+	{
+		s += 8;
+	}
+	else if (!Q_stricmpn(s, "scriptsjk2/", 11))
+	{
+		s += 11; // the JKO scripts (com_outcast)
+	}
+	Q_strncpyz(out, s, size);
+	char* dot = strrchr(out, '.');
+	if (dot && !strchr(dot, '/'))
+	{
+		*dot = 0;
+	}
+}
+
+// PZK_CHALLENGE_FILE, the lines for this map: <map> <script> [opponent targetname or *] [wager]
+static void Pzk_LoadChallenges()
+{
+	char* buf = nullptr;
+
+	if (pzkChallengeMap[0] && !Q_stricmp(pzkChallengeMap, level.mapname))
+	{
+		return;
+	}
+	Q_strncpyz(pzkChallengeMap, level.mapname[0] ? level.mapname : "-", sizeof(pzkChallengeMap));
+	pzkNumChallenges = 0;
+	const long len = gi.FS_ReadFile(PZK_CHALLENGE_FILE, reinterpret_cast<void**>(&buf));
+	if (len <= 0 || !buf)
+	{
+		return;
+	}
+	COM_ParseSession session; // COM_ParseExt needs a parse session (ended when this goes out of scope)
+	const char* p = buf;
+	while (*p && pzkNumChallenges < PZK_MAX_CHALLENGES)
+	{
+		// one line at a time ("//" comments are skipped by the parser)
+		char line[256];
+		int n = 0;
+		while (*p && *p != '\n' && n < static_cast<int>(sizeof(line)) - 1)
+		{
+			line[n++] = *p++;
+		}
+		line[n] = 0;
+		while (*p && *p != '\n')
+		{
+			p++; // a line too long: the rest is ignored
+		}
+		if (*p == '\n')
+		{
+			p++;
+		}
+
+		char map[MAX_QPATH], script[MAX_QPATH], opponent[64];
+		const char* l = line;
+		Q_strncpyz(map, COM_ParseExt(&l, qfalse), sizeof(map));
+		Q_strncpyz(script, COM_ParseExt(&l, qfalse), sizeof(script));
+		Q_strncpyz(opponent, COM_ParseExt(&l, qfalse), sizeof(opponent));
+		const int wager = atoi(COM_ParseExt(&l, qfalse));
+		if (!map[0] || !script[0] || Q_stricmp(map, level.mapname))
+		{
+			continue;
+		}
+		pzkChallenge_t* c = &pzkChallenges[pzkNumChallenges++];
+		Pzk_ScriptName(script, c->script, sizeof(c->script));
+		Q_strncpyz(c->opponent, opponent[0] ? opponent : "*", sizeof(c->opponent));
+		c->wager = wager > 0 ? wager : 0;
+		c->asked = qfalse;
+	}
+	gi.FS_FreeFile(buf);
+}
+
+// The opponent of a challenge: the named NPC, or ("*") the script's own NPC, else the living NPC nearest the
+// player (not after him) within PZK_BAR_RANGE
+static gentity_t* Pzk_ChallengeOpponent(const pzkChallenge_t* c, const gentity_t* owner, const gentity_t* player)
+{
+	if (c->opponent[0] && Q_stricmp(c->opponent, "*"))
+	{
+		gentity_t* npc = G_Find(nullptr, FOFS(targetname), c->opponent);
+		return npc && npc->client && npc->health > 0 ? npc : nullptr;
+	}
+	if (owner && owner->client && owner->NPC && owner->health > 0)
+	{
+		return const_cast<gentity_t*>(owner);
+	}
+	gentity_t* best = nullptr;
+	float bestDist = PZK_BAR_RANGE;
+	for (int i = 1; i < globals.num_entities; i++)
+	{
+		gentity_t* ent = &g_entities[i];
+		if (!ent->inuse || !ent->client || !ent->NPC || ent->health <= 0 || ent->enemy == player)
+		{
+			continue;
+		}
+		const float dist = Distance(ent->currentOrigin, player->currentOrigin);
+		if (dist < bestDist)
+		{
+			bestDist = dist;
+			best = ent;
+		}
+	}
+	return best;
+}
+
+// Runs the held script ourselves (not held back again)
+static void Pzk_RunHeldScript(const int entNum, const char* script)
+{
+	if (entNum < 0 || entNum >= ENTITYNUM_WORLD || !script[0] || !g_entities[entNum].inuse)
+	{
+		return;
+	}
+	pzkScriptBypass = qtrue;
+	Quake3Game()->RunScript(&g_entities[entNum], script);
+	pzkScriptBypass = qfalse;
+}
+
+// A listed script is about to start: ask the question (qtrue: hold it). bySignal: it is an ICARUS run( ),
+// answered with the signal; else a RunScript, run again after the answer
+static qboolean Pzk_TryChallenge(const gentity_t* ent, const char* script, const qboolean bySignal)
+{
+	char name[MAX_QPATH];
+
+	if (pzkScriptBypass || !ent || !script || !script[0])
+	{
+		return qfalse;
+	}
+	Pzk_ScriptName(script, name, sizeof(name));
+	if (g_pazaakScriptLog && g_pazaakScriptLog->integer)
+	{
+		Com_Printf(S_COLOR_CYAN "Pazaak script log:" S_COLOR_WHITE " %s %s runs \"%s\" (map %s)\n", ent->classname ? ent->classname : "?",
+			ent->targetname ? ent->targetname : "", name, level.mapname);
+	}
+	Pzk_LoadChallenges();
+	if (!pzkNumChallenges || pzkPendingEnt >= 0 || pzkRunning)
+	{
+		return qfalse;
+	}
+	for (int i = 0; i < pzkNumChallenges; i++)
+	{
+		pzkChallenge_t* c = &pzkChallenges[i];
+		if (c->asked || Q_stricmp(c->script, name))
+		{
+			continue;
+		}
+		c->asked = qtrue;
+		gentity_t* player = &g_entities[0];
+		if (!Pzk_CanPlay(player) || Pzk_InCutscene() || g_pazaakAllowed && !g_pazaakAllowed->integer)
+		{
+			return qfalse; // no question now: the script runs as normal
+		}
+		const gentity_t* npc = Pzk_ChallengeOpponent(c, ent, player);
+		pzkPendingEnt = ent->s.number;
+		Q_strncpyz(pzkPendingScript, script, sizeof(pzkPendingScript));
+		pzkPendingOpponent = npc ? npc->s.number : -1;
+		pzkPendingWager = c->wager;
+		pzkPendingSignal = bySignal;
+		if (bySignal)
+		{
+			IIcarusInterface* icarus = IIcarusInterface::GetIcarus();
+			if (icarus)
+			{
+				static_cast<CIcarus*>(icarus)->ClearSignal(PZK_HOLD_SIGNAL); // an old one
+			}
+		}
+
+		char who[64];
+		Q_strncpyz(who, npc && npc->fullName && npc->fullName[0] ? npc->fullName : "this character", sizeof(who));
+		for (char* q = who; *q; q++)
+		{
+			if (*q == '"')
+			{
+				*q = '\'';
+			}
+		}
+		const char* text = c->wager > 0
+			? va("Do you want to challenge %s to a pazaak match for %i credits?", who, c->wager)
+			: va("Do you want to challenge %s to a pazaak match?", who);
+		gi.SendConsoleCommand(va("uipzk_challenge \"%s\"\n", text));
+		return qtrue;
+	}
+	return qfalse;
+}
+
+// Q3_Interface.cpp RunScript: qtrue = held back for the challenge question (it runs after the answer)
+qboolean G_Pazaak_InterceptScript(const gentity_t* ent, const char* script)
+{
+	return Pzk_TryChallenge(ent, script, qfalse);
+}
+
+// icarus/Sequencer.cpp CheckRun, a run( ) inside a running script of entity entNum: true = the sequencer waits on
+// the signal PZK_HOLD_SIGNAL first (given after the answer, or after the match)
+bool G_Pazaak_HoldRun(const int entNum, const char* script)
+{
+	if (entNum < 0 || entNum >= ENTITYNUM_WORLD || !g_entities[entNum].inuse)
+	{
+		return false;
+	}
+	return Pzk_TryChallenge(&g_entities[entNum], script, qtrue) ? true : false;
+}
+
+// A bar match: standing, the opponent stays as he is, sound on (the UI); qfalse if it can't start
+static qboolean Pzk_StartBar(gentity_t* player, gentity_t* npc, const int wager)
+{
+	if (!Pzk_CanPlay(player) || pzkRunning || Pzk_InCutscene())
+	{
+		return qfalse;
+	}
+	if (!Pzk_TakeWager(player, wager))
+	{
+		return qfalse;
+	}
+	Q_strncpyz(pzkName, npc ? Pzk_NPCName(npc) : "AI", sizeof(pzkName));
+	IIcarusInterface* icarus = IIcarusInterface::GetIcarus();
+	if (icarus)
+	{
+		static_cast<CIcarus*>(icarus)->ClearSignal("pazaak_done");
+	}
+	pzkRunning = qtrue;
+	pzkBarMode = qtrue;
+	pzkOpponent = npc ? npc->s.number : -1;
+	pzkWager = wager;
+	pzkNPCSits = qfalse;
+	pzkNPCHadGod = qfalse;
+	Pzk_Face(player, npc);
+	if (player->client->ps.SaberActive())
+	{
+		G_Sound(player, player->client->ps.saber[0].soundOff);
+		player->client->ps.SaberDeactivate();
+	}
+	VectorClear(player->client->ps.velocity);
+	NPC_SetAnim(player, SETANIM_BOTH, BOTH_STAND1IDLE1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+	pzkHadGod = player->flags & FL_GODMODE ? qtrue : qfalse;
+	player->flags |= FL_GODMODE;
+	pzkStartAt = level.time + 100; // no sitting down: the board opens straight away (G_Pazaak_RunFrame)
+	return qtrue;
+}
+
+// "pazaak_challenge 1/0": the answer to the question (ui_pazaak.cpp)
+static void Pzk_ChallengeAnswer(gentity_t* player, const qboolean yes)
+{
+	char script[MAX_QPATH];
+
+	if (pzkPendingEnt < 0)
+	{
+		return;
+	}
+	const int owner = pzkPendingEnt;
+	Q_strncpyz(script, pzkPendingScript, sizeof(script));
+	const int opponent = pzkPendingOpponent;
+	const int wager = pzkPendingWager;
+	const qboolean bySignal = pzkPendingSignal;
+	pzkPendingSignal = qfalse;
+	pzkPendingEnt = -1;
+	pzkPendingScript[0] = 0;
+	pzkPendingOpponent = -1;
+	pzkPendingWager = 0;
+
+	if (yes)
+	{
+		gentity_t* npc = opponent >= 0 && opponent < ENTITYNUM_WORLD ? &g_entities[opponent] : nullptr;
+		if (npc && (!npc->inuse || !npc->client || npc->health <= 0))
+		{
+			npc = nullptr;
+		}
+		if (Pzk_StartBar(player, npc, wager))
+		{
+			if (bySignal)
+			{
+				pzkSignalAfterMatch = qtrue; // the held script goes on when the match is over
+			}
+			else
+			{
+				G_Pazaak_SetEndScript(owner, script); // the held script runs when the match is over
+			}
+			return;
+		}
+		Pzk_Unavailable(player, "");
+	}
+	if (bySignal)
+	{
+		Pzk_ReleaseHeldRun();
+	}
+	else
+	{
+		Pzk_RunHeldScript(owner, script);
+	}
+}
+
 // The entity in the player's crosshair (up to PZK_LOOK_RANGE away)
 static gentity_t* Pzk_LookTarget(const gentity_t* ent)
 {
@@ -570,6 +956,12 @@ qboolean G_Pazaak_ClientCommand(gentity_t* ent, const char* cmd)
 		}
 		// 1. Nobody: the AI
 		Pzk_Start(ent, nullptr, 0, qfalse, nullptr);
+		return qtrue;
+	}
+	if (!Q_stricmp(cmd, "pazaak_challenge"))
+	{
+		// pazaak_challenge <1 = yes, 0 = no>: the answer to the question before a map's script
+		Pzk_ChallengeAnswer(ent, atoi(gi.argv(1)) ? qtrue : qfalse);
 		return qtrue;
 	}
 	if (!Q_stricmp(cmd, "pazaak_result"))

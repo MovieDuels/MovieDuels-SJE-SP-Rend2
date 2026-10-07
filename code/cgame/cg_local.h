@@ -707,6 +707,9 @@ extern vmCvar_t cg_vehicleStickPitch;
 extern vmCvar_t cg_vehicleStickEaseIn;
 
 extern vmCvar_t cg_drawRadar;
+extern vmCvar_t cg_dynamicHud;
+extern vmCvar_t cg_dynamicHudTime;
+extern vmCvar_t cg_dynamicHudRange;
 extern vmCvar_t cg_drawVehLeadIndicator;
 
 extern vmCvar_t cg_drawSelectionScrollBar;
@@ -1355,5 +1358,7 @@ void CG_SetLightstyle(int i);
 //trueview stuff
 void CG_TrueViewInit();
 void CG_AdjustEyePos(const char* model_name);
+void CG_TrueViewCheckModel(const char* model_name); // the player's model changed: its trueview.cfg eye position
+void CG_TrueViewSave_f(); // "trueview_save [value]": saves the player's model with its eye position in trueview.cfg
 
 #endif	//__CG_LOCAL_H__

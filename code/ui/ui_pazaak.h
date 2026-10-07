@@ -43,6 +43,9 @@ qboolean UI_Pazaak_ConsoleCommand(const char* cmd);
 #ifdef PZK_SP
 // SP: runs the local match, call every UI frame
 void UI_Pazaak_Frame(void);
+
+// SP: the challenge question before a map's script is open: escape / N = no, Y = yes (qtrue = key used)
+qboolean UI_Pazaak_ChallengeKey(int key);
 #endif
 
 #endif // UI_PAZAAK_H

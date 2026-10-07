@@ -393,7 +393,8 @@ static float CG_LongLeapCameraBlend()
 	const qboolean leaping = static_cast<qboolean>(cg.renderingThirdPerson
 		&& !(g_longLeapCinematic && g_longLeapCinematic->integer)
 		&& (anim == BOTH_FORCELONGLEAP_START || anim == BOTH_FORCELONGLEAP_ATTACK || anim == BOTH_FORCELONGLEAP_ATTACK2
-			|| anim == BOTH_FORCELONGLEAP_LAND || anim == BOTH_FORCELONGLEAP_LAND2));
+			|| anim == BOTH_FORCELONGLEAP_LAND || anim == BOTH_FORCELONGLEAP_LAND2
+			|| anim == BOTH_FORCEJUMPDASH_START || anim == BOTH_FORCEJUMPDASH_ATTACK || anim == BOTH_FORCEJUMPDASH_LAND));
 
 	if (cg.time != lastTime)
 	{
@@ -936,8 +937,8 @@ static void CG_UpdateThirdPersonCameraDamp()
 extern vmCvar_t cg_thirdPersonAlpha;
 static constexpr float CAMERA_BLEND_MS = 250.0f;
 static constexpr int CAMERA_BLEND_OVERRIDES = CG_OVERRIDE_3RD_PERSON_ANG | CG_OVERRIDE_3RD_PERSON_APH |
-	CG_OVERRIDE_3RD_PERSON_POF | CG_OVERRIDE_3RD_PERSON_HOF | CG_OVERRIDE_3RD_PERSON_VOF | CG_OVERRIDE_3RD_PERSON_CDP |
-	CG_OVERRIDE_3RD_PERSON_TDP | CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV;
+CG_OVERRIDE_3RD_PERSON_POF | CG_OVERRIDE_3RD_PERSON_HOF | CG_OVERRIDE_3RD_PERSON_VOF | CG_OVERRIDE_3RD_PERSON_CDP |
+CG_OVERRIDE_3RD_PERSON_TDP | CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_FOV;
 
 struct cameraBlendField_t
 {

@@ -518,6 +518,8 @@ saber_moveData_t saberMoveData[LS_MOVE_MAX] = {
    {"Reflect LR", BOTH_P1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_A_BR2TL, 150}, // LS_PARRY_LR,
    {"Reflect LL", BOTH_P1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_A_BL2TR, 150}, // LS_PARRY_LL
    {"Reflect B", BOTH_P1_S1_B_, Q_R, Q_B, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_R_T2B, 150}, // LS_PARRY_B
+
+   {"JumpDashAtk", BOTH_FORCEJUMPDASH_ATTACK, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200}, // LS_JUMPDASH_ATTACK (the force jump dash's attack, as LS_LEAP_ATTACK)
 };
 
 saberMoveName_t transitionMove[Q_NUM_QUADS][Q_NUM_QUADS] =
@@ -1023,6 +1025,7 @@ int PM_PowerLevelForSaberAnim(const playerState_t* ps, const int saberNum)
 	}
 	return FORCE_LEVEL_3;
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 		if (anim_time_elapsed <= 200)
 		{
 			//1st four frames of anim
@@ -1452,6 +1455,7 @@ qboolean PM_InAnimForSaberMove(int anim, const int saberMove)
 	case BOTH_VT_ATR_S:
 	case BOTH_VT_ATL_S:
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_A7_KICK_F:
 	case BOTH_KICK_F_MD:
 	case BOTH_KICK_F_MD_GALEN:
@@ -1618,6 +1622,7 @@ qboolean PM_SaberInDamageMove(const int move)
 	case LS_SPINATTACK_DUAL:
 	case LS_SPINATTACK:
 	case LS_LEAP_ATTACK:
+	case LS_JUMPDASH_ATTACK:
 	case LS_SWOOP_ATTACK_RIGHT:
 	case LS_SWOOP_ATTACK_LEFT:
 	case LS_TAUNTAUN_ATTACK_RIGHT:
@@ -1686,6 +1691,7 @@ qboolean PM_SaberDoDamageAnim(const int anim)
 	case BOTH_SPINATTACK6_GRIEV:
 	case BOTH_SPINATTACK7:
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_VS_ATR_S:
 	case BOTH_VS_ATL_S:
 	case BOTH_VT_ATR_S:
@@ -1839,6 +1845,7 @@ qboolean PM_SaberInSpecialAttack(const int anim)
 	case BOTH_SPINATTACK6_GRIEV:
 	case BOTH_SPINATTACK7:
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_VS_ATR_S:
 	case BOTH_VS_ATL_S:
 	case BOTH_VT_ATR_S:
@@ -1927,6 +1934,7 @@ qboolean PM_SaberInInstankillKillAttack(const int anim)
 	switch (anim)
 	{
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 		return qtrue;
 	default:;
 	}
@@ -1954,6 +1962,7 @@ qboolean PM_SaberInKillAttack(const int anim)
 	case BOTH_SPINATTACK6_GRIEV:
 	case BOTH_SPINATTACK7:
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_VS_ATR_S:
 	case BOTH_VS_ATL_S:
 	case BOTH_VT_ATR_S:
@@ -2023,6 +2032,7 @@ qboolean PM_SaberInnonblockableAttack(const int anim)
 	case BOTH_SPINATTACK6_GRIEV:
 	case BOTH_SPINATTACK7:
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_STABDOWN:
 	case BOTH_STABDOWN_STAFF:
 	case BOTH_STABDOWN_DUAL:
@@ -2110,6 +2120,7 @@ qboolean PM_SaberInAttack(const int move)
 	case LS_SPINATTACK_DUAL:
 	case LS_SPINATTACK:
 	case LS_LEAP_ATTACK:
+	case LS_JUMPDASH_ATTACK:
 	case LS_SWOOP_ATTACK_RIGHT:
 	case LS_SWOOP_ATTACK_LEFT:
 	case LS_TAUNTAUN_ATTACK_RIGHT:
@@ -2385,6 +2396,7 @@ qboolean PM_SaberInSpecial(const int move)
 	case LS_SPINATTACK_DUAL:
 	case LS_SPINATTACK:
 	case LS_LEAP_ATTACK:
+	case LS_JUMPDASH_ATTACK:
 	case LS_SWOOP_ATTACK_RIGHT:
 	case LS_SWOOP_ATTACK_LEFT:
 	case LS_TAUNTAUN_ATTACK_RIGHT:
@@ -2497,6 +2509,7 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 		case LS_SPINATTACK_DUAL:
 		case LS_SPINATTACK:
 		case LS_LEAP_ATTACK:
+		case LS_JUMPDASH_ATTACK:
 		case LS_SWOOP_ATTACK_RIGHT:
 		case LS_SWOOP_ATTACK_LEFT:
 		case LS_TAUNTAUN_ATTACK_RIGHT:
@@ -2601,6 +2614,7 @@ qboolean PM_SaberCanInterruptMove(const int move, const int anim)
 	case BOTH_SPINATTACK6_GRIEV:
 	case BOTH_SPINATTACK7:
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_VS_ATR_S:
 	case BOTH_VS_ATL_S:
 	case BOTH_VT_ATR_S:
@@ -6681,7 +6695,10 @@ float pm_get_time_scale_mod(const gentity_t* gent)
 		if (!MatrixMode
 			&& gent->client->ps.legsAnim != BOTH_FORCELONGLEAP_START
 			&& gent->client->ps.legsAnim != BOTH_FORCELONGLEAP_ATTACK
-			&& gent->client->ps.legsAnim != BOTH_FORCELONGLEAP_LAND)
+			&& gent->client->ps.legsAnim != BOTH_FORCELONGLEAP_LAND
+			&& gent->client->ps.legsAnim != BOTH_FORCEJUMPDASH_START
+			&& gent->client->ps.legsAnim != BOTH_FORCEJUMPDASH_ATTACK
+			&& gent->client->ps.legsAnim != BOTH_FORCEJUMPDASH_LAND)
 		{
 			if (gent && gent->s.clientNum == 0 && !player_locked && !PlayerAffectedByStasis() && gent->client->ps.
 				forcePowersActive & 1 << FP_SPEED)
@@ -10256,7 +10273,13 @@ void PM_TorsoAnimation()
 				&& !PM_SaberInMassiveBounce(pm->ps->torsoAnim))
 			{
 				//PLayer- temp hack for weapon frame
-				if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_RANCOR)
+				if (PM_WalkingAnim(pm->ps->legsAnim) || PM_RunningAnim(pm->ps->legsAnim)
+					|| PM_JumpingAnim(pm->ps->legsAnim) || PM_SwimmingAnim(pm->ps->legsAnim))
+				{
+					// moving: keep the torso PM_TorsoAnimFromLegs gave (the stand pose below locked the arms down at
+					// his sides while walking with no weapon, melee or a gun in WEAPON_READY, e.g. after SET_WEAPON)
+				}
+				else if (pm->gent && pm->gent->client && pm->gent->client->NPC_class == CLASS_RANCOR)
 				{
 					//ignore
 				}
@@ -14716,7 +14739,9 @@ qboolean PM_ForceUsingSaberAnim(const int anim)
 	case BOTH_JUMPATTACK6_GRIEV:
 	case BOTH_JUMPATTACK7:
 	case BOTH_FORCELONGLEAP_START:
+	case BOTH_FORCEJUMPDASH_START:
 	case BOTH_FORCELONGLEAP_ATTACK:
+	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_FORCEWALLRUNFLIP_START:
 	case BOTH_FORCEWALLRUNFLIP_END:
 	case BOTH_FORCEWALLRUNFLIP_ALT:
@@ -15254,6 +15279,7 @@ qboolean PM_SaberInKillMove(const int move)
 	case LS_A_FLIP_STAB:
 	case LS_A_FLIP_SLASH:
 	case LS_LEAP_ATTACK:
+	case LS_JUMPDASH_ATTACK:
 	case LS_STABDOWN:
 	case LS_STABDOWN_STAFF:
 	case LS_STABDOWN_DUAL:

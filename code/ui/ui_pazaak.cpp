@@ -88,6 +88,10 @@ int MenuFontToHandle(int i_menu_font);
 
 #ifdef PZK_SP
 #define PZK_MENU_FILE	"ui/pazaak/sje_pazaak.menu"
+
+// the challenge question before a map's script and the bar match (defined further down, near Pazaak_StartLocal)
+static void Pazaak_ChallengeAnswer(int yes);
+static int pzkNoMute; // a bar match: the sound stays on
 #else
 #define PZK_MENU_FILE	"ui/pazaak/sje_pazaak_mp.menu" // numbers instead of the menudef.h names, it is loaded on its own
 #endif
@@ -1190,6 +1194,16 @@ qboolean UI_Pazaak_Script(const char* name, void* argsPtr)
 		return qfalse;
 	}
 
+	if (!Q_stricmp(name, "pzk_challenge"))
+	{
+		// the Yes / No buttons of the challenge question
+		if (Int_Parse(args, &a))
+		{
+			Pazaak_ChallengeAnswer(a);
+		}
+		return qtrue;
+	}
+
 	if (!Q_stricmp(name, "pzk_handhover"))
 	{
 		if (Int_Parse(args, &a) && Int_Parse(args, &b) && a >= 1 && a <= 4)
@@ -1383,7 +1397,10 @@ static void Pazaak_OpenBoard(const int board)
 	if (menu)
 	{
 		PZK_SetCatcher(PZK_GetCatcher() | KEYCATCH_UI);
-		PZK_CvarSet("s_pazaakMute", "1"); // the engine plays only interface sounds now (snd_dma.cpp)
+		if (!pzkNoMute)
+		{
+			PZK_CvarSet("s_pazaakMute", "1"); // the engine plays only interface sounds now (snd_dma.cpp); not in a bar match
+		}
 #ifdef PZK_SP
 		// The world waits while we play (like every other in-game menu)
 		if (!PzkState.pausedGame)
@@ -2024,8 +2041,70 @@ static void Pazaak_LocalFinish(pzkGame_t* game, const int winnerPid)
 	pzkLocalWager = 0;
 }
 
-// "uipzk_start <opponent name> <opponent entity number> <wager>" from the game module
-static void Pazaak_StartLocal(const char* opponentName, const int opponentEnt, const int wager)
+// The challenge question before a map's script (g_pazaak.cpp G_Pazaak_InterceptScript): "uipzk_challenge <text>"
+// opens it (cinematic bars, the question, Yes / No, the cursor on, the game paused), the answer goes back to the
+// game module as "pazaak_challenge 1/0"
+#define PZK_CHALLENGE_FILE	"ui/pazaak/sje_pazaak_challenge.menu"
+#define PZK_CHALLENGE_MENU	"sje_pazaak_challenge"
+static int pzkChallengeOpen = 0;
+
+static void Pazaak_ChallengeOpen(const char* text)
+{
+	menuDef_t* menu = Menus_FindByName(PZK_CHALLENGE_MENU);
+	if (!menu)
+	{
+		UI_ParseMenu(PZK_CHALLENGE_FILE); // not in the menu lists, load it on demand
+		menu = Menus_FindByName(PZK_CHALLENGE_MENU);
+	}
+	if (!menu)
+	{
+		Com_Printf("Pazaak: could not load %s\n", PZK_CHALLENGE_FILE);
+		ui.Cmd_ExecuteText(EXEC_APPEND, "pazaak_challenge 0\n"); // no question: the script runs as normal
+		return;
+	}
+	PZK_CvarSet("ui_pzkChallenge", text && text[0] ? text : "Do you want to challenge this character to a pazaak match?");
+	Menus_ActivateByName(PZK_CHALLENGE_MENU);
+	PZK_SetCatcher(PZK_GetCatcher() | KEYCATCH_UI);
+	PZK_CvarSet("cl_paused", "1"); // the world waits for the answer
+	pzkChallengeOpen = 1;
+}
+
+static void Pazaak_ChallengeAnswer(const int yes)
+{
+	if (!pzkChallengeOpen)
+	{
+		return;
+	}
+	pzkChallengeOpen = 0;
+	Menus_CloseByName(PZK_CHALLENGE_MENU);
+	PZK_SetCatcher(PZK_GetCatcher() & ~KEYCATCH_UI);
+	PZK_CvarSet("cl_paused", "0");
+	ui.Cmd_ExecuteText(EXEC_APPEND, va("pazaak_challenge %i\n", yes ? 1 : 0));
+}
+
+qboolean UI_Pazaak_ChallengeKey(const int key)
+{
+	if (!pzkChallengeOpen)
+	{
+		return qfalse;
+	}
+	if (key == A_ESCAPE || key == 'n' || key == 'N')
+	{
+		Pazaak_ChallengeAnswer(0);
+		return qtrue;
+	}
+	if (key == 'y' || key == 'Y')
+	{
+		Pazaak_ChallengeAnswer(1);
+		return qtrue;
+	}
+	return qfalse; // the mouse and the buttons
+}
+
+// pzkNoMute (declared at the top): a bar match (uipzk_start ... 1), the sound stays on
+
+// "uipzk_start <opponent name> <opponent entity number> <wager> [1 = no mute]" from the game module
+static void Pazaak_StartLocal(const char* opponentName, const int opponentEnt, const int wager, const int noMute)
 {
 	int cards[PZK_NUM_SIDECARDS];
 	int aiDeck[PZK_SIDEDECK_SIZE];
@@ -2062,6 +2141,7 @@ static void Pazaak_StartLocal(const char* opponentName, const int opponentEnt, c
 
 	pzkLocalOpponent = opponentEnt;
 	pzkLocalWager = wager;
+	pzkNoMute = noMute;
 
 	err = Pzk_StartGame(&pzkLocal, PZK_Millis());
 	if (err)
@@ -2080,7 +2160,13 @@ qboolean UI_Pazaak_ConsoleCommand(const char* cmd)
 {
 	if (!Q_stricmp(cmd, "uipzk_start"))
 	{
-		Pazaak_StartLocal(Cmd_Argv(1), Cmd_Argc() > 2 ? atoi(Cmd_Argv(2)) : -1, Cmd_Argc() > 3 ? atoi(Cmd_Argv(3)) : 0);
+		Pazaak_StartLocal(Cmd_Argv(1), Cmd_Argc() > 2 ? atoi(Cmd_Argv(2)) : -1, Cmd_Argc() > 3 ? atoi(Cmd_Argv(3)) : 0,
+			Cmd_Argc() > 4 ? atoi(Cmd_Argv(4)) : 0);
+		return qtrue;
+	}
+	if (!Q_stricmp(cmd, "uipzk_challenge"))
+	{
+		Pazaak_ChallengeOpen(Cmd_Argv(1));
 		return qtrue;
 	}
 	if (!Q_stricmp(cmd, "uipzk_action"))

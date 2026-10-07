@@ -587,6 +587,8 @@ using saberMoveName_t = enum saberMoveName_t
 	LS_REFLECT_LL,
 	LS_REFLECT_B,
 
+	LS_JUMPDASH_ATTACK, // the force jump dash's attack (BOTH_FORCEJUMPDASH_ATTACK)
+
 	LS_MOVE_MAX //
 };
 

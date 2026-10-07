@@ -99,20 +99,20 @@ namespace
 			{
 				std::unique_lock<std::mutex> lock(s_lock);
 				s_work.wait(lock, []
-				{
-					if (s_quit)
 					{
-						return true;
-					}
-					for (const auto& j : s_jobs)
-					{
-						if (!j->taken)
+						if (s_quit)
 						{
 							return true;
 						}
-					}
-					return false;
-				});
+						for (const auto& j : s_jobs)
+						{
+							if (!j->taken)
+							{
+								return true;
+							}
+						}
+						return false;
+					});
 				if (s_quit)
 				{
 					return;

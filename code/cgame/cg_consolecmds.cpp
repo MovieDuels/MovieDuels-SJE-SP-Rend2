@@ -255,6 +255,7 @@ static consoleCommand_t commands[] = {
 	{"testlistsurfaces", CG_ListModelSurfaces_f},
 	{"testmodel", CG_TestModel_f},
 	{"testsurface", CG_TestModelSurfaceOnOff_f},
+	{"trueview_save", CG_TrueViewSave_f}, // saves the player's model with cg_trueeyeposition in trueview.cfg
 	{"viewpos", CG_Viewpos_f},
 	{"weapnext", CG_NextWeapon_f},
 	{"weapon", CG_Weapon_f},

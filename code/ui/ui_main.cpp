@@ -5575,7 +5575,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 9.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 06/10/2026 ---------------------\n");// build date
+	Com_Printf("--------------------- Build Date 07/10/2026 ---------------------\n");// build date
 	Com_Printf("--------------------------- Build 05 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
@@ -6812,6 +6812,11 @@ static int UI_GamepadMenuKey(const int key)
 void _UI_KeyEvent(const int pressed_key, const qboolean down)
 {
 	const int key = UI_GamepadMenuKey(pressed_key);
+
+	if (down && UI_Pazaak_ChallengeKey(key))
+	{
+		return; // the pazaak challenge question: escape / N = no, Y = yes
+	}
 
 	if (key == A_ESCAPE && down && UI_Pazaak_Active())
 	{

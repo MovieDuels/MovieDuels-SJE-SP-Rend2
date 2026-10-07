@@ -8270,6 +8270,11 @@ void CQuake3GameInterface::RunScript(const gentity_t* pEntity, const char* strSc
 	char* pBuf = nullptr;
 	int iLength = 0;
 
+	if (G_Pazaak_InterceptScript(pEntity, strScriptName))
+	{
+		return; // a pazaak challenge asks first (g_pazaak.cpp): it runs after the answer, or after the match
+	}
+
 	switch (RegisterScript(strScriptName, reinterpret_cast<void**>(&pBuf), iLength))
 	{
 		// If could not be loaded, leave!

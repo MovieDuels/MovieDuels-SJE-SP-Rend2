@@ -5687,6 +5687,9 @@ using animNumber_t = enum animNumber_e //# animNumber_e
 	BOTH_STANDYODAIDLE_STICK_YODA,
 	BOTH_WALK1_STICK_YODA,
 	//////////////////////////////////////////
+	BOTH_FORCEJUMPDASH_START,
+	BOTH_FORCEJUMPDASH_ATTACK,
+	BOTH_FORCEJUMPDASH_LAND,
 
 	//# #eol
 	MAX_ANIMATIONS,

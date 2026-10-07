@@ -468,6 +468,9 @@ vmCvar_t cg_IsSaberDoingAttackDamage;
 vmCvar_t cg_DebugSaberCombat;
 
 vmCvar_t cg_drawRadar;
+vmCvar_t cg_dynamicHud; // the HUD fades out when the player is not in action (CG_DynamicHudAlpha, cg_draw.cpp)
+vmCvar_t cg_dynamicHudTime; // how long (ms) the HUD stays after the last action before it fades out
+vmCvar_t cg_dynamicHudRange; // an enemy within this range (and in sight, or after the player) keeps the HUD on
 vmCvar_t cg_drawVehLeadIndicator; // flying a fighter: where to aim at a moving enemy ship (CG_DrawVehicleTargets)
 
 vmCvar_t cg_drawSelectionScrollBar;
@@ -707,6 +710,9 @@ static cvarTable_t cvarTable[] = {
 	{&cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE},
 
 	{&cg_drawRadar, "cg_drawRadar", "0", CVAR_ARCHIVE},
+	{&cg_dynamicHud, "cg_dynamicHud", "1", CVAR_ARCHIVE},
+	{&cg_dynamicHudTime, "cg_dynamicHudTime", "15000", CVAR_ARCHIVE},
+	{&cg_dynamicHudRange, "cg_dynamicHudRange", "1024", CVAR_ARCHIVE},
 	{&cg_drawVehLeadIndicator, "cg_drawVehLeadIndicator", "1", CVAR_ARCHIVE},
 
 	{&cg_drawSelectionScrollBar, "cg_drawSelectionScrollBar", "0", CVAR_ARCHIVE},

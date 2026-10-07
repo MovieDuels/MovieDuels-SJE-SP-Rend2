@@ -33,6 +33,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "taskmanager.h"
 #include "sequencer.h"
 
+// g_pazaak.cpp: a pazaak challenge question before this run( ) (true: wait on the signal "pazaak_challenge" first)
+bool G_Pazaak_HoldRun(int entNum, const char* script);
+
 #define S_FAILED(a) (a!=SEQ_OK)
 
 #define STL_ITERATE( a, b )		for ( a = b.begin(); a != b.end(); ++a )
@@ -1007,6 +1010,19 @@ void CSequencer::CheckRun(CBlock** command, CIcarus* icarus)
 	//Check for a run command
 	if (block->GetBlockID() == CIcarus::ID_RUN)
 	{
+		if (!m_curSequence->HasFlag(CSequence::SQ_RETAIN)
+			&& G_Pazaak_HoldRun(m_ownerID, static_cast<char*>(block->GetMemberData(0))))
+		{
+			// A pazaak challenge question first (g_pazaak.cpp): the run waits behind a waitsignal, and comes
+			// again once the signal is given (after the answer, or the match); it is not held twice
+			PushCommand(block, CSequence::PUSH_BACK);
+			CBlock* wait = new CBlock;
+			wait->Create(CIcarus::ID_WAITSIGNAL);
+			wait->Write(CIcarus::TK_STRING, "pazaak_challenge", icarus);
+			*command = wait;
+			return;
+		}
+
 		const int id = static_cast<int>(*static_cast<float*>(block->GetMemberData(1)));
 
 		game->DebugPrint(IGameInterface::WL_DEBUG, "%4d run( \"%s\" ); [%d]", m_ownerID,

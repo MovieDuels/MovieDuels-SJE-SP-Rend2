@@ -6074,7 +6074,9 @@ void CG_AddRefEntityWithPowerups(refEntity_t* ent, int powerups, centity_t* cent
 		&& (gent->client->ps.forcePowersActive & 1 << FP_SPEED //in force speed
 			|| cent->gent->client->ps.legsAnim == BOTH_FORCELONGLEAP_START
 			//or force long jump - FIXME: only 1st half of that anim?
-			|| cent->gent->client->ps.legsAnim == BOTH_FORCELONGLEAP_ATTACK) //or force long jump attack
+			|| cent->gent->client->ps.legsAnim == BOTH_FORCELONGLEAP_ATTACK //or force long jump attack
+			|| cent->gent->client->ps.legsAnim == BOTH_FORCEJUMPDASH_START //or the force jump dash
+			|| cent->gent->client->ps.legsAnim == BOTH_FORCEJUMPDASH_ATTACK)
 		&& (gent->s.number || cg.renderingThirdPerson)) // looks dumb doing this with first peron mode on
 	{
 		//FIXME: debounce this
@@ -16313,6 +16315,9 @@ void CG_Player(centity_t* cent)
 		//Restrict True View Model changes to the player and do the True View camera view work.
 		if (cg.snap && cent->currentState.number == cg.snap->ps.viewEntity && cg_truebobbing.integer)
 		{
+			// this model's eye position from trueview.cfg (looked up again when the model changes)
+			CG_TrueViewCheckModel(cent->gent && cent->gent->client ? cent->gent->client->renderInfo.legsModelName : "");
+
 			if (!cg.renderingThirdPerson &&
 				(cg_trueguns.integer || cent->currentState.weapon == WP_SABER || cent->currentState.weapon == WP_MELEE) &&
 				!cg.zoomMode)
