@@ -743,8 +743,11 @@ qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolea
 	const int levitationLevel = ent->client->ps.forcePowerLevel[FP_LEVITATION];
 
 	// Levitation 0-2: original Jedi Academy wall run
-	if (levitationLevel < FORCE_LEVEL_3)
-	{
+	if (((g_SerenityJediEngineMode->integer <= 2) || (levitationLevel < FORCE_LEVEL_3)) ||
+		(ent->s.number >= MAX_CLIENTS &&
+			!G_ControlledByPlayer(ent) &&
+			(g_npc_is_smart == nullptr && g_npc_is_smart->integer == 0)))
+	{ // Use original wall run for lower levitation levels or non-smart NPCs
 		return PM_AdjustAngleForWallRunold(ent, ucmd, doMove);
 	}
 

@@ -1108,6 +1108,18 @@ static void CG_PlayerAnimation(centity_t* cent, int* legs_old, int* legs, float*
 extern int PM_LegsAnimForFrame(gentity_t* ent, int legs_frame);
 extern int PM_TorsoAnimForFrame(gentity_t* ent, int torso_frame);
 
+// A Darksaber (saberType SABER_CUSTOMSFX) or a sword (SABER_SITH_SWORD) makes no saber swing sound: the saber moves'
+// "sound/weapons/saber/lowswing%d" animevents (animevents.cfg) play silent with it, the moves themselves as before.
+static qboolean CG_NoSaberSwingSounds(const centity_t* cent)
+{
+	if (!cent->gent || !cent->gent->client || cent->gent->client->ps.weapon != WP_SABER)
+	{
+		return qfalse;
+	}
+	const int type = cent->gent->client->ps.saber[0].type;
+	return type == SABER_CUSTOMSFX || type == SABER_SITH_SWORD ? qtrue : qfalse;
+}
+
 static void CG_PlayerAnimEventDo(centity_t* cent, animevent_t* anim_event)
 {
 	//FIXME: pass in event, switch off the type
@@ -1128,6 +1140,10 @@ static void CG_PlayerAnimEventDo(centity_t* cent, animevent_t* anim_event)
 			0, anim_event->eventData[AED_SOUND_NUMRANDOMSNDS])];
 		if (hold_snd > 0)
 		{
+			if (CG_NoSaberSwingSounds(cent) && strstr(CG_ConfigString(CS_SOUNDS + hold_snd), "saber/lowswing"))
+			{
+				break; // (no swing sound with a Darksaber / sword)
+			}
 			if (cgs.sound_precache[hold_snd])
 			{
 				cgi_S_StartSound(nullptr, cent->currentState.clientNum, channel, cgs.sound_precache[hold_snd]);

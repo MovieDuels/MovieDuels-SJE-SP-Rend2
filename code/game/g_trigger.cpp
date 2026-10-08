@@ -1685,6 +1685,17 @@ void hyperspace_touch(const gentity_t* self, gentity_t* other, trace_t* trace)
 				VectorMA(newOrg, f_diff * self->radius, fwd, newOrg);
 				VectorMA(newOrg, r_diff * self->radius, right, newOrg);
 				VectorMA(newOrg, u_diff * self->radius, up, newOrg);
+				// one that is short of the target (or wide of it) could be put past the map's edge, out of the world
+				// (deathstar_trench: the exit is near a corner): then it comes out at the exit point itself
+				{
+					trace_t tr;
+					gi.trace(&tr, ent->s.origin, other->mins, other->maxs, newOrg, other->s.number, MASK_SOLID,
+						static_cast<EG2_Collision>(0), 0);
+					if (tr.startsolid || tr.allsolid || tr.fraction < 1.0f)
+					{
+						VectorCopy(ent->s.origin, newOrg);
+					}
+				}
 				TeleportPlayer(other, newOrg, ent->s.angles);
 
 				if (other->m_pVehicle && other->m_pVehicle->m_pPilot)

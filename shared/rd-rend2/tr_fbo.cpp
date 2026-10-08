@@ -750,6 +750,21 @@ void FBO_Init(void)
 		R_CheckFBO(tr.weatherDepthFbo);
 	}
 
+	// clear every render target (not the exposure levels, which start from their own data): a new GL context can be
+	// handed video memory still holding the last renderer's images (a vanilla -> rend2 switch in the menus,
+	// vid_restart), and a target the post process reads before it is first written (exposure, history, scratch)
+	// drew the first menus in wild colours. A fresh start gets cleared memory, so it never showed then.
+	qglClearColor(0.f, 0.f, 0.f, 1);
+	for (int f = 0; f < tr.numFBOs; f++)
+	{
+		if (tr.fbos[f] == tr.calcLevelsFbo || tr.fbos[f] == tr.targetLevelsFbo)
+		{
+			continue;
+		}
+		FBO_Bind(tr.fbos[f]);
+		qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	}
+
 	GL_CheckErrors();
 
 	FBO_Bind(NULL);

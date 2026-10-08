@@ -26164,6 +26164,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 					}
 					continue;
 				}
+
 				if (!push_target[x]->s.number && !is_class_guard)
 				{
 					//player
@@ -27065,6 +27066,7 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 	int damage_level = FORCE_LEVEL_0;
 	qboolean is_class_guard = qfalse;
 	animFlags_t flags = W_Animationstyletable(self);
+	qboolean i_grip = qfalse;
 
 	if (self->client->ps.groundEntityNum == ENTITYNUM_NONE && self->client->ps.forcePowerLevel[FP_PUSH] > FORCE_LEVEL_2
 		&& (self->s.weapon == WP_MELEE ||
@@ -27180,6 +27182,13 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 		//we're face-down, so we'd only be force-push/pulling the floor
 		return;
 	}
+
+	if (self->client->ps.forcePowersActive & 1 << FP_GRIP)
+	{
+		WP_ForcePowerStop(self, FP_GRIP);
+		i_grip = qtrue;
+	}
+
 	if (pull)
 	{
 		radius = forcePushPullRadius[FP_TableLevel(self->client->ps.forcePowerLevel[FP_PULL])];
@@ -27799,6 +27808,12 @@ void ForceThrow_MD(gentity_t* self, qboolean pull, qboolean fake) //MD Mode Push
 					}
 					continue;
 				}
+
+				if (i_grip)
+				{
+					power_level *= 4;
+				}
+
 				if (!push_target[x]->s.number && !is_class_guard)
 				{
 					//player
@@ -33678,7 +33693,6 @@ void ForceAbsorb(gentity_t* self);
 
 void ForceGrip(gentity_t* self)
 {
-	//FIXME: make enemy Jedi able to use this
 	trace_t tr;
 	vec3_t end, forward;
 	gentity_t* traceEnt = nullptr;
@@ -33777,8 +33791,7 @@ void ForceGrip(gentity_t* self)
 					minDot = 0.2f;
 				}
 				if (InFront(self->enemy->currentOrigin, self->client->renderInfo.eyePoint, self->client->ps.viewangles,
-					minDot))
-					//self->s.number || //NPCs can always lift enemy since we assume they're looking at them...?
+					minDot))//NPCs can always lift enemy since we assume they're looking at them...?
 				{
 					//need to be facing the enemy
 					if (gi.inPVS(self->enemy->currentOrigin, self->client->renderInfo.eyePoint))

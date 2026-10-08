@@ -63,6 +63,44 @@ static cvar_t* g_spaceAISkill;
 
 static int route_num_points; // the map's ship route (see "Ship routes" below)
 
+/*
+===========================================================================
+Walking to the ships
+
+On a map with a walk file (shiproutes/<map>.walk: deathstar_trench_v1 / v2), a ship's AI pilot is not made inside
+it: he is made at the hangar's pilot start point nearest to the ship ("s x y z" lines: the player spawn areas) and
+walks to it along the hangar's walk points ("w x y z"), each linked to the ones he can walk straight to. Next to the
+ship he gets in, and from then on the fighter AI flies it (his own AI does nothing until the ship is gone). One who
+can't get there in WALK_TIMEOUT is put in it. A map without the file: the pilot is made inside the ship, as before.
+===========================================================================
+*/
+static constexpr int WALK_MAX_POINTS = 96;
+static constexpr float WALK_LINK_DIST = 1600.0f;
+static constexpr float WALK_REACHED = 48.0f; // a walk point is reached this close (across)
+static constexpr float WALK_BOARD_DIST = 96.0f; // he gets in this close to the ship's side
+static constexpr int WALK_TIMEOUT = 30000;
+
+static vec3_t walk_points[WALK_MAX_POINTS];
+static qboolean walk_is_start[WALK_MAX_POINTS];
+static qboolean walk_links[WALK_MAX_POINTS][WALK_MAX_POINTS];
+static qboolean walk_links_dirty;
+static int walk_num_points;
+static int fighter_walk_ship[MAX_GENTITIES]; // a walking pilot: the ship he goes to (+1, 0: none), not saved
+static int fighter_walk_since[MAX_GENTITIES];
+static int fighter_walk_report[MAX_GENTITIES]; // developer messages of a walking pilot: when next
+static constexpr int WALK_STUCK_TIME = 3000; // a walking pilot who has not got anywhere for this long gets in at once
+static vec3_t fighter_walk_last_pos[MAX_GENTITIES]; // where he last got to, and when
+static int fighter_walk_last_move[MAX_GENTITIES];
+
+// a ship that has just taken off on a hangar map (Fighter_HangarExit): until when it is still leaving (0: not), the way
+// it stood and the height it took off from, not saved
+static constexpr int FIGHTER_EXIT_TIME = 12000;
+static constexpr int FIGHTER_EXIT_SPEED_HANGAR = 1000; // the speed it leaves the hangar at, and climbs out at
+static constexpr int FIGHTER_EXIT_SPEED_CLIMB = 700;
+static int fighter_exit_until[MAX_GENTITIES];
+static float fighter_exit_yaw[MAX_GENTITIES];
+static float fighter_exit_z[MAX_GENTITIES];
+
 static void Fighter_RegisterCvars()
 {
 	if (!g_spaceBattle)
@@ -103,6 +141,26 @@ static team_t Fighter_ShipTeam(const gentity_t* ship)
 	return pilot->client->playerTeam;
 }
 
+// the side a ship is on by what it is: the Empire's (TIEs: the player's enemy) or the Rebels' (the X-, Y-, A- and
+// B-wings, the Falcon: the player's side). TEAM_FREE for anything else: then its spawner's "teamowner" says. (On the
+// deathstar_trench maps "teamowner" 1, the player's side, is the TIEs' hangars.)
+static team_t Fighter_ShipFaction(const char* type)
+{
+	if (!type)
+	{
+		return TEAM_FREE;
+	}
+	if (Q_stristr(type, "tie"))
+	{
+		return TEAM_ENEMY;
+	}
+	if (Q_stristr(type, "wing") || Q_stristr(type, "yt-1300") || Q_stristr(type, "falcon"))
+	{
+		return TEAM_PLAYER;
+	}
+	return TEAM_FREE;
+}
+
 // how many ships of this side NPCs fly now
 static int Fighter_CrewCount(const team_t team)
 {
@@ -115,8 +173,307 @@ static int Fighter_CrewCount(const team_t team)
 		{
 			count++;
 		}
+		else if (fighter_walk_ship[i] && ent->inuse && ent->client && ent->health > 0
+			&& ent->client->playerTeam == team)
+		{
+			count++; // a pilot still walking to his ship
+		}
 	}
 	return count;
+}
+
+static qboolean Fighter_PutInShip(gentity_t* pilot, gentity_t* veh);
+static qboolean Fighter_AutoSpawnMap();
+
+// the player has a fighter of his side to get into besides this one (or is flying one): an empty one, standing,
+// nobody walking to it
+static qboolean Fighter_PlayerHasShip(const gentity_t* except)
+{
+	if (player && player->client && player->client->ps.m_iVehicleNum
+		&& Fighter_IsFighter(&g_entities[player->client->ps.m_iVehicleNum]))
+	{
+		return qtrue;
+	}
+	for (int i = MAX_CLIENTS; i < globals.num_entities; i++)
+	{
+		const gentity_t* ship = &g_entities[i];
+		if (ship == except || !Fighter_IsFighter(ship) || ship->health <= 0 || ship->m_pVehicle->m_pPilot
+			|| ship->client->playerTeam != TEAM_PLAYER || VectorLength(ship->client->ps.velocity) > 50.0f)
+		{
+			continue;
+		}
+		qboolean taken = qfalse;
+		for (int j = MAX_CLIENTS; j < globals.num_entities && !taken; j++)
+		{
+			taken = static_cast<qboolean>(fighter_walk_ship[j] == i + 1 && g_entities[j].inuse
+				&& g_entities[j].health > 0);
+		}
+		if (!taken)
+		{
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+static constexpr int FIGHTER_AUTOSPAWN_MAX_CREW = 12; // AI pilots of a side at most on those maps (the entities)
+
+// an NPC pilot of the side made at pos (null: none could be made there)
+static gentity_t* Fighter_SpawnPilot(const team_t team, const vec3_t pos, const int spawnflags)
+{
+	gentity_t* spawner_ent = G_Spawn();
+	if (!spawner_ent)
+	{
+		return nullptr;
+	}
+	spawner_ent->classname = "NPC_spawner";
+	spawner_ent->NPC_type = team == TEAM_PLAYER ? "Rebel_Pilot" : "StormPilot";
+	spawner_ent->count = 1;
+	spawner_ent->spawnflags = spawnflags;
+	VectorCopy(pos, spawner_ent->s.origin);
+	G_SetOrigin(spawner_ent, pos);
+
+	gentity_t* pilot = NPC_Spawn_Do(spawner_ent, qtrue);
+	if (!pilot || !pilot->client || !pilot->NPC)
+	{
+		return nullptr;
+	}
+	return pilot;
+}
+
+static qboolean Walk_Clear(const vec3_t a, const vec3_t b)
+{
+	const vec3_t mins = { -12.0f, -12.0f, 0.0f };
+	const vec3_t maxs = { 12.0f, 12.0f, 16.0f };
+	trace_t tr;
+	gi.trace(&tr, a, mins, maxs, b, ENTITYNUM_NONE, MASK_SOLID, static_cast<EG2_Collision>(0), 0);
+	return static_cast<qboolean>(!tr.startsolid && !tr.allsolid && tr.fraction >= 1.0f);
+}
+
+static void Walk_BuildLinks()
+{
+	if (!walk_links_dirty)
+	{
+		return;
+	}
+	walk_links_dirty = qfalse;
+	memset(walk_links, 0, sizeof walk_links);
+	for (int i = 0; i < walk_num_points; i++)
+	{
+		for (int j = i + 1; j < walk_num_points; j++)
+		{
+			if (Distance(walk_points[i], walk_points[j]) <= WALK_LINK_DIST && Walk_Clear(walk_points[i], walk_points[j]))
+			{
+				walk_links[i][j] = walk_links[j][i] = qtrue;
+			}
+		}
+	}
+}
+
+static void Walk_Load()
+{
+	walk_num_points = 0;
+	walk_links_dirty = qtrue;
+	memset(fighter_walk_ship, 0, sizeof fighter_walk_ship);
+
+	char* buffer = nullptr;
+	const int len = gi.FS_ReadFile(va("shiproutes/%s.walk", level.mapname), reinterpret_cast<void**>(&buffer));
+	if (len <= 0 || !buffer)
+	{
+		return;
+	}
+	const char* line = buffer;
+	while (line && *line && walk_num_points < WALK_MAX_POINTS)
+	{
+		char kind = 0;
+		vec3_t point;
+		if (sscanf(line, " %c %f %f %f", &kind, &point[0], &point[1], &point[2]) == 4 && (kind == 's' || kind == 'w'))
+		{
+			VectorCopy(point, walk_points[walk_num_points]);
+			walk_is_start[walk_num_points] = kind == 's' ? qtrue : qfalse;
+			walk_num_points++;
+		}
+		line = strchr(line, '\n');
+		if (line)
+		{
+			line++;
+		}
+	}
+	gi.FS_FreeFile(buffer);
+	if (g_developer && g_developer->integer)
+	{
+		gi.Printf("Ship walk: %d points from shiproutes/%s.walk\n", walk_num_points, level.mapname);
+	}
+}
+
+// someone (alive) is standing on a pilot start
+static qboolean Walk_StartTaken(const vec3_t start)
+{
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		const gentity_t* ent = &g_entities[i];
+		if (ent->inuse && ent->client && ent->health > 0 && DistanceHorizontal(ent->currentOrigin, start) < 48.0f
+			&& fabs(ent->currentOrigin[2] - start[2]) < 80.0f)
+		{
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
+// the free pilot start point nearest to a ship (-1: the map has none, or all are taken)
+static int Walk_NearestStart(const vec3_t pos)
+{
+	int best = -1;
+	float best_dist = 1.0e30f;
+	for (int i = 0; i < walk_num_points; i++)
+	{
+		const float dist = DistanceSquared(pos, walk_points[i]);
+		if (walk_is_start[i] && dist < best_dist && !Walk_StartTaken(walk_points[i]))
+		{
+			best_dist = dist;
+			best = i;
+		}
+	}
+	return best;
+}
+
+// where a walking pilot heads now: the walk point that is on the shortest way to the one nearest his ship, or (past
+// it, or with no way) the ship itself
+static void Walk_NextGoal(const vec3_t pos, const vec3_t ship_pos, vec3_t goal)
+{
+	VectorCopy(ship_pos, goal);
+	goal[2] = pos[2];
+	if (!walk_num_points)
+	{
+		return;
+	}
+	Walk_BuildLinks();
+
+	// the walk point nearest the ship (across), and the way there from every point (Dijkstra)
+	int end = -1;
+	float end_dist = 1.0e30f;
+	for (int i = 0; i < walk_num_points; i++)
+	{
+		const float dist = DistanceHorizontalSquared(walk_points[i], ship_pos);
+		if (dist < end_dist)
+		{
+			end_dist = dist;
+			end = i;
+		}
+	}
+	if (DistanceHorizontalSquared(pos, ship_pos) <= end_dist)
+	{
+		return; // as near the ship as that point: straight on to it
+	}
+	float way[WALK_MAX_POINTS];
+	qboolean done[WALK_MAX_POINTS];
+	for (int i = 0; i < walk_num_points; i++)
+	{
+		way[i] = 1.0e30f;
+		done[i] = qfalse;
+	}
+	way[end] = 0.0f;
+	for (;;)
+	{
+		int cur = -1;
+		for (int i = 0; i < walk_num_points; i++)
+		{
+			if (!done[i] && way[i] < 1.0e29f && (cur < 0 || way[i] < way[cur]))
+			{
+				cur = i;
+			}
+		}
+		if (cur < 0)
+		{
+			break;
+		}
+		done[cur] = qtrue;
+		for (int i = 0; i < walk_num_points; i++)
+		{
+			if (walk_links[cur][i] && way[cur] + Distance(walk_points[cur], walk_points[i]) < way[i])
+			{
+				way[i] = way[cur] + Distance(walk_points[cur], walk_points[i]);
+			}
+		}
+	}
+
+	// the best point he can walk straight to (not the one he stands on, unless it is the last)
+	int best = -1;
+	float best_way = 1.0e30f;
+	for (int i = 0; i < walk_num_points; i++)
+	{
+		if (way[i] >= 1.0e29f || i != end && DistanceHorizontal(pos, walk_points[i]) < WALK_REACHED)
+		{
+			continue;
+		}
+		const float total = Distance(pos, walk_points[i]) + way[i];
+		if (total < best_way && Distance(pos, walk_points[i]) <= WALK_LINK_DIST && Walk_Clear(pos, walk_points[i]))
+		{
+			best_way = total;
+			best = i;
+		}
+	}
+	if (best >= 0 && !(best == end && DistanceHorizontal(pos, walk_points[end]) < WALK_REACHED))
+	{
+		VectorCopy(walk_points[best], goal);
+	}
+}
+
+// a pilot walking to his ship: qtrue while he walks (this think's moves are set), qfalse when he is in it or it is
+// gone (he goes)
+static qboolean Fighter_Walk()
+{
+	const int ship_num = fighter_walk_ship[NPC->s.number] - 1;
+	gentity_t* ship = ship_num >= 0 ? &g_entities[ship_num] : nullptr;
+	if (!ship || !Fighter_IsFighter(ship) || ship->health <= 0 || ship->m_pVehicle->m_pPilot || NPC->health <= 0)
+	{
+		fighter_walk_ship[NPC->s.number] = 0; // gone or taken
+		return qfalse;
+	}
+	const int n = NPC->s.number;
+	if (DistanceHorizontal(NPC->currentOrigin, fighter_walk_last_pos[n]) > 24.0f)
+	{
+		VectorCopy(NPC->currentOrigin, fighter_walk_last_pos[n]);
+		fighter_walk_last_move[n] = level.time;
+	}
+	const bool stuck = level.time - fighter_walk_last_move[n] > WALK_STUCK_TIME;
+	const float reach = (ship->maxs[0] > ship->maxs[1] ? ship->maxs[0] : ship->maxs[1]) + WALK_BOARD_DIST;
+	if (DistanceHorizontal(NPC->currentOrigin, ship->currentOrigin) < reach
+		|| level.time - fighter_walk_since[n] > WALK_TIMEOUT || stuck)
+	{
+		if (stuck && g_developer && g_developer->integer)
+		{
+			gi.Printf("fighter AI: %s %d is stuck at %s (think %d, nodraw %d, pm_type %d, pm_time %d, pm_flags %x, "
+				"ps.speed %d, ground %d, contents %x), gets in now\n", NPC->NPC_type, n, vtos(NPC->currentOrigin),
+				static_cast<int>(NPC->e_ThinkFunc), NPC->s.eFlags & EF_NODRAW ? 1 : 0, NPC->client->ps.pm_type,
+				NPC->client->ps.pm_time, NPC->client->ps.pm_flags, static_cast<int>(NPC->client->ps.speed),
+				NPC->client->ps.groundEntityNum, NPC->contents);
+		}
+		fighter_walk_ship[NPC->s.number] = 0;
+		Fighter_PutInShip(NPC, ship);
+		return qfalse;
+	}
+
+	vec3_t goal, dir;
+	Walk_NextGoal(NPC->currentOrigin, ship->currentOrigin, goal);
+	if (g_developer && g_developer->integer > 1 && fighter_walk_report[NPC->s.number] < level.time)
+	{
+		fighter_walk_report[NPC->s.number] = level.time + 2000;
+		gi.Printf("fighter AI: %s %d walking at %s to %s (ship %d at %s), speed %.0f (ps.speed %d, pm_type %d, "
+			"pm_time %d, nodraw %d)\n", NPC->NPC_type, NPC->s.number, vtos(NPC->currentOrigin), vtos(goal),
+			ship->s.number, vtos(ship->currentOrigin), VectorLength(NPC->client->ps.velocity),
+			static_cast<int>(NPC->client->ps.speed), NPC->client->ps.pm_type, NPC->client->ps.pm_time,
+			NPC->s.eFlags & EF_NODRAW ? 1 : 0);
+	}
+	VectorSubtract(goal, NPC->currentOrigin, dir);
+	dir[2] = 0.0f;
+	NPCInfo->desiredYaw = AngleNormalize360(vectoyaw(dir));
+	NPCInfo->desiredPitch = 0.0f;
+	NPC_UpdateAngles(qtrue, qtrue);
+	ucmd.forwardmove = 127;
+	ucmd.rightmove = ucmd.upmove = 0;
+	ucmd.buttons &= ~BUTTON_WALKING; // he runs
+	return qtrue;
 }
 
 /*
@@ -134,8 +491,15 @@ void G_FighterAI_VehicleSpawned(const gentity_t* spawner, gentity_t* veh)
 	}
 	Fighter_RegisterCvars();
 
-	const team_t team = spawner->noDamageTeam;
+	// the side by what the ship is (a TIE is the Empire's whatever hangar it is in), else by its spawner
+	const team_t faction = Fighter_ShipFaction(veh->NPC_type);
+	const team_t team = faction != TEAM_FREE ? faction : spawner->noDamageTeam;
 	veh->client->playerTeam = team;
+	if (g_developer && g_developer->integer)
+	{
+		gi.Printf("fighter AI: new %s %d at %s for team %d\n", veh->NPC_type ? veh->NPC_type : "?", veh->s.number,
+			vtos(veh->currentOrigin), team);
+	}
 	veh->client->enemyTeam = team == TEAM_PLAYER ? TEAM_ENEMY : TEAM_PLAYER;
 
 	if (!g_spaceBattle->integer || !Fighter_IsFighter(veh) || !veh->NPC_type)
@@ -146,34 +510,56 @@ void G_FighterAI_VehicleSpawned(const gentity_t* spawner, gentity_t* veh)
 	{
 		return; // the transports are scenery
 	}
+	// on the maps whose hangars the game fills (G_FighterAI_AutoSpawn) every new ship gets a pilot, up to
+	// FIGHTER_AUTOSPAWN_MAX_CREW of a side, in place of g_spaceWingmen / g_spaceEnemies
+	const qboolean hangar_map = Fighter_AutoSpawnMap();
 	if (team == TEAM_PLAYER)
 	{
-		if (Q_stristr(veh->NPC_type, "x-wing") || Fighter_CrewCount(team) >= g_spaceWingmen->integer)
+		// the X-wings are the player's to fly; on a hangar map one ship of his side is always left for him (the
+		// others get pilots and fly out, and the hangar is filled again)
+		if (hangar_map ? !Fighter_PlayerHasShip(veh) : Q_stristr(veh->NPC_type, "x-wing") != nullptr)
 		{
-			return; // the X-wings are the player's to fly
+			if (g_developer && g_developer->integer)
+			{
+				gi.Printf("fighter AI: %s %d is left for the player\n", veh->NPC_type, veh->s.number);
+			}
+			return;
+		}
+		if (Fighter_CrewCount(team) >= (hangar_map ? FIGHTER_AUTOSPAWN_MAX_CREW : g_spaceWingmen->integer))
+		{
+			if (g_developer && g_developer->integer)
+			{
+				gi.Printf("fighter AI: %s %d gets no pilot: team %d has %d AI pilots\n", veh->NPC_type, veh->s.number,
+					team, Fighter_CrewCount(team));
+			}
+			return;
 		}
 	}
-	else if (Fighter_CrewCount(team) >= g_spaceEnemies->integer)
+	else if (Fighter_CrewCount(team) >= (hangar_map ? FIGHTER_AUTOSPAWN_MAX_CREW : g_spaceEnemies->integer))
 	{
+		if (g_developer && g_developer->integer)
+		{
+			gi.Printf("fighter AI: %s %d gets no pilot: team %d has %d AI pilots\n", veh->NPC_type, veh->s.number, team,
+				Fighter_CrewCount(team));
+		}
 		return;
 	}
 
-	// a pilot, made right in the ship (it is hidden in there) and put in it
-	gentity_t* spawner_ent = G_Spawn();
-	if (!spawner_ent)
+	// a pilot: at the hangar's pilot start nearest to the ship when the map has a walk file (he walks to it), else
+	// made right in the ship (it is hidden in there) and put in it
+	const int start = Walk_NearestStart(veh->currentOrigin);
+	gentity_t* pilot = start >= 0 ? Fighter_SpawnPilot(team, walk_points[start], 0) : nullptr;
+	const qboolean walker = pilot ? qtrue : qfalse;
+	if (!pilot)
 	{
-		return;
+		pilot = Fighter_SpawnPilot(team, veh->currentOrigin, 64 | 128); // NOTSOLID | STARTINSOLID: inside the ship
 	}
-	spawner_ent->classname = "NPC_spawner";
-	spawner_ent->NPC_type = team == TEAM_PLAYER ? "Rebel" : "StormPilot";
-	spawner_ent->count = 1;
-	spawner_ent->spawnflags = 64 | 128; // NOTSOLID | STARTINSOLID: it starts inside the ship
-	VectorCopy(veh->currentOrigin, spawner_ent->s.origin);
-	G_SetOrigin(spawner_ent, veh->currentOrigin);
-
-	gentity_t* pilot = NPC_Spawn_Do(spawner_ent, qtrue);
-	if (!pilot || !pilot->client || !pilot->NPC)
+	if (!pilot)
 	{
+		if (g_developer && g_developer->integer)
+		{
+			gi.Printf("fighter AI: no pilot could be made for %s %d\n", veh->NPC_type, veh->s.number);
+		}
 		return;
 	}
 
@@ -185,17 +571,42 @@ void G_FighterAI_VehicleSpawned(const gentity_t* spawner, gentity_t* veh)
 	pilot->client->ps.weapon = WP_NONE;
 	pilot->s.weapon = WP_NONE;
 
+	if (walker)
+	{
+		// he walks to it first (Fighter_Walk), then gets in (Fighter_PutInShip)
+		fighter_walk_ship[pilot->s.number] = veh->s.number + 1;
+		fighter_walk_since[pilot->s.number] = level.time;
+		fighter_walk_report[pilot->s.number] = 0;
+		VectorCopy(pilot->currentOrigin, fighter_walk_last_pos[pilot->s.number]);
+		fighter_walk_last_move[pilot->s.number] = level.time;
+		if (g_developer && g_developer->integer)
+		{
+			gi.Printf("fighter AI: %s %d walks to %s %d for team %d\n", pilot->NPC_type, pilot->s.number, veh->NPC_type,
+				veh->s.number, team);
+		}
+		return;
+	}
+	Fighter_PutInShip(pilot, veh);
+}
+
+// the pilot gets into his ship (at once, no boarding time) and the fighter AI flies it. qfalse: he couldn't (freed)
+static qboolean Fighter_PutInShip(gentity_t* pilot, gentity_t* veh)
+{
+	const team_t team = pilot->client->playerTeam;
 	Vehicle_t* p_veh = veh->m_pVehicle;
 	if (!p_veh->m_pVehicleInfo->Board(p_veh, pilot))
 	{
 		G_FreeEntity(pilot);
-		return;
+		return qfalse;
 	}
 	p_veh->m_iBoarding = 0; // in it at once, no boarding time
 
 	// a ship docked in its rack (SUSPENDED) is let go, as when the player gets in (Board): it drops clear of the
 	// rack first ("dropTime"), then flies out
-	int launch_time = 2500;
+	// (on a hangar map only a moment: it leaves the hangar and the trench by Fighter_HangarExit, not straight on into the
+	// trench's far wall)
+	const qboolean hangar_map = Fighter_AutoSpawnMap();
+	int launch_time = hangar_map ? 1000 : 2500;
 	if (veh->spawnflags & 2)
 	{
 		veh->spawnflags &= ~2;
@@ -209,15 +620,117 @@ void G_FighterAI_VehicleSpawned(const gentity_t* spawner, gentity_t* veh)
 
 	if (g_developer && g_developer->integer)
 	{
-		gi.Printf("fighter AI: %s %d flies %s %d for team %d\n", pilot->NPC_type, pilot->s.number, veh->NPC_type,
-			veh->s.number, team);
+		gi.Printf("fighter AI: %s %d flies %s %d for team %d (on the ground %s, drops for %d ms)\n", pilot->NPC_type,
+			pilot->s.number, veh->NPC_type, veh->s.number, team,
+			veh->client->ps.groundEntityNum != ENTITYNUM_NONE ? "yes" : "no",
+			p_veh->m_iDropTime > level.time ? p_veh->m_iDropTime - level.time : 0);
 	}
+	const int n = pilot->s.number;
+	fighter_exit_until[n] = hangar_map ? level.time + launch_time + FIGHTER_EXIT_TIME : 0;
+	fighter_exit_yaw[n] = p_veh->m_vOrientation[YAW];
+	fighter_exit_z[n] = veh->currentOrigin[2];
 
 	pilot->painDebounceTime = level.time; // (a hidden pilot is never hurt: the developer messages use it as boarding time)
 	VectorCopy(veh->currentOrigin, pilot->pos4); // home, the centre of its patrol
 	VectorCopy(veh->currentOrigin, pilot->pos3);
 	TIMER_Set(pilot, "fighterLaunch", launch_time); // drops clear and flies straight out of its hangar first
 	TIMER_Set(pilot, "fighterRetarget", 0);
+	return qtrue;
+}
+
+/*
+-------------------------
+G_FighterAI_AutoSpawn
+
+On the maps whose ships are only made by a button in their hangar (a trigger_multiple using the NPC_Vehicle
+spawner: deathstar_trench_v1 / v2), the game uses the spawners itself, at the start of the map and then every
+FIGHTER_AUTOSPAWN_INTERVAL, so there are ships for the AI pilots (G_FighterAI_VehicleSpawned) and for the player. A
+spawner is used only when its spot is empty (its last ship has flown out or is gone), so a hangar holds one ship per
+spot. g_spaceBattle 0 switches it off.
+-------------------------
+*/
+static constexpr int FIGHTER_AUTOSPAWN_INTERVAL = 60000;
+static constexpr int FIGHTER_AUTOSPAWN_START = 5000; // the first time, after the start of the map
+static constexpr float FIGHTER_AUTOSPAWN_SPOT = 250.0f; // a ship this close to the spawner (across) is on its spot
+static int fighter_autospawn_time;
+
+static qboolean Fighter_AutoSpawnMap()
+{
+	static const char* maps[] = { "deathstar_trench_v1", "deathstar_trench_v2" };
+	for (const char* map : maps)
+	{
+		if (!Q_stricmp(level.mapname, map))
+		{
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
+// a ship (any vehicle, alive) still on the spawner's spot
+static qboolean Fighter_SpawnSpotTaken(const gentity_t* spawner)
+{
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		const gentity_t* ent = &g_entities[i];
+		if (ent == spawner || !ent->inuse || !ent->client || ent->client->NPC_class != CLASS_VEHICLE
+			|| ent->health <= 0)
+		{
+			continue;
+		}
+		if (DistanceHorizontal(ent->currentOrigin, spawner->currentOrigin) < FIGHTER_AUTOSPAWN_SPOT
+			&& fabs(ent->currentOrigin[2] - spawner->currentOrigin[2]) < 300.0f)
+		{
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
+void G_FighterAI_AutoSpawn()
+{
+	if (fighter_autospawn_time > level.time + FIGHTER_AUTOSPAWN_INTERVAL + FIGHTER_AUTOSPAWN_START)
+	{
+		fighter_autospawn_time = 0; // a new map (the time went back)
+	}
+	if (!fighter_autospawn_time)
+	{
+		fighter_autospawn_time = level.time + FIGHTER_AUTOSPAWN_START;
+	}
+	if (fighter_autospawn_time > level.time)
+	{
+		return;
+	}
+	fighter_autospawn_time = level.time + FIGHTER_AUTOSPAWN_INTERVAL;
+
+	Fighter_RegisterCvars();
+	if (!g_spaceBattle->integer || !Fighter_AutoSpawnMap())
+	{
+		return;
+	}
+	for (int i = 0; i < globals.num_entities; i++)
+	{
+		gentity_t* spawner = &g_entities[i];
+		if (!spawner->inuse || !spawner->classname || Q_stricmp(spawner->classname, "NPC_Vehicle")
+			|| !spawner->targetname || spawner->noDamageTeam == TEAM_FREE
+			|| spawner->e_UseFunc != useF_NPC_VehicleSpawnUse)
+		{
+			continue; // only the hangars' ship spawners (made by a button)
+		}
+		if (spawner->e_ThinkFunc == thinkF_G_VehicleSpawn && spawner->nextthink > level.time)
+		{
+			continue; // already making one (its "delay")
+		}
+		if (Fighter_SpawnSpotTaken(spawner))
+		{
+			continue;
+		}
+		if (g_developer && g_developer->integer)
+		{
+			gi.Printf("fighter AI: hangar spawner %s makes a %s\n", spawner->targetname, spawner->NPC_type);
+		}
+		GEntity_UseFunc(spawner, spawner, spawner);
+	}
 }
 
 // ships of the other side with a live pilot: the nearest, liking the ones in front of it, and (a wingman) the ones
@@ -703,6 +1216,7 @@ void G_FighterRoute_Load()
 {
 	route_show = qfalse;
 	Route_Load(qfalse);
+	Walk_Load(); // the hangars' walk to the ships (shiproutes/<map>.walk)
 }
 
 // draws the route while it is shown: the points as green posts (the one ship_wp_rem would remove yellow), the links
@@ -711,6 +1225,8 @@ extern void CG_TestLine(vec3_t start, vec3_t end, int time, unsigned int color, 
 
 void G_FighterRoute_Frame()
 {
+	G_FighterAI_AutoSpawn(); // the hangars' ships on the maps where only a button makes them
+
 	if (!route_show || !player || !player->client || route_show_time > level.time)
 	{
 		return;
@@ -823,6 +1339,113 @@ static qboolean Fighter_RouteGoal(const vec3_t my_pos, const vec3_t fwd)
 	return qtrue;
 }
 
+// a ship still lifting off a floor: the vehicle code (ProcessMoveCommands) only lets it rise, with no speed forward,
+// until it is FIGHTER_MIN_TAKEOFF_FRACTION (0.7) of its landingHeight up, as a player holds the jump key until then.
+// (The ship's groundEntityNum is no use: an MP ship standing on a floor has none, so its pilot never took off.) Not
+// with a roof just above it.
+static qboolean Fighter_TakingOff(const gentity_t* ship, const Vehicle_t* p_veh)
+{
+	if (p_veh->m_LandTrace.fraction >= 1.0f || p_veh->m_LandTrace.fraction > 0.7f || ship->client->ps.speed > 200)
+	{
+		return qfalse;
+	}
+	trace_t tr;
+	vec3_t up;
+	VectorCopy(ship->currentOrigin, up);
+	up[2] += ship->maxs[2] + 48.0f;
+	gi.trace(&tr, ship->currentOrigin, nullptr, nullptr, up, ship->s.number, MASK_SOLID, static_cast<EG2_Collision>(0),
+		0);
+	return tr.fraction >= 1.0f ? qtrue : qfalse;
+}
+
+/*
+-------------------------
+Fighter_HangarExit
+
+A ship that has just taken off on a hangar map (deathstar_trench: the TIEs' hangars open sideways into the trench, just
+across from its far wall) leaves the hangar the way it stood while there is a roof over it, then climbs out of the
+trench straight ahead until the way on is clear and it is well above where it took off. Only then does it look for a
+fight or follow the route (its pilot would turn after an enemy into a wall). qtrue while it is leaving (the moves
+are set). A ship in a hangar that is a hyperspace tunnel (the Rebels') flies on into the jump.
+-------------------------
+*/
+static qboolean Fighter_HangarExit(const gentity_t* ship, const Vehicle_t* p_veh, const vec3_t my_pos,
+	const float max_step)
+{
+	const int n = NPC->s.number;
+	if (!fighter_exit_until[n])
+	{
+		return qfalse;
+	}
+	if (level.time > fighter_exit_until[n])
+	{
+		fighter_exit_until[n] = 0;
+		if (g_developer && g_developer->integer)
+		{
+			gi.Printf("fighter AI: %s %d gave up leaving its hangar at %s\n", ship->NPC_type, ship->s.number,
+				vtos(my_pos));
+		}
+		return qfalse;
+	}
+	vec3_t out_dir;
+	const float yaw = DEG2RAD(fighter_exit_yaw[n]);
+	VectorSet(out_dir, cos(yaw), sin(yaw), 0.0f);
+
+	trace_t tr;
+	vec3_t end;
+	VectorCopy(my_pos, end);
+	end[2] += 1500.0f;
+	gi.trace(&tr, my_pos, nullptr, nullptr, end, ship->s.number, MASK_SOLID, static_cast<EG2_Collision>(0), 0);
+	vec3_t want;
+	VectorCopy(out_dir, want);
+	float step = max_step;
+	int cruise; // the speed it leaves at: slow enough to climb out of the trench before its far wall
+	if (tr.fraction < 1.0f)
+	{
+		// under the hangar's roof: straight on out
+		cruise = FIGHTER_EXIT_SPEED_HANGAR;
+	}
+	else
+	{
+		// out of it: climb on ahead, steeply, until nothing is in the way
+		VectorMA(my_pos, 6000.0f, out_dir, end);
+		gi.trace(&tr, my_pos, ship->mins, ship->maxs, end, ship->s.number, MASK_SOLID, static_cast<EG2_Collision>(0),
+			0);
+		if (!tr.startsolid && !tr.allsolid && tr.fraction >= 1.0f && my_pos[2] > fighter_exit_z[n] + 1000.0f)
+		{
+			fighter_exit_until[n] = 0;
+			if (g_developer && g_developer->integer)
+			{
+				gi.Printf("fighter AI: %s %d is out of its hangar at %s\n", ship->NPC_type, ship->s.number,
+					vtos(my_pos));
+			}
+			return qfalse;
+		}
+		want[2] = 2.5f; // about 68 degrees up (FIGHTER_MAX_PITCH is 70)
+		step = max_step * 1.5f;
+		cruise = FIGHTER_EXIT_SPEED_CLIMB;
+	}
+	// the throttle: on to its speed, back off above it (not so slow it would land)
+	const int speed_now = static_cast<int>(ship->client->ps.speed);
+	if (speed_now > cruise + 150 && speed_now > 400)
+	{
+		ucmd.forwardmove = -127;
+	}
+	else
+	{
+		ucmd.forwardmove = speed_now < cruise ? 127 : 0;
+	}
+	if (Fighter_TakingOff(ship, p_veh))
+	{
+		ucmd.forwardmove = 127;
+		ucmd.upmove = 127; // still lifting off the floor
+	}
+	Fighter_TurnTowards(want, step);
+	VectorCopy(my_pos, NPC->pos4); // home is where it is out of the hangar
+	VectorCopy(my_pos, NPC->pos3);
+	return qtrue;
+}
+
 /*
 -------------------------
 NPC_FighterAI
@@ -837,6 +1460,16 @@ qboolean NPC_FighterAI()
 		return qfalse; // only the pilots G_FighterAI_VehicleSpawned put in (scripted ones are left alone)
 	}
 	Vehicle_t* p_veh = G_IsRidingVehicle(NPC);
+	if (!p_veh && fighter_walk_ship[NPC->s.number])
+	{
+		ucmd.forwardmove = ucmd.rightmove = ucmd.upmove = 0;
+		ucmd.buttons = 0;
+		if (Fighter_Walk())
+		{
+			return qtrue; // still walking to his ship (his own AI does nothing)
+		}
+		p_veh = G_IsRidingVehicle(NPC);
+	}
 	if (!p_veh || !p_veh->m_pVehicleInfo || p_veh->m_pVehicleInfo->type != VH_FIGHTER)
 	{
 		if (NPC->health > 0)
@@ -935,14 +1568,19 @@ qboolean NPC_FighterAI()
 		if (p_veh->m_iDropTime < level.time) // not still dropping clear of its rack
 		{
 			ucmd.forwardmove = 127;
-			if (ship->client->ps.groundEntityNum != ENTITYNUM_NONE)
+			if (Fighter_TakingOff(ship, p_veh))
 			{
-				ucmd.upmove = 127; // standing on the hangar floor: take off (in the air upmove is turbo)
+				ucmd.upmove = 127; // lifting off the hangar floor (in the air upmove is turbo)
 			}
 		}
 		Fighter_TurnTowards(fwd, max_step);
 		VectorCopy(my_pos, NPC->pos4); // home is where it is out of the hangar, not in it
 		VectorCopy(my_pos, NPC->pos3);
+		return qtrue;
+	}
+	// a hangar map's ship: out of the hangar and the trench before anything else
+	if (Fighter_HangarExit(ship, p_veh, my_pos, max_step))
+	{
 		return qtrue;
 	}
 

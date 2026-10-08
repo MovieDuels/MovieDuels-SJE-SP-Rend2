@@ -3840,7 +3840,8 @@ static void PM_CheckAirDash()
 		|| PM_KickMove(pm->ps->saberMove)
 		|| (pm->cmd.forwardmove < 0
 			|| pm->cmd.rightmove > 0
-			|| pm->cmd.rightmove < 0))
+			|| pm->cmd.rightmove < 0
+			|| (g_SerenityJediEngineMode->integer <= 2)))
 	{
 		return;
 	}
@@ -3910,7 +3911,8 @@ static void PM_CheckDoubleJump(const int legs_anim_before)
 		|| PM_InKnockDown(pm->ps)
 		|| PM_InRoll(pm->ps)
 		|| PM_InLedgeMove(pm->ps->legsAnim)
-		|| PM_InSpecialJump(pm->ps->legsAnim)) // flips, wall-runs, wall-flips...
+		|| PM_InSpecialJump(pm->ps->legsAnim)
+		|| (g_SerenityJediEngineMode->integer <= 2)) // flips, wall-runs, wall-flips...
 	{
 		return;
 	}
@@ -23944,7 +23946,7 @@ saberMoveName_t PM_NPCSaberAttackFromQuad(const int quad)
 		return LS_NONE;
 	}
 
-	if ((g_SerenityJediEngineMode->integer > 1 /*&& g_spskill->integer > 1*/) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0) &&
+	if ((g_SerenityJediEngineMode->integer > 1) && (g_npc_is_smart != nullptr && g_npc_is_smart->integer != 0) &&
 		G_EnoughPowerForSpecialMove(pm->ps->forcePower, SABER_ALT_ATTACK_POWER, qtrue) &&
 		!pm->ps->forcePowersActive &&
 		!in_camera &&
