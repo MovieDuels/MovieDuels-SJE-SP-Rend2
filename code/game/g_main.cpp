@@ -186,6 +186,7 @@ cvar_t* g_numEntities;
 //cvar_t	*g_iscensored;
 
 cvar_t* g_saberAutoBlocking;
+cvar_t* g_saberBreaking; // breakable saber staffs: 0 off, 1 NPCs only, 2 everyone
 cvar_t* g_saberRealisticCombat;
 cvar_t* debug_subdivision;
 cvar_t* g_saberDamageCapping;
@@ -780,6 +781,7 @@ static void G_InitCvars()
 	com_buildScript = gi.cvar("com_buildscript", "0", 0);
 
 	g_saberAutoBlocking = gi.cvar("g_saberAutoBlocking", "1", CVAR_ARCHIVE);
+	g_saberBreaking = gi.cvar("g_saberBreaking", "2", CVAR_ARCHIVE);
 	//must press +block button to do any blocking
 	g_saberRealisticCombat = gi.cvar("g_saberMoreRealistic", "1", CVAR_ARCHIVE);
 	//makes collision more precise, increases damage

@@ -1199,6 +1199,8 @@ static qboolean G_JediInRoom(vec3_t from)
 	return qfalse;
 }
 
+extern qboolean WP_SaberWearHiltHit(gentity_t* ent, const char* surfName, saberType_t saberType);
+
 qboolean G_GetHitLocFromSurfName(gentity_t* ent, const char* surf_name, int* hit_loc, vec3_t point, vec3_t dir,
 	vec3_t blade_dir, const int mod, const saberType_t saber_type)
 {
@@ -1545,9 +1547,9 @@ qboolean G_GetHitLocFromSurfName(gentity_t* ent, const char* surf_name, int* hit
 			}
 		}
 	}
-	else if (mod == MOD_SABER && WP_BreakSaber(ent, surf_name, saber_type))
+	else if (mod == MOD_SABER && WP_SaberWearHiltHit(ent, surf_name, saber_type))
 	{
-		//saber hit and broken
+		//saber hit on a breakable staff's hilt: it wears down (wp_saberblocking.cpp)
 		*hit_loc = HL_HAND_RT;
 	}
 	else if (!Q_stricmpn("r_hand", surf_name, 6) || !Q_stricmpn("w_", surf_name, 2))
@@ -7888,6 +7890,12 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 	vec3_t new_dir;
 	qboolean already_dead = qfalse;
 	float shield_absorbed = 0;
+
+	if (mod == MOD_SABER && targ && targ->client && targ->client->ps.stats[STAT_SABER_BREAK_SAFE] > level.time)
+	{
+		// just had the saber staff break (stagger / knockdown): half saber damage
+		damage = (damage + 1) / 2;
+	}
 
 	if (!targ->takedamage)
 	{

@@ -9560,6 +9560,8 @@ extern void Ent_CheckBarrierIsAllowed(gentity_t* ent);
 extern void Ent_CheckBarrierIsAllowed_WithSaber(gentity_t* ent);
 extern qboolean droideka_npc(const gentity_t* ent);
 
+extern void WP_SaberWearThink(gentity_t* ent, int msec);
+
 static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 {
 	gclient_t* client;
@@ -11138,6 +11140,8 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 		return;
 	}
+
+	WP_SaberWearThink(ent, msec); // breakable saber staffs (wp_saberblocking.cpp)
 
 	// perform once-a-second actions
 	ClientTimerActions(ent, msec);

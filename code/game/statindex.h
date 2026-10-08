@@ -40,7 +40,13 @@ using statIndex_t = enum
 	// look this direction when dead (FIXME: get rid of?)
 	STAT_CLIENTS_READY,
 	// bit mask of clients wishing to exit the intermission (FIXME: configstring?)
-	STAT_MAX_HEALTH // health / armor limit, changable by handicap
+	STAT_MAX_HEALTH, // health / armor limit, changable by handicap
+	STAT_SABER_WEAR,
+	// breakable saber staff: wear 0-100 (100: breaks; 101: breaks from a heavy hit) - wp_saberblocking.cpp
+	STAT_SABER_WEAR_TIMER,
+	// ms until the wear starts to recover
+	STAT_SABER_BREAK_SAFE
+	// level.time until which saber damage is halved after a break (stagger / knockdown)
 };
 
 #endif	// #ifndef STATINDEX_H
