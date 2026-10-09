@@ -121,6 +121,7 @@ const char* inv_names[] =
 };
 
 int force_icons[NUM_FORCE_POWERS];
+static int flame_force_icon = 0; // gfx/hud/i_icon_flame: Force Lightning slot for flamethrower users
 
 void CG_DrawDataPadHUD(const centity_t* cent);
 void CG_DrawDataPadObjectives(const centity_t* cent);
@@ -3345,6 +3346,7 @@ void CG_Init(const int serverCommandSequence)
 			force_icons[i] = cgi_R_RegisterShaderNoMip(force_icon_files[i]);
 		}
 	}
+	flame_force_icon = cgi_R_RegisterShaderNoMip("gfx/hud/i_icon_flame");
 
 	CG_LoadHudMenu(); // load new hud stuff
 
@@ -5131,6 +5133,49 @@ int showDataPadPowers[MAX_DPSHOWPOWERS] =
 
 /*
 ===============
+CG_ForcePowerIcon
+
+The force select icon. The flamethrower users (BUTTON_FORCE_LIGHTNING -> Mando_DoFlameThrower, wp_saber.cpp) see the
+flame icon in the Force Lightning slot.
+===============
+*/
+static qboolean CG_PlayerUsesFlamethrower()
+{
+	const gentity_t* player = &g_entities[0];
+
+	return player->client && (player->client->NPC_class == CLASS_BOBAFETT
+			|| player->client->NPC_class == CLASS_MANDALORIAN
+			|| player->client->NPC_class == CLASS_JANGO
+			|| player->client->NPC_class == CLASS_JANGODUAL) ? qtrue : qfalse;
+}
+
+static int CG_ForcePowerIcon(const int power)
+{
+	if (power == FP_LIGHTNING && flame_force_icon && CG_PlayerUsesFlamethrower())
+	{
+		return flame_force_icon;
+	}
+	return force_icons[power];
+}
+
+// the force select name: "Flamethrower" (sp_ingame.str FLAMETHROWER2) in the Force Lightning slot for the flamethrower
+// users; a language without the string keeps "Lightning"
+static const char* CG_ForcePowerName(const int index)
+{
+	if (showPowers[index] == FP_LIGHTNING && CG_PlayerUsesFlamethrower())
+	{
+		char test[64];
+
+		if (cgi_SP_GetStringTextString("SP_INGAME_FLAMETHROWER2", test, sizeof test))
+		{
+			return "SP_INGAME_FLAMETHROWER2";
+		}
+	}
+	return showPowersName[index];
+}
+
+/*
+===============
 ForcePower_Valid
 ===============
 */
@@ -5395,33 +5440,33 @@ void CG_DrawForceSelect()
 
 		++iconCnt; // Good icon
 
-		if (force_icons[showPowers[i]])
+		if (CG_ForcePowerIcon(showPowers[i]))
 		{
 			if (isOnVeh) //PM_WeaponOkOnVehicle
 			{
-				CG_DrawPic(holdX, y - 10 + yOffset, smallIconSize, smallIconSize, force_icons[showPowers[i]]);
+				CG_DrawPic(holdX, y - 10 + yOffset, smallIconSize, smallIconSize, CG_ForcePowerIcon(showPowers[i]));
 				holdX -= smallIconSize + pad;
 			}
 			else
 			{
-				CG_DrawPic(holdX, y + yOffset, smallIconSize, smallIconSize, force_icons[showPowers[i]]);
+				CG_DrawPic(holdX, y + yOffset, smallIconSize, smallIconSize, CG_ForcePowerIcon(showPowers[i]));
 				holdX -= smallIconSize + pad;
 			}
 		}
 	}
 
 	// Current Center Icon
-	if (force_icons[showPowers[cg.forcepowerSelect]])
+	if (CG_ForcePowerIcon(showPowers[cg.forcepowerSelect]))
 	{
 		if (isOnVeh) //PM_WeaponOkOnVehicle
 		{
 			CG_DrawPic(x - bigIconSize / static_cast<float>(2), y - (static_cast<float>(bigIconSize) - smallIconSize) / 2 - 10 + yOffset, bigIconSize,
-				bigIconSize, force_icons[showPowers[cg.forcepowerSelect]]);
+				bigIconSize, CG_ForcePowerIcon(showPowers[cg.forcepowerSelect]));
 		}
 		else
 		{
 			CG_DrawPic(x - bigIconSize / static_cast<float>(2), y - (static_cast<float>(bigIconSize) - smallIconSize) / 2 + yOffset, bigIconSize,
-				bigIconSize, force_icons[showPowers[cg.forcepowerSelect]]);
+				bigIconSize, CG_ForcePowerIcon(showPowers[cg.forcepowerSelect]));
 		}
 	}
 
@@ -5447,16 +5492,16 @@ void CG_DrawForceSelect()
 
 		++iconCnt; // Good icon
 
-		if (force_icons[showPowers[i]])
+		if (CG_ForcePowerIcon(showPowers[i]))
 		{
 			if (isOnVeh) //PM_WeaponOkOnVehicle
 			{
-				CG_DrawPic(holdX, y - 10 + yOffset, smallIconSize, smallIconSize, force_icons[showPowers[i]]);
+				CG_DrawPic(holdX, y - 10 + yOffset, smallIconSize, smallIconSize, CG_ForcePowerIcon(showPowers[i]));
 				holdX += smallIconSize + pad;
 			}
 			else
 			{
-				CG_DrawPic(holdX, y + yOffset, smallIconSize, smallIconSize, force_icons[showPowers[i]]);
+				CG_DrawPic(holdX, y + yOffset, smallIconSize, smallIconSize, CG_ForcePowerIcon(showPowers[i]));
 				holdX += smallIconSize + pad;
 			}
 		}
@@ -5469,7 +5514,7 @@ void CG_DrawForceSelect()
 	else
 	{
 		// This only a temp solution.
-		if (cgi_SP_GetStringTextString(showPowersName[cg.forcepowerSelect], text, sizeof text))
+		if (cgi_SP_GetStringTextString(CG_ForcePowerName(cg.forcepowerSelect), text, sizeof text))
 		{
 			const int w = cgi_R_Font_StrLenPixels(text, cgs.media.qhFontSmall, 1.0f);
 			const int ox = (SCREEN_WIDTH - w) / 2;
@@ -5517,7 +5562,7 @@ void CG_DrawForceSelect_text()
 	cg.itemPickupTime = 0;
 
 	// This only a temp solution.
-	if (cgi_SP_GetStringTextString(showPowersName[cg.forcepowerSelect], text, sizeof text) && !
+	if (cgi_SP_GetStringTextString(CG_ForcePowerName(cg.forcepowerSelect), text, sizeof text) && !
 		cg_drawSelectionScrollBar
 		.integer)
 	{
@@ -5568,7 +5613,7 @@ void CG_DrawForceSelect_side()
 	cgi_R_SetColor(nullptr);
 
 	// Current Center Icon
-	if (force_icons[showPowers[cg.forcepowerSelect]])
+	if (CG_ForcePowerIcon(showPowers[cg.forcepowerSelect]))
 	{
 		constexpr int big_icon_size = 24;
 		constexpr int small_icon_size = 12;
@@ -5578,13 +5623,13 @@ void CG_DrawForceSelect_side()
 		{
 			CG_DrawPic(32 - big_icon_size / 2, 420 - (big_icon_size - small_icon_size) / 2 + y_offset,
 				big_icon_size,
-				big_icon_size, force_icons[showPowers[cg.forcepowerSelect]]);
+				big_icon_size, CG_ForcePowerIcon(showPowers[cg.forcepowerSelect]));
 		}
 		else // horizonal
 		{
 			CG_DrawPic(45 - big_icon_size / 2, 438 - (big_icon_size - small_icon_size) / 2 + y_offset,
 				big_icon_size,
-				big_icon_size, force_icons[showPowers[cg.forcepowerSelect]]);
+				big_icon_size, CG_ForcePowerIcon(showPowers[cg.forcepowerSelect]));
 		}
 	}
 }

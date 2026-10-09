@@ -2569,6 +2569,26 @@ static void G_MissileImpact_MD(gentity_t* ent, trace_t* trace, const int hit_loc
 				G_Damage(other, ent, ent, v, ent->currentOrigin, TASER_DAMAGE, DAMAGE_NO_KNOCKBACK, MOD_IMPACT);
 
 				GEntity_PainFunc(other, ent, ent, other->currentOrigin, 0, MOD_IMPACT);
+
+				// the hook yanks him off his feet towards the grappler, as force pull does (MD team)
+				if (other->health > 0 && ent->parent && ent->parent->client && other != ent->parent)
+				{
+					vec3_t pull_dir;
+					VectorSubtract(ent->parent->currentOrigin, other->currentOrigin, pull_dir);
+					pull_dir[2] = 0;
+					VectorNormalize(pull_dir);
+
+					G_Knockdown(other, ent->parent, pull_dir, 300, qtrue);
+
+					if (PM_InKnockDown(&other->client->ps))
+					{
+						// dragged about 5 feet (~60 units) towards the grappler: no ground friction while pm_time runs
+						VectorScale(pull_dir, 240.0f, other->client->ps.velocity);
+						other->client->ps.velocity[2] = 100.0f;
+						other->client->ps.pm_time = 250;
+						other->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
+					}
+				}
 			}
 			nent->s.otherentityNum2 = other->s.number;
 

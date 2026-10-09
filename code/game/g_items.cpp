@@ -2212,6 +2212,8 @@ void ItemUse_UseCloak(gentity_t* ent)
 
 constexpr auto JETPACK_TOGGLE_TIME = 1000;
 
+constexpr float JETPACK_IGNITE_THRUST = 300.0f;
+
 void Jetpack_Off(const gentity_t* ent)
 {
 	//create effects?
@@ -2241,6 +2243,12 @@ static void Jetpack_On(const gentity_t* ent)
 	}
 
 	ent->client->jetPackOn = qtrue;
+
+	// upward thrust on ignition (MD team): the jetpack kicks in with a jolt instead of just stopping the fall
+	if (ent->client->ps.velocity[2] < JETPACK_IGNITE_THRUST)
+	{
+		ent->client->ps.velocity[2] = JETPACK_IGNITE_THRUST;
+	}
 }
 
 void ItemUse_Jetpack(const gentity_t* ent)
