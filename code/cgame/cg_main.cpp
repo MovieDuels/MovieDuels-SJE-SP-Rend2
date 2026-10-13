@@ -5160,9 +5160,9 @@ static qboolean CG_PlayerUsesFlamethrower()
 	const gentity_t* player = &g_entities[0];
 
 	return player->client && (player->client->NPC_class == CLASS_BOBAFETT
-			|| player->client->NPC_class == CLASS_MANDALORIAN
-			|| player->client->NPC_class == CLASS_JANGO
-			|| player->client->NPC_class == CLASS_JANGODUAL) ? qtrue : qfalse;
+		|| player->client->NPC_class == CLASS_MANDALORIAN
+		|| player->client->NPC_class == CLASS_JANGO
+		|| player->client->NPC_class == CLASS_JANGODUAL) ? qtrue : qfalse;
 }
 
 static int CG_ForcePowerIcon(const int power)

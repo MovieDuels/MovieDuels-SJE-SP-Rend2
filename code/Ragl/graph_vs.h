@@ -1524,7 +1524,7 @@ namespace ragl
 			//------------------------------
 			// ~20 KB: on the heap, not the stack (C6262); one per call
 			const std::unique_ptr<handle_heap<search_node>> openBuf(new handle_heap<search_node>(mNodes));
-			handle_heap<search_node>&	open = *openBuf;
+			handle_heap<search_node>& open = *openBuf;
 
 			// Run Through The Open List
 			//---------------------------

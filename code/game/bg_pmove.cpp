@@ -25911,7 +25911,7 @@ static qboolean PM_CheckUpsideDownAttack()
 		}
 	}
 	//NOTE: falls through on purpose
-		[[fallthrough]];
+	[[fallthrough]];
 	case BOTH_FLIP_HOLD7:
 		pm->ps->pm_flags |= PMF_SLOW_MO_FALL;
 		PM_SetSaberMove(LS_UPSIDE_DOWN_ATTACK);
