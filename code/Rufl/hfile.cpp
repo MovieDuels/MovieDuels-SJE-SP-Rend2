@@ -65,10 +65,10 @@ constexpr auto MAX_OPEN_FILES = 20;
 struct SOpenFile
 {
 	hstring mPath;
-	bool mForRead;
-	int mHandle;
-	float mVersion;
-	int mChecksum;
+	bool mForRead = false;
+	int mHandle = 0;
+	float mVersion = 0.0f;
+	int mChecksum = 0;
 };
 
 using TFilePool = ratl::handle_pool_vs<SOpenFile, MAX_OPEN_FILES>;

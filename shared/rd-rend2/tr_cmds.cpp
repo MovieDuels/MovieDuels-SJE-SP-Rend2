@@ -774,7 +774,10 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 					return;
 			}
 			else
+			{
 				ri.Error(ERR_FATAL, "RE_BeginFrame: Stereo is enabled, but stereoFrame was %i", stereoFrame);
+				return; // not reached: ri.Error never returns (function pointer, so it cannot be noreturn)
+			}
 
 			R_SetColorMode(colcmd->rgba, stereoFrame, r_anaglyphMode->integer);
 			colcmd->commandId = RC_COLORMASK;

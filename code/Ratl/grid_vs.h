@@ -400,6 +400,7 @@ namespace ratl
 			// Constructors
 			//--------------
 			riterator()
+				: mMins{}, mMaxs{}, mLoc{}, mOwner(nullptr)
 			{}
 
 			riterator(grid2_vs* p, const int Range, const int SX, const int SY) :

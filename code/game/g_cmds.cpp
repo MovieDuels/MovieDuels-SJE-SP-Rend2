@@ -1747,7 +1747,9 @@ static void Cmd_UseInventory_f(gentity_t* ent)
 		//return;
 	/*case INV_GRAPPLEHOOK:
 		Cmd_UseGrapple_f(ent);*/
-	default:;
+		break;
+	default:
+		break;
 	}
 }
 

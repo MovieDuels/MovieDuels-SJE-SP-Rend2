@@ -1110,6 +1110,7 @@ void RB_CalcDiffuseEntityColor(unsigned char* colors)
 	if (!backEnd.currentEntity)
 	{//error, use the normal lighting
 		RB_CalcDiffuseColor(colors);
+		return;
 	}
 
 	const trRefEntity_t* ent = backEnd.currentEntity;

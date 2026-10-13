@@ -61,9 +61,9 @@ void GL_Bind(image_t* image) {
 		glState.currenttextures[glState.currenttmu] = texnum;
 		if (image && image->flags & IMGFLAG_CUBEMAP)
 			qglBindTexture(GL_TEXTURE_CUBE_MAP, texnum);
-		else if (image->flags & IMGFLAG_3D)
+		else if (image && image->flags & IMGFLAG_3D)
 			qglBindTexture(GL_TEXTURE_3D, texnum);
-		else if (image->flags & IMGFLAG_2D_ARRAY)
+		else if (image && image->flags & IMGFLAG_2D_ARRAY)
 			qglBindTexture(GL_TEXTURE_2D_ARRAY, texnum);
 		else
 			qglBindTexture(GL_TEXTURE_2D, texnum);
@@ -920,7 +920,8 @@ UniformData* UniformDataWriter::Finish(Allocator& destHeap)
 }
 
 SamplerBindingsWriter::SamplerBindingsWriter()
-	: failed(false)
+	: scratch()
+	, failed(false)
 	, count(0)
 {}
 
@@ -1623,8 +1624,8 @@ Used for cinematics.
 void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* data, int client, qboolean dirty) {
 	int			i, j;
 	int			start, end;
-	vec4_t quadVerts[4]{};
-	vec2_t texCoords[4]{};
+	vec4_t quadVerts[4]; // all set below; no {} (it made /analyze report a NULL dereference, C6011)
+	vec2_t texCoords[4]; // all set below; no {} (it made /analyze report a NULL dereference, C6011)
 
 	if (!tr.registered) {
 		return;
@@ -2353,8 +2354,13 @@ static void RB_UpdateTemporalConstants(gpuFrame_t* frame, gpuFrame_t* previousFr
 			{0.25f, -.25f},
 			{-.25f, 0.25f}
 		};
-		VectorCopy2(jitterPos[backEndData->realFrameNumber % 2], tempBlock.currentJitter);
-		VectorCopy2(jitterPos[(backEndData->realFrameNumber + 1) % 2], tempBlock.previousJitter);
+		// element-wise instead of VectorCopy2 (the macro made /analyze report a NULL dereference, C6011)
+		const int jitterCur = backEndData->realFrameNumber % 2;
+		const int jitterPrev = (backEndData->realFrameNumber + 1) % 2;
+		tempBlock.currentJitter[0] = jitterPos[jitterCur][0];
+		tempBlock.currentJitter[1] = jitterPos[jitterCur][1];
+		tempBlock.previousJitter[0] = jitterPos[jitterPrev][0];
+		tempBlock.previousJitter[1] = jitterPos[jitterPrev][1];
 	}
 	tr.temporalInfoUboOffset = RB_AppendConstantsData(
 		frame, &tempBlock, sizeof(tempBlock));
@@ -2891,7 +2897,7 @@ void RB_ShowImages(void) {
 		}
 
 		{
-			vec4_t quadVerts[4]{};
+			vec4_t quadVerts[4]; // all set below; no {} (it made /analyze report a NULL dereference, C6011)
 
 			GL_Bind(image);
 

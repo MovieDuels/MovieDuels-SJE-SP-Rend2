@@ -1556,7 +1556,7 @@ void DoImpact(gentity_t* self, gentity_t* other, const qboolean damage_self, con
 				if (magnitude >= 100 + self->health || magnitude >= 700
 					&& self->s.number >= MAX_CLIENTS
 					&& self->s.weapon != WP_SABER
-					|| self->client->NPC_class == CLASS_VEHICLE) //health here is used to simulate structural integrity
+					|| self->client && self->client->NPC_class == CLASS_VEHICLE) //health here is used to simulate structural integrity
 				{
 					if ((self->s.weapon == WP_SABER ||
 						self->s.number < MAX_CLIENTS ||
@@ -7949,6 +7949,10 @@ static void CommandNPCtoAttack(gentity_t* caller, gentity_t* ourFriend)
 static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean controlled_by_player)
 {
 	gclient_t* client = ent->client;
+	if (!client)
+	{
+		return; // client is used unchecked below
+	}
 	const Vehicle_t* p_veh = nullptr;
 	animFlags_t flags = G_Animationstyletable(ent);
 
@@ -9575,7 +9579,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 
 	qboolean holding_stun = ent->client->ps.communicatingflags & 1 << CF_STUNNING ? qtrue : qfalse;
 
-	if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+	if (ent->client->NPC_class == CLASS_VEHICLE)
 	{
 		p_veh = ent->m_pVehicle;
 	}
@@ -9587,13 +9591,13 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		G_HeldByMonster(ent, &ucmd);
 	}
 
-	if (ent->client && ent->client->ps.ManualMBlockingTime <= level.time && ent->client->ps.ManualMBlockingTime > 0)
+	if (ent->client->ps.ManualMBlockingTime <= level.time && ent->client->ps.ManualMBlockingTime > 0)
 	{
 		ent->client->ps.userInt3 &= ~(1 << FLAG_BLOCKING);
 		ent->client->ps.ManualMBlockingTime = 0;
 	}
 
-	if (ent->client && ent->client->ps.powerups[PW_GALAK_SHIELD] && !droideka_npc(ent))
+	if (ent->client->ps.powerups[PW_GALAK_SHIELD] && !droideka_npc(ent))
 	{
 		if (ent->client->ps.weapon == WP_SABER)
 		{
@@ -9785,7 +9789,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		}
 
 		// Transfer over our driver's commands to us (the vehicle).
-		if (ent->owner && ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+		if (ent->owner && ent->client->NPC_class == CLASS_VEHICLE)
 		{
 			memcpy(ucmd, &ent->owner->client->usercmd, sizeof(usercmd_t));
 			ucmd->buttons &= ~BUTTON_USE; //Vehicles NEVER try to use ANYTHING!!!
@@ -9817,7 +9821,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	{
 		p_veh->m_pVehicleInfo->Update(p_veh, ucmd);
 	}
-	else if (ent->client)
+	else
 	{
 		//this is any client that is not a vehicle (OR: is a vehicle and it not being ridden, is not being boarded, or is a TaunTaun...!
 		if (ent->client->NPC_class == CLASS_GONK ||
@@ -10888,7 +10892,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	}
 
 	//NEED to do this every frame, since these overrides do not go into the save/load data
-	if (client && ent->s.m_iVehicleNum != 0 && !ent->s.number && !MatrixMode)
+	if (ent->s.m_iVehicleNum != 0 && !ent->s.number && !MatrixMode)
 	{
 		//FIXME: extern and read from g_vehicleInfo?
 		Vehicle_t* p_player_veh = ent->owner->m_pVehicle;
@@ -11027,7 +11031,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	pm.debugLevel = g_debugMove->integer;
 	pm.noFootsteps = qfalse; //( g_dmflags->integer & DF_NO_FOOTSTEPS ) > 0;
 
-	if (ent->client && ent->NPC)
+	if (ent->NPC)
 	{
 		pm.cmd.weapon = ent->client->ps.weapon;
 	}
@@ -11170,7 +11174,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	{
 		if (client->ps.pm_type != PM_DEAD && !ent->client->stunhasbeenfired)
 		{
-			if (client && client->stunDebounceTime > level.time)
+			if (client->stunDebounceTime > level.time)
 			{
 				if (client->stun)
 				{
@@ -11220,7 +11224,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 				&& ent->client->ps.pm_type != PM_DEAD
 				&& !ent->client->hookhasbeenfired)
 			{
-				if (ent->client && ent->client->hookDebounceTime > level.time)
+				if (ent->client->hookDebounceTime > level.time)
 				{
 					if (ent->client->hook)
 					{
@@ -11300,7 +11304,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 
 				if (clear_to_activate_grapple)
 				{
-					if (ent->client && ent->client->hookDebounceTime > level.time)
+					if (ent->client->hookDebounceTime > level.time)
 					{
 						if (ent->client->hook)
 						{
@@ -11389,12 +11393,21 @@ A new command has arrived from the client
 extern void PM_CheckForceUseButton(gentity_t* ent, usercmd_t* ucmd);
 extern qboolean PM_GentCantJump(const gentity_t* gent);
 
+extern qboolean CG_MDWheel_BlocksButtons();
+
 void ClientThink(const int clientNum, usercmd_t* ucmd)
 {
 	gentity_t* ent = g_entities + clientNum;
 	if (!ent->client)
 	{
 		return;
+	}
+
+	// the radial weapon wheel (cgame, cg_main.cpp) has the player's attack buttons while it is open (they pick / toggle
+	// On Person there), and the press that closed it doesn't fire
+	if (clientNum == 0 && CG_MDWheel_BlocksButtons())
+	{
+		ucmd->buttons &= ~(BUTTON_ATTACK | BUTTON_ALT_ATTACK);
 	}
 
 	qboolean restore_ucmd = qfalse;

@@ -6480,6 +6480,7 @@ static void Q3_Face(const int entID, const int expression, float holdtime)
 	case SET_FACEBLINKFROWN:
 		ent->client->facial_blink = -(level.time + holdtime);
 		//fall through
+		[[fallthrough]];
 	case SET_FACEFROWN:
 		ent->client->facial_timer = -(level.time + holdtime);
 		ent->client->facial_anim = FACE_FROWN;
@@ -8291,7 +8292,9 @@ void CQuake3GameInterface::RunScript(const gentity_t* pEntity, const char* strSc
 			IIcarusInterface::ICARUS_INVALID)
 			DebugPrint(WL_VERBOSE, "%d Script %s executed by %s %s\n", level.time, strScriptName,
 				pEntity->classname, pEntity->targetname);
-	default:;
+		break;
+	default:
+		break;
 	}
 }
 
@@ -12315,7 +12318,9 @@ void CQuake3GameInterface::PrecacheScript(const char* name)
 		// We loaded the script and registered it, so precache it through Icarus now.
 	case SCRIPT_REGISTERED:
 		IIcarusInterface::GetIcarus()->Precache(pBuf, iLength);
-	default:;
+		break;
+	default:
+		break;
 	}
 }
 

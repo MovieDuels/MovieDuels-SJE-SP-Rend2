@@ -948,7 +948,7 @@ static void CG_General(centity_t* cent)
 	}
 
 	//--------------------------
-	if (s1->eFlags & EF_FIRING && cent->gent->inuse)
+	if (s1->eFlags & EF_FIRING && cent->gent && cent->gent->inuse)
 	{
 		//special code for adding the beam to the attached tripwire mine
 		vec3_t beam_org;

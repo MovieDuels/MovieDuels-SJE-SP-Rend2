@@ -2116,6 +2116,7 @@ static qboolean G_LimbLost(const gentity_t* ent, const int hit_loc)
 			return qtrue;
 		}
 		//NOTE: falls through
+		[[fallthrough]];
 	case HL_LEG_RT:
 		//NOTE: feet fall through
 		if (ent->locationDamage[HL_LEG_RT] >= Q3_INFINITE)
@@ -2130,6 +2131,7 @@ static qboolean G_LimbLost(const gentity_t* ent, const int hit_loc)
 			return qtrue;
 		}
 		//NOTE: falls through
+		[[fallthrough]];
 	case HL_LEG_LT:
 		//NOTE: feet fall through
 		if (ent->locationDamage[HL_LEG_LT] >= Q3_INFINITE)
@@ -2144,6 +2146,7 @@ static qboolean G_LimbLost(const gentity_t* ent, const int hit_loc)
 			return qtrue;
 		}
 		//NOTE: falls through
+		[[fallthrough]];
 	case HL_ARM_LT:
 	case HL_CHEST_LT:
 	case HL_BACK_RT:
@@ -2163,6 +2166,7 @@ static qboolean G_LimbLost(const gentity_t* ent, const int hit_loc)
 			return qtrue;
 		}
 		//NOTE: falls through
+		[[fallthrough]];
 	case HL_ARM_RT:
 	case HL_CHEST_RT:
 	case HL_BACK_LT:
@@ -2182,6 +2186,7 @@ static qboolean G_LimbLost(const gentity_t* ent, const int hit_loc)
 			return qtrue;
 		}
 		//NOTE: falls through
+		[[fallthrough]];
 	case HL_WAIST:
 		//NOTE: head falls through
 		if (ent->locationDamage[HL_WAIST] >= Q3_INFINITE)
@@ -4500,6 +4505,11 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	qboolean holding_saber = qfalse;
 	int      cliff_fall = 0;
 
+	if (!self->client)
+	{
+		return; // only clients die here: self->client is used unchecked all through
+	}
+
 	// -----------------------------------------------------------------
 	// 0. Cleanup hooks / stuns
 	// -----------------------------------------------------------------
@@ -6398,6 +6408,11 @@ void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 		return;
 	}
 
+	if (self->client->ps.repulseChargeStart)
+	{
+		return; // charging Force Repulse: can't be knocked down
+	}
+
 	if (self->client->NPC_class == CLASS_ROCKETTROOPER)
 	{
 		return;
@@ -7891,6 +7906,17 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 	qboolean already_dead = qfalse;
 	float shield_absorbed = 0;
 
+	if (!targ)
+	{
+		return; // targ is used unchecked below (targ->takedamage)
+	}
+
+	if (targ->client && targ->client->ps.repulseChargeStart && mod != MOD_TRIGGER_HURT && mod != MOD_SUICIDE
+		&& mod != MOD_CRUSH)
+	{
+		return; // charging Force Repulse: invincible, no knockback either (2026-10-12, DH)
+	}
+
 	if (mod == MOD_SABER && targ && targ->client && targ->client->ps.stats[STAT_SABER_BREAK_SAFE] > level.time)
 	{
 		// just had the saber staff break (stagger / knockdown): half saber damage
@@ -8370,6 +8396,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 						//need to still be crushed by AT-ST
 						break;
 					}
+					[[fallthrough]];
 				case MOD_REPEATER_ALT:
 				case MOD_FLECHETTE_ALT:
 				case MOD_ROCKET:

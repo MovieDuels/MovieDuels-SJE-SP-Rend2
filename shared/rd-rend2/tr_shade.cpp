@@ -1240,7 +1240,7 @@ static void RB_FogPass(shaderCommands_t* input, const VertexArraysProperties* ve
 	RB_AddDrawItem(backEndData->currentPass, key, item);
 
 	// invert fog planes and render global fog into them
-	if (input->fogNum != tr.world->globalFogIndex && tr.world->globalFogIndex != -1)
+	if (tr.world && input->fogNum != tr.world->globalFogIndex && tr.world->globalFogIndex != -1) // tr.world is NULL-checked above too
 	{
 		// only invert render fog planes
 		if (input->shader->sort != SS_FOG)
@@ -1724,7 +1724,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 			}
 		}
 
-		if (!(backEnd.currentEntity->e.renderfx & RF_VOLUMETRIC))
+		if (!backEnd.currentEntity || !(backEnd.currentEntity->e.renderfx & RF_VOLUMETRIC)) // currentEntity is NULL-checked above too
 		{
 			vec4_t baseColor{};
 			vec4_t vertColor{};
@@ -1748,7 +1748,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 				VectorScale(vertColor, backEnd.refdef.colorScale, vertColor);
 			}
 
-			if (backEnd.currentEntity->e.renderfx & RF_FORCE_ENT_ALPHA)
+			if (backEnd.currentEntity && (backEnd.currentEntity->e.renderfx & RF_FORCE_ENT_ALPHA))
 			{
 				baseColor[3] = backEnd.currentEntity->e.shaderRGBA[3] / 255.0f;
 				vertColor[3] = 0.0f;
@@ -1767,7 +1767,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		uniformDataWriter.SetUniformInt(UNIFORM_COLORGEN, forceRGBGen);
 		uniformDataWriter.SetUniformInt(UNIFORM_ALPHAGEN, forceAlphaGen);
 
-		if (backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2))
+		if (backEnd.currentEntity && (backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2)))
 			uniformDataWriter.SetUniformVec4(UNIFORM_DISINTEGRATION, disintegrationInfo);
 
 		if (backEnd.currentEntity == &backEnd.entityFlare)

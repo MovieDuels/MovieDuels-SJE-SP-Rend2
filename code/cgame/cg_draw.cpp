@@ -8425,6 +8425,12 @@ static void CG_DrawCrosshairNames(void)
 		return;
 	}
 
+	// MovieDuels: names (and the backup names) only for a character within 256 units of the view
+	if (DistanceSquared(cg_entities[g_crosshairEntNum].lerpOrigin, cg.refdef.vieworg) > 256.0f * 256.0f)
+	{
+		return;
+	}
+
 	const char* name = GetFullName(CrosshairEnt);
 
 	if (!name || !name[0])
@@ -9312,11 +9318,21 @@ static qboolean CG_RenderingFromMiscCamera()
 
 qboolean cg_usingInFrontOf = qfalse;
 qboolean CanUseInfrontOf(const gentity_t*);
+qboolean G_GonkCanGiveBacta(const gentity_t* gonk);
 
 static void CG_UseIcon()
 {
 	cg_usingInFrontOf = CanUseInfrontOf(cg_entities[cg.snap->ps.clientNum].gent);
-	if (cg_usingInFrontOf)
+
+	// MovieDuels: a gonk with a bacta canister to give (G_GonkCanGiveBacta) under the crosshair gets the use icon too
+	qboolean show_hint = cg_usingInFrontOf;
+	if (!show_hint)
+	{
+		CG_ScanForCrosshairEntity(qfalse);
+		show_hint = cg.crosshairClientTime == cg.time && cg.crosshairclientNum > 0 && cg.crosshairclientNum < ENTITYNUM_WORLD
+			&& G_GonkCanGiveBacta(&g_entities[cg.crosshairclientNum]) ? qtrue : qfalse;
+	}
+	if (show_hint)
 	{
 		cgi_R_SetColor(nullptr);
 
@@ -10461,6 +10477,9 @@ static void CG_Draw2D()
 
 		cgi_R_Font_DrawString(x_pos, y_pos, text, colorTable[CT_WHITE], cgs.media.qhFontMedium, -1, scale);
 	}
+
+	// the radial weapon / force wheel, while its key is held (cg_main.cpp)
+	CG_DrawMDWheel();
 }
 
 /*

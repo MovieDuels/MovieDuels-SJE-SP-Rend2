@@ -191,15 +191,15 @@ const char* Music_BaseStateToString(const MusicState_e eMusicState, const qboole
 
 		// info only, not map<> lookup keys (unlike above)...
 		//
-	case eBGRNDTRACK_ACTIONTRANS0: if (bDebugPrintQuery) return "action_tr0";
-	case eBGRNDTRACK_ACTIONTRANS1: if (bDebugPrintQuery) return "action_tr1";
-	case eBGRNDTRACK_ACTIONTRANS2: if (bDebugPrintQuery) return "action_tr2";
-	case eBGRNDTRACK_ACTIONTRANS3: if (bDebugPrintQuery) return "action_tr3";
-	case eBGRNDTRACK_EXPLORETRANS0: if (bDebugPrintQuery) return "explore_tr0";
-	case eBGRNDTRACK_EXPLORETRANS1: if (bDebugPrintQuery) return "explore_tr1";
-	case eBGRNDTRACK_EXPLORETRANS2: if (bDebugPrintQuery) return "explore_tr2";
-	case eBGRNDTRACK_EXPLORETRANS3: if (bDebugPrintQuery) return "explore_tr3";
-	case eBGRNDTRACK_FADE: if (bDebugPrintQuery) return "fade";
+	case eBGRNDTRACK_ACTIONTRANS0: if (bDebugPrintQuery) return "action_tr0"; [[fallthrough]];
+	case eBGRNDTRACK_ACTIONTRANS1: if (bDebugPrintQuery) return "action_tr1"; [[fallthrough]];
+	case eBGRNDTRACK_ACTIONTRANS2: if (bDebugPrintQuery) return "action_tr2"; [[fallthrough]];
+	case eBGRNDTRACK_ACTIONTRANS3: if (bDebugPrintQuery) return "action_tr3"; [[fallthrough]];
+	case eBGRNDTRACK_EXPLORETRANS0: if (bDebugPrintQuery) return "explore_tr0"; [[fallthrough]];
+	case eBGRNDTRACK_EXPLORETRANS1: if (bDebugPrintQuery) return "explore_tr1"; [[fallthrough]];
+	case eBGRNDTRACK_EXPLORETRANS2: if (bDebugPrintQuery) return "explore_tr2"; [[fallthrough]];
+	case eBGRNDTRACK_EXPLORETRANS3: if (bDebugPrintQuery) return "explore_tr3"; [[fallthrough]];
+	case eBGRNDTRACK_FADE: if (bDebugPrintQuery) return "fade"; [[fallthrough]];
 	default: break;
 	}
 

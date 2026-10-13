@@ -232,6 +232,7 @@ void CG_MiscModelExplosion(vec3_t mins, vec3_t maxs, const int size, const mater
 			effect = "chunks/rockbreakmed";
 			break;
 		}
+		break;
 	default:
 		break;
 	}

@@ -1523,6 +1523,10 @@ float R_GetChanceOfSaberFizz()
 {
 	float	chance = 0.0f;
 	int		numWater = 0;
+	if (!tr.weatherSystem) // no weather system yet (called before the renderer has a map)
+	{
+		return 0.0f;
+	}
 	if (tr.weatherSystem->weatherSlots[WEATHER_RAIN].active)
 	{
 		chance += (tr.weatherSystem->weatherSlots[WEATHER_RAIN].gravity / 20.0f);

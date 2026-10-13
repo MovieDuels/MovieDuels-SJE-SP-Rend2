@@ -226,6 +226,8 @@ int cmdcmp(const void* a, const void* b)
 
 /* This array MUST be sorted correctly by alphabetical name field */
 static consoleCommand_t commands[] = {
+	{"+md_wheel", CG_MDWheel_Down_f}, // the radial weapon / force wheel (cg_main.cpp), held
+	{"-md_wheel", CG_MDWheel_Up_f},
 	{"cam_disable", CMD_CGCam_Disable}, //gets out of camera mode for debuggin
 	{"cam_enable", CGCam_Enable}, //gets into camera mode for precise camera placement
 	{"dpforcenext", CG_DPNextForcePower_f},
@@ -241,6 +243,7 @@ static consoleCommand_t commands[] = {
 	{"invprev", CG_PrevInventory_f},
 	{"la_zoom", CG_ToggleLAGoggles},
 	{"loadhud", CG_LoadHud_f},
+	{"md_wheel_menu", CG_MDWheel_Menu_f}, // run by the old wheel menus (cg_main.cpp)
 	{"lock_disable", Lock_Disable}, //player can move now
 	{"nextframe", CG_TestModelNextFrame_f},
 	{"nextskin", CG_TestModelNextSkin_f},

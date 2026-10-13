@@ -135,6 +135,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #endif
 #include <qcommon/q_shared.h>
 #include <Ratl/ratl_common.h>
+#include <memory>
 namespace ragl
 {
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -1521,7 +1522,9 @@ namespace ragl
 
 			// Allocate Our Data Structures
 			//------------------------------
-			handle_heap<search_node>		open(mNodes);
+			// ~20 KB: on the heap, not the stack (C6262); one per call
+			const std::unique_ptr<handle_heap<search_node>> openBuf(new handle_heap<search_node>(mNodes));
+			handle_heap<search_node>&	open = *openBuf;
 
 			// Run Through The Open List
 			//---------------------------

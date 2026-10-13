@@ -307,7 +307,8 @@ double JSON_ValueGetDouble(const char *json, const char *jsonEnd)
 	if (!JSON_ValueGetString(json, jsonEnd, cValue, 256))
 		return 0.0;
 
-	sscanf(cValue, "%lf", &dValue);
+	int unused = sscanf(cValue, "%lf", &dValue);
+	(void)unused;
 
 	return dValue;
 }
@@ -324,7 +325,8 @@ float JSON_ValueGetFloat(const char *json, const char *jsonEnd)
 	if (!JSON_ValueGetString(json, jsonEnd, cValue, 256))
 		return 0.0f;
 
-	sscanf(cValue, "%f", &fValue);
+	int unused = sscanf(cValue, "%f", &fValue);
+	(void)unused;
 
 	return fValue;
 }
@@ -341,7 +343,8 @@ int JSON_ValueGetInt(const char *json, const char *jsonEnd)
 	if (!JSON_ValueGetString(json, jsonEnd, cValue, 256))
 		return 0;
 
-	sscanf(cValue, "%d", &iValue);
+	int unused = sscanf(cValue, "%d", &iValue);
+	(void)unused;
 
 	return iValue;
 }

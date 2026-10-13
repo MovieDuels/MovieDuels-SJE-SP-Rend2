@@ -1082,7 +1082,7 @@ static uint32_t ComputeFinalVertexColor(const byte* colors) {
 	// an optimization could be added here to compute the style[0] (which is always the world normal light)
 	uint32_t r = g = b = 0;
 	for (k = 0; k < MAXLIGHTMAPS; k++) {
-		if (tess.shader->styles[k] < LS_UNUSED) {
+		if (tess.shader->styles[k] < LS_UNUSED && tess.shader->styles[k] < MAX_LIGHT_STYLES) { // stay inside styleColors[] (a bad style stops, as an unused one does)
 			byte* style_color = styleColors[tess.shader->styles[k]];
 
 			r += static_cast<uint32_t>(*colors++) * static_cast<uint32_t>(*style_color++);
@@ -2064,6 +2064,92 @@ void RB_SurfaceBad(surfaceType_t* surf_type) {
 	ri.Printf(PRINT_ALL, "Bad surface tesselated.\n");
 }
 
+// Flare visibility used a synchronous glReadPixels of the depth under every flare on screen: each read stalls the CPU until
+// the GPU has drawn everything before it (mp/duel5, 19 flares: ~3 ms per frame, 0.5 ms without flares). The depth is now
+// copied into a pixel buffer object and read on the next frame, when the GPU is done with it: the same test, answered one
+// frame later. A flare's first frame on screen, a full pool or no PBO support use the old synchronous read.
+#define FLARE_PBO_SLOTS 256
+
+static GLuint flare_pbos[2][FLARE_PBO_SLOTS];
+static int flare_pbo_used[2];
+static int flare_pbo_frame = -1;
+static int flare_pbo_state; // 0 = not tried yet, 1 = ready, -1 = not available
+static PFNGLGENBUFFERSARBPROC flare_glGenBuffers;
+static PFNGLDELETEBUFFERSARBPROC flare_glDeleteBuffers;
+static PFNGLBINDBUFFERARBPROC flare_glBindBuffer;
+static PFNGLBUFFERDATAARBPROC flare_glBufferData;
+static PFNGLGETBUFFERSUBDATAARBPROC flare_glGetBufferSubData;
+
+static bool R_FlarePbosReady()
+{
+	if (flare_pbo_state == 0)
+	{
+		flare_pbo_state = -1;
+		if (glConfig.extensions_string && strstr(glConfig.extensions_string, "GL_ARB_pixel_buffer_object")
+			&& strstr(glConfig.extensions_string, "GL_ARB_vertex_buffer_object"))
+		{
+			flare_glGenBuffers = reinterpret_cast<PFNGLGENBUFFERSARBPROC>(ri.GL_GetProcAddress("glGenBuffersARB"));
+			flare_glDeleteBuffers = reinterpret_cast<PFNGLDELETEBUFFERSARBPROC>(ri.GL_GetProcAddress("glDeleteBuffersARB"));
+			flare_glBindBuffer = reinterpret_cast<PFNGLBINDBUFFERARBPROC>(ri.GL_GetProcAddress("glBindBufferARB"));
+			flare_glBufferData = reinterpret_cast<PFNGLBUFFERDATAARBPROC>(ri.GL_GetProcAddress("glBufferDataARB"));
+			flare_glGetBufferSubData = reinterpret_cast<PFNGLGETBUFFERSUBDATAARBPROC>(ri.GL_GetProcAddress("glGetBufferSubDataARB"));
+			if (flare_glGenBuffers && flare_glDeleteBuffers && flare_glBindBuffer && flare_glBufferData && flare_glGetBufferSubData)
+			{
+				flare_glGenBuffers(2 * FLARE_PBO_SLOTS, &flare_pbos[0][0]);
+				for (int set = 0; set < 2; set++)
+				{
+					for (int slot = 0; slot < FLARE_PBO_SLOTS; slot++)
+					{
+						flare_glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, flare_pbos[set][slot]);
+						flare_glBufferData(GL_PIXEL_PACK_BUFFER_ARB, sizeof(float), nullptr, GL_STREAM_READ_ARB);
+					}
+				}
+				flare_glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+				flare_pbo_used[0] = flare_pbo_used[1] = 0;
+				flare_pbo_frame = -1;
+				flare_pbo_state = 1;
+			}
+		}
+	}
+	return flare_pbo_state == 1;
+}
+
+// queue this frame's depth under the flare; read by RB_TestZFlare on the next frame
+static void R_FlarePboQueue(srfFlare_t* surf, const int frame, const GLint x, const GLint y, const float eye_z)
+{
+	const int set = frame & 1;
+	if (flare_pbo_frame != frame)
+	{
+		flare_pbo_frame = frame;
+		flare_pbo_used[set] = 0;
+	}
+	if (flare_pbo_used[set] >= FLARE_PBO_SLOTS)
+	{
+		surf->pboQueued = 0;	// pool full: next frame reads synchronously
+		return;
+	}
+	const int slot = flare_pbo_used[set]++;
+	flare_glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, flare_pbos[set][slot]);
+	qglReadPixels(x, y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	flare_glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+	surf->pboQueued = frame + 1;
+	surf->pboSlot = slot;
+	surf->pboEyeZ = eye_z;
+	surf->pboProj[0] = backEnd.viewParms.projectionMatrix[10];
+	surf->pboProj[1] = backEnd.viewParms.projectionMatrix[11];
+	surf->pboProj[2] = backEnd.viewParms.projectionMatrix[14];
+}
+
+void R_ShutdownFlarePbos()
+{
+	if (flare_pbo_state == 1 && flare_glDeleteBuffers)
+	{
+		flare_glDeleteBuffers(2 * FLARE_PBO_SLOTS, &flare_pbos[0][0]);
+	}
+	flare_pbo_state = 0;
+	flare_pbo_frame = -1;
+	flare_pbo_used[0] = flare_pbo_used[1] = 0;
+}
 /*
 ==================
 RB_TestZFlare
@@ -2071,12 +2157,12 @@ RB_TestZFlare
 This is called at surface tesselation time
 ==================
 */
-static bool RB_TestZFlare(vec3_t point) {
+static bool RB_TestZFlare(srfFlare_t* surf) {
 	vec4_t			eye, clip, normalized, window;
 
 	// if the point is off the screen, don't bother adding it
 	// calculate screen coordinates and depth
-	R_TransformModelToClip(point, backEnd.ori.model_matrix,
+	R_TransformModelToClip(surf->origin, backEnd.ori.model_matrix,
 		backEnd.viewParms.projectionMatrix, eye, clip);
 
 	// check to see if the point is completely off screen
@@ -2100,10 +2186,52 @@ static bool RB_TestZFlare(vec3_t point) {
 	if (r_flares->integer != 1) {	//skipping the the z-test
 		return true;
 	}
+
+	const GLint read_x = static_cast<GLint>(backEnd.viewParms.viewportX + window[0]);
+	const GLint read_y = static_cast<GLint>(backEnd.viewParms.viewportY + window[1]);
+
+	if (R_FlarePbosReady())
+	{
+		const int frame = tr.frameCount;
+		if (surf->pboQueued == frame + 1)
+		{
+			// already tested in an earlier view of this frame (portal / mirror): same answer
+			return surf->pboVisible != 0;
+		}
+
+		bool visible;
+		if (surf->pboQueued == frame)
+		{
+			// queued on the previous frame: that depth is ready by now
+			flare_glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, flare_pbos[(frame - 1) & 1][surf->pboSlot]);
+			flare_glGetBufferSubData(GL_PIXEL_PACK_BUFFER_ARB, 0, sizeof(float), &depth);
+			flare_glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+
+			const float screen_z = surf->pboProj[2] / ((2 * depth - 1) * surf->pboProj[1] - surf->pboProj[0]);
+			visible = surf->pboEyeZ - -screen_z < 24;
+		}
+		else
+		{
+			// first frame on screen: nothing queued yet, read it now (as before)
+			glState.finishCalled = qtrue;
+			qglReadPixels(read_x, read_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+
+			const float screen_z = backEnd.viewParms.projectionMatrix[14] /
+				((2 * depth - 1) * backEnd.viewParms.projectionMatrix[11] - backEnd.viewParms.projectionMatrix[10]);
+			visible = -eye[2] - -screen_z < 24;
+		}
+
+		R_FlarePboQueue(surf, frame, read_x, read_y, -eye[2]);
+		surf->pboVisible = visible ? 1 : 0;
+		return visible;
+	}
+
+	// no pixel buffer objects: synchronous read
 	// doing a readpixels is as good as doing a glFinish(), so
-	// don't bother with another sync
-	glState.finishCalled = qfalse;
-	qglReadPixels(backEnd.viewParms.viewportX + window[0], backEnd.viewParms.viewportY + window[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+	// don't bother with another sync (this was qfalse - the opposite of this comment: every frame with a flare on screen
+	// then also ran a full qglFinish() before the buffer swap)
+	glState.finishCalled = qtrue;
+	qglReadPixels(read_x, read_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 
 	const float screen_z = backEnd.viewParms.projectionMatrix[14] /
 		((2 * depth - 1) * backEnd.viewParms.projectionMatrix[11] - backEnd.viewParms.projectionMatrix[10]);
@@ -2111,7 +2239,6 @@ static bool RB_TestZFlare(vec3_t point) {
 	const bool visible = -eye[2] - -screen_z < 24;
 	return visible;
 }
-
 void RB_SurfaceFlare(srfFlare_t* surf) {
 	vec3_t		left, up;
 	byte		color[4]{};
@@ -2122,7 +2249,7 @@ void RB_SurfaceFlare(srfFlare_t* surf) {
 		return;
 	}
 
-	if (!RB_TestZFlare(surf->origin)) {
+	if (!RB_TestZFlare(surf)) {
 		return;
 	}
 

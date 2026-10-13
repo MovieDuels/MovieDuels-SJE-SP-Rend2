@@ -288,11 +288,11 @@ public:
 	};
 	using TFlags = ratl::bits_vs<FLAG_MAX>;
 
-	float	mAlpha;
+	float	mAlpha = 1.0f;
 	TFlags	mFlags;
 	CVec3	mPosition;
 	CVec3	mVelocity;
-	float	mMass;			// A higher number will more greatly resist force and result in greater gravity
+	float	mMass = 1.0f;			// A higher number will more greatly resist force and result in greater gravity
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -301,17 +301,17 @@ public:
 class	CWindZone
 {
 public:
-	bool		mGlobal;
+	bool		mGlobal = false;
 	SVecRange	mRBounds;
 	SVecRange	mRVelocity;
-	SIntRange	mRDuration;
-	SIntRange	mRDeadTime;
-	float		mMaxDeltaVelocityPerUpdate;
-	float		mChanceOfDeadTime;
+	SIntRange	mRDuration = {};
+	SIntRange	mRDeadTime = {};
+	float		mMaxDeltaVelocityPerUpdate = 0.0f;
+	float		mChanceOfDeadTime = 0.0f;
 
 	CVec3		mCurrentVelocity;
 	CVec3		mTargetVelocity;
-	int			mTargetVelocityTimeRemaining;
+	int			mTargetVelocityTimeRemaining = 0;
 
 public:
 	////////////////////////////////////////////////////////////////////////////////////
@@ -444,14 +444,14 @@ private:
 	struct SWeatherZone
 	{
 		static bool	mMarkedOutside;
-		uint32_t* mPointCache;			// malloc block ptr
+		uint32_t* mPointCache = nullptr;			// malloc block ptr
 
-		int			miPointCacheByteSize;	// size of block
+		int			miPointCacheByteSize = 0;	// size of block
 		SVecRange	mExtents;
 		SVecRange	mSize;
-		int			mWidth;
-		int			mHeight;
-		int			mDepth;
+		int			mWidth = 0;
+		int			mHeight = 0;
+		int			mDepth = 0;
 
 		void WriteToDisk(const fileHandle_t f) const
 		{

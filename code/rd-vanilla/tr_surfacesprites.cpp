@@ -642,8 +642,8 @@ static void RB_DrawVerticalSurfaceSprites(shaderStage_t* stage, shaderCommands_t
 		}
 		l1 = input->vertexColors[curvert][2];
 		a1 = ss_vert_alpha[curvert];
-		fog1[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1));
-		fog1[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1) + 1);
+		fog1[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1));
+		fog1[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1) + 1);
 		winddiff1[0] = ss_vert_wind_dir[curvert][0];
 		winddiff1[1] = ss_vert_wind_dir[curvert][1];
 		windforce1 = ss_vert_wind_force[curvert];
@@ -666,8 +666,8 @@ static void RB_DrawVerticalSurfaceSprites(shaderStage_t* stage, shaderCommands_t
 		}
 		l2 = input->vertexColors[curvert][2];
 		a2 = ss_vert_alpha[curvert];
-		fog2[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1));
-		fog2[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1) + 1);
+		fog2[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1));
+		fog2[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1) + 1);
 		winddiff2[0] = ss_vert_wind_dir[curvert][0];
 		winddiff2[1] = ss_vert_wind_dir[curvert][1];
 		windforce2 = ss_vert_wind_force[curvert];
@@ -690,8 +690,8 @@ static void RB_DrawVerticalSurfaceSprites(shaderStage_t* stage, shaderCommands_t
 		}
 		l3 = input->vertexColors[curvert][2];
 		a3 = ss_vert_alpha[curvert];
-		fog3[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1));
-		fog3[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1) + 1);
+		fog3[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1));
+		fog3[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1) + 1);
 		winddiff3[0] = ss_vert_wind_dir[curvert][0];
 		winddiff3[1] = ss_vert_wind_dir[curvert][1];
 		windforce3 = ss_vert_wind_force[curvert];
@@ -974,8 +974,8 @@ static void RB_DrawOrientedSurfaceSprites(const shaderStage_t* stage, const shad
 		}
 		const float l1 = input->vertexColors[curvert][2];
 		const float a1 = ss_vert_alpha[curvert];
-		fog1[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1));
-		fog1[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1) + 1);
+		fog1[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1));
+		fog1[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1) + 1);
 
 		curvert = input->indexes[curindex + 1];
 		VectorCopy(input->xyz[curvert], v2);
@@ -985,8 +985,8 @@ static void RB_DrawOrientedSurfaceSprites(const shaderStage_t* stage, const shad
 		}
 		const float l2 = input->vertexColors[curvert][2];
 		const float a2 = ss_vert_alpha[curvert];
-		fog2[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1));
-		fog2[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1) + 1);
+		fog2[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1));
+		fog2[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1) + 1);
 
 		curvert = input->indexes[curindex + 2];
 		VectorCopy(input->xyz[curvert], v3);
@@ -996,8 +996,8 @@ static void RB_DrawOrientedSurfaceSprites(const shaderStage_t* stage, const shad
 		}
 		const float l3 = input->vertexColors[curvert][2];
 		const float a3 = ss_vert_alpha[curvert];
-		fog3[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1));
-		fog3[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (curvert << 1) + 1);
+		fog3[0] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1));
+		fog3[1] = *(reinterpret_cast<float*>(tess.svars.texcoords[0]) + (static_cast<size_t>(curvert) << 1) + 1);
 
 		if (a1 <= 0.0 && a2 <= 0.0 && a3 <= 0.0)
 		{

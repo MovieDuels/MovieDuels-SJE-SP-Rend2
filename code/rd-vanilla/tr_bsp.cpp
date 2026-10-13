@@ -1248,27 +1248,42 @@ static void R_LoadEntities(const lump_t* l, world_t& worldData)
 		Q_strncpyz(value, token, sizeof value);
 		if (!Q_stricmp(keyname, "distanceCull"))
 		{
-			sscanf(value, "%f", &tr.distanceCull);
+			if (sscanf(value, "%f", &tr.distanceCull) != 1)
+			{
+				ri.Printf(PRINT_DEVELOPER, "WARNING: bad worldspawn value '%s'\n", value);
+			}
 			continue;
 		}
 		//check for linear fog -rww
 		if (!Q_stricmp(keyname, "linFogStart")) {
-			sscanf(value, "%f", &tr.rangedFog);
+			if (sscanf(value, "%f", &tr.rangedFog) != 1)
+			{
+				ri.Printf(PRINT_DEVELOPER, "WARNING: bad worldspawn value '%s'\n", value);
+			}
 			tr.rangedFog = -tr.rangedFog;
 			continue;
 		}
 		// check for a different grid size
 		if (!Q_stricmp(keyname, "gridsize")) {
-			sscanf(value, "%f %f %f", &w->lightGridSize[0], &w->lightGridSize[1], &w->lightGridSize[2]);
+			if (sscanf(value, "%f %f %f", &w->lightGridSize[0], &w->lightGridSize[1], &w->lightGridSize[2]) != 3)
+			{
+				ri.Printf(PRINT_DEVELOPER, "WARNING: bad worldspawn value '%s'\n", value);
+			}
 			continue;
 		}
 		// find the optional world ambient for arioche
 		if (!Q_stricmp(keyname, "_color")) {
-			sscanf(value, "%f %f %f", &tr.sunAmbient[0], &tr.sunAmbient[1], &tr.sunAmbient[2]);
+			if (sscanf(value, "%f %f %f", &tr.sunAmbient[0], &tr.sunAmbient[1], &tr.sunAmbient[2]) != 3)
+			{
+				ri.Printf(PRINT_DEVELOPER, "WARNING: bad worldspawn value '%s'\n", value);
+			}
 			continue;
 		}
 		if (!Q_stricmp(keyname, "ambient")) {
-			sscanf(value, "%f", &ambient);
+			if (sscanf(value, "%f", &ambient) != 1)
+			{
+				ri.Printf(PRINT_DEVELOPER, "WARNING: bad worldspawn value '%s'\n", value);
+			}
 		}
 	}
 	//both default to 1 so no harm if not present.

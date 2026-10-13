@@ -903,6 +903,30 @@ static void R_TakeScreenshot(const int x, const int y, const int width, const in
 	R_Free(allbuf);
 }
 
+// GL functions for the video read back (tr_video_encoder.cpp); the buffer ones (GL_ARB_pixel_buffer_object) are loaded on
+// first use - without them the frame is read synchronously as before
+static videoReadbackGL_t s_videoGL;
+static bool s_videoGLLoaded = false;
+
+static const videoReadbackGL_t& R_VideoReadbackGL()
+{
+	if (!s_videoGLLoaded)
+	{
+		s_videoGLLoaded = true;
+		s_videoGL = videoReadbackGL_t();
+		s_videoGL.ReadPixels = qglReadPixels;
+		if (glConfig.extensions_string && strstr(glConfig.extensions_string, "GL_ARB_pixel_buffer_object")
+			&& strstr(glConfig.extensions_string, "GL_ARB_vertex_buffer_object"))
+		{
+			s_videoGL.GenBuffers = reinterpret_cast<decltype(s_videoGL.GenBuffers)>(ri.GL_GetProcAddress("glGenBuffersARB"));
+			s_videoGL.DeleteBuffers = reinterpret_cast<decltype(s_videoGL.DeleteBuffers)>(ri.GL_GetProcAddress("glDeleteBuffersARB"));
+			s_videoGL.BindBuffer = reinterpret_cast<decltype(s_videoGL.BindBuffer)>(ri.GL_GetProcAddress("glBindBufferARB"));
+			s_videoGL.BufferData = reinterpret_cast<decltype(s_videoGL.BufferData)>(ri.GL_GetProcAddress("glBufferDataARB"));
+			s_videoGL.GetBufferSubData = reinterpret_cast<decltype(s_videoGL.GetBufferSubData)>(ri.GL_GetProcAddress("glGetBufferSubDataARB"));
+		}
+	}
+	return s_videoGL;
+}
 /*
 ==================
 RB_TakeVideoFrameCmd (as MP)
@@ -923,16 +947,8 @@ const void* RB_TakeVideoFrameCmd(const void* data)
 	const int padlen = padwidth - linelen;
 	// the read back is done here; the compression and the writing run on workers (tr_video_encoder.cpp) - compressing
 	// here cost tens of milliseconds per captured frame
-	byte* frame = R_VideoEncoderBegin(static_cast<size_t>(padwidth) * cmd->height);
-
-	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, frame);
-
-	// gamma correct
-	if (glConfig.deviceSupportsGamma)
-		R_GammaCorrect(frame, padwidth * cmd->height);
-
-	R_VideoEncoderSubmit(cmd->width, cmd->height, padlen, r_aviMotionJpegQuality->integer, cmd->motionJpeg,
-		ri.CL_WriteAVIVideoFrame);
+	R_VideoCaptureFrame(R_VideoReadbackGL(), cmd->width, cmd->height, padwidth, r_aviMotionJpegQuality->integer,
+		cmd->motionJpeg, glConfig.deviceSupportsGamma ? R_GammaCorrect : nullptr, ri.CL_WriteAVIVideoFrame);
 
 	return cmd + 1;
 }
@@ -940,6 +956,7 @@ const void* RB_TakeVideoFrameCmd(const void* data)
 // SP: every frame still being compressed is written (the client calls it before closing the AVI file)
 static void RE_FlushVideoFrames(void)
 {
+	R_VideoCaptureFlush(R_VideoReadbackGL(), ri.CL_WriteAVIVideoFrame); // the last captured frame first
 	R_VideoEncoderFlush(ri.CL_WriteAVIVideoFrame, qtrue);
 }
 
@@ -1854,6 +1871,9 @@ extern void R_ShutdownWorldEffects();
 
 void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 {
+	R_ShutdownFlarePbos(); // flare depth-read buffers (the GL context may go away below)
+	R_VideoCaptureShutdown(R_VideoReadbackGL()); // its pixel buffer objects (the GL context may go away below)
+	s_videoGLLoaded = false;
 	R_VideoEncoderShutdown(); // the recording workers (a recording's frames were flushed when its file closed)
 
 	for (size_t i = 0; i < numCommands; i++)

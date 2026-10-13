@@ -1159,6 +1159,25 @@ void R_ScreenShotJPEG_f(void) {
 
 //============================================================================
 
+// GL functions for the video read back (tr_video_encoder.cpp)
+static videoReadbackGL_t s_videoGL;
+static bool s_videoGLLoaded = false;
+
+static const videoReadbackGL_t& R_VideoReadbackGL()
+{
+	if (!s_videoGLLoaded)
+	{
+		s_videoGLLoaded = true;
+		s_videoGL = videoReadbackGL_t();
+		s_videoGL.ReadPixels = qglReadPixels;
+		s_videoGL.GenBuffers = qglGenBuffers;
+		s_videoGL.DeleteBuffers = qglDeleteBuffers;
+		s_videoGL.BindBuffer = qglBindBuffer;
+		s_videoGL.BufferData = qglBufferData;
+		s_videoGL.GetBufferSubData = qglGetBufferSubData;
+	}
+	return s_videoGL;
+}
 /*
 ==================
 RB_TakeVideoFrameCmd
@@ -1203,16 +1222,8 @@ const void* RB_TakeVideoFrameCmd(const void* data)
 	padlen = padwidth - linelen;
 	// the read back is done here; the compression and the writing run on workers (tr_video_encoder.cpp) - compressing
 	// here cost tens of milliseconds per captured frame
-	byte* frame = R_VideoEncoderBegin(static_cast<size_t>(padwidth) * cmd->height);
-
-	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, frame);
-
-	// gamma correct
-	if (glConfig.deviceSupportsGamma)
-		R_GammaCorrect(frame, padwidth * cmd->height);
-
-	R_VideoEncoderSubmit(cmd->width, cmd->height, padlen, r_aviMotionJpegQuality->integer, cmd->motionJpeg,
-		ri.CL_WriteAVIVideoFrame);
+	R_VideoCaptureFrame(R_VideoReadbackGL(), cmd->width, cmd->height, padwidth, r_aviMotionJpegQuality->integer,
+		cmd->motionJpeg, glConfig.deviceSupportsGamma ? R_GammaCorrect : nullptr, ri.CL_WriteAVIVideoFrame);
 
 	return (const void*)(cmd + 1);
 }
@@ -1220,6 +1231,7 @@ const void* RB_TakeVideoFrameCmd(const void* data)
 // SP: every frame still being compressed is written (the client calls it before closing the AVI file)
 static void RE_FlushVideoFrames(void)
 {
+	R_VideoCaptureFlush(R_VideoReadbackGL(), ri.CL_WriteAVIVideoFrame); // the last captured frame first
 	R_VideoEncoderFlush(ri.CL_WriteAVIVideoFrame, qtrue);
 }
 
@@ -2256,6 +2268,8 @@ RE_Shutdown
 */
 void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 {
+	R_VideoCaptureShutdown(R_VideoReadbackGL()); // its pixel buffer objects (the GL context may go away below)
+	s_videoGLLoaded = false;
 	R_VideoEncoderShutdown(); // the recording workers (a recording's frames were flushed when its file closed)
 
 	ri.Printf(PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow);

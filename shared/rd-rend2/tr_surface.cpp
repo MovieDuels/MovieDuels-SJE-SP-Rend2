@@ -228,7 +228,7 @@ void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4])
 
 void RB_InstantQuad(vec4_t quadVerts[4])
 {
-	vec2_t texCoords[4]{};
+	vec2_t texCoords[4]; // all set below; no {} (it made /analyze report a NULL dereference, C6011)
 
 	VectorSet2(texCoords[0], 0.0f, 0.0f);
 	VectorSet2(texCoords[1], 1.0f, 0.0f);
@@ -533,7 +533,8 @@ static qboolean RB_SurfaceVbo(
 		}
 	}
 
-	if (mergeBack != -1 && mergeForward == -1)
+	// ">= 0" / "< 0" instead of "!= -1" / "== -1": same result (an index is -1 or a valid slot), and /analyze can see it is not negative
+	if (mergeBack >= 0 && mergeForward < 0)
 	{
 		tess.multiDrawNumIndexes[mergeBack] += numIndexes;
 		tess.multiDrawLastIndex[mergeBack] = tess.multiDrawFirstIndex[mergeBack] + tess.multiDrawNumIndexes[mergeBack];
@@ -541,7 +542,7 @@ static qboolean RB_SurfaceVbo(
 		tess.multiDrawMaxIndex[mergeBack] = MAX(tess.multiDrawMaxIndex[mergeBack], maxIndex);
 		backEnd.pc.c_multidrawsMerged++;
 	}
-	else if (mergeBack == -1 && mergeForward != -1)
+	else if (mergeBack < 0 && mergeForward >= 0)
 	{
 		tess.multiDrawNumIndexes[mergeForward] += numIndexes;
 		tess.multiDrawFirstIndex[mergeForward] = (glIndex_t*)firstIndexOffset;
@@ -550,7 +551,7 @@ static qboolean RB_SurfaceVbo(
 		tess.multiDrawMaxIndex[mergeForward] = MAX(tess.multiDrawMaxIndex[mergeForward], maxIndex);
 		backEnd.pc.c_multidrawsMerged++;
 	}
-	else if (mergeBack != -1 && mergeForward != -1)
+	else if (mergeBack >= 0 && mergeForward >= 0)
 	{
 		tess.multiDrawNumIndexes[mergeBack] += numIndexes + tess.multiDrawNumIndexes[mergeForward];
 		tess.multiDrawLastIndex[mergeBack] = tess.multiDrawFirstIndex[mergeBack] + tess.multiDrawNumIndexes[mergeBack];
@@ -565,7 +566,7 @@ static qboolean RB_SurfaceVbo(
 		}
 		backEnd.pc.c_multidrawsMerged += 2;
 	}
-	else if (mergeBack == -1 && mergeForward == -1)
+	else if (mergeBack < 0 && mergeForward < 0)
 	{
 		tess.multiDrawNumIndexes[tess.multiDrawPrimitives] = numIndexes;
 		tess.multiDrawFirstIndex[tess.multiDrawPrimitives] = (glIndex_t*)firstIndexOffset;
@@ -2539,7 +2540,8 @@ static void RB_SurfaceVBOMDVMesh(srfVBOMDVMesh_t* surface)
 		}
 	}
 
-	if (mergeBack != -1 && mergeForward == -1)
+	// ">= 0" / "< 0" instead of "!= -1" / "== -1": same result (an index is -1 or a valid slot), and /analyze can see it is not negative
+	if (mergeBack >= 0 && mergeForward < 0)
 	{
 		tess.multiDrawNumIndexes[mergeBack] += surface->numIndexes;
 		tess.multiDrawLastIndex[mergeBack] = tess.multiDrawFirstIndex[mergeBack] + tess.multiDrawNumIndexes[mergeBack];
@@ -2547,7 +2549,7 @@ static void RB_SurfaceVBOMDVMesh(srfVBOMDVMesh_t* surface)
 		tess.multiDrawMaxIndex[mergeBack] = MAX(tess.multiDrawMaxIndex[mergeBack], surface->maxIndex);
 		backEnd.pc.c_multidrawsMerged++;
 	}
-	else if (mergeBack == -1 && mergeForward != -1)
+	else if (mergeBack < 0 && mergeForward >= 0)
 	{
 		tess.multiDrawNumIndexes[mergeForward] += surface->numIndexes;
 		tess.multiDrawFirstIndex[mergeForward] = (glIndex_t*)firstIndexOffset;
@@ -2556,7 +2558,7 @@ static void RB_SurfaceVBOMDVMesh(srfVBOMDVMesh_t* surface)
 		tess.multiDrawMaxIndex[mergeForward] = MAX(tess.multiDrawMaxIndex[mergeForward], surface->maxIndex);
 		backEnd.pc.c_multidrawsMerged++;
 	}
-	else if (mergeBack != -1 && mergeForward != -1)
+	else if (mergeBack >= 0 && mergeForward >= 0)
 	{
 		tess.multiDrawNumIndexes[mergeBack] += surface->numIndexes + tess.multiDrawNumIndexes[mergeForward];
 		tess.multiDrawLastIndex[mergeBack] = tess.multiDrawFirstIndex[mergeBack] + tess.multiDrawNumIndexes[mergeBack];
@@ -2571,7 +2573,7 @@ static void RB_SurfaceVBOMDVMesh(srfVBOMDVMesh_t* surface)
 		}
 		backEnd.pc.c_multidrawsMerged += 2;
 	}
-	else if (mergeBack == -1 && mergeForward == -1)
+	else if (mergeBack < 0 && mergeForward < 0)
 	{
 		tess.multiDrawNumIndexes[tess.multiDrawPrimitives] = surface->numIndexes;
 		tess.multiDrawFirstIndex[tess.multiDrawPrimitives] = (glIndex_t*)firstIndexOffset;

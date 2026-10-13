@@ -45,7 +45,8 @@ static image_t* hashTable[FILE_HASH_SIZE];
 /*
 Extends the size of the images pool allocator
 */
-static void R_ExtendImagesPool()
+// returns the new head of tr.imagesFreeList (never NULL)
+static image_t* R_ExtendImagesPool()
 {
 	ImagesPool* pool = (ImagesPool*)R_Malloc(sizeof(*pool), TAG_GENERAL);
 	image_t* freeImages = (image_t*)R_Malloc(sizeof(*freeImages) * NUM_IMAGES_PER_POOL_ALLOC, TAG_IMAGE_T);
@@ -61,6 +62,7 @@ static void R_ExtendImagesPool()
 	imagesPool = pool;
 
 	tr.imagesFreeList = freeImages;
+	return freeImages;
 }
 
 /*
@@ -333,7 +335,7 @@ static void ResampleTexture(byte* in, int inwidth, int inheight, byte* out,
 	int		i, j;
 	byte* inrow, * inrow2;
 	int		frac, fracstep;
-	int		p1[2048], p2[2048];
+	static int p1[2048], p2[2048]; // off the stack (C6262); [0, outwidth) is written before it is read
 	byte* pix1, * pix2, * pix3, * pix4;
 
 	if (outwidth > 2048)
@@ -1127,8 +1129,8 @@ static void FillInNormalizedZ(const byte* in, byte* out, int width, int height)
 // assumes that data has already been expanded into a 2x2 grid
 static void FCBIByBlock(byte* data, int width, int height, qboolean clampToEdge, qboolean normalized)
 {
-	byte workdata[WORKBLOCK_REALSIZE * WORKBLOCK_REALSIZE * 4];
-	byte outdata[WORKBLOCK_REALSIZE * WORKBLOCK_REALSIZE * 4];
+	static byte workdata[WORKBLOCK_REALSIZE * WORKBLOCK_REALSIZE * 4]; // off the stack (C6262)
+	static byte outdata[WORKBLOCK_REALSIZE * WORKBLOCK_REALSIZE * 4]; // off the stack (C6262)
 	byte* inbyte, * outbyte;
 	int x, y;
 	int srcx, srcy;
@@ -2260,14 +2262,14 @@ static image_t* R_AllocImage()
 {
 	image_t* result;
 
-	if (!tr.imagesFreeList)
+	result = tr.imagesFreeList;
+	if (!result)
 	{
-		R_ExtendImagesPool();
+		result = R_ExtendImagesPool();
 	}
 
 	// Remove from free list
-	result = tr.imagesFreeList;
-	tr.imagesFreeList = tr.imagesFreeList->poolNext;
+	tr.imagesFreeList = result->poolNext;
 
 	// Add to list of used images
 	result->poolNext = tr.images;
@@ -3214,7 +3216,8 @@ static void R_CreateEnvBrdfLUT(void) {
 	if (!r_cubeMapping->integer)
 		return;
 
-	uint16_t data[LUT_WIDTH][LUT_HEIGHT][3];
+	static uint16_t data[LUT_WIDTH][LUT_HEIGHT][3]; // ~98 KB, off the stack (C6262)
+	memset(data, 0, sizeof(data));
 
 	unsigned const numSamples = 1024;
 

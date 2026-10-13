@@ -901,6 +901,7 @@ void CG_RegisterWeapon(const int weapon_num)
 		cgs.effects.bryarWallImpactEffect3 = theFxScheduler.RegisterEffect("bryar/wall_impact3");
 		cgs.effects.bryarFleshImpactEffect = theFxScheduler.RegisterEffect("bryar/flesh_impact");
 
+		[[fallthrough]];
 	case WP_REY:
 		cgs.effects.bryarShotEffect = theFxScheduler.RegisterEffect("bryar/shot");
 		theFxScheduler.RegisterEffect("bryar/NPCshot");
@@ -1819,7 +1820,12 @@ void CG_AddViewWeapon(playerState_t* ps)
 		return;
 	}
 
-	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING)
+	if (!cent->gent || !cent->gent->client)
+	{
+		return; // drawn from the player's own entity, used unchecked further down
+	}
+
+	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING && CG_ContinuousFxReady(cent->currentState.number, CFX_VIEW_LIGHTNING))
 	{
 		//doing the electrocuting
 		vec3_t temp;
@@ -1853,7 +1859,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 		}
 	}
 
-	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING_STRIKE)
+	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING_STRIKE && CG_ContinuousFxReady(cent->currentState.number, CFX_VIEW_LIGHTNING_STRIKE))
 	{
 		//doing the lightning_strike
 		vec3_t t_ang, temp;
@@ -1877,7 +1883,7 @@ void CG_AddViewWeapon(playerState_t* ps)
 		}
 	}
 
-	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_DRAIN)
+	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_DRAIN && CG_ContinuousFxReady(cent->currentState.number, CFX_VIEW_DRAIN))
 	{
 		//doing the draining
 		vec3_t temp;
@@ -2352,7 +2358,12 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 		return;
 	}
 
-	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING)
+	if (!cent->gent || !cent->gent->client)
+	{
+		return; // drawn from the player's own entity, used unchecked further down
+	}
+
+	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING && CG_ContinuousFxReady(cent->currentState.number, CFX_VIEW_LIGHTNING))
 	{
 		//doing the electrocuting
 		vec3_t temp;
@@ -2386,7 +2397,7 @@ void CG_AddViewWeaponDuals(playerState_t* ps)
 		}
 	}
 
-	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_DRAIN)
+	if (cent->gent && cent->gent->client && cent->gent->client->ps.forcePowersActive & 1 << FP_DRAIN && CG_ContinuousFxReady(cent->currentState.number, CFX_VIEW_DRAIN))
 	{
 		//doing the draining
 		vec3_t temp;
@@ -4675,6 +4686,11 @@ CG_NextWeapon_f
 */
 void CG_NextWeapon_f()
 {
+	if (CG_MDWheel_SwitchRing())
+	{
+		return; // the mouse wheel switches the radial wheel's rings
+	}
+
 	if (!cg.snap)
 	{
 		return;
@@ -4956,6 +4972,11 @@ CG_PrevWeapon_f
 */
 void CG_PrevWeapon_f()
 {
+	if (CG_MDWheel_SwitchRing())
+	{
+		return; // the mouse wheel switches the radial wheel's rings
+	}
+
 	if (!cg.snap)
 	{
 		return;

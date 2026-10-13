@@ -703,6 +703,7 @@ static void ParseAnimationEvtBlock(const int gla_index, const unsigned short mod
 			}
 			// fall through to normal sound
 
+			[[fallthrough]];
 		case AEV_SOUND: //# animID AEV_SOUND framenum soundpath randomlow randomhi chancetoplay
 			// get soundstring
 			token = COM_Parse(text_p);

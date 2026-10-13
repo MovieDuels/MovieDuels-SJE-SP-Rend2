@@ -62,31 +62,29 @@ void R_AddEdgeDef(const int i1, const int i2, const int facing)
 	numEdgeDefs[i1]++;
 }
 
-void R_RenderShadowEdges() {
-	int		i;
-	int		c;
-	int		i2;
-	//int		c_edges, c_rejected;
-#if 0
-	int		c2, k;
-	int		hit[2];
-#endif
-#ifdef _STENCIL_REVERSE
-	int		num_tris;
-	int		o1, o2, o3;
-#endif
+// Shadow volume of the current surface, built once per surface by R_BuildShadowVolume() and drawn by R_RenderShadowEdges()
+// with one glDrawElements per stencil pass. It used to be drawn in immediate mode with one qglBegin/qglEnd per edge quad and
+// per cap triangle (tens of thousands of GL calls per model and pass, half the frame rate with cg_shadows 2 and a few
+// characters on screen). Same triangles, same order, same winding: vertexes 0..n-1 = tess.xyz, n..2n-1 = shadowXyz.
+static	vec3_t		shadowVolumeXyz[SHADER_MAX_VERTEXES * 2];
+static	glIndex_t	shadowVolumeIndexes[SHADER_MAX_INDEXES * 8];	// <= 3 edges * 6 + 2 caps * 3 per triangle
+static	int			numShadowVolumeIndexes;
+
+static void R_BuildShadowVolume() {
+	const int n = tess.numVertexes;
+	glIndex_t* out = shadowVolumeIndexes;
+
+	for (int i = 0; i < n; i++) {
+		VectorCopy(tess.xyz[i], shadowVolumeXyz[i]);
+		VectorCopy(shadowXyz[i], shadowVolumeXyz[n + i]);
+	}
 
 	// an edge is NOT a silhouette edge if its face doesn't face the light,
 	// or if it has a reverse paired edge that also faces the light.
 	// A well behaved polyhedron would have exactly two faces for each edge,
 	// but lots of models have dangling edges or overfanned edges
-#if 0
-	c_edges = 0;
-	c_rejected = 0;
-#endif
-
-	for (i = 0; i < tess.numVertexes; i++) {
-		c = numEdgeDefs[i];
+	for (int i = 0; i < n; i++) {
+		const int c = numEdgeDefs[i];
 		for (int j = 0; j < c; j++) {
 			if (!edgeDefs[i][j].facing) {
 				continue;
@@ -95,75 +93,88 @@ void R_RenderShadowEdges() {
 			//with this system we can still get edges shared by more than 2 tris which
 			//produces artifacts including seeing the shadow through walls. So for now
 			//we are going to render all edges even though it is a tiny bit slower. -rww
-#if 1
-			i2 = edgeDefs[i][j].i2;
-			qglBegin(GL_TRIANGLE_STRIP);
-			qglVertex3fv(tess.xyz[i]);
-			qglVertex3fv(shadowXyz[i]);
-			qglVertex3fv(tess.xyz[i2]);
-			qglVertex3fv(shadowXyz[i2]);
-			qglEnd();
-#else
-			hit[0] = 0;
-			hit[1] = 0;
-
-			i2 = edgeDefs[i][j].i2;
-			c2 = numEdgeDefs[i2];
-			for (k = 0; k < c2; k++) {
-				if (edgeDefs[i2][k].i2 == i) {
-					hit[edgeDefs[i2][k].facing]++;
-				}
-			}
-
-			// if it doesn't share the edge with another front facing
-			// triangle, it is a sil edge
-			if (hit[1] == 0) {
-				qglBegin(GL_TRIANGLE_STRIP);
-				qglVertex3fv(tess.xyz[i]);
-				qglVertex3fv(shadowXyz[i]);
-				qglVertex3fv(tess.xyz[i2]);
-				qglVertex3fv(shadowXyz[i2]);
-				qglEnd();
-				c_edges++;
-			}
-			else {
-				c_rejected++;
-			}
-#endif
+			// (was a GL_TRIANGLE_STRIP of xyz[i], shadow[i], xyz[i2], shadow[i2] = these two triangles)
+			const int i2 = edgeDefs[i][j].i2;
+			*out++ = i;
+			*out++ = n + i;
+			*out++ = i2;
+			*out++ = i2;
+			*out++ = n + i;
+			*out++ = n + i2;
 		}
 	}
 
 #ifdef _STENCIL_REVERSE
 	//Carmack Reverse<tm> method requires that volumes
 	//be capped properly -rww
-	num_tris = tess.numIndexes / 3;
+	const int numTris = tess.numIndexes / 3;
 
-	for (i = 0; i < num_tris; i++)
+	for (int i = 0; i < numTris; i++)
 	{
 		if (!facing[i])
 		{
 			continue;
 		}
 
-		o1 = tess.indexes[i * 3 + 0];
-		o2 = tess.indexes[i * 3 + 1];
-		o3 = tess.indexes[i * 3 + 2];
+		const glIndex_t o1 = tess.indexes[i * 3 + 0];
+		const glIndex_t o2 = tess.indexes[i * 3 + 1];
+		const glIndex_t o3 = tess.indexes[i * 3 + 2];
 
-		qglBegin(GL_TRIANGLES);
-		qglVertex3fv(tess.xyz[o1]);
-		qglVertex3fv(tess.xyz[o2]);
-		qglVertex3fv(tess.xyz[o3]);
-		qglEnd();
-		qglBegin(GL_TRIANGLES);
-		qglVertex3fv(shadowXyz[o3]);
-		qglVertex3fv(shadowXyz[o2]);
-		qglVertex3fv(shadowXyz[o1]);
-		qglEnd();
+		*out++ = o1;
+		*out++ = o2;
+		*out++ = o3;
+		*out++ = n + o3;
+		*out++ = n + o2;
+		*out++ = n + o1;
 	}
 #endif
+
+	numShadowVolumeIndexes = static_cast<int>(out - shadowVolumeIndexes);
 }
 
-//#define _DEBUG_STENCIL_SHADOWS
+static void R_RenderShadowEdges() {
+	if (numShadowVolumeIndexes <= 0) {
+		return;
+	}
+
+	// only the vertex array may be on for this draw (the index range is 2 * numVertexes): turn the color and
+	// texture coordinate arrays off and put everything back afterwards, so the next surface sees the same state
+	const int oldTmu = glState.currenttmu;
+	const int numUnits = qglActiveTextureARB ? (glConfig.maxActiveTextures < NUM_TEXTURE_BUNDLES ? glConfig.maxActiveTextures : NUM_TEXTURE_BUNDLES) : 1;
+	qboolean texArray[NUM_TEXTURE_BUNDLES] = { qfalse };
+	for (int t = 0; t < numUnits; t++) {
+		if (qglActiveTextureARB) {
+			GL_SelectTexture(t);
+		}
+		texArray[t] = qglIsEnabled(GL_TEXTURE_COORD_ARRAY) ? qtrue : qfalse;
+		if (texArray[t]) {
+			qglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
+	}
+	const qboolean colorArray = qglIsEnabled(GL_COLOR_ARRAY) ? qtrue : qfalse;
+	if (colorArray) {
+		qglDisableClientState(GL_COLOR_ARRAY);
+	}
+
+	qglVertexPointer(3, GL_FLOAT, 0, shadowVolumeXyz);
+	qglDrawElements(GL_TRIANGLES, numShadowVolumeIndexes, GL_INDEX_TYPE, shadowVolumeIndexes);
+	qglVertexPointer(3, GL_FLOAT, 16, tess.xyz);	// padded for SIMD, as the stage iterators set it
+
+	if (colorArray) {
+		qglEnableClientState(GL_COLOR_ARRAY);
+	}
+	for (int t = numUnits - 1; t >= 0; t--) {
+		if (qglActiveTextureARB) {
+			GL_SelectTexture(t);
+		}
+		if (texArray[t]) {
+			qglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
+	}
+	if (qglActiveTextureARB) {
+		GL_SelectTexture(oldTmu);
+	}
+}
 
 /*
 =================
@@ -321,6 +332,8 @@ void RB_DoShadowTessEnd(vec3_t light_pos)
 		R_AddEdgeDef(i2, i3, facing[i]);
 		R_AddEdgeDef(i3, i1, facing[i]);
 	}
+
+	R_BuildShadowVolume();
 
 	GL_Bind(tr.whiteImage);
 	//qglEnable( GL_CULL_FACE );

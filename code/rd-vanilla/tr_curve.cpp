@@ -294,7 +294,8 @@ srfGridMesh_t* R_SubdividePatchToGrid(int width, int height, drawVert_t points[M
 	int			i, j, k;
 	drawVert_t	prev, next, mid;
 	int			t;
-	drawVert_t	ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE]{};
+	static drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE]; // off the stack (C6262)
+	memset(ctrl, 0, sizeof(ctrl)); // zeroed each call, as the {} on the stack was
 	float		errorTable[2][MAX_GRID_SIZE]{};
 	srfGridMesh_t* grid;
 	drawVert_t* vert;

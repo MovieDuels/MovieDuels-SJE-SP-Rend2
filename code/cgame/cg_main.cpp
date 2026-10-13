@@ -478,6 +478,8 @@ vmCvar_t cg_drawSelectionScrollBar;
 
 vmCvar_t cg_trueguns;
 vmCvar_t cg_holsteredweapons; // cg_holster.cpp: 0 = off, 1 = the player only, 2 = everyone
+vmCvar_t cg_holsterHide; // cg_holster.cpp: the guns the player doesn't carry on his body (hex mask of weapon numbers; weapon wheel "On Person")
+vmCvar_t cg_weaponWheelOld; // 1: +md_wheel opens the old menu wheel instead of the radial one (CG_DrawMDWheel)
 vmCvar_t cg_holsterdebug;
 vmCvar_t cg_holsterdebug_boneindex;
 vmCvar_t cg_holsterdebug_posoffset;
@@ -521,6 +523,7 @@ vmCvar_t cg_hudRatio;
 vmCvar_t cg_saberLockCinematicCamera;
 
 vmCvar_t cg_AimingCinematicCamera;
+vmCvar_t cg_aimShoulder;
 
 vmCvar_t cg_allowcallout;
 
@@ -662,7 +665,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_saberinfo, "d_saberinfo", "0", CVAR_ARCHIVE},
 
 	{&cg_smoothCamera, "cg_smoothCamera", "1", CVAR_ARCHIVE},
-	{&cg_speedTrail, "cg_speedTrail", "1", CVAR_ARCHIVE},
+	{&cg_speedTrail, "cg_speedTrail", "0", CVAR_ARCHIVE}, // force speed after-image trail, off by default (DH)
 	{&cg_fovViewmodel, "cg_fovViewmodel", "0", CVAR_ARCHIVE},
 	{&cg_fovViewmodelAdjust, "cg_fovViewmodelAdjust", "1", CVAR_ARCHIVE},
 
@@ -720,6 +723,8 @@ static cvarTable_t cvarTable[] = {
 
 	{&cg_trueguns, "cg_trueguns", "1", CVAR_ARCHIVE},
 	{&cg_holsteredweapons, "cg_holsteredweapons", "2", CVAR_ARCHIVE},
+	{&cg_holsterHide, "cg_holsterHide", "", CVAR_ARCHIVE},
+	{&cg_weaponWheelOld, "cg_weaponWheelOld", "0", CVAR_ARCHIVE},
 	{&cg_holsterdebug, "cg_holsterdebug", "0", 0},
 	{&cg_holsterdebug_boneindex, "cg_holsterdebug_boneindex", "0", 0},
 	{&cg_holsterdebug_posoffset, "cg_holsterdebug_posoffset", "0.0 0.0 0.0", 0},
@@ -770,6 +775,7 @@ static cvarTable_t cvarTable[] = {
 	{&cg_saberLockCinematicCamera, "g_saberLockCinematicCamera", "0", CVAR_ARCHIVE},
 
 	{ &cg_AimingCinematicCamera, "g_AimingCinematicCamera", "1", CVAR_ARCHIVE },
+	{ &cg_aimShoulder, "cg_aimShoulder", "1", CVAR_ARCHIVE }, // aiming camera over the right shoulder (x model size); 0 = centred
 
 	{&cg_jumpSounds, "cg_jumpSounds", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
 
@@ -2920,7 +2926,8 @@ static void CG_RegisterGraphics()
 		}
 	}
 
-	for (i = 1; i < MAX_TERRAINS; i++)
+	int max_terrains = MAX_TERRAINS; // a variable: MAX_TERRAINS is 1 now, so the loop does not run (C6294)
+	for (i = 1; i < max_terrains; i++)
 	{
 		const char* terrainInfo = CG_ConfigString(CS_TERRAINS + i);
 		if (!terrainInfo[0])
@@ -3290,6 +3297,14 @@ Called after every level change or subsystem restart
 void CG_Init(const int serverCommandSequence)
 {
 	cgs.serverCommandSequence = serverCommandSequence;
+	CG_MDWheel_Reset();
+
+	// Wall marks and local entities keep the renderer's shader handles. This also runs after vid_restart (the SP cgame is
+	// not unloaded), where the new renderer - e.g. vanilla -> rend2 - numbers its shaders differently: marks made before
+	// the switch were drawn with the old handles ("R_GetShaderByHandle: out of range hShader" every frame, or a wrong
+	// shader). A level restart already clears them (CG_RestartLevel); start empty here too.
+	CG_InitLocalEntities();
+	CG_InitMarkPolys();
 
 	cgi_Cvar_Set("cg_drawHUD", "1");
 
@@ -3387,6 +3402,7 @@ Called before every level change or subsystem restart
 void CG_Shutdown()
 {
 	in_camera = false;
+	CG_MDWheel_Reset();
 	FX_Free();
 	CG_HolsterShutdown();
 }
@@ -6054,4 +6070,636 @@ void CG_DrawDataPadForceSelect()
 			colorTable[CT_ICON_BLUE]
 		);
 	}
+}
+/*
+===============================================================================
+MovieDuels weapon / force wheel (MD team request)
+
+Hold the key bound to +md_wheel: a radial overlay of the weapons the player carries, or (mouse wheel) the force powers
+he knows. Point with the mouse, let go of the key or press attack to take it; alt attack toggles a gun's "On Person"
+(cg_holsterHide, as the old menu wheel; red = not on the body). While the wheel is open the game runs at a quarter
+speed and the mouse turns the view only a little (the turn moves the pointer; the view is given back on close).
+cg_weaponWheelOld 1: +md_wheel opens the old menu wheel instead.
+===============================================================================
+*/
+constexpr int MDW_MAX_ITEMS = 64;
+constexpr float MDW_PANEL = 240.0f; // half size of the panel art (virtual 480-high units, kept round on wide screens)
+constexpr float MDW_RIM = 178.0f; // just inside the panel's gold rim (at 0.76 of its half size)
+constexpr float MDW_INNER = 106.0f; // the slices start here (inside it: the names)
+constexpr float MDW_RADIUS = 146.0f; // the icon ring
+constexpr float MDW_ICON = 28.0f;
+constexpr float MDW_ICON_HOVER = 38.0f;
+constexpr float MDW_SCENE_DIST = 100.0f; // the slice polygons: a small 3D scene in front of a 90 degree camera
+constexpr float MDW_DEADZONE = 30.0f; // pointer this close to the centre = nothing picked
+constexpr float MDW_POINTER_MAX = 175.0f;
+constexpr float MDW_SENSITIVITY = 0.15f; // the mouse sensitivity while the wheel is open
+constexpr float MDW_POINTER_SCALE = 20.0f; // pointer units per degree of that (reduced) turn
+constexpr float MDW_TIMESCALE = 0.25f; // the game speed while the wheel is open
+
+extern cvar_t* g_timescale;
+extern qboolean playerUsableWeapons[WP_NUM_WEAPONS];
+void CG_ChangeWeapon(int num);
+
+static struct
+{
+	bool open;
+	int ring; // 0 weapons, 1 force powers (showPowers indexes)
+	float px, py; // the pointer, relative to the centre
+	int hover; // index in items[], -1 none
+	int items[MDW_MAX_ITEMS];
+	bool avail[MDW_MAX_ITEMS]; // carried / known (the others are shown faded and can't be picked)
+	int numItems;
+	vec3_t openAngles; // the view when it opened (usercmd angles), given back on close
+	vec3_t lastAngles;
+	int lastButtons;
+	float oldTimescale; // the timescale before the wheel slowed the game, 0: the wheel didn't change it
+	bool blockButtons; // attack / alt attack belong to the wheel (also the press that closed it, until let go)
+	qhandle_t panelShader, sliceShader;
+	sfxHandle_t clickSound;
+} mdWheel;
+
+static void CG_MDWheel_GetCmd(usercmd_t* cmd)
+{
+	memset(cmd, 0, sizeof * cmd);
+	cgi_GetUserCmd(cgi_GetCurrentCmdNumber(), cmd);
+}
+
+static qboolean CG_MDWheel_CanOpen()
+{
+	const gentity_t* player = &g_entities[0];
+
+	if (!cg.snap || in_camera || !player->client || cg.snap->ps.viewEntity
+		|| cg.predictedPlayerState.stats[STAT_HEALTH] <= 0 || cg.predictedPlayerState.pm_type != PM_NORMAL
+		|| player->client->NPC_class == CLASS_ATST || player->client->NPC_class == CLASS_SBD
+		|| player->client->NPC_class == CLASS_DROIDEKA)
+	{
+		return qfalse;
+	}
+	return qtrue;
+}
+
+// the guns a player can carry: always on the wheel, faded when he doesn't carry them (playerUsableWeapons without the
+// AT-ST's two guns); others (NPC / vehicle weapons) only while he has them
+static bool CG_MDWheel_PlayerWeapon(const int weapon)
+{
+	return weapon > WP_NONE && weapon < WP_NUM_WEAPONS && playerUsableWeapons[weapon] && weapon != WP_ATST_MAIN
+		&& weapon != WP_ATST_SIDE;
+}
+
+// every slot in a fixed place: all player weapons / all selectable force powers (showPowers), carried / known or not
+static void CG_MDWheel_BuildItems()
+{
+	const gentity_t* player = &g_entities[0];
+
+	mdWheel.numItems = 0;
+	if (mdWheel.ring == 0)
+	{
+		for (int i = WP_NONE + 1; i < WP_NUM_WEAPONS && mdWheel.numItems < MDW_MAX_ITEMS; i++)
+		{
+			const bool owned = player->client->ps.weapons[i] && playerUsableWeapons[i];
+			if (owned || CG_MDWheel_PlayerWeapon(i))
+			{
+				mdWheel.avail[mdWheel.numItems] = owned;
+				mdWheel.items[mdWheel.numItems++] = i;
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < MAX_SHOWPOWERS && mdWheel.numItems < MDW_MAX_ITEMS; i++)
+		{
+			mdWheel.avail[mdWheel.numItems] = ForcePower_Valid(i) ? true : false;
+			mdWheel.items[mdWheel.numItems++] = i;
+		}
+	}
+}
+
+static void CG_MDWheel_UpdateHover()
+{
+	mdWheel.hover = -1;
+	if (mdWheel.numItems <= 0 || mdWheel.px * mdWheel.px + mdWheel.py * mdWheel.py < MDW_DEADZONE * MDW_DEADZONE)
+	{
+		return;
+	}
+	// clockwise from straight up, item 0 at the top
+	float a = atan2f(mdWheel.px, -mdWheel.py);
+	if (a < 0.0f)
+	{
+		a += 2.0f * static_cast<float>(M_PI);
+	}
+	const float step = 2.0f * static_cast<float>(M_PI) / static_cast<float>(mdWheel.numItems);
+	mdWheel.hover = static_cast<int>((a + step * 0.5f) / step) % mdWheel.numItems;
+}
+
+static void CG_MDWheel_Close(const qboolean pick)
+{
+	if (!mdWheel.open)
+	{
+		return;
+	}
+	mdWheel.open = false;
+
+	if (pick && cg.snap && mdWheel.hover >= 0 && mdWheel.hover < mdWheel.numItems && mdWheel.avail[mdWheel.hover])
+	{
+		const int item = mdWheel.items[mdWheel.hover];
+		if (mdWheel.ring == 0 && item > WP_NONE && item < WP_NUM_WEAPONS)
+		{
+			CG_ChangeWeapon(item);
+		}
+		else if (ForcePower_Valid(item))
+		{
+			cg.forcepowerSelect = item;
+			SetForcePowerTime();
+		}
+	}
+
+	// the game speed back, unless something else (force speed, a cinematic skip) changed it meanwhile
+	if (mdWheel.oldTimescale > 0.0f && fabsf(g_timescale->value - MDW_TIMESCALE) < 0.001f)
+	{
+		cgi_Cvar_Set("timescale", va("%g", mdWheel.oldTimescale));
+	}
+	mdWheel.oldTimescale = 0.0f;
+
+	// the view where it was when the wheel opened
+	cgi_SetUserCmdAngles(mdWheel.openAngles[PITCH], mdWheel.openAngles[YAW], mdWheel.openAngles[ROLL]);
+}
+
+// a new level / a loaded game / the cgame closing: the wheel is gone, the game speed back
+void CG_MDWheel_Reset()
+{
+	if (mdWheel.open && mdWheel.oldTimescale > 0.0f && g_timescale && fabsf(g_timescale->value - MDW_TIMESCALE) < 0.001f)
+	{
+		cgi_Cvar_Set("timescale", va("%g", mdWheel.oldTimescale));
+	}
+	mdWheel.open = false;
+	mdWheel.oldTimescale = 0.0f;
+	mdWheel.blockButtons = false;
+	mdWheel.panelShader = 0; // registered again (a vid_restart can change the renderer's handles)
+}
+
+static void CG_MDWheel_Open(const int ring)
+{
+	if (mdWheel.open || !CG_MDWheel_CanOpen())
+	{
+		return;
+	}
+	mdWheel.ring = ring;
+	if (!mdWheel.panelShader)
+	{
+		// the MD team's panel art and the slice shader (shaders/md_weaponwheel.shader, MD Claude pk3)
+		mdWheel.panelShader = cgi_R_RegisterShaderNoMip("gfx/menus/weaponwheel/WeaponWheelPanel");
+		mdWheel.sliceShader = cgi_R_RegisterShaderNoMip("gfx/menus/weaponwheel/slice");
+		mdWheel.clickSound = cgi_S_RegisterSound("sound/interface/button1.wav");
+	}
+
+	usercmd_t cmd;
+	CG_MDWheel_GetCmd(&cmd);
+	for (int i = 0; i < 3; i++)
+	{
+		mdWheel.openAngles[i] = mdWheel.lastAngles[i] = SHORT2ANGLE(cmd.angles[i]);
+	}
+	mdWheel.lastButtons = cmd.buttons;
+	mdWheel.open = true;
+	mdWheel.blockButtons = true;
+	mdWheel.px = mdWheel.py = 0.0f;
+	mdWheel.hover = -1;
+
+	// slow the game down (not when force speed or a cinematic skip runs the timescale already)
+	mdWheel.oldTimescale = 0.0f;
+	if (fabsf(g_timescale->value - 1.0f) < 0.001f)
+	{
+		mdWheel.oldTimescale = g_timescale->value;
+		cgi_Cvar_Set("timescale", va("%g", MDW_TIMESCALE));
+	}
+}
+
+// +md_wheel / -md_wheel: held open, the pick on letting go
+void CG_MDWheel_Down_f()
+{
+	if (cg_weaponWheelOld.integer)
+	{
+		cgi_SendConsoleCommand("uimenu ingameweaponwheelMenu\n");
+		return;
+	}
+	CG_MDWheel_Open(mdWheel.ring);
+}
+
+void CG_MDWheel_Up_f()
+{
+	CG_MDWheel_Close(qtrue);
+}
+
+// "md_wheel_menu [force]": the old wheel menus' binds ("uimenu ingameweaponwheelMenu" / "uimenu ingameforcewheelMenu",
+// the only ones the Controls menu can set) run this from the menus' onOpen. Unless cg_weaponWheelOld asks for the old
+// menu, it is closed again and the radial wheel opens instead, toggled: the key again or attack picks.
+void CG_MDWheel_Menu_f()
+{
+	if (cg_weaponWheelOld.integer)
+	{
+		return;
+	}
+	cgi_UI_MenuCloseAll(); // the UI lets go of the keys (and the pause) on the next key event
+	if (mdWheel.open)
+	{
+		CG_MDWheel_Close(qtrue);
+	}
+	else
+	{
+		CG_MDWheel_Open(!Q_stricmp(CG_Argv(1), "force") ? 1 : 0);
+	}
+}
+
+// weapnext / weapprev (the mouse wheel) switch the rings while the wheel is open
+qboolean CG_MDWheel_SwitchRing()
+{
+	if (!mdWheel.open)
+	{
+		return qfalse;
+	}
+	mdWheel.ring ^= 1;
+	mdWheel.hover = -1;
+	cgi_S_StartLocalSound(mdWheel.clickSound, CHAN_LOCAL_SOUND);
+	return qtrue;
+}
+
+// the mouse sensitivity scale while the wheel is open (cg_view.cpp, cgi_SetUserCmdValue)
+float CG_MDWheel_SensitivityScale()
+{
+	return mdWheel.open ? MDW_SENSITIVITY : 1.0f;
+}
+
+// the player's attack / alt attack are the wheel's (g_active.cpp ClientThink)
+qboolean CG_MDWheel_BlocksButtons()
+{
+	return mdWheel.blockButtons ? qtrue : qfalse;
+}
+
+static void CG_MDWheel_ToggleOnPerson(const int weapon)
+{
+	// grenades / mines / det packs are never drawn on the body (as the old wheel)
+	if (weapon <= WP_NONE || weapon >= 64 || weapon == WP_THERMAL || weapon == WP_TRIP_MINE || weapon == WP_DET_PACK)
+	{
+		return;
+	}
+	const unsigned long long mask = strtoull(cg_holsterHide.string, nullptr, 16) ^ 1ull << weapon;
+	cgi_Cvar_Set("cg_holsterHide", mask ? va("%llx", mask) : "");
+	cgi_Cvar_Update(&cg_holsterHide);
+	cgi_S_StartLocalSound(mdWheel.clickSound, CHAN_LOCAL_SOUND);
+}
+
+// every frame, before the usercmd values are sent (cg_view.cpp): the mouse turn moves the pointer, the attack buttons
+// pick / toggle On Person
+void CG_MDWheel_Frame()
+{
+	usercmd_t cmd;
+
+	if (!mdWheel.open)
+	{
+		if (mdWheel.blockButtons)
+		{
+			// the attack press that closed the wheel doesn't fire: the buttons stay the wheel's until let go
+			CG_MDWheel_GetCmd(&cmd);
+			if (!(cmd.buttons & (BUTTON_ATTACK | BUTTON_ALT_ATTACK)))
+			{
+				mdWheel.blockButtons = false;
+			}
+		}
+		return;
+	}
+	if (!CG_MDWheel_CanOpen())
+	{
+		CG_MDWheel_Close(qfalse);
+		return;
+	}
+
+	CG_MDWheel_GetCmd(&cmd);
+	vec3_t angles;
+	for (int i = 0; i < 3; i++)
+	{
+		angles[i] = SHORT2ANGLE(cmd.angles[i]);
+	}
+	mdWheel.px -= AngleSubtract(angles[YAW], mdWheel.lastAngles[YAW]) * MDW_POINTER_SCALE;
+	mdWheel.py += AngleSubtract(angles[PITCH], mdWheel.lastAngles[PITCH]) * MDW_POINTER_SCALE;
+	VectorCopy(angles, mdWheel.lastAngles);
+	const float d = sqrtf(mdWheel.px * mdWheel.px + mdWheel.py * mdWheel.py);
+	if (d > MDW_POINTER_MAX)
+	{
+		mdWheel.px *= MDW_POINTER_MAX / d;
+		mdWheel.py *= MDW_POINTER_MAX / d;
+	}
+
+	CG_MDWheel_BuildItems();
+	CG_MDWheel_UpdateHover();
+
+	const int pressed = cmd.buttons & ~mdWheel.lastButtons;
+	mdWheel.lastButtons = cmd.buttons;
+	if (pressed & BUTTON_ATTACK)
+	{
+		CG_MDWheel_Close(qtrue);
+	}
+	else if (pressed & BUTTON_ALT_ATTACK && mdWheel.ring == 0 && mdWheel.hover >= 0 && mdWheel.avail[mdWheel.hover])
+	{
+		CG_MDWheel_ToggleOnPerson(mdWheel.items[mdWheel.hover]);
+	}
+}
+
+static const char* CG_MDWheel_WeaponName(const int weapon)
+{
+	static char text[256];
+	const gitem_t* item = cg_weapons[weapon].item;
+
+	if (!item || !item->classname)
+	{
+		return "";
+	}
+	if (cgi_SP_GetStringTextString(va("SP_INGAME_%s", item->classname), text, sizeof text))
+	{
+		return text;
+	}
+	return item->classname;
+}
+
+static void CG_MDWheel_CenterText(const float y, float scale, const vec4_t color, const char* text, const float ax)
+{
+	if (text && text[0])
+	{
+		// long names are scaled down to stay inside the inner ring
+		const float maxWidth = 230.0f * ax;
+		float width = static_cast<float>(cgi_R_Font_StrLenPixels(text, cgs.media.qhFontSmall, scale));
+		if (width > maxWidth)
+		{
+			scale *= maxWidth / width;
+			width = static_cast<float>(cgi_R_Font_StrLenPixels(text, cgs.media.qhFontSmall, scale));
+		}
+		cgi_R_Font_DrawString(static_cast<int>(320.0f - width * 0.5f), static_cast<int>(y), text, color,
+			cgs.media.qhFontSmall, -1, scale);
+	}
+}
+
+// a point of the wheel (x right, y up, virtual 480-high units from the centre) in the slice scene
+static void CG_MDWheel_VertXY(polyVert_t* v, const float x, const float y, const vec4_t c)
+{
+	constexpr float k = MDW_SCENE_DIST / MDW_PANEL;
+	v->xyz[0] = MDW_SCENE_DIST;
+	v->xyz[1] = -x * k;
+	v->xyz[2] = y * k;
+	v->st[0] = v->st[1] = 0.0f;
+	for (int i = 0; i < 4; i++)
+	{
+		const float f = c[i] < 0.0f ? 0.0f : c[i] > 1.0f ? 1.0f : c[i];
+		v->modulate[i] = static_cast<byte>(f * 255.0f);
+	}
+}
+
+// radius r at angle a (radians, clockwise from straight up)
+static void CG_MDWheel_Vert(polyVert_t* v, const float r, const float a, const vec4_t c)
+{
+	CG_MDWheel_VertXY(v, sinf(a) * r, cosf(a) * r, c);
+}
+
+// a ring sector from angle a0 to a1, radius r0 (colour c0) to r1 (c1): the colours blend across it
+static void CG_MDWheel_Sector(const float r0, const float r1, const float a0, const float a1, const vec4_t c0,
+	const vec4_t c1)
+{
+	constexpr float maxStep = 4.0f * static_cast<float>(M_PI) / 180.0f;
+	int steps = static_cast<int>(ceilf(fabsf(a1 - a0) / maxStep));
+	if (steps < 1)
+	{
+		steps = 1;
+	}
+	for (int s = 0; s < steps; s++)
+	{
+		polyVert_t v[4];
+		const float s0 = a0 + (a1 - a0) * static_cast<float>(s) / static_cast<float>(steps);
+		const float s1 = a0 + (a1 - a0) * static_cast<float>(s + 1) / static_cast<float>(steps);
+		CG_MDWheel_Vert(&v[0], r0, s0, c0);
+		CG_MDWheel_Vert(&v[1], r1, s0, c1);
+		CG_MDWheel_Vert(&v[2], r1, s1, c1);
+		CG_MDWheel_Vert(&v[3], r0, s1, c0);
+		cgi_R_AddPolyToScene(mdWheel.sliceShader, 4, v);
+	}
+}
+
+// a straight line out from the centre at angle a, from r0 to r1, w wide
+static void CG_MDWheel_Spoke(const float a, const float r0, const float r1, const float w, const vec4_t c)
+{
+	polyVert_t v[4];
+	const float sx = sinf(a), sy = cosf(a);
+	const float tx = sy * w * 0.5f, ty = -sx * w * 0.5f; // across the line
+	CG_MDWheel_VertXY(&v[0], sx * r0 - tx, sy * r0 - ty, c);
+	CG_MDWheel_VertXY(&v[1], sx * r1 - tx, sy * r1 - ty, c);
+	CG_MDWheel_VertXY(&v[2], sx * r1 + tx, sy * r1 + ty, c);
+	CG_MDWheel_VertXY(&v[3], sx * r0 + tx, sy * r0 + ty, c);
+	cgi_R_AddPolyToScene(mdWheel.sliceShader, 4, v);
+}
+
+// slot n's slice (Outer Worlds style): a soft gradient getting stronger towards the rim, with an edge
+static void CG_MDWheel_Slice(const int n, const vec3_t rgb, const float alphaIn, const float alphaOut,
+	const float edgeAlpha)
+{
+	const float step = 2.0f * static_cast<float>(M_PI) / static_cast<float>(mdWheel.numItems);
+	const float a0 = (static_cast<float>(n) - 0.5f) * step, a1 = (static_cast<float>(n) + 0.5f) * step;
+	vec4_t cIn, cOut, cEdge;
+
+	VectorCopy(rgb, cIn);
+	VectorCopy(rgb, cOut);
+	VectorCopy(rgb, cEdge);
+	cIn[3] = alphaIn;
+	cOut[3] = alphaOut;
+	cEdge[3] = edgeAlpha;
+	CG_MDWheel_Sector(MDW_INNER, MDW_RIM, a0, a1, cIn, cOut);
+	if (edgeAlpha > 0.0f)
+	{
+		CG_MDWheel_Sector(MDW_RIM - 3.0f, MDW_RIM, a0, a1, cEdge, cEdge); // along the rim
+		CG_MDWheel_Sector(MDW_INNER, MDW_INNER + 1.5f, a0, a1, cEdge, cEdge); // the inner end
+		if (mdWheel.numItems > 1)
+		{
+			CG_MDWheel_Spoke(a0, MDW_INNER, MDW_RIM, 1.6f, cEdge);
+			CG_MDWheel_Spoke(a1, MDW_INNER, MDW_RIM, 1.6f, cEdge);
+		}
+	}
+}
+
+// the dividers and the slices, drawn as polygons in a small scene over the panel (square in pixels: round anywhere)
+static void CG_MDWheel_DrawSlices(const int current)
+{
+	static constexpr vec3_t gold = { 0.98f, 0.78f, 0.30f };
+	static constexpr vec3_t greyRgb = { 0.62f, 0.62f, 0.62f };
+	static constexpr vec4_t divider = { 0.98f, 0.78f, 0.30f, 0.28f };
+
+	if (!mdWheel.sliceShader || mdWheel.numItems <= 0 || cgs.glconfig.vidHeight <= 0)
+	{
+		return;
+	}
+	cgi_R_ClearScene();
+	if (mdWheel.numItems > 1)
+	{
+		const float step = 2.0f * static_cast<float>(M_PI) / static_cast<float>(mdWheel.numItems);
+		for (int n = 0; n < mdWheel.numItems; n++)
+		{
+			CG_MDWheel_Spoke((static_cast<float>(n) + 0.5f) * step, MDW_INNER, MDW_RIM, 1.0f, divider);
+		}
+	}
+	for (int n = 0; n < mdWheel.numItems; n++)
+	{
+		if (mdWheel.items[n] == current && mdWheel.avail[n] && n != mdWheel.hover)
+		{
+			CG_MDWheel_Slice(n, gold, 0.02f, 0.16f, 0.35f); // the one in hand: a fainter slice
+		}
+	}
+	if (mdWheel.hover >= 0 && mdWheel.hover < mdWheel.numItems)
+	{
+		if (mdWheel.avail[mdWheel.hover])
+		{
+			CG_MDWheel_Slice(mdWheel.hover, gold, 0.05f, 0.45f, 0.95f);
+		}
+		else
+		{
+			CG_MDWheel_Slice(mdWheel.hover, greyRgb, 0.03f, 0.2f, 0.4f); // can't be picked
+		}
+	}
+
+	refdef_t rd = {};
+	rd.rdflags = RDF_NOWORLDMODEL;
+	AxisClear(rd.viewaxis);
+	rd.fov_x = rd.fov_y = 90.0f;
+	rd.width = rd.height = static_cast<int>(2.0f * MDW_PANEL * static_cast<float>(cgs.glconfig.vidHeight) / 480.0f);
+	rd.x = (cgs.glconfig.vidWidth - rd.width) / 2;
+	rd.y = (cgs.glconfig.vidHeight - rd.height) / 2;
+	rd.time = cg.time;
+	cgi_R_RenderScene(&rd);
+}
+
+void CG_DrawMDWheel()
+{
+	static constexpr vec4_t dim = { 0.0f, 0.0f, 0.0f, 0.35f };
+	static constexpr vec4_t gold = { 0.875f, 0.718f, 0.121f, 1.0f };
+	static constexpr vec4_t white = { 1.0f, 1.0f, 1.0f, 1.0f };
+	static constexpr vec4_t grey = { 0.7f, 0.7f, 0.7f, 0.9f };
+	static constexpr vec4_t greyed = { 0.5f, 0.5f, 0.5f, 0.85f };
+	static constexpr vec4_t red = { 1.0f, 0.4f, 0.4f, 1.0f };
+
+	if (!mdWheel.open || !cg.snap)
+	{
+		return;
+	}
+
+	// the 640x480 screen is stretched to the window: squeeze x to keep the wheel round
+	const float ax = cgs.glconfig.vidWidth > 0 && cgs.glconfig.vidHeight > 0
+		? static_cast<float>(cgs.glconfig.vidHeight) * 640.0f / (static_cast<float>(cgs.glconfig.vidWidth) * 480.0f)
+		: 1.0f;
+	constexpr float mx = 320.0f, my = 240.0f;
+	const unsigned long long hidden = strtoull(cg_holsterHide.string, nullptr, 16);
+	const int current = mdWheel.ring == 0 ? cg.weaponSelect : cg.forcepowerSelect;
+	// the icons get smaller when many share the ring
+	const float slotArc = mdWheel.numItems > 0
+		? 2.0f * static_cast<float>(M_PI) * MDW_RADIUS / static_cast<float>(mdWheel.numItems) : MDW_ICON;
+	const float iconSize = slotArc * 0.82f < MDW_ICON ? slotArc * 0.82f : MDW_ICON;
+
+	CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, dim);
+	cgi_R_SetColor(nullptr);
+	CG_DrawPic(mx - MDW_PANEL * ax, my - MDW_PANEL, 2.0f * MDW_PANEL * ax, 2.0f * MDW_PANEL, mdWheel.panelShader);
+	CG_MDWheel_DrawSlices(current);
+
+	for (int n = 0; n < mdWheel.numItems; n++)
+	{
+		const int item = mdWheel.items[n];
+		const float a = 2.0f * static_cast<float>(M_PI) * static_cast<float>(n) / static_cast<float>(mdWheel.numItems);
+		const float size = n == mdWheel.hover ? iconSize * MDW_ICON_HOVER / MDW_ICON : iconSize;
+		const float x = mx + sinf(a) * MDW_RADIUS * ax, y = my - cosf(a) * MDW_RADIUS;
+		qhandle_t icon;
+		vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		if (mdWheel.ring == 0)
+		{
+			CG_RegisterWeapon(item);
+			const int ammoIndex = weaponData[item].ammoIndex;
+			const int perShot = weaponData[item].energyPerShot < weaponData[item].altEnergyPerShot
+				? weaponData[item].energyPerShot : weaponData[item].altEnergyPerShot;
+			const bool usable = !mdWheel.avail[n] || ammoIndex == AMMO_NONE || cg.snap->ps.ammo[ammoIndex] >= perShot;
+			icon = usable || !cg_weapons[item].weaponIconNoAmmo ? cg_weapons[item].weapon_Icon : cg_weapons[item].weaponIconNoAmmo;
+			if (!mdWheel.avail[n])
+			{
+				color[3] = 0.25f; // not carried
+			}
+			else if (!usable)
+			{
+				color[3] = 0.5f;
+			}
+			if (item < 64 && hidden & 1ull << item)
+			{
+				color[1] = color[2] = 0.4f;
+			}
+		}
+		else
+		{
+			icon = CG_ForcePowerIcon(showPowers[item]);
+			if (!mdWheel.avail[n])
+			{
+				color[3] = 0.25f; // not known
+			}
+		}
+
+		if (icon)
+		{
+			cgi_R_SetColor(color);
+			CG_DrawPic(x - size * 0.5f * ax, y - size * 0.5f, size * ax, size, icon);
+		}
+	}
+	cgi_R_SetColor(nullptr);
+
+	// the centre: ring name, the pointed item, its ammo / On Person (or why it can't be picked), the controls
+	CG_MDWheel_CenterText(my - 86.0f, 0.6f, gold, mdWheel.ring == 0 ? "WEAPONS" : "FORCE POWERS", ax);
+	if (mdWheel.numItems == 0)
+	{
+		CG_MDWheel_CenterText(my - 20.0f, 0.7f, grey, mdWheel.ring == 0 ? "No weapons" : "No force powers", ax);
+	}
+	else if (mdWheel.hover >= 0)
+	{
+		const int item = mdWheel.items[mdWheel.hover];
+		const bool avail = mdWheel.avail[mdWheel.hover];
+		if (mdWheel.ring == 0 && item > WP_NONE && item < WP_NUM_WEAPONS)
+		{
+			CG_MDWheel_CenterText(my - 38.0f, 0.75f, avail ? white : greyed, CG_MDWheel_WeaponName(item), ax);
+			if (!avail)
+			{
+				CG_MDWheel_CenterText(my - 12.0f, 0.6f, greyed, "Not carried", ax);
+			}
+			else
+			{
+				if (weaponData[item].ammoIndex != AMMO_NONE)
+				{
+					CG_MDWheel_CenterText(my - 12.0f, 0.6f, grey,
+						va("Ammo: %d", cg.snap->ps.ammo[weaponData[item].ammoIndex]), ax);
+				}
+				if (item != WP_THERMAL && item != WP_TRIP_MINE && item != WP_DET_PACK && item < 64)
+				{
+					CG_MDWheel_CenterText(my + 10.0f, 0.6f, hidden & 1ull << item ? red : grey,
+						hidden & 1ull << item ? "Not on person" : "On person", ax);
+				}
+			}
+		}
+		else if (mdWheel.ring == 1)
+		{
+			char text[256];
+			if (!cgi_SP_GetStringTextString(CG_ForcePowerName(item), text, sizeof text))
+			{
+				Q_strncpyz(text, CG_ForcePowerName(item), sizeof text);
+			}
+			CG_MDWheel_CenterText(my - 26.0f, 0.75f, avail ? white : greyed, text, ax);
+			if (!avail)
+			{
+				CG_MDWheel_CenterText(my - 2.0f, 0.6f, greyed, "Not known", ax);
+			}
+		}
+	}
+	CG_MDWheel_CenterText(my + 44.0f, 0.45f, grey,
+		mdWheel.ring == 0 ? "Mouse wheel: force powers" : "Mouse wheel: weapons", ax);
+	if (mdWheel.ring == 0)
+	{
+		CG_MDWheel_CenterText(my + 58.0f, 0.45f, grey, "Alt attack: on person", ax);
+	}
+
+	// the pointer
+	CG_FillRect(mx + mdWheel.px * ax - 2.0f * ax, my + mdWheel.py - 2.0f, 4.0f * ax, 4.0f, white);
 }

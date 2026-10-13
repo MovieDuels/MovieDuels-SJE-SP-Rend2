@@ -77,16 +77,13 @@ void R_LoadHDRImage(const char* filename, byte** data, int* width, int* height)
 
 	ri.FS_FreeFile(buf);
 
-	if (!data)
+	if (!*data) // was !data (always false, data is dereferenced above)
 		ri.Printf(PRINT_DEVELOPER, "R_LoadHDRImage(%s) failed: %s\n", filename, stbi_failure_reason());
 
+	// (the old "else *width = 0;" / "else *height = 0;" wrote through the NULL pointer)
 	if (width)
 		*width = x;
-	else
-		*width = 0;
 
 	if (height)
 		*height = y;
-	else
-		*height = 0;
 }

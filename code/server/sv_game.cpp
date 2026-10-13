@@ -887,7 +887,7 @@ static float SV_WE_IsOutsideCausingPain(vec3_t pos)
 
 static float SV_WE_GetChanceOfSaberFizz()
 {
-	return re.GetChanceOfSaberFizz();
+	return re.GetChanceOfSaberFizz ? re.GetChanceOfSaberFizz() : 0.0f; // a renderer without weather may leave it NULL
 }
 
 static bool SV_WE_IsShaking(vec3_t pos)

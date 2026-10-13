@@ -305,7 +305,7 @@ public:
 	hstring mNameTrack;
 	CVec3 mMins;
 	CVec3 mMaxs;
-	int mStartTime;
+	int mStartTime = 0;
 
 public:
 	////////////////////////////////////////////////////////////////////////////////////
@@ -349,9 +349,9 @@ public:
 		assert(mTrack != nullptr);
 	}
 
-	CRailTrack* mTrack;
-	int mMinCol;
-	int mMaxCol;
+	CRailTrack* mTrack = nullptr;
+	int mMinCol = 0;
+	int mMaxCol = 0;
 };
 
 ratl::vector_vs<CRailLane, MAX_LANES> mRailLanes;
@@ -408,10 +408,10 @@ public:
 		gi.linkentity(ent);
 	}
 
-	gentity_t* mEnt;
-	bool mCenter;
+	gentity_t* mEnt = nullptr;
+	bool mCenter = false;
 	CVec3 mOriginOffset;
-	bool mSoundPlayed;
+	bool mSoundPlayed = false;
 
 	bool Active() const
 	{
@@ -483,10 +483,10 @@ public:
 		}
 	}
 
-	CRailTrack* mTrack;
-	CRailLane* mLane;
-	int mCols;
-	int mRows;
+	CRailTrack* mTrack = nullptr;
+	CRailLane* mLane = nullptr;
+	int mCols = 0;
+	int mRows = 0;
 };
 
 ratl::vector_vs<CRailMover, MAX_MOVERS> mRailMovers;

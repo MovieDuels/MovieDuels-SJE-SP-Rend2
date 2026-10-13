@@ -4394,29 +4394,11 @@ static const char* FindShaderInShaderText(const char* shadername) {
 		}
 	}
 
-	p = s_shaderText;
-
-	if (!p) {
-		return NULL;
-	}
-
-	// look for label
-	while (1) {
-		token = COM_ParseExt(&p, qtrue);
-		if (token[0] == 0) {
-			break;
-		}
-
-		if (!Q_stricmp(token, shadername)) {
-			return p;
-		}
-		else {
-			// skip the definition
-			SkipBracedSection(&p, 0);
-		}
-	}
-
-	return NULL;
+	// Not in the hash table = not in the shader text: the table holds every top-level name of s_shaderText (built in
+	// ScanAndLoadShaderFiles with the same parse), so the full linear scan of all shader files that used to follow here
+	// could never find anything more. It ran for every image without a shader script (most model / map textures) and made
+	// shader registration slow on map load and mid-game.
+	return nullptr;
 }
 
 /*

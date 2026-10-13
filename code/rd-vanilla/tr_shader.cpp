@@ -1260,7 +1260,7 @@ static qboolean ParseStage(shaderStage_t* stage, const char** text)
 		else if (!Q_stricmp(token, "animMap") || !Q_stricmp(token, "clampanimMap") || !Q_stricmp(token, "oneshotanimMap"))
 		{
 			constexpr auto max_image_animations = 64;
-			image_t* images[max_image_animations];
+			image_t* images[max_image_animations]{};
 			const bool b_clamp = !Q_stricmp(token, "clampanimMap");
 			const bool one_shot = !Q_stricmp(token, "oneshotanimMap");
 
@@ -1275,6 +1275,10 @@ static qboolean ParseStage(shaderStage_t* stage, const char** text)
 
 			// several animMap lines in one stage add to the same frames (MD's TFA / unstable blades): keep the frames
 			// read so far, else they are lost (NULL = the flat default image)
+			if (stage->bundle[0].numImageAnimations > max_image_animations)
+			{
+				stage->bundle[0].numImageAnimations = max_image_animations; // cannot happen (only counted up to the max below); keeps the copies inside images[]
+			}
 			if (stage->bundle[0].numImageAnimations > 0 && stage->bundle[0].image)
 			{
 				memcpy(images, stage->bundle[0].image, stage->bundle[0].numImageAnimations * sizeof(image_t*));
@@ -1304,7 +1308,10 @@ static qboolean ParseStage(shaderStage_t* stage, const char** text)
 			}
 			// Copy image ptrs into an array of ptrs
 			stage->bundle[0].image = static_cast<image_t*>(R_Hunk_Alloc(stage->bundle[0].numImageAnimations * sizeof(image_t*), qfalse));
-			memcpy(stage->bundle[0].image, images, stage->bundle[0].numImageAnimations * sizeof(image_t*));
+			if (stage->bundle[0].image) // the hunk allocator never returns NULL (it errors out)
+			{
+				memcpy(stage->bundle[0].image, images, stage->bundle[0].numImageAnimations * sizeof(image_t*));
+			}
 		}
 		else if (!Q_stricmp(token, "videoMap"))
 		{

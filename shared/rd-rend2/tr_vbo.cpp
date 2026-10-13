@@ -84,8 +84,9 @@ VBO_t* R_CreateVBO(byte* vertexes, size_t vertexesSize, vboUsage_t usage, const 
 {
 	VBO_t* vbo;
 
-	if (tr.numVBOs == MAX_VBOS) {
+	if (tr.numVBOs >= MAX_VBOS) {
 		ri.Error(ERR_DROP, "R_CreateVBO: MAX_VBOS hit");
+		return nullptr; // not reached: ri.Error never returns (function pointer, so it cannot be noreturn)
 	}
 
 	R_IssuePendingRenderCommands();
@@ -134,8 +135,9 @@ IBO_t* R_CreateIBO(byte* indexes, size_t indexesSize, vboUsage_t usage, const ch
 {
 	IBO_t* ibo;
 
-	if (tr.numIBOs == MAX_IBOS) {
+	if (tr.numIBOs >= MAX_IBOS) {
 		ri.Error(ERR_DROP, "R_CreateIBO: MAX_IBOS hit");
+		return nullptr; // not reached: ri.Error never returns (function pointer, so it cannot be noreturn)
 	}
 
 	R_IssuePendingRenderCommands();

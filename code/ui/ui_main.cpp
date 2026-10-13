@@ -3084,6 +3084,33 @@ static qboolean UI_RunMenuScript(const char** args)
 				UI_ViewWeaponWheel();
 			}
 		}
+		else if (Q_stricmp(name, "md_wheelpick") == 0)
+		{
+			// a gun icon of the weapon wheel: in "Equip" mode (ui_wheelmode 0) take it and close the wheel, in "On Person"
+			// mode toggle whether it is drawn on the body when carried (cg_holsterHide, a hex mask of weapon numbers)
+			const char* weaponText;
+			const int weapon = String_Parse(args, &weaponText) ? atoi(weaponText) : 0;
+			if (weapon > 0)
+			{
+				// (thermal / trip mine / det pack use the wheel's 1010+ numbers: they are never holstered, just taken)
+				if (Cvar_VariableIntegerValue("ui_wheelmode") == 0 || weapon >= 64)
+				{
+					ui.Cmd_ExecuteText(EXEC_APPEND, va("weapon %d\n", weapon));
+					trap_Key_SetCatcher(trap_Key_GetCatcher() & ~KEYCATCH_UI);
+					trap_Key_ClearStates();
+					Cvar_Set("cl_paused", "0");
+					Menus_CloseAll();
+				}
+				else
+				{
+					char hide[32];
+					ui.Cvar_VariableStringBuffer("cg_holsterHide", hide, sizeof hide);
+					const unsigned long long mask = strtoull(hide, nullptr, 16) ^ 1ull << weapon;
+					Cvar_Set("cg_holsterHide", mask ? va("%llx", mask) : "");
+					UI_ViewWeaponWheel();
+				}
+			}
+		}
 		else if (Q_stricmp(name, "md_viewforcewheel") == 0)
 		{
 			const menuDef_t* menu = Menu_GetFocused();
@@ -5574,9 +5601,9 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("---- Genuine MovieDuels SerenityJediEngine (Solaris Edition) ----\n");
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
-	Com_Printf("-------------------------- Update 9.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 09/10/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 06 ----------------------------\n");
+	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
+	Com_Printf("--------------------- Build Date 13/10/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 07 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
@@ -7607,6 +7634,11 @@ static void UI_ViewWeaponWheel() {
 	const playerState_t* pState = cl->gentity->client;
 	const menuDef_t* menu = Menu_GetFocused();
 
+	// the guns not carried on the body (cg_holsterHide, weapon wheel "On Person" mode) are shown tinted red
+	char hide[32];
+	ui.Cvar_VariableStringBuffer("cg_holsterHide", hide, sizeof hide);
+	const unsigned long long hideMask = strtoull(hide, nullptr, 16);
+
 	// Enable/disable weapon icons if in player inventory
 	for (const auto& weaponIcon : weaponIcons)
 	{
@@ -7615,6 +7647,10 @@ static void UI_ViewWeaponWheel() {
 		{
 			if (pState->weapons[weaponIcon.weaponIndex]) {
 				item->disabled = qfalse;
+				const bool hidden = weaponIcon.weaponIndex < 64 && hideMask & 1ull << weaponIcon.weaponIndex;
+				item->window.foreColor[0] = 1.0f;
+				item->window.foreColor[1] = hidden ? 0.4f : 1.0f;
+				item->window.foreColor[2] = hidden ? 0.4f : 1.0f;
 				item->window.foreColor[3] = 1.0f;
 			}
 			else {

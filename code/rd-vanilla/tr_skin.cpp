@@ -311,6 +311,21 @@ qhandle_t RE_RegisterIndividualSkin(const char* name, const qhandle_t h_skin)
 			surf_name[strlen(surf_name) - 4] = 0;	//remove the "_off"
 		}
 #endif
+		// skip a surface this skin already has (3-part skins made of full copies list each surface three times;
+		// the renderer uses the first match anyway) so they don't run into the surface limit; "*off" entries are always kept
+		bool skinDupSurface = false;
+		for (int existing = 0; existing < skin->numSurfaces; existing++)
+		{
+			if (!strcmp(skin->surfaces[existing]->name, surf_name))
+			{
+				skinDupSurface = true;
+				break;
+			}
+		}
+		if (skinDupSurface && strcmp(token, "*off") != 0) // an "*off" entry still turns its surface off
+		{
+			continue;
+		}
 		if (static_cast<unsigned>(skin->numSurfaces) >= std::size(skin->surfaces))
 		{
 			assert(ARRAY_LEN(skin->surfaces) > static_cast<unsigned>(skin->numSurfaces));

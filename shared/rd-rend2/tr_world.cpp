@@ -715,6 +715,7 @@ static mnode_t* R_PointInLeaf(const vec3_t p) {
 
 	if (!tr.world) {
 		ri.Error(ERR_DROP, "R_PointInLeaf: bad model");
+		return nullptr; // not reached: ri.Error never returns (function pointer, so it cannot be noreturn)
 	}
 
 	node = tr.world->nodes;

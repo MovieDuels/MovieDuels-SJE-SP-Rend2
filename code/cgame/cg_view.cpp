@@ -965,6 +965,32 @@ static const cameraBlendField_t cameraBlendFields[] =
 	{ CG_OVERRIDE_FOV, &overrides_t::fov, &cg_fov, 60.0f, 31.0f, true },
 };
 
+static constexpr float AIM_CAMERA_SHOULDER = 24.0f; // right-shoulder shift of a normal-sized model (cg_aimShoulder 1)
+
+// The aiming camera's sideways offset (viewaxis[1] points left, so negative = over the right shoulder):
+// cg_aimShoulder x AIM_CAMERA_SHOULDER, scaled by the player's size (bbox half width and height against the default
+// player bbox, model scale) so a big model gets a bigger shift. cg_aimShoulder 0 = the old centred camera.
+static float CG_AimShoulderOffset(const float normal)
+{
+	if (cg_aimShoulder.value <= 0.0f)
+	{
+		return normal;
+	}
+	float scale = 1.0f;
+	const gentity_t* player = cg.snap ? &g_entities[cg.snap->ps.clientNum] : nullptr;
+	if (player && player->client && DEFAULT_MAXS_0 > 0.0f)
+	{
+		// the largest of: width and height against the default player bbox, model scale
+		scale = Q_max(player->maxs[0] / DEFAULT_MAXS_0, player->maxs[2] / static_cast<float>(DEFAULT_MAXS_2));
+		if (player->s.modelScale[2] > scale)
+		{
+			scale = player->s.modelScale[2];
+		}
+	}
+	scale = Q_min(3.0f, Q_max(0.5f, scale));
+	return normal - AIM_CAMERA_SHOULDER * cg_aimShoulder.value * scale;
+}
+
 static float cg_aimBlend = 0.0f;
 static float cg_saberLockBlend = 0.0f;
 static int cg_cameraBlendLastTime = 0;
@@ -1087,7 +1113,9 @@ static void CG_UpdateCameraBlends()
 		else
 		{
 			float value = cg_cameraBlendSaved.active & f.bit ? cg_cameraBlendSaved.*f.field : f.normal->value;
-			value = CG_CameraBlendLerp(value, f.aim, aim);
+			// the side shift: over the right shoulder, sized to the model (cg_aimShoulder)
+			const float aim_value = f.bit == CG_OVERRIDE_3RD_PERSON_HOF ? CG_AimShoulderOffset(value) : f.aim;
+			value = CG_CameraBlendLerp(value, aim_value, aim);
 			if (f.lockSets)
 			{
 				value = CG_CameraBlendLerp(value, f.lock, lock);
@@ -1935,7 +1963,9 @@ static qboolean CG_CalcFov()
 		else
 		{
 			const float f = (cg.time - cg.zoomTime) / ZOOM_OUT_TIME;
-			if (f <= 1.0)
+			// the zoom-out ease is for the first person view; back in third person it narrowed the
+			// camera behind the player's head and then swung it out (closing the binoculars)
+			if (f <= 1.0 && !cg.renderingThirdPerson)
 			{
 				fov_x = cg_zoomFov + f * (fov_x - cg_zoomFov);
 			}
@@ -3019,6 +3049,10 @@ void CG_DrawActiveFrame(const int server_time, const stereoFrame_t stereo_view)
 			keyYawScale = 0.0f;
 		}
 	}
+
+	// the radial wheel: the mouse turn moves its pointer (a slower turn while it is open)
+	CG_MDWheel_Frame();
+	speed *= CG_MDWheel_SensitivityScale();
 
 	// Send weapon selection, speed, and mouse overrides to the engine.
 	cgi_SetUserCmdValue(cg.weaponSelect, speed, mPitchOverride, mYawOverride, keyPitchScale, keyYawScale);

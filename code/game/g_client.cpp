@@ -1648,7 +1648,7 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 			}
 			COM_EndParseSession();
 		}
-		if (ent->client && ent->client->NPC_class == CLASS_IMPERIAL && ent->message)
+		if (ent->client->NPC_class == CLASS_IMPERIAL && ent->message)
 		{
 			//carrying a key, turn on the key sleeve surface (assuming we have one)
 			gi.G2API_SetSurfaceOnOff(&ent->ghoul2[ent->playerModel], "l_arm_key", 0);
@@ -1707,7 +1707,7 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 		}
 		else
 		{
-			if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+			if (ent->client->NPC_class == CLASS_VEHICLE)
 			{
 				//do vehicles tags
 				// Setup the driver tag (where the driver is mounted to).
@@ -1747,7 +1747,7 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 						: -1;
 				}
 			}
-			else if (ent->client && ent->client->NPC_class == CLASS_HOWLER)
+			else if (ent->client->NPC_class == CLASS_HOWLER)
 			{
 				ent->genericBolt1 = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "Tongue01"); // tongue base
 				ent->genericBolt2 = gi.G2API_AddBolt(&ent->ghoul2[ent->playerModel], "Tongue08"); // tongue tip
@@ -1893,12 +1893,12 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 		ent->humerusRBone = gi.G2API_GetBoneIndex(&ent->ghoul2[ent->playerModel], "rhumerus", qtrue);
 
 		// now add overrides on specific joints so the client can set angle overrides on the legs, torso and head
-		if (ent->client && ent->client->NPC_class == CLASS_VEHICLE)
+		if (ent->client->NPC_class == CLASS_VEHICLE)
 		{
 			//do vehicles tags
 			//vehicleInfo_t *vehicle = ent->m_pVehicle->m_pVehicleInfo;
 		}
-		else if (ent->client && ent->client->NPC_class == CLASS_HOWLER)
+		else if (ent->client->NPC_class == CLASS_HOWLER)
 		{
 		}
 		else if (!Q_stricmp("gonk", model_name) || !Q_stricmp("seeker", model_name) || !Q_stricmp("remote", model_name))
@@ -2052,7 +2052,7 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 					BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, nullptr, 0, 0);
 			}
 		}
-		else if (ent->client && ent->client->NPC_class == CLASS_RANCOR)
+		else if (ent->client->NPC_class == CLASS_RANCOR)
 		{
 			Eorientations o_up, o_rt, o_fwd;
 			//regular bones we need

@@ -372,6 +372,10 @@ static void Walk_NextGoal(const vec3_t pos, const vec3_t ship_pos, vec3_t goal)
 		way[i] = 1.0e30f;
 		done[i] = qfalse;
 	}
+	if (end < 0)
+	{
+		return; // no walk point nearer than "infinitely far" (C6386: way[-1])
+	}
 	way[end] = 0.0f;
 	for (;;)
 	{
@@ -1681,7 +1685,7 @@ qboolean NPC_FighterAI()
 		const gentity_t* player_ship = player && player->client && player->client->ps.m_iVehicleNum
 			? &g_entities[player->client->ps.m_iVehicleNum]
 			: nullptr;
-		if (my_team == TEAM_PLAYER && Fighter_IsFighter(player_ship))
+		if (my_team == TEAM_PLAYER && player_ship && Fighter_IsFighter(player_ship))
 		{
 			// a wingman flies with the player: behind him and to a side (one side each by number)
 			vec3_t p_fwd, p_right;

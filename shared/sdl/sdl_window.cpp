@@ -496,11 +496,13 @@ static rserr_t GLimp_SetMode(glconfig_t* glConfig, const windowDesc_t* windowDes
 						depthBits = 16;
 					else if (depthBits == 16)
 						depthBits = 8;
+					[[fallthrough]];
 				case 3:
 					if (stencilBits == 24)
 						stencilBits = 16;
 					else if (stencilBits == 16)
 						stencilBits = 8;
+					[[fallthrough]];
 				default:;
 				}
 			}

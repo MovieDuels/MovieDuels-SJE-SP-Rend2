@@ -596,7 +596,16 @@ using srfFlare_t = struct srfFlare_s {
 	vec3_t			origin;
 	vec3_t			normal;
 	vec3_t			color;
+
+	// asynchronous depth test (RB_TestZFlare, tr_surface.cpp)
+	int				pboQueued;		// frame + 1 of the last queued depth read, 0 = none
+	int				pboSlot;
+	int				pboVisible;
+	float			pboEyeZ;
+	float			pboProj[3];		// projectionMatrix[10], [11], [14] of that frame
 };
+
+void R_ShutdownFlarePbos();
 
 using srfGridMesh_t = struct srfGridMesh_s {
 	surfaceType_t	surfaceType;

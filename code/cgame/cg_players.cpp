@@ -1133,6 +1133,7 @@ static void CG_PlayerAnimEventDo(centity_t* cent, animevent_t* anim_event)
 	{
 	case AEV_SOUNDCHAN:
 		channel = static_cast<soundChannel_t>(anim_event->eventData[AED_SOUNDCHANNEL]);
+		[[fallthrough]];
 	case AEV_SOUND:
 		// are there variations on the sound?
 	{
@@ -1277,42 +1278,46 @@ static void CG_PlayerAnimEventDo(centity_t* cent, animevent_t* anim_event)
 		else
 		{
 			//add bolt, play effect
+			// The bolt is looked up on THIS entity's model each time. It was looked up once and stored in the animevent, which is
+			// shared by every model using the same animation file, so other models got the first model's bolt index
+			// (md_ga_jedi SBDs: "G2API_AttachEnt: invalid toBoltIndex 10 ... (num bolts 10)", or the effect on a wrong bolt).
+			int model_index = anim_event->eventData[AED_MODELINDEX];
+			int bolt_index = anim_event->eventData[AED_BOLTINDEX];
 			if (anim_event->stringData != nullptr && cent && cent->gent && cent->gent->ghoul2.size())
 			{
 				//have a bolt name we want to use
-				anim_event->eventData[AED_MODELINDEX] = cent->gent->playerModel;
+				model_index = cent->gent->playerModel;
 				if ((Q_stricmpn("*blade", anim_event->stringData, 6) == 0
 					|| Q_stricmp("*flash", anim_event->stringData) == 0)
 					&& cent->gent->weaponModel[0] > 0)
 				{
 					//must be a weapon, try weapon 0?
-					anim_event->eventData[AED_BOLTINDEX] = gi.G2API_AddBolt(
+					bolt_index = gi.G2API_AddBolt(
 						&cent->gent->ghoul2[cent->gent->weaponModel[0]], anim_event->stringData);
-					if (anim_event->eventData[AED_BOLTINDEX] != -1)
+					if (bolt_index != -1)
 					{
 						//found it!
-						anim_event->eventData[AED_MODELINDEX] = cent->gent->weaponModel[0];
+						model_index = cent->gent->weaponModel[0];
 					}
 					else
 					{
 						//hmm, just try on the player model, then?
-						anim_event->eventData[AED_BOLTINDEX] = gi.G2API_AddBolt(
+						bolt_index = gi.G2API_AddBolt(
 							&cent->gent->ghoul2[cent->gent->playerModel], anim_event->stringData);
 					}
 				}
 				else
 				{
-					anim_event->eventData[AED_BOLTINDEX] = gi.G2API_AddBolt(
+					bolt_index = gi.G2API_AddBolt(
 						&cent->gent->ghoul2[cent->gent->playerModel], anim_event->stringData);
 				}
-				anim_event->stringData = nullptr; //so we don't try to do this again
 			}
-			if (anim_event->eventData[AED_BOLTINDEX] != -1)
+			if (bolt_index != -1)
 			{
 				//have a bolt we want to play the effect on
 				CG_PlayEffectIDBolted(anim_event->eventData[AED_EFFECTINDEX],
-					anim_event->eventData[AED_MODELINDEX],
-					anim_event->eventData[AED_BOLTINDEX],
+					model_index,
+					bolt_index,
 					cent->currentState.clientNum,
 					cent->lerpOrigin);
 			}
@@ -5146,6 +5151,29 @@ static void CG_ForcePushBodyBlur(const centity_t* cent, const vec3_t origin, vec
 		gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, fx_org);
 		CG_ForcePushBlur(fx_org);
 	}
+}
+
+// Continuous force effects (lightning, drain, electrocution) are started again on every rendered frame while they last.
+// Their pieces live 50-150 ms, so at high frame rates more and more copies overlap: at 300 fps five times the bolts,
+// traces and dynamic lights of 60 fps, and the frame rate drops sharply. They are started at most once per CFX_INTERVAL
+// ms per entity and effect: at 60 fps and below nothing changes; above, the effect looks as it does at 60 fps.
+#define CFX_INTERVAL 16
+
+qboolean CG_ContinuousFxReady(const int ent_num, const int slot)
+{
+	static int next_time[MAX_GENTITIES][CFX_NUM_SLOTS];
+
+	if (ent_num < 0 || ent_num >= MAX_GENTITIES || slot < 0 || slot >= CFX_NUM_SLOTS)
+	{
+		return qtrue;
+	}
+	int& next = next_time[ent_num][slot];
+	if (cg.time >= next || next - cg.time > CFX_INTERVAL) // (the second test: time went back - map restart / load)
+	{
+		next = cg.time + CFX_INTERVAL;
+		return qtrue;
+	}
+	return qfalse;
 }
 
 static void CG_ForceElectrocution(const centity_t* cent, const vec3_t origin, vec3_t tempAngles,
@@ -17204,13 +17232,13 @@ void CG_Player(centity_t* cent)
 				CG_GraspBlur(cent->gent->client->renderInfo.crotchPoint);
 			}
 
-			if (cent->gent->client && cent->gent->client->ps.powerups[PW_SHOCKED] > cg.time)
+			if (cent->gent->client && cent->gent->client->ps.powerups[PW_SHOCKED] > cg.time && CG_ContinuousFxReady(cent->currentState.number, CFX_SHOCKED))
 			{
 				//being electrocuted
 				CG_ForceElectrocution(cent, ent.origin, tempAngles, cgs.media.boltShader);
 			}
 
-			if (cent->gent->client && cent->gent->client->ps.powerups[PW_STUNNED] > cg.time)
+			if (cent->gent->client && cent->gent->client->ps.powerups[PW_STUNNED] > cg.time && CG_ContinuousFxReady(cent->currentState.number, CFX_STUNNED))
 			{
 				//being electrocuted
 				CG_ForceElectrocution(cent, ent.origin, tempAngles, cgs.media.shockShader);
@@ -17222,15 +17250,15 @@ void CG_Player(centity_t* cent)
 				CG_GraspBlur(cent->gent->client->renderInfo.handLPoint);
 			}
 
-			if (cent->gent->client->ps.eFlags & EF_FORCE_DRAINED
-				|| cent->currentState.powerups & 1 << PW_DRAINED)
+			if ((cent->gent->client->ps.eFlags & EF_FORCE_DRAINED
+				|| cent->currentState.powerups & 1 << PW_DRAINED) && CG_ContinuousFxReady(cent->currentState.number, CFX_DRAINED))
 			{
 				//being drained
 				//do red electricity lines off them and red drain shell on them
 				CG_ForceElectrocution(cent, ent.origin, tempAngles, cgs.media.drainShader, qtrue);
 			}
 
-			if (cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING)
+			if (cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING && CG_ContinuousFxReady(cent->currentState.number, CFX_LIGHTNING))
 			{
 				//doing the electrocuting
 				//FIXME: if the target is absorbing or blocking lightning w/saber, draw a beam from my hand to his (hand?chest?saber?)
@@ -17288,7 +17316,7 @@ void CG_Player(centity_t* cent)
 				}
 			}
 
-			if (cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING_STRIKE)
+			if (cent->gent->client->ps.forcePowersActive & 1 << FP_LIGHTNING_STRIKE && CG_ContinuousFxReady(cent->currentState.number, CFX_LIGHTNING_STRIKE))
 			{
 				//doing the lightning_strike
 				vec3_t t_ang;
@@ -17312,7 +17340,7 @@ void CG_Player(centity_t* cent)
 				}
 			}
 
-			if (cent->gent->client->ps.eFlags & EF_POWERING_ROSH)
+			if (cent->gent->client->ps.eFlags & EF_POWERING_ROSH && CG_ContinuousFxReady(cent->currentState.number, CFX_ROSH))
 			{
 				vec3_t t_ang, fx_dir;
 				VectorCopy(cent->lerpAngles, t_ang);
@@ -17322,7 +17350,7 @@ void CG_Player(centity_t* cent)
 			}
 
 			if (cent->gent->client->ps.forcePowersActive & 1 << FP_DRAIN
-				&& cent->gent->client->ps.forceDrainEntityNum >= ENTITYNUM_WORLD)
+				&& cent->gent->client->ps.forceDrainEntityNum >= ENTITYNUM_WORLD && CG_ContinuousFxReady(cent->currentState.number, CFX_DRAIN))
 			{
 				//doing the draining and not on a single person
 				vec3_t t_ang;
@@ -17749,7 +17777,7 @@ void CG_Player(centity_t* cent)
 				}
 
 				// Z6 rotary cannon barrel spinning (third-person, MD3 overlay)
-				for (int i = 0; i < w_data->numBarrels; i++)
+				for (int i = 0; w_data && i < w_data->numBarrels; i++)
 				{
 					refEntity_t barrel = {};
 					vec3_t angles = { 0.0f, 0.0f, 0.0f };

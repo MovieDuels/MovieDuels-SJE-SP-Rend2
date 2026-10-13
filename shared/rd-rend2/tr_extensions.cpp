@@ -474,7 +474,9 @@ void GLimp_InitCoreFunctions()
 	{
 		char version[256];
 		Q_strncpyz(version, (const char*)qglGetString(GL_SHADING_LANGUAGE_VERSION), sizeof(version));
-		sscanf(version, "%d.%d", &glRefConfig.glslMajorVersion, &glRefConfig.glslMinorVersion);
+		// result not checked (as before): an unparsable string leaves the values unchanged
+		int unused = sscanf(version, "%d.%d", &glRefConfig.glslMajorVersion, &glRefConfig.glslMinorVersion);
+		(void)unused;
 
 		ri.Printf(PRINT_ALL, "...using GLSL version %s\n", version);
 	}

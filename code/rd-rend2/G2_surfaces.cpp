@@ -69,7 +69,7 @@ public:
 class CQuickOverride
 {
 	int mOverride[512];
-	int mAt[512];
+	int mAt[512] = {};
 	int mCurrentTouch;
 public:
 	CQuickOverride()

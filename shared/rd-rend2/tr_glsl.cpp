@@ -698,6 +698,7 @@ private:
 ShaderProgramBuilder::ShaderProgramBuilder()
 	: name(nullptr)
 	, attribs(0)
+	, xfbVariables(0)
 	, program(0)
 	, shaderNames()
 	, numShaderNames(0)

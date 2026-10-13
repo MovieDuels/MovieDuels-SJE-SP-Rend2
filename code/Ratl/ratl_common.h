@@ -319,7 +319,7 @@ namespace ratl
 		////////////////////////////////////////////////////////////////////////////////////
 		// Data
 		////////////////////////////////////////////////////////////////////////////////////
-		unsigned int						mV[ARRAY_SIZE];
+		unsigned int						mV[ARRAY_SIZE]{};
 	public:
 		static const int SIZE = SZ;
 		static const int CAPACITY = SZ;
@@ -693,6 +693,10 @@ namespace ratl
 			{
 				NODE	nodeData;
 				T		value;
+				// raw node storage like array_base::mArray: nodeData is set when the node is linked in, before it is read
+#ifdef _MSC_VER
+#pragma warning(suppress: 26495)
+#endif
 			};
 			using TAlign = SNode;		// this is any type that has the right alignment
 			using TValue = T;		// this is the actual thing the user uses
@@ -983,6 +987,11 @@ namespace ratl
 
 	public:
 
+		// mArray is raw element storage: an element is constructed or assigned before it is read (mConstructed / the
+		// container size track which are live); zeroing it would memset the whole capacity on every construction
+#ifdef _MSC_VER
+#pragma warning(suppress: 26495)
+#endif
 		array_base()
 		{}
 

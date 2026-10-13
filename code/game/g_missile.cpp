@@ -1508,7 +1508,8 @@ void G_StasisMissileThink(gentity_t* missile)
 	}
 
 	vec3_t mins, maxs;
-	gentity_t* touch[MAX_GENTITIES];
+	// static: too big for the stack (C6262); filled by EntitiesInBox before it is read
+	static gentity_t* touch[MAX_GENTITIES];
 	for (int i = 0; i < 3; i++)
 	{
 		mins[i] = missile->absmin[i] - 8.0f;

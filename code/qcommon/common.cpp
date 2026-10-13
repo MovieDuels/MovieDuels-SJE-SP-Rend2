@@ -178,15 +178,20 @@ void QDECL Com_Printf(const char* fmt, ...)
 	// logfile
 	if (com_logfile && com_logfile->integer)
 	{
-		if (!logfile && FS_Initialized())
+		// don't recurse while opening qconsole.log: with fs_debug 1, FS_FOpenFileWrite prints through Com_Printf,
+		// logfile is still 0 there, and every print would open the file again until the stack overflows (as in MP)
+		static qboolean opening_qconsole = qfalse;
+		if (!logfile && FS_Initialized() && !opening_qconsole)
 		{
+			opening_qconsole = qtrue;
 			logfile = FS_FOpenFileWrite("qconsole.log");
-			if (com_logfile->integer > 1)
+			if (logfile && com_logfile->integer > 1)
 			{
 				// force it to not buffer so we get valid
 				// data even if we are crashing
 				FS_ForceFlush(logfile);
 			}
+			opening_qconsole = qfalse;
 		}
 		if (logfile)
 		{

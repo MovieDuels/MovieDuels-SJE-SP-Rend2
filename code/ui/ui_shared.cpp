@@ -6897,7 +6897,7 @@ static void Item_ListBox_Paint(itemDef_t* item)
 						for (int j = 0; j < listPtr->numColumns; j++)
 						{
 							text = DC->feederItemText(item->special, i, j, &optionalImage);
-							const bool textname = text[0] == '@';
+							const bool textname = text && text[0] == '@';
 							if (textname)
 							{
 								text = SE_GetString(&text[1]);

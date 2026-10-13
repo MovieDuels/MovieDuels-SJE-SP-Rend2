@@ -28,6 +28,11 @@ set(InMovieDuels TRUE)
 set(ProjectName "MovieDuels-SP" CACHE STRING "Project Name")
 project(${ProjectName})
 
+# C++ language standard: C++17 for every C++ project (shown in VS as "ISO C++17 Standard (/std:c++17)").
+# Set here, not in the VS project properties - CMake rewrites those every time it regenerates the solution.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 
@@ -169,6 +174,14 @@ set(SharedDir ${CMAKE_SOURCE_DIR}/shared)
 set(OpenJKLibDir "${CMAKE_SOURCE_DIR}/lib")
 set(GSLIncludeDirectory "${OpenJKLibDir}/gsl-lite/include")
 
+# INSTALL and PACKAGE projects (install rules + CPack installer/zip): not needed, the built exes and dlls are copied
+# to the mod by hand. Left out of the solution unless MakeInstallProjects is turned on in CMake.
+option(MakeInstallProjects "Whether to create the INSTALL and PACKAGE projects" OFF)
+if(NOT MakeInstallProjects)
+	# every install() rule does nothing, so CMake makes no INSTALL project (InstallConfig skips CPack -> no PACKAGE)
+	function(install)
+	endfunction()
+endif()
 include(InstallConfig)
 
 
@@ -202,12 +215,21 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
-	# same language level as the GCC/Clang builds below (-std=c++17);
-	# MSVC defaults to C++14, which rejects inline variables (ghoul2_shared.h)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-	# keep std::random_shuffle (g_pazaak.cpp) available like GCC does, so the
-	# card shuffling behaves exactly as before
+	# Code analysis (/analyze): the bundled third-party code in lib/ is not ours to change. Its headers are
+	# external (no analysis warnings from them); the bundled library targets have analysis off (see lib/ below).
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /external:I\"${CMAKE_SOURCE_DIR}/lib\" /analyze:external-")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /external:I\"${CMAKE_SOURCE_DIR}/lib\" /analyze:external-")
+
+	# Release builds: link-time code generation (/GL + /LTCG). The small vector helpers (DotProduct, VectorCopy, VectorMA...)
+	# are out-of-line functions in q_math.c, so without it they are never inlined across files. Measured in MD MP
+	# (timedemo, 2026-10-10): +9-10% fps with the vanilla renderer, +2% with rend2. Debug builds are unchanged.
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
+
+	# C++17 removed some old library pieces the engine code may use (std::random_shuffle, auto_ptr, unary_function...):
+	# keep them available. std::byte off, so it can't clash with the engine's own 'byte' type.
 	set(SharedDefines ${SharedDefines} "_HAS_AUTO_PTR_ETC=1")
+	set(SharedDefines ${SharedDefines} "_HAS_STD_BYTE=0")
 
 	# We don't try to control symbol visibility under MSVC.
 	set(OPENJK_VISIBILITY_FLAGS "")
@@ -239,8 +261,7 @@ elseif (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_C_COMPILER_ID}" M
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-	# enable somewhat modern C++
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	# (the C++ standard comes from CMAKE_CXX_STANDARD at the top)
 	
 	if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
@@ -361,6 +382,17 @@ endif()
 
 # Always use bundled minizip (sets MINIZIP_{LIBRARIES,INCLUDE_DIR})
 add_subdirectory(lib/minizip)
+
+# No code analysis for the bundled third-party libraries (jpeg-9a, zlib, libpng, minizip).
+if(MSVC)
+	foreach(BundledLib bundled_libjpeg bundled_zlib bundled_libpng bundled_minizip)
+		if(TARGET ${BundledLib})
+			# 'Run Code Analysis' turns /analyze on for every project; this MSBuild switch keeps it off here.
+			# (MSB8061 'No tool enabled for Code Analysis' is then expected here: shown as a message, not a warning.)
+			set_target_properties(${BundledLib} PROPERTIES VS_GLOBAL_EnableMicrosoftCodeAnalysis false VS_GLOBAL_MSBuildWarningsAsMessages MSB8061)
+		endif()
+	endforeach()
+endif()
 
 # Add projects
 add_subdirectory(${SPDir})

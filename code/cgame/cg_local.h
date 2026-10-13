@@ -716,6 +716,17 @@ extern vmCvar_t cg_drawSelectionScrollBar;
 
 extern vmCvar_t cg_trueguns;
 extern vmCvar_t cg_holsteredweapons;
+extern vmCvar_t cg_holsterHide;
+extern vmCvar_t cg_weaponWheelOld;
+void CG_MDWheel_Down_f();
+void CG_MDWheel_Up_f();
+void CG_MDWheel_Menu_f();
+void CG_MDWheel_Reset();
+void CG_MDWheel_Frame();
+void CG_DrawMDWheel();
+qboolean CG_MDWheel_SwitchRing();
+qboolean CG_MDWheel_BlocksButtons();
+float CG_MDWheel_SensitivityScale();
 extern vmCvar_t cg_holsterdebug;
 extern vmCvar_t cg_holsterdebug_boneindex;
 extern vmCvar_t cg_holsterdebug_posoffset;
@@ -738,6 +749,7 @@ extern vmCvar_t cg_setVaderBreathdamaged;
 extern vmCvar_t cg_hudRatio;
 extern vmCvar_t cg_saberLockCinematicCamera;
 extern vmCvar_t cg_AimingCinematicCamera;
+extern vmCvar_t cg_aimShoulder;
 extern vmCvar_t cg_jumpSounds;
 extern vmCvar_t cg_rollSounds;
 
@@ -1361,4 +1373,20 @@ void CG_AdjustEyePos(const char* model_name);
 void CG_TrueViewCheckModel(const char* model_name); // the player's model changed: its trueview.cfg eye position
 void CG_TrueViewSave_f(); // "trueview_save [value]": saves the player's model with its eye position in trueview.cfg
 
+// continuous force effects started at most once per 16 ms per entity and effect (see CG_ContinuousFxReady, cg_players.cpp)
+enum
+{
+	CFX_SHOCKED,
+	CFX_STUNNED,
+	CFX_DRAINED,
+	CFX_LIGHTNING,
+	CFX_LIGHTNING_STRIKE,
+	CFX_ROSH,
+	CFX_DRAIN,
+	CFX_VIEW_LIGHTNING,
+	CFX_VIEW_LIGHTNING_STRIKE,
+	CFX_VIEW_DRAIN,
+	CFX_NUM_SLOTS
+};
+qboolean CG_ContinuousFxReady(int ent_num, int slot);
 #endif	//__CG_LOCAL_H__

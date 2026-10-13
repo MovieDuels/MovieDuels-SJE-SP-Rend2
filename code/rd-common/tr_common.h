@@ -85,6 +85,27 @@ byte* R_VideoEncoderBegin(size_t bytes);
 void R_VideoEncoderSubmit(int width, int height, int padding, int quality, qboolean motionJpeg, void (*write)(const byte*, int));
 void R_VideoEncoderFlush(void (*write)(const byte*, int), qboolean all);
 void R_VideoEncoderShutdown(void);
+// video frames read back asynchronously through two pixel buffer objects (tr_video_encoder.cpp): each frame is picked up on
+// the next capture, so glReadPixels does not stall the render thread. The renderer passes its GL buffer functions
+// (vanilla loads the ARB ones itself, rend2 has its own); without them the frame is read synchronously as before.
+#ifdef _WIN32
+#define VIDEO_GLAPI __stdcall
+#else
+#define VIDEO_GLAPI
+#endif
+struct videoReadbackGL_t
+{
+	void (VIDEO_GLAPI* GenBuffers)(int n, unsigned int* buffers) = nullptr;
+	void (VIDEO_GLAPI* DeleteBuffers)(int n, const unsigned int* buffers) = nullptr;
+	void (VIDEO_GLAPI* BindBuffer)(unsigned int target, unsigned int buffer) = nullptr;
+	void (VIDEO_GLAPI* BufferData)(unsigned int target, ptrdiff_t size, const void* data, unsigned int usage) = nullptr;
+	void (VIDEO_GLAPI* GetBufferSubData)(unsigned int target, ptrdiff_t offset, ptrdiff_t size, void* data) = nullptr;
+	void (VIDEO_GLAPI* ReadPixels)(int x, int y, int width, int height, unsigned int format, unsigned int type, void* pixels) = nullptr;
+};
+void R_VideoCaptureFrame(const videoReadbackGL_t& gl, int width, int height, int padwidth, int quality, qboolean motionJpeg,
+	void (*gammaCorrect)(byte*, int), void (*write)(const byte*, int));
+void R_VideoCaptureFlush(const videoReadbackGL_t& gl, void (*write)(const byte*, int));
+void R_VideoCaptureShutdown(const videoReadbackGL_t& gl);
 
 // Save raw image data as JPEG image file.
 void RE_SaveJPG(const char* filename, int quality, int image_width, int image_height, byte* image_buffer, int padding);

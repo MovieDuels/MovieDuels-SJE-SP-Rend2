@@ -1112,7 +1112,8 @@ static void R_CreateDlightImage()
 	}
 	else
 	{	// if we dont get a successful load
-		byte	data[DLIGHT_SIZE][DLIGHT_SIZE][4]{};
+		static byte data[DLIGHT_SIZE][DLIGHT_SIZE][4]; // off the stack (C6262); init-time only, not reentrant
+		memset(data, 0, sizeof(data)); // cleared each time, as the {} on the stack was
 
 		// make a centered inverse-square falloff blob for dynamic lighting
 		for (int x = 0; x < DLIGHT_SIZE; x++) {
@@ -1366,7 +1367,7 @@ void R_SetColorMappings() {
 		tr.overbrightBits = 0;
 	}
 
-	tr.identityLight = 1.0 / (1 << tr.overbrightBits);
+	tr.identityLight = 1.0 / (1LL << tr.overbrightBits); // 64-bit shift (C6297)
 	tr.identityLightByte = 255 * tr.identityLight;
 
 	if (r_intensity->value < 1.0f) {

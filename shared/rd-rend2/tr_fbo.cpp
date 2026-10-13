@@ -118,9 +118,10 @@ FBO_t* FBO_Create(const char* name, int width, int height)
 		ri.Error(ERR_DROP, "FBO_Create: bad height %i", height);
 	}
 
-	if (tr.numFBOs == MAX_FBOS)
+	if (tr.numFBOs >= MAX_FBOS)
 	{
 		ri.Error(ERR_DROP, "FBO_Create: MAX_FBOS hit");
+		return nullptr; // not reached: ri.Error never returns (function pointer, so it cannot be noreturn)
 	}
 
 	fbo = tr.fbos[tr.numFBOs] = (FBO_t*)Hunk_Alloc(sizeof(*fbo), h_low);

@@ -625,6 +625,9 @@ qboolean RE_InitDissolve(const qboolean bForceCircularExtroWipe)
 			//
 			qglReadBuffer(GL_FRONT_LEFT); // rend2 4d3177e5: read the front buffer (the last shown frame)
 			qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, pBuffer);
+			// back to the default (the read buffer is kept): video capture and screenshots read the back buffer, and with the
+			// front buffer left selected they got the previous frame - the video's frames carried the REC overlay
+			qglReadBuffer(GL_BACK_LEFT);
 			//
 			// now expand the pic over the top of itself so that it has a stride value of {PowerOf2(glConfig.vidWidth)}
 			//	(for GL power-of-2 rules)

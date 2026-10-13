@@ -77,7 +77,9 @@ void GL_Bind(image_t* image) {
 	}
 
 	if (glState.currenttextures[glState.currenttmu] != texnum) {
-		image->frameUsed = tr.frameCount;
+		if (image) {
+			image->frameUsed = tr.frameCount;
+		}
 		glState.currenttextures[glState.currenttmu] = texnum;
 		qglBindTexture(GL_TEXTURE_2D, texnum);
 	}
@@ -1651,7 +1653,9 @@ static void BeginPixelShader(const GLuint ui_type, const GLuint ui_id)
 
 		g_uiCurrentPixelShaderType = GL_FRAGMENT_PROGRAM_ARB;
 	}
-	default:;
+	break;
+	default:
+		break;
 	}
 }
 
@@ -1749,10 +1753,13 @@ static void RB_BlurGlowTexture()
 	for (int i_num_blur_passes = 0; i_num_blur_passes < r_DynamicGlowPasses->integer; i_num_blur_passes++)
 	{
 		// Load the Texel Offsets into the Vertex Program.
-		qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 0, -f_texel_width_offset, -f_texel_width_offset, 0.0f, 0.0f);
-		qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 1, -f_texel_width_offset, f_texel_width_offset, 0.0f, 0.0f);
-		qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 2, f_texel_width_offset, -f_texel_width_offset, 0.0f, 0.0f);
-		qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 3, f_texel_width_offset, f_texel_width_offset, 0.0f, 0.0f);
+		if (qglProgramEnvParameter4fARB) // always set when the glow vertex program exists; NULL would crash
+		{
+			qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 0, -f_texel_width_offset, -f_texel_width_offset, 0.0f, 0.0f);
+			qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 1, -f_texel_width_offset, f_texel_width_offset, 0.0f, 0.0f);
+			qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 2, f_texel_width_offset, -f_texel_width_offset, 0.0f, 0.0f);
+			qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 3, f_texel_width_offset, f_texel_width_offset, 0.0f, 0.0f);
+		}
 
 		// After first pass put the tex coords to the viewport size.
 		if (i_num_blur_passes == 1)

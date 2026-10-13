@@ -2054,8 +2054,12 @@ void R_GenerateDrawSurfs(viewParms_t* viewParms, trRefdef_t* refdef) {
 
 	R_AddPolygonSurfaces(refdef);
 
+	// weather belongs to the game view only. It was added to whichever scene came first in the frame: while an in-game
+	// menu is open the game view is not drawn, so the menu's model preview (RDF_NOWORLDMODEL) was scene 0 and the map's
+	// weather was drawn over the menu across that scene's viewport.
 	if (tr.viewParms.viewParmType > VPT_POINT_SHADOWS &&
 		tr.world &&
+		!(refdef->rdflags & RDF_NOWORLDMODEL) &&
 		backEndData->currentFrame->currentScene == 0)
 	{
 		R_AddWeatherSurfaces();

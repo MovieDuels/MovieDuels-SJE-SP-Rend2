@@ -616,9 +616,17 @@ void CG_HolsteredWeapons(centity_t* cent, const vec3_t g2Angles, const vec3_t or
 			return weapon > WP_NONE && weapon < WP_NUM_WEAPONS && client->ps.weapons[weapon] ? true : false;
 		};
 	const int inHand = client->ps.weapon;
+	// the guns the player set to "not on person" in the weapon wheel (cg_holsterHide): carried, but not drawn
+	static int hideModCount = -1;
+	static unsigned long long hideMask = 0;
+	if (hideModCount != cg_holsterHide.modificationCount)
+	{
+		hideModCount = cg_holsterHide.modificationCount;
+		hideMask = strtoull(cg_holsterHide.string, nullptr, 16);
+	}
 	auto carries = [&](const int weapon)
 		{
-			return weapon != inHand && has(weapon);
+			return weapon != inHand && has(weapon) && !(isPlayer && weapon < 64 && hideMask & 1ull << weapon);
 		};
 
 	// A jetpack (the classes that can fly with one) or a saber holstered on the back (the singleplayer saber

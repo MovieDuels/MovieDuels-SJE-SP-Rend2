@@ -763,7 +763,7 @@ static bool Board(Vehicle_t* p_veh, bgEntity_t* pEnt)
 		parent->client->ps.m_iVehicleNum = ent->s.number + 1;
 	}
 
-	if (p_veh->m_pVehicleInfo->numHands == 2)
+	if (p_veh->m_pVehicleInfo->numHands == 2 && ent->client)
 	{
 		//switch to vehicle weapon
 		if (ent->s.number < MAX_CLIENTS)
@@ -1213,8 +1213,11 @@ static bool Eject(Vehicle_t* p_veh, bgEntity_t* pEnt, const qboolean force_eject
 	vPlayerDir[ROLL] = 0;
 	SetClientViewAngle(ent, vPlayerDir);
 #endif
-	PM_SetLegsAnimTimer(ent, &ent->client->ps.legsAnimTimer, 0);
-	PM_SetTorsoAnimTimer(ent, &ent->client->ps.torsoAnimTimer, 0);
+	if (ent->client)
+	{
+		PM_SetLegsAnimTimer(ent, &ent->client->ps.legsAnimTimer, 0);
+		PM_SetTorsoAnimTimer(ent, &ent->client->ps.torsoAnimTimer, 0);
+	}
 
 	// Set how long until this vehicle can be boarded again.
 	p_veh->m_iBoarding = level.time + 1000;

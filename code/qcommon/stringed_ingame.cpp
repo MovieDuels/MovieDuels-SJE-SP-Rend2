@@ -660,8 +660,7 @@ const char* CStringEdPackage::ParseLine(const char* psLine)
 				{
 					iCharsToCopy = sizeof sThisLanguage - 1;
 				}
-				strncpy(sThisLanguage, psLine, iCharsToCopy);
-				// already declared as {0} so no need to zero-cap dest buffer
+				Q_strncpyz(sThisLanguage, psLine, static_cast<int>(iCharsToCopy) + 1); // the first iCharsToCopy chars, always terminated
 
 				psLine += strlen(sThisLanguage);
 				const char* _psSentence = ConvertCRLiterals_Read(InsideQuotes(psLine));

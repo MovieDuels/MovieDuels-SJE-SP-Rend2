@@ -1545,6 +1545,16 @@ void CM_TraceThroughPatchCollide(traceWork_t* tw, const patchCollide_s* pc)
 	static cvar_t* cv;
 #endif //BSPC
 
+	// The swept trace box (tw->bounds, from CM_Trace) does not touch the patch's bounds (its grid points + 1 unit): no facet
+	// can be hit. Same cull as the MP code (codemp/qcommon/cm_patch.cpp); SP tested every facet of every patch in the leaf -
+	// on maps made mostly of curves (md_ga_jedi) the patch traces were ~15% of the frame.
+	for (int i = 0; i < 3; i++) {
+		if (tw->bounds[0][i] > pc->bounds[1][i]
+			|| tw->bounds[1][i] < pc->bounds[0][i]) {
+			return;
+		}
+	}
+
 	if (tw->isPoint) {
 		CM_TracePointThroughPatchCollide(tw, pc);
 		return;

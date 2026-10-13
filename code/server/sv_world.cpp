@@ -603,7 +603,7 @@ using moveclip_t = struct
 	/*
 	Ghoul2 Insert Start
 	*/
-	EG2_Collision eG2TraceType;
+	EG2_Collision eG2TraceType = G2_NOCOLLIDE;
 	int useLod = 0;
 	trace_t trace; // make sure nothing goes under here for Ghoul2 collision purposes
 	/*

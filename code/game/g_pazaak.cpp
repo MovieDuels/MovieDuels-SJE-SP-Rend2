@@ -74,7 +74,7 @@ static char pzkEndScript[MAX_QPATH];
 static cvar_t* g_pazaakAllowed;     // SET_PAZAAK_ALLOWED: 0 = the Play Pazaak key does nothing (saved with the game)
 
 // Challenges before a map's own scripts (see the top of the file)
-#define PZK_CHALLENGE_FILE	"ext_data/sje_pazaak_challenges.cfg"
+#define PZK_CHALLENGE_FILE	"ext_data/MD_pazaak_challenges.dat"
 #define PZK_MAX_CHALLENGES	16
 #define PZK_BAR_RANGE		384	// "*": the opponent is the NPC nearest the player within this
 
@@ -159,8 +159,9 @@ static qboolean Pzk_InCutscene()
 // An enemy who is after the player is close by (the match would make him a sitting, invulnerable target)
 static qboolean Pzk_EnemyNear(const gentity_t* ent)
 {
-	gentity_t* list[MAX_GENTITIES];
-	vec3_t mins, maxs;
+	// static: too big for the stack (C6262); filled by EntitiesInBox before it is read
+	static gentity_t* list[MAX_GENTITIES];
+	vec3_t mins{}, maxs{};
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -620,7 +621,7 @@ static void Pzk_LoadChallenges()
 	while (*p && pzkNumChallenges < PZK_MAX_CHALLENGES)
 	{
 		// one line at a time ("//" comments are skipped by the parser)
-		char line[256];
+		char line[256]{};
 		int n = 0;
 		while (*p && *p != '\n' && n < static_cast<int>(sizeof(line)) - 1)
 		{

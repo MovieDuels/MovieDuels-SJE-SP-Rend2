@@ -990,11 +990,13 @@ static void ParseMesh(const world_t* worldData, dsurface_t* ds, drawVert_t* vert
 	srfBspSurface_t* grid;
 	int				i, j;
 	int				width, height, numPoints;
-	srfVert_t points[MAX_PATCH_SIZE * MAX_PATCH_SIZE]{};
+	// static: ~160 KB, off the stack (C6262); map load only, never re-entered
+	static srfVert_t points[MAX_PATCH_SIZE * MAX_PATCH_SIZE];
 	vec3_t			bounds[2]{};
 	vec3_t			tmpVec;
 	static surfaceType_t	skipData = SF_SKIP;
 	int realLightmapNum[MAXLIGHTMAPS]{};
+	memset(points, 0, sizeof(points)); // was = {}
 
 	for (j = 0; j < MAXLIGHTMAPS; j++)
 		realLightmapNum[j] = FatLightmap(LittleLong(ds->lightmapNum[j]));
@@ -2458,6 +2460,7 @@ static void R_LoadSubmodels(world_t* worldData, int worldIndex, lump_t* l) {
 
 		if (model == NULL) {
 			ri.Error(ERR_DROP, "R_LoadSubmodels: R_AllocModel() failed");
+			return; // not reached: ri.Error never returns (function pointer, so it cannot be noreturn)
 		}
 
 		model->type = MOD_BRUSH;
@@ -2988,24 +2991,28 @@ static void R_LoadEntities(world_t* worldData, lump_t* l)
 			continue;
 		}
 		if (!Q_stricmp(keyname, "distanceCull")) {
-			sscanf(value, "%f", &tr.distanceCull);
+			int unused = sscanf(value, "%f", &tr.distanceCull);
+			(void)unused;
 			continue;
 		}
 		// check for a different grid size
 		if (!Q_stricmp(keyname, "gridsize")) {
-			sscanf(value, "%f %f %f", &w->lightGridSize[0], &w->lightGridSize[1], &w->lightGridSize[2]);
+			int unused = sscanf(value, "%f %f %f", &w->lightGridSize[0], &w->lightGridSize[1], &w->lightGridSize[2]);
+			(void)unused;
 			continue;
 		}
 
 		// check for auto exposure
 		if (!Q_stricmp(keyname, "autoExposureMinMax")) {
-			sscanf(value, "%f %f", &tr.autoExposureMinMax[0], &tr.autoExposureMinMax[1]);
+			int unused = sscanf(value, "%f %f", &tr.autoExposureMinMax[0], &tr.autoExposureMinMax[1]);
+			(void)unused;
 			continue;
 		}
 
 		// check for volumetric fog scale
 		if (!Q_stricmp(keyname, "volumetricFogScale")) {
-			sscanf(value, "%f", &tr.volumetricFogScale);
+			int unused = sscanf(value, "%f", &tr.volumetricFogScale);
+			(void)unused;
 			continue;
 		}
 	}
@@ -3236,12 +3243,14 @@ static void R_LoadCubemapEntities(const char* cubemapEntityName)
 
 			if (!Q_stricmp(spawnVars[i][0], "origin"))
 			{
-				sscanf(spawnVars[i][1], "%f %f %f", &origin[0], &origin[1], &origin[2]);
+				int unused = sscanf(spawnVars[i][1], "%f %f %f", &origin[0], &origin[1], &origin[2]);
+				(void)unused;
 				originSet = qtrue;
 			}
 			else if (!Q_stricmp(spawnVars[i][0], "radius"))
 			{
-				sscanf(spawnVars[i][1], "%f", &parallaxRadius);
+				int unused = sscanf(spawnVars[i][1], "%f", &parallaxRadius);
+				(void)unused;
 			}
 		}
 

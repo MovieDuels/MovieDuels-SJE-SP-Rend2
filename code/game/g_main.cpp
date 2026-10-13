@@ -1010,6 +1010,7 @@ InitGame
 int giMapChecksum;
 SavedGameJustLoaded_e g_eSavedGameJustLoaded;
 qboolean g_qbLoadTransition = qfalse;
+extern void WP_RepulseClearPending();
 
 static void InitGame(const char* mapname, const char* spawntarget, const int checkSum, const char* entities,
 	const int levelTime,
@@ -1032,6 +1033,7 @@ static void InitGame(const char* mapname, const char* spawntarget, const int che
 	srand(randomSeed);
 
 	G_InitCvars();
+	WP_RepulseClearPending(); // per-entity Repulse blasts / saber relights of the last level or game
 	G_EnforceUpdateSettings();
 	G_LatchAnimationStyle(); // before any model or animation.cfg of this map is loaded
 	g_playerAnimStyleApplied = qfalse; // give the player g_PlayerAnimationStyle again once spawned

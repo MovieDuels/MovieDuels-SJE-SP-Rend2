@@ -855,6 +855,7 @@ static void NPC_SetMiscDefaultData(gentity_t* ent)
 			case WP_ROCKET_LAUNCHER:
 			case WP_CONCUSSION:
 				NPCInfo->scriptFlags |= SCF_PILOT;
+				break;
 			default:
 				break;
 			case WP_THERMAL:

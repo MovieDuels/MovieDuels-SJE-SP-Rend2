@@ -2168,6 +2168,52 @@ Try and use an entity in the world, directly ahead of us
 
 extern void ItemUse_Jetpack(const gentity_t* ent);
 
+// MovieDuels: a gonk (power droid) gives a bacta canister to whoever uses it: dropped in front of it, towards the user, then
+// the gonk needs g_gonkBactaCooldown seconds (default 30) before the next one. The cgame shows the use icon on a gonk
+// that has one, within 256 units (CG_UseIcon). Not saved: a loaded game starts with every gonk ready.
+extern gentity_t* LaunchItem(gitem_t* item, const vec3_t origin, const vec3_t velocity, const char* target);
+static int gonkBactaTime[MAX_GENTITIES];
+
+qboolean G_GonkCanGiveBacta(const gentity_t* gonk)
+{
+	if (!gonk || !gonk->inuse || !gonk->client || gonk->client->NPC_class != CLASS_GONK || gonk->health <= 0
+		|| gonk->client->ps.pm_type >= PM_DEAD)
+	{
+		return qfalse;
+	}
+	if (gonkBactaTime[gonk->s.number] > level.time + 3600000)
+	{
+		gonkBactaTime[gonk->s.number] = 0; // left over from an earlier map
+	}
+	return level.time >= gonkBactaTime[gonk->s.number] ? qtrue : qfalse;
+}
+
+static void G_GonkGiveBacta(gentity_t* gonk, const gentity_t* user)
+{
+	gitem_t* item = FindItemForInventory(INV_BACTA_CANISTER);
+	vec3_t dir, org, vel;
+
+	if (!item)
+	{
+		return;
+	}
+	VectorSubtract(user->currentOrigin, gonk->currentOrigin, dir);
+	dir[2] = 0;
+	if (VectorNormalize(dir) < 1.0f)
+	{
+		AngleVectors(gonk->currentAngles, dir, nullptr, nullptr);
+	}
+	VectorMA(gonk->currentOrigin, 20.0f, dir, org);
+	org[2] += 8.0f;
+	VectorScale(dir, 80.0f, vel);
+	vel[2] = 120.0f;
+	LaunchItem(item, org, vel, nullptr);
+	G_SoundOnEnt(gonk, CHAN_VOICE, "sound/chars/gonk/misc/gonktalk1.wav");
+
+	static const cvar_t* cooldown = gi.cvar("g_gonkBactaCooldown", "30", CVAR_ARCHIVE);
+	gonkBactaTime[gonk->s.number] = level.time + static_cast<int>((cooldown->value > 0.0f ? cooldown->value : 0.0f) * 1000.0f);
+}
+
 void TryUse(gentity_t* ent)
 {
 	trace_t trace;
@@ -2214,6 +2260,12 @@ void TryUse(gentity_t* ent)
 	}
 
 	target = &g_entities[trace.entityNum];
+
+	if (target != ent && G_GonkCanGiveBacta(target))
+	{
+		G_GonkGiveBacta(target, ent);
+		return;
+	}
 
 	if (target && target->client && target->client->NPC_class == CLASS_VEHICLE)
 	{

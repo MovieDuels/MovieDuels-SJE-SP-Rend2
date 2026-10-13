@@ -791,7 +791,7 @@ struct SVertexTemp
 	int touch;
 	int newindex;
 	float tex[2];
-	SVertexTemp()
+	SVertexTemp() : flags(0), newindex(0), tex{}
 	{
 		touch = 0;
 	}

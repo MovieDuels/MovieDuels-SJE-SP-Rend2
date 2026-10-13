@@ -40,6 +40,9 @@ namespace
 		int padding = 0; // bytes after each row of pixels
 		int quality = 90;
 		qboolean motionJpeg = qtrue;
+		void (*gamma)(byte*, int) = nullptr; // gamma correction, done by the worker before compressing
+		int bgraRowBytes = 0; // > 0: pixels are BGRA rows (async read back), converted to the padded RGB rows below first
+		int rgbRowBytes = 0;
 		std::vector<byte> out;
 		size_t outSize = 0;
 		bool taken = false; // a worker is compressing it
@@ -57,6 +60,31 @@ namespace
 	void R_VideoEncode(videoJob_t* job)
 	{
 		const size_t linelen = static_cast<size_t>(job->width) * 3;
+
+		if (job->bgraRowBytes > 0)
+		{
+			// the async read back fetches BGRA (the GPU's fast path; GL_RGB made the driver convert on the CPU and stall):
+			// the same pixels as the old GL_RGB read, in its row layout (rgbRowBytes per row, padding zeroed)
+			std::vector<byte> rgb(static_cast<size_t>(job->rgbRowBytes) * job->height, 0);
+			for (int y = 0; y < job->height; y++)
+			{
+				const byte* src = job->pixels.data() + static_cast<size_t>(y) * job->bgraRowBytes;
+				byte* dst = rgb.data() + static_cast<size_t>(y) * job->rgbRowBytes;
+				for (int x = 0; x < job->width; x++, src += 4, dst += 3)
+				{
+					dst[0] = src[2];
+					dst[1] = src[1];
+					dst[2] = src[0];
+				}
+			}
+			job->pixels.swap(rgb);
+			job->bgraRowBytes = 0;
+		}
+
+		if (job->gamma)
+		{
+			job->gamma(job->pixels.data(), static_cast<int>(job->pixels.size()));
+		}
 
 		if (job->motionJpeg)
 		{
@@ -126,6 +154,10 @@ namespace
 						break;
 					}
 				}
+			}
+			if (!job)
+			{
+				continue; // cannot happen: the wait above only returns (without s_quit) when an untaken job exists
 			}
 			R_VideoEncode(job);
 			{
@@ -231,4 +263,144 @@ void R_VideoEncoderShutdown(void)
 	s_jobs.clear();
 	s_next.reset();
 	s_quit = false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Asynchronous read back. glReadPixels of the whole frame (into client memory) waited for the GPU to finish the frame on
+// every captured frame (25 a second): at 60 fps the captured frames took up to 22-36 ms (MD SP 1280x720) - the stutter
+// while recording. Now the frame goes into one of two pixel buffer objects (the copy runs on the GPU) and is fetched on
+// the next capture, when it is long done. Same frames, same order; each one reaches the encoder one capture later, and
+// R_VideoCaptureFlush (called before the AVI file is closed) hands over the last one.
+// ---------------------------------------------------------------------------------------------------------------------
+namespace
+{
+	constexpr unsigned int VIDEO_GL_PIXEL_PACK_BUFFER = 0x88EB;
+	constexpr unsigned int VIDEO_GL_STREAM_READ = 0x88E1;
+	constexpr unsigned int VIDEO_GL_RGB = 0x1907;
+	constexpr unsigned int VIDEO_GL_UNSIGNED_BYTE = 0x1401;
+	constexpr unsigned int VIDEO_GL_BGRA = 0x80E1;
+
+	unsigned int s_pbo[2] = { 0, 0 };
+	size_t s_pboBytes = 0; // size of each PBO, 0 = not created
+	int s_pboNext = 0; // the PBO the next frame is read into
+	int s_pboPending = -1; // the PBO holding a frame not handed to the encoder yet
+
+	struct pendingFrame_t
+	{
+		int width = 0;
+		int height = 0;
+		int padding = 0;
+		int quality = 90;
+		qboolean motionJpeg = qtrue;
+		void (*gamma)(byte*, int) = nullptr;
+		int rgbRowBytes = 0; // the old GL_RGB row size (pack alignment padding included)
+	} s_pendingFrame;
+
+	bool R_VideoHavePbo(const videoReadbackGL_t& gl)
+	{
+		return gl.GenBuffers && gl.DeleteBuffers && gl.BindBuffer && gl.BufferData && gl.GetBufferSubData;
+	}
+
+	void R_VideoSubmitWithGamma(const pendingFrame_t& f, void (*write)(const byte*, int))
+	{
+		if (s_next)
+		{
+			s_next->gamma = f.gamma; // applied by the worker before compressing (it was done here on the render thread)
+		}
+		R_VideoEncoderSubmit(f.width, f.height, f.padding, f.quality, f.motionJpeg, write);
+	}
+
+	void R_VideoSubmitPending(const videoReadbackGL_t& gl, void (*write)(const byte*, int))
+	{
+		if (s_pboPending < 0)
+		{
+			return;
+		}
+		byte* frame = R_VideoEncoderBegin(s_pboBytes);
+		gl.BindBuffer(VIDEO_GL_PIXEL_PACK_BUFFER, s_pbo[s_pboPending]);
+		gl.GetBufferSubData(VIDEO_GL_PIXEL_PACK_BUFFER, 0, static_cast<ptrdiff_t>(s_pboBytes), frame);
+		gl.BindBuffer(VIDEO_GL_PIXEL_PACK_BUFFER, 0);
+		s_pboPending = -1;
+		if (s_next)
+		{
+			s_next->bgraRowBytes = s_pendingFrame.width * 4;
+			s_next->rgbRowBytes = s_pendingFrame.rgbRowBytes;
+		}
+		R_VideoSubmitWithGamma(s_pendingFrame, write);
+	}
+}
+
+void R_VideoCaptureFrame(const videoReadbackGL_t& gl, const int width, const int height, const int padwidth,
+	const int quality, const qboolean motionJpeg, void (*gammaCorrect)(byte*, int), void (*write)(const byte*, int))
+{
+	const size_t bytes = static_cast<size_t>(padwidth) * height;
+	const size_t bgraBytes = static_cast<size_t>(width) * 4 * height; // BGRA rows need no padding
+	pendingFrame_t f;
+	f.width = width;
+	f.height = height;
+	f.padding = padwidth - width * 3;
+	f.quality = quality;
+	f.motionJpeg = motionJpeg;
+	f.gamma = gammaCorrect;
+	f.rgbRowBytes = padwidth;
+
+	if (!R_VideoHavePbo(gl))
+	{
+		// no pixel buffer objects: read it now (as before)
+		byte* frame = R_VideoEncoderBegin(bytes);
+		gl.ReadPixels(0, 0, width, height, VIDEO_GL_RGB, VIDEO_GL_UNSIGNED_BYTE, frame);
+		R_VideoSubmitWithGamma(f, write);
+		return;
+	}
+
+	if (s_pboBytes != bgraBytes)
+	{
+		// first frame, or the video size changed: hand over the frame of the old size, then (re)create the buffers
+		R_VideoSubmitPending(gl, write);
+		if (s_pboBytes)
+		{
+			gl.DeleteBuffers(2, s_pbo);
+		}
+		gl.GenBuffers(2, s_pbo);
+		for (const unsigned int pbo : s_pbo)
+		{
+			gl.BindBuffer(VIDEO_GL_PIXEL_PACK_BUFFER, pbo);
+			gl.BufferData(VIDEO_GL_PIXEL_PACK_BUFFER, static_cast<ptrdiff_t>(bgraBytes), nullptr, VIDEO_GL_STREAM_READ);
+		}
+		gl.BindBuffer(VIDEO_GL_PIXEL_PACK_BUFFER, 0);
+		s_pboBytes = bgraBytes;
+		s_pboNext = 0;
+	}
+
+	// start this frame's copy (returns at once), then hand over the previous one
+	gl.BindBuffer(VIDEO_GL_PIXEL_PACK_BUFFER, s_pbo[s_pboNext]);
+	gl.ReadPixels(0, 0, width, height, VIDEO_GL_BGRA, VIDEO_GL_UNSIGNED_BYTE, nullptr);
+	gl.BindBuffer(VIDEO_GL_PIXEL_PACK_BUFFER, 0);
+
+	R_VideoSubmitPending(gl, write);
+
+	s_pboPending = s_pboNext;
+	s_pendingFrame = f;
+	s_pboNext ^= 1;
+}
+
+// hands the last captured frame to the encoder (before the AVI file is closed)
+void R_VideoCaptureFlush(const videoReadbackGL_t& gl, void (*write)(const byte*, int))
+{
+	if (R_VideoHavePbo(gl))
+	{
+		R_VideoSubmitPending(gl, write);
+	}
+}
+
+void R_VideoCaptureShutdown(const videoReadbackGL_t& gl)
+{
+	if (s_pboBytes && gl.DeleteBuffers)
+	{
+		gl.DeleteBuffers(2, s_pbo);
+	}
+	s_pbo[0] = s_pbo[1] = 0;
+	s_pboBytes = 0;
+	s_pboNext = 0;
+	s_pboPending = -1;
 }
