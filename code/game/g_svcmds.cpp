@@ -1363,9 +1363,12 @@ static int svcmdcmp(const void* a, const void* b)
 	return Q_stricmp(static_cast<const char*>(a), ((svcmd_t*)b)->name);
 }
 
+extern void Svcmd_FighterTest_f(); // (2026-10-13) g_vehicles.cpp, developer test (cheats)
+
 // FIXME some of these should be made CMD_ALIVE too!
 static svcmd_t svcmds[] = {
 	{"entitylist", Svcmd_EntityList_f, CMD_NONE},
+	{"fightertest", Svcmd_FighterTest_f, CMD_CHEAT},
 	{"game_memory", Svcmd_GameMem_f, CMD_NONE},
 
 	{"nav", Svcmd_Nav_f, CMD_CHEAT},

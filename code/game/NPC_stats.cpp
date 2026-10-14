@@ -3969,6 +3969,22 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 					}
 					continue;
 				}
+				if (!Q_stricmp(token, "alt_fire"))
+				{
+					if (COM_ParseInt(&p, &n))
+					{
+						SkipRestOfLine(&p);
+						continue;
+					}
+					if (npc->NPC)
+					{
+						if (n != 0)
+						{
+							npc->NPC->scriptFlags |= SCF_ALT_FIRE;
+						}
+					}
+					continue;
+				}
 				//Other unique behaviors/numbers that are currently hardcoded?
 			}
 

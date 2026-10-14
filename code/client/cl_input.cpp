@@ -693,6 +693,122 @@ static void CL_JoystickMove(usercmd_t* cmd)
 
 /*
 =================
+CL_FighterPadMove
+
+(2026-10-13) Battlefront II (2017) like controller flying while piloting a fighter (cl_fighterPad 1 and
+g_fighterArcade 1), as MP: right stick = turn rate (the deflection sets how fast the aim turns, deg/s, with a small
+round dead zone and a curve for fine aiming; the ship follows the aim at its own turn rate), left stick up / down =
+throttle (the speed holds when the stick is centred), left stick left / right = roll (the fighter code rolls with the
+strafe move and levels out on release), boost = the fighter's turbo (the jump button, or +speed: the left trigger),
+fire as before. Meanwhile the sticks press no keys (in_padStickKeysOff). cl_fighterPadSim "lx ly rx ry" (cheat
+protected) stands in for the sticks, for a scripted test without a controller.
+=================
+*/
+extern float IN_GamepadStick(int axis);
+static cvar_t* cl_fighterPad;
+static cvar_t* cl_fighterPadYawRate;
+static cvar_t* cl_fighterPadPitchRate;
+static cvar_t* cl_fighterPadDeadzone;
+static cvar_t* cl_fighterPadExpo;
+static cvar_t* cl_fighterPadInvert;
+static cvar_t* cl_fighterPadSim;
+static cvar_t* cl_fighterPilot;
+static cvar_t* in_padStickKeysOff;
+static constexpr float FIGHTER_PAD_THROTTLE = 0.25f; // left stick part up / down that works the throttle
+
+static qboolean CL_FighterPadActive()
+{
+	return static_cast<qboolean>(cl_fighterPad && cl_fighterPad->integer
+		&& Cvar_VariableIntegerValue("g_fighterArcade")
+		&& cl_fighterPilot->integer
+		&& cls.state == CA_ACTIVE
+		&& !(Key_GetCatcher() & (KEYCATCH_UI | KEYCATCH_CONSOLE)));
+}
+
+// while a controller flies a fighter its sticks press no keys (sdl_input.cpp); every frame, also when not connected
+static void CL_FighterPadKeys()
+{
+	const int off = CL_FighterPadActive() ? 1 : 0;
+
+	if (in_padStickKeysOff && in_padStickKeysOff->integer != off)
+	{
+		Cvar_Set("in_padStickKeysOff", off ? "1" : "0");
+	}
+}
+
+// a stick with a round dead zone and the response curve: -1 .. 1 per axis
+static void CL_FighterPadStick(const float x, const float y, float* outX, float* outY)
+{
+	const float dead = Com_Clamp(0.0f, 0.9f, cl_fighterPadDeadzone->value);
+	const float mag = sqrtf(x * x + y * y);
+
+	if (mag <= dead)
+	{
+		*outX = *outY = 0.0f;
+		return;
+	}
+	float m = ((mag > 1.0f ? 1.0f : mag) - dead) / (1.0f - dead);
+	m = powf(m, Com_Clamp(1.0f, 4.0f, cl_fighterPadExpo->value));
+	*outX = x / mag * m;
+	*outY = y / mag * m;
+}
+
+static void CL_FighterPadMove(usercmd_t* cmd)
+{
+	float stick[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	float sx, sy;
+
+	if (!CL_FighterPadActive())
+	{
+		return;
+	}
+
+	if (cl_fighterPadSim->string[0])
+	{
+		//test: fixed stick deflections
+		if (sscanf(cl_fighterPadSim->string, "%f %f %f %f", &stick[0], &stick[1], &stick[2], &stick[3]) < 1)
+		{
+			return;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			stick[i] = IN_GamepadStick(i);
+		}
+	}
+
+	//right stick: turn rate
+	const float dt = 0.001f * cls.frametime;
+	CL_FighterPadStick(stick[2], stick[3], &sx, &sy);
+	cl.viewangles[YAW] -= sx * cl_fighterPadYawRate->value * dt;
+	cl.viewangles[PITCH] += (cl_fighterPadInvert->integer ? -sy : sy) * cl_fighterPadPitchRate->value * dt;
+
+	//left stick: throttle (up = faster) and roll
+	CL_FighterPadStick(stick[0], stick[1], &sx, &sy);
+	if (sy < -FIGHTER_PAD_THROTTLE)
+	{
+		cmd->forwardmove = 127;
+	}
+	else if (sy > FIGHTER_PAD_THROTTLE)
+	{
+		cmd->forwardmove = -127;
+	}
+	if (sx != 0.0f)
+	{
+		cmd->rightmove = ClampCharMove(static_cast<int>(sx * 127.0f));
+	}
+
+	//the sprint button (+speed, the left trigger) boosts too, as the jump button: the fighter's turbo
+	if (in_speed.active)
+	{
+		cmd->upmove = 127;
+	}
+}
+
+/*
+=================
 CL_MouseMove
 =================
 */
@@ -875,6 +991,9 @@ static usercmd_t CL_CreateCmd()
 
 	// get basic movement from joystick
 	CL_JoystickMove(&cmd);
+
+	// (2026-10-13) a controller flying a fighter
+	CL_FighterPadMove(&cmd);
 
 	// check to make sure the angles haven't wrapped
 	if (cl.viewangles[PITCH] - oldAngles[PITCH] > 90)
@@ -1104,6 +1223,8 @@ Called every frame to builds and sends a command packet to the server.
 */
 void CL_SendCmd()
 {
+	CL_FighterPadKeys(); // (2026-10-13)
+
 	// don't send any message if not connected
 	if (cls.state < CA_CONNECTED)
 	{
@@ -1262,4 +1383,15 @@ void CL_InitInput()
 
 	cl_nodelta = Cvar_Get("cl_nodelta", "0", 0);
 	cl_debugMove = Cvar_Get("cl_debugMove", "0", 0);
+
+	// (2026-10-13) a controller flying a fighter (CL_FighterPadMove), as MP
+	cl_fighterPad = Cvar_Get("cl_fighterPad", "1", CVAR_ARCHIVE);
+	cl_fighterPadYawRate = Cvar_Get("cl_fighterPadYawRate", "110", CVAR_ARCHIVE); // deg/s at full deflection
+	cl_fighterPadPitchRate = Cvar_Get("cl_fighterPadPitchRate", "95", CVAR_ARCHIVE); // deg/s at full deflection
+	cl_fighterPadDeadzone = Cvar_Get("cl_fighterPadDeadzone", "0.12", CVAR_ARCHIVE);
+	cl_fighterPadExpo = Cvar_Get("cl_fighterPadExpo", "1.8", CVAR_ARCHIVE); // 1 = linear, more = finer aim near the centre
+	cl_fighterPadInvert = Cvar_Get("cl_fighterPadInvert", "0", CVAR_ARCHIVE); // 1 = stick up pitches down
+	cl_fighterPadSim = Cvar_Get("cl_fighterPadSim", "", CVAR_CHEAT | CVAR_TEMP); // test: "lx ly rx ry", -1 .. 1, y down
+	cl_fighterPilot = Cvar_Get("cl_fighterPilot", "0", CVAR_ROM | CVAR_TEMP); // set by the cgame
+	in_padStickKeysOff = Cvar_Get("in_padStickKeysOff", "0", CVAR_ROM | CVAR_TEMP);
 }

@@ -3154,6 +3154,7 @@ void G_RemoveWeather()
 ClientCommand
 =================
 */
+extern void Svcmd_FighterTest_f(); // (2026-10-13) g_vehicles.cpp
 void ClientCommand(const int clientNum)
 {
 	gentity_t* ent = g_entities + clientNum;
@@ -3605,6 +3606,14 @@ void ClientCommand(const int clientNum)
 			G_RemoveWeather();
 			num = G_EffectIndex("*clear");
 			gi.SetConfigstring(CS_EFFECTS + num, "");
+		}
+	}
+	else if (Q_stricmp(cmd, "fightertest") == 0)
+	{
+		//(2026-10-13) developer test of the fighter controls (g_vehicles.cpp), cheats only
+		if (g_cheats->integer)
+		{
+			Svcmd_FighterTest_f();
 		}
 	}
 	else if (TryWorkshopCommand(ent))

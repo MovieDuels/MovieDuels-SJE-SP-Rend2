@@ -2951,3 +2951,172 @@ void G_SetSharedVehicleFunctions(vehicleInfo_t* pVehInfo)
 
 #undef MOD_EXPLOSIVE
 #endif
+
+// (2026-10-13) fightertest: the most open spot near the player (room around a ship, well clear of the ground)
+static void G_FighterTestOpenAir(const gentity_t* player, const float height, vec3_t out)
+{
+	vec3_t boxMins = { -400.0f, -400.0f, -150.0f };
+	vec3_t boxMaxs = { 400.0f, 400.0f, 150.0f };
+	static const vec3_t dirs[6] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+	float bestScore = -1.0f;
+
+	VectorCopy(player->client->ps.origin, out);
+	for (int iz = 0; iz <= 4; iz++)
+	{
+		for (int ix = -4; ix <= 4; ix++)
+		{
+			for (int iy = -4; iy <= 4; iy++)
+			{
+				vec3_t p;
+				trace_t tr;
+				float score = 0.0f;
+				qboolean ok = qtrue;
+
+				VectorSet(p, player->client->ps.origin[0] + ix * 1024.0f, player->client->ps.origin[1] + iy * 1024.0f,
+					player->client->ps.origin[2] + iz * height * 0.25f);
+				gi.trace(&tr, p, boxMins, boxMaxs, p, ENTITYNUM_NONE, MASK_NPCSOLID, static_cast<EG2_Collision>(0), 0);
+				if (tr.startsolid || tr.allsolid)
+				{
+					continue;
+				}
+				for (int d = 0; d < 6 && ok; d++)
+				{
+					vec3_t end;
+					VectorMA(p, 4096.0f, dirs[d], end);
+					gi.trace(&tr, p, boxMins, boxMaxs, end, ENTITYNUM_NONE, MASK_NPCSOLID, static_cast<EG2_Collision>(0), 0);
+					score += tr.fraction;
+					if (d == 5 && tr.fraction * 4096.0f < 500.0f)
+					{
+						//too near the ground (it would land)
+						ok = qfalse;
+					}
+				}
+				if (ok && score > bestScore)
+				{
+					bestScore = score;
+					VectorCopy(p, out);
+				}
+			}
+		}
+	}
+}
+
+// (2026-10-13) fightertest: put the player into this vehicle, level and at idle speed
+static void G_FighterTestBoard(gentity_t* player, gentity_t* veh)
+{
+	if (!veh->m_pVehicle->m_pVehicleInfo->Board(veh->m_pVehicle, player))
+	{
+		gi.Printf("fightertest: could not board\n");
+		return;
+	}
+	{
+		//aim level, along the ship (not into the ground)
+		vec3_t levelAim = { 0.0f, 0.0f, 0.0f };
+		levelAim[YAW] = veh->client->ps.viewangles[YAW];
+		SetClientViewAngle(player, levelAim);
+	}
+	if (veh->m_pVehicle->m_pVehicleInfo->type == VH_FIGHTER)
+	{
+		//already flying, level (an empty ship noses down as it falls), no tumble, no fall
+		veh->client->ps.speed = veh->m_pVehicle->m_pVehicleInfo->speedIdle;
+		veh->m_pVehicle->m_vOrientation[PITCH] = veh->m_pVehicle->m_vOrientation[ROLL] = 0.0f;
+		VectorClear(veh->m_pVehicle->m_vFullAngleVelocity);
+		VectorClear(veh->client->ps.velocity);
+	}
+	gi.Printf("fightertest: player in %s (entity %d) at %.0f %.0f %.0f\n", veh->m_pVehicle->m_pVehicleInfo->name,
+		veh->s.number, veh->currentOrigin[0], veh->currentOrigin[1], veh->currentOrigin[2]);
+}
+
+// (2026-10-13) developer test (cheats; the fighter control tests: a map's fighters sit on the ground or far away):
+// "fightertest <vehicle> [height]" takes the map's nearest empty vehicle of that kind up into open air near the player
+// and puts the player into it, level and at idle speed (with none in the map it spawns one there - "npc spawn
+// vehicle" - and "fightertest board" then boards the nearest empty vehicle). Not for normal play.
+void Svcmd_FighterTest_f()
+{
+	gentity_t* player = &g_entities[0];
+	const char* arg = gi.argv(1);
+
+	if (!player->client || player->health <= 0 || player->client->ps.m_iVehicleNum)
+	{
+		gi.Printf("fightertest: the player must be alive and on foot\n");
+		return;
+	}
+	if (!arg[0])
+	{
+		gi.Printf("usage: fightertest <vehicle> [height, default 1024], or fightertest board\n");
+		return;
+	}
+
+	//a test script may send the command more than once: once a second
+	static int lastTime = -1000;
+	if (level.time >= lastTime && level.time - lastTime < 1000)
+	{
+		return;
+	}
+	lastTime = level.time;
+
+	const qboolean anyKind = static_cast<qboolean>(!Q_stricmp(arg, "board"));
+	gentity_t* best = nullptr;
+	float bestDist = 0.0f;
+	for (int i = 1; i < globals.num_entities; i++)
+	{
+		gentity_t* e = &g_entities[i];
+		vec3_t d;
+
+		if (!e->inuse || !e->client || !e->m_pVehicle || !e->m_pVehicle->m_pVehicleInfo || e->m_pVehicle->m_pPilot
+			|| e->health <= 0 || (!anyKind && Q_stricmp(e->m_pVehicle->m_pVehicleInfo->name, arg)))
+		{
+			continue;
+		}
+		VectorSubtract(e->currentOrigin, player->currentOrigin, d);
+		if (!best || VectorLengthSquared(d) < bestDist)
+		{
+			best = e;
+			bestDist = VectorLengthSquared(d);
+		}
+	}
+
+	//the most open spot near by, up to height higher
+	float height = 1024.0f;
+	if (gi.argc() > 2)
+	{
+		height = atof(gi.argv(2));
+	}
+	vec3_t top;
+	G_FighterTestOpenAir(player, height, top);
+
+	if (best)
+	{
+		if (!anyKind)
+		{
+			//take it there, the player a little behind it
+			vec3_t fwd, behind;
+			vec3_t yawOnly = { 0.0f, 0.0f, 0.0f };
+			yawOnly[YAW] = best->client->ps.viewangles[YAW];
+			AngleVectors(yawOnly, fwd, nullptr, nullptr);
+			G_SetOrigin(best, top);
+			VectorCopy(top, best->client->ps.origin);
+			gi.linkentity(best);
+			VectorMA(top, -700.0f, fwd, behind);
+			G_SetOrigin(player, behind);
+			VectorCopy(behind, player->client->ps.origin);
+			VectorClear(player->client->ps.velocity);
+			gi.linkentity(player);
+		}
+		G_FighterTestBoard(player, best);
+		return;
+	}
+	if (anyKind)
+	{
+		gi.Printf("fightertest: no vehicle to board\n");
+		return;
+	}
+
+	//none in the map: spawn one there
+	G_SetOrigin(player, top);
+	VectorCopy(top, player->client->ps.origin);
+	VectorClear(player->client->ps.velocity);
+	gi.linkentity(player);
+	gi.SendConsoleCommand(va("npc spawn vehicle %s\n", arg));
+	gi.Printf("fightertest: spawning %s; then fightertest board\n", arg);
+}

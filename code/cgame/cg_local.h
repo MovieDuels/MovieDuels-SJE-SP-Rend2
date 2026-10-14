@@ -544,7 +544,7 @@ using cg_t = struct cg_s
 	overrides_t overrides; //for overriding certain third-person camera properties
 
 	short radarEntityCount;
-	short radarEntities[64];
+	short radarEntities[128];
 
 	short bracketedEntityCount;
 	short bracketedEntities[64];
@@ -705,6 +705,7 @@ extern vmCvar_t cg_scaleJoystickSensitivity;
 extern vmCvar_t cg_vehicleStickYaw;
 extern vmCvar_t cg_vehicleStickPitch;
 extern vmCvar_t cg_vehicleStickEaseIn;
+extern vmCvar_t cg_fighterCamTight; // (2026-10-13)
 
 extern vmCvar_t cg_drawRadar;
 extern vmCvar_t cg_dynamicHud;

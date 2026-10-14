@@ -10905,6 +10905,11 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			cg.overrides.active |= CG_OVERRIDE_3RD_PERSON_RNG | CG_OVERRIDE_3RD_PERSON_VOF | CG_OVERRIDE_3RD_PERSON_POF;
 
 			cg.overrides.thirdPersonRange = p_player_veh->m_pVehicleInfo->cameraRange;
+			if (cg_fighterCamTight.integer && p_player_veh->m_pVehicleInfo->type == VH_FIGHTER)
+			{
+				//(2026-10-13) cg_fighterCamTight: a closer chase camera for the fighter's pilot, as MP
+				cg.overrides.thirdPersonRange *= 0.8f;
+			}
 			cg.overrides.thirdPersonVertOffset = p_player_veh->m_pVehicleInfo->cameraVertOffset;
 			cg.overrides.thirdPersonPitchOffset = p_player_veh->m_pVehicleInfo->cameraPitchOffset;
 

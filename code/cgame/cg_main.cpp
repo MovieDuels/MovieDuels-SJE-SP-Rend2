@@ -433,6 +433,7 @@ vmCvar_t cg_scaleJoystickSensitivity;
 vmCvar_t cg_vehicleStickYaw;
 vmCvar_t cg_vehicleStickPitch;
 vmCvar_t cg_vehicleStickEaseIn;
+vmCvar_t cg_fighterCamTight; // (2026-10-13)
 
 vmCvar_t cg_SFXSabers;
 vmCvar_t cg_SFXSabersGlowSize;
@@ -676,6 +677,8 @@ static cvarTable_t cvarTable[] = {
 	{&cg_vehicleStickYaw, "cg_vehicleStickYaw", "0.3", CVAR_ARCHIVE},
 	{&cg_vehicleStickPitch, "cg_vehicleStickPitch", "0.22", CVAR_ARCHIVE},
 	{&cg_vehicleStickEaseIn, "cg_vehicleStickEaseIn", "400", CVAR_ARCHIVE},
+	//(2026-10-13) fighters: 1 = closer chase camera (x 0.8 of the vehicle cameraRange), 0 = the old camera
+	{&cg_fighterCamTight, "cg_fighterCamTight", "1", CVAR_ARCHIVE},
 
 	{&cg_SFXSabers, "cg_SFXSabers", "4", CVAR_ARCHIVE},
 	{&cg_SFXSabersGlowSize, "cg_SFXSabersGlowSize", "1.0", CVAR_ARCHIVE},
@@ -684,102 +687,102 @@ static cvarTable_t cvarTable[] = {
 
 	{&cg_SFXSabersGlowSizeEP1, "cg_SFXSabersGlowSizeEP1", "1.0", CVAR_ARCHIVE},
 	{&cg_SFXSabersCoreSizeEP1, "cg_SFXSabersCoreSizeEP1", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeEP2, "cg_SFXSabersGlowSizeEP2", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeEP2, "cg_SFXSabersCoreSizeEP2", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeEP3, "cg_SFXSabersGlowSizeEP3", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeEP3, "cg_SFXSabersCoreSizeEP3", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeSFX, "cg_SFXSabersGlowSizeSFX", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeSFX, "cg_SFXSabersCoreSizeSFX", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeOT, "cg_SFXSabersGlowSizeOT", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeOT, "cg_SFXSabersCoreSizeOT", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeROTJ, "cg_SFXSabersGlowSizeROTJ", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeROTJ, "cg_SFXSabersCoreSizeROTJ", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeTFA, "cg_SFXSabersGlowSizeTFA", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeTFA, "cg_SFXSabersCoreSizeTFA", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeUSB, "cg_SFXSabersGlowSizeUSB", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeUSB, "cg_SFXSabersCoreSizeUSB", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeRebels, "cg_SFXSabersGlowSizeRebels", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeRebels, "cg_SFXSabersCoreSizeRebels", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSizeCW, "cg_SFXSabersGlowSizeCW", "1.0", CVAR_ARCHIVE },
-	{&cg_SFXSabersCoreSizeCW, "cg_SFXSabersCoreSizeCW", "1.0", CVAR_ARCHIVE },
-	{&cg_SFXSabersGlowSizeMaul, "cg_SFXSabersGlowSizeMaul", "1.0", CVAR_ARCHIVE },
-	{&cg_SFXSabersCoreSizeMaul, "cg_SFXSabersCoreSizeMaul", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeEP2, "cg_SFXSabersGlowSizeEP2", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeEP2, "cg_SFXSabersCoreSizeEP2", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeEP3, "cg_SFXSabersGlowSizeEP3", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeEP3, "cg_SFXSabersCoreSizeEP3", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeSFX, "cg_SFXSabersGlowSizeSFX", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeSFX, "cg_SFXSabersCoreSizeSFX", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeOT, "cg_SFXSabersGlowSizeOT", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeOT, "cg_SFXSabersCoreSizeOT", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeROTJ, "cg_SFXSabersGlowSizeROTJ", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeROTJ, "cg_SFXSabersCoreSizeROTJ", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeTFA, "cg_SFXSabersGlowSizeTFA", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeTFA, "cg_SFXSabersCoreSizeTFA", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeUSB, "cg_SFXSabersGlowSizeUSB", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeUSB, "cg_SFXSabersCoreSizeUSB", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeRebels, "cg_SFXSabersGlowSizeRebels", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeRebels, "cg_SFXSabersCoreSizeRebels", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeCW, "cg_SFXSabersGlowSizeCW", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeCW, "cg_SFXSabersCoreSizeCW", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSizeMaul, "cg_SFXSabersGlowSizeMaul", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeMaul, "cg_SFXSabersCoreSizeMaul", "1.0", CVAR_ARCHIVE },
 
-	{&cg_ignitionSpeed, "cg_ignitionSpeed", "1", CVAR_ARCHIVE},
-	{&cg_ignitionSpeedstaff, "cg_ignitionSpeedstaff", "1", CVAR_ARCHIVE},
+	{ &cg_ignitionSpeed, "cg_ignitionSpeed", "1", CVAR_ARCHIVE },
+	{ &cg_ignitionSpeedstaff, "cg_ignitionSpeedstaff", "1", CVAR_ARCHIVE },
 
-	{&cg_SerenityJediEngineMode, "g_SerenityJediEngineMode", "0", CVAR_ARCHIVE}, // default 0 everywhere (game, cgame, ui)
-	{&cg_SerenityJediEngineHudMode, "g_SerenityJediEngineHudMode", "5", CVAR_ARCHIVE},
-	{&cg_SaberInnonblockableAttackWarning, "g_SaberInnonblockableAttackWarning", "0", CVAR_ARCHIVE},
-	{&cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE},
+	{ &cg_SerenityJediEngineMode, "g_SerenityJediEngineMode", "0", CVAR_ARCHIVE }, // default 0 everywhere (game, cgame, ui)
+	{ &cg_SerenityJediEngineHudMode, "g_SerenityJediEngineHudMode", "5", CVAR_ARCHIVE },
+	{ &cg_SaberInnonblockableAttackWarning, "g_SaberInnonblockableAttackWarning", "0", CVAR_ARCHIVE },
+	{ &cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE },
 
-	{&cg_drawRadar, "cg_drawRadar", "0", CVAR_ARCHIVE},
-	{&cg_dynamicHud, "cg_dynamicHud", "1", CVAR_ARCHIVE},
-	{&cg_dynamicHudTime, "cg_dynamicHudTime", "15000", CVAR_ARCHIVE},
-	{&cg_dynamicHudRange, "cg_dynamicHudRange", "1024", CVAR_ARCHIVE},
-	{&cg_drawVehLeadIndicator, "cg_drawVehLeadIndicator", "1", CVAR_ARCHIVE},
+	{ &cg_drawRadar, "cg_drawRadar", "0", CVAR_ARCHIVE },
+	{ &cg_dynamicHud, "cg_dynamicHud", "1", CVAR_ARCHIVE },
+	{ &cg_dynamicHudTime, "cg_dynamicHudTime", "15000", CVAR_ARCHIVE },
+	{ &cg_dynamicHudRange, "cg_dynamicHudRange", "1024", CVAR_ARCHIVE },
+	{ &cg_drawVehLeadIndicator, "cg_drawVehLeadIndicator", "1", CVAR_ARCHIVE },
 
-	{&cg_drawSelectionScrollBar, "cg_drawSelectionScrollBar", "0", CVAR_ARCHIVE},
+	{ &cg_drawSelectionScrollBar, "cg_drawSelectionScrollBar", "0", CVAR_ARCHIVE },
 
-	{&cg_trueguns, "cg_trueguns", "1", CVAR_ARCHIVE},
-	{&cg_holsteredweapons, "cg_holsteredweapons", "2", CVAR_ARCHIVE},
-	{&cg_holsterHide, "cg_holsterHide", "", CVAR_ARCHIVE},
-	{&cg_weaponWheelOld, "cg_weaponWheelOld", "0", CVAR_ARCHIVE},
-	{&cg_holsterdebug, "cg_holsterdebug", "0", 0},
-	{&cg_holsterdebug_boneindex, "cg_holsterdebug_boneindex", "0", 0},
-	{&cg_holsterdebug_posoffset, "cg_holsterdebug_posoffset", "0.0 0.0 0.0", 0},
-	{&cg_holsterdebug_angoffset, "cg_holsterdebug_angoffset", "0.0 0.0 0.0", 0},
-	{&cg_fpls, "cg_fpls", "0", CVAR_ARCHIVE},
-	{&cg_trueroll, "cg_trueroll", "1", CVAR_ARCHIVE},
-	{&cg_trueflip, "cg_trueflip", "1", CVAR_ARCHIVE},
-	{&cg_truespin, "cg_truespin", "1", CVAR_ARCHIVE},
-	{&cg_truemoveroll, "cg_truemoveroll", "0", CVAR_ARCHIVE},
-	{&cg_truesaberonly, "cg_truesaberonly", "0", CVAR_ARCHIVE},
-	{&cg_trueeyeposition, "cg_trueeyeposition", "0.0", 0},
-	{&cg_trueinvertsaber, "cg_trueinvertsaber", "1", CVAR_ARCHIVE},
-	{&cg_truefov, "cg_truefov", "80", CVAR_ARCHIVE},
-	{&cg_truebobbing, "cg_truebobbing", "1", CVAR_ARCHIVE},
+	{ &cg_trueguns, "cg_trueguns", "1", CVAR_ARCHIVE },
+	{ &cg_holsteredweapons, "cg_holsteredweapons", "2", CVAR_ARCHIVE },
+	{ &cg_holsterHide, "cg_holsterHide", "", CVAR_ARCHIVE },
+	{ &cg_weaponWheelOld, "cg_weaponWheelOld", "0", CVAR_ARCHIVE },
+	{ &cg_holsterdebug, "cg_holsterdebug", "0", 0 },
+	{ &cg_holsterdebug_boneindex, "cg_holsterdebug_boneindex", "0", 0 },
+	{ &cg_holsterdebug_posoffset, "cg_holsterdebug_posoffset", "0.0 0.0 0.0", 0 },
+	{ &cg_holsterdebug_angoffset, "cg_holsterdebug_angoffset", "0.0 0.0 0.0", 0 },
+	{ &cg_fpls, "cg_fpls", "0", CVAR_ARCHIVE },
+	{ &cg_trueroll, "cg_trueroll", "1", CVAR_ARCHIVE },
+	{ &cg_trueflip, "cg_trueflip", "1", CVAR_ARCHIVE },
+	{ &cg_truespin, "cg_truespin", "1", CVAR_ARCHIVE },
+	{ &cg_truemoveroll, "cg_truemoveroll", "0", CVAR_ARCHIVE },
+	{ &cg_truesaberonly, "cg_truesaberonly", "0", CVAR_ARCHIVE },
+	{ &cg_trueeyeposition, "cg_trueeyeposition", "0.0", 0 },
+	{ &cg_trueinvertsaber, "cg_trueinvertsaber", "1", CVAR_ARCHIVE },
+	{ &cg_truefov, "cg_truefov", "80", CVAR_ARCHIVE },
+	{ &cg_truebobbing, "cg_truebobbing", "1", CVAR_ARCHIVE },
 
-	{&cg_weaponBob, "cg_weaponBob", "1", CVAR_ARCHIVE},
-	{&cg_fallingBob, "cg_fallingBob", "1", CVAR_ARCHIVE},
+	{ &cg_weaponBob, "cg_weaponBob", "1", CVAR_ARCHIVE },
+	{ &cg_fallingBob, "cg_fallingBob", "1", CVAR_ARCHIVE },
 
-	{&cg_gunMomentumDamp, "cg_gunMomentumDamp", "0.001", CVAR_ARCHIVE},
-	{&cg_gunMomentumFall, "cg_gunMomentumFall", "0.5", CVAR_ARCHIVE},
-	{&cg_gunMomentumEnable, "cg_gunMomentumEnable", "0", CVAR_ARCHIVE},
-	{&cg_gunMomentumInterval, "cg_gunMomentumInterval", "75", CVAR_ARCHIVE},
+	{ &cg_gunMomentumDamp, "cg_gunMomentumDamp", "0.001", CVAR_ARCHIVE },
+	{ &cg_gunMomentumFall, "cg_gunMomentumFall", "0.5", CVAR_ARCHIVE },
+	{ &cg_gunMomentumEnable, "cg_gunMomentumEnable", "0", CVAR_ARCHIVE },
+	{ &cg_gunMomentumInterval, "cg_gunMomentumInterval", "75", CVAR_ARCHIVE },
 
-	{&cg_setVaderBreath, "cg_setVaderBreath", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
-	{&cg_setVaderBreathdamaged, "cg_setVaderBreathdamaged", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
-	{&cg_com_outcast, "com_outcast", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
+	{ &cg_setVaderBreath, "cg_setVaderBreath", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
+	{ &cg_setVaderBreathdamaged, "cg_setVaderBreathdamaged", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
+	{ &cg_com_outcast, "com_outcast", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
-	{&cg_drawwidescreenmode, "cg_drawwidescreenmode", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
+	{ &cg_drawwidescreenmode, "cg_drawwidescreenmode", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
-	{&cg_SpinningBarrels, "cg_SpinningBarrels", "1", CVAR_ARCHIVE},
+	{ &cg_SpinningBarrels, "cg_SpinningBarrels", "1", CVAR_ARCHIVE },
 
-	{&cg_Bloodmist, "g_Bloodmist", "0", CVAR_ARCHIVE},
+	{ &cg_Bloodmist, "g_Bloodmist", "0", CVAR_ARCHIVE },
 
-	{&cg_Weather, "r_weather", "0", CVAR_ARCHIVE},
+	{ &cg_Weather, "r_weather", "0", CVAR_ARCHIVE },
 
-	{&cg_jkoeffects, "cg_outcastpusheffect", "1", CVAR_ARCHIVE},
+	{ &cg_jkoeffects, "cg_outcastpusheffect", "1", CVAR_ARCHIVE },
 
-	{&r_ratiofix, "r_ratiofix", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
-	{&cg_hudRatio, "cg_hudRatio", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
-	{&cg_DebugSaberCombat, "g_DebugSaberCombat", "0", CVAR_ARCHIVE},
+	{ &r_ratiofix, "r_ratiofix", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
+	{ &cg_hudRatio, "cg_hudRatio", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
+	{ &cg_DebugSaberCombat, "g_DebugSaberCombat", "0", CVAR_ARCHIVE },
 
-	{&cg_allowcallout, "g_allowattackorder", "1", CVAR_ARCHIVE},
+	{ &cg_allowcallout, "g_allowattackorder", "1", CVAR_ARCHIVE },
 
-	{&cg_allowcalloutmarker, "g_allowattackordermarker", "0", CVAR_ARCHIVE},
+	{ &cg_allowcalloutmarker, "g_allowattackordermarker", "0", CVAR_ARCHIVE },
 
-	{&cg_com_kotor, "com_kotor", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
+	{ &cg_com_kotor, "com_kotor", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
-	{&cg_saberLockCinematicCamera, "g_saberLockCinematicCamera", "0", CVAR_ARCHIVE},
+	{ &cg_saberLockCinematicCamera, "g_saberLockCinematicCamera", "0", CVAR_ARCHIVE },
 
 	{ &cg_AimingCinematicCamera, "g_AimingCinematicCamera", "1", CVAR_ARCHIVE },
 	{ &cg_aimShoulder, "cg_aimShoulder", "1", CVAR_ARCHIVE }, // aiming camera over the right shoulder (x model size); 0 = centred
 
-	{&cg_jumpSounds, "cg_jumpSounds", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
+	{ &cg_jumpSounds, "cg_jumpSounds", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
-	{&cg_rollSounds, "cg_rollSounds", "2", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
+	{ &cg_rollSounds, "cg_rollSounds", "2", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
 	{ &cg_com_rend2, "com_rend2", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 

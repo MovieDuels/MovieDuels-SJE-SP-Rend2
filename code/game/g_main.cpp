@@ -201,6 +201,8 @@ cvar_t* g_saberPickuppableDroppedSabers;
 cvar_t* g_dismemberProbabilities;
 
 cvar_t* g_speederControlScheme;
+cvar_t* g_fighterArcade; // (2026-10-13) fighters: 1 = responsive flight, 0 = the old flight exactly (FighterNPC.cpp)
+cvar_t* g_fighterTurnScale; // (2026-10-13) fighters, g_fighterArcade 1: top turn rate = turningSpeed x this x 12 deg/s
 
 cvar_t* g_char_model;
 cvar_t* g_char_skin_head;
@@ -814,6 +816,8 @@ static void G_InitCvars()
 	gi.cvar_set("newTotalSecrets", "0"); //used to carry over the count from SP_target_secret to ClientBegin
 
 	g_speederControlScheme = gi.cvar("g_speederControlScheme", "2", CVAR_ARCHIVE); //2 is default, 1 is alternate
+	g_fighterArcade = gi.cvar("g_fighterArcade", "1", CVAR_ARCHIVE); // (2026-10-13)
+	g_fighterTurnScale = gi.cvar("g_fighterTurnScale", "1.6", CVAR_ARCHIVE); // (2026-10-13)
 
 	g_char_model = gi.cvar("g_char_model", "jedi_hm", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	g_char_skin_head = gi.cvar("g_char_skin_head", "head_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);

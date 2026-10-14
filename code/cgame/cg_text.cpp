@@ -181,6 +181,23 @@ void CG_CaptionTextStop()
 	cg.captionTextTime = 0;
 }
 
+// (2026-10-13) cg_textprintscale: caption size multiplier, latched per caption so wrapping and drawing match
+static float cg_captionSize = 1.0f;
+
+static float CG_CaptionSizeCvar()
+{
+	float size = cg_textprintscale.value;
+	if (size < 0.25f)
+	{
+		size = 0.25f;
+	}
+	else if (size > 2.0f)
+	{
+		size = 2.0f;
+	}
+	return size;
+}
+
 // try and get the correct StripEd text (with retry) for a given reference...
 //
 // returns 0 if failed, else strlen...
@@ -217,7 +234,8 @@ void CG_CaptionText(const char* str, const int sound)
 {
 	char text[8192] = { 0 };
 
-	const float fFontScale = cgi_Language_IsAsian() ? 0.8f : 1.0f;
+	const float captionSize = CG_CaptionSizeCvar(); // (2026-10-13)
+	const float fFontScale = (cgi_Language_IsAsian() ? 0.8f : 1.0f) * captionSize;
 
 	const char* holds = strrchr(str, '/');
 	if (!holds)
@@ -250,6 +268,7 @@ void CG_CaptionText(const char* str, const int sound)
 			cgs.media.qhFontMedium, fFontScale))); // taiwanese & japanese need 1.5 fontheight spacing
 
 	cg.captionTextTime = cg.time;
+	cg_captionSize = captionSize; // (2026-10-13)
 	if (in_camera)
 	{
 		cg.captionTextY = SCREEN_HEIGHT - client_camera.bar_height_dest / 2; // ths is now a centre'd Y, not a start Y
@@ -288,7 +307,7 @@ void CG_CaptionText(const char* str, const int sound)
 	cg.captionLetterTime = iPlayingTimeMS / iLengthInChars;
 
 	const char* psBestLineBreakSrcPos = s;
-	while (*s)
+	while (*s && i < MAX_CAPTIONTEXT - 1) // (2026-10-13) larger sizes make more lines, stay inside captionText[]
 	{
 		const char* psLastGood_s = s;
 
@@ -326,7 +345,8 @@ void CG_CaptionText(const char* str, const int sound)
 			psBestLineBreakSrcPos = s;
 			cg.scrollTextLines++;
 		}
-		else if (cgi_R_Font_StrLenPixels(cg.captionText[i], cgs.media.qhFontMedium, fFontScale) >= SCREEN_WIDTH)
+		else if (cgi_R_Font_StrLenPixels(cg.captionText[i], cgs.media.qhFontMedium, fFontScale) >= SCREEN_WIDTH
+			|| strlen(cg.captionText[i]) >= sizeof cg.captionText[i] - 4) // (2026-10-13) line buffer full at tiny sizes
 		{
 			// reached screen edge, so cap off string at bytepos after last good position...
 			//
@@ -390,7 +410,7 @@ void CG_DrawCaptionText()
 		return;
 	}
 
-	const float fFontScale = cgi_Language_IsAsian() ? 0.8f : 1.0f;
+	const float fFontScale = (cgi_Language_IsAsian() ? 0.8f : 1.0f) * cg_captionSize; // (2026-10-13) cg_subtitleSize
 
 	if (cg_skippingcin.integer != 0)
 	{
@@ -435,7 +455,24 @@ void CG_DrawCaptionText()
 	const bool bPrinting2Lines = !!cg.captionText[cg.captionTextCurrentLine + 1][0];
 	int y = cg.captionTextY - static_cast<float>(fontHeight) * (bPrinting2Lines ? 1 : 0.5f);
 	// captionTextY was a centered Y pos, not a top one
-	y -= cgi_Language_IsAsian() ? 0 : 4;
+	y -= cgi_Language_IsAsian() ? 0 : static_cast<int>(4.0f * cg_captionSize); // (2026-10-13) was 4
+
+	int lineStep = fontHeight; // (2026-10-13)
+	if (cg_captionSize > 1.0f)
+	{
+		// (2026-10-13) larger subtitles: tighten line spacing if 2 lines overflow the letterbox bar,
+		//	then move the block up so its bottom never leaves the screen
+		const int numLines = bPrinting2Lines ? 2 : 1;
+		if (in_camera && numLines == 2 && fontHeight * 2 > static_cast<int>(client_camera.bar_height_dest))
+		{
+			lineStep = static_cast<int>(static_cast<float>(fontHeight) * 0.85f);
+		}
+		const int bottom = y + (numLines - 1) * lineStep + fontHeight;
+		if (bottom > SCREEN_HEIGHT - 2)
+		{
+			y -= bottom - (SCREEN_HEIGHT - 2);
+		}
+	}
 
 	for (int i = cg.captionTextCurrentLine; i < cg.captionTextCurrentLine + 2; ++i)
 	{
@@ -444,7 +481,7 @@ void CG_DrawCaptionText()
 		{
 			const int x = (SCREEN_WIDTH - w) / 2;
 			cgi_R_Font_DrawString(x, y, cg.captionText[i], textcolor_caption, cgs.media.qhFontMedium, -1, fFontScale);
-			y += fontHeight;
+			y += lineStep;
 		}
 	}
 

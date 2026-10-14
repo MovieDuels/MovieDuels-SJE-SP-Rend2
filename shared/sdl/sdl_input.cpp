@@ -42,6 +42,7 @@ static cvar_t* in_joystickThreshold = nullptr;
 static cvar_t* in_joystickNo = nullptr;
 static cvar_t* in_joystickUseAnalog = nullptr;
 static cvar_t* in_joystickMenuSpeed = nullptr;
+static cvar_t* in_padStickKeysOff = nullptr; // (2026-10-13) set by the MP client: the sticks press no keys
 
 cvar_t* j_pitch;
 cvar_t* j_yaw;
@@ -806,6 +807,7 @@ static void IN_InitJoystick(void)
 	in_joystickThreshold = Cvar_Get("joy_threshold", "0.378125", CVAR_ARCHIVE_ND);
 	// how fast a stick moves the menu pointer when pushed all the way: menu pixels (640x480) per second
 	in_joystickMenuSpeed = Cvar_Get("in_joystickMenuSpeed", "520", CVAR_ARCHIVE_ND);
+	in_padStickKeysOff = Cvar_Get("in_padStickKeysOff", "0", CVAR_ROM | CVAR_TEMP); // (2026-10-13)
 
 	j_pitch = Cvar_Get("j_pitch", "0.022", CVAR_ARCHIVE_ND);
 	j_yaw = Cvar_Get("j_yaw", "-0.022", CVAR_ARCHIVE_ND);
@@ -1380,6 +1382,25 @@ static void IN_GamepadMenuPointer()
 
 /*
 ===============
+IN_GamepadStick
+
+(2026-10-13) a stick axis of the controller as it is (no dead zone): 0 left x, 1 left y, 2 right x, 3 right y;
+-1 .. 1, y positive down. 0 with no controller.
+===============
+*/
+float IN_GamepadStick(const int axis)
+{
+	if (!gamepad || !in_joystick || !in_joystick->integer || axis < 0 || axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT)
+	{
+		return 0.0f;
+	}
+	const float value = static_cast<float>(SDL_GameControllerGetAxis(gamepad,
+		static_cast<SDL_GameControllerAxis>(SDL_CONTROLLER_AXIS_LEFTX + axis))) / 32767.0f;
+	return value < -1.0f ? -1.0f : value > 1.0f ? 1.0f : value;
+}
+
+/*
+===============
 IN_GamepadMove
 ===============
 */
@@ -1434,6 +1455,11 @@ static void IN_GamepadMove(void)
 			f = 0.0f;
 
 		axis = (int)(32767 * ((axis < 0) ? -f : f));
+
+		// (2026-10-13) piloting a fighter with the controller (MP cl_fighterPad): the client reads the sticks itself
+		// (IN_GamepadStick), so they press no keys (held ones are let go)
+		if (i < SDL_CONTROLLER_AXIS_TRIGGERLEFT && in_padStickKeysOff && in_padStickKeysOff->integer)
+			axis = 0;
 
 		if (axis != oldAxis)
 		{

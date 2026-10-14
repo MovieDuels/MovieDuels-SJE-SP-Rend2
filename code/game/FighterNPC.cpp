@@ -86,6 +86,16 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define bgEntity_t gentity_t
 #endif
 
+// (2026-10-13) responsive (Battlefront II like) fighter flight, as MP: g_fighterArcade 0 = the old flight exactly
+extern cvar_t* g_fighterArcade;
+extern cvar_t* g_fighterTurnScale;
+constexpr float FIGHTER_ARCADE_TURN_FACTOR = 12.0f; // deg/s per point of turningSpeed x g_fighterTurnScale (MP's old top rate: 0.2 x 60)
+constexpr float FIGHTER_ARCADE_TURN_GAIN = 12.0f; // 1/s: closes the last degrees to the aim in about 1/12 s instead of easing in
+constexpr float FIGHTER_ARCADE_ROLL_RATE = 270.0f; // deg/s: rolling with the strafe keys / left stick and levelling out again
+constexpr float FIGHTER_ARCADE_TURN_BANK = 0.6f; // part of the roll limit the ship banks into a full rate turn
+constexpr float FIGHTER_ARCADE_ACCEL_SCALE = 2.0f; // throttle response (speeding up, slowing down) x acceleration
+constexpr float FIGHTER_ARCADE_TURBO_ACCEL = 4.0f; // boost acceleration x acceleration (the old: 2)
+
 #ifdef QAGAME //SP or game side MP
 extern vmCvar_t cg_thirdPersonAlpha;
 extern vec3_t playerMins;
@@ -286,6 +296,80 @@ static float PredictedAngularDecrement(const float scale, const float time_mod, 
 	}
 
 	return r;
+}
+
+// (2026-10-13) the responsive flight: g_fighterArcade on, a fighter flown by the player (AI pilots keep the old flight)
+static qboolean FighterArcade(const Vehicle_t* p_veh)
+{
+	return static_cast<qboolean>(g_fighterArcade && g_fighterArcade->integer
+		&& p_veh->m_pVehicleInfo->type == VH_FIGHTER
+		&& p_veh->m_pPilot
+		&& p_veh->m_pPilot->s.number < MAX_CLIENTS);
+}
+
+// (2026-10-13) turn an angle toward a target at most maxRate deg/s, the last degrees closing quickly (frame rate independent)
+static float FighterArcadeApproach(const float cur, const float target, const float maxRate, const float gain, const float dt)
+{
+	const float dif = AngleSubtract(target, cur);
+	float step = fabsf(dif) * (1.0f - expf(-gain * dt));
+	const float maxStep = maxRate * dt;
+
+	if (step > maxStep)
+	{
+		step = maxStep;
+	}
+	if (step < 0.01f)
+	{
+		step = fabsf(dif) < 0.01f ? fabsf(dif) : 0.01f;
+	}
+	return AngleNormalize180(cur + (dif > 0.0f ? step : -step));
+}
+
+// (2026-10-13) responsive steering: the ship turns toward the pilot's aim at a fixed rate in deg/s (instead of snapping
+// to it while the mouse is slowed down), banks into the turn and rolls with the strafe keys / left stick, levelling out
+static void FighterArcadeOrient(Vehicle_t* p_veh, const playerState_t* rider_ps, const qboolean canPitch, const qboolean canRoll)
+{
+	const float dt = p_veh->m_fTimeModifier / 60.0f; // m_fTimeModifier is frametime x 60
+	const float turnRate = p_veh->m_pVehicleInfo->turningSpeed * g_fighterTurnScale->value * FIGHTER_ARCADE_TURN_FACTOR;
+	float rollLimit = p_veh->m_pVehicleInfo->rollLimit;
+
+	if (dt <= 0.0f || turnRate <= 0.0f)
+	{
+		return;
+	}
+
+	p_veh->m_vOrientation[YAW] = FighterArcadeApproach(p_veh->m_vOrientation[YAW], rider_ps->viewangles[YAW], turnRate,
+		FIGHTER_ARCADE_TURN_GAIN, dt);
+	if (canPitch)
+	{
+		p_veh->m_vOrientation[PITCH] = FighterArcadeApproach(p_veh->m_vOrientation[PITCH],
+			AngleNormalize180(rider_ps->viewangles[PITCH]), turnRate, FIGHTER_ARCADE_TURN_GAIN, dt);
+	}
+	if (!canRoll)
+	{
+		return;
+	}
+
+	if (rollLimit < 0.0f)
+	{
+		//no limit
+		rollLimit = 90.0f;
+	}
+	//bank into the turn (turning left, yaw going up, rolls negative as the old flight) ...
+	float rollTarget = -AngleSubtract(p_veh->m_vOrientation[YAW], p_veh->m_vPrevOrientation[YAW]) / dt / turnRate
+		* rollLimit * FIGHTER_ARCADE_TURN_BANK;
+	//... and roll with the strafe keys (right = positive, as the old strafe bank)
+	rollTarget += p_veh->m_ucmd.rightmove / 127.0f * rollLimit;
+	if (rollTarget > rollLimit)
+	{
+		rollTarget = rollLimit;
+	}
+	else if (rollTarget < -rollLimit)
+	{
+		rollTarget = -rollLimit;
+	}
+	p_veh->m_vOrientation[ROLL] = FighterArcadeApproach(p_veh->m_vOrientation[ROLL], rollTarget, FIGHTER_ARCADE_ROLL_RATE,
+		FIGHTER_ARCADE_TURN_GAIN, dt);
 }
 
 #ifdef QAGAME//only do this check on GAME side, because if it's CGAME, it's being predicted, and it's only predicted if the local client is the driver
@@ -575,13 +659,20 @@ static void ProcessMoveCommands(Vehicle_t* p_veh)
 		}
 	}
 	speedInc = p_veh->m_pVehicleInfo->acceleration * p_veh->m_fTimeModifier;
+	const qboolean arcade = FighterArcade(p_veh); // (2026-10-13)
+	if (arcade)
+	{
+		//quicker throttle response
+		speedInc *= FIGHTER_ARCADE_ACCEL_SCALE;
+	}
 
 	if (curTime < p_veh->m_iTurboTime)
 	{
 		//going turbo speed
 		speedMax = p_veh->m_pVehicleInfo->turboSpeed;
-		//double our acceleration
-		speedInc *= 2.0f;
+		//double our acceleration (responsive flight: 4 x acceleration)
+		speedInc = arcade ? p_veh->m_pVehicleInfo->acceleration * FIGHTER_ARCADE_TURBO_ACCEL * p_veh->m_fTimeModifier
+			: speedInc * 2.0f;
 		//force us to move forward
 		p_veh->m_ucmd.forwardmove = 127;
 		//add flag to let cgame know to draw the iTurboFX effect
@@ -1280,6 +1371,7 @@ static void ProcessOrientCommands(Vehicle_t* p_veh)
 	float cur_roll;
 	qboolean is_dead;
 	qboolean is_landing_or_landed;
+	const qboolean arcade = FighterArcade(p_veh); // (2026-10-13)
 #ifndef _JK2MP//SP
 	int curTime = level.time;
 #elif defined QAGAME//MP GAME
@@ -1433,7 +1525,18 @@ static void ProcessOrientCommands(Vehicle_t* p_veh)
 #ifdef _JK2MP
 			FighterYawAdjust(p_veh, rider_ps, parent_ps);
 #else
-			p_veh->m_vOrientation[YAW] = rider_ps->viewangles[YAW]; //*p_veh->m_LandTrace.fraction;
+			if (arcade)
+			{
+				//(2026-10-13) yaw only, at the responsive rate
+				if (parent_ps->speed)
+				{
+					FighterArcadeOrient(p_veh, rider_ps, qfalse, qfalse);
+				}
+			}
+			else
+			{
+				p_veh->m_vOrientation[YAW] = rider_ps->viewangles[YAW]; //*p_veh->m_LandTrace.fraction;
+			}
 #endif
 		}
 	}
@@ -1447,7 +1550,23 @@ static void ProcessOrientCommands(Vehicle_t* p_veh)
 		&& parent_ps->speed > 0.0f)
 		//&& !( p_veh->m_ucmd.forwardmove > 0 && p_veh->m_LandTrace.fraction != 1.0f ) )
 	{
-		if (BG_UnrestrainedPitchRoll(rider_ps, p_veh))
+		if (arcade)
+		{
+			//(SP: before the free pitch / roll below, which the player always has in a fighter here - the ship simply
+			//copied the aim, slowed down at the mouse)
+			//(2026-10-13) responsive flight: turn to the aim at a fixed rate, roll with the strafe keys
+			// If we are not hitting the ground, allow the fighter to pitch (and roll) as the old flight.
+			const auto canPitch = static_cast<qboolean>(!FighterOverValidLandingSurface(p_veh)
+				|| parent_ps->speed > MIN_LANDING_SPEED);
+
+			FighterArcadeOrient(p_veh, rider_ps, canPitch, canPitch);
+			if (canPitch)
+			{
+				FighterNoseMalfunctionCheck(p_veh, parent_ps);
+				cur_roll = p_veh->m_vOrientation[ROLL];
+			}
+		}
+		else if (BG_UnrestrainedPitchRoll(rider_ps, p_veh))
 		{
 			VectorCopy(rider_ps->viewangles, p_veh->m_vOrientation);
 			VectorCopy(rider_ps->viewangles, parent_ps->viewangles);
@@ -1556,7 +1675,13 @@ static void ProcessOrientCommands(Vehicle_t* p_veh)
 	}
 #endif
 
-	if (!p_veh->m_fStrafeTime)
+	if (arcade)
+	{
+		//(2026-10-13) responsive flight: the roll is set already (or levels out as above); no yaw drift from the
+		//roll, the ship follows the aim
+		p_veh->m_vOrientation[ROLL] = cur_roll;
+	}
+	else if (!p_veh->m_fStrafeTime)
 	{
 		//use that roll
 		p_veh->m_vOrientation[ROLL] = cur_roll;
