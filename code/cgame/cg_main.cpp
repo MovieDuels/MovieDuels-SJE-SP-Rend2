@@ -757,7 +757,7 @@ static cvarTable_t cvarTable[] = {
 
 	{ &cg_drawwidescreenmode, "cg_drawwidescreenmode", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
-	{ &cg_SpinningBarrels, "cg_SpinningBarrels", "1", CVAR_ARCHIVE },
+	{ &cg_SpinningBarrels, "cg_SpinningBarrels", "1", CVAR_ROM },
 
 	{ &cg_Bloodmist, "g_Bloodmist", "0", CVAR_ARCHIVE },
 

@@ -1650,7 +1650,10 @@ void NPC_Use(gentity_t* self, gentity_t* other, gentity_t* activator)
 			jedi_ambush(NPC);
 		}
 		//Run any use instructions
-		if (activator && activator->s.number == 0 && self->client->NPC_class == CLASS_GONK)
+		// a Gonk recharges the player's batteries when used - unless the map gave it a usescript:
+		// then it is a mission Gonk (e.g. a secret one) and only its script runs
+		if (activator && activator->s.number == 0 && self->client->NPC_class == CLASS_GONK
+			&& !(self->behaviorSet[BSET_USE] && self->behaviorSet[BSET_USE][0]))
 		{
 			Add_Batteries(activator, &self->client->ps.batteryCharge);
 		}

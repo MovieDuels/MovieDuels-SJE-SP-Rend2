@@ -5399,6 +5399,13 @@ constexpr auto SABER_COLLISION_DIST = 6;
 
 extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float threshHold = 0.0f);
 
+// An NPC made invisible by script (set_invisible: EF_NODRAW) is not in the scene: it must not react to force powers
+// or be hit by (or hit with) a lightsaber. Clients riding inside a vehicle are also EF_NODRAW and are skipped the same way.
+qboolean WP_IsScriptInvisible(const gentity_t* ent)
+{
+	return ent && ent->client && ent->s.eFlags & EF_NODRAW ? qtrue : qfalse;
+}
+
 static qboolean WP_SaberDamageForTrace(const int ignore,
 	vec3_t start,
 	vec3_t end,
@@ -5414,6 +5421,11 @@ static qboolean WP_SaberDamageForTrace(const int ignore,
 	const int  mask = MASK_SHOT | CONTENTS_LIGHTSABER;
 	gentity_t* attacker = &g_entities[ignore];
 	vec3_t     end2;
+	if (WP_IsScriptInvisible(attacker))
+	{// a script-invisible NPC's saber hits nothing
+		return qfalse;
+	}
+
 
 	VectorCopy(end, end2);
 
@@ -5521,6 +5533,12 @@ static qboolean WP_SaberDamageForTrace(const int ignore,
 	// Hit an entity
 	gentity_t* hitEnt = &g_entities[tr.entityNum];
 	gentity_t* owner = hitEnt->owner;
+
+	// a script-invisible NPC (set_invisible) is not there: its body and its saber cannot be hit
+	if (WP_IsScriptInvisible(hitEnt) || hitEnt->contents & CONTENTS_LIGHTSABER && WP_IsScriptInvisible(owner))
+	{
+		return qfalse;
+	}
 
 	// Saber vs saber (hit a lightsaber volume)
 	if (hitEnt->contents & CONTENTS_LIGHTSABER)
@@ -23842,6 +23860,10 @@ void WP_SaberUpdateJKA(gentity_t* self, const usercmd_t* ucmd)
 			G_SetOrigin(saberent, self->currentOrigin);
 		}
 		saberent->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
+		if (self->s.eFlags & EF_NODRAW)
+		{// script-invisible (set_invisible): its saber cannot be hit
+			saberent->contents = 0;
+		}
 		gi.linkentity(saberent);
 	}
 	else
@@ -24303,6 +24325,10 @@ void WP_SaberUpdateMD(gentity_t* self, const usercmd_t* ucmd)
 			G_SetOrigin(saberent, self->currentOrigin);
 		}
 		saberent->clipmask = MASK_SHOT | CONTENTS_LIGHTSABER;
+		if (self->s.eFlags & EF_NODRAW)
+		{// script-invisible (set_invisible): its saber cannot be hit
+			saberent->contents = 0;
+		}
 		gi.linkentity(saberent);
 	}
 	else
@@ -24964,6 +24990,10 @@ qboolean WP_ForceThrowable(gentity_t* ent, const gentity_t* forward_ent, const g
 		return qfalse;
 	if (!ent->inuse)
 		return qfalse;
+	if (WP_IsScriptInvisible(ent))
+	{// a script-invisible NPC (set_invisible) is not there: no resist, no push/pull
+		return qfalse;
+	}
 	if (ent->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(ent))
 	{
 		if (!in_camera && ent->NPC && ent->NPC->scriptFlags & SCF_NO_FORCE)
@@ -33108,7 +33138,7 @@ int IsPressingDashButton(const gentity_t* self)
 		&& self->client->ps.Dash_Count < 3
 		&& (!(self->client->buttons & BUTTON_KICK))
 		&& (!(self->client->buttons & BUTTON_USE))
-		&& (self->client->ps.forcePowerLevel[FP_SPEED] >= FORCE_LEVEL_1)
+		&& (self->client->ps.forcePowerLevel[FP_SABER_OFFENSE] > FORCE_LEVEL_0) // ground dash: any saber user (Saber Offense 1+); gunners with no saber skill cannot
 		&& (self->client->buttons & BUTTON_DASH))
 	{
 		return qtrue;
@@ -33665,6 +33695,10 @@ void ForceTelepathy(gentity_t* self)
 
 	gentity_t* traceEnt = &g_entities[tr.entityNum];
 
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 	if (traceEnt->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(traceEnt))
 	{
 		if (!in_camera && traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
@@ -34040,6 +34074,10 @@ void ForceGrip(gentity_t* self)
 		return; // charging Force Repulse: can't be gripped (2026-10-12)
 	}
 	//rww - RAGDOLL_BEGIN
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 #ifdef JK2_RAGDOLL_GRIPNOHEALTH
 	if (!traceEnt || traceEnt == self/*???*/ || traceEnt->bmodel || traceEnt->NPC && traceEnt->NPC->scriptFlags &
 		SCF_NO_FORCE)
@@ -34676,6 +34714,10 @@ void ForceFear(gentity_t* self)
 
 	gentity_t* traceEnt = &g_entities[tr.entityNum];
 
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 	if (traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
 	{
 		return;
@@ -36169,6 +36211,10 @@ static void ForceLightningDamage(gentity_t* self, gentity_t* traceEnt, vec3_t di
 	qboolean lightning_blocked = qfalse;
 	qboolean is_class_guard = qfalse;
 
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 	if (traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
 	{
 		if (!in_camera
@@ -36966,6 +37012,10 @@ static void ForceLightningDamage_AMD(gentity_t* self, gentity_t* traceEnt, vec3_
 	qboolean lightning_blocked = qfalse;
 	qboolean is_class_guard = qfalse;
 
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 	if (traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
 	{
 		if (!in_camera
@@ -38028,6 +38078,10 @@ static void ForceLightningDamage_MD(gentity_t* self, gentity_t* traceEnt, vec3_t
 	qboolean lightning_blocked = qfalse;
 	qboolean is_class_guard = qfalse;
 
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 	if (traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
 	{
 		if (!in_camera
@@ -39240,6 +39294,10 @@ qboolean ForceDrain2(gentity_t* self)
 		return qfalse;
 	}
 	gentity_t* traceEnt = &g_entities[tr.entityNum];
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return qfalse;
+	}
 	if (!traceEnt || traceEnt == self/*???*/ || traceEnt->bmodel || traceEnt->health <= 0 && traceEnt->takedamage
 		||
 		traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
@@ -41397,6 +41455,10 @@ static void ForceStasisWide(const gentity_t* self, gentity_t* traceEnt)
 	//===========================
 	// Respect NO_FORCE script flag
 	//===========================
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 	if (traceEnt->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(traceEnt))
 	{
 		if (!in_camera &&
@@ -41970,6 +42032,10 @@ void ForceStasis(gentity_t* self)
 		return;
 	}
 
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 	if (traceEnt->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(traceEnt))
 	{
 		if (!in_camera && traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE)
@@ -42359,6 +42425,10 @@ void ForceGrasp(gentity_t* self)
 		return; // charging Force Repulse: can't be gripped (2026-10-12)
 	}
 	//rww - RAGDOLL_BEGIN
+	if (WP_IsScriptInvisible(traceEnt))
+	{// a script-invisible NPC (set_invisible) is not there: no force reaction
+		return;
+	}
 #ifdef JK2_RAGDOLL_GRIPNOHEALTH
 	if (!traceEnt || traceEnt == self || traceEnt->bmodel || traceEnt->NPC && traceEnt->NPC->scriptFlags &
 		SCF_NO_FORCE)
