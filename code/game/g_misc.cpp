@@ -2887,7 +2887,7 @@ void GasBurst(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, const 
 
 	// do some damage to anything that may be standing on top of it when it bursts into flame
 	pt[2] += 32;
-	G_RadiusDamage(pt, self, 32, 32, self, MOD_UNKNOWN);
+	G_RadiusDamage(pt, self, 32, 32, self, MOD_BURNING); // a flame jet: sets them alight (burning)
 
 	//  only get one burst
 	self->e_PainFunc = painF_NULL;

@@ -48,6 +48,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 extern cvar_t* g_SerenityJediEngineMode;
 extern void Player_CheckBurn(const gentity_t* self);
 extern void player_Burn(const gentity_t* self);
+extern void G_SetOnFire(gentity_t* self, gentity_t* attacker);
 extern qboolean PM_InKnockDown(const playerState_t* ps);
 extern qboolean PM_InRoll(const playerState_t* ps);
 extern qboolean rocket_trooper_player(const gentity_t* self);
@@ -586,6 +587,12 @@ void Boba_FireFlameThrower(gentity_t* self)
 				DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
 		}
 
+		// burning (wp_saber.cpp): the flame sets them on fire (this flamethrower deals MOD_LAVA, so G_Damage doesn't)
+		if (traceEnt->client && traceEnt->health > 0)
+		{
+			G_SetOnFire(traceEnt, self);
+		}
+
 		if (traceEnt->health > 0 && traceEnt->painDebounceTime > level.time)
 		{
 			G_Throw(traceEnt, dir, 30);
@@ -658,6 +665,12 @@ static void Mando_FireFlameThrower(gentity_t* self)
 		{
 			G_Damage(traceEnt, self, self, dir, tr.endpos, damage,
 				DAMAGE_NO_KNOCKBACK | DAMAGE_NO_HIT_LOC | DAMAGE_IGNORE_TEAM, MOD_LAVA, HL_NONE);
+		}
+
+		// burning (wp_saber.cpp): the flame sets them on fire (this flamethrower deals MOD_LAVA, so G_Damage doesn't)
+		if (traceEnt->client && traceEnt->health > 0)
+		{
+			G_SetOnFire(traceEnt, self);
 		}
 
 		if (traceEnt->health > 0 && traceEnt->painDebounceTime > level.time)

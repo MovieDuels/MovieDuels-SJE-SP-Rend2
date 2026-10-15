@@ -2181,6 +2181,11 @@ qboolean G_GonkCanGiveBacta(const gentity_t* gonk)
 	{
 		return qfalse;
 	}
+	if (gonk->behaviorSet[BSET_USE] && gonk->behaviorSet[BSET_USE][0])
+	{
+		// a gonk the map / a script gave a usescript is a mission gonk: no bacta, using it runs its script (NPC_Use)
+		return qfalse;
+	}
 	if (gonkBactaTime[gonk->s.number] > level.time + 3600000)
 	{
 		gonkBactaTime[gonk->s.number] = 0; // left over from an earlier map

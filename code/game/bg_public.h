@@ -921,6 +921,8 @@ using meansOfDeath_t = enum
 
 	MOD_PROJECTION_END,
 
+	MOD_BURNING, // on fire (wp_saber.cpp burning, 2026-10-15) - appended so the other MODs keep their values
+
 	NUM_MODS,
 };
 

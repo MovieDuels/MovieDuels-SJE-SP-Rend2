@@ -729,6 +729,8 @@ extern qboolean PM_InAmputateMove(int anim);
 extern qboolean PM_InDrainPainMove(int anim);
 extern void WP_ForcePowerStart(gentity_t* self, forcePowers_t force_power, int override_amt);
 
+extern void G_SetOnFire(gentity_t* self, gentity_t* attacker); // burning (wp_saber.cpp)
+
 static void P_WorldEffects(gentity_t* ent)
 {
 	int mouth_contents = 0;
@@ -807,6 +809,7 @@ static void P_WorldEffects(gentity_t* ent)
 			{
 				G_Damage(ent, nullptr, nullptr, nullptr, nullptr,
 					15 * ent->waterlevel, 0, MOD_LAVA);
+				G_SetOnFire(ent, nullptr); // burning: lava sets them alight
 			}
 
 			if (ent->watertype & CONTENTS_SLIME)
@@ -11108,6 +11111,9 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	client->oldbuttons = client->buttons;
 	client->buttons = ucmd->buttons;
 	client->latched_buttons |= client->buttons & ~client->oldbuttons;
+
+	// burning (wp_saber.cpp): the effect, the damage ticks, put out by rolling / water / death
+	Player_CheckBurn(ent);
 
 	// check for respawning
 	if (client->ps.stats[STAT_HEALTH] <= 0)

@@ -1236,6 +1236,10 @@ void trigger_hurt_reset(gentity_t* self)
 extern qboolean PM_InForceFall();
 extern void JET_FlyStart(gentity_t* self);
 
+extern void G_SetOnFire(gentity_t* self, gentity_t* attacker); // burning (wp_saber.cpp)
+extern qboolean G_NearFireEffect(const gentity_t* area);
+extern qboolean G_FxRunnerIsFire(const gentity_t* ent);
+
 void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 {
 	int dflags;
@@ -1391,6 +1395,11 @@ void hurt_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 		else
 		{
 			G_Damage(other, self, self, nullptr, nullptr, actual_dmg, dflags, MOD_TRIGGER_HURT);
+		}
+		// burning: a trigger_hurt at a map fire (a fire fx_runner in / by it) also sets them alight
+		if (other->client && other->health > 0 && G_NearFireEffect(self))
+		{
+			G_SetOnFire(other, nullptr);
 		}
 		if (!other->s.number)
 		{

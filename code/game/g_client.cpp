@@ -3516,7 +3516,20 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 			char bleh[MAX_SPAWN_VARS_CHARS];
 			Q_strncpyz(bleh, ent->NPC_type, sizeof(bleh));
 
+			// G_ChangePlayerModel re-reads the NPC file (NPC_ParseParms), which puts back that character's
+			// playerTeam / enemyTeam: keep the saved ones, so a team (or faction) changed in game by the
+			// playerteam / enemyteam / playerfaction commands or a script survives the save and load (2026-10-15)
+			const team_t saved_player_team = ent->client->playerTeam;
+			const team_t saved_enemy_team = ent->client->enemyTeam;
+			const faction_t saved_friendly_faction = ent->client->friendlyfaction;
+			const faction_t saved_enemy_faction = ent->client->enemyfaction;
+
 			G_ChangePlayerModel(ent, bleh);
+
+			ent->client->playerTeam = saved_player_team;
+			ent->client->enemyTeam = saved_enemy_team;
+			ent->client->friendlyfaction = saved_friendly_faction;
+			ent->client->enemyfaction = saved_enemy_faction;
 
 			// -----------------------------------------------------------------------------
 			// Apply animation style after NPC_ParseParms

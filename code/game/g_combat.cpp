@@ -7896,6 +7896,8 @@ dflags		these flags are used to control how T_Damage works
 ============
 */
 int G_PickPainAnim(const gentity_t* self, const vec3_t point, int hit_loc);
+extern void G_SetOnFire(gentity_t* self, gentity_t* attacker); // wp_saber.cpp (burning)
+
 void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const vec3_t dir, const vec3_t point, int damage, int dflags, int mod, int hit_loc)
 {
 	gclient_t* client;
@@ -9262,6 +9264,13 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 				G_TrackWeaponUsage(attacker, inflictor, add, mod);
 			}
 		}
+	}
+
+	// burning (wp_saber.cpp): flame damage sets a character on fire - any MOD_BURNING except the fire's own ticks,
+	// which come from the burning character itself (inflictor == targ)
+	if (take > 0 && mod == MOD_BURNING && inflictor != targ && targ->client && targ->health > 0)
+	{
+		G_SetOnFire(targ, attacker);
 	}
 
 	if (take || dflags & DAMAGE_NO_DAMAGE)
