@@ -921,27 +921,27 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			ent->NPC->burstMean = 6;
 			ent->NPC->burstMax = 8;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 700; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 400; //attack debounce
+				ent->NPC->burstSpacing = 550; //attack debounce
 			else
-				ent->NPC->burstSpacing = 250; //attack debounce
+				ent->NPC->burstSpacing = 400; //attack debounce
 		}
 		else if (ent->client->NPC_class == CLASS_SABOTEUR)
 		{
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 900; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 700; //attack debounce
 			else
-				ent->NPC->burstSpacing = 400; //attack debounce
+				ent->NPC->burstSpacing = 500; //attack debounce
 		}
 		else
 		{
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1000; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 			else
 				ent->NPC->burstSpacing = 600; //attack debounce
 		}
@@ -975,7 +975,7 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 				ent->NPC->burstSpacing = 2000; //attackdebounce
 				break;
 			case 2:
-				ent->NPC->burstSpacing = 1500; //attackdebounce
+				ent->NPC->burstSpacing = 1750; //attackdebounce
 				break;
 			default:;
 			}
@@ -999,25 +999,25 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 				ent->NPC->burstSpacing = 2000; //attackdebounce
 				break;
 			case 2:
-				ent->NPC->burstSpacing = 1500; //attackdebounce
+				ent->NPC->burstSpacing = 1750; //attackdebounce
 				break;
 			default:;
 			}
 		}
 		else
 		{
-			ent->NPC->burstSpacing = 1000; //attackdebounce
+			ent->NPC->burstSpacing = 2000; //attackdebounce
 		}
 		break;
 
 	case WP_BOWCASTER:
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 		if (g_spskill->integer == 0)
-			ent->NPC->burstSpacing = 1000; //attack debounce
+			ent->NPC->burstSpacing = 1500; //attack debounce
 		else if (g_spskill->integer == 1)
-			ent->NPC->burstSpacing = 750; //attack debounce
+			ent->NPC->burstSpacing = 1250; //attack debounce
 		else
-			ent->NPC->burstSpacing = 600; //attack debounce
+			ent->NPC->burstSpacing = 1000; //attack debounce
 		break;
 
 	case WP_REPEATER:
@@ -1035,15 +1035,20 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		break;
 
 	case WP_DEMP2:
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
-		ent->NPC->burstSpacing = 1000; //attackdebounce
+		if (g_spskill->integer == 0)
+			ent->NPC->burstSpacing = 2500; //attack debounce
+		else if (g_spskill->integer == 1)
+			ent->NPC->burstSpacing = 2000; //attack debounce
+		else
+			ent->NPC->burstSpacing = 1750; //attack debounce
 		break;
 
 	case WP_FLECHETTE:
@@ -1054,18 +1059,23 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		}
 		else
 		{
-			ent->NPC->burstSpacing = 1000; //attackdebounce
+			if (g_spskill->integer == 0)
+				ent->NPC->burstSpacing = 1500; //attack debounce
+			else if (g_spskill->integer == 1)
+				ent->NPC->burstSpacing = 1250; //attack debounce
+			else
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		break;
 
 	case WP_ROCKET_LAUNCHER:
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 		if (g_spskill->integer == 0)
-			ent->NPC->burstSpacing = 2500; //attack debounce
+			ent->NPC->burstSpacing = 6000; //attack debounce
 		else if (g_spskill->integer == 1)
-			ent->NPC->burstSpacing = 2000; //attack debounce
+			ent->NPC->burstSpacing = 5000; //attack debounce
 		else
-			ent->NPC->burstSpacing = 1500; //attack debounce
+			ent->NPC->burstSpacing = 4000; //attack debounce
 		break;
 
 	case WP_CONCUSSION:
@@ -1073,28 +1083,28 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		if (ent->NPC->scriptFlags & SCF_ALT_FIRE)
 		{
 			//beam
-			ent->NPC->burstSpacing = 1200; //attackdebounce
+			ent->NPC->burstSpacing = 2500; //attackdebounce
 		}
 		else
 		{
 			//rocket
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 2300; //attack debounce
+				ent->NPC->burstSpacing = 3000; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1800; //attack debounce
+				ent->NPC->burstSpacing = 2500; //attack debounce
 			else
-				ent->NPC->burstSpacing = 1200; //attack debounce
+				ent->NPC->burstSpacing = 2000; //attack debounce
 		}
 		break;
 
 	case WP_THERMAL:
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 		if (g_spskill->integer == 0)
-			ent->NPC->burstSpacing = 4500; //attack debounce
+			ent->NPC->burstSpacing = 6000; //attack debounce
 		else if (g_spskill->integer == 1)
-			ent->NPC->burstSpacing = 3000; //attack debounce
+			ent->NPC->burstSpacing = 5000; //attack debounce
 		else
-			ent->NPC->burstSpacing = 2000; //attack debounce
+			ent->NPC->burstSpacing = 4000; //attack debounce
 		break;
 
 	case WP_BLASTER:
@@ -1107,19 +1117,19 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 
@@ -1201,7 +1211,7 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		else if (g_spskill->integer == 1)
 			ent->NPC->burstSpacing = 1500; //attack debounce
 		else
-			ent->NPC->burstSpacing = 750; //attack debounce
+			ent->NPC->burstSpacing = 1000; //attack debounce
 		break;
 
 	case WP_BATTLEDROID:
@@ -1214,19 +1224,19 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		break;
 
@@ -1240,19 +1250,19 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 
@@ -1266,19 +1276,19 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 
@@ -1292,19 +1302,19 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 
@@ -1318,19 +1328,19 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 
@@ -1345,27 +1355,36 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 
 	case WP_Z6_ROTARY_CANNON:
-		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
+		//ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
+		ent->NPC->aiFlags |= NPCAI_BURST_WEAPON;
+		ent->NPC->burstMin = 6;
+		ent->NPC->burstMean = 12;
+		ent->NPC->burstMax = 18;
 		ent->NPC->rotaryCannonShotsFired = 0;
 		ent->NPC->rotaryCannonCooldownTime = 0;
-		ent->NPC->burstSpacing = 200; //attack debounce
+		if (g_spskill->integer == 0)
+			ent->NPC->burstSpacing = 3000; //attack debounce
+		else if (g_spskill->integer == 1)
+			ent->NPC->burstSpacing = 2750; //attack debounce
+		else
+			ent->NPC->burstSpacing = 2500; //attack debounce
 		break;
 
 	case WP_REBELRIFLE:
@@ -1378,19 +1397,19 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 
@@ -1400,7 +1419,7 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		if (g_spskill->integer == 0)
 			ent->NPC->burstSpacing = 1000; //attack debounce
 		else if (g_spskill->integer == 1)
-			ent->NPC->burstSpacing = 750; //attack debounce
+			ent->NPC->burstSpacing = 800; //attack debounce
 		else
 			ent->NPC->burstSpacing = 600; //attack debounce
 		break;
@@ -1411,7 +1430,7 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 		if (g_spskill->integer == 0)
 			ent->NPC->burstSpacing = 1000; //attack debounce
 		else if (g_spskill->integer == 1)
-			ent->NPC->burstSpacing = 750; //attack debounce
+			ent->NPC->burstSpacing = 800; //attack debounce
 		else
 			ent->NPC->burstSpacing = 600; //attack debounce
 		break;
@@ -1436,7 +1455,7 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1000; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 			else
 				ent->NPC->burstSpacing = 600; //attack debounce
 		}
@@ -1467,6 +1486,7 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
+
 	case WP_DROIDEKA:
 		if (ent->NPC->scriptFlags & SCF_ALT_FIRE)
 		{
@@ -1488,11 +1508,21 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 				ent->NPC->burstMin = 2;
 				ent->NPC->burstMean = 2;
 				ent->NPC->burstMax = 2;
-				ent->NPC->burstSpacing = 600; //attack debounce
+				if (g_spskill->integer == 0)
+					ent->NPC->burstSpacing = 1500; //attack debounce
+				else if (g_spskill->integer == 1)
+					ent->NPC->burstSpacing = 1250; //attack debounce
+				else
+					ent->NPC->burstSpacing = 1000; //attack debounce
 			}
 			else
 			{
-				ent->NPC->burstSpacing = 750; //attack debounce
+				if (g_spskill->integer == 0)
+					ent->NPC->burstSpacing = 1500; //attack debounce
+				else if (g_spskill->integer == 1)
+					ent->NPC->burstSpacing = 1250; //attack debounce
+				else
+					ent->NPC->burstSpacing = 1000; //attack debounce
 			}
 		}
 		break;
@@ -1507,24 +1537,29 @@ void ChangeWeapon(const gentity_t* ent, const int new_weapon)
 			if (g_spskill->integer == 0)
 				ent->NPC->burstSpacing = 1500; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1250; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 		}
 		else
 		{
 			ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
 			if (g_spskill->integer == 0)
-				ent->NPC->burstSpacing = 1000; //attack debounce
+				ent->NPC->burstSpacing = 1200; //attack debounce
 			else if (g_spskill->integer == 1)
-				ent->NPC->burstSpacing = 750; //attack debounce
+				ent->NPC->burstSpacing = 1000; //attack debounce
 			else
-				ent->NPC->burstSpacing = 600; //attack debounce
+				ent->NPC->burstSpacing = 800; //attack debounce
 		}
 		break;
 	case WP_SBD_BLASTER:
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
-		ent->NPC->burstSpacing = 400;
+		if (g_spskill->integer == 0)
+			ent->NPC->burstSpacing = 1200; //attack debounce
+		else if (g_spskill->integer == 1)
+			ent->NPC->burstSpacing = 1000; //attack debounce
+		else
+			ent->NPC->burstSpacing = 800; //attack debounce
 		break;
 	case WP_JAWA: //prifle
 		ent->NPC->aiFlags &= ~NPCAI_BURST_WEAPON;
