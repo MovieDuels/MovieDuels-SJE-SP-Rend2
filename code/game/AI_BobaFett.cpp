@@ -859,8 +859,8 @@ wristWeapon_t missileStates[4] =
 		BOBA_MISSILE_LASER, FP_GRIP, WP_WRIST_BLASTER, qfalse, 5, BOBA_FLAMEDURATION, 150, BOTH_FLAMETHROWER, qfalse,
 		qtrue, qtrue
 	},
-	{BOBA_MISSILE_DART, FP_FIRST, WP_TUSKEN_RIFLE, qfalse, 1, 1500, 200, BOTH_FLAMETHROWER, qfalse, qfalse, qtrue},
-	{BOBA_MISSILE_VIBROBLADE, FP_DRAIN, WP_MELEE, qfalse, 1, 1000, 100, BOTH_PULL_IMPALE_STAB, qfalse, qfalse, qfalse}
+	{ BOBA_MISSILE_DART, FP_FIRST, WP_TUSKEN_RIFLE, qfalse, 1, 1500, 200, BOTH_FLAMETHROWER, qfalse, qfalse, qtrue },
+	{ BOBA_MISSILE_VIBROBLADE, FP_DRAIN, WP_MELEE, qfalse, 1, 1000, 100, BOTH_PULL_IMPALE_STAB, qfalse, qfalse, qfalse }
 };
 
 static void Boba_VibrobladePunch(gentity_t* self)

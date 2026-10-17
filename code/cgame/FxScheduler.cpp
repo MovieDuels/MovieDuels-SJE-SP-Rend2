@@ -540,7 +540,7 @@ int CFxScheduler::ParseEffect(const char* file, const CGPGroup& base)
 	for (const auto& primitive_group : base.GetSubGroups())
 	{
 		static std::map<gsl::cstring_view, EPrimType, Q::CStringViewILess> primitiveTypes{
-			{CSTRING_VIEW("particle"), Particle},
+			{ CSTRING_VIEW("particle"), Particle },
 			{ CSTRING_VIEW("line"), Line },
 			{ CSTRING_VIEW("tail"), Tail },
 			{ CSTRING_VIEW("sound"), Sound },

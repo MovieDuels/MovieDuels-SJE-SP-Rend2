@@ -243,16 +243,16 @@ static int svcmdcmp(const void* a, const void* b)
 
 /* This array MUST be sorted correctly by alphabetical name field */
 static serverCommand_t commands[] = {
-	{"chat", CG_Print_f},
-	{"clientLevelShot", CG_ClientLevelShot_f},
-	{"cp", CG_CenterPrint_f},
-	{"cs", CG_ConfigStringModified},
-	{"ct", CG_CaptionText_f},
-	{"cts", CG_CaptionTextStop},
-	{"lt", CG_LCARSText_f},
-	{"print", CG_Print_f},
-	{"pzkcp", CG_PazaakPrint_f},
-	{"st", CG_ScrollText_f},
+	{ "chat", CG_Print_f },
+	{ "clientLevelShot", CG_ClientLevelShot_f },
+	{ "cp", CG_CenterPrint_f },
+	{ "cs", CG_ConfigStringModified },
+	{ "ct", CG_CaptionText_f },
+	{ "cts", CG_CaptionTextStop },
+	{ "lt", CG_LCARSText_f },
+	{ "print", CG_Print_f },
+	{ "pzkcp", CG_PazaakPrint_f },
+	{ "st", CG_ScrollText_f },
 };
 
 static constexpr size_t num_commands = std::size(commands);

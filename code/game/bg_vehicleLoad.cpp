@@ -159,37 +159,37 @@ using vehField_t = struct
 
 vehField_t vehWeaponFields[] =
 {
-	{"name", VWFOFS(name), VF_STRING}, //unique name of the vehicle
-	{"projectile", VWFOFS(bIsProjectile), VF_BOOL}, //traceline or entity?
-	{"hasGravity", VWFOFS(bHasGravity), VF_BOOL}, //if a projectile, drops
-	{"ionWeapon", VWFOFS(bIonWeapon), VF_BOOL}, //disables ship shields and sends them out of control
-	{"saberBlockable", VWFOFS(bSaberBlockable), VF_BOOL}, //lightsabers can deflect this projectile
-	{"muzzleFX", VWFOFS(iMuzzleFX), VF_EFFECT_CLIENT}, //index of Muzzle Effect
-	{"model", VWFOFS(iModel), VF_MODEL_CLIENT}, //handle to the model used by this projectile
-	{"shotFX", VWFOFS(iShotFX), VF_EFFECT_CLIENT}, //index of Shot Effect
-	{"impactFX", VWFOFS(iImpactFX), VF_EFFECT_CLIENT}, //index of Impact Effect
-	{"g2MarkShader", VWFOFS(iG2MarkShaderHandle), VF_SHADER},
+	{ "name", VWFOFS(name), VF_STRING }, //unique name of the vehicle
+	{ "projectile", VWFOFS(bIsProjectile), VF_BOOL }, //traceline or entity?
+	{ "hasGravity", VWFOFS(bHasGravity), VF_BOOL }, //if a projectile, drops
+	{ "ionWeapon", VWFOFS(bIonWeapon), VF_BOOL }, //disables ship shields and sends them out of control
+	{ "saberBlockable", VWFOFS(bSaberBlockable), VF_BOOL }, //lightsabers can deflect this projectile
+	{ "muzzleFX", VWFOFS(iMuzzleFX), VF_EFFECT_CLIENT }, //index of Muzzle Effect
+	{ "model", VWFOFS(iModel), VF_MODEL_CLIENT }, //handle to the model used by this projectile
+	{ "shotFX", VWFOFS(iShotFX), VF_EFFECT_CLIENT }, //index of Shot Effect
+	{ "impactFX", VWFOFS(iImpactFX), VF_EFFECT_CLIENT }, //index of Impact Effect
+	{ "g2MarkShader", VWFOFS(iG2MarkShaderHandle), VF_SHADER },
 	//index of shader to use for G2 marks made on other models when hit by this projectile
-	{"g2MarkSize", VWFOFS(fG2MarkSize), VF_FLOAT}, //size (diameter) of the ghoul2 mark
-	{"loopSound", VWFOFS(iLoopSound), VF_SOUND_CLIENT}, //index of loopSound
-	{"speed", VWFOFS(fSpeed), VF_FLOAT}, //speed of projectile/range of traceline
-	{"homing", VWFOFS(fHoming), VF_FLOAT},
+	{ "g2MarkSize", VWFOFS(fG2MarkSize), VF_FLOAT }, //size (diameter) of the ghoul2 mark
+	{ "loopSound", VWFOFS(iLoopSound), VF_SOUND_CLIENT }, //index of loopSound
+	{ "speed", VWFOFS(fSpeed), VF_FLOAT }, //speed of projectile/range of traceline
+	{ "homing", VWFOFS(fHoming), VF_FLOAT },
 	//0.0 = not homing, 0.5 = half vel to targ, half cur vel, 1.0 = all vel to targ
-	{"homingFOV", VWFOFS(fHomingFOV), VF_FLOAT},
+	{ "homingFOV", VWFOFS(fHomingFOV), VF_FLOAT },
 	//missile will lose lock on if DotProduct of missile direction and direction to target ever drops below this (-1 to 1, -1 = never lose target, 0 = lose if ship gets behind missile, 1 = pretty much will lose it's target right away)
-	{"lockOnTime", VWFOFS(iLockOnTime), VF_INT}, //0 = no lock time needed, else # of ms needed to lock on
-	{"damage", VWFOFS(iDamage), VF_INT}, //damage done when traceline or projectile directly hits target
-	{"splashDamage", VWFOFS(iSplashDamage), VF_INT},
+	{ "lockOnTime", VWFOFS(iLockOnTime), VF_INT }, //0 = no lock time needed, else # of ms needed to lock on
+	{ "damage", VWFOFS(iDamage), VF_INT }, //damage done when traceline or projectile directly hits target
+	{ "splashDamage", VWFOFS(iSplashDamage), VF_INT },
 	//damage done to ents in splashRadius of end of traceline or projectile origin on impact
-	{"splashRadius", VWFOFS(fSplashRadius), VF_FLOAT},
+	{ "splashRadius", VWFOFS(fSplashRadius), VF_FLOAT },
 	//radius that ent must be in to take splashDamage (linear fall-off)
-	{"ammoPerShot", VWFOFS(iAmmoPerShot), VF_INT}, //how much "ammo" each shot takes
-	{"health", VWFOFS(iHealth), VF_INT},
+	{ "ammoPerShot", VWFOFS(iAmmoPerShot), VF_INT }, //how much "ammo" each shot takes
+	{ "health", VWFOFS(iHealth), VF_INT },
 	//if non-zero, projectile can be shot, takes this much damage before being destroyed
-	{"width", VWFOFS(fWidth), VF_FLOAT}, //width of traceline or bounding box of projecile (non-rotating!)
-	{"height", VWFOFS(fHeight), VF_FLOAT}, //height of traceline or bounding box of projecile (non-rotating!)
-	{"lifetime", VWFOFS(iLifeTime), VF_INT}, //removes itself after this amount of time
-	{"explodeOnExpire", VWFOFS(bExplodeOnExpire), VF_BOOL},
+	{ "width", VWFOFS(fWidth), VF_FLOAT }, //width of traceline or bounding box of projecile (non-rotating!)
+	{ "height", VWFOFS(fHeight), VF_FLOAT }, //height of traceline or bounding box of projecile (non-rotating!)
+	{ "lifetime", VWFOFS(iLifeTime), VF_INT }, //removes itself after this amount of time
+	{ "explodeOnExpire", VWFOFS(bExplodeOnExpire), VF_BOOL },
 	//when iLifeTime is up, explodes rather than simply removing itself
 };
 
@@ -489,275 +489,275 @@ static int VEH_VehWeaponIndexForName(const char* vehWeaponName)
 
 vehField_t vehicleFields[] =
 {
-	{"name", VFOFS(name), VF_STRING}, //unique name of the vehicle
+	{ "name", VFOFS(name), VF_STRING }, //unique name of the vehicle
 
 	//general data
-	{"type", VFOFS(type), VF_VEHTYPE}, //what kind of vehicle
-	{"numHands", VFOFS(numHands), VF_INT},
+	{ "type", VFOFS(type), VF_VEHTYPE }, //what kind of vehicle
+	{ "numHands", VFOFS(numHands), VF_INT },
 	//if 2 hands, no weapons, if 1 hand, can use 1-handed weapons, if 0 hands, can use 2-handed weapons
-	{"lookPitch", VFOFS(lookPitch), VF_FLOAT}, //How far you can look up and down off the forward of the vehicle
-	{"lookYaw", VFOFS(lookYaw), VF_FLOAT}, //How far you can look left and right off the forward of the vehicle
-	{"length", VFOFS(length), VF_FLOAT}, //how long it is - used for body length traces when turning/moving?
-	{"width", VFOFS(width), VF_FLOAT}, //how wide it is - used for body length traces when turning/moving?
-	{"height", VFOFS(height), VF_FLOAT}, //how tall it is - used for body length traces when turning/moving?
-	{"centerOfGravity", VFOFS(centerOfGravity), VF_VECTOR},
+	{ "lookPitch", VFOFS(lookPitch), VF_FLOAT }, //How far you can look up and down off the forward of the vehicle
+	{ "lookYaw", VFOFS(lookYaw), VF_FLOAT }, //How far you can look left and right off the forward of the vehicle
+	{ "length", VFOFS(length), VF_FLOAT }, //how long it is - used for body length traces when turning/moving?
+	{ "width", VFOFS(width), VF_FLOAT }, //how wide it is - used for body length traces when turning/moving?
+	{ "height", VFOFS(height), VF_FLOAT }, //how tall it is - used for body length traces when turning/moving?
+	{ "centerOfGravity", VFOFS(centerOfGravity), VF_VECTOR },
 	//offset from origin: {forward, right, up} as a modifier on that dimension (-1.0f is all the way back, 1.0f is all the way forward)
 
 	//speed stats
-	{"speedMax", VFOFS(speedMax), VF_FLOAT}, //top speed
-	{"turboSpeed", VFOFS(turboSpeed), VF_FLOAT}, //turbo speed
-	{"speedMin", VFOFS(speedMin), VF_FLOAT}, //if < 0, can go in reverse
-	{"speedIdle", VFOFS(speedIdle), VF_FLOAT}, //what speed it drifts to when no accel/decel input is given
-	{"accelIdle", VFOFS(accelIdle), VF_FLOAT}, //if speedIdle > 0, how quickly it goes up to that speed
-	{"acceleration", VFOFS(acceleration), VF_FLOAT}, //when pressing on accelerator
-	{"decelIdle", VFOFS(decelIdle), VF_FLOAT}, //when giving no input, how quickly it drops to speedIdle
-	{"throttleSticks", VFOFS(throttleSticks), VF_BOOL},
+	{ "speedMax", VFOFS(speedMax), VF_FLOAT }, //top speed
+	{ "turboSpeed", VFOFS(turboSpeed), VF_FLOAT }, //turbo speed
+	{ "speedMin", VFOFS(speedMin), VF_FLOAT }, //if < 0, can go in reverse
+	{ "speedIdle", VFOFS(speedIdle), VF_FLOAT }, //what speed it drifts to when no accel/decel input is given
+	{ "accelIdle", VFOFS(accelIdle), VF_FLOAT }, //if speedIdle > 0, how quickly it goes up to that speed
+	{ "acceleration", VFOFS(acceleration), VF_FLOAT }, //when pressing on accelerator
+	{ "decelIdle", VFOFS(decelIdle), VF_FLOAT }, //when giving no input, how quickly it drops to speedIdle
+	{ "throttleSticks", VFOFS(throttleSticks), VF_BOOL },
 	//if true, speed stays at whatever you accel/decel to, unless you turbo or brake
-	{"strafePerc", VFOFS(strafePerc), VF_FLOAT},
+	{ "strafePerc", VFOFS(strafePerc), VF_FLOAT },
 	//multiplier on current speed for strafing.  If 1.0f, you can strafe at the same speed as you're going forward, 0.5 is half, 0 is no strafing
 
 	//handling stats
-	{"bankingSpeed", VFOFS(bankingSpeed), VF_FLOAT}, //how quickly it pitches and rolls (not under player control)
-	{"pitchLimit", VFOFS(pitchLimit), VF_FLOAT}, //how far it can roll forward or backward
-	{"rollLimit", VFOFS(rollLimit), VF_FLOAT}, //how far it can roll to either side
-	{"braking", VFOFS(braking), VF_FLOAT}, //when pressing on decelerator
-	{"mouseYaw", VFOFS(mouseYaw), VF_FLOAT}, // The mouse yaw override.
-	{"mousePitch", VFOFS(mousePitch), VF_FLOAT}, // The mouse yaw override.
-	{"turningSpeed", VFOFS(turningSpeed), VF_FLOAT}, //how quickly you can turn
-	{"turnWhenStopped", VFOFS(turnWhenStopped), VF_BOOL}, //whether or not you can turn when not moving
-	{"traction", VFOFS(traction), VF_FLOAT}, //how much your command input affects velocity
-	{"friction", VFOFS(friction), VF_FLOAT}, //how much velocity is cut on its own
-	{"maxSlope", VFOFS(maxSlope), VF_FLOAT}, //the max slope that it can go up with control
-	{"speedDependantTurning", VFOFS(speedDependantTurning), VF_BOOL}, //vehicle turns faster the faster it's going
+	{ "bankingSpeed", VFOFS(bankingSpeed), VF_FLOAT }, //how quickly it pitches and rolls (not under player control)
+	{ "pitchLimit", VFOFS(pitchLimit), VF_FLOAT }, //how far it can roll forward or backward
+	{ "rollLimit", VFOFS(rollLimit), VF_FLOAT }, //how far it can roll to either side
+	{ "braking", VFOFS(braking), VF_FLOAT }, //when pressing on decelerator
+	{ "mouseYaw", VFOFS(mouseYaw), VF_FLOAT }, // The mouse yaw override.
+	{ "mousePitch", VFOFS(mousePitch), VF_FLOAT }, // The mouse yaw override.
+	{ "turningSpeed", VFOFS(turningSpeed), VF_FLOAT }, //how quickly you can turn
+	{ "turnWhenStopped", VFOFS(turnWhenStopped), VF_BOOL }, //whether or not you can turn when not moving
+	{ "traction", VFOFS(traction), VF_FLOAT }, //how much your command input affects velocity
+	{ "friction", VFOFS(friction), VF_FLOAT }, //how much velocity is cut on its own
+	{ "maxSlope", VFOFS(maxSlope), VF_FLOAT }, //the max slope that it can go up with control
+	{ "speedDependantTurning", VFOFS(speedDependantTurning), VF_BOOL }, //vehicle turns faster the faster it's going
 
 	//durability stats
-	{"mass", VFOFS(mass), VF_INT}, //for momentum and impact force (player mass is 10)
-	{"armor", VFOFS(armor), VF_INT}, //total points of damage it can take
-	{"shields", VFOFS(shields), VF_INT}, //energy shield damage points
-	{"shieldRechargeMS", VFOFS(shieldRechargeMS), VF_INT}, //energy shield milliseconds per point recharged
-	{"toughness", VFOFS(toughness), VF_FLOAT},
+	{ "mass", VFOFS(mass), VF_INT }, //for momentum and impact force (player mass is 10)
+	{ "armor", VFOFS(armor), VF_INT }, //total points of damage it can take
+	{ "shields", VFOFS(shields), VF_INT }, //energy shield damage points
+	{ "shieldRechargeMS", VFOFS(shieldRechargeMS), VF_INT }, //energy shield milliseconds per point recharged
+	{ "toughness", VFOFS(toughness), VF_FLOAT },
 	//modifies incoming damage, 1.0 is normal, 0.5 is half, etc.  Simulates being made of tougher materials/construction
-	{"malfunctionArmorLevel", VFOFS(malfunctionArmorLevel), VF_INT},
+	{ "malfunctionArmorLevel", VFOFS(malfunctionArmorLevel), VF_INT },
 	//when armor drops to or below this point, start malfunctioning
-	{"surfDestruction", VFOFS(surfDestruction), VF_INT},
+	{ "surfDestruction", VFOFS(surfDestruction), VF_INT },
 
 	//visuals & sounds
-	{"model", VFOFS(model), VF_STRING}, //what model to use - if make it an NPC's primary model, don't need this?
-	{"skin", VFOFS(skin), VF_STRING}, //what skin to use - if make it an NPC's primary model, don't need this?
-	{"g2radius", VFOFS(g2radius), VF_INT}, //render radius (really diameter, but...) for the ghoul2 model
-	{"riderAnim", VFOFS(riderAnim), VF_ANIM}, //what animation the rider uses
-	{"droidNPC", VFOFS(droidNPC), VF_STRING}, //NPC to attach to *droidunit tag (if it exists in the model)
+	{ "model", VFOFS(model), VF_STRING }, //what model to use - if make it an NPC's primary model, don't need this?
+	{ "skin", VFOFS(skin), VF_STRING }, //what skin to use - if make it an NPC's primary model, don't need this?
+	{ "g2radius", VFOFS(g2radius), VF_INT }, //render radius (really diameter, but...) for the ghoul2 model
+	{ "riderAnim", VFOFS(riderAnim), VF_ANIM }, //what animation the rider uses
+	{ "droidNPC", VFOFS(droidNPC), VF_STRING }, //NPC to attach to *droidunit tag (if it exists in the model)
 
-	{"radarIcon", VFOFS(radarIconHandle), VF_SHADER_NOMIP}, //what icon to show on radar in MP
-	{"dmgIndicFrame", VFOFS(dmgIndicFrame), VF_STRING}, //(kept as a name: the cgame registers it)
+	{ "radarIcon", VFOFS(radarIconHandle), VF_SHADER_NOMIP }, //what icon to show on radar in MP
+	{ "dmgIndicFrame", VFOFS(dmgIndicFrame), VF_STRING }, //(kept as a name: the cgame registers it)
 	//what image to use for the frame of the damage indicator
-	{"dmgIndicShield", VFOFS(dmgIndicShield), VF_STRING}, //(kept as a name: the cgame registers it)
+	{ "dmgIndicShield", VFOFS(dmgIndicShield), VF_STRING }, //(kept as a name: the cgame registers it)
 	//what image to use for the shield of the damage indicator
-	{"dmgIndicBackground", VFOFS(dmgIndicBackground), VF_STRING}, //(kept as a name: the cgame registers it)
+	{ "dmgIndicBackground", VFOFS(dmgIndicBackground), VF_STRING }, //(kept as a name: the cgame registers it)
 	//what image to use for the background of the damage indicator
-	{"icon_front", VFOFS(iconFront), VF_STRING}, //(kept as a name: the cgame registers it)
+	{ "icon_front", VFOFS(iconFront), VF_STRING }, //(kept as a name: the cgame registers it)
 	//what image to use for the front of the ship on the damage indicator
-	{"icon_back", VFOFS(iconBack), VF_STRING}, //(kept as a name: the cgame registers it)
+	{ "icon_back", VFOFS(iconBack), VF_STRING }, //(kept as a name: the cgame registers it)
 	//what image to use for the back of the ship on the damage indicator
-	{"icon_right", VFOFS(iconRight), VF_STRING}, //(kept as a name: the cgame registers it)
+	{ "icon_right", VFOFS(iconRight), VF_STRING }, //(kept as a name: the cgame registers it)
 	//what image to use for the right of the ship on the damage indicator
-	{"icon_left", VFOFS(iconLeft), VF_STRING}, //(kept as a name: the cgame registers it)
+	{ "icon_left", VFOFS(iconLeft), VF_STRING }, //(kept as a name: the cgame registers it)
 	//what image to use for the left of the ship on the damage indicator
 	//kept as a name: the game reads this file and cannot register a shader, the cgame does that when it draws
-	{"crosshairShader", VFOFS(crosshairShader), VF_STRING}, //what image to use as the crosshair
-	{"shieldShader", VFOFS(shieldShaderHandle), VF_SHADER}, //What shader to use when drawing the shield shell
+	{ "crosshairShader", VFOFS(crosshairShader), VF_STRING }, //what image to use as the crosshair
+	{ "shieldShader", VFOFS(shieldShaderHandle), VF_SHADER }, //What shader to use when drawing the shield shell
 
 	//individual "area" health -rww
-	{"health_front", VFOFS(health_front), VF_INT},
-	{"health_back", VFOFS(health_back), VF_INT},
-	{"health_right", VFOFS(health_right), VF_INT},
-	{"health_left", VFOFS(health_left), VF_INT},
+	{ "health_front", VFOFS(health_front), VF_INT },
+	{ "health_back", VFOFS(health_back), VF_INT },
+	{ "health_right", VFOFS(health_right), VF_INT },
+	{ "health_left", VFOFS(health_left), VF_INT },
 
-	{"soundOn", VFOFS(soundOn), VF_SOUND}, //sound to play when get on it
-	{"soundOff", VFOFS(soundOff), VF_SOUND}, //sound to play when get off
-	{"soundLoop", VFOFS(soundLoop), VF_SOUND}, //sound to loop while riding it
+	{ "soundOn", VFOFS(soundOn), VF_SOUND }, //sound to play when get on it
+	{ "soundOff", VFOFS(soundOff), VF_SOUND }, //sound to play when get off
+	{ "soundLoop", VFOFS(soundLoop), VF_SOUND }, //sound to loop while riding it
 
-	{"soundTakeOff", VFOFS(soundTakeOff), VF_SOUND}, //sound to play when ship takes off
-	{"soundEngineStart",VFOFS(soundEngineStart), VF_SOUND_CLIENT}, //sound to play when ship's thrusters first activate
-	{"soundSpin", VFOFS(soundSpin), VF_SOUND}, //sound to loop while spiraling out of control
+	{ "soundTakeOff", VFOFS(soundTakeOff), VF_SOUND }, //sound to play when ship takes off
+	{ "soundEngineStart",VFOFS(soundEngineStart), VF_SOUND_CLIENT }, //sound to play when ship's thrusters first activate
+	{ "soundSpin", VFOFS(soundSpin), VF_SOUND }, //sound to loop while spiraling out of control
 
-	{"soundTurbo", VFOFS(soundTurbo), VF_SOUND}, //sound to play when turbo/afterburner kicks in
-	{"soundTurbo2", VFOFS(soundTurbo2), VF_SOUND}, //sound to play when turbo/afterburner kicks in
-	{"soundTurbo3", VFOFS(soundTurbo3), VF_SOUND}, //sound to play when turbo/afterburner kicks in
-	{"soundTurbo4", VFOFS(soundTurbo4), VF_SOUND}, //sound to play when turbo/afterburner kicks in
+	{ "soundTurbo", VFOFS(soundTurbo), VF_SOUND }, //sound to play when turbo/afterburner kicks in
+	{ "soundTurbo2", VFOFS(soundTurbo2), VF_SOUND }, //sound to play when turbo/afterburner kicks in
+	{ "soundTurbo3", VFOFS(soundTurbo3), VF_SOUND }, //sound to play when turbo/afterburner kicks in
+	{ "soundTurbo4", VFOFS(soundTurbo4), VF_SOUND }, //sound to play when turbo/afterburner kicks in
 
-	{"soundBraking", VFOFS(soundBraking), VF_SOUND}, //sound to play when pulling back
-	{"soundAccelerate", VFOFS(soundAccelerate), VF_SOUND}, //sound to play when pushing forward
+	{ "soundBraking", VFOFS(soundBraking), VF_SOUND }, //sound to play when pulling back
+	{ "soundAccelerate", VFOFS(soundAccelerate), VF_SOUND }, //sound to play when pushing forward
 
-	{"soundHyper", VFOFS(soundHyper), VF_SOUND_CLIENT}, //sound to play when hits hyperspace
-	{"soundLand", VFOFS(soundLand), VF_SOUND}, //sound to play when ship lands
+	{ "soundHyper", VFOFS(soundHyper), VF_SOUND_CLIENT }, //sound to play when hits hyperspace
+	{ "soundLand", VFOFS(soundLand), VF_SOUND }, //sound to play when ship lands
 
-	{"soundFlyBy", VFOFS(soundFlyBy), VF_SOUND_CLIENT}, //sound to play when they buzz you
-	{"soundFlyBy2", VFOFS(soundFlyBy2), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy3", VFOFS(soundFlyBy3), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy4", VFOFS(soundFlyBy4), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy5", VFOFS(soundFlyBy5), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy6", VFOFS(soundFlyBy6), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy7", VFOFS(soundFlyBy7), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy8", VFOFS(soundFlyBy8), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy9", VFOFS(soundFlyBy9), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy10", VFOFS(soundFlyBy10), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy11", VFOFS(soundFlyBy11), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy12", VFOFS(soundFlyBy12), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy13", VFOFS(soundFlyBy13), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
-	{"soundFlyBy14", VFOFS(soundFlyBy14), VF_SOUND_CLIENT}, //alternate sound to play when they buzz you
+	{ "soundFlyBy", VFOFS(soundFlyBy), VF_SOUND_CLIENT }, //sound to play when they buzz you
+	{ "soundFlyBy2", VFOFS(soundFlyBy2), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy3", VFOFS(soundFlyBy3), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy4", VFOFS(soundFlyBy4), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy5", VFOFS(soundFlyBy5), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy6", VFOFS(soundFlyBy6), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy7", VFOFS(soundFlyBy7), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy8", VFOFS(soundFlyBy8), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy9", VFOFS(soundFlyBy9), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy10", VFOFS(soundFlyBy10), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy11", VFOFS(soundFlyBy11), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy12", VFOFS(soundFlyBy12), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy13", VFOFS(soundFlyBy13), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
+	{ "soundFlyBy14", VFOFS(soundFlyBy14), VF_SOUND_CLIENT }, //alternate sound to play when they buzz you
 
-	{"soundShift1", VFOFS(soundShift1), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift2", VFOFS(soundShift2), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift3", VFOFS(soundShift3), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift4", VFOFS(soundShift4), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift5", VFOFS(soundShift5), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift6", VFOFS(soundShift6), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift7", VFOFS(soundShift7), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift8", VFOFS(soundShift8), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift9", VFOFS(soundShift9), VF_SOUND}, //sound to play when changing speeds
-	{"soundShift10", VFOFS(soundShift10), VF_SOUND}, //sound to play when changing speeds
+	{ "soundShift1", VFOFS(soundShift1), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift2", VFOFS(soundShift2), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift3", VFOFS(soundShift3), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift4", VFOFS(soundShift4), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift5", VFOFS(soundShift5), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift6", VFOFS(soundShift6), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift7", VFOFS(soundShift7), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift8", VFOFS(soundShift8), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift9", VFOFS(soundShift9), VF_SOUND }, //sound to play when changing speeds
+	{ "soundShift10", VFOFS(soundShift10), VF_SOUND }, //sound to play when changing speeds
 
-	{"exhaustFX", VFOFS(iExhaustFX), VF_EFFECT_CLIENT}, //exhaust effect, played from "*exhaust" bolt(s)
-	{"turboFX", VFOFS(iTurboFX), VF_EFFECT_CLIENT},
+	{ "exhaustFX", VFOFS(iExhaustFX), VF_EFFECT_CLIENT }, //exhaust effect, played from "*exhaust" bolt(s)
+	{ "turboFX", VFOFS(iTurboFX), VF_EFFECT_CLIENT },
 	//turbo exhaust effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
-	{"turboStartFX", VFOFS(iTurboStartFX), VF_EFFECT},
+	{ "turboStartFX", VFOFS(iTurboStartFX), VF_EFFECT },
 	//turbo start effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
-	{"trailFX", VFOFS(iTrailFX), VF_EFFECT_CLIENT}, //trail effect, played from "*trail" bolt(s)
-	{"impactFX", VFOFS(iImpactFX), VF_EFFECT_CLIENT}, //impact effect, for when it bumps into something
-	{"explodeFX", VFOFS(iExplodeFX), VF_EFFECT},
+	{ "trailFX", VFOFS(iTrailFX), VF_EFFECT_CLIENT }, //trail effect, played from "*trail" bolt(s)
+	{ "impactFX", VFOFS(iImpactFX), VF_EFFECT_CLIENT }, //impact effect, for when it bumps into something
+	{ "explodeFX", VFOFS(iExplodeFX), VF_EFFECT },
 	//explosion effect, for when it blows up (should have the sound built into explosion effect)
-	{"wakeFX", VFOFS(iWakeFX), VF_EFFECT_CLIENT}, //effect it makes when going across water
-	{"dmgFX", VFOFS(iDmgFX), VF_EFFECT_CLIENT}, //effect to play on damage from a weapon or something
-	{"injureFX", VFOFS(iInjureFX), VF_EFFECT_CLIENT}, //effect to play on partially damaged ship surface
-	{"noseFX", VFOFS(iNoseFX), VF_EFFECT_CLIENT}, //effect for nose piece flying away when blown off
-	{"lwingFX", VFOFS(iLWingFX), VF_EFFECT_CLIENT}, //effect for left wing piece flying away when blown off
-	{"rwingFX", VFOFS(iRWingFX), VF_EFFECT_CLIENT}, //effect for right wing piece flying away when blown off
+	{ "wakeFX", VFOFS(iWakeFX), VF_EFFECT_CLIENT }, //effect it makes when going across water
+	{ "dmgFX", VFOFS(iDmgFX), VF_EFFECT_CLIENT }, //effect to play on damage from a weapon or something
+	{ "injureFX", VFOFS(iInjureFX), VF_EFFECT_CLIENT }, //effect to play on partially damaged ship surface
+	{ "noseFX", VFOFS(iNoseFX), VF_EFFECT_CLIENT }, //effect for nose piece flying away when blown off
+	{ "lwingFX", VFOFS(iLWingFX), VF_EFFECT_CLIENT }, //effect for left wing piece flying away when blown off
+	{ "rwingFX", VFOFS(iRWingFX), VF_EFFECT_CLIENT }, //effect for right wing piece flying away when blown off
 
-	{"armorLowFX", VFOFS(iArmorLowFX), VF_EFFECT_CLIENT}, //effect to play on damage from a weapon or something
-	{"armorGoneFX", VFOFS(iArmorGoneFX), VF_EFFECT_CLIENT}, //effect to play on damage from a weapon or something
+	{ "armorLowFX", VFOFS(iArmorLowFX), VF_EFFECT_CLIENT }, //effect to play on damage from a weapon or something
+	{ "armorGoneFX", VFOFS(iArmorGoneFX), VF_EFFECT_CLIENT }, //effect to play on damage from a weapon or something
 
 	// Weapon stuff:
-	{"weap1", VFOFS(weapon[0].ID), VF_WEAPON}, //weapon used when press fire
-	{"weap2", VFOFS(weapon[1].ID), VF_WEAPON}, //weapon used when press alt-fire
+	{ "weap1", VFOFS(weapon[0].ID), VF_WEAPON }, //weapon used when press fire
+	{ "weap2", VFOFS(weapon[1].ID), VF_WEAPON }, //weapon used when press alt-fire
 	// The delay between shots for this weapon.
-	{"weap1Delay", VFOFS(weapon[0].delay), VF_INT},
-	{"weap2Delay", VFOFS(weapon[1].delay), VF_INT},
+	{ "weap1Delay", VFOFS(weapon[0].delay), VF_INT },
+	{ "weap2Delay", VFOFS(weapon[1].delay), VF_INT },
 	// Whether or not all the muzzles for each weapon can be linked together (linked delay = weapon delay * number of muzzles linked!)
-	{"weap1Link", VFOFS(weapon[0].linkable), VF_INT},
-	{"weap2Link", VFOFS(weapon[1].linkable), VF_INT},
+	{ "weap1Link", VFOFS(weapon[0].linkable), VF_INT },
+	{ "weap2Link", VFOFS(weapon[1].linkable), VF_INT },
 	// Whether or not to auto-aim the projectiles at the thing under the crosshair when we fire
-	{"weap1Aim", VFOFS(weapon[0].aimCorrect), VF_BOOL},
-	{"weap2Aim", VFOFS(weapon[1].aimCorrect), VF_BOOL},
+	{ "weap1Aim", VFOFS(weapon[0].aimCorrect), VF_BOOL },
+	{ "weap2Aim", VFOFS(weapon[1].aimCorrect), VF_BOOL },
 	//maximum ammo
-	{"weap1AmmoMax", VFOFS(weapon[0].ammoMax), VF_INT},
-	{"weap2AmmoMax", VFOFS(weapon[1].ammoMax), VF_INT},
+	{ "weap1AmmoMax", VFOFS(weapon[0].ammoMax), VF_INT },
+	{ "weap2AmmoMax", VFOFS(weapon[1].ammoMax), VF_INT },
 	//ammo recharge rate - milliseconds per unit (minimum of 100, which is 10 ammo per second)
-	{"weap1AmmoRechargeMS", VFOFS(weapon[0].ammoRechargeMS), VF_INT},
-	{"weap2AmmoRechargeMS", VFOFS(weapon[1].ammoRechargeMS), VF_INT},
+	{ "weap1AmmoRechargeMS", VFOFS(weapon[0].ammoRechargeMS), VF_INT },
+	{ "weap2AmmoRechargeMS", VFOFS(weapon[1].ammoRechargeMS), VF_INT },
 	//sound to play when out of ammo (plays default "no ammo" sound if none specified)
-	{"weap1SoundNoAmmo", VFOFS(weapon[0].soundNoAmmo), VF_SOUND_CLIENT},
+	{ "weap1SoundNoAmmo", VFOFS(weapon[0].soundNoAmmo), VF_SOUND_CLIENT },
 	//sound to play when try to fire weapon 1 with no ammo
-	{"weap2SoundNoAmmo", VFOFS(weapon[1].soundNoAmmo), VF_SOUND_CLIENT},
+	{ "weap2SoundNoAmmo", VFOFS(weapon[1].soundNoAmmo), VF_SOUND_CLIENT },
 	//sound to play when try to fire weapon 2 with no ammo
 
 	// Which weapon a muzzle fires (has to match one of the weapons this vehicle has).
-	{"weapMuzzle1", VFOFS(weapMuzzle[0]), VF_WEAPON},
-	{"weapMuzzle2", VFOFS(weapMuzzle[1]), VF_WEAPON},
-	{"weapMuzzle3", VFOFS(weapMuzzle[2]), VF_WEAPON},
-	{"weapMuzzle4", VFOFS(weapMuzzle[3]), VF_WEAPON},
-	{"weapMuzzle5", VFOFS(weapMuzzle[4]), VF_WEAPON},
-	{"weapMuzzle6", VFOFS(weapMuzzle[5]), VF_WEAPON},
-	{"weapMuzzle7", VFOFS(weapMuzzle[6]), VF_WEAPON},
-	{"weapMuzzle8", VFOFS(weapMuzzle[7]), VF_WEAPON},
-	{"weapMuzzle9", VFOFS(weapMuzzle[8]), VF_WEAPON},
-	{"weapMuzzle10", VFOFS(weapMuzzle[9]), VF_WEAPON},
+	{ "weapMuzzle1", VFOFS(weapMuzzle[0]), VF_WEAPON },
+	{ "weapMuzzle2", VFOFS(weapMuzzle[1]), VF_WEAPON },
+	{ "weapMuzzle3", VFOFS(weapMuzzle[2]), VF_WEAPON },
+	{ "weapMuzzle4", VFOFS(weapMuzzle[3]), VF_WEAPON },
+	{ "weapMuzzle5", VFOFS(weapMuzzle[4]), VF_WEAPON },
+	{ "weapMuzzle6", VFOFS(weapMuzzle[5]), VF_WEAPON },
+	{ "weapMuzzle7", VFOFS(weapMuzzle[6]), VF_WEAPON },
+	{ "weapMuzzle8", VFOFS(weapMuzzle[7]), VF_WEAPON },
+	{ "weapMuzzle9", VFOFS(weapMuzzle[8]), VF_WEAPON },
+	{ "weapMuzzle10", VFOFS(weapMuzzle[9]), VF_WEAPON },
 
 	// The max height before this ship (?) starts (auto)landing.
-	{"landingHeight", VFOFS(landingHeight), VF_FLOAT},
+	{ "landingHeight", VFOFS(landingHeight), VF_FLOAT },
 
 	//other misc stats
-	{"gravity", VFOFS(gravity), VF_INT}, //normal is 800
-	{"hoverHeight", VFOFS(hoverHeight), VF_FLOAT}, //if 0, it's a ground vehicle
-	{"hoverStrength", VFOFS(hoverStrength), VF_FLOAT},
+	{ "gravity", VFOFS(gravity), VF_INT }, //normal is 800
+	{ "hoverHeight", VFOFS(hoverHeight), VF_FLOAT }, //if 0, it's a ground vehicle
+	{ "hoverStrength", VFOFS(hoverStrength), VF_FLOAT },
 	//how hard it pushes off ground when less than hover height... causes "bounce", like shocks
-	{"waterProof", VFOFS(waterProof), VF_BOOL}, //can drive underwater if it has to
-	{"bouyancy", VFOFS(bouyancy), VF_FLOAT}, //when in water, how high it floats (1 is neutral bouyancy)
-	{"fuelMax", VFOFS(fuelMax), VF_INT}, //how much fuel it can hold (capacity)
-	{"fuelRate", VFOFS(fuelRate), VF_INT}, //how quickly is uses up fuel
-	{"turboDuration", VFOFS(turboDuration), VF_INT}, //how long turbo lasts
-	{"turboRecharge", VFOFS(turboRecharge), VF_INT}, //how long turbo takes to recharge
-	{"visibility", VFOFS(visibility), VF_INT}, //for sight alerts
-	{"loudness", VFOFS(loudness), VF_INT}, //for sound alerts
-	{"explosionRadius", VFOFS(explosionRadius), VF_FLOAT}, //range of explosion
-	{"explosionDamage", VFOFS(explosionDamage), VF_INT}, //damage of explosion
+	{ "waterProof", VFOFS(waterProof), VF_BOOL }, //can drive underwater if it has to
+	{ "bouyancy", VFOFS(bouyancy), VF_FLOAT }, //when in water, how high it floats (1 is neutral bouyancy)
+	{ "fuelMax", VFOFS(fuelMax), VF_INT }, //how much fuel it can hold (capacity)
+	{ "fuelRate", VFOFS(fuelRate), VF_INT }, //how quickly is uses up fuel
+	{ "turboDuration", VFOFS(turboDuration), VF_INT }, //how long turbo lasts
+	{ "turboRecharge", VFOFS(turboRecharge), VF_INT }, //how long turbo takes to recharge
+	{ "visibility", VFOFS(visibility), VF_INT }, //for sight alerts
+	{ "loudness", VFOFS(loudness), VF_INT }, //for sound alerts
+	{ "explosionRadius", VFOFS(explosionRadius), VF_FLOAT }, //range of explosion
+	{ "explosionDamage", VFOFS(explosionDamage), VF_INT }, //damage of explosion
 
 	//new stuff
-	{"maxPassengers", VFOFS(maxPassengers), VF_INT},
+	{ "maxPassengers", VFOFS(maxPassengers), VF_INT },
 	// The max number of passengers this vehicle may have (Default = 0).
-	{"hideRider", VFOFS(hideRider), VF_BOOL}, // rider (and passengers?) should not be drawn
-	{"killRiderOnDeath", VFOFS(killRiderOnDeath), VF_BOOL}, //if rider is on vehicle when it dies, they should die
-	{"flammable", VFOFS(flammable), VF_BOOL}, //whether or not the vehicle should catch on fire before it explodes
-	{"explosionDelay", VFOFS(explosionDelay), VF_INT}, //how long the vehicle should be on fire/dying before it explodes
+	{ "hideRider", VFOFS(hideRider), VF_BOOL }, // rider (and passengers?) should not be drawn
+	{ "killRiderOnDeath", VFOFS(killRiderOnDeath), VF_BOOL }, //if rider is on vehicle when it dies, they should die
+	{ "flammable", VFOFS(flammable), VF_BOOL }, //whether or not the vehicle should catch on fire before it explodes
+	{ "explosionDelay", VFOFS(explosionDelay), VF_INT }, //how long the vehicle should be on fire/dying before it explodes
 	//camera stuff
-	{"cameraOverride", VFOFS(cameraOverride), VF_BOOL},
+	{ "cameraOverride", VFOFS(cameraOverride), VF_BOOL },
 	//override the third person camera with the below values - normal is 0 (off)
-	{"cameraRange", VFOFS(cameraRange), VF_FLOAT}, //how far back the camera should be - normal is 80
-	{"cameraVertOffset", VFOFS(cameraVertOffset), VF_FLOAT},
+	{ "cameraRange", VFOFS(cameraRange), VF_FLOAT }, //how far back the camera should be - normal is 80
+	{ "cameraVertOffset", VFOFS(cameraVertOffset), VF_FLOAT },
 	//how high over the vehicle origin the camera should be - normal is 16
-	{"cameraHorzOffset", VFOFS(cameraHorzOffset), VF_FLOAT},
+	{ "cameraHorzOffset", VFOFS(cameraHorzOffset), VF_FLOAT },
 	//how far to left/right (negative/positive) of of the vehicle origin the camera should be - normal is 0
-	{"cameraPitchOffset", VFOFS(cameraPitchOffset), VF_FLOAT},
+	{ "cameraPitchOffset", VFOFS(cameraPitchOffset), VF_FLOAT },
 	//a modifier on the camera's pitch (up/down angle) to the vehicle - normal is 0
-	{"cameraFOV", VFOFS(cameraFOV), VF_FLOAT}, //third person camera FOV, default is 80
-	{"cameraAlpha", VFOFS(cameraAlpha), VF_FLOAT},
+	{ "cameraFOV", VFOFS(cameraFOV), VF_FLOAT }, //third person camera FOV, default is 80
+	{ "cameraAlpha", VFOFS(cameraAlpha), VF_FLOAT },
 	//fade out the vehicle to this alpha (0.1-1.0f) if it's in the way of the crosshair
-	{"cameraPitchDependantVertOffset", VFOFS(cameraPitchDependantVertOffset), VF_BOOL},
+	{ "cameraPitchDependantVertOffset", VFOFS(cameraPitchDependantVertOffset), VF_BOOL },
 	//use the hacky AT-ST pitch dependant vertical offset
 	//===TURRETS===========================================================================
 	//Turret 1
-	{"turret1Weap", VFOFS(turret[0].iWeapon), VF_WEAPON},
-	{"turret1Delay", VFOFS(turret[0].iDelay), VF_INT},
-	{"turret1AmmoMax", VFOFS(turret[0].iAmmoMax), VF_INT},
-	{"turret1AmmoRechargeMS", VFOFS(turret[0].iAmmoRechargeMS), VF_INT},
-	{"turret1YawBone", VFOFS(turret[0].yawBone), VF_STRING},
-	{"turret1PitchBone", VFOFS(turret[0].pitchBone), VF_STRING},
-	{"turret1YawAxis", VFOFS(turret[0].yawAxis), VF_INT},
-	{"turret1PitchAxis", VFOFS(turret[0].pitchAxis), VF_INT},
-	{"turret1ClampYawL", VFOFS(turret[0].yawClampLeft), VF_FLOAT}, //how far the turret is allowed to turn left
-	{"turret1ClampYawR", VFOFS(turret[0].yawClampRight), VF_FLOAT}, //how far the turret is allowed to turn right
-	{"turret1ClampPitchU", VFOFS(turret[0].pitchClampUp), VF_FLOAT}, //how far the turret is allowed to title up
-	{"turret1ClampPitchD", VFOFS(turret[0].pitchClampDown), VF_FLOAT}, //how far the turret is allowed to tilt down
-	{"turret1Muzzle1", VFOFS(turret[0].iMuzzle[0]), VF_INT},
-	{"turret1Muzzle2", VFOFS(turret[0].iMuzzle[1]), VF_INT},
-	{"turret1TurnSpeed", VFOFS(turret[0].fTurnSpeed), VF_FLOAT},
-	{"turret1AI", VFOFS(turret[0].bAI), VF_BOOL},
-	{"turret1AILead", VFOFS(turret[0].bAILead), VF_BOOL},
-	{"turret1AIRange", VFOFS(turret[0].fAIRange), VF_FLOAT},
-	{"turret1PassengerNum", VFOFS(turret[0].passengerNum), VF_INT}, //which number passenger can control this turret
-	{"turret1GunnerViewTag", VFOFS(turret[0].gunnerViewTag), VF_STRING},
+	{ "turret1Weap", VFOFS(turret[0].iWeapon), VF_WEAPON },
+	{ "turret1Delay", VFOFS(turret[0].iDelay), VF_INT },
+	{ "turret1AmmoMax", VFOFS(turret[0].iAmmoMax), VF_INT },
+	{ "turret1AmmoRechargeMS", VFOFS(turret[0].iAmmoRechargeMS), VF_INT },
+	{ "turret1YawBone", VFOFS(turret[0].yawBone), VF_STRING },
+	{ "turret1PitchBone", VFOFS(turret[0].pitchBone), VF_STRING },
+	{ "turret1YawAxis", VFOFS(turret[0].yawAxis), VF_INT },
+	{ "turret1PitchAxis", VFOFS(turret[0].pitchAxis), VF_INT },
+	{ "turret1ClampYawL", VFOFS(turret[0].yawClampLeft), VF_FLOAT }, //how far the turret is allowed to turn left
+	{ "turret1ClampYawR", VFOFS(turret[0].yawClampRight), VF_FLOAT }, //how far the turret is allowed to turn right
+	{ "turret1ClampPitchU", VFOFS(turret[0].pitchClampUp), VF_FLOAT }, //how far the turret is allowed to title up
+	{ "turret1ClampPitchD", VFOFS(turret[0].pitchClampDown), VF_FLOAT }, //how far the turret is allowed to tilt down
+	{ "turret1Muzzle1", VFOFS(turret[0].iMuzzle[0]), VF_INT },
+	{ "turret1Muzzle2", VFOFS(turret[0].iMuzzle[1]), VF_INT },
+	{ "turret1TurnSpeed", VFOFS(turret[0].fTurnSpeed), VF_FLOAT },
+	{ "turret1AI", VFOFS(turret[0].bAI), VF_BOOL },
+	{ "turret1AILead", VFOFS(turret[0].bAILead), VF_BOOL },
+	{ "turret1AIRange", VFOFS(turret[0].fAIRange), VF_FLOAT },
+	{ "turret1PassengerNum", VFOFS(turret[0].passengerNum), VF_INT }, //which number passenger can control this turret
+	{ "turret1GunnerViewTag", VFOFS(turret[0].gunnerViewTag), VF_STRING },
 
 	//Turret 2
-	{"turret2Weap", VFOFS(turret[1].iWeapon), VF_WEAPON},
-	{"turret2Delay", VFOFS(turret[1].iDelay), VF_INT},
-	{"turret2AmmoMax", VFOFS(turret[1].iAmmoMax), VF_INT},
-	{"turret2AmmoRechargeMS", VFOFS(turret[1].iAmmoRechargeMS), VF_INT},
-	{"turret2YawBone", VFOFS(turret[1].yawBone), VF_STRING},
-	{"turret2PitchBone", VFOFS(turret[1].pitchBone), VF_STRING},
-	{"turret2YawAxis", VFOFS(turret[1].yawAxis), VF_INT},
-	{"turret2PitchAxis", VFOFS(turret[1].pitchAxis), VF_INT},
-	{"turret2ClampYawL", VFOFS(turret[1].yawClampLeft), VF_FLOAT}, //how far the turret is allowed to turn left
-	{"turret2ClampYawR", VFOFS(turret[1].yawClampRight), VF_FLOAT}, //how far the turret is allowed to turn right
-	{"turret2ClampPitchU", VFOFS(turret[1].pitchClampUp), VF_FLOAT}, //how far the turret is allowed to title up
-	{"turret2ClampPitchD", VFOFS(turret[1].pitchClampDown), VF_FLOAT}, //how far the turret is allowed to tilt down
-	{"turret2Muzzle1", VFOFS(turret[1].iMuzzle[0]), VF_INT},
-	{"turret2Muzzle2", VFOFS(turret[1].iMuzzle[1]), VF_INT},
-	{"turret2TurnSpeed", VFOFS(turret[1].fTurnSpeed), VF_FLOAT},
-	{"turret2AI", VFOFS(turret[1].bAI), VF_BOOL},
-	{"turret2AILead", VFOFS(turret[1].bAILead), VF_BOOL},
-	{"turret2AIRange", VFOFS(turret[1].fAIRange), VF_FLOAT},
-	{"turret2PassengerNum", VFOFS(turret[1].passengerNum), VF_INT}, //which number passenger can control this turret
-	{"turret2GunnerViewTag", VFOFS(turret[1].gunnerViewTag), VF_STRING},
+	{ "turret2Weap", VFOFS(turret[1].iWeapon), VF_WEAPON },
+	{ "turret2Delay", VFOFS(turret[1].iDelay), VF_INT },
+	{ "turret2AmmoMax", VFOFS(turret[1].iAmmoMax), VF_INT },
+	{ "turret2AmmoRechargeMS", VFOFS(turret[1].iAmmoRechargeMS), VF_INT },
+	{ "turret2YawBone", VFOFS(turret[1].yawBone), VF_STRING },
+	{ "turret2PitchBone", VFOFS(turret[1].pitchBone), VF_STRING },
+	{ "turret2YawAxis", VFOFS(turret[1].yawAxis), VF_INT },
+	{ "turret2PitchAxis", VFOFS(turret[1].pitchAxis), VF_INT },
+	{ "turret2ClampYawL", VFOFS(turret[1].yawClampLeft), VF_FLOAT }, //how far the turret is allowed to turn left
+	{ "turret2ClampYawR", VFOFS(turret[1].yawClampRight), VF_FLOAT }, //how far the turret is allowed to turn right
+	{ "turret2ClampPitchU", VFOFS(turret[1].pitchClampUp), VF_FLOAT }, //how far the turret is allowed to title up
+	{ "turret2ClampPitchD", VFOFS(turret[1].pitchClampDown), VF_FLOAT }, //how far the turret is allowed to tilt down
+	{ "turret2Muzzle1", VFOFS(turret[1].iMuzzle[0]), VF_INT },
+	{ "turret2Muzzle2", VFOFS(turret[1].iMuzzle[1]), VF_INT },
+	{ "turret2TurnSpeed", VFOFS(turret[1].fTurnSpeed), VF_FLOAT },
+	{ "turret2AI", VFOFS(turret[1].bAI), VF_BOOL },
+	{ "turret2AILead", VFOFS(turret[1].bAILead), VF_BOOL },
+	{ "turret2AIRange", VFOFS(turret[1].fAIRange), VF_FLOAT },
+	{ "turret2PassengerNum", VFOFS(turret[1].passengerNum), VF_INT }, //which number passenger can control this turret
+	{ "turret2GunnerViewTag", VFOFS(turret[1].gunnerViewTag), VF_STRING },
 	//===END TURRETS===========================================================================
 };
 
@@ -771,7 +771,7 @@ stringID_table_t VehicleTable[VH_NUM_VEHICLES + 1] =
 	ENUM2STRING(VH_SPEEDER), //something you ride on that hovers, like a speeder or swoop
 	ENUM2STRING(VH_ANIMAL), //animal you ride on top of that walks, like a tauntaun
 	ENUM2STRING(VH_FLIER), //animal you ride on top of that flies, like a giant mynoc?
-	{nullptr, -1}
+	{ nullptr, -1 }
 };
 
 // Setup the shared functions (one's that all vehicles would generally use).

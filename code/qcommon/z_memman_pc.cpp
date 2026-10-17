@@ -181,7 +181,7 @@ using StaticMem_t = struct
 #pragma pack(pop)
 
 constexpr static StaticZeroMem_t gZeroMalloc =
-{ {ZONE_MAGIC, TAG_STATIC, 0, nullptr, nullptr}, {ZONE_MAGIC} };
+{ { ZONE_MAGIC, TAG_STATIC, 0, nullptr, nullptr },{ ZONE_MAGIC } };
 
 #ifdef DEBUG_ZONE_ALLOCS
 #define DEF_STATIC(_char) {ZONE_MAGIC, TAG_STATIC,2,NULL,NULL, "<static>",0,"",0},{_char,'\0'},{ZONE_MAGIC}
@@ -193,16 +193,16 @@ constexpr static StaticMem_t gEmptyString =
 { DEF_STATIC('\0') };
 
 constexpr static StaticMem_t gNumberString[] = {
-	{DEF_STATIC('0')},
-	{DEF_STATIC('1')},
-	{DEF_STATIC('2')},
-	{DEF_STATIC('3')},
-	{DEF_STATIC('4')},
-	{DEF_STATIC('5')},
-	{DEF_STATIC('6')},
-	{DEF_STATIC('7')},
-	{DEF_STATIC('8')},
-	{DEF_STATIC('9')},
+	{ DEF_STATIC('0') },
+	{ DEF_STATIC('1') },
+	{ DEF_STATIC('2') },
+	{ DEF_STATIC('3') },
+	{ DEF_STATIC('4') },
+	{ DEF_STATIC('5') },
+	{ DEF_STATIC('6') },
+	{ DEF_STATIC('7') },
+	{ DEF_STATIC('8') },
+	{ DEF_STATIC('9') },
 };
 
 qboolean gbMemFreeupOccured = qfalse;

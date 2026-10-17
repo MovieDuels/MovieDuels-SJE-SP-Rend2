@@ -81,7 +81,7 @@ stringID_table_t animEventTypeTable[] =
 	ENUM2STRING(AEV_SABER_SWING), //# animID AEV_SABER_SWING framenum CHANNEL randomlow randomhi chancetoplay
 	ENUM2STRING(AEV_SABER_SPIN), //# animID AEV_SABER_SPIN framenum CHANNEL chancetoplay
 	//must be terminated
-	{nullptr, -1}
+	{ nullptr, -1 }
 };
 
 stringID_table_t footstepTypeTable[] =
@@ -91,7 +91,7 @@ stringID_table_t footstepTypeTable[] =
 	ENUM2STRING(FOOTSTEP_HEAVY_R),
 	ENUM2STRING(FOOTSTEP_HEAVY_L),
 	//must be terminated
-	{nullptr, -1}
+	{ nullptr, -1 }
 };
 
 stringID_table_t FPTable[] =
@@ -123,96 +123,96 @@ stringID_table_t FPTable[] =
 	ENUM2STRING(FP_DEADLYSIGHT),
 	ENUM2STRING(FP_PROJECTION),
 	ENUM2STRING(FP_BLAST),
-	{"", -1}
+	{ "", -1 }
 };
 
 stringID_table_t TeamTable[] =
 {
-	{"free", TEAM_FREE},
+	{ "free", TEAM_FREE },
 	// caution, some code checks a team_t via "if (!team_t_varname)" so I guess this should stay as entry 0, great or what? -slc
 	ENUM2STRING(TEAM_FREE),
 	// caution, some code checks a team_t via "if (!team_t_varname)" so I guess this should stay as entry 0, great or what? -slc
-	{"player", TEAM_PLAYER},
+	{ "player", TEAM_PLAYER },
 	ENUM2STRING(TEAM_PLAYER),
-	{"enemy", TEAM_ENEMY},
+	{ "enemy", TEAM_ENEMY },
 	ENUM2STRING(TEAM_ENEMY),
-	{"neutral", TEAM_NEUTRAL}, // most droids are team_neutral, there are some exceptions like Probe,Seeker,Interrogator
+	{ "neutral", TEAM_NEUTRAL }, // most droids are team_neutral, there are some exceptions like Probe,Seeker,Interrogator
 	ENUM2STRING(TEAM_NEUTRAL), // most droids are team_neutral, there are some exceptions like Probe,Seeker,Interrogator
-	{"solo", TEAM_SOLO},
+	{ "solo", TEAM_SOLO },
 	ENUM2STRING(TEAM_SOLO),
-	{"projection", TEAM_PROJECTION},
+	{ "projection", TEAM_PROJECTION },
 	ENUM2STRING(TEAM_PROJECTION),
-	{"", -1}
+	{ "", -1 }
 };
 
 stringID_table_t FactionTable[] =
 {
-	{"solo", FACTION_SOLO},
+	{ "solo", FACTION_SOLO },
 	ENUM2STRING(FACTION_SOLO),
-	{"friendly", FACTION_LIGHT},
+	{ "friendly", FACTION_LIGHT },
 	ENUM2STRING(FACTION_LIGHT),
-	{"enemy", FACTION_DARK},
+	{ "enemy", FACTION_DARK },
 	ENUM2STRING(FACTION_DARK),
-	{"neutral", FACTION_NEUTRAL},
+	{ "neutral", FACTION_NEUTRAL },
 	ENUM2STRING(FACTION_NEUTRAL),
-	{"kotor", FACTION_KOTOR},
+	{ "kotor", FACTION_KOTOR },
 	ENUM2STRING(FACTION_KOTOR),
-	{"", -1}
+	{ "", -1 }
 };
 
 stringID_table_t AnimationstylesTable[] =
 {
-	{"default",        CS_DEFAULT},
+	{ "default",        CS_DEFAULT },
 	ENUM2STRING(CS_DEFAULT),
-	{"anakin",         CS_ANAKIN},
+	{ "anakin",         CS_ANAKIN },
 	ENUM2STRING(CS_ANAKIN),
-	{"battle_droid",   CS_BATTLEDROID},
+	{ "battle_droid",   CS_BATTLEDROID },
 	ENUM2STRING(CS_BATTLEDROID),
-		{"ben_kenobi",     CS_BENKENOBI},
+		{ "ben_kenobi",     CS_BENKENOBI },
 	ENUM2STRING(CS_BENKENOBI),
-	{"cal_kestis",     CS_CAL_KESTIS},
+	{ "cal_kestis",     CS_CAL_KESTIS },
 	ENUM2STRING(CS_CAL_KESTIS),
-	{"clone_trooper",  CS_CLONETROOPER},
+	{ "clone_trooper",  CS_CLONETROOPER },
 	ENUM2STRING(CS_CLONETROOPER),
-	{"darkforces2",    CS_DARKFORCES2},
+	{ "darkforces2",    CS_DARKFORCES2 },
 	ENUM2STRING(CS_DARKFORCES2),
-	{"count_dooku",    CS_COUNT_DOOKU},
+	{ "count_dooku",    CS_COUNT_DOOKU },
 	ENUM2STRING(CS_COUNT_DOOKU),
-	{"galen_marek",    CS_GALEN_MAREK},
+	{ "galen_marek",    CS_GALEN_MAREK },
 	ENUM2STRING(CS_GALEN_MAREK),
-	{"qui_gon_jinn",   CS_QUI_GON_JINN},
+	{ "qui_gon_jinn",   CS_QUI_GON_JINN },
 	ENUM2STRING(CS_QUI_GON_JINN),
-	{"grievous",       CS_GRIEVOUS},
+	{ "grievous",       CS_GRIEVOUS },
 	ENUM2STRING(CS_GRIEVOUS),
-	{"jango",          CS_JANGO},
+	{ "jango",          CS_JANGO },
 	ENUM2STRING(CS_JANGO),
-	{"kotor",          CS_KOTOR},
+	{ "kotor",          CS_KOTOR },
 	ENUM2STRING(CS_KOTOR),
-	{"luke_skywalker", CS_LUKE_SKYWALKER},
+	{ "luke_skywalker", CS_LUKE_SKYWALKER },
 	ENUM2STRING(CS_LUKE_SKYWALKER),
-	{"mace_windu",     CS_MACE_WINDU},
+	{ "mace_windu",     CS_MACE_WINDU },
 	ENUM2STRING(CS_MACE_WINDU),
-	{"maul",           CS_MAUL},
+	{ "maul",           CS_MAUL },
 	ENUM2STRING(CS_MAUL),
-	{"movie_duels",    CS_MOVIEDUELS},
+	{ "movie_duels",    CS_MOVIEDUELS },
 	ENUM2STRING(CS_MOVIEDUELS),
-	{"obiwan",         CS_OBIWAN},
+	{ "obiwan",         CS_OBIWAN },
 	ENUM2STRING(CS_OBIWAN),
-	{"obiwan_ep3",     CS_OBIWAN_EP3},
+	{ "obiwan_ep3",     CS_OBIWAN_EP3 },
 	ENUM2STRING(CS_OBIWAN_EP3),
-	{"palpatine",      CS_PALPATINE},
+	{ "palpatine",      CS_PALPATINE },
 	ENUM2STRING(CS_PALPATINE),
-	{"rebels",         CS_REBELS},
+	{ "rebels",         CS_REBELS },
 	ENUM2STRING(CS_REBELS),
-	{"kylo_ren",       CS_KYLO_REN},
+	{ "kylo_ren",       CS_KYLO_REN },
 	ENUM2STRING(CS_KYLO_REN),
-	{"rey",            CS_REY},
+	{ "rey",            CS_REY },
 	ENUM2STRING(CS_REY),
-	{"vader",          CS_VADER},
+	{ "vader",          CS_VADER },
 	ENUM2STRING(CS_VADER),
-	{"yoda",           CS_YODA},
+	{ "yoda",           CS_YODA },
 	ENUM2STRING(CS_YODA),
-	{"", -1}
+	{ "", -1 }
 };
 
 // this list was made using the model directories, this MUST be in the same order as the CLASS_ enum in teams.h
@@ -305,8 +305,8 @@ stringID_table_t ClassTable[] =
 	ENUM2STRING(CLASS_JEDIMASTER),
 	ENUM2STRING(CLASS_GROGU),
 	ENUM2STRING(CLASS_CALONORD),
-	{"CLASS_GALAK_MECH", CLASS_GALAKMECH},
-	{"", -1}
+	{ "CLASS_GALAK_MECH", CLASS_GALAKMECH },
+	{ "", -1 }
 };
 
 /*
@@ -2227,8 +2227,8 @@ qboolean NPC_ParseParms(const char* npc_name, gentity_t* npc)
 	qboolean parsing_player = qfalse;
 
 	qboolean forced_rgb_saber_colours[MAX_SABERS][MAX_BLADES] = {
-		{qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse},
-		{qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse}
+		{ qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse },
+		{ qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse, qfalse }
 	};
 
 	strcpy(customSkin, "default");

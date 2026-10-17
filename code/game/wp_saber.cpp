@@ -625,22 +625,22 @@ float saberAnimSpeedMod[NUM_FORCE_POWER_LEVELS] =
 
 stringID_table_t SaberStyleTable[] =
 {
-	{"NULL", SS_NONE},
+	{ "NULL", SS_NONE },
 	ENUM2STRING(SS_FAST),
-	{"fast", SS_FAST},
+	{ "fast", SS_FAST },
 	ENUM2STRING(SS_MEDIUM),
-	{"medium", SS_MEDIUM},
+	{ "medium", SS_MEDIUM },
 	ENUM2STRING(SS_STRONG),
-	{"strong", SS_STRONG},
+	{ "strong", SS_STRONG },
 	ENUM2STRING(SS_DESANN),
-	{"desann", SS_DESANN},
+	{ "desann", SS_DESANN },
 	ENUM2STRING(SS_TAVION),
-	{"tavion", SS_TAVION},
+	{ "tavion", SS_TAVION },
 	ENUM2STRING(SS_DUAL),
-	{"dual", SS_DUAL},
+	{ "dual", SS_DUAL },
 	ENUM2STRING(SS_STAFF),
-	{"staff", SS_STAFF},
-	{"", 0},
+	{ "staff", SS_STAFF },
+	{ "", 0 },
 };
 
 //SABER INITIALIZATION======================================================================
@@ -648,7 +648,7 @@ stringID_table_t SaberStyleTable[] =
 // Extra offset of a saber holstered on a hip, at the side or (a gun has that hip) the front (WP_SaberHolsterAvoidGuns)
 static vec3_t saberHolsterHipExtra = { 0.0f, 0.0f, 0.0f };
 
-void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,
+static void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model, const int bolt_num,
 	const int weapon_num, vec3_t angles, vec3_t offset)
 {
 	if (!ps_weapon_model || !ps_weapon_model[0])
@@ -717,7 +717,7 @@ void G_CreateG2HolsteredWeaponModel(gentity_t* ent, const char* ps_weapon_model,
 					const vec3_t g2_angles = { angles[PITCH], angles[ROLL], angles[YAW] };
 					vec3_t axis[3];
 					AnglesToAxis(g2_angles, axis);
-					mdxaBone_t matrix;
+					mdxaBone_t matrix{};
 					for (int i = 0; i < 3; i++)
 					{
 						matrix.matrix[i][0] = axis[0][i];
@@ -5401,7 +5401,7 @@ extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float thres
 
 // An NPC made invisible by script (set_invisible: EF_NODRAW) is not in the scene: it must not react to force powers
 // or be hit by (or hit with) a lightsaber. Clients riding inside a vehicle are also EF_NODRAW and are skipped the same way.
-qboolean WP_IsScriptInvisible(const gentity_t* ent)
+static qboolean WP_IsScriptInvisible(const gentity_t* ent)
 {
 	return ent && ent->client && ent->s.eFlags & EF_NODRAW ? qtrue : qfalse;
 }
@@ -5425,7 +5425,6 @@ static qboolean WP_SaberDamageForTrace(const int ignore,
 	{// a script-invisible NPC's saber hits nothing
 		return qfalse;
 	}
-
 
 	VectorCopy(end, end2);
 
@@ -13080,7 +13079,7 @@ static qboolean WP_SaberThrowerIsYoda(const gentity_t* owner)
 
 static qboolean WP_SaberBodyBoneFrame(gentity_t* victim, vec3_t org_out, vec3_t axis_out[3])
 {
-	vec3_t org, axis[3];
+	vec3_t org, axis[3]{};
 
 	if (!victim || !victim->inuse || !victim->client || !victim->ghoul2.size() || victim->playerModel < 0)
 	{
@@ -13121,7 +13120,7 @@ static qboolean WP_SaberBodyBoneFrame(gentity_t* victim, vec3_t org_out, vec3_t 
 // puts the saber where it sits in the body now (the body moves, falls, ragdolls)
 static qboolean WP_SaberBodyStuckPlace(gentity_t* saber)
 {
-	vec3_t org, axis[3], hilt, blade_dir, angles;
+	vec3_t org, axis[3], hilt, blade_dir, angles{};
 
 	if (!WP_SaberBodyBoneFrame(saber->activator, org, axis))
 	{
@@ -15279,7 +15278,7 @@ void WP_SaberReturn(const gentity_t* self, gentity_t* saber)
 	{
 		return;
 	}
-	if (g_SerenityJediEngineMode->integer && self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self))
+	if (g_SerenityJediEngineMode->integer && g_SaberMustReturn->integer < 1 && (self->s.number < MAX_CLIENTS || G_ControlledByPlayer(self)))
 	{
 		if (self->client->ps.forcePower < BLOCKPOINTS_FIVE
 			|| self->client->ps.blockPoints < BLOCKPOINTS_TWELVE
@@ -31942,7 +31941,7 @@ void ForceRepulse(gentity_t* self, qboolean pull, qboolean fake)
 // BOTH_FORCE_REPULSE_GALEN (_humanoid.gla) - and its strength follows the charge time (a tap is the weakest, a full
 // g_repulseMaxCharge charge the strongest). The saber goes out while charging and comes back on after the throw if it was
 // on. Kept per entity and not saved: a save in the half second between release and blast just loses that blast.
-#define REPULSE_THROW_FRAME	11
+constexpr auto REPULSE_THROW_FRAME = 11;
 extern void CGCam_Shake(float intensity, int duration);
 static int repulseBlastTime[MAX_GENTITIES];
 static int repulseBlastCharge[MAX_GENTITIES];
@@ -31953,7 +31952,7 @@ static qboolean repulseSaberWasOn[MAX_GENTITIES];
 static qboolean repulseHeld[MAX_GENTITIES];
 // after the release he floats on through the throw and comes down a moment after the blast (DH 2026-10-13, as The Force
 // Unleashed 2): until this time PM_RepulseHover keeps him up (WP_RepulseHoverHeld), 0 = no
-#define REPULSE_HOVER_AFTER_BLAST	175
+constexpr auto REPULSE_HOVER_AFTER_BLAST = 175;
 static int repulseHoverEnd[MAX_GENTITIES];
 
 void WP_RepulseClearPending()
@@ -33128,7 +33127,7 @@ void ForceSpeed(gentity_t* self, const int duration)
 	G_Sound(self, G_SoundIndex("sound/weapons/force/speed.wav"));
 }
 
-extern qboolean NPC_Is_Force_Master(const gentity_t* self);
+extern qboolean char_is_force_user_attacker(const gentity_t* self);
 //Dash stuff
 int IsPressingDashButton(const gentity_t* self)
 {
@@ -33140,7 +33139,7 @@ int IsPressingDashButton(const gentity_t* self)
 		&& self->client->ps.Dash_Count < 3
 		&& (!(self->client->buttons & BUTTON_KICK))
 		&& (!(self->client->buttons & BUTTON_USE))
-		&& (self->client->ps.forcePowerLevel[FP_SABER_OFFENSE] > FORCE_LEVEL_0 || NPC_Is_Force_Master(self)) // ground dash: any saber user (Saber Offense 1+); gunners with no saber skill cannot
+		&& (self->client->ps.forcePowerLevel[FP_SABER_OFFENSE] > FORCE_LEVEL_0 || char_is_force_user_attacker(self)) // ground dash: any saber user (Saber Offense 1+); gunners with no saber skill cannot
 		&& (self->client->buttons & BUTTON_DASH))
 	{
 		return qtrue;
@@ -33419,7 +33418,7 @@ static qboolean G_BurnPutOut(const gentity_t* self)
 static qboolean G_IsFireEffectName(const char* name)
 {
 	static const char* fire_words[] = { "fire", "flame", "burn", "torch", "lava", "inferno", "blaze" };
-	char lower[MAX_QPATH];
+	char lower[MAX_QPATH]{};
 	int i;
 
 	if (!name || !name[0])
@@ -33478,7 +33477,7 @@ qboolean G_NearFireEffect(const gentity_t* area)
 	return qfalse;
 }
 
-void player_StopBurn(const gentity_t* self)
+static void player_StopBurn(const gentity_t* self)
 {
 	if (self && self->client)
 	{
@@ -34207,7 +34206,7 @@ void ForceGrip(gentity_t* self)
 		return;
 	}
 #else
-//rww - RAGDOLL_END
+	//rww - RAGDOLL_END
 	if (!traceEnt || traceEnt == self/*???*/ || traceEnt->bmodel || (traceEnt->health <= 0 && traceEnt->takedamage) || (traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE))
 	{
 		return;
@@ -35158,7 +35157,7 @@ extern int G_GetHitLocFromTrace(trace_t* trace, int mod);
 static void ForceShootstrike(gentity_t* self)
 {
 	trace_t tr;
-	vec3_t end, forward, right, up, dir, fx_dir; // fx_dir: the fizz effect's direction (it was built in forward, which the next target's cone check then used)
+	vec3_t end, forward, right, up, dir, fx_dir{}; // fx_dir: the fizz effect's direction (it was built in forward, which the next target's cone check then used)
 	gentity_t* traceEnt;
 	constexpr int damage_low = STRIKE_DAMAGELOW;
 	constexpr int damage_medium = STRIKE_DAMAGEMEDIUM;
@@ -42558,7 +42557,7 @@ void ForceGrasp(gentity_t* self)
 		return;
 	}
 #else
-//rww - RAGDOLL_END
+	//rww - RAGDOLL_END
 	if (!traceEnt || traceEnt == self/*???*/ || traceEnt->bmodel || (traceEnt->health <= 0 && traceEnt->takedamage) || (traceEnt->NPC && traceEnt->NPC->scriptFlags & SCF_NO_FORCE))
 	{
 		return;

@@ -226,45 +226,45 @@ int cmdcmp(const void* a, const void* b)
 
 /* This array MUST be sorted correctly by alphabetical name field */
 static consoleCommand_t commands[] = {
-	{"+md_wheel", CG_MDWheel_Down_f}, // the radial weapon / force wheel (cg_main.cpp), held
-	{"-md_wheel", CG_MDWheel_Up_f},
-	{"cam_disable", CMD_CGCam_Disable}, //gets out of camera mode for debuggin
-	{"cam_enable", CGCam_Enable}, //gets into camera mode for precise camera placement
-	{"dpforcenext", CG_DPNextForcePower_f},
-	{"dpforceprev", CG_DPPrevForcePower_f},
-	{"dpinvnext", CG_DPNextInventory_f},
-	{"dpinvprev", CG_DPPrevInventory_f},
-	{"dpweapnext", CG_DPNextWeapon_f},
-	{"dpweapprev", CG_DPPrevWeapon_f},
-	{"forcenext", CG_NextForcePower_f},
-	{"forceprev", CG_PrevForcePower_f},
-	{"forceselect", CG_SelectForcePower_f},
-	{"invnext", CG_NextInventory_f},
-	{"invprev", CG_PrevInventory_f},
-	{"la_zoom", CG_ToggleLAGoggles},
-	{"loadhud", CG_LoadHud_f},
-	{"md_wheel_menu", CG_MDWheel_Menu_f}, // run by the old wheel menus (cg_main.cpp)
-	{"lock_disable", Lock_Disable}, //player can move now
-	{"nextframe", CG_TestModelNextFrame_f},
-	{"nextskin", CG_TestModelNextSkin_f},
-	{"prevframe", CG_TestModelPrevFrame_f},
-	{"prevskin", CG_TestModelPrevSkin_f},
-	{"tcmd", CG_TargetCommand_f},
-	{"testG2Model", CG_TestG2Model_f},
-	{"testanglespost", CG_TestModelSetAnglespost_f},
-	{"testanglespre", CG_TestModelSetAnglespre_f},
-	{"testanimate", CG_TestModelAnimate_f},
-	{"testlistbones", CG_ListModelBones_f},
-	{"testlistsurfaces", CG_ListModelSurfaces_f},
-	{"testmodel", CG_TestModel_f},
-	{"testsurface", CG_TestModelSurfaceOnOff_f},
-	{"trueview_save", CG_TrueViewSave_f}, // saves the player's model with cg_trueeyeposition in trueview.cfg
-	{"viewpos", CG_Viewpos_f},
-	{"weapnext", CG_NextWeapon_f},
-	{"weapon", CG_Weapon_f},
-	{"weapprev", CG_PrevWeapon_f},
-	{"writecam", CG_WriteCam_f},
-	{"zoom", CG_ToggleBinoculars},
+	{ "+md_wheel", CG_MDWheel_Down_f }, // the radial weapon / force wheel (cg_main.cpp), held
+	{ "-md_wheel", CG_MDWheel_Up_f },
+	{ "cam_disable", CMD_CGCam_Disable }, //gets out of camera mode for debuggin
+	{ "cam_enable", CGCam_Enable }, //gets into camera mode for precise camera placement
+	{ "dpforcenext", CG_DPNextForcePower_f },
+	{ "dpforceprev", CG_DPPrevForcePower_f },
+	{ "dpinvnext", CG_DPNextInventory_f },
+	{ "dpinvprev", CG_DPPrevInventory_f },
+	{ "dpweapnext", CG_DPNextWeapon_f },
+	{ "dpweapprev", CG_DPPrevWeapon_f },
+	{ "forcenext", CG_NextForcePower_f },
+	{ "forceprev", CG_PrevForcePower_f },
+	{ "forceselect", CG_SelectForcePower_f },
+	{ "invnext", CG_NextInventory_f },
+	{ "invprev", CG_PrevInventory_f },
+	{ "la_zoom", CG_ToggleLAGoggles },
+	{ "loadhud", CG_LoadHud_f },
+	{ "md_wheel_menu", CG_MDWheel_Menu_f }, // run by the old wheel menus (cg_main.cpp)
+	{ "lock_disable", Lock_Disable }, //player can move now
+	{ "nextframe", CG_TestModelNextFrame_f },
+	{ "nextskin", CG_TestModelNextSkin_f },
+	{ "prevframe", CG_TestModelPrevFrame_f },
+	{ "prevskin", CG_TestModelPrevSkin_f },
+	{ "tcmd", CG_TargetCommand_f },
+	{ "testG2Model", CG_TestG2Model_f },
+	{ "testanglespost", CG_TestModelSetAnglespost_f },
+	{ "testanglespre", CG_TestModelSetAnglespre_f },
+	{ "testanimate", CG_TestModelAnimate_f },
+	{ "testlistbones", CG_ListModelBones_f },
+	{ "testlistsurfaces", CG_ListModelSurfaces_f },
+	{ "testmodel", CG_TestModel_f },
+	{ "testsurface", CG_TestModelSurfaceOnOff_f },
+	{ "trueview_save", CG_TrueViewSave_f }, // saves the player's model with cg_trueeyeposition in trueview.cfg
+	{ "viewpos", CG_Viewpos_f },
+	{ "weapnext", CG_NextWeapon_f },
+	{ "weapon", CG_Weapon_f },
+	{ "weapprev", CG_PrevWeapon_f },
+	{ "writecam", CG_WriteCam_f },
+	{ "zoom", CG_ToggleBinoculars },
 };
 
 static constexpr size_t num_commands = std::size(commands);

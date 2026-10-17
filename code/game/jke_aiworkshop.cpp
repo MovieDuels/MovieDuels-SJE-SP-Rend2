@@ -1760,14 +1760,14 @@ struct workshopCmd_t
 
 workshopCmd_t workshopCommands[] =
 {
-	{"aiworkshop", "Toggles the AI workshop", 0, WorkshopToggle},
-	{"workshop_commands", "Lists all AI workshop commands", 0, Workshop_Commands_f},
-	{"workshop_cmdhelp", "Provides detailed information about an AI workshop command", 0, Workshop_CmdHelp_f},
+	{ "aiworkshop", "Toggles the AI workshop", 0, WorkshopToggle },
+	{ "workshop_commands", "Lists all AI workshop commands", 0, Workshop_Commands_f },
+	{ "workshop_cmdhelp", "Provides detailed information about an AI workshop command", 0, Workshop_CmdHelp_f },
 	{
 		"workshop_toggle_display", "Toggles the detailed display of the AI workshop",
 		WSFLAG_NEEDSELECTED | WSFLAG_ONLYINWS, Workshop_ToggleDisplay_f
 	},
-	{"workshop_select", "Selects an NPC that you are looking at.", WSFLAG_ONLYINWS, WorkshopSelect_f},
+	{ "workshop_select", "Selects an NPC that you are looking at.", WSFLAG_ONLYINWS, WorkshopSelect_f },
 	{
 		"workshop_deselect", "Deselects your currently selected NPC.", WSFLAG_NEEDSELECTED | WSFLAG_ONLYINWS,
 		WorkshopDeselect_f
@@ -1792,7 +1792,7 @@ workshopCmd_t workshopCommands[] =
 		"workshop_list_classes", "Lists all of the Classes that an AI can be in.", WSFLAG_ONLYINWS,
 		Workshop_List_Classes_f
 	},
-	{"workshop_list_ranks", "Lists all of the Ranks that an AI can be.", WSFLAG_ONLYINWS, Workshop_List_Ranks_f},
+	{ "workshop_list_ranks", "Lists all of the Ranks that an AI can be.", WSFLAG_ONLYINWS, Workshop_List_Ranks_f },
 	{
 		"workshop_list_movetypes", "Lists all of the Move Types that an AI can use.", WSFLAG_ONLYINWS,
 		Workshop_List_Movetypes_f
@@ -1814,7 +1814,7 @@ workshopCmd_t workshopCommands[] =
 		"Lists all of the timers (alive or dead) that are active on the currently selected NPC.",
 		WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_View_Timers_f
 	},
-	{"workshop_set_timer", "Sets a timer on an NPC", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Timer_f},
+	{ "workshop_set_timer", "Sets a timer on an NPC", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Timer_f },
 	{
 		"workshop_set_bstate", "Changes the Behavior State of an NPC", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED,
 		Workshop_Set_BehaviorState_f
@@ -1883,10 +1883,10 @@ workshopCmd_t workshopCommands[] =
 		"workshop_set_parm", "Sets a parm that can be read with ICARUS.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED,
 		Workshop_Set_Parm_f
 	},
-	{"workshop_set_health", "Sets the NPC's health.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Health_f},
-	{"workshop_set_armor", "Sets the NPC's armor.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Armor_f},
-	{"workshop_set_gravity", "Sets an NPC's gravity.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Gravity_f},
-	{"workshop_set_scale", "Sets an NPC's scale.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Scale_f},
+	{ "workshop_set_health", "Sets the NPC's health.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Health_f },
+	{ "workshop_set_armor", "Sets the NPC's armor.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Armor_f },
+	{ "workshop_set_gravity", "Sets an NPC's gravity.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Gravity_f },
+	{ "workshop_set_scale", "Sets an NPC's scale.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Scale_f },
 	{
 		"workshop_play_dialogue", "Plays a line of dialogue from the NPC.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED,
 		Workshop_Play_Dialogue_f
@@ -1907,9 +1907,9 @@ workshopCmd_t workshopCommands[] =
 		"workshop_control", "Allows you to control an NPC, like with Mind Trick level 4.",
 		WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_MindControl_f
 	},
-	{"workshop_end_control", "Stops controlling an NPC", WSFLAG_ONLYINWS, Workshop_EndMindControl_f},
-	{"workshop_freeze", "Freezes an NPC", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Freeze_f},
-	{"workshop_kill", "Kills the NPC", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Kill_f},
+	{ "workshop_end_control", "Stops controlling an NPC", WSFLAG_ONLYINWS, Workshop_EndMindControl_f },
+	{ "workshop_freeze", "Freezes an NPC", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Freeze_f },
+	{ "workshop_kill", "Kills the NPC", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Kill_f },
 	{
 		"workshop_god", "Uses the god cheat (invincibility) on an NPC.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED,	Workshop_God_f
 	},
@@ -1933,7 +1933,7 @@ workshopCmd_t workshopCommands[] =
 		"workshop_stamina", "Uses the stamina cheat (unlimitedstamina) on an NPC.",WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Stamina_f
 	},
 	//
-	{"Workshop_Set_Saber", "Sets the NPC's saber.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Saber_f},
+	{ "Workshop_Set_Saber", "Sets the NPC's saber.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED, Workshop_Set_Saber_f },
 	{
 		"Workshop_Set_SaberSingle", "Sets the NPC's Single saber.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED,	Workshop_Set_SaberSingle_f
 	},
@@ -1944,7 +1944,7 @@ workshopCmd_t workshopCommands[] =
 		"Workshop_Set_SaberColor", "Sets the NPC's sabercolor.", WSFLAG_ONLYINWS | WSFLAG_NEEDSELECTED,	Workshop_Set_SaberColor_f
 	},
 	//
-	{"", "", 0, nullptr},
+	{ "", "", 0, nullptr },
 };
 
 void Workshop_Commands_f(gentity_t* ent)

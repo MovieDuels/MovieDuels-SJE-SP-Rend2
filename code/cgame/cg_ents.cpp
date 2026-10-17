@@ -1841,7 +1841,7 @@ static void CG_Grapple(centity_t* cent)
 
 static vec2_t st[] =
 {
-	{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+	{ 0.0f, 0.0f },{ 1.0f, 0.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f }
 };
 
 void CG_Cube(vec3_t mins, vec3_t maxs, vec3_t color, const float alpha)

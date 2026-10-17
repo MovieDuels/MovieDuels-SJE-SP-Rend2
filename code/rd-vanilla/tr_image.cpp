@@ -55,12 +55,12 @@ using textureMode_t = struct {
 };
 
 textureMode_t modes[] = {
-	{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
-	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
-	{"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
-	{"GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR},
-	{"GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST},
-	{"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR}
+	{ "GL_NEAREST", GL_NEAREST, GL_NEAREST },
+	{ "GL_LINEAR", GL_LINEAR, GL_LINEAR },
+	{ "GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST },
+	{ "GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR },
+	{ "GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST },
+	{ "GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR }
 };
 
 static constexpr size_t numTextureModes = std::size(modes);
@@ -493,22 +493,22 @@ static void R_BlendOverTexture(byte* data, const int pixelCount, byte blend[4]) 
 }
 
 byte	mipBlendColors[16][4] = {
-	{0,0,0,0},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
+	{ 0,0,0,0 },
+	{ 255,0,0,128 },
+	{ 0,255,0,128 },
+	{ 0,0,255,128 },
+	{ 255,0,0,128 },
+	{ 0,255,0,128 },
+	{ 0,0,255,128 },
+	{ 255,0,0,128 },
+	{ 0,255,0,128 },
+	{ 0,0,255,128 },
+	{ 255,0,0,128 },
+	{ 0,255,0,128 },
+	{ 0,0,255,128 },
+	{ 255,0,0,128 },
+	{ 0,255,0,128 },
+	{ 0,0,255,128 },
 };
 
 /*

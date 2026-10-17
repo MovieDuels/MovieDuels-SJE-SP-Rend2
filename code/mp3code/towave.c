@@ -198,24 +198,24 @@ AUDIO;
 static AUDIO audio_table[2][2] =
 {
    {
-  {audio_decode_init, audio_decode_info, audio_decode},
-  {audio_decode8_init, audio_decode8_info, audio_decode8},
+  { audio_decode_init, audio_decode_info, audio_decode },
+  { audio_decode8_init, audio_decode8_info, audio_decode8 },
    },
    {
-  {i_audio_decode_init, i_audio_decode_info, i_audio_decode},
-  {audio_decode8_init, audio_decode8_info, audio_decode8},
+  { i_audio_decode_init, i_audio_decode_info, i_audio_decode },
+  { audio_decode8_init, audio_decode8_info, audio_decode8 },
    }
 };
 
 static AUDIO audio_table[2][2] =
 {
    {
-	 {audio_decode_init, audio_decode_info, audio_decode},
-	 {audio_decode_init, audio_decode_info, audio_decode},
+	 { audio_decode_init, audio_decode_info, audio_decode },
+	 { audio_decode_init, audio_decode_info, audio_decode },
    },
    {
-	 {audio_decode_init, audio_decode_info, audio_decode},
-	 {audio_decode_init, audio_decode_info, audio_decode},
+	 { audio_decode_init, audio_decode_info, audio_decode },
+	 { audio_decode_init, audio_decode_info, audio_decode },
    }
 };
 #endif

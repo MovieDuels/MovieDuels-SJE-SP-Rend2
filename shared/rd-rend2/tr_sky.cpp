@@ -38,12 +38,12 @@ POLYGON TO BOX SIDE PROJECTION
 
 static vec3_t sky_clip[6] =
 {
-	{1,1,0},
-	{1,-1,0},
-	{0,-1,1},
-	{0,1,1},
-	{1,0,1},
-	{-1,0,1}
+	{ 1,1,0 },
+	{ 1,-1,0 },
+	{ 0,-1,1 },
+	{ 0,1,1 },
+	{ 1,0,1 },
+	{ -1,0,1 }
 };
 
 static float	sky_mins[2][6], sky_maxs[2][6];
@@ -64,14 +64,14 @@ static void AddSkyPolygon(int nump, vec3_t vecs)
 	// s = [0]/[2], t = [1]/[2]
 	static int	vec_to_st[6][3] =
 	{
-		{-2,3,1},
-		{2,3,-1},
+		{ -2,3,1 },
+		{ 2,3,-1 },
 
-		{1,3,2},
-		{-1,3,-2},
+		{ 1,3,2 },
+		{ -1,3,-2 },
 
-		{-2,-1,3},
-		{-2,1,-3}
+		{ -2,-1,3 },
+		{ -2,1,-3 }
 
 		//	{-1,2,3},
 		//	{1,2,-3}
@@ -294,14 +294,14 @@ static void MakeSkyVec(float s, float t, int axis, float outSt[2], vec3_t outXYZ
 	// 1 = s, 2 = t, 3 = 2048
 	static int	st_to_vec[6][3] =
 	{
-		{3,-1,2},
-		{-3,1,2},
+		{ 3,-1,2 },
+		{ -3,1,2 },
 
-		{1,3,2},
-		{-1,-3,2},
+		{ 1,3,2 },
+		{ -1,-3,2 },
 
-		{-2,-1,3},		// 0 degrees yaw, look straight up
-		{2,-1,-3}		// look straight down
+		{ -2,-1,3 },		// 0 degrees yaw, look straight up
+		{ 2,-1,-3 }		// look straight down
 	};
 
 	vec3_t		b;

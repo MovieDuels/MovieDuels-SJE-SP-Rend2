@@ -57,16 +57,16 @@ constexpr auto IT_PARM_MAX = 10;
 
 itemParms_t ItemParms[IT_PARM_MAX] =
 {
-	{"itemname", IT_Name},
-	{"classname", IT_ClassName},
-	{"count", IT_Count},
-	{"icon", IT_Icon},
-	{"min", IT_Min},
-	{"max", IT_Max},
-	{"pickupsound", IT_PickupSound},
-	{"tag", IT_Tag},
-	{"type", IT_Type},
-	{"worldmodel", IT_WorldModel},
+	{ "itemname", IT_Name },
+	{ "classname", IT_ClassName },
+	{ "count", IT_Count },
+	{ "icon", IT_Icon },
+	{ "min", IT_Min },
+	{ "max", IT_Max },
+	{ "pickupsound", IT_PickupSound },
+	{ "tag", IT_Tag },
+	{ "type", IT_Type },
+	{ "worldmodel", IT_WorldModel },
 };
 
 static void IT_SetDefaults()

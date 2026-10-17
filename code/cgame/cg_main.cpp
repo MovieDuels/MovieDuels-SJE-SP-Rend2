@@ -549,144 +549,144 @@ using cvarTable_t = struct
 };
 
 static cvarTable_t cvarTable[] = {
-	{&cg_autoswitch, "cg_autoswitch", "1", CVAR_ARCHIVE},
-	{&cg_drawGun, "cg_drawGun", "1", CVAR_ARCHIVE},
-	{&cg_fov, "cg_fov", "80", CVAR_ARCHIVE},
-	{&cg_fovAspectAdjust, "cg_fovAspectAdjust", "1", CVAR_ARCHIVE},
-	{&cg_stereoSeparation, "cg_stereoSeparation", "0.4", CVAR_ARCHIVE},
-	{&cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE},
-	{&cg_renderToTextureFX, "cg_renderToTextureFX", "1", CVAR_ARCHIVE},
-	{&cg_shadowCullDistance, "r_shadowRange", "1000", CVAR_ARCHIVE},
-	{&cg_footsteps, "cg_footsteps", "3", CVAR_ARCHIVE},
+	{ &cg_autoswitch, "cg_autoswitch", "1", CVAR_ARCHIVE },
+	{ &cg_drawGun, "cg_drawGun", "1", CVAR_ARCHIVE },
+	{ &cg_fov, "cg_fov", "80", CVAR_ARCHIVE },
+	{ &cg_fovAspectAdjust, "cg_fovAspectAdjust", "1", CVAR_ARCHIVE },
+	{ &cg_stereoSeparation, "cg_stereoSeparation", "0.4", CVAR_ARCHIVE },
+	{ &cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE },
+	{ &cg_renderToTextureFX, "cg_renderToTextureFX", "1", CVAR_ARCHIVE },
+	{ &cg_shadowCullDistance, "r_shadowRange", "1000", CVAR_ARCHIVE },
+	{ &cg_footsteps, "cg_footsteps", "3", CVAR_ARCHIVE },
 	//1 = sounds, 2 = sounds & effects, 3 = sounds, effects & marks, 4 = always
-	{&cg_saberEntMarks, "cg_saberEntMarks", "1", CVAR_ARCHIVE},
+	{ &cg_saberEntMarks, "cg_saberEntMarks", "1", CVAR_ARCHIVE },
 
-	{&cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE},
-	{&cg_drawStatus, "cg_drawStatus", "1", CVAR_ARCHIVE},
-	{&cg_drawHUD, "cg_drawHUD", "1", 0},
-	{&cg_drawTimer, "cg_drawTimer", "0", CVAR_ARCHIVE},
-	{&cg_drawFPS, "cg_drawFPS", "0", CVAR_ARCHIVE},
-	{&cg_drawSnapshot, "cg_drawSnapshot", "0", CVAR_ARCHIVE},
-	{&cg_drawAmmoWarning, "cg_drawAmmoWarning", "1", CVAR_ARCHIVE},
-	{&cg_drawCrosshair, "cg_drawCrosshair", "1", CVAR_ARCHIVE},
-	{&cg_dynamicCrosshair, "cg_dynamicCrosshair", "6", CVAR_ARCHIVE},
-	{&cg_adaptiveCrosshair, "cg_adaptiveCrosshair", "0", CVAR_ARCHIVE},
-	{&cg_drawCrosshairNames, "cg_drawCrosshairNames", "0", CVAR_ARCHIVE},
-	{&cg_drawCrosshairBackupNames, "cg_drawCrosshairBackupNames", "1", CVAR_ARCHIVE},
-	{&cg_drawCrosshairColourNames, "cg_drawCrosshairColourNames", "0", CVAR_ARCHIVE},
-	{&cg_DrawCrosshairItem, "cg_DrawCrosshairItem", "1", CVAR_ARCHIVE},
+	{ &cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE },
+	{ &cg_drawStatus, "cg_drawStatus", "1", CVAR_ARCHIVE },
+	{ &cg_drawHUD, "cg_drawHUD", "1", 0 },
+	{ &cg_drawTimer, "cg_drawTimer", "0", CVAR_ARCHIVE },
+	{ &cg_drawFPS, "cg_drawFPS", "0", CVAR_ARCHIVE },
+	{ &cg_drawSnapshot, "cg_drawSnapshot", "0", CVAR_ARCHIVE },
+	{ &cg_drawAmmoWarning, "cg_drawAmmoWarning", "1", CVAR_ARCHIVE },
+	{ &cg_drawCrosshair, "cg_drawCrosshair", "1", CVAR_ARCHIVE },
+	{ &cg_dynamicCrosshair, "cg_dynamicCrosshair", "6", CVAR_ARCHIVE },
+	{ &cg_adaptiveCrosshair, "cg_adaptiveCrosshair", "0", CVAR_ARCHIVE },
+	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "0", CVAR_ARCHIVE },
+	{ &cg_drawCrosshairBackupNames, "cg_drawCrosshairBackupNames", "1", CVAR_ARCHIVE },
+	{ &cg_drawCrosshairColourNames, "cg_drawCrosshairColourNames", "0", CVAR_ARCHIVE },
+	{ &cg_DrawCrosshairItem, "cg_DrawCrosshairItem", "1", CVAR_ARCHIVE },
 	// NOTE : I also create this in UI_Init()
-	{&cg_crosshairIdentifyTarget, "cg_crosshairIdentifyTarget", "1", CVAR_ARCHIVE},
-	{&cg_crosshairForceHint, "cg_crosshairForceHint", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART},
-	{&cg_endcredits, "cg_endcredits", "0", 0},
-	{&cg_updatedDataPadForcePower1, "cg_updatedDataPadForcePower1", "0", 0},
-	{&cg_updatedDataPadForcePower2, "cg_updatedDataPadForcePower2", "0", 0},
-	{&cg_updatedDataPadForcePower3, "cg_updatedDataPadForcePower3", "0", 0},
-	{&cg_updatedDataPadObjective, "cg_updatedDataPadObjective", "0", 0},
+	{ &cg_crosshairIdentifyTarget, "cg_crosshairIdentifyTarget", "1", CVAR_ARCHIVE },
+	{ &cg_crosshairForceHint, "cg_crosshairForceHint", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
+	{ &cg_endcredits, "cg_endcredits", "0", 0 },
+	{ &cg_updatedDataPadForcePower1, "cg_updatedDataPadForcePower1", "0", 0 },
+	{ &cg_updatedDataPadForcePower2, "cg_updatedDataPadForcePower2", "0", 0 },
+	{ &cg_updatedDataPadForcePower3, "cg_updatedDataPadForcePower3", "0", 0 },
+	{ &cg_updatedDataPadObjective, "cg_updatedDataPadObjective", "0", 0 },
 
-	{&cg_crosshairSize, "cg_crosshairSize", "20", CVAR_ARCHIVE},
-	{&cg_crosshairDualSize, "cg_crosshairDualSize", "10", CVAR_ARCHIVE},
-	{&cg_weaponcrosshairs, "cg_weaponcrosshairs", "0", CVAR_ARCHIVE},
+	{ &cg_crosshairSize, "cg_crosshairSize", "20", CVAR_ARCHIVE },
+	{ &cg_crosshairDualSize, "cg_crosshairDualSize", "10", CVAR_ARCHIVE },
+	{ &cg_weaponcrosshairs, "cg_weaponcrosshairs", "0", CVAR_ARCHIVE },
 
-	{&cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE},
-	{&cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE},
-	{&cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE},
+	{ &cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE },
+	{ &cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE },
+	{ &cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE },
 	// NOTE : I also create this in UI_Init()
-	{&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
+	{ &cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE },
 	// NOTE : I also create these weapon sway cvars in UI_Init()
-	{&cg_runpitch, "cg_runpitch", "0.002", CVAR_ARCHIVE},
-	{&cg_runroll, "cg_runroll", "0.005", CVAR_ARCHIVE},
-	{&cg_bobup, "cg_bobup", "0.005", CVAR_ARCHIVE},
-	{&cg_bobpitch, "cg_bobpitch", "0.002", CVAR_ARCHIVE},
-	{&cg_bobroll, "cg_bobroll", "0.002", CVAR_ARCHIVE},
+	{ &cg_runpitch, "cg_runpitch", "0.002", CVAR_ARCHIVE },
+	{ &cg_runroll, "cg_runroll", "0.005", CVAR_ARCHIVE },
+	{ &cg_bobup, "cg_bobup", "0.005", CVAR_ARCHIVE },
+	{ &cg_bobpitch, "cg_bobpitch", "0.002", CVAR_ARCHIVE },
+	{ &cg_bobroll, "cg_bobroll", "0.002", CVAR_ARCHIVE },
 
-	{&cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT},
+	{ &cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT },
 #ifndef FINAL_BUILD
 	{ &cg_gun_frame, "gun_frame", "0", CVAR_CHEAT },
 	{ &cg_debugAnimTarget, "cg_debugAnimTarget", "0", CVAR_CHEAT },
 #endif
-	{&cg_gun_x, "cg_gunX", "0", CVAR_ARCHIVE},
-	{&cg_gun_y, "cg_gunY", "0", CVAR_ARCHIVE},
-	{&cg_gun_z, "cg_gunZ", "0", CVAR_ARCHIVE},
-	{&cg_debugSaber, "cg_debugsaber", "0", CVAR_CHEAT},
-	{&cg_debugEvents, "cg_debugevents", "0", CVAR_CHEAT},
-	{&cg_errorDecay, "cg_errordecay", "100", 0},
+	{ &cg_gun_x, "cg_gunX", "0", CVAR_ARCHIVE },
+	{ &cg_gun_y, "cg_gunY", "0", CVAR_ARCHIVE },
+	{ &cg_gun_z, "cg_gunZ", "0", CVAR_ARCHIVE },
+	{ &cg_debugSaber, "cg_debugsaber", "0", CVAR_CHEAT },
+	{ &cg_debugEvents, "cg_debugevents", "0", CVAR_CHEAT },
+	{ &cg_errorDecay, "cg_errordecay", "100", 0 },
 
-	{&cg_drawBreath, "cg_drawBreath", "0", CVAR_ARCHIVE}, // Added 11/07/02
-	{&cg_roffdebug, "cg_roffdebug", "0"},
+	{ &cg_drawBreath, "cg_drawBreath", "0", CVAR_ARCHIVE }, // Added 11/07/02
+	{ &cg_roffdebug, "cg_roffdebug", "0" },
 #ifndef FINAL_BUILD
 	{ &cg_roffval1, "cg_roffval1", "0" },
 	{ &cg_roffval2, "cg_roffval2", "0" },
 	{ &cg_roffval3, "cg_roffval3", "0" },
 	{ &cg_roffval4, "cg_roffval4", "0" },
 #endif
-	{&cg_thirdPerson, "cg_thirdPerson", "1", CVAR_SAVEGAME},
-	{&cg_thirdPersonRange, "cg_thirdPersonRange", "80", CVAR_ARCHIVE},
-	{&cg_thirdPersonMaxRange, "cg_thirdPersonMaxRange", "150", 0},
-	{&cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", 0},
-	{&cg_thirdPersonPitchOffset, "cg_thirdPersonPitchOffset", "0", 0},
-	{&cg_thirdPersonVertOffset, "cg_thirdPersonVertOffset", "16", 0},
-	{&cg_thirdPersonCameraDamp, "cg_thirdPersonCameraDamp", "0.3", 0},
-	{&cg_thirdPersonTargetDamp, "cg_thirdPersonTargetDamp", "0.5", 0},
+	{ &cg_thirdPerson, "cg_thirdPerson", "1", CVAR_SAVEGAME },
+	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "80", CVAR_ARCHIVE },
+	{ &cg_thirdPersonMaxRange, "cg_thirdPersonMaxRange", "150", 0 },
+	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", 0 },
+	{ &cg_thirdPersonPitchOffset, "cg_thirdPersonPitchOffset", "0", 0 },
+	{ &cg_thirdPersonVertOffset, "cg_thirdPersonVertOffset", "16", 0 },
+	{ &cg_thirdPersonCameraDamp, "cg_thirdPersonCameraDamp", "0.3", 0 },
+	{ &cg_thirdPersonTargetDamp, "cg_thirdPersonTargetDamp", "0.5", 0 },
 
-	{&cg_thirdPersonHorzOffset, "cg_thirdPersonHorzOffset", "0", 0},
-	{&cg_thirdPersonAlpha, "cg_thirdPersonAlpha", "1.0", CVAR_ARCHIVE},
-	{&cg_thirdPersonAutoAlpha, "cg_thirdPersonAutoAlpha", "0", 0},
+	{ &cg_thirdPersonHorzOffset, "cg_thirdPersonHorzOffset", "0", 0 },
+	{ &cg_thirdPersonAlpha, "cg_thirdPersonAlpha", "1.0", CVAR_ARCHIVE },
+	{ &cg_thirdPersonAutoAlpha, "cg_thirdPersonAutoAlpha", "0", 0 },
 	// NOTE: also declare this in UI_Init
-	{&cg_gunAutoFirst, "cg_gunAutoFirst", "1", CVAR_ARCHIVE},
+	{ &cg_gunAutoFirst, "cg_gunAutoFirst", "1", CVAR_ARCHIVE },
 
-	{&cg_pano, "pano", "0", 0},
-	{&cg_panoNumShots, "panoNumShots", "10", 0},
+	{ &cg_pano, "pano", "0", 0 },
+	{ &cg_panoNumShots, "panoNumShots", "10", 0 },
 
-	{&fx_freeze, "fx_freeze", "0", 0},
-	{&fx_debug, "fx_debug", "0", 0},
+	{ &fx_freeze, "fx_freeze", "0", 0 },
+	{ &fx_debug, "fx_debug", "0", 0 },
 	// the following variables are created in other parts of the system,
 	// but we also reference them here
 
-	{&cg_paused, "cl_paused", "0", CVAR_ROM},
-	{&cg_developer, "developer", "", 0},
-	{&cg_timescale, "timescale", "1", 0},
-	{&cg_skippingcin, "skippingCinematic", "0", CVAR_ROM},
-	{&cg_missionInfoFlashTime, "cg_missionInfoFlashTime", "10000", 0},
-	{&cg_hudFiles, "cg_hudFiles", "ui/jahud.txt", CVAR_ARCHIVE},
+	{ &cg_paused, "cl_paused", "0", CVAR_ROM },
+	{ &cg_developer, "developer", "", 0 },
+	{ &cg_timescale, "timescale", "1", 0 },
+	{ &cg_skippingcin, "skippingCinematic", "0", CVAR_ROM },
+	{ &cg_missionInfoFlashTime, "cg_missionInfoFlashTime", "10000", 0 },
+	{ &cg_hudFiles, "cg_hudFiles", "ui/jahud.txt", CVAR_ARCHIVE },
 
-	{&cg_VariantSoundCap, "cg_VariantSoundCap", "0", 0},
-	{&cg_turnAnims, "cg_turnAnims", "0", 0},
-	{&cg_motionBoneComp, "cg_motionBoneComp", "2", 0},
-	{&cg_distributeMBCorrection, "cg_distributeMBCorrection", "1", 0},
-	{&cg_reliableAnimEvents, "cg_reliableAnimEvents", "1", CVAR_ARCHIVE},
-	{&cg_smoothPlayerPos, "cg_smoothPlayerPos", "0.5", 0},
-	{&cg_smoothPlayerPlat, "cg_smoothPlayerPlat", "0.75", 0},
-	{&cg_smoothPlayerPlatAccel, "cg_smoothPlayerPlatAccel", "3.25", 0},
-	{&cg_g2Marks, "cg_g2Marks", "1", CVAR_ARCHIVE},
-	{&fx_expensivePhysics, "fx_expensivePhysics", "1", CVAR_ARCHIVE},
-	{&cg_debugHealthBars, "cg_debugHealthBars", "0", CVAR_ARCHIVE},
-	{&cg_debugBlockBars, "cg_drawblockpointbar", "0", CVAR_ARCHIVE},
-	{&cg_debugFatigueBars, "cg_drawfatiguepointbar", "0", CVAR_ARCHIVE},
-	{&cg_saberinfo, "d_saberinfo", "0", CVAR_ARCHIVE},
+	{ &cg_VariantSoundCap, "cg_VariantSoundCap", "0", 0 },
+	{ &cg_turnAnims, "cg_turnAnims", "0", 0 },
+	{ &cg_motionBoneComp, "cg_motionBoneComp", "2", 0 },
+	{ &cg_distributeMBCorrection, "cg_distributeMBCorrection", "1", 0 },
+	{ &cg_reliableAnimEvents, "cg_reliableAnimEvents", "1", CVAR_ARCHIVE },
+	{ &cg_smoothPlayerPos, "cg_smoothPlayerPos", "0.5", 0 },
+	{ &cg_smoothPlayerPlat, "cg_smoothPlayerPlat", "0.75", 0 },
+	{ &cg_smoothPlayerPlatAccel, "cg_smoothPlayerPlatAccel", "3.25", 0 },
+	{ &cg_g2Marks, "cg_g2Marks", "1", CVAR_ARCHIVE },
+	{ &fx_expensivePhysics, "fx_expensivePhysics", "1", CVAR_ARCHIVE },
+	{ &cg_debugHealthBars, "cg_debugHealthBars", "0", CVAR_ARCHIVE },
+	{ &cg_debugBlockBars, "cg_drawblockpointbar", "0", CVAR_ARCHIVE },
+	{ &cg_debugFatigueBars, "cg_drawfatiguepointbar", "0", CVAR_ARCHIVE },
+	{ &cg_saberinfo, "d_saberinfo", "0", CVAR_ARCHIVE },
 
-	{&cg_smoothCamera, "cg_smoothCamera", "1", CVAR_ARCHIVE},
-	{&cg_speedTrail, "cg_speedTrail", "0", CVAR_ARCHIVE}, // force speed after-image trail, off by default (DH)
-	{&cg_fovViewmodel, "cg_fovViewmodel", "0", CVAR_ARCHIVE},
-	{&cg_fovViewmodelAdjust, "cg_fovViewmodelAdjust", "1", CVAR_ARCHIVE},
+	{ &cg_smoothCamera, "cg_smoothCamera", "1", CVAR_ARCHIVE },
+	{ &cg_speedTrail, "cg_speedTrail", "0", CVAR_ARCHIVE }, // force speed after-image trail, off by default (DH)
+	{ &cg_fovViewmodel, "cg_fovViewmodel", "0", CVAR_ARCHIVE },
+	{ &cg_fovViewmodelAdjust, "cg_fovViewmodelAdjust", "1", CVAR_ARCHIVE },
 
-	{&cg_scaleVehicleSensitivity, "cg_scaleVehicleSensitivity", "1", CVAR_ARCHIVE},
-	{&cg_scaleJoystickSensitivity, "cg_scaleJoystickSensitivity", "0", CVAR_ARCHIVE},
+	{ &cg_scaleVehicleSensitivity, "cg_scaleVehicleSensitivity", "1", CVAR_ARCHIVE },
+	{ &cg_scaleJoystickSensitivity, "cg_scaleJoystickSensitivity", "0", CVAR_ARCHIVE },
 	//how fast a stick (the look keys) turns the view in a vehicle, as a fraction of its speed on foot, and how many
 	//milliseconds a turn takes to come up to that speed (0 = at once)
-	{&cg_vehicleStickYaw, "cg_vehicleStickYaw", "0.3", CVAR_ARCHIVE},
-	{&cg_vehicleStickPitch, "cg_vehicleStickPitch", "0.22", CVAR_ARCHIVE},
-	{&cg_vehicleStickEaseIn, "cg_vehicleStickEaseIn", "400", CVAR_ARCHIVE},
+	{ &cg_vehicleStickYaw, "cg_vehicleStickYaw", "0.3", CVAR_ARCHIVE },
+	{ &cg_vehicleStickPitch, "cg_vehicleStickPitch", "0.22", CVAR_ARCHIVE },
+	{ &cg_vehicleStickEaseIn, "cg_vehicleStickEaseIn", "400", CVAR_ARCHIVE },
 	//(2026-10-13) fighters: 1 = closer chase camera (x 0.8 of the vehicle cameraRange), 0 = the old camera
-	{&cg_fighterCamTight, "cg_fighterCamTight", "1", CVAR_ARCHIVE},
+	{ &cg_fighterCamTight, "cg_fighterCamTight", "1", CVAR_ARCHIVE },
 
-	{&cg_SFXSabers, "cg_SFXSabers", "4", CVAR_ARCHIVE},
-	{&cg_SFXSabersGlowSize, "cg_SFXSabersGlowSize", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSize, "cg_SFXSabersCoreSize", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXLerpOrigin, "cg_SFXLerpOrigin", "0", CVAR_ARCHIVE},
+	{ &cg_SFXSabers, "cg_SFXSabers", "4", CVAR_ARCHIVE },
+	{ &cg_SFXSabersGlowSize, "cg_SFXSabersGlowSize", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSize, "cg_SFXSabersCoreSize", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXLerpOrigin, "cg_SFXLerpOrigin", "0", CVAR_ARCHIVE },
 
-	{&cg_SFXSabersGlowSizeEP1, "cg_SFXSabersGlowSizeEP1", "1.0", CVAR_ARCHIVE},
-	{&cg_SFXSabersCoreSizeEP1, "cg_SFXSabersCoreSizeEP1", "1.0", CVAR_ARCHIVE},
+	{ &cg_SFXSabersGlowSizeEP1, "cg_SFXSabersGlowSizeEP1", "1.0", CVAR_ARCHIVE },
+	{ &cg_SFXSabersCoreSizeEP1, "cg_SFXSabersCoreSizeEP1", "1.0", CVAR_ARCHIVE },
 	{ &cg_SFXSabersGlowSizeEP2, "cg_SFXSabersGlowSizeEP2", "1.0", CVAR_ARCHIVE },
 	{ &cg_SFXSabersCoreSizeEP2, "cg_SFXSabersCoreSizeEP2", "1.0", CVAR_ARCHIVE },
 	{ &cg_SFXSabersGlowSizeEP3, "cg_SFXSabersGlowSizeEP3", "1.0", CVAR_ARCHIVE },
@@ -1587,553 +1587,553 @@ void CG_RegisterClientModels(const int entityNum)
 
 forceTicPos_t forceTicPos[] =
 {
-	{11, 41, 20, 10, "gfx/hud/DataPadforce_tick1", NULL_HANDLE}, // Left Top
-	{12, 45, 20, 10, "gfx/hud/DataPadforce_tick2", NULL_HANDLE},
-	{14, 49, 20, 10, "gfx/hud/DataPadforce_tick3", NULL_HANDLE},
-	{17, 52, 20, 10, "gfx/hud/DataPadforce_tick4", NULL_HANDLE},
-	{22, 55, 10, 10, "gfx/hud/DataPadforce_tick5", NULL_HANDLE},
-	{28, 57, 10, 20, "gfx/hud/DataPadforce_tick6", NULL_HANDLE},
-	{34, 59, 10, 10, "gfx/hud/DataPadforce_tick7", NULL_HANDLE}, // Left bottom
+	{ 11, 41, 20, 10, "gfx/hud/DataPadforce_tick1", NULL_HANDLE }, // Left Top
+	{ 12, 45, 20, 10, "gfx/hud/DataPadforce_tick2", NULL_HANDLE },
+	{ 14, 49, 20, 10, "gfx/hud/DataPadforce_tick3", NULL_HANDLE },
+	{ 17, 52, 20, 10, "gfx/hud/DataPadforce_tick4", NULL_HANDLE },
+	{ 22, 55, 10, 10, "gfx/hud/DataPadforce_tick5", NULL_HANDLE },
+	{ 28, 57, 10, 20, "gfx/hud/DataPadforce_tick6", NULL_HANDLE },
+	{ 34, 59, 10, 10, "gfx/hud/DataPadforce_tick7", NULL_HANDLE }, // Left bottom
 
-	{46, 59, -10, 10, "gfx/hud/DataPadforce_tick7", NULL_HANDLE}, // Right bottom
-	{52, 57, -10, 20, "gfx/hud/DataPadforce_tick6", NULL_HANDLE},
-	{58, 55, -10, 10, "gfx/hud/DataPadforce_tick5", NULL_HANDLE},
-	{63, 52, -20, 10, "gfx/hud/DataPadforce_tick4", NULL_HANDLE},
-	{66, 49, -20, 10, "gfx/hud/DataPadforce_tick3", NULL_HANDLE},
-	{68, 45, -20, 10, "gfx/hud/DataPadforce_tick2", NULL_HANDLE},
-	{69, 41, -20, 10, "gfx/hud/DataPadforce_tick1", NULL_HANDLE}, // Right top
+	{ 46, 59, -10, 10, "gfx/hud/DataPadforce_tick7", NULL_HANDLE }, // Right bottom
+	{ 52, 57, -10, 20, "gfx/hud/DataPadforce_tick6", NULL_HANDLE },
+	{ 58, 55, -10, 10, "gfx/hud/DataPadforce_tick5", NULL_HANDLE },
+	{ 63, 52, -20, 10, "gfx/hud/DataPadforce_tick4", NULL_HANDLE },
+	{ 66, 49, -20, 10, "gfx/hud/DataPadforce_tick3", NULL_HANDLE },
+	{ 68, 45, -20, 10, "gfx/hud/DataPadforce_tick2", NULL_HANDLE },
+	{ 69, 41, -20, 10, "gfx/hud/DataPadforce_tick1", NULL_HANDLE }, // Right top
 };
 
 forceTicPos_t JK2forceTicPos[] =
 {
-	{11, 41, 20, 10, "gfx/hud/JK2force_tick1", NULL_HANDLE}, // Left Top
-	{12, 45, 20, 10, "gfx/hud/JK2force_tick2", NULL_HANDLE},
-	{14, 49, 20, 10, "gfx/hud/JK2force_tick3", NULL_HANDLE},
-	{17, 52, 20, 10, "gfx/hud/JK2force_tick4", NULL_HANDLE},
-	{22, 55, 10, 10, "gfx/hud/JK2force_tick5", NULL_HANDLE},
-	{28, 57, 10, 20, "gfx/hud/JK2force_tick6", NULL_HANDLE},
-	{34, 59, 10, 10, "gfx/hud/JK2force_tick7", NULL_HANDLE}, // Left bottom
+	{ 11, 41, 20, 10, "gfx/hud/JK2force_tick1", NULL_HANDLE }, // Left Top
+	{ 12, 45, 20, 10, "gfx/hud/JK2force_tick2", NULL_HANDLE },
+	{ 14, 49, 20, 10, "gfx/hud/JK2force_tick3", NULL_HANDLE },
+	{ 17, 52, 20, 10, "gfx/hud/JK2force_tick4", NULL_HANDLE },
+	{ 22, 55, 10, 10, "gfx/hud/JK2force_tick5", NULL_HANDLE },
+	{ 28, 57, 10, 20, "gfx/hud/JK2force_tick6", NULL_HANDLE },
+	{ 34, 59, 10, 10, "gfx/hud/JK2force_tick7", NULL_HANDLE }, // Left bottom
 
-	{46, 59, -10, 10, "gfx/hud/JK2force_tick7", NULL_HANDLE}, // Right bottom
-	{52, 57, -10, 20, "gfx/hud/JK2force_tick6", NULL_HANDLE},
-	{58, 55, -10, 10, "gfx/hud/JK2force_tick5", NULL_HANDLE},
-	{63, 52, -20, 10, "gfx/hud/JK2force_tick4", NULL_HANDLE},
-	{66, 49, -20, 10, "gfx/hud/JK2force_tick3", NULL_HANDLE},
-	{68, 45, -20, 10, "gfx/hud/JK2force_tick2", NULL_HANDLE},
-	{69, 41, -20, 10, "gfx/hud/JK2force_tick1", NULL_HANDLE}, // Right top
+	{ 46, 59, -10, 10, "gfx/hud/JK2force_tick7", NULL_HANDLE }, // Right bottom
+	{ 52, 57, -10, 20, "gfx/hud/JK2force_tick6", NULL_HANDLE },
+	{ 58, 55, -10, 10, "gfx/hud/JK2force_tick5", NULL_HANDLE },
+	{ 63, 52, -20, 10, "gfx/hud/JK2force_tick4", NULL_HANDLE },
+	{ 66, 49, -20, 10, "gfx/hud/JK2force_tick3", NULL_HANDLE },
+	{ 68, 45, -20, 10, "gfx/hud/JK2force_tick2", NULL_HANDLE },
+	{ 69, 41, -20, 10, "gfx/hud/JK2force_tick1", NULL_HANDLE }, // Right top
 };
 
 forceTicPos_t ammoTicPos[] =
 {
-	{12, 34, 10, 10, "gfx/hud/DataPadammo_tick7-l", NULL_HANDLE}, // Bottom
-	{13, 28, 10, 10, "gfx/hud/DataPadammo_tick6-l", NULL_HANDLE},
-	{15, 23, 10, 10, "gfx/hud/DataPadammo_tick5-l", NULL_HANDLE},
-	{19, 19, 10, 10, "gfx/hud/DataPadammo_tick4-l", NULL_HANDLE},
-	{23, 15, 10, 10, "gfx/hud/DataPadammo_tick3-l", NULL_HANDLE},
-	{29, 12, 10, 10, "gfx/hud/DataPadammo_tick2-l", NULL_HANDLE},
-	{34, 11, 10, 10, "gfx/hud/DataPadammo_tick1-l", NULL_HANDLE},
+	{ 12, 34, 10, 10, "gfx/hud/DataPadammo_tick7-l", NULL_HANDLE }, // Bottom
+	{ 13, 28, 10, 10, "gfx/hud/DataPadammo_tick6-l", NULL_HANDLE },
+	{ 15, 23, 10, 10, "gfx/hud/DataPadammo_tick5-l", NULL_HANDLE },
+	{ 19, 19, 10, 10, "gfx/hud/DataPadammo_tick4-l", NULL_HANDLE },
+	{ 23, 15, 10, 10, "gfx/hud/DataPadammo_tick3-l", NULL_HANDLE },
+	{ 29, 12, 10, 10, "gfx/hud/DataPadammo_tick2-l", NULL_HANDLE },
+	{ 34, 11, 10, 10, "gfx/hud/DataPadammo_tick1-l", NULL_HANDLE },
 
-	{47, 11, -10, 10, "gfx/hud/DataPadammo_tick1-r", NULL_HANDLE},
-	{52, 12, -10, 10, "gfx/hud/DataPadammo_tick2-r", NULL_HANDLE},
-	{58, 15, -10, 10, "gfx/hud/DataPadammo_tick3-r", NULL_HANDLE},
-	{62, 19, -10, 10, "gfx/hud/DataPadammo_tick4-r", NULL_HANDLE},
-	{66, 23, -10, 10, "gfx/hud/DataPadammo_tick5-r", NULL_HANDLE},
-	{68, 28, -10, 10, "gfx/hud/DataPadammo_tick6-r", NULL_HANDLE},
-	{69, 34, -10, 10, "gfx/hud/DataPadammo_tick7-r", NULL_HANDLE},
+	{ 47, 11, -10, 10, "gfx/hud/DataPadammo_tick1-r", NULL_HANDLE },
+	{ 52, 12, -10, 10, "gfx/hud/DataPadammo_tick2-r", NULL_HANDLE },
+	{ 58, 15, -10, 10, "gfx/hud/DataPadammo_tick3-r", NULL_HANDLE },
+	{ 62, 19, -10, 10, "gfx/hud/DataPadammo_tick4-r", NULL_HANDLE },
+	{ 66, 23, -10, 10, "gfx/hud/DataPadammo_tick5-r", NULL_HANDLE },
+	{ 68, 28, -10, 10, "gfx/hud/DataPadammo_tick6-r", NULL_HANDLE },
+	{ 69, 34, -10, 10, "gfx/hud/DataPadammo_tick7-r", NULL_HANDLE },
 };
 
 forceTicPos_t JK2ammoTicPos[] =
 {
-	{12, 34, 10, 10, "gfx/hud/JK2ammo_tick7-l", NULL_HANDLE}, // Bottom
-	{13, 28, 10, 10, "gfx/hud/JK2ammo_tick6-l", NULL_HANDLE},
-	{15, 23, 10, 10, "gfx/hud/JK2ammo_tick5-l", NULL_HANDLE},
-	{19, 19, 10, 10, "gfx/hud/JK2ammo_tick4-l", NULL_HANDLE},
-	{23, 15, 10, 10, "gfx/hud/JK2ammo_tick3-l", NULL_HANDLE},
-	{29, 12, 10, 10, "gfx/hud/JK2ammo_tick2-l", NULL_HANDLE},
-	{34, 11, 10, 10, "gfx/hud/JK2ammo_tick1-l", NULL_HANDLE},
+	{ 12, 34, 10, 10, "gfx/hud/JK2ammo_tick7-l", NULL_HANDLE }, // Bottom
+	{ 13, 28, 10, 10, "gfx/hud/JK2ammo_tick6-l", NULL_HANDLE },
+	{ 15, 23, 10, 10, "gfx/hud/JK2ammo_tick5-l", NULL_HANDLE },
+	{ 19, 19, 10, 10, "gfx/hud/JK2ammo_tick4-l", NULL_HANDLE },
+	{ 23, 15, 10, 10, "gfx/hud/JK2ammo_tick3-l", NULL_HANDLE },
+	{ 29, 12, 10, 10, "gfx/hud/JK2ammo_tick2-l", NULL_HANDLE },
+	{ 34, 11, 10, 10, "gfx/hud/JK2ammo_tick1-l", NULL_HANDLE },
 
-	{47, 11, -10, 10, "gfx/hud/JK2ammo_tick1-r", NULL_HANDLE},
-	{52, 12, -10, 10, "gfx/hud/JK2ammo_tick2-r", NULL_HANDLE},
-	{58, 15, -10, 10, "gfx/hud/JK2ammo_tick3-r", NULL_HANDLE},
-	{62, 19, -10, 10, "gfx/hud/JK2ammo_tick4-r", NULL_HANDLE},
-	{66, 23, -10, 10, "gfx/hud/JK2ammo_tick5-r", NULL_HANDLE},
-	{68, 28, -10, 10, "gfx/hud/JK2ammo_tick6-r", NULL_HANDLE},
-	{69, 34, -10, 10, "gfx/hud/JK2ammo_tick7-r", NULL_HANDLE},
+	{ 47, 11, -10, 10, "gfx/hud/JK2ammo_tick1-r", NULL_HANDLE },
+	{ 52, 12, -10, 10, "gfx/hud/JK2ammo_tick2-r", NULL_HANDLE },
+	{ 58, 15, -10, 10, "gfx/hud/JK2ammo_tick3-r", NULL_HANDLE },
+	{ 62, 19, -10, 10, "gfx/hud/JK2ammo_tick4-r", NULL_HANDLE },
+	{ 66, 23, -10, 10, "gfx/hud/JK2ammo_tick5-r", NULL_HANDLE },
+	{ 68, 28, -10, 10, "gfx/hud/JK2ammo_tick6-r", NULL_HANDLE },
+	{ 69, 34, -10, 10, "gfx/hud/JK2ammo_tick7-r", NULL_HANDLE },
 };
 
 HUDMenuItem_t forceTics[] =
 {
-	{"rightHUD", "force_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "force_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "force_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "force_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "force_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "force_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "force_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "force_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t forceTics_md[] =
 {
-	{"rightHUD", "force_tic1SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "force_tic2SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "force_tic3SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "force_tic4SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "force_tic1SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "force_tic2SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "force_tic3SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "force_tic4SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t blockpoint_tics[] =
 {
-	{"leftHUD", "block_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "block_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "block_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "block_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
+	{ "leftHUD", "block_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "block_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "block_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "block_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
 };
 
 HUDMenuItem_t ammoTics[] =
 {
-	{"rightHUD", "ammo_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "ammo_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "ammo_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "ammo_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "ammo_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "ammo_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "ammo_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "ammo_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t ammoTics_md[] =
 {
-	{"rightHUD", "ammo_tic1SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "ammo_tic2SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "ammo_tic3SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "ammo_tic4SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "ammo_tic1SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "ammo_tic2SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "ammo_tic3SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "ammo_tic4SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t armorTics[] =
 {
-	{"leftHUD", "armor_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "armor_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "armor_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "armor_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "leftHUD", "armor_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "armor_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "armor_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "armor_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t armorTics_md[] =
 {
-	{"leftHUD", "armor_tic1SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "armor_tic2SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "armor_tic3SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "armor_tic4SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "leftHUD", "armor_tic1SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "armor_tic2SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "armor_tic3SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "armor_tic4SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t healthTics[] =
 {
-	{"leftHUD", "health_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "health_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "health_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "health_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
+	{ "leftHUD", "health_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "health_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "health_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "health_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
 };
 // new df hud
 HUDMenuItem_t df_health_tics[] =
 {
-	{"leftHUD", "DF-Health-Tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-Health-Tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
-	{"leftHUD", "DF-Health-Tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
-	{"leftHUD", "DF-Health-Tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
-	{"leftHUD", "DF-Health-Tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
-	{"leftHUD", "DF-Health-Tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "DF-Health-Tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
+	{ "leftHUD", "DF-Health-Tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-Health-Tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
+	{ "leftHUD", "DF-Health-Tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
+	{ "leftHUD", "DF-Health-Tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
+	{ "leftHUD", "DF-Health-Tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
+	{ "leftHUD", "DF-Health-Tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "DF-Health-Tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
 };
 
 HUDMenuItem_t df_armorTics[] =
 {
-	{"leftHUD", "DF-armor_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-armor_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-armor_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-armor_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-armor_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-armor_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "leftHUD", "DF-armor_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-armor_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-armor_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-armor_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-armor_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-armor_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t df_staminaTics[] =
 {
-	{"leftHUD", "DF-stamina_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-stamina_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-stamina_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-stamina_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-stamina_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-stamina_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "leftHUD", "DF-stamina_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-stamina_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-stamina_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-stamina_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-stamina_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-stamina_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t df_fuelTics[] =
 {
-	{"leftHUD", "DF-fuel_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-fuel_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-fuel_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-fuel_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-fuel_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-fuel_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "leftHUD", "DF-fuel_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-fuel_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-fuel_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-fuel_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-fuel_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-fuel_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t df_cloakTics[] =
 {
-	{"leftHUD", "DF-cloak_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-cloak_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-cloak_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-cloak_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-cloak_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-cloak_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "leftHUD", "DF-cloak_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-cloak_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-cloak_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-cloak_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-cloak_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-cloak_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t df_barrierTics[] =
 {
-	{"leftHUD", "DF-barrier_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-barrier_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-barrier_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-barrier_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "DF-barrier_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"leftHUD", "DF-barrier_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "leftHUD", "DF-barrier_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-barrier_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-barrier_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-barrier_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "DF-barrier_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "leftHUD", "DF-barrier_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t df_forceTics[] =
 {
-	{"rightHUD", "DF-force_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-force_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-force_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-force_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-force_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-force_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "rightHUD", "DF-force_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-force_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-force_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-force_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-force_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-force_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t df_blockTics[] =
 {
-	{"rightHUD", "DF-block_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-block_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-block_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-block_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-block_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-block_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "rightHUD", "DF-block_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-block_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-block_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-block_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-block_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-block_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t df_ammoTics[] =
 {
-	{"rightHUD", "DF-ammo_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-ammo_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-ammo_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-ammo_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "DF-ammo_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"rightHUD", "DF-ammo_tic16", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "rightHUD", "DF-ammo_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-ammo_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-ammo_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-ammo_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "DF-ammo_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "rightHUD", "DF-ammo_tic16", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 };
 
 HUDMenuItem_t healthTics_md[] =
 {
-	{"leftHUD", "health_tic1SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"leftHUD", "health_tic2SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "health_tic3SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, //
-	{"leftHUD", "health_tic4SP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Bottom
+	{ "leftHUD", "health_tic1SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "leftHUD", "health_tic2SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "health_tic3SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, //
+	{ "leftHUD", "health_tic4SP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Bottom
 };
 
 HUDMenuItem_t mishapTics[] =
 {
-	{"rightHUD", "mishap_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "mishap_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "mishap_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "mishap_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "mishap_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "mishap_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "mishap_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "mishap_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t classicmishapTics[] =
 {
-	{"rightHUD", "classicsabfat_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "classicsabfat_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t sabfatticS[] =
 {
-	{"rightHUD", "sabfat_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "sabfat_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "sabfat_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "sabfat_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t classicsabfatticS[] =
 {
-	{"rightHUD", "classicsabfat_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "classicsabfat_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "classicsabfat_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "classicsabfat_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t newsabfatticS[] =
 {
-	{"rightHUD", "newsabfat_tic1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic4", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic5", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic6", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic7", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic8", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic9", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic10", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic11", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic12", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic13", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic14", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
-	{"rightHUD", "newsabfat_tic15", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // Top
+	{ "rightHUD", "newsabfat_tic1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic4", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic5", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic6", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic7", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic8", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic9", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic10", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic11", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic12", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic13", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic14", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
+	{ "rightHUD", "newsabfat_tic15", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // Top
 };
 
 HUDMenuItem_t otherHUDBits[] =
 {
-	{"lefthud", "healthamount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_HEALTHAMOUNT
-	{"lefthud", "healthamount_md", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_HEALTHAMOUNT_MD
-	{"lefthud", "healthamount_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_HEALTHAMOUNT_DF
-	{"lefthud", "healthamountalt", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_HEALTHAMOUNTALT
-	{"lefthud", "blockpointamount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BLOCKAMOUNT
-	{"righthud", "blockpointamount_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BLOCKAMOUNT_DF
-	{"lefthud", "JK2blockpointamount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_JK2BLOCKAMOUNT
-	{"lefthud", "Classicblockpointamount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "lefthud", "healthamount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_HEALTHAMOUNT
+	{ "lefthud", "healthamount_md", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_HEALTHAMOUNT_MD
+	{ "lefthud", "healthamount_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_HEALTHAMOUNT_DF
+	{ "lefthud", "healthamountalt", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_HEALTHAMOUNTALT
+	{ "lefthud", "blockpointamount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLOCKAMOUNT
+	{ "righthud", "blockpointamount_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLOCKAMOUNT_DF
+	{ "lefthud", "JK2blockpointamount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_JK2BLOCKAMOUNT
+	{ "lefthud", "Classicblockpointamount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_CLASSICBLOCKAMOUNT
-	{"lefthud", "armoramount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_ARMORAMOUNT
-	{"lefthud", "armoramount_md", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_ARMORAMOUNT_MD
-	{"lefthud", "armoramount_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_ARMORAMOUNT_DF
-	{"righthud", "forceamount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FORCEAMOUNT
-	{"righthud", "forceamount_md", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FORCEAMOUNT_MD
-	{"righthud", "forceamount_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FORCEAMOUNT_DF
-	{"righthud", "JK2forceamount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_JK2FORCEAMOUNT
-	{"righthud", "ammoamount", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_AMMOAMOUNT
-	{"righthud", "ammoamount_md", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_AMMOAMOUNT_MD
-	{"righthud", "ammoamount_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_AMMOAMOUNT_DF
+	{ "lefthud", "armoramount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_ARMORAMOUNT
+	{ "lefthud", "armoramount_md", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_ARMORAMOUNT_MD
+	{ "lefthud", "armoramount_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_ARMORAMOUNT_DF
+	{ "righthud", "forceamount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FORCEAMOUNT
+	{ "righthud", "forceamount_md", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FORCEAMOUNT_MD
+	{ "righthud", "forceamount_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FORCEAMOUNT_DF
+	{ "righthud", "JK2forceamount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_JK2FORCEAMOUNT
+	{ "righthud", "ammoamount", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_AMMOAMOUNT
+	{ "righthud", "ammoamount_md", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_AMMOAMOUNT_MD
+	{ "righthud", "ammoamount_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_AMMOAMOUNT_DF
 
-	{"righthud", "saberstyle_strong", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_STRONG
-	{"righthud", "saberstyle_strongSP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_strong", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_STRONG
+	{ "righthud", "saberstyle_strongSP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_STRONG_MD
-	{"righthud", "saberstyle_strongDF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_strongDF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_STRONG_DF
 
-	{"righthud", "saberstyle_medium", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_MEDIUM
-	{"righthud", "saberstyle_mediumSP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_medium", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_MEDIUM
+	{ "righthud", "saberstyle_mediumSP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_MEDIUM_MD
-	{"righthud", "saberstyle_mediumDF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_mediumDF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_MEDIUM_DF
 
-	{"righthud", "saberstyle_fast", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_FAST
-	{"righthud", "saberstyle_fastSP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_FAST_MD
-	{"righthud", "saberstyle_fastDF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_FAST_DF
+	{ "righthud", "saberstyle_fast", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_FAST
+	{ "righthud", "saberstyle_fastSP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_FAST_MD
+	{ "righthud", "saberstyle_fastDF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_FAST_DF
 
-	{"righthud", "saberstyle_tavion", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_TAVION
-	{"righthud", "saberstyle_tavionSP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_tavion", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_TAVION
+	{ "righthud", "saberstyle_tavionSP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_TAVION_MD
-	{"righthud", "saberstyle_tavionDF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_tavionDF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_TAVION_DF
 
-	{"righthud", "saberstyle_desann", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_DESANN
-	{"righthud", "saberstyle_desannSP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_desann", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_DESANN
+	{ "righthud", "saberstyle_desannSP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_DESANN_MD
-	{"righthud", "saberstyle_desannDF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_desannDF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_DESANN_DF
 
-	{"righthud", "saberstyle_staff", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_STAFF
-	{"righthud", "saberstyle_staffSP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_staff", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_STAFF
+	{ "righthud", "saberstyle_staffSP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_STAFF_MD
-	{"righthud", "saberstyle_staffDF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "saberstyle_staffDF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_SABERSTYLE_STAFF_DF
 
-	{"righthud", "saberstyle_dual", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_DUAL
-	{"righthud", "saberstyle_dualSP", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_DUAL_MD
-	{"righthud", "saberstyle_dualDF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SABERSTYLE_DUAL_DF
+	{ "righthud", "saberstyle_dual", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_DUAL
+	{ "righthud", "saberstyle_dualSP", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_DUAL_MD
+	{ "righthud", "saberstyle_dualDF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SABERSTYLE_DUAL_DF
 
-	{"righthud", "blasterstyle_DF", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BLASTERSTYLE_DF
+	{ "righthud", "blasterstyle_DF", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLASTERSTYLE_DF
 
-	{"righthud", "weapontype_stun_baton", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_STUN_BATON
-	{"righthud", "weapontype_briar_pistol", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BRIAR_PISTOL
-	{"righthud", "weapontype_blaster_pistol", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "weapontype_stun_baton", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_STUN_BATON
+	{ "righthud", "weapontype_briar_pistol", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BRIAR_PISTOL
+	{ "righthud", "weapontype_blaster_pistol", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_BLASTER_PISTOL
-	{"righthud", "weapontype_blaster", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BLASTER
-	{"righthud", "weapontype_disruptor", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_DISRUPTOR
-	{"righthud", "weapontype_bowcaster", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BOWCASTER
-	{"righthud", "weapontype_repeater", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_REPEATER
-	{"righthud", "weapontype_demp2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_DEMP2
-	{"righthud", "weapontype_flachette", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FLACHETTE
-	{"righthud", "weapontype_rocket", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_ROCKET
-	{"righthud", "weapontype_thermal", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_THERMAL
-	{"righthud", "weapontype_tripmine", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_TRIPMINE
-	{"righthud", "weapontype_detpack", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_DETPACK
-	{"righthud", "weapontype_concussion", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CONCUSSION
-	{"righthud", "weapontype_melee", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_MELEE
-	{"righthud", "weapontype_battledroid", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BATTLEDROID
-	{"righthud", "weapontype_thefirstorder", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
+	{ "righthud", "weapontype_blaster", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLASTER
+	{ "righthud", "weapontype_disruptor", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_DISRUPTOR
+	{ "righthud", "weapontype_bowcaster", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BOWCASTER
+	{ "righthud", "weapontype_repeater", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_REPEATER
+	{ "righthud", "weapontype_demp2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_DEMP2
+	{ "righthud", "weapontype_flachette", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FLACHETTE
+	{ "righthud", "weapontype_rocket", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_ROCKET
+	{ "righthud", "weapontype_thermal", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_THERMAL
+	{ "righthud", "weapontype_tripmine", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_TRIPMINE
+	{ "righthud", "weapontype_detpack", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_DETPACK
+	{ "righthud", "weapontype_concussion", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CONCUSSION
+	{ "righthud", "weapontype_melee", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_MELEE
+	{ "righthud", "weapontype_battledroid", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BATTLEDROID
+	{ "righthud", "weapontype_thefirstorder", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
 	// OHB_THEFIRSTORDER
-	{"righthud", "weapontype_clonecarbine", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CLONECARBINE
-	{"righthud", "weapontype_rebelblaster", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_REBELBLASTER
-	{"righthud", "weapontype_clonerifle", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CLONERIFLE
-	{"righthud", "weapontype_clonecommando", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE},
-	{"righthud", "weapontype_z6rotarycannon", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_Z6_ROTARY_CANNON
+	{ "righthud", "weapontype_clonecarbine", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CLONECARBINE
+	{ "righthud", "weapontype_rebelblaster", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_REBELBLASTER
+	{ "righthud", "weapontype_clonerifle", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CLONERIFLE
+	{ "righthud", "weapontype_clonecommando", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE },
+	{ "righthud", "weapontype_z6rotarycannon", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_Z6_ROTARY_CANNON
 	// OHB_CLONECOMMANDO
-	{"righthud", "weapontype_rebelrifle", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_REBELRIFLE
-	{"righthud", "weapontype_rey", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_REY
-	{"righthud", "weapontype_jango", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_JANGO
-	{"righthud", "weapontype_boba", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BOBA
-	{"righthud", "weapontype_clonepistol", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CLONEPISTOL
-	{"righthud", "weapontype_wrist", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_WRIST
-	{"righthud", "weapontype_jangodual", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_DUAL
-	{"righthud", "weapontype_droideka", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_DEKA
-	{"righthud", "weapontype_nogri", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_NOGRI
-	{"righthud", "weapontype_tusken", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_TUSKEN
+	{ "righthud", "weapontype_rebelrifle", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_REBELRIFLE
+	{ "righthud", "weapontype_rey", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_REY
+	{ "righthud", "weapontype_jango", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_JANGO
+	{ "righthud", "weapontype_boba", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BOBA
+	{ "righthud", "weapontype_clonepistol", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CLONEPISTOL
+	{ "righthud", "weapontype_wrist", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_WRIST
+	{ "righthud", "weapontype_jangodual", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_DUAL
+	{ "righthud", "weapontype_droideka", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_DEKA
+	{ "righthud", "weapontype_nogri", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_NOGRI
+	{ "righthud", "weapontype_tusken", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_TUSKEN
 	// OHB_KOTOR
-	{"righthud", "weapontype_kotor_bowcaster2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_BOWCASTER
-	{"righthud", "weapontype_kotor_bpistol2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_BPISTOL2
-	{"righthud", "weapontype_kotor_bpistol3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_BPISTOL3
-	{"righthud", "weapontype_kotor_brifle1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_BRIFLE1
-	{"righthud", "weapontype_kotor_brifle2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_BRIFLE2
-	{"righthud", "weapontype_kotor_brifle3", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_BRIFLE3
-	{"righthud", "weapontype_kotor_carbine", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_CARBINE
-	{"righthud", "weapontype_kotor_drifle", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_DRIFLE
-	{"righthud", "weapontype_kotor_hobpistol", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_HOBPISTOL
-	{"righthud", "weapontype_kotor_hpistol", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_HPISTOL
-	{"righthud", "weapontype_kotor_ionrifle", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_IONRIFLE
-	{"righthud", "weapontype_kotor_pistol1", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_PISTOL1
-	{"righthud", "weapontype_kotor_repeater", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_REPEATER
-	{"righthud", "weapontype_kotor_reprifle", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_KOTOR_REPRIFLE
+	{ "righthud", "weapontype_kotor_bowcaster2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_BOWCASTER
+	{ "righthud", "weapontype_kotor_bpistol2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_BPISTOL2
+	{ "righthud", "weapontype_kotor_bpistol3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_BPISTOL3
+	{ "righthud", "weapontype_kotor_brifle1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_BRIFLE1
+	{ "righthud", "weapontype_kotor_brifle2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_BRIFLE2
+	{ "righthud", "weapontype_kotor_brifle3", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_BRIFLE3
+	{ "righthud", "weapontype_kotor_carbine", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_CARBINE
+	{ "righthud", "weapontype_kotor_drifle", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_DRIFLE
+	{ "righthud", "weapontype_kotor_hobpistol", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_HOBPISTOL
+	{ "righthud", "weapontype_kotor_hpistol", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_HPISTOL
+	{ "righthud", "weapontype_kotor_ionrifle", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_IONRIFLE
+	{ "righthud", "weapontype_kotor_pistol1", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_PISTOL1
+	{ "righthud", "weapontype_kotor_repeater", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_REPEATER
+	{ "righthud", "weapontype_kotor_reprifle", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_KOTOR_REPRIFLE
 	/////////////
-	{"lefthud", "scanline", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SCANLINE_LEFT
-	{"righthud", "scanline", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_SCANLINE_RIGHT
-	{"lefthud", "frame", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FRAME_LEFT
-	{"righthud", "frame", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FRAME_RIGHT
-	{"lefthud", "frame_classic", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CLASSIC_FRAME_LEFT
-	{"righthud", "frame_classic", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CLASSIC_FRAME_RIGHT
-	{"lefthud", "frame_md", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FRAME_LEFT_MD
-	{"righthud", "frame_md", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FRAME_RIGHT_MD
-	{"righthud", "MBlockingMode", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_MBLOCKINGMODE
-	{"righthud", "BlockingMode", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BLOCKINGMODE
-	{"righthud", "NotBlocking", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_NOTBLOCKING
-	{"righthud", "JK2MBlockingMode", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_JK2MBLOCKINGMODE
-	{"righthud", "JK2BlockingMode", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_JK2BLOCKINGMODE
-	{"righthud", "JK2NotBlocking", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_JK2NOTBLOCKING
+	{ "lefthud", "scanline", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SCANLINE_LEFT
+	{ "righthud", "scanline", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_SCANLINE_RIGHT
+	{ "lefthud", "frame", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FRAME_LEFT
+	{ "righthud", "frame", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FRAME_RIGHT
+	{ "lefthud", "frame_classic", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CLASSIC_FRAME_LEFT
+	{ "righthud", "frame_classic", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CLASSIC_FRAME_RIGHT
+	{ "lefthud", "frame_md", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FRAME_LEFT_MD
+	{ "righthud", "frame_md", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FRAME_RIGHT_MD
+	{ "righthud", "MBlockingMode", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_MBLOCKINGMODE
+	{ "righthud", "BlockingMode", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLOCKINGMODE
+	{ "righthud", "NotBlocking", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_NOTBLOCKING
+	{ "righthud", "JK2MBlockingMode", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_JK2MBLOCKINGMODE
+	{ "righthud", "JK2BlockingMode", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_JK2BLOCKINGMODE
+	{ "righthud", "JK2NotBlocking", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_JK2NOTBLOCKING
 
-	{"lefthud", "left_frame_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_LEFT_FRAME_DF
-	{"lefthud", "left_frame_df2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_LEFT_FRAME_DF2
-	{"lefthud", "left_center_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_LEFT_CENTER_DF
-	{"lefthud", "left_ring_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_LEFT_RING_DF
-	{"righthud", "right_frame_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_RIGHT_FRAME_DF
-	{"righthud", "right_frame_df2", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_RIGHT_FRAME_DF2
-	{"righthud", "right_center_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_RIGHT_CENTER_DF
-	{"righthud", "right_ring_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_RIGHT_RING_DF
-	{"righthud", "hilt_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_HILT_DF
-	{"righthud", "block_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BLOCK_DF
-	{"righthud", "mblock_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_MBLOCK_DF
-	{"lefthud", "health_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_HEALTH_ICON_DF
-	{"lefthud", "armor_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_ARMOR_ICON_DF
-	{"lefthud", "stamina_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_STAMINA_ICON_DF
-	{"lefthud", "fuel_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FUEL_ICON_DF
-	{"lefthud", "cloak_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_CLOAK_ICON_DF
-	{"lefthud", "barrier_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BARRIER_ICON_DF
-	{"righthud", "force_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_FORCE_ICON_DF
-	{"righthud", "block_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_BLOCK_ICON_DF
-	{"righthud", "ammo_icon_df", 0, 0, 0, 0, {0.0f, 0.0f, 0.0f, 0.0f}, NULL_HANDLE}, // OHB_AMMO_ICON_DF
+	{ "lefthud", "left_frame_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_LEFT_FRAME_DF
+	{ "lefthud", "left_frame_df2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_LEFT_FRAME_DF2
+	{ "lefthud", "left_center_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_LEFT_CENTER_DF
+	{ "lefthud", "left_ring_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_LEFT_RING_DF
+	{ "righthud", "right_frame_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_RIGHT_FRAME_DF
+	{ "righthud", "right_frame_df2", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_RIGHT_FRAME_DF2
+	{ "righthud", "right_center_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_RIGHT_CENTER_DF
+	{ "righthud", "right_ring_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_RIGHT_RING_DF
+	{ "righthud", "hilt_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_HILT_DF
+	{ "righthud", "block_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLOCK_DF
+	{ "righthud", "mblock_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_MBLOCK_DF
+	{ "lefthud", "health_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_HEALTH_ICON_DF
+	{ "lefthud", "armor_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_ARMOR_ICON_DF
+	{ "lefthud", "stamina_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_STAMINA_ICON_DF
+	{ "lefthud", "fuel_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FUEL_ICON_DF
+	{ "lefthud", "cloak_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CLOAK_ICON_DF
+	{ "lefthud", "barrier_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BARRIER_ICON_DF
+	{ "righthud", "force_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FORCE_ICON_DF
+	{ "righthud", "block_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLOCK_ICON_DF
+	{ "righthud", "ammo_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_AMMO_ICON_DF
 };
 
 extern void CG_NPC_Precache(gentity_t* spawner);

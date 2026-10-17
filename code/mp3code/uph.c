@@ -44,23 +44,23 @@ Layer 3 audio
 #define MAXBITS 9
 
 static const HUFF_ELEMENT huff_table_0[4] =
-{ {0}, {0}, {0}, {64} }; /* dummy must not use */
+{ { 0 },{ 0 },{ 0 },{ 64 } }; /* dummy must not use */
 
 #include "htable.h"
 
 /*-- 6 bit lookup (purgebits, value) --*/
 static const unsigned char quad_table_a[][2] =
 {
-	{6, 11}, {6, 15}, {6, 13}, {6, 14}, {6, 7}, {6, 5}, {5, 9},
-	{5, 9}, {5, 6}, {5, 6}, {5, 3}, {5, 3}, {5, 10}, {5, 10},
-	{5, 12}, {5, 12}, {4, 2}, {4, 2}, {4, 2}, {4, 2}, {4, 1},
-	{4, 1}, {4, 1}, {4, 1}, {4, 4}, {4, 4}, {4, 4}, {4, 4},
-	{4, 8}, {4, 8}, {4, 8}, {4, 8}, {1, 0}, {1, 0}, {1, 0},
-	{1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0},
-	{1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0},
-	{1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0},
-	{1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0}, {1, 0},
-	{1, 0},
+	{ 6, 11 },{ 6, 15 },{ 6, 13 },{ 6, 14 },{ 6, 7 },{ 6, 5 },{ 5, 9 },
+	{ 5, 9 },{ 5, 6 },{ 5, 6 },{ 5, 3 },{ 5, 3 },{ 5, 10 },{ 5, 10 },
+	{ 5, 12 },{ 5, 12 },{ 4, 2 },{ 4, 2 },{ 4, 2 },{ 4, 2 },{ 4, 1 },
+	{ 4, 1 },{ 4, 1 },{ 4, 1 },{ 4, 4 },{ 4, 4 },{ 4, 4 },{ 4, 4 },
+	{ 4, 8 },{ 4, 8 },{ 4, 8 },{ 4, 8 },{ 1, 0 },{ 1, 0 },{ 1, 0 },
+	{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },
+	{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },
+	{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },
+	{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },{ 1, 0 },
+	{ 1, 0 },
 };
 
 typedef struct
@@ -80,40 +80,40 @@ HUFF_SETUP;
 
 static const HUFF_SETUP table_look[] =
 {
-	{huff_table_0, 0, no_bits},
-	{huff_table_1, 0, one_shot},
-	{huff_table_2, 0, one_shot},
-	{huff_table_3, 0, one_shot},
-	{huff_table_0, 0, no_bits},
-	{huff_table_5, 0, one_shot},
-	{huff_table_6, 0, one_shot},
-	{huff_table_7, 0, no_linbits},
-	{huff_table_8, 0, no_linbits},
-	{huff_table_9, 0, no_linbits},
-	{huff_table_10, 0, no_linbits},
-	{huff_table_11, 0, no_linbits},
-	{huff_table_12, 0, no_linbits},
-	{huff_table_13, 0, no_linbits},
-	{huff_table_0, 0, no_bits},
-	{huff_table_15, 0, no_linbits},
-	{huff_table_16, 1, have_linbits},
-	{huff_table_16, 2, have_linbits},
-	{huff_table_16, 3, have_linbits},
-	{huff_table_16, 4, have_linbits},
-	{huff_table_16, 6, have_linbits},
-	{huff_table_16, 8, have_linbits},
-	{huff_table_16, 10, have_linbits},
-	{huff_table_16, 13, have_linbits},
-	{huff_table_24, 4, have_linbits},
-	{huff_table_24, 5, have_linbits},
-	{huff_table_24, 6, have_linbits},
-	{huff_table_24, 7, have_linbits},
-	{huff_table_24, 8, have_linbits},
-	{huff_table_24, 9, have_linbits},
-	{huff_table_24, 11, have_linbits},
-	{huff_table_24, 13, have_linbits},
-	{huff_table_0, 0, quad_a},
-	{huff_table_0, 0, quad_b},
+	{ huff_table_0, 0, no_bits },
+	{ huff_table_1, 0, one_shot },
+	{ huff_table_2, 0, one_shot },
+	{ huff_table_3, 0, one_shot },
+	{ huff_table_0, 0, no_bits },
+	{ huff_table_5, 0, one_shot },
+	{ huff_table_6, 0, one_shot },
+	{ huff_table_7, 0, no_linbits },
+	{ huff_table_8, 0, no_linbits },
+	{ huff_table_9, 0, no_linbits },
+	{ huff_table_10, 0, no_linbits },
+	{ huff_table_11, 0, no_linbits },
+	{ huff_table_12, 0, no_linbits },
+	{ huff_table_13, 0, no_linbits },
+	{ huff_table_0, 0, no_bits },
+	{ huff_table_15, 0, no_linbits },
+	{ huff_table_16, 1, have_linbits },
+	{ huff_table_16, 2, have_linbits },
+	{ huff_table_16, 3, have_linbits },
+	{ huff_table_16, 4, have_linbits },
+	{ huff_table_16, 6, have_linbits },
+	{ huff_table_16, 8, have_linbits },
+	{ huff_table_16, 10, have_linbits },
+	{ huff_table_16, 13, have_linbits },
+	{ huff_table_24, 4, have_linbits },
+	{ huff_table_24, 5, have_linbits },
+	{ huff_table_24, 6, have_linbits },
+	{ huff_table_24, 7, have_linbits },
+	{ huff_table_24, 8, have_linbits },
+	{ huff_table_24, 9, have_linbits },
+	{ huff_table_24, 11, have_linbits },
+	{ huff_table_24, 13, have_linbits },
+	{ huff_table_0, 0, quad_a },
+	{ huff_table_0, 0, quad_b },
 };
 
 /*========================================================*/

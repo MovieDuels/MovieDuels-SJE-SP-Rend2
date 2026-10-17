@@ -156,8 +156,8 @@ using itemFlagsDef_t = struct itemFlagsDef_s
 };
 
 itemFlagsDef_t itemFlags[] = {
-	{"WINDOW_INACTIVE", WINDOW_INACTIVE},
-	{nullptr, 0}
+	{ "WINDOW_INACTIVE", WINDOW_INACTIVE },
+	{ nullptr, 0 }
 };
 
 const char* styles[] = {
@@ -1159,46 +1159,46 @@ using keywordHash_t = struct keywordHash_s
 };
 
 keywordHash_t menuParseKeywords[] = {
-	{"appearanceIncrement", MenuParse_appearanceIncrement},
-	{"backcolor", MenuParse_backcolor,},
-	{"background", MenuParse_background,},
-	{"border", MenuParse_border,},
-	{"bordercolor", MenuParse_bordercolor,},
-	{"borderSize", MenuParse_borderSize,},
-	{"cinematic", MenuParse_cinematic,},
-	{"descAlignment", MenuParse_descAlignment},
-	{"descTextStyle", MenuParse_descTextStyle},
-	{"desccolor", MenuParse_descColor},
-	{"descX", MenuParse_descX},
-	{"descY", MenuParse_descY},
-	{"descScale", MenuParse_descScale},
-	{"disablecolor", MenuParse_disablecolor,},
-	{"fadeClamp", MenuParse_fadeClamp,},
-	{"fadeCycle", MenuParse_fadeCycle,},
-	{"fadeAmount", MenuParse_fadeAmount,},
-	{"focuscolor", MenuParse_focuscolor,},
-	{"font", MenuParse_font,},
-	{"forecolor", MenuParse_forecolor,},
-	{"fullscreen", MenuParse_fullscreen,},
-	{"itemDef", MenuParse_itemDef,},
-	{"name", MenuParse_name,},
-	{"onClose", MenuParse_onClose,},
+	{ "appearanceIncrement", MenuParse_appearanceIncrement },
+	{ "backcolor", MenuParse_backcolor, },
+	{ "background", MenuParse_background, },
+	{ "border", MenuParse_border, },
+	{ "bordercolor", MenuParse_bordercolor, },
+	{ "borderSize", MenuParse_borderSize, },
+	{ "cinematic", MenuParse_cinematic, },
+	{ "descAlignment", MenuParse_descAlignment },
+	{ "descTextStyle", MenuParse_descTextStyle },
+	{ "desccolor", MenuParse_descColor },
+	{ "descX", MenuParse_descX },
+	{ "descY", MenuParse_descY },
+	{ "descScale", MenuParse_descScale },
+	{ "disablecolor", MenuParse_disablecolor, },
+	{ "fadeClamp", MenuParse_fadeClamp, },
+	{ "fadeCycle", MenuParse_fadeCycle, },
+	{ "fadeAmount", MenuParse_fadeAmount, },
+	{ "focuscolor", MenuParse_focuscolor, },
+	{ "font", MenuParse_font, },
+	{ "forecolor", MenuParse_forecolor, },
+	{ "fullscreen", MenuParse_fullscreen, },
+	{ "itemDef", MenuParse_itemDef, },
+	{ "name", MenuParse_name, },
+	{ "onClose", MenuParse_onClose, },
 	//JLFACCEPT MPMOVED
-	{"onAccept", MenuParse_onAccept,},
-	{"onESC", MenuParse_onESC,},
-	{"onOpen", MenuParse_onOpen,},
-	{"outlinecolor", MenuParse_outlinecolor,},
-	{"outOfBoundsClick", MenuParse_outOfBounds,},
-	{"ownerdraw", MenuParse_ownerdraw,},
-	{"ownerdrawFlag", MenuParse_ownerdrawFlag,},
-	{"popup", MenuParse_popup,},
-	{"rect", MenuParse_rect,},
-	{"soundLoop", MenuParse_soundLoop,},
-	{"style", MenuParse_style,},
-	{"visible", MenuParse_visible,},
-	{"ignoreescape", MenuParse_ignoreescape,},
-	{"ownerdrawID",	MenuParse_ownerdrawID,},
-	{nullptr, nullptr,}
+	{ "onAccept", MenuParse_onAccept, },
+	{ "onESC", MenuParse_onESC, },
+	{ "onOpen", MenuParse_onOpen, },
+	{ "outlinecolor", MenuParse_outlinecolor, },
+	{ "outOfBoundsClick", MenuParse_outOfBounds, },
+	{ "ownerdraw", MenuParse_ownerdraw, },
+	{ "ownerdrawFlag", MenuParse_ownerdrawFlag, },
+	{ "popup", MenuParse_popup, },
+	{ "rect", MenuParse_rect, },
+	{ "soundLoop", MenuParse_soundLoop, },
+	{ "style", MenuParse_style, },
+	{ "visible", MenuParse_visible, },
+	{ "ignoreescape", MenuParse_ignoreescape, },
+	{ "ownerdrawID",	MenuParse_ownerdrawID, },
+	{ nullptr, nullptr, }
 };
 
 keywordHash_t* menuParseKeywordHash[KEYWORDHASH_SIZE];
@@ -2878,39 +2878,39 @@ static qboolean Script_Orbit(itemDef_t* item, const char** args)
 
 commandDef_t commandList[] =
 {
-	{"activate", &Script_Activate}, // menu
-	{"close", &Script_Close}, // menu
-	{"exec", &Script_Exec}, // group/name
-	{"fadein", &Script_FadeIn}, // group/name
-	{"fadeout", &Script_FadeOut}, // group/name
-	{"hide", &Script_Hide}, // group/name
-	{"open", &Script_Open}, // menu
-	{"openGoToMenu", &Script_OpenGoToMenu}, //
-	{"orbit", &Script_Orbit}, // group/name
-	{"play", &Script_Play}, // group/name
-	{"playVoice", &Script_PlayVoice}, // group/name
-	{"stopVoice", &Script_StopVoice}, // group/name
-	{"setasset", &Script_SetAsset}, // works on this
-	{"setbackground", &Script_SetBackground}, // works on this
-	{"setcolor", &Script_SetColor}, // works on this
-	{"setcvar", &Script_SetCvar}, // group/name
-	{"setfocus", &Script_SetFocus}, // sets this background color to team color
-	{"setitemcolor", &Script_SetItemColor}, // group/name
-	{"setitemflag", &Script_SetItemFlag}, // name
-	{"show", &Script_Show}, // group/name
-	{"showMenu", &Script_ShowMenu}, // menu
-	{"transition", &Script_Transition}, // group/name
-	{"transition2", &Script_Transition2}, // group/name
-	{"setitembackground", &Script_SetItemBackground}, // group/name
-	{"setitemtext", &Script_SetItemText}, // group/name
-	{"setitemrect", &Script_SetItemRect}, // group/name
-	{"setitemexec", &Script_SetItemExec}, // group/name
-	{"defer", &Script_Defer}, //
-	{"rundeferred", &Script_RunDeferred}, //
-	{"delay", &Script_Delay}, // works on this (script)
-	{"transition3", &Script_Transition3}, // model exclusive transition
-	{"incrementfeeder", &Script_IncrementFeeder},
-	{"decrementfeeder", &Script_DecrementFeeder}
+	{ "activate", &Script_Activate }, // menu
+	{ "close", &Script_Close }, // menu
+	{ "exec", &Script_Exec }, // group/name
+	{ "fadein", &Script_FadeIn }, // group/name
+	{ "fadeout", &Script_FadeOut }, // group/name
+	{ "hide", &Script_Hide }, // group/name
+	{ "open", &Script_Open }, // menu
+	{ "openGoToMenu", &Script_OpenGoToMenu }, //
+	{ "orbit", &Script_Orbit }, // group/name
+	{ "play", &Script_Play }, // group/name
+	{ "playVoice", &Script_PlayVoice }, // group/name
+	{ "stopVoice", &Script_StopVoice }, // group/name
+	{ "setasset", &Script_SetAsset }, // works on this
+	{ "setbackground", &Script_SetBackground }, // works on this
+	{ "setcolor", &Script_SetColor }, // works on this
+	{ "setcvar", &Script_SetCvar }, // group/name
+	{ "setfocus", &Script_SetFocus }, // sets this background color to team color
+	{ "setitemcolor", &Script_SetItemColor }, // group/name
+	{ "setitemflag", &Script_SetItemFlag }, // name
+	{ "show", &Script_Show }, // group/name
+	{ "showMenu", &Script_ShowMenu }, // menu
+	{ "transition", &Script_Transition }, // group/name
+	{ "transition2", &Script_Transition2 }, // group/name
+	{ "setitembackground", &Script_SetItemBackground }, // group/name
+	{ "setitemtext", &Script_SetItemText }, // group/name
+	{ "setitemrect", &Script_SetItemRect }, // group/name
+	{ "setitemexec", &Script_SetItemExec }, // group/name
+	{ "defer", &Script_Defer }, //
+	{ "rundeferred", &Script_RunDeferred }, //
+	{ "delay", &Script_Delay }, // works on this (script)
+	{ "transition3", &Script_Transition3 }, // model exclusive transition
+	{ "incrementfeeder", &Script_IncrementFeeder },
+	{ "decrementfeeder", &Script_DecrementFeeder }
 };
 
 int scriptCommandCount = sizeof commandList / sizeof(commandDef_t);
@@ -4858,102 +4858,102 @@ static qboolean ItemParse_isSaber2(itemDef_t* item)
 }
 
 keywordHash_t itemParseKeywords[] = {
-	{"accept", ItemParse_accept,},
-	{"selectNext", ItemParse_selectionNext,},
-	{"selectPrev", ItemParse_selectionPrev,},
-	{"action", ItemParse_action,},
-	{"addColorRange", ItemParse_addColorRange,},
-	{"align", ItemParse_align,},
-	{"appearance_slot", ItemParse_Appearance_slot,},
-	{"asset_model", ItemParse_asset_model,},
-	{"asset_shader", ItemParse_asset_shader,},
-	{"isCharacter", ItemParse_isCharacter,},
-	{"isSaber", ItemParse_isSaber,},
-	{"isSaber2", ItemParse_isSaber2,},
-	{"autowrapped", ItemParse_autowrapped,},
-	{"backcolor", ItemParse_backcolor,},
-	{"background", ItemParse_background,},
-	{"border", ItemParse_border,},
-	{"bordercolor", ItemParse_bordercolor,},
-	{"bordersize", ItemParse_bordersize,},
-	{"cinematic", ItemParse_cinematic,},
-	{"columns", ItemParse_columns,},
-	{"cvar", ItemParse_cvar,},
-	{"cvarFloat", ItemParse_cvarFloat,},
-	{"cvarInt", ItemParse_cvarInt,},
-	{"cvarRotateScale", ItemParse_cvarRotateScale,},
-	{"cvarFloatList", ItemParse_cvarFloatList,},
-	{"cvarSubString", ItemParse_cvarsubstring},
-	{"cvarStrList", ItemParse_cvarStrList,},
-	{"cvarTest", ItemParse_cvarTest,},
-	{"decoration", ItemParse_decoration,},
-	{"desctext", ItemParse_descText},
-	{"disableCvar", ItemParse_disableCvar,},
-	{"doubleclick", ItemParse_doubleClick,},
-	{"elementheight", ItemParse_elementheight,},
-	{"elementtype", ItemParse_elementtype,},
-	{"elementwidth", ItemParse_elementwidth,},
-	{"enableCvar", ItemParse_enableCvar,},
-	{"exec", ItemParse_exec,},
-	{"feeder", ItemParse_feeder,},
-	{"flag", ItemParse_flag,},
-	{"focusSound", ItemParse_focusSound,},
-	{"font", ItemParse_font,},
-	{"forecolor", ItemParse_forecolor,},
-	{"group", ItemParse_group,},
-	{"hideCvar", ItemParse_hideCvar,},
-	{"horizontalscroll", ItemParse_horizontalscroll,},
-	{"leaveFocus", ItemParse_leaveFocus,},
-	{"maxChars", ItemParse_maxChars,},
-	{"maxPaintChars", ItemParse_maxPaintChars,},
-	{"model_angle", ItemParse_model_angle,},
-	{"model_fovx", ItemParse_model_fovx,},
-	{"model_fovy", ItemParse_model_fovy,},
-	{"model_origin", ItemParse_model_origin,},
-	{"model_rotation", ItemParse_model_rotation,},
+	{ "accept", ItemParse_accept, },
+	{ "selectNext", ItemParse_selectionNext, },
+	{ "selectPrev", ItemParse_selectionPrev, },
+	{ "action", ItemParse_action, },
+	{ "addColorRange", ItemParse_addColorRange, },
+	{ "align", ItemParse_align, },
+	{ "appearance_slot", ItemParse_Appearance_slot, },
+	{ "asset_model", ItemParse_asset_model, },
+	{ "asset_shader", ItemParse_asset_shader, },
+	{ "isCharacter", ItemParse_isCharacter, },
+	{ "isSaber", ItemParse_isSaber, },
+	{ "isSaber2", ItemParse_isSaber2, },
+	{ "autowrapped", ItemParse_autowrapped, },
+	{ "backcolor", ItemParse_backcolor, },
+	{ "background", ItemParse_background, },
+	{ "border", ItemParse_border, },
+	{ "bordercolor", ItemParse_bordercolor, },
+	{ "bordersize", ItemParse_bordersize, },
+	{ "cinematic", ItemParse_cinematic, },
+	{ "columns", ItemParse_columns, },
+	{ "cvar", ItemParse_cvar, },
+	{ "cvarFloat", ItemParse_cvarFloat, },
+	{ "cvarInt", ItemParse_cvarInt, },
+	{ "cvarRotateScale", ItemParse_cvarRotateScale, },
+	{ "cvarFloatList", ItemParse_cvarFloatList, },
+	{ "cvarSubString", ItemParse_cvarsubstring },
+	{ "cvarStrList", ItemParse_cvarStrList, },
+	{ "cvarTest", ItemParse_cvarTest, },
+	{ "decoration", ItemParse_decoration, },
+	{ "desctext", ItemParse_descText },
+	{ "disableCvar", ItemParse_disableCvar, },
+	{ "doubleclick", ItemParse_doubleClick, },
+	{ "elementheight", ItemParse_elementheight, },
+	{ "elementtype", ItemParse_elementtype, },
+	{ "elementwidth", ItemParse_elementwidth, },
+	{ "enableCvar", ItemParse_enableCvar, },
+	{ "exec", ItemParse_exec, },
+	{ "feeder", ItemParse_feeder, },
+	{ "flag", ItemParse_flag, },
+	{ "focusSound", ItemParse_focusSound, },
+	{ "font", ItemParse_font, },
+	{ "forecolor", ItemParse_forecolor, },
+	{ "group", ItemParse_group, },
+	{ "hideCvar", ItemParse_hideCvar, },
+	{ "horizontalscroll", ItemParse_horizontalscroll, },
+	{ "leaveFocus", ItemParse_leaveFocus, },
+	{ "maxChars", ItemParse_maxChars, },
+	{ "maxPaintChars", ItemParse_maxPaintChars, },
+	{ "model_angle", ItemParse_model_angle, },
+	{ "model_fovx", ItemParse_model_fovx, },
+	{ "model_fovy", ItemParse_model_fovy, },
+	{ "model_origin", ItemParse_model_origin, },
+	{ "model_rotation", ItemParse_model_rotation, },
 	//rww - g2 begin
-	{"model_g2mins", ItemParse_model_g2mins,},
-	{"model_g2maxs", ItemParse_model_g2maxs,},
-	{"model_g2skin", ItemParse_model_g2skin,},
-	{"model_g2anim", ItemParse_model_g2anim,},
+	{ "model_g2mins", ItemParse_model_g2mins, },
+	{ "model_g2maxs", ItemParse_model_g2maxs, },
+	{ "model_g2skin", ItemParse_model_g2skin, },
+	{ "model_g2anim", ItemParse_model_g2anim, },
 	//rww - g2 end
-	{"mouseEnter", ItemParse_mouseEnter,},
-	{"mouseEnterText", ItemParse_mouseEnterText,},
-	{"mouseExit", ItemParse_mouseExit,},
-	{"mouseExitText", ItemParse_mouseExitText,},
-	{"name", ItemParse_name},
-	{"notselectable", ItemParse_notselectable,},
+	{ "mouseEnter", ItemParse_mouseEnter, },
+	{ "mouseEnterText", ItemParse_mouseEnterText, },
+	{ "mouseExit", ItemParse_mouseExit, },
+	{ "mouseExitText", ItemParse_mouseExitText, },
+	{ "name", ItemParse_name },
+	{ "notselectable", ItemParse_notselectable, },
 	//JLF
-	{"scrollhidden", ItemParse_scrollhidden,},
+	{ "scrollhidden", ItemParse_scrollhidden, },
 	//JLF END
-	{"onFocus", ItemParse_onFocus,},
-	{"outlinecolor", ItemParse_outlinecolor,},
-	{"ownerdraw", ItemParse_ownerdraw,},
-	{"ownerdrawFlag", ItemParse_ownerdrawFlag,},
-	{"rect", ItemParse_rect,},
-	{"showCvar", ItemParse_showCvar,},
-	{"special", ItemParse_special,},
-	{"style", ItemParse_style,},
-	{"text", ItemParse_text},
-	{"text2", ItemParse_text2},
-	{"text2alignx", ItemParse_text2alignx,},
-	{"text2aligny", ItemParse_text2aligny,},
-	{"textalign", ItemParse_textalign,},
-	{"textalignx", ItemParse_textalignx,},
-	{"textaligny", ItemParse_textaligny,},
-	{"textscale", ItemParse_textscale,},
-	{"textstyle", ItemParse_textstyle,},
-	{"type", ItemParse_type,},
-	{"visible", ItemParse_visible,},
-	{"wrapped", ItemParse_wrapped,},
-	{"invertyesno", ItemParse_invertyesno},
-	{"xoffset", ItemParse_xoffset}, //for yes/no and multi
-	{"ownerdrawID", ItemParse_ownerdrawID,},
+	{ "onFocus", ItemParse_onFocus, },
+	{ "outlinecolor", ItemParse_outlinecolor, },
+	{ "ownerdraw", ItemParse_ownerdraw, },
+	{ "ownerdrawFlag", ItemParse_ownerdrawFlag, },
+	{ "rect", ItemParse_rect, },
+	{ "showCvar", ItemParse_showCvar, },
+	{ "special", ItemParse_special, },
+	{ "style", ItemParse_style, },
+	{ "text", ItemParse_text },
+	{ "text2", ItemParse_text2 },
+	{ "text2alignx", ItemParse_text2alignx, },
+	{ "text2aligny", ItemParse_text2aligny, },
+	{ "textalign", ItemParse_textalign, },
+	{ "textalignx", ItemParse_textalignx, },
+	{ "textaligny", ItemParse_textaligny, },
+	{ "textscale", ItemParse_textscale, },
+	{ "textstyle", ItemParse_textstyle, },
+	{ "type", ItemParse_type, },
+	{ "visible", ItemParse_visible, },
+	{ "wrapped", ItemParse_wrapped, },
+	{ "invertyesno", ItemParse_invertyesno },
+	{ "xoffset", ItemParse_xoffset }, //for yes/no and multi
+	{ "ownerdrawID", ItemParse_ownerdrawID, },
 
 	// Text scroll specific
-	{"lineHeight", ItemParse_lineHeight, nullptr},
+	{ "lineHeight", ItemParse_lineHeight, nullptr },
 
-	{nullptr, nullptr,}
+	{ nullptr, nullptr, }
 };
 
 keywordHash_t* itemParseKeywordHash[KEYWORDHASH_SIZE];

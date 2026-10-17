@@ -288,16 +288,16 @@ static void RE_Blit(const float fX0, const float fY0, const float fX1, const flo
 	GLSL_SetUniformInt(shaderProgram, UNIFORM_ALPHA_TEST_TYPE, atest ? ALPHA_TEST_LT128 : ALPHA_TEST_NONE);
 
 	vec4_t quadVerts[4] = {
-		{fX0, fY0, 0.f},
-		{fX1, fY1, 0.f},
-		{fX2, fY2, 0.f},
-		{fX3, fY3, 0.f},
+		{ fX0, fY0, 0.f },
+		{ fX1, fY1, 0.f },
+		{ fX2, fY2, 0.f },
+		{ fX3, fY3, 0.f },
 	};
 	vec2_t texCoords[4] = {
-		{0.0f, 0.0f},
-		{1.0f, 0.0f},
-		{1.0f, 1.0f},
-		{0.0f, 1.0f},
+		{ 0.0f, 0.0f },
+		{ 1.0f, 0.0f },
+		{ 1.0f, 1.0f },
+		{ 0.0f, 1.0f },
 	};
 
 	RB_InstantQuad2(quadVerts, texCoords);

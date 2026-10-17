@@ -41,105 +41,105 @@ extern void FX_Write();
 
 static const save_field_t savefields_gEntity[] =
 {
-	{strFOFS(client), F_GCLIENT},
-	{strFOFS(owner), F_GENTITY},
-	{strFOFS(classname), F_STRING},
-	{strFOFS(model), F_STRING},
-	{strFOFS(model2), F_STRING},
-	{strFOFS(nextTrain), F_GENTITY},
-	{strFOFS(prevTrain), F_GENTITY},
-	{strFOFS(message), F_STRING},
-	{strFOFS(target), F_STRING},
-	{strFOFS(target2), F_STRING},
-	{strFOFS(target3), F_STRING},
-	{strFOFS(target4), F_STRING},
-	{strFOFS(targetJump), F_STRING},
-	{strFOFS(targetname), F_STRING},
-	{strFOFS(team), F_STRING},
-	{strFOFS(roff), F_STRING},
-	{strFOFS(chain), F_GENTITY},
-	{strFOFS(enemy), F_GENTITY},
-	{strFOFS(activator), F_GENTITY},
-	{strFOFS(teamchain), F_GENTITY},
-	{strFOFS(teammaster), F_GENTITY},
-	{strFOFS(item), F_ITEM},
-	{strFOFS(NPC_type), F_STRING},
-	{strFOFS(closetarget), F_STRING},
-	{strFOFS(opentarget), F_STRING},
-	{strFOFS(paintarget), F_STRING},
-	{strFOFS(NPC_targetname), F_STRING},
-	{strFOFS(NPC_target), F_STRING},
-	{strFOFS(ownername), F_STRING},
-	{strFOFS(lastEnemy), F_GENTITY},
-	{strFOFS(behaviorSet), F_BEHAVIORSET},
-	{strFOFS(script_targetname), F_STRING},
-	{strFOFS(m_iIcarusID), F_NULL},
-	{strFOFS(NPC), F_BOOLPTR},
-	{strFOFS(soundSet), F_STRING},
-	{strFOFS(cameraGroup), F_STRING},
-	{strFOFS(parms), F_BOOLPTR},
-	{strFOFS(m_pVehicle), F_BOOLPTR},
-	{strFOFS(fullName),	F_STRING},
+	{ strFOFS(client), F_GCLIENT },
+	{ strFOFS(owner), F_GENTITY },
+	{ strFOFS(classname), F_STRING },
+	{ strFOFS(model), F_STRING },
+	{ strFOFS(model2), F_STRING },
+	{ strFOFS(nextTrain), F_GENTITY },
+	{ strFOFS(prevTrain), F_GENTITY },
+	{ strFOFS(message), F_STRING },
+	{ strFOFS(target), F_STRING },
+	{ strFOFS(target2), F_STRING },
+	{ strFOFS(target3), F_STRING },
+	{ strFOFS(target4), F_STRING },
+	{ strFOFS(targetJump), F_STRING },
+	{ strFOFS(targetname), F_STRING },
+	{ strFOFS(team), F_STRING },
+	{ strFOFS(roff), F_STRING },
+	{ strFOFS(chain), F_GENTITY },
+	{ strFOFS(enemy), F_GENTITY },
+	{ strFOFS(activator), F_GENTITY },
+	{ strFOFS(teamchain), F_GENTITY },
+	{ strFOFS(teammaster), F_GENTITY },
+	{ strFOFS(item), F_ITEM },
+	{ strFOFS(NPC_type), F_STRING },
+	{ strFOFS(closetarget), F_STRING },
+	{ strFOFS(opentarget), F_STRING },
+	{ strFOFS(paintarget), F_STRING },
+	{ strFOFS(NPC_targetname), F_STRING },
+	{ strFOFS(NPC_target), F_STRING },
+	{ strFOFS(ownername), F_STRING },
+	{ strFOFS(lastEnemy), F_GENTITY },
+	{ strFOFS(behaviorSet), F_BEHAVIORSET },
+	{ strFOFS(script_targetname), F_STRING },
+	{ strFOFS(m_iIcarusID), F_NULL },
+	{ strFOFS(NPC), F_BOOLPTR },
+	{ strFOFS(soundSet), F_STRING },
+	{ strFOFS(cameraGroup), F_STRING },
+	{ strFOFS(parms), F_BOOLPTR },
+	{ strFOFS(m_pVehicle), F_BOOLPTR },
+	{ strFOFS(fullName),	F_STRING },
 
-	{nullptr, 0, F_IGNORE}
+	{ nullptr, 0, F_IGNORE }
 };
 
 static const save_field_t savefields_gNPC[] =
 {
-	{strNPCOFS(touchedByPlayer), F_GENTITY},
-	{strNPCOFS(aimingBeam), F_GENTITY},
-	{strNPCOFS(eventOwner), F_GENTITY},
-	{strNPCOFS(coverTarg), F_GENTITY},
-	{strNPCOFS(tempGoal), F_GENTITY},
-	{strNPCOFS(goalEntity), F_GENTITY},
-	{strNPCOFS(lastGoalEntity), F_GENTITY},
-	{strNPCOFS(eventualGoal), F_GENTITY},
-	{strNPCOFS(captureGoal), F_GENTITY},
-	{strNPCOFS(defendEnt), F_GENTITY},
-	{strNPCOFS(greetEnt), F_GENTITY},
-	{strNPCOFS(group), F_GROUP},
-	{strNPCOFS(blockedEntity), F_GENTITY},
-	{strNPCOFS(blockedTargetEntity), F_GENTITY},
-	{strNPCOFS(jumpTarget), F_GENTITY},
-	{strNPCOFS(watchTarget), F_GENTITY},
-	{nullptr, 0, F_IGNORE}
+	{ strNPCOFS(touchedByPlayer), F_GENTITY },
+	{ strNPCOFS(aimingBeam), F_GENTITY },
+	{ strNPCOFS(eventOwner), F_GENTITY },
+	{ strNPCOFS(coverTarg), F_GENTITY },
+	{ strNPCOFS(tempGoal), F_GENTITY },
+	{ strNPCOFS(goalEntity), F_GENTITY },
+	{ strNPCOFS(lastGoalEntity), F_GENTITY },
+	{ strNPCOFS(eventualGoal), F_GENTITY },
+	{ strNPCOFS(captureGoal), F_GENTITY },
+	{ strNPCOFS(defendEnt), F_GENTITY },
+	{ strNPCOFS(greetEnt), F_GENTITY },
+	{ strNPCOFS(group), F_GROUP },
+	{ strNPCOFS(blockedEntity), F_GENTITY },
+	{ strNPCOFS(blockedTargetEntity), F_GENTITY },
+	{ strNPCOFS(jumpTarget), F_GENTITY },
+	{ strNPCOFS(watchTarget), F_GENTITY },
+	{ nullptr, 0, F_IGNORE }
 };
 
 static const save_field_t savefields_LevelLocals[] =
 {
-	{strLLOFS(locationHead), F_GENTITY},
-	{strLLOFS(alertEvents), F_ALERTEVENT},
-	{strLLOFS(groups), F_AIGROUPS},
-	{strLLOFS(knownAnimFileSets), F_ANIMFILESETS},
-	{nullptr, 0, F_IGNORE}
+	{ strLLOFS(locationHead), F_GENTITY },
+	{ strLLOFS(alertEvents), F_ALERTEVENT },
+	{ strLLOFS(groups), F_AIGROUPS },
+	{ strLLOFS(knownAnimFileSets), F_ANIMFILESETS },
+	{ nullptr, 0, F_IGNORE }
 };
 
 static const save_field_t savefields_gVHIC[] =
 {
-	{strVHICOFS(m_pPilot), F_GENTITY},
-	{strVHICOFS(m_pOldPilot), F_GENTITY},
-	{strVHICOFS(m_pDroidUnit), F_GENTITY},
-	{strVHICOFS(m_pParentEntity), F_GENTITY},
+	{ strVHICOFS(m_pPilot), F_GENTITY },
+	{ strVHICOFS(m_pOldPilot), F_GENTITY },
+	{ strVHICOFS(m_pDroidUnit), F_GENTITY },
+	{ strVHICOFS(m_pParentEntity), F_GENTITY },
 
 	//m_ppPassengers	//!ptr array?!
-	{strVHICOFS(m_pVehicleInfo), F_VEHINFO}, //!another ptr! store name field instead and re-hook on load?
+	{ strVHICOFS(m_pVehicleInfo), F_VEHINFO }, //!another ptr! store name field instead and re-hook on load?
 
-	{nullptr, 0, F_IGNORE}
+	{ nullptr, 0, F_IGNORE }
 };
 
 static const save_field_t savefields_gClient[] =
 {
 	// sabers are stomped over by specific code elsewhere, it seems, but the first two fields MUST be saved
 	//	or it crashes on reload
-	{strCLOFS(ps.saber[0].name), F_STRING},
-	{strCLOFS(ps.saber[1].name), F_STRING},
-	{strCLOFS(leader), F_GENTITY},
-	{strCLOFS(clientInfo.customBasicSoundDir), F_STRING},
-	{strCLOFS(clientInfo.customCombatSoundDir), F_STRING},
-	{strCLOFS(clientInfo.customExtraSoundDir), F_STRING},
-	{strCLOFS(clientInfo.customJediSoundDir), F_STRING},
+	{ strCLOFS(ps.saber[0].name), F_STRING },
+	{ strCLOFS(ps.saber[1].name), F_STRING },
+	{ strCLOFS(leader), F_GENTITY },
+	{ strCLOFS(clientInfo.customBasicSoundDir), F_STRING },
+	{ strCLOFS(clientInfo.customCombatSoundDir), F_STRING },
+	{ strCLOFS(clientInfo.customExtraSoundDir), F_STRING },
+	{ strCLOFS(clientInfo.customJediSoundDir), F_STRING },
 
-	{nullptr, 0, F_IGNORE}
+	{ nullptr, 0, F_IGNORE }
 };
 
 // std::string, not sstring_t: an sstring_t holds at most MAX_QPATH-1 chars, but GetStringNum() writes the

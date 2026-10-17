@@ -2351,8 +2351,8 @@ static void RB_UpdateTemporalConstants(gpuFrame_t* frame, gpuFrame_t* previousFr
 	{
 		const vec2_t jitterPos[2] =
 		{
-			{0.25f, -.25f},
-			{-.25f, 0.25f}
+			{ 0.25f, -.25f },
+			{ -.25f, 0.25f }
 		};
 		// element-wise instead of VectorCopy2 (the macro made /analyze report a NULL dereference, C6011)
 		const int jitterCur = backEndData->realFrameNumber % 2;

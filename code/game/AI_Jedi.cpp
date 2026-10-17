@@ -421,19 +421,6 @@ static qboolean npc_force_master(const gentity_t* self)
 	return qfalse;
 }
 
-qboolean NPC_Is_Force_Master(const gentity_t* self)
-{
-	if (!Q_stricmp("Ep7_Snoke", self->NPC_type) ||
-		!Q_stricmp("Ep8_Snoke", self->NPC_type) ||
-		!Q_stricmp("Emperor_Palpatine", self->NPC_type))
-	{
-		
-		return qtrue;
-	}
-
-	return qfalse;
-}
-
 static qboolean npc_is_staff_style(const gentity_t* self)
 {
 	if (!Q_stricmp("md_magnaguard", self->NPC_type)

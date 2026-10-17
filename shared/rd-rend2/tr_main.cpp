@@ -3078,8 +3078,8 @@ void R_GatherFrameViews(trRefdef_t* refdef)
 		{
 			const vec2_t jitterPos[2] =
 			{
-				{-.25f, 0.25f},
-				{0.25f, -.25f},
+				{ -.25f, 0.25f },
+				{ 0.25f, -.25f },
 			};
 			tr.viewParms.projectionMatrix[2] = 2.0 * jitterPos[backEndData->realFrameNumber % 2][0] / glConfig.vidWidth;
 			tr.viewParms.projectionMatrix[6] = 2.0 * jitterPos[backEndData->realFrameNumber % 2][1] / glConfig.vidHeight;

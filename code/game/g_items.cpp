@@ -1432,8 +1432,8 @@ void FinishSpawningItem(gentity_t* ent)
 			if (tr.startsolid && (autoNudge || mapException))
 			{
 				static const float side_dirs[8][2] = {
-					{ 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
-					{ 0.7071f, 0.7071f }, { 0.7071f, -0.7071f }, { -0.7071f, 0.7071f }, { -0.7071f, -0.7071f }
+					{ 1, 0 },{ -1, 0 },{ 0, 1 },{ 0, -1 },
+					{ 0.7071f, 0.7071f },{ 0.7071f, -0.7071f },{ -0.7071f, 0.7071f },{ -0.7071f, -0.7071f }
 				};
 				vec3_t nudged;
 				qboolean found = qfalse;

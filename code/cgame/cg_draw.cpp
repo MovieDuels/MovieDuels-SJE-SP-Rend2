@@ -3629,10 +3629,10 @@ struct veh_damage_t
 
 static const veh_damage_t vehDamageData[4] =
 {
-	{"vehicle_front", SHIPSURF_DAMAGE_FRONT_HEAVY, SHIPSURF_DAMAGE_FRONT_LIGHT},
-	{"vehicle_back", SHIPSURF_DAMAGE_BACK_HEAVY, SHIPSURF_DAMAGE_BACK_LIGHT},
-	{"vehicle_left", SHIPSURF_DAMAGE_LEFT_HEAVY, SHIPSURF_DAMAGE_LEFT_LIGHT},
-	{"vehicle_right", SHIPSURF_DAMAGE_RIGHT_HEAVY, SHIPSURF_DAMAGE_RIGHT_LIGHT},
+	{ "vehicle_front", SHIPSURF_DAMAGE_FRONT_HEAVY, SHIPSURF_DAMAGE_FRONT_LIGHT },
+	{ "vehicle_back", SHIPSURF_DAMAGE_BACK_HEAVY, SHIPSURF_DAMAGE_BACK_LIGHT },
+	{ "vehicle_left", SHIPSURF_DAMAGE_LEFT_HEAVY, SHIPSURF_DAMAGE_LEFT_LIGHT },
+	{ "vehicle_right", SHIPSURF_DAMAGE_RIGHT_HEAVY, SHIPSURF_DAMAGE_RIGHT_LIGHT },
 };
 
 // A HUD image of a vehicle. The game reads the .veh file and cannot register shaders, so it keeps the name.

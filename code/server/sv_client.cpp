@@ -318,10 +318,10 @@ using ucmd_t = struct
 };
 
 static ucmd_t ucmds[] = {
-	{"userinfo", SV_UpdateUserinfo_f},
-	{"disconnect", SV_Disconnect_f},
+	{ "userinfo", SV_UpdateUserinfo_f },
+	{ "disconnect", SV_Disconnect_f },
 
-	{nullptr, nullptr}
+	{ nullptr, nullptr }
 };
 
 /*

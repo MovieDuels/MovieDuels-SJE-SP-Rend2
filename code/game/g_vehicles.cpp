@@ -2957,7 +2957,7 @@ static void G_FighterTestOpenAir(const gentity_t* player, const float height, ve
 {
 	vec3_t boxMins = { -400.0f, -400.0f, -150.0f };
 	vec3_t boxMaxs = { 400.0f, 400.0f, 150.0f };
-	static const vec3_t dirs[6] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+	static const vec3_t dirs[6] = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
 	float bestScore = -1.0f;
 
 	VectorCopy(player->client->ps.origin, out);

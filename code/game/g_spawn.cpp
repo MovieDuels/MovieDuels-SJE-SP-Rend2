@@ -250,7 +250,7 @@ stringID_table_t flagTable[] =
 {
 	//"noTED", EF_NO_TED,
 	//stringID_table_t Must end with a null entry
-	{"", 0}
+	{ "", 0 }
 };
 
 //
@@ -321,155 +321,155 @@ using field_t = struct
 field_t fields[] =
 {
 	//Fields for benefit of Radiant only
-	{"autobound", FOFS(classname), F_IGNORE},
-	{"groupname", FOFS(classname), F_IGNORE},
-	{"noBasicSounds", FOFS(classname), F_IGNORE}, //will be looked at separately
-	{"noCombatSounds", FOFS(classname), F_IGNORE}, //will be looked at separately
-	{"noExtraSounds", FOFS(classname), F_IGNORE}, //will be looked at separately
+	{ "autobound", FOFS(classname), F_IGNORE },
+	{ "groupname", FOFS(classname), F_IGNORE },
+	{ "noBasicSounds", FOFS(classname), F_IGNORE }, //will be looked at separately
+	{ "noCombatSounds", FOFS(classname), F_IGNORE }, //will be looked at separately
+	{ "noExtraSounds", FOFS(classname), F_IGNORE }, //will be looked at separately
 
-	{"classname", FOFS(classname), F_LSTRING},
-	{"origin", FOFS(s.origin), F_VECTOR},
-	{"mins", FOFS(mins), F_VECTOR},
-	{"maxs", FOFS(maxs), F_VECTOR},
-	{"model", FOFS(model), F_LSTRING},
-	{"model2", FOFS(model2), F_LSTRING},
-	{"model3", FOFS(target), F_LSTRING}, //for misc_replicator_item only!!!
-	{"model4", FOFS(target2), F_LSTRING}, //for misc_replicator_item only!!!
-	{"model5", FOFS(target3), F_LSTRING}, //for misc_replicator_item only!!!
-	{"model6", FOFS(target4), F_LSTRING}, //for misc_replicator_item only!!!
-	{"spawnflags", FOFS(spawnflags), F_INT},
-	{"speed", FOFS(speed), F_FLOAT},
-	{"duration", FOFS(speed), F_FLOAT}, //for psycho jism
-	{"interest", FOFS(health), F_INT}, //For target_interest
-	{"target", FOFS(target), F_LSTRING},
-	{"target2", FOFS(target2), F_LSTRING},
-	{"target3", FOFS(target3), F_LSTRING},
-	{"target4", FOFS(target4), F_LSTRING},
-	{"targetJump", FOFS(targetJump), F_LSTRING},
-	{"targetname", FOFS(targetname), F_LSTRING},
-	{"material", FOFS(material), F_INT},
-	{"message", FOFS(message), F_LSTRING},
-	{"team", FOFS(team), F_LSTRING},
-	{"mapname", FOFS(message), F_LSTRING},
-	{"wait", FOFS(wait), F_FLOAT},
-	{"finaltime", FOFS(wait), F_FLOAT}, //For dlight
-	{"random", FOFS(random), F_FLOAT},
-	{"FOV", FOFS(random), F_FLOAT}, //for ref_tags and trigger_visibles
-	{"count", FOFS(count), F_INT},
-	{"bounceCount", FOFS(bounceCount), F_INT},
-	{"health", FOFS(health), F_INT},
-	{"friction", FOFS(health), F_INT}, //For target_friction_change
-	{"light", 0, F_IGNORE},
-	{"dmg", FOFS(damage), F_INT},
-	{"angles", FOFS(s.angles), F_VECTOR},
-	{"angle", FOFS(s.angles), F_ANGLEHACK},
-	{"modelAngles", FOFS(modelAngles), F_VECTOR},
-	{"cameraGroup", FOFS(cameraGroup), F_LSTRING},
-	{"radius", FOFS(radius), F_FLOAT},
-	{"hiderange", FOFS(radius), F_FLOAT}, //for triggers only
-	{"starttime", FOFS(radius), F_FLOAT}, //for dlight
-	{"turfrange", FOFS(radius), F_FLOAT}, //for sand creatures
-	{"type", FOFS(count), F_FLOAT}, //for fx_crew_beam_in
-	{"fullName", FOFS(fullName), F_LSTRING},
-	{"fxfile", FOFS(fxFile), F_LSTRING},
-	{"fxfile2", FOFS(cameraGroup), F_LSTRING},
-	{"noVisTime", FOFS(endFrame), F_INT}, //for NPC_Vehicle
-	{"endFrame", FOFS(endFrame), F_INT}, //for func_usable shader animation
-	{"linear", FOFS(alt_fire), F_INT}, //for movers to use linear movement
-	{"weapon",FOFS(paintarget), F_LSTRING}, //for misc_weapon_shooter only
+	{ "classname", FOFS(classname), F_LSTRING },
+	{ "origin", FOFS(s.origin), F_VECTOR },
+	{ "mins", FOFS(mins), F_VECTOR },
+	{ "maxs", FOFS(maxs), F_VECTOR },
+	{ "model", FOFS(model), F_LSTRING },
+	{ "model2", FOFS(model2), F_LSTRING },
+	{ "model3", FOFS(target), F_LSTRING }, //for misc_replicator_item only!!!
+	{ "model4", FOFS(target2), F_LSTRING }, //for misc_replicator_item only!!!
+	{ "model5", FOFS(target3), F_LSTRING }, //for misc_replicator_item only!!!
+	{ "model6", FOFS(target4), F_LSTRING }, //for misc_replicator_item only!!!
+	{ "spawnflags", FOFS(spawnflags), F_INT },
+	{ "speed", FOFS(speed), F_FLOAT },
+	{ "duration", FOFS(speed), F_FLOAT }, //for psycho jism
+	{ "interest", FOFS(health), F_INT }, //For target_interest
+	{ "target", FOFS(target), F_LSTRING },
+	{ "target2", FOFS(target2), F_LSTRING },
+	{ "target3", FOFS(target3), F_LSTRING },
+	{ "target4", FOFS(target4), F_LSTRING },
+	{ "targetJump", FOFS(targetJump), F_LSTRING },
+	{ "targetname", FOFS(targetname), F_LSTRING },
+	{ "material", FOFS(material), F_INT },
+	{ "message", FOFS(message), F_LSTRING },
+	{ "team", FOFS(team), F_LSTRING },
+	{ "mapname", FOFS(message), F_LSTRING },
+	{ "wait", FOFS(wait), F_FLOAT },
+	{ "finaltime", FOFS(wait), F_FLOAT }, //For dlight
+	{ "random", FOFS(random), F_FLOAT },
+	{ "FOV", FOFS(random), F_FLOAT }, //for ref_tags and trigger_visibles
+	{ "count", FOFS(count), F_INT },
+	{ "bounceCount", FOFS(bounceCount), F_INT },
+	{ "health", FOFS(health), F_INT },
+	{ "friction", FOFS(health), F_INT }, //For target_friction_change
+	{ "light", 0, F_IGNORE },
+	{ "dmg", FOFS(damage), F_INT },
+	{ "angles", FOFS(s.angles), F_VECTOR },
+	{ "angle", FOFS(s.angles), F_ANGLEHACK },
+	{ "modelAngles", FOFS(modelAngles), F_VECTOR },
+	{ "cameraGroup", FOFS(cameraGroup), F_LSTRING },
+	{ "radius", FOFS(radius), F_FLOAT },
+	{ "hiderange", FOFS(radius), F_FLOAT }, //for triggers only
+	{ "starttime", FOFS(radius), F_FLOAT }, //for dlight
+	{ "turfrange", FOFS(radius), F_FLOAT }, //for sand creatures
+	{ "type", FOFS(count), F_FLOAT }, //for fx_crew_beam_in
+	{ "fullName", FOFS(fullName), F_LSTRING },
+	{ "fxfile", FOFS(fxFile), F_LSTRING },
+	{ "fxfile2", FOFS(cameraGroup), F_LSTRING },
+	{ "noVisTime", FOFS(endFrame), F_INT }, //for NPC_Vehicle
+	{ "endFrame", FOFS(endFrame), F_INT }, //for func_usable shader animation
+	{ "linear", FOFS(alt_fire), F_INT }, //for movers to use linear movement
+	{ "weapon",FOFS(paintarget), F_LSTRING }, //for misc_weapon_shooter only
 
 	//Script parms - will this handle clamping to 16 or whatever length of parm[0] is?
-	{"parm1", 0, F_PARM1},
-	{"parm2", 0, F_PARM2},
-	{"parm3", 0, F_PARM3},
-	{"parm4", 0, F_PARM4},
-	{"parm5", 0, F_PARM5},
-	{"parm6", 0, F_PARM6},
-	{"parm7", 0, F_PARM7},
-	{"parm8", 0, F_PARM8},
-	{"parm9", 0, F_PARM9},
-	{"parm10", 0, F_PARM10},
-	{"parm11", 0, F_PARM11},
-	{"parm12", 0, F_PARM12},
-	{"parm13", 0, F_PARM13},
-	{"parm14", 0, F_PARM14},
-	{"parm15", 0, F_PARM15},
-	{"parm16", 0, F_PARM16},
+	{ "parm1", 0, F_PARM1 },
+	{ "parm2", 0, F_PARM2 },
+	{ "parm3", 0, F_PARM3 },
+	{ "parm4", 0, F_PARM4 },
+	{ "parm5", 0, F_PARM5 },
+	{ "parm6", 0, F_PARM6 },
+	{ "parm7", 0, F_PARM7 },
+	{ "parm8", 0, F_PARM8 },
+	{ "parm9", 0, F_PARM9 },
+	{ "parm10", 0, F_PARM10 },
+	{ "parm11", 0, F_PARM11 },
+	{ "parm12", 0, F_PARM12 },
+	{ "parm13", 0, F_PARM13 },
+	{ "parm14", 0, F_PARM14 },
+	{ "parm15", 0, F_PARM15 },
+	{ "parm16", 0, F_PARM16 },
 
 	//MCG - Begin
 	//extra fields for ents
-	{"delay", FOFS(delay), F_INT},
-	{"sounds", FOFS(sounds), F_INT},
-	{"closetarget", FOFS(closetarget), F_LSTRING}, //for doors
-	{"opentarget", FOFS(opentarget), F_LSTRING}, //for doors
-	{"paintarget", FOFS(paintarget), F_LSTRING}, //for doors
-	{"soundGroup", FOFS(paintarget), F_LSTRING}, //for target_speakers
-	{"backwardstarget", FOFS(paintarget), F_LSTRING}, //for trigger_bidirectional
-	{"splashDamage", FOFS(splashDamage), F_INT},
-	{"splashRadius", FOFS(splashRadius), F_INT},
+	{ "delay", FOFS(delay), F_INT },
+	{ "sounds", FOFS(sounds), F_INT },
+	{ "closetarget", FOFS(closetarget), F_LSTRING }, //for doors
+	{ "opentarget", FOFS(opentarget), F_LSTRING }, //for doors
+	{ "paintarget", FOFS(paintarget), F_LSTRING }, //for doors
+	{ "soundGroup", FOFS(paintarget), F_LSTRING }, //for target_speakers
+	{ "backwardstarget", FOFS(paintarget), F_LSTRING }, //for trigger_bidirectional
+	{ "splashDamage", FOFS(splashDamage), F_INT },
+	{ "splashRadius", FOFS(splashRadius), F_INT },
 	//Script stuff
-	{"spawnscript", FOFS(behaviorSet[BSET_SPAWN]), F_LSTRING}, //name of script to run
-	{"usescript", FOFS(behaviorSet[BSET_USE]), F_LSTRING}, //name of script to run
-	{"awakescript", FOFS(behaviorSet[BSET_AWAKE]), F_LSTRING}, //name of script to run
-	{"angerscript", FOFS(behaviorSet[BSET_ANGER]), F_LSTRING}, //name of script to run
-	{"attackscript", FOFS(behaviorSet[BSET_ATTACK]), F_LSTRING}, //name of script to run
-	{"victoryscript", FOFS(behaviorSet[BSET_VICTORY]), F_LSTRING}, //name of script to run
-	{"lostenemyscript", FOFS(behaviorSet[BSET_LOSTENEMY]), F_LSTRING}, //name of script to run
-	{"painscript", FOFS(behaviorSet[BSET_PAIN]), F_LSTRING}, //name of script to run
-	{"fleescript", FOFS(behaviorSet[BSET_FLEE]), F_LSTRING}, //name of script to run
-	{"deathscript", FOFS(behaviorSet[BSET_DEATH]), F_LSTRING}, //name of script to run
-	{"delayscript", FOFS(behaviorSet[BSET_DELAYED]), F_LSTRING}, //name of script to run
-	{"delayscripttime", FOFS(delayScriptTime), F_INT}, //name of script to run
-	{"blockedscript", FOFS(behaviorSet[BSET_BLOCKED]), F_LSTRING}, //name of script to run
-	{"ffirescript", FOFS(behaviorSet[BSET_FFIRE]), F_LSTRING}, //name of script to run
-	{"ffdeathscript", FOFS(behaviorSet[BSET_FFDEATH]), F_LSTRING}, //name of script to run
-	{"mindtrickscript", FOFS(behaviorSet[BSET_MINDTRICK]), F_LSTRING}, //name of script to run
-	{"script_targetname", FOFS(script_targetname), F_LSTRING}, //scripts look for this when "affecting"
+	{ "spawnscript", FOFS(behaviorSet[BSET_SPAWN]), F_LSTRING }, //name of script to run
+	{ "usescript", FOFS(behaviorSet[BSET_USE]), F_LSTRING }, //name of script to run
+	{ "awakescript", FOFS(behaviorSet[BSET_AWAKE]), F_LSTRING }, //name of script to run
+	{ "angerscript", FOFS(behaviorSet[BSET_ANGER]), F_LSTRING }, //name of script to run
+	{ "attackscript", FOFS(behaviorSet[BSET_ATTACK]), F_LSTRING }, //name of script to run
+	{ "victoryscript", FOFS(behaviorSet[BSET_VICTORY]), F_LSTRING }, //name of script to run
+	{ "lostenemyscript", FOFS(behaviorSet[BSET_LOSTENEMY]), F_LSTRING }, //name of script to run
+	{ "painscript", FOFS(behaviorSet[BSET_PAIN]), F_LSTRING }, //name of script to run
+	{ "fleescript", FOFS(behaviorSet[BSET_FLEE]), F_LSTRING }, //name of script to run
+	{ "deathscript", FOFS(behaviorSet[BSET_DEATH]), F_LSTRING }, //name of script to run
+	{ "delayscript", FOFS(behaviorSet[BSET_DELAYED]), F_LSTRING }, //name of script to run
+	{ "delayscripttime", FOFS(delayScriptTime), F_INT }, //name of script to run
+	{ "blockedscript", FOFS(behaviorSet[BSET_BLOCKED]), F_LSTRING }, //name of script to run
+	{ "ffirescript", FOFS(behaviorSet[BSET_FFIRE]), F_LSTRING }, //name of script to run
+	{ "ffdeathscript", FOFS(behaviorSet[BSET_FFDEATH]), F_LSTRING }, //name of script to run
+	{ "mindtrickscript", FOFS(behaviorSet[BSET_MINDTRICK]), F_LSTRING }, //name of script to run
+	{ "script_targetname", FOFS(script_targetname), F_LSTRING }, //scripts look for this when "affecting"
 	//For NPCs
-	{"NPC_targetname", FOFS(NPC_targetname), F_LSTRING},
-	{"NPC_target", FOFS(NPC_target), F_LSTRING},
-	{"NPC_target2", FOFS(target2), F_LSTRING}, //NPC_spawner only
-	{"NPC_target4", FOFS(target4), F_LSTRING}, //NPC_spawner only
-	{"NPC_type", FOFS(NPC_type), F_LSTRING},
+	{ "NPC_targetname", FOFS(NPC_targetname), F_LSTRING },
+	{ "NPC_target", FOFS(NPC_target), F_LSTRING },
+	{ "NPC_target2", FOFS(target2), F_LSTRING }, //NPC_spawner only
+	{ "NPC_target4", FOFS(target4), F_LSTRING }, //NPC_spawner only
+	{ "NPC_type", FOFS(NPC_type), F_LSTRING },
 
-	{"ownername", FOFS(ownername), F_LSTRING},
+	{ "ownername", FOFS(ownername), F_LSTRING },
 	//for weapon_saber
-	{"saberType", FOFS(NPC_type), F_LSTRING},
-	{"saberColor", FOFS(NPC_targetname), F_LSTRING},
-	{"saberLeftHand", FOFS(alt_fire), F_INT},
-	{"saberSolo", FOFS(loopAnim), F_INT},
-	{"saberPitch", FOFS(random), F_FLOAT},
+	{ "saberType", FOFS(NPC_type), F_LSTRING },
+	{ "saberColor", FOFS(NPC_targetname), F_LSTRING },
+	{ "saberLeftHand", FOFS(alt_fire), F_INT },
+	{ "saberSolo", FOFS(loopAnim), F_INT },
+	{ "saberPitch", FOFS(random), F_FLOAT },
 	//freaky camera shit
-	{"startRGBA", FOFS(startRGBA), F_VECTOR4},
-	{"finalRGBA", FOFS(finalRGBA), F_VECTOR4},
+	{ "startRGBA", FOFS(startRGBA), F_VECTOR4 },
+	{ "finalRGBA", FOFS(finalRGBA), F_VECTOR4 },
 	//MCG - End
 
-	{"soundSet", FOFS(soundSet), F_LSTRING},
-	{"mass", FOFS(mass), F_FLOAT}, //really only used for pushable misc_model_breakables
-	{"icon", FOFS(radarIcon), F_LSTRING},
+	{ "soundSet", FOFS(soundSet), F_LSTRING },
+	{ "mass", FOFS(mass), F_FLOAT }, //really only used for pushable misc_model_breakables
+	{ "icon", FOFS(radarIcon), F_LSTRING },
 
 	//q3map stuff
-	{"scale", 0, F_IGNORE},
-	{"modelscale", 0, F_IGNORE},
-	{"modelscale_vec", 0, F_IGNORE},
-	{"style", 0, F_IGNORE},
-	{"lip", 0, F_IGNORE},
-	{"switch_style", 0, F_IGNORE},
-	{"height", 0, F_IGNORE},
-	{"noise", 0, F_IGNORE}, //SP_target_speaker
-	{"gravity", 0, F_IGNORE}, //SP_target_gravity_change
+	{ "scale", 0, F_IGNORE },
+	{ "modelscale", 0, F_IGNORE },
+	{ "modelscale_vec", 0, F_IGNORE },
+	{ "style", 0, F_IGNORE },
+	{ "lip", 0, F_IGNORE },
+	{ "switch_style", 0, F_IGNORE },
+	{ "height", 0, F_IGNORE },
+	{ "noise", 0, F_IGNORE }, //SP_target_speaker
+	{ "gravity", 0, F_IGNORE }, //SP_target_gravity_change
 
-	{"storyhead", 0, F_IGNORE}, //SP_target_level_change
-	{"tier_storyinfo", 0, F_IGNORE}, //SP_target_level_change
-	{"zoffset", 0, F_IGNORE}, //used by misc_model_static
-	{"music", 0, F_IGNORE}, //used by target_play_music
-	{"forcevisible", 0, F_IGNORE}, //for force sight on multiple model entities
-	{"redcrosshair", 0, F_IGNORE}, //for red crosshairs on breakables
-	{"nodelay", 0, F_IGNORE}, //for Reborn & Cultist NPCs
+	{ "storyhead", 0, F_IGNORE }, //SP_target_level_change
+	{ "tier_storyinfo", 0, F_IGNORE }, //SP_target_level_change
+	{ "zoffset", 0, F_IGNORE }, //used by misc_model_static
+	{ "music", 0, F_IGNORE }, //used by target_play_music
+	{ "forcevisible", 0, F_IGNORE }, //for force sight on multiple model entities
+	{ "redcrosshair", 0, F_IGNORE }, //for red crosshairs on breakables
+	{ "nodelay", 0, F_IGNORE }, //for Reborn & Cultist NPCs
 
-	{"player_victoryscript", FOFS(behaviorSet[UNDYINGPLAYERVICTORY]), F_LSTRING }, //name of script to run
+	{ "player_victoryscript", FOFS(behaviorSet[UNDYINGPLAYERVICTORY]), F_LSTRING }, //name of script to run
 
-	{nullptr}
+	{ nullptr }
 };
 
 using spawn_t = struct
@@ -736,269 +736,269 @@ void SP_NPC_md_darkside_sith2_random(gentity_t* self);
 void SP_NPC_md_darkside_gunners_random(gentity_t* self);
 
 spawn_t spawns[] = {
-	{"info_player_start", SP_info_player_start},
-	{"info_player_start_blue", SP_info_player_start_blue},
-	{"info_player_start_red", SP_info_player_start_red},
-	{"info_player_deathmatch", SP_info_player_deathmatch},
-	{"info_player_duel", SP_info_player_duel},
-	{"info_player_duel1", SP_info_player_duel1},
-	{"info_player_duel2", SP_info_player_duel2},
-	{"info_player_intermission", SP_info_player_intermission},
-	{"info_player_intermission_blue", SP_info_player_intermission_blue},
-	{"info_player_intermission_red", SP_info_player_intermission_red},
-	{"info_player_siegeteam1", SP_info_player_siegeteam1},
-	{"info_player_siegeteam2", SP_info_player_siegeteam2},
+	{ "info_player_start", SP_info_player_start },
+	{ "info_player_start_blue", SP_info_player_start_blue },
+	{ "info_player_start_red", SP_info_player_start_red },
+	{ "info_player_deathmatch", SP_info_player_deathmatch },
+	{ "info_player_duel", SP_info_player_duel },
+	{ "info_player_duel1", SP_info_player_duel1 },
+	{ "info_player_duel2", SP_info_player_duel2 },
+	{ "info_player_intermission", SP_info_player_intermission },
+	{ "info_player_intermission_blue", SP_info_player_intermission_blue },
+	{ "info_player_intermission_red", SP_info_player_intermission_red },
+	{ "info_player_siegeteam1", SP_info_player_siegeteam1 },
+	{ "info_player_siegeteam2", SP_info_player_siegeteam2 },
 
-	{"func_plat", SP_func_plat},
-	{"func_button", SP_func_button},
-	{"func_door", SP_func_door},
-	{"func_static", SP_func_static},
-	{"func_rotating", SP_func_rotating},
-	{"func_bobbing", SP_func_bobbing},
-	{"func_breakable", SP_func_breakable},
-	{"func_pendulum", SP_func_pendulum},
-	{"func_train", SP_func_train},
-	{"func_timer", SP_func_timer}, // rename trigger_timer?
-	{"func_wall", SP_func_wall},
-	{"func_usable", SP_func_usable},
-	{"func_glass", SP_func_glass},
+	{ "func_plat", SP_func_plat },
+	{ "func_button", SP_func_button },
+	{ "func_door", SP_func_door },
+	{ "func_static", SP_func_static },
+	{ "func_rotating", SP_func_rotating },
+	{ "func_bobbing", SP_func_bobbing },
+	{ "func_breakable", SP_func_breakable },
+	{ "func_pendulum", SP_func_pendulum },
+	{ "func_train", SP_func_train },
+	{ "func_timer", SP_func_timer }, // rename trigger_timer?
+	{ "func_wall", SP_func_wall },
+	{ "func_usable", SP_func_usable },
+	{ "func_glass", SP_func_glass },
 
-	{"rail_mover", SP_rail_mover},
-	{"rail_track", SP_rail_track},
-	{"rail_lane", SP_rail_lane},
+	{ "rail_mover", SP_rail_mover },
+	{ "rail_track", SP_rail_track },
+	{ "rail_lane", SP_rail_lane },
 
-	{"trigger_always", SP_trigger_always},
-	{"trigger_multiple", SP_trigger_multiple},
-	{"trigger_once", SP_trigger_once},
-	{"trigger_push", SP_trigger_push},
-	{"trigger_teleport", SP_trigger_teleport},
-	{"trigger_hurt", SP_trigger_hurt},
-	{"trigger_bidirectional", SP_trigger_bidirectional},
-	{"trigger_entdist", SP_trigger_entdist},
-	{"trigger_location", SP_trigger_location},
-	{"trigger_visible", SP_trigger_visible},
-	{"trigger_space", SP_trigger_space},
-	{"trigger_shipboundary", SP_trigger_shipboundary},
-	{"trigger_hyperspace", SP_trigger_hyperspace},
-	{"trigger_asteroid_field", SP_trigger_asteroid_field},
+	{ "trigger_always", SP_trigger_always },
+	{ "trigger_multiple", SP_trigger_multiple },
+	{ "trigger_once", SP_trigger_once },
+	{ "trigger_push", SP_trigger_push },
+	{ "trigger_teleport", SP_trigger_teleport },
+	{ "trigger_hurt", SP_trigger_hurt },
+	{ "trigger_bidirectional", SP_trigger_bidirectional },
+	{ "trigger_entdist", SP_trigger_entdist },
+	{ "trigger_location", SP_trigger_location },
+	{ "trigger_visible", SP_trigger_visible },
+	{ "trigger_space", SP_trigger_space },
+	{ "trigger_shipboundary", SP_trigger_shipboundary },
+	{ "trigger_hyperspace", SP_trigger_hyperspace },
+	{ "trigger_asteroid_field", SP_trigger_asteroid_field },
 
-	{"target_give", SP_target_give},
-	{"target_delay", SP_target_delay},
-	{"target_speaker", SP_target_speaker},
-	{"target_print", SP_target_print},
-	{"target_laser", SP_target_laser},
-	{"target_score", SP_target_score},
-	{"target_teleporter", SP_target_teleporter},
-	{"target_relay", SP_target_relay},
-	{"target_kill", SP_target_kill},
-	{"target_position", SP_target_position},
-	{"target_location", SP_target_location},
-	{"target_push", SP_target_push},
-	{"target_random", SP_target_random},
-	{"target_counter", SP_target_counter},
-	{"target_scriptrunner", SP_target_scriptrunner},
-	{"target_interest", SP_target_interest},
-	{"target_activate", SP_target_activate},
-	{"target_deactivate", SP_target_deactivate},
-	{"target_gravity_change", SP_target_gravity_change},
-	{"target_friction_change", SP_target_friction_change},
-	{"target_level_change", SP_target_level_change},
-	{"target_change_parm", SP_target_change_parm},
-	{"target_play_music", SP_target_play_music},
-	{"target_autosave", SP_target_autosave},
-	{"target_secret", SP_target_secret},
+	{ "target_give", SP_target_give },
+	{ "target_delay", SP_target_delay },
+	{ "target_speaker", SP_target_speaker },
+	{ "target_print", SP_target_print },
+	{ "target_laser", SP_target_laser },
+	{ "target_score", SP_target_score },
+	{ "target_teleporter", SP_target_teleporter },
+	{ "target_relay", SP_target_relay },
+	{ "target_kill", SP_target_kill },
+	{ "target_position", SP_target_position },
+	{ "target_location", SP_target_location },
+	{ "target_push", SP_target_push },
+	{ "target_random", SP_target_random },
+	{ "target_counter", SP_target_counter },
+	{ "target_scriptrunner", SP_target_scriptrunner },
+	{ "target_interest", SP_target_interest },
+	{ "target_activate", SP_target_activate },
+	{ "target_deactivate", SP_target_deactivate },
+	{ "target_gravity_change", SP_target_gravity_change },
+	{ "target_friction_change", SP_target_friction_change },
+	{ "target_level_change", SP_target_level_change },
+	{ "target_change_parm", SP_target_change_parm },
+	{ "target_play_music", SP_target_play_music },
+	{ "target_autosave", SP_target_autosave },
+	{ "target_secret", SP_target_secret },
 
-	{"light", SP_light},
-	{"info_null", SP_info_null},
-	{"func_group", SP_info_null},
-	{"info_notnull", SP_info_notnull}, // use target_position instead
-	{"path_corner", SP_path_corner},
+	{ "light", SP_light },
+	{ "info_null", SP_info_null },
+	{ "func_group", SP_info_null },
+	{ "info_notnull", SP_info_notnull }, // use target_position instead
+	{ "path_corner", SP_path_corner },
 
-	{"misc_teleporter", SP_misc_teleporter},
-	{"misc_teleporter_dest", SP_misc_teleporter_dest},
-	{"misc_model", SP_misc_model},
-	{"misc_model_static", SP_misc_model_static},
-	{"misc_turret", SP_misc_turret},
-	{"misc_turretG2", SP_misc_turretG2},
-	{"misc_ns_turret", SP_misc_ns_turret},
-	{"misc_laser_arm", SP_laser_arm},
-	{"misc_ion_cannon", SP_misc_ion_cannon},
-	{"misc_sentry_turret", SP_PAS},
-	{"misc_maglock", SP_misc_maglock},
-	{"misc_weapon_shooter", SP_misc_weapon_shooter},
-	{"misc_weather_zone", SP_misc_weather_zone},
+	{ "misc_teleporter", SP_misc_teleporter },
+	{ "misc_teleporter_dest", SP_misc_teleporter_dest },
+	{ "misc_model", SP_misc_model },
+	{ "misc_model_static", SP_misc_model_static },
+	{ "misc_turret", SP_misc_turret },
+	{ "misc_turretG2", SP_misc_turretG2 },
+	{ "misc_ns_turret", SP_misc_ns_turret },
+	{ "misc_laser_arm", SP_laser_arm },
+	{ "misc_ion_cannon", SP_misc_ion_cannon },
+	{ "misc_sentry_turret", SP_PAS },
+	{ "misc_maglock", SP_misc_maglock },
+	{ "misc_weapon_shooter", SP_misc_weapon_shooter },
+	{ "misc_weather_zone", SP_misc_weather_zone },
 
-	{"misc_model_ghoul", SP_misc_model_ghoul},
-	{"misc_model_breakable", SP_misc_model_breakable},
-	{"misc_portal_surface", SP_misc_portal_surface},
-	{"misc_portal_camera", SP_misc_portal_camera},
+	{ "misc_model_ghoul", SP_misc_model_ghoul },
+	{ "misc_model_breakable", SP_misc_model_breakable },
+	{ "misc_portal_surface", SP_misc_portal_surface },
+	{ "misc_portal_camera", SP_misc_portal_camera },
 
-	{"misc_bsp", SP_misc_bsp},
-	{"terrain", SP_terrain},
-	{"misc_skyportal", SP_misc_skyportal},
+	{ "misc_bsp", SP_misc_bsp },
+	{ "terrain", SP_terrain },
+	{ "misc_skyportal", SP_misc_skyportal },
 
-	{"misc_camera_focus", SP_misc_camera_focus},
-	{"misc_camera_track", SP_misc_camera_track},
-	{"misc_dlight", SP_misc_dlight},
-	{"misc_replicator_item", SP_misc_replicator_item},
-	{"misc_trip_mine", SP_misc_trip_mine},
-	{"misc_security_panel", SP_misc_security_panel},
-	{"misc_camera", SP_misc_camera},
-	{"misc_spotlight", SP_misc_spotlight},
-	{"misc_panel_turret", SP_misc_panel_turret},
-	{"misc_model_welder", SP_misc_model_welder},
-	{"misc_model_jabba_cam", SP_misc_model_jabba_cam},
-	{"misc_model_shield_power_converter", SP_misc_model_shield_power_converter},
-	{"misc_model_ammo_power_converter", SP_misc_model_ammo_power_converter},
-	{"misc_model_bomb_planted", SP_misc_model_bomb_planted},
-	{"misc_model_beacon", SP_misc_model_beacon},
-	{"misc_shield_floor_unit", SP_misc_shield_floor_unit},
-	{"misc_ammo_floor_unit", SP_misc_ammo_floor_unit},
+	{ "misc_camera_focus", SP_misc_camera_focus },
+	{ "misc_camera_track", SP_misc_camera_track },
+	{ "misc_dlight", SP_misc_dlight },
+	{ "misc_replicator_item", SP_misc_replicator_item },
+	{ "misc_trip_mine", SP_misc_trip_mine },
+	{ "misc_security_panel", SP_misc_security_panel },
+	{ "misc_camera", SP_misc_camera },
+	{ "misc_spotlight", SP_misc_spotlight },
+	{ "misc_panel_turret", SP_misc_panel_turret },
+	{ "misc_model_welder", SP_misc_model_welder },
+	{ "misc_model_jabba_cam", SP_misc_model_jabba_cam },
+	{ "misc_model_shield_power_converter", SP_misc_model_shield_power_converter },
+	{ "misc_model_ammo_power_converter", SP_misc_model_ammo_power_converter },
+	{ "misc_model_bomb_planted", SP_misc_model_bomb_planted },
+	{ "misc_model_beacon", SP_misc_model_beacon },
+	{ "misc_shield_floor_unit", SP_misc_shield_floor_unit },
+	{ "misc_ammo_floor_unit", SP_misc_ammo_floor_unit },
 
-	{"misc_model_gun_rack", SP_misc_model_gun_rack},
-	{"misc_model_ammo_rack", SP_misc_model_ammo_rack},
-	{"misc_model_cargo_small", SP_misc_model_cargo_small},
+	{ "misc_model_gun_rack", SP_misc_model_gun_rack },
+	{ "misc_model_ammo_rack", SP_misc_model_ammo_rack },
+	{ "misc_model_cargo_small", SP_misc_model_cargo_small },
 
-	{"misc_exploding_crate", SP_misc_exploding_crate},
-	{"misc_gas_tank", SP_misc_gas_tank},
-	{"misc_crystal_crate", SP_misc_crystal_crate},
-	{"misc_atst_drivable", SP_misc_atst_drivable},
+	{ "misc_exploding_crate", SP_misc_exploding_crate },
+	{ "misc_gas_tank", SP_misc_gas_tank },
+	{ "misc_crystal_crate", SP_misc_crystal_crate },
+	{ "misc_atst_drivable", SP_misc_atst_drivable },
 
-	{"misc_cubemap", SP_misc_cubemap},
+	{ "misc_cubemap", SP_misc_cubemap },
 
-	{"shooter_rocket", SP_shooter_rocket},
-	{"shooter_grenade", SP_shooter_grenade},
-	{"shooter_plasma", SP_shooter_plasma},
+	{ "shooter_rocket", SP_shooter_rocket },
+	{ "shooter_grenade", SP_shooter_grenade },
+	{ "shooter_plasma", SP_shooter_plasma },
 
-	{"ref_tag", SP_referenceTag},
-	{"ref_tag_huge", SP_referenceTag}, // MP maps: the same tag, only drawn bigger in the editor
+	{ "ref_tag", SP_referenceTag },
+	{ "ref_tag_huge", SP_referenceTag }, // MP maps: the same tag, only drawn bigger in the editor
 
 	//new NPC ents
-	{"NPC_spawner", SP_NPC_spawner},
+	{ "NPC_spawner", SP_NPC_spawner },
 
-	{"NPC_Vehicle", SP_NPC_Vehicle},
-	{"NPC_Player", SP_NPC_Player},
-	{"NPC_Projection_far", SP_NPC_Projection_far},
-	{"NPC_Projection_near", SP_NPC_Projection_near},
-	{"NPC_Projection_close", SP_NPC_Projection_close},
-	{"NPC_Kyle", SP_NPC_Kyle},
-	{"NPC_Lando", SP_NPC_Lando},
-	{"NPC_Jan", SP_NPC_Jan},
-	{"NPC_Luke", SP_NPC_Luke},
-	{"NPC_MonMothma", SP_NPC_MonMothma},
-	{"NPC_Rosh_Penin", SP_NPC_Rosh_Penin},
-	{"NPC_Tavion", SP_NPC_Tavion},
-	{"NPC_Tavion_New", SP_NPC_Tavion_New},
-	{"NPC_Alora", SP_NPC_Alora},
-	{"NPC_Reelo", SP_NPC_Reelo},
-	{"NPC_Galak", SP_NPC_Galak},
-	{"NPC_Desann", SP_NPC_Desann},
-	{"NPC_Rax", SP_NPC_Rax},
-	{"NPC_BobaFett", SP_NPC_BobaFett},
-	{"NPC_Ragnos", SP_NPC_Ragnos},
-	{"NPC_Lannik_Racto", SP_NPC_Lannik_Racto},
-	{"NPC_Kothos", SP_NPC_Kothos},
-	{"NPC_Chewbacca", SP_NPC_Chewbacca},
-	{"NPC_Bartender", SP_NPC_Bartender},
-	{"NPC_MorganKatarn", SP_NPC_MorganKatarn},
-	{"NPC_Jedi", SP_NPC_Jedi},
-	{"NPC_Prisoner", SP_NPC_Prisoner},
-	{"NPC_Merchant", SP_NPC_Merchant},
-	{"NPC_Rebel", SP_NPC_Rebel},
-	{"NPC_Human_Merc", SP_NPC_Human_Merc},
-	{"NPC_Stormtrooper", SP_NPC_Stormtrooper},
-	{"NPC_StormtrooperOfficer", SP_NPC_StormtrooperOfficer},
-	{"NPC_Tie_Pilot", SP_NPC_Tie_Pilot},
-	{"NPC_Snowtrooper", SP_NPC_Snowtrooper},
-	{"NPC_RocketTrooper", SP_NPC_RocketTrooper},
-	{"NPC_HazardTrooper", SP_NPC_HazardTrooper},
+	{ "NPC_Vehicle", SP_NPC_Vehicle },
+	{ "NPC_Player", SP_NPC_Player },
+	{ "NPC_Projection_far", SP_NPC_Projection_far },
+	{ "NPC_Projection_near", SP_NPC_Projection_near },
+	{ "NPC_Projection_close", SP_NPC_Projection_close },
+	{ "NPC_Kyle", SP_NPC_Kyle },
+	{ "NPC_Lando", SP_NPC_Lando },
+	{ "NPC_Jan", SP_NPC_Jan },
+	{ "NPC_Luke", SP_NPC_Luke },
+	{ "NPC_MonMothma", SP_NPC_MonMothma },
+	{ "NPC_Rosh_Penin", SP_NPC_Rosh_Penin },
+	{ "NPC_Tavion", SP_NPC_Tavion },
+	{ "NPC_Tavion_New", SP_NPC_Tavion_New },
+	{ "NPC_Alora", SP_NPC_Alora },
+	{ "NPC_Reelo", SP_NPC_Reelo },
+	{ "NPC_Galak", SP_NPC_Galak },
+	{ "NPC_Desann", SP_NPC_Desann },
+	{ "NPC_Rax", SP_NPC_Rax },
+	{ "NPC_BobaFett", SP_NPC_BobaFett },
+	{ "NPC_Ragnos", SP_NPC_Ragnos },
+	{ "NPC_Lannik_Racto", SP_NPC_Lannik_Racto },
+	{ "NPC_Kothos", SP_NPC_Kothos },
+	{ "NPC_Chewbacca", SP_NPC_Chewbacca },
+	{ "NPC_Bartender", SP_NPC_Bartender },
+	{ "NPC_MorganKatarn", SP_NPC_MorganKatarn },
+	{ "NPC_Jedi", SP_NPC_Jedi },
+	{ "NPC_Prisoner", SP_NPC_Prisoner },
+	{ "NPC_Merchant", SP_NPC_Merchant },
+	{ "NPC_Rebel", SP_NPC_Rebel },
+	{ "NPC_Human_Merc", SP_NPC_Human_Merc },
+	{ "NPC_Stormtrooper", SP_NPC_Stormtrooper },
+	{ "NPC_StormtrooperOfficer", SP_NPC_StormtrooperOfficer },
+	{ "NPC_Tie_Pilot", SP_NPC_Tie_Pilot },
+	{ "NPC_Snowtrooper", SP_NPC_Snowtrooper },
+	{ "NPC_RocketTrooper", SP_NPC_RocketTrooper },
+	{ "NPC_HazardTrooper", SP_NPC_HazardTrooper },
 
-	{"NPC_Ugnaught", SP_NPC_Ugnaught},
-	{"NPC_Jawa", SP_NPC_Jawa},
-	{"NPC_Gran", SP_NPC_Gran},
-	{"NPC_Rodian", SP_NPC_Rodian},
-	{"NPC_Weequay", SP_NPC_Weequay},
-	{"NPC_Trandoshan", SP_NPC_Trandoshan},
-	{"NPC_Tusken", SP_NPC_Tusken},
-	{"NPC_Noghri", SP_NPC_Noghri},
-	{"NPC_SwampTrooper", SP_NPC_SwampTrooper},
-	{"NPC_Imperial", SP_NPC_Imperial},
-	{"NPC_ImpWorker", SP_NPC_ImpWorker},
-	{"NPC_BespinCop", SP_NPC_BespinCop},
-	{"NPC_Reborn", SP_NPC_Reborn},
-	{"NPC_Reborn_New", SP_NPC_Reborn_New},
-	{"NPC_Cultist", SP_NPC_Cultist},
-	{"NPC_Cultist_Saber", SP_NPC_Cultist_Saber},
-	{"NPC_Cultist_Saber_Powers", SP_NPC_Cultist_Saber_Powers},
-	{"NPC_Cultist_Destroyer", SP_NPC_Cultist_Destroyer},
-	{"NPC_Cultist_Commando", SP_NPC_Cultist_Commando},
-	{"NPC_ShadowTrooper", SP_NPC_ShadowTrooper},
-	{"NPC_Saboteur", SP_NPC_Saboteur},
-	{"NPC_Monster_Murjj", SP_NPC_Monster_Murjj},
-	{"NPC_Monster_Swamp", SP_NPC_Monster_Swamp},
-	{"NPC_Monster_Howler", SP_NPC_Monster_Howler},
-	{"NPC_Monster_Rancor", SP_NPC_Monster_Rancor},
-	{"NPC_Monster_Mutant_Rancor", SP_NPC_Monster_Mutant_Rancor},
-	{"NPC_Monster_Wampa", SP_NPC_Monster_Wampa},
-	{"NPC_MineMonster", SP_NPC_MineMonster},
-	{"NPC_Monster_Claw", SP_NPC_Monster_Claw},
-	{"NPC_Monster_Glider", SP_NPC_Monster_Glider},
-	{"NPC_Monster_Flier2", SP_NPC_Monster_Flier2},
-	{"NPC_Monster_Lizard", SP_NPC_Monster_Lizard},
-	{"NPC_Monster_Fish", SP_NPC_Monster_Fish},
-	{"NPC_Monster_Sand_Creature", SP_NPC_Monster_Sand_Creature},
-	{"NPC_Droid_Interrogator", SP_NPC_Droid_Interrogator},
-	{"NPC_Droid_Probe", SP_NPC_Droid_Probe},
-	{"NPC_Droid_Mark1", SP_NPC_Droid_Mark1},
-	{"NPC_Droid_Mark2", SP_NPC_Droid_Mark2},
-	{"NPC_Droid_ATST", SP_NPC_Droid_ATST},
-	{"NPC_Droid_Seeker", SP_NPC_Droid_Seeker},
-	{"NPC_Droid_Remote", SP_NPC_Droid_Remote},
-	{"NPC_Droid_Sentry", SP_NPC_Droid_Sentry},
-	{"NPC_Droid_Gonk", SP_NPC_Droid_Gonk},
-	{"NPC_Droid_Mouse", SP_NPC_Droid_Mouse},
-	{"NPC_Droid_R2D2", SP_NPC_Droid_R2D2},
-	{"NPC_Droid_R5D2", SP_NPC_Droid_R5D2},
-	{"NPC_Droid_Protocol", SP_NPC_Droid_Protocol},
-	{"NPC_Droid_Assassin", SP_NPC_Droid_Assassin},
-	{"NPC_Droid_Saber", SP_NPC_Droid_Saber},
+	{ "NPC_Ugnaught", SP_NPC_Ugnaught },
+	{ "NPC_Jawa", SP_NPC_Jawa },
+	{ "NPC_Gran", SP_NPC_Gran },
+	{ "NPC_Rodian", SP_NPC_Rodian },
+	{ "NPC_Weequay", SP_NPC_Weequay },
+	{ "NPC_Trandoshan", SP_NPC_Trandoshan },
+	{ "NPC_Tusken", SP_NPC_Tusken },
+	{ "NPC_Noghri", SP_NPC_Noghri },
+	{ "NPC_SwampTrooper", SP_NPC_SwampTrooper },
+	{ "NPC_Imperial", SP_NPC_Imperial },
+	{ "NPC_ImpWorker", SP_NPC_ImpWorker },
+	{ "NPC_BespinCop", SP_NPC_BespinCop },
+	{ "NPC_Reborn", SP_NPC_Reborn },
+	{ "NPC_Reborn_New", SP_NPC_Reborn_New },
+	{ "NPC_Cultist", SP_NPC_Cultist },
+	{ "NPC_Cultist_Saber", SP_NPC_Cultist_Saber },
+	{ "NPC_Cultist_Saber_Powers", SP_NPC_Cultist_Saber_Powers },
+	{ "NPC_Cultist_Destroyer", SP_NPC_Cultist_Destroyer },
+	{ "NPC_Cultist_Commando", SP_NPC_Cultist_Commando },
+	{ "NPC_ShadowTrooper", SP_NPC_ShadowTrooper },
+	{ "NPC_Saboteur", SP_NPC_Saboteur },
+	{ "NPC_Monster_Murjj", SP_NPC_Monster_Murjj },
+	{ "NPC_Monster_Swamp", SP_NPC_Monster_Swamp },
+	{ "NPC_Monster_Howler", SP_NPC_Monster_Howler },
+	{ "NPC_Monster_Rancor", SP_NPC_Monster_Rancor },
+	{ "NPC_Monster_Mutant_Rancor", SP_NPC_Monster_Mutant_Rancor },
+	{ "NPC_Monster_Wampa", SP_NPC_Monster_Wampa },
+	{ "NPC_MineMonster", SP_NPC_MineMonster },
+	{ "NPC_Monster_Claw", SP_NPC_Monster_Claw },
+	{ "NPC_Monster_Glider", SP_NPC_Monster_Glider },
+	{ "NPC_Monster_Flier2", SP_NPC_Monster_Flier2 },
+	{ "NPC_Monster_Lizard", SP_NPC_Monster_Lizard },
+	{ "NPC_Monster_Fish", SP_NPC_Monster_Fish },
+	{ "NPC_Monster_Sand_Creature", SP_NPC_Monster_Sand_Creature },
+	{ "NPC_Droid_Interrogator", SP_NPC_Droid_Interrogator },
+	{ "NPC_Droid_Probe", SP_NPC_Droid_Probe },
+	{ "NPC_Droid_Mark1", SP_NPC_Droid_Mark1 },
+	{ "NPC_Droid_Mark2", SP_NPC_Droid_Mark2 },
+	{ "NPC_Droid_ATST", SP_NPC_Droid_ATST },
+	{ "NPC_Droid_Seeker", SP_NPC_Droid_Seeker },
+	{ "NPC_Droid_Remote", SP_NPC_Droid_Remote },
+	{ "NPC_Droid_Sentry", SP_NPC_Droid_Sentry },
+	{ "NPC_Droid_Gonk", SP_NPC_Droid_Gonk },
+	{ "NPC_Droid_Mouse", SP_NPC_Droid_Mouse },
+	{ "NPC_Droid_R2D2", SP_NPC_Droid_R2D2 },
+	{ "NPC_Droid_R5D2", SP_NPC_Droid_R5D2 },
+	{ "NPC_Droid_Protocol", SP_NPC_Droid_Protocol },
+	{ "NPC_Droid_Assassin", SP_NPC_Droid_Assassin },
+	{ "NPC_Droid_Saber", SP_NPC_Droid_Saber },
 
-	{"NPC_Colombian_Soldier", SP_NPC_Reborn},
-	{"NPC_Colombian_Rebel", SP_NPC_Reborn},
-	{"NPC_Colombian_EmplacedGunner", SP_NPC_ShadowTrooper},
-	{"NPC_Manuel_Vergara_RMG", SP_NPC_Desann},
+	{ "NPC_Colombian_Soldier", SP_NPC_Reborn },
+	{ "NPC_Colombian_Rebel", SP_NPC_Reborn },
+	{ "NPC_Colombian_EmplacedGunner", SP_NPC_ShadowTrooper },
+	{ "NPC_Manuel_Vergara_RMG", SP_NPC_Desann },
 
-	{"waypoint", SP_waypoint},
-	{"waypoint_small", SP_waypoint_small},
-	{"waypoint_navgoal", SP_waypoint_navgoal},
+	{ "waypoint", SP_waypoint },
+	{ "waypoint_small", SP_waypoint_small },
+	{ "waypoint_navgoal", SP_waypoint_navgoal },
 
-	{"fx_runner", SP_fx_runner},
-	{"fx_explosion_trail", SP_fx_explosion_trail},
-	{"fx_target_beam", SP_fx_target_beam},
-	{"fx_cloudlayer", SP_fx_cloudlayer},
-	{"fx_rain", SP_CreateRain},
-	{"fx_wind", SP_CreateWind},
-	{"fx_snow", SP_CreateSnow},
-	{"fx_puff", SP_CreatePuffSystem},
-	{"fx_wind_zone", SP_CreateWindZone},
-	{"fx_lava", SP_CreateLava},
+	{ "fx_runner", SP_fx_runner },
+	{ "fx_explosion_trail", SP_fx_explosion_trail },
+	{ "fx_target_beam", SP_fx_target_beam },
+	{ "fx_cloudlayer", SP_fx_cloudlayer },
+	{ "fx_rain", SP_CreateRain },
+	{ "fx_wind", SP_CreateWind },
+	{ "fx_snow", SP_CreateSnow },
+	{ "fx_puff", SP_CreatePuffSystem },
+	{ "fx_wind_zone", SP_CreateWindZone },
+	{ "fx_lava", SP_CreateLava },
 
-	{"object_cargo_barrel1", SP_object_cargo_barrel1},
-	{"point_combat", SP_point_combat},
+	{ "object_cargo_barrel1", SP_object_cargo_barrel1 },
+	{ "point_combat", SP_point_combat },
 
-	{"emplaced_gun", SP_emplaced_gun},
-	{"emplaced_eweb", SP_emplaced_eweb},
+	{ "emplaced_gun", SP_emplaced_gun },
+	{ "emplaced_eweb", SP_emplaced_eweb },
 
-	{"misc_radar_icon", SP_misc_radar_icon},
+	{ "misc_radar_icon", SP_misc_radar_icon },
 
-	{"NPC_md_lightside_jedi1_random", SP_NPC_md_lightside_jedi1_random},
-	{"NPC_md_lightside_jedi2_random", SP_NPC_md_lightside_jedi2_random},
-	{"NPC_md_lightside_gunners_random", SP_NPC_md_lightside_gunners_random},
-	{"NPC_md_darkside_sith1_random", SP_NPC_md_darkside_sith1_random},
-	{"NPC_md_darkside_sith2_random", SP_NPC_md_darkside_sith2_random},
-	{"NPC_md_darkside_gunners_random", SP_NPC_md_darkside_gunners_random},
+	{ "NPC_md_lightside_jedi1_random", SP_NPC_md_lightside_jedi1_random },
+	{ "NPC_md_lightside_jedi2_random", SP_NPC_md_lightside_jedi2_random },
+	{ "NPC_md_lightside_gunners_random", SP_NPC_md_lightside_gunners_random },
+	{ "NPC_md_darkside_sith1_random", SP_NPC_md_darkside_sith1_random },
+	{ "NPC_md_darkside_sith2_random", SP_NPC_md_darkside_sith2_random },
+	{ "NPC_md_darkside_gunners_random", SP_NPC_md_darkside_gunners_random },
 
-	{nullptr, nullptr}
+	{ nullptr, nullptr }
 };
 
 /*

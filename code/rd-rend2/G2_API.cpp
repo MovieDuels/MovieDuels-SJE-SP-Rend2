@@ -1981,9 +1981,9 @@ qboolean G2API_GetBoltMatrix(CGhoul2Info_v& ghoul2, const int modelIndex, const 
 	constexpr static mdxaBone_t identity_matrix =
 	{
 		{
-			{0.0f, -1.0f, 0.0f, 0.0f},
-			{1.0f, 0.0f, 0.0f, 0.0f},
-			{0.0f, 0.0f, 1.0f, 0.0f}
+			{ 0.0f, -1.0f, 0.0f, 0.0f },
+			{ 1.0f, 0.0f, 0.0f, 0.0f },
+			{ 0.0f, 0.0f, 1.0f, 0.0f }
 		}
 	};
 

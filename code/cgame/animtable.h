@@ -3735,5 +3735,5 @@ stringID_table_t animTable[MAX_ANIMATIONS + 1] =
 	ENUM2STRING(BOTH_FORCEJUMPDASH_START),
 
 	//must be terminated
-	{nullptr, -1}
+	{ nullptr, -1 }
 };

@@ -126,7 +126,7 @@ static void MakeMeshNormals(const int width, const int height, srfVert_t ctrl[MA
 	qboolean	wrapWidth, wrapHeight;
 	float		len;
 	static	int	neighbors[8][2] = {
-		{0,1}, {1,1}, {1,0}, {1,-1}, {0,-1}, {-1,-1}, {-1,0}, {-1,1}
+		{ 0,1 },{ 1,1 },{ 1,0 },{ 1,-1 },{ 0,-1 },{ -1,-1 },{ -1,0 },{ -1,1 }
 	};
 
 	wrapWidth = qfalse;
