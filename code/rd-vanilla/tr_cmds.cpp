@@ -440,7 +440,7 @@ void RE_BeginFrame(const stereoFrame_t stereoFrame)
 
 	// check for errors
 	if (!r_ignoreGLErrors->integer) {
-		int	err;
+		int	err = 0;
 
 		R_IssuePendingRenderCommands();
 		if ((err = qglGetError()) != GL_NO_ERROR) {

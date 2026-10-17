@@ -69,7 +69,7 @@ static int sync_test(const unsigned char* buf, int n, int isync, int padbytes);
 /*--------------------------------------------------------------*/
 int head_info(const unsigned char* buf, unsigned int n, MPEG_HEAD* h)
 {
-	int mpeg25_flag;
+	int mpeg25_flag = 0;
 
 	if (n > 10000)
 		n = 10000; /* limit scan for free format */

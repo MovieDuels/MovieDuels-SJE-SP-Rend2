@@ -84,10 +84,10 @@ bool RE_SplitSkins(const char* i_nname, char* skinhead, char* skintorso, char* s
 // given a name, go get the skin we want and return
 qhandle_t RE_RegisterIndividualSkin(const char* name, const qhandle_t h_skin)
 {
-	skin_t* skin;
-	skinSurface_t* surf;
-	char* text, * text_p;
-	char* token;
+	skin_t* skin = nullptr;
+	skinSurface_t* surf = nullptr;
+	char* text = nullptr, * text_p = nullptr;
+	char* token = nullptr;
 	char			surfName[MAX_QPATH];
 
 	// load and parse the skin file
@@ -178,8 +178,8 @@ qhandle_t RE_RegisterIndividualSkin(const char* name, const qhandle_t h_skin)
 }
 
 qhandle_t RE_RegisterSkin(const char* name) {
-	qhandle_t	h_skin;
-	skin_t* skin;
+	qhandle_t	h_skin = 0;
+	skin_t* skin = nullptr;
 
 	if (!name || !name[0]) {
 		Com_Printf("Empty name passed to RE_RegisterSkin\n");
@@ -256,8 +256,8 @@ compatible with our normal parsing rules.
 ==================
 */
 static char* CommaParse(char** data_p) {
-	int c = 0, len;
-	char* data;
+	int c = 0, len = 0;
+	char* data = nullptr;
 	static	char	com_token[MAX_TOKEN_CHARS];
 
 	data = *data_p;
@@ -362,7 +362,7 @@ Mangled version of the above function to load .skin files on the server.
 ===============
 */
 qhandle_t RE_RegisterServerSkin(const char* name) {
-	qhandle_t r;
+	qhandle_t r = 0;
 
 	if (ri.Cvar_VariableIntegerValue("cl_running") &&
 		ri.Com_TheHunkMarkHasBeenMade() &&
@@ -444,7 +444,7 @@ R_InitSkins
 ===============
 */
 void	R_InitSkins(void) {
-	skin_t* skin;
+	skin_t* skin = nullptr;
 
 	tr.numSkins = 1;
 
@@ -474,8 +474,8 @@ R_SkinList_f
 ===============
 */
 void	R_SkinList_f(void) {
-	int			i, j;
-	skin_t* skin;
+	int			i = 0, j = 0;
+	skin_t* skin = nullptr;
 
 	Com_Printf("------------------\n");
 

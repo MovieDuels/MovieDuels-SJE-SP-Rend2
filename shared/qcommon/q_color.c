@@ -116,7 +116,7 @@ vec4_t colorTable[CT_MAX] =
 
 unsigned ColorBytes3(const float r, const float g, const float b)
 {
-	unsigned i;
+	unsigned i = 0;
 
 	((byte*)&i)[0] = (byte)(r * 255);
 	((byte*)&i)[1] = (byte)(g * 255);
@@ -127,7 +127,7 @@ unsigned ColorBytes3(const float r, const float g, const float b)
 
 unsigned ColorBytes4(const float r, const float g, const float b, const float a)
 {
-	unsigned i;
+	unsigned i = 0;
 
 	((byte*)&i)[0] = (byte)(r * 255);
 	((byte*)&i)[1] = (byte)(g * 255);

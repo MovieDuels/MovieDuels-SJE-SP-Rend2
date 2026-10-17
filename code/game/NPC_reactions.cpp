@@ -146,7 +146,7 @@ static void NPC_CheckAttacker(gentity_t* other, const int mod)
 	if (other == &g_entities[0])
 	{
 		//Account for the skill level to skew the results
-		float luckThreshold;
+		float luckThreshold = 0.0f;
 
 		switch (g_spskill->integer)
 		{
@@ -251,7 +251,7 @@ static void NPC_ChoosePainAnimation(gentity_t* self, const gentity_t* other, con
 	}
 
 	int pain_anim = -1;
-	float pain_chance;
+	float pain_chance = 0.0f;
 
 	if (self->s.weapon == WP_THERMAL && self->client->fireDelay > 0)
 	{
@@ -662,7 +662,7 @@ void NPC_Touch(gentity_t* self, gentity_t* other, trace_t* trace)
 		if (other && player && player->health > 0 && other == player)
 		{
 			//player touched me
-			char* text;
+			char* text = nullptr;
 			qboolean keyTaken;
 			//give him my key
 			if (Q_stricmp("goodie", self->message) == 0)

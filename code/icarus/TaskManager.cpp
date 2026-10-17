@@ -254,7 +254,7 @@ AddTaskGroup
 
 CTaskGroup* CTaskManager::AddTaskGroup(const char* name, const CIcarus* icarus)
 {
-	CTaskGroup* group;
+	CTaskGroup* group = nullptr;
 
 	const auto tgni = m_taskGroupNameMap.find(name);
 
@@ -434,7 +434,7 @@ GetVector
 
 int CTaskManager::GetVector(const int ent_id, CBlock* block, int& member_num, vec3_t& value, CIcarus* icarus)
 {
-	int type, i;
+	int type = 0, i = 0;
 
 	//See if this is a get() command replacement
 	if (Check(CIcarus::ID_GET, block, member_num))
@@ -474,8 +474,8 @@ int CTaskManager::GetVector(const int ent_id, CBlock* block, int& member_num, ve
 	//Look for a tag() inline call
 	if (Check(CIcarus::ID_TAG, block, member_num))
 	{
-		char* tag_name;
-		float tag_lookup;
+		char* tag_name = nullptr;
+		float tag_lookup = 0.0f;
 
 		member_num++;
 		ICARUS_VALIDATE(Get(ent_id, block, member_num, &tag_name, icarus));
@@ -525,7 +525,7 @@ int CTaskManager::GetID() const
 int CTaskManager::Get(const int ent_id, CBlock* block, int& member_num, char** value, CIcarus* icarus)
 {
 	static char temp_buffer[128]; //FIXME: EEEK!
-	char* tag_name;
+	char* tag_name = nullptr;
 
 	//Look for a get() inline call
 	if (Check(CIcarus::ID_GET, block, member_num))
@@ -554,7 +554,7 @@ int CTaskManager::Get(const int ent_id, CBlock* block, int& member_num, char** v
 
 		case CIcarus::TK_FLOAT:
 		{
-			float temp;
+			float temp = 0.0f;
 
 			if (icarus->GetGame()->GetFloat(ent_id, name, &temp) == false)
 			{
@@ -611,7 +611,7 @@ int CTaskManager::Get(const int ent_id, CBlock* block, int& member_num, char** v
 	//Look for a tag() inline call
 	if (Check(CIcarus::ID_TAG, block, member_num))
 	{
-		float tag_lookup;
+		float tag_lookup = 0.0f;
 		vec3_t vector;
 		member_num++;
 		ICARUS_VALIDATE(Get(ent_id, block, member_num, &tag_name, icarus));
@@ -981,7 +981,7 @@ PopTask
 
 CTask* CTaskManager::PopTask(const int flag)
 {
-	CTask* task;
+	CTask* task = nullptr;
 
 	assert(flag == CSequence::POP_FRONT || flag == CSequence::POP_BACK);
 
@@ -1039,8 +1039,8 @@ CBlock* CTaskManager::GetCurrentTask()
 int CTaskManager::Wait(const CTask* task, bool& completed, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
-	float dwtime;
+	char* s_val = nullptr;
+	float dwtime = 0.0f;
 	int member_num = 0;
 
 	completed = false;
@@ -1125,7 +1125,7 @@ WaitSignal
 int CTaskManager::WaitSignal(const CTask* task, bool& completed, CIcarus* icarus) const
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	completed = false;
@@ -1157,7 +1157,7 @@ Print
 int CTaskManager::Print(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1181,7 +1181,7 @@ Sound
 int CTaskManager::Sound(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val, * s_val2;
+	char* s_val = nullptr, * s_val2 = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1207,14 +1207,14 @@ int CTaskManager::Rotate(const CTask* task, CIcarus* icarus) const
 {
 	vec3_t vector;
 	CBlock* block = task->GetBlock();
-	char* tag_name;
-	float duration;
+	char* tag_name = nullptr;
+	float duration = 0.0f;
 	int member_num = 0;
 
 	//Check for a tag reference
 	if (Check(CIcarus::ID_TAG, block, member_num))
 	{
-		float tag_lookup;
+		float tag_lookup = 0.0f;
 		member_num++;
 
 		ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &tag_name, icarus));
@@ -1252,7 +1252,7 @@ Remove
 int CTaskManager::Remove(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1276,8 +1276,8 @@ int CTaskManager::Camera(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
 	vec3_t vector, vector2;
-	float type, f_val, f_val2, f_val3;
-	char* s_val;
+	float type = 0.0f, f_val = 0.0f, f_val2 = 0.0f, f_val3 = 0.0f;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	//Get the camera function type
@@ -1426,7 +1426,7 @@ int CTaskManager::Move(const CTask* task, CIcarus* icarus) const
 {
 	vec3_t vector, vector2;
 	CBlock* block = task->GetBlock();
-	float duration;
+	float duration = 0.0f;
 	int member_num = 0;
 
 	//Get the goal position
@@ -1464,7 +1464,7 @@ Kill
 int CTaskManager::Kill(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1487,7 +1487,7 @@ Set
 int CTaskManager::Set(const CTask* task, CIcarus* icarus) const
 {
 	CBlock* block = task->GetBlock();
-	char* s_val, * s_val2;
+	char* s_val = nullptr, * s_val2 = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1509,7 +1509,7 @@ Use
 int CTaskManager::Use(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1532,9 +1532,9 @@ DeclareVariable
 int CTaskManager::DeclareVariable(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
-	float fVal;
+	float fVal = 0.0f;
 
 	ICARUS_VALIDATE(GetFloat(m_ownerID, block, member_num, fVal, icarus));
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1557,7 +1557,7 @@ FreeVariable
 int CTaskManager::FreeVariable(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1580,7 +1580,7 @@ Signal
 int CTaskManager::Signal(const CTask* task, CIcarus* icarus)
 {
 	CBlock* block = task->GetBlock();
-	char* s_val;
+	char* s_val = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1603,7 +1603,7 @@ Play
 int CTaskManager::Play(const CTask* task, CIcarus* icarus) const
 {
 	CBlock* block = task->GetBlock();
-	char* s_val, * s_val2;
+	char* s_val = nullptr, * s_val2 = nullptr;
 	int member_num = 0;
 
 	ICARUS_VALIDATE(Get(m_ownerID, block, member_num, &s_val, icarus));
@@ -1628,8 +1628,8 @@ int CTaskManager::SaveCommand(const CBlock* block)
 {
 	const auto p_icarus = static_cast<CIcarus*>(IIcarusInterface::GetIcarus());
 
-	unsigned char flags;
-	int num_members, b_id, size;
+	unsigned char flags = 0;
+	int num_members = 0, b_id = 0, size = 0;
 
 	//Save out the block ID
 	b_id = block->GetBlockID();
@@ -1670,9 +1670,9 @@ Save
 
 void CTaskManager::Save()
 {
-	unsigned int time_stamp;
-	bool completed;
-	int id, num_commands;
+	unsigned int time_stamp = 0;
+	bool completed = false;
+	int id = 0, num_commands = 0;
 
 	// Data saved here.
 	//	Taskmanager GUID.
@@ -1817,13 +1817,13 @@ Load
 
 void CTaskManager::Load(CIcarus* icarus)
 {
-	unsigned char flags;
-	CTaskGroup* task_group;
-	unsigned int time_stamp;
-	bool completed;
-	void* b_data;
-	int id, num_tasks, num_members;
-	int b_id, b_size;
+	unsigned char flags = 0;
+	CTaskGroup* task_group = nullptr;
+	unsigned int time_stamp = 0;
+	bool completed = false;
+	void* b_data = nullptr;
+	int id = 0, num_tasks = 0, num_members = 0;
+	int b_id = 0, b_size = 0;
 
 	const auto p_icarus = static_cast<CIcarus*>(IIcarusInterface::GetIcarus());
 
@@ -1930,7 +1930,7 @@ void CTaskManager::Load(CIcarus* icarus)
 	}
 
 	//Load the task groups
-	int num_task_groups;
+	int num_task_groups = 0;
 
 	//icarus->GetGame()->ReadSaveData( 'TG#G', &numTaskGroups, sizeof( numTaskGroups ) );
 	p_icarus->BufferRead(&num_task_groups, sizeof num_task_groups);
@@ -1989,7 +1989,7 @@ void CTaskManager::Load(CIcarus* icarus)
 	}
 
 	//Reload the currently active group
-	int cur_group_id;
+	int cur_group_id = 0;
 
 	p_icarus->BufferRead(&cur_group_id, sizeof cur_group_id);
 
@@ -1997,7 +1997,7 @@ void CTaskManager::Load(CIcarus* icarus)
 	for (int i = 0; i < num_task_groups; i++)
 	{
 		char name[1024];
-		int length;
+		int length = 0;
 
 		//Get the size of the string
 		p_icarus->BufferRead(&length, sizeof length);

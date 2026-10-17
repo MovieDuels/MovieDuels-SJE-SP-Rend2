@@ -89,9 +89,9 @@ Print a single mission objective
 */
 static void ObjectivePrint_Line(const int color, const int objectIndex, int& missionYcnt)
 {
-	int y;
+	int y = 0;
 	char finalText[2048];
-	qhandle_t graphic;
+	qhandle_t graphic = 0;
 
 	const int iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, 1.0f);
 
@@ -312,7 +312,7 @@ Draw routine for the objective info screen of the data pad.
 */
 void CG_DrawDataPadObjectives(const centity_t* cent)
 {
-	int i;
+	int i = 0;
 	const int iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, 1.0f);
 
 	constexpr short titleXPos = objectiveStartingXpos - 22; // X starting position for title text
@@ -432,10 +432,10 @@ constexpr int MAXLOAD_FORCEICONPAD = 12; // Padding space between icons
 static int CG_DrawLoadWeaponsPrintRow(const char* itemName, const char* weapons, const int rowIconCnt, const int startIndex)
 {
 	int endIndex = 0, printedIconCnt = 0;
-	int x, y;
-	int width, height;
+	int x = 0, y = 0;
+	int width = 0, height = 0;
 	vec4_t color;
-	qhandle_t background;
+	qhandle_t background = 0;
 	const gentity_t* cent = &g_entities[g_entities[0].client->ps.clientNum];
 
 	if (!cgi_UI_GetMenuItemInfo(
@@ -577,10 +577,10 @@ static int CG_DrawLoadForcePrintRow(const char* itemName, const int forceBits, c
 	const int startIndex)
 {
 	int endIndex = 0, printedIconCnt = 0;
-	int x, y;
-	int width, height;
+	int x = 0, y = 0;
+	int width = 0, height = 0;
 	vec4_t color;
-	qhandle_t background;
+	qhandle_t background = 0;
 
 	if (!cgi_UI_GetMenuItemInfo(
 		"loadScreen",
@@ -688,9 +688,9 @@ static void CG_DrawLoadForcePowers(const int forceBits)
 static void CG_GetLoadScreenInfo(char* weapons, int* forceBits)
 {
 	char s[MAX_STRING_CHARS];
-	int iDummy;
-	float fDummy;
-	const char* var;
+	int iDummy = 0;
+	float fDummy = 0.0f;
+	const char* var = nullptr;
 
 	// Load the saved player state string
 	gi.Cvar_VariableStringBuffer(sCVARNAME_PLAYERSAVE, s, sizeof(s));
@@ -780,9 +780,9 @@ Load screen displays the map pic, the mission briefing and weapons/force powers
 
 static void CG_DrawLoadingScreen(const qhandle_t levelshot, const char* map_name)
 {
-	int x_pos, y_pos, width, height;
+	int x_pos = 0, y_pos = 0, width = 0, height = 0;
 	vec4_t color;
-	qhandle_t background;
+	qhandle_t background = 0;
 	int forcepowers = 0;
 	char weapons[WP_NUM_WEAPONS];
 
@@ -868,7 +868,7 @@ static void LoadTips(void)
 	if (SCREENTIP_NEXT_UPDATE_TIME == 0 || SCREENTIP_NEXT_UPDATE_TIME < time)
 	{
 		static int lastIndex = -1;
-		int index;
+		int index = 0;
 
 		do {
 			index = Q_irand(1, 20);

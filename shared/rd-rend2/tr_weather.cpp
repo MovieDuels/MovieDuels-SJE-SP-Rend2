@@ -261,7 +261,7 @@ namespace
 						for (int j = 0; j < currentWeatherBrush->numPlanes; j++)
 						{
 							vec3_t plane_normal{};
-							float plane_dist;
+							float plane_dist = 0.0f;
 							if (tr.weatherSystem->weatherBrushType == WEATHER_BRUSHES_OUTSIDE)
 							{
 								plane_normal[0] = currentWeatherBrush->planes[j][0];
@@ -543,8 +543,8 @@ WE_ParseVector
 ===============
 */
 static qboolean WE_ParseVector(const char** text, int count, float* v) {
-	char* token;
-	int		i;
+	char* token = nullptr;
+	int		i = 0;
 
 	// FIXME: spaces are currently required after parens, should change parseext...
 	token = COM_ParseExt(text, qfalse);
@@ -618,7 +618,7 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 #else
 	COM_BeginParseSession();
 #endif
-	const char* token;//, *origCommand;
+	const char* token = nullptr;//, *origCommand;
 
 	token = COM_ParseExt(&command, qfalse);
 
@@ -844,7 +844,7 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 	//---------------------
 	else if (Q_stricmp(token, "spacedust") == 0)
 	{
-		int count;
+		int count = 0;
 		token = COM_ParseExt(&command, qfalse);
 		count = atoi(token);
 
@@ -1106,7 +1106,7 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		//---------------------
 		else if (g_Weather->integer == 9)
 		{
-			int count;
+			int count = 0;
 			token = COM_ParseExt(&command, qfalse);
 			count = atoi(token);
 

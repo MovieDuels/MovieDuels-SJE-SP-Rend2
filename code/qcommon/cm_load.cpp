@@ -170,7 +170,7 @@ CMod_LoadSubmodels
 */
 void CMod_LoadSubmodels(const lump_t* l, clipMap_t& cm)
 {
-	int j;
+	int j = 0;
 
 	auto in = reinterpret_cast<dmodel_t*>(cmod_base + l->fileofs);
 	if (l->filelen % sizeof * in)
@@ -483,7 +483,7 @@ CMod_LoadEntityString
 */
 void CMod_LoadEntityString(const lump_t* l, clipMap_t& cm, const char* name)
 {
-	fileHandle_t h;
+	fileHandle_t h = 0;
 	char ent_name[MAX_QPATH];
 
 	// Attempt to load entities from an external .ent file if available
@@ -546,8 +546,8 @@ constexpr auto MAX_PATCH_VERTS = 1024;
 
 void CMod_LoadPatches(const lump_t* surfs, const lump_t* verts, clipMap_t& cm)
 {
-	int count;
-	cPatch_t* patch;
+	int count = 0;
+	cPatch_t* patch = nullptr;
 	vec3_t points[MAX_PATCH_VERTS]{};
 
 	auto in = reinterpret_cast<dsurface_t*>(cmod_base + surfs->fileofs);
@@ -718,7 +718,7 @@ static void CM_LoadMap_Actual(const char* name, const qboolean clientload, int* 
 	else
 	{
 		void* sub_bsp_data = nullptr;
-		const int* buf;
+		const int* buf = nullptr;
 		// ... else load map from scratch...
 		//
 		if (&cm == &cmg)
@@ -744,7 +744,7 @@ static void CM_LoadMap_Actual(const char* name, const qboolean clientload, int* 
 		// load the file into a buffer that we either discard as usual at the bottom, or if we've got enough memory
 		//	then keep it long enough to save the renderer re-loading it, then discard it after that.
 		//
-		fileHandle_t h;
+		fileHandle_t h = 0;
 		const int i_bsp_len = FS_FOpenFileRead(name, &h, qfalse);
 		if (!h)
 		{
@@ -1116,7 +1116,7 @@ void CM_ModelBounds(const clipHandle_t model, vec3_t mins, vec3_t maxs)
 
 int CM_LoadSubBSP(const char* name, const qboolean clientload)
 {
-	int checksum;
+	int checksum = 0;
 
 	int count = cmg.numSubModels;
 	for (int i = 0; i < NumSubBSP; i++)

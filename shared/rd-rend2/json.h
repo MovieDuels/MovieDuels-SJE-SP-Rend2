@@ -224,7 +224,7 @@ const char *JSON_ObjectGetNamedValue(const char *json, const char *jsonEnd, cons
 	{
 		if (*json == '"')
 		{
-			const char *thisNameStart, *thisNameEnd;
+			const char *thisNameStart = nullptr, *thisNameEnd = nullptr;
 
 			thisNameStart = json + 1;
 			json = JSON_SkipString(json, jsonEnd);
@@ -260,7 +260,7 @@ unsigned int JSON_ValueGetType(const char *json, const char *jsonEnd)
 
 unsigned int JSON_ValueGetString(const char *json, const char *jsonEnd, char *outString, unsigned int stringLen)
 {
-	const char *stringEnd, *stringStart;
+	const char *stringEnd = nullptr, *stringStart = nullptr;
 
 	if (!json)
 	{

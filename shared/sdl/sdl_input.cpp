@@ -129,7 +129,7 @@ static qboolean IN_IsConsoleKey(fakeAscii_t key, const int character)
 	// Only parse the variable when it changes
 	if (cl_consoleKeys->modified)
 	{
-		const char* text_p;
+		const char* text_p = nullptr;
 
 		cl_consoleKeys->modified = qfalse;
 		text_p = cl_consoleKeys->string;
@@ -506,7 +506,7 @@ IN_GobbleMotionEvents
 static void IN_GobbleMotionEvents()
 {
 	SDL_Event dummy[1];
-	int val;
+	int val = 0;
 
 	// Gobble any mouse motion events
 	SDL_PumpEvents();
@@ -1151,7 +1151,7 @@ static void IN_ProcessEvents()
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
 		{
-			unsigned short b;
+			unsigned short b = 0;
 			switch (e.button.button)
 			{
 			case SDL_BUTTON_LEFT: b = A_MOUSE1;
@@ -1247,7 +1247,7 @@ static void IN_ProcessEvents()
 
 static qboolean KeyToAxisAndSign(int keynum, int* outAxis, int* outSign)
 {
-	const char* bind;
+	const char* bind = nullptr;
 
 	if (!keynum)
 		return qfalse;
@@ -1406,7 +1406,7 @@ IN_GamepadMove
 */
 static void IN_GamepadMove(void)
 {
-	int i;
+	int i = 0;
 	int translatedAxes[MAX_JOYSTICK_AXIS]{};
 	qboolean translatedAxesSet[MAX_JOYSTICK_AXIS]{};
 
@@ -1549,7 +1549,7 @@ static void IN_JoyMove()
 {
 	unsigned int axes = 0;
 	unsigned int hats = 0;
-	int i;
+	int i = 0;
 
 	if (gamepad)
 	{

@@ -165,9 +165,9 @@ extern byte* RB_ReadPixels(int x, int y, int width, int height, size_t* offset, 
 void RE_GetScreenShot(byte* buffer, const int w, const int h)
 {
 	size_t offset = 0;
-	int padlen;
+	int padlen = 0;
 
-	int g, b;
+	int g = 0, b = 0;
 
 	byte* source = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
 	const size_t memcount = (glConfig.vidWidth * 3 + padlen) * glConfig.vidHeight;
@@ -206,7 +206,7 @@ void RE_GetScreenShot(byte* buffer, const int w, const int h)
 //
 static byte* RE_ReSample(byte* pbLoadedPic, const int iLoadedWidth, const int iLoadedHeight, byte* pb_re_sample_buffer, int* piWidth, int* piHeight)
 {
-	byte* pb_return;
+	byte* pb_return = nullptr;
 
 	// if not resampling, just return some values and return...
 	//
@@ -226,7 +226,7 @@ static byte* RE_ReSample(byte* pbLoadedPic, const int iLoadedWidth, const int iL
 		const float	f_y_step = static_cast<float>(iLoadedHeight) / static_cast<float>(*piHeight);
 		const int		i_tot_pixels_per_down_sample = static_cast<int>(ceil(f_x_step)) * static_cast<int>(ceil(f_y_step));
 
-		int g, b;
+		int g = 0, b = 0;
 
 		byte* pb_dst = pb_re_sample_buffer;
 
@@ -300,7 +300,7 @@ byte* RE_TempRawImage_ReadFromFile(const char* psLocalFilename, int* piWidth, in
 
 	if (psLocalFilename && piWidth && piHeight)
 	{
-		int	 iLoadedWidth, iLoadedHeight;
+		int	 iLoadedWidth = 0, iLoadedHeight = 0;
 
 		R_LoadImage(psLocalFilename, &pbLoadedPic, &iLoadedWidth, &iLoadedHeight);
 		if (pbLoadedPic)
@@ -490,7 +490,7 @@ qboolean RE_ProcessDissolve(void)
 
 			float f_x_scale_factor = static_cast<float>(SCREEN_WIDTH) / static_cast<float>(Dissolve.iWidth);
 			float f_y_scale_factor = static_cast<float>(SCREEN_HEIGHT) / static_cast<float>(Dissolve.iHeight);
-			float x0, y0, x1, y1, x2, y2, x3, y3;
+			float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f, x2 = 0.0f, y2 = 0.0f, x3 = 0.0f, y3 = 0.0f;
 
 			switch (Dissolve.eDissolveType)
 			{

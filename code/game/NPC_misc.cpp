@@ -31,7 +31,7 @@ Debug_Printf
 */
 void Debug_Printf(const cvar_t* cv, const int debug_level, char* fmt, ...)
 {
-	char* color;
+	char* color = nullptr;
 	va_list argptr;
 	char msg[1024];
 
@@ -61,7 +61,7 @@ Debug_NPCPrintf
 */
 void Debug_NPCPrintf(const gentity_t* printNPC, const cvar_t* cv, const int debugLevel, char* fmt, ...)
 {
-	int color;
+	int color = 0;
 	va_list argptr;
 	char msg[1024];
 

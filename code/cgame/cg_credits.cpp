@@ -297,7 +297,7 @@ void CG_Credits_Init(const char* psStripReference, vec4_t* pv4Color)
 		while (true)
 		{
 			qboolean bIsTrailingPunctuation;
-			int iAdvanceCount;
+			int iAdvanceCount = 0;
 			unsigned int uiLetter = cgi_AnyLanguage_ReadCharFromString(psTextParse, &iAdvanceCount,
 				&bIsTrailingPunctuation);
 			psTextParse += iAdvanceCount;
@@ -412,7 +412,7 @@ void CG_Credits_Init(const char* psStripReference, vec4_t* pv4Color)
 				CreditLine.bDotted = true;
 
 				std::string strResult(sLine);
-				const char* p;
+				const char* p = nullptr;
 				while ((p = GetSubString(strResult)) != nullptr)
 				{
 					if (CreditLine.strText.IsEmpty())
@@ -455,7 +455,7 @@ void CG_Credits_Init(const char* psStripReference, vec4_t* pv4Color)
 				CreditCard_t CreditCard;
 
 				std::string strResult(sLine);
-				const char* p;
+				const char* p = nullptr;
 				while ((p = GetSubString(strResult)) != nullptr)
 				{
 					if (CreditCard.strTitle.IsEmpty())

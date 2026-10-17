@@ -43,8 +43,8 @@ R_MDRCullModel
 
 static int R_MDRCullModel(mdrHeader_t* header, trRefEntity_t* ent) {
 	vec3_t		bounds[2];
-	mdrFrame_t* oldFrame, * newFrame;
-	int			i, frameSize;
+	mdrFrame_t* oldFrame = nullptr, * newFrame = nullptr;
+	int			i = 0, frameSize = 0;
 
 	frameSize = (size_t)(&((mdrFrame_t*)0)->bones[header->numBones]);
 
@@ -77,7 +77,7 @@ static int R_MDRCullModel(mdrHeader_t* header, trRefEntity_t* ent) {
 		}
 		else
 		{
-			int sphereCull, sphereCullB;
+			int sphereCull = 0, sphereCullB = 0;
 
 			sphereCull = R_CullLocalPointAndRadius(newFrame->localOrigin, newFrame->radius);
 			if (newFrame == oldFrame) {
@@ -136,12 +136,12 @@ R_MDRComputeFogNum
 */
 
 int R_MDRComputeFogNum(mdrHeader_t* header, trRefEntity_t* ent) {
-	int				i, j = 0;
-	float			frameRadius;
-	fog_t* fog;
-	mdrFrame_t* mdrFrame;
+	int				i = 0, j = 0;
+	float			frameRadius = 0.0f;
+	fog_t* fog = nullptr;
+	mdrFrame_t* mdrFrame = nullptr;
 	vec3_t			localOrigin;
-	int frameSize;
+	int frameSize = 0;
 
 	if (tr.refdef.rdflags & RDF_NOWORLDMODEL) {
 		return 0;
@@ -214,16 +214,16 @@ R_MDRAddAnimSurfaces
 
 void R_MDRAddAnimSurfaces(trRefEntity_t* ent, int entityNum)
 {
-	mdrHeader_t* header;
-	mdrSurface_t* surface;
-	mdrLOD_t* lod;
-	shader_t* shader;
-	skin_t* skin;
-	int				i, j;
+	mdrHeader_t* header = nullptr;
+	mdrSurface_t* surface = nullptr;
+	mdrLOD_t* lod = nullptr;
+	shader_t* shader = nullptr;
+	skin_t* skin = nullptr;
+	int				i = 0, j = 0;
 	int				lodnum = 0;
 	int				fogNum = 0;
-	int				cull;
-	int             cubemapIndex;
+	int				cull = 0;
+	int             cubemapIndex = 0;
 	qboolean	personalModel;
 
 	header = (mdrHeader_t*)tr.currentModel->data.mdr;
@@ -344,19 +344,19 @@ RB_MDRSurfaceAnim
 */
 void RB_MDRSurfaceAnim(mdrSurface_t* surface)
 {
-	int				i, j, k;
-	float			frontlerp, backlerp;
-	int* triangles;
-	int				indexes;
-	int				baseIndex, baseVertex;
-	int				numVerts;
-	mdrVertex_t* v;
-	mdrHeader_t* header;
-	mdrFrame_t* frame;
-	mdrFrame_t* oldFrame;
-	mdrBone_t		bones[MDR_MAX_BONES], * bonePtr, * bone;
+	int				i = 0, j = 0, k = 0;
+	float			frontlerp = 0.0f, backlerp = 0.0f;
+	int* triangles = nullptr;
+	int				indexes = 0;
+	int				baseIndex = 0, baseVertex = 0;
+	int				numVerts = 0;
+	mdrVertex_t* v = nullptr;
+	mdrHeader_t* header = nullptr;
+	mdrFrame_t* frame = nullptr;
+	mdrFrame_t* oldFrame = nullptr;
+	mdrBone_t		bones[MDR_MAX_BONES], * bonePtr = nullptr, * bone = nullptr;
 
-	int			frameSize;
+	int			frameSize = 0;
 
 	// don't lerp if lerping off, or this is the only frame, or the last frame...
 	//
@@ -420,7 +420,7 @@ void RB_MDRSurfaceAnim(mdrSurface_t* surface)
 	for (j = 0; j < numVerts; j++)
 	{
 		vec3_t	tempVert, tempNormal;
-		mdrWeight_t* w;
+		mdrWeight_t* w = nullptr;
 
 		VectorClear(tempVert);
 		VectorClear(tempNormal);

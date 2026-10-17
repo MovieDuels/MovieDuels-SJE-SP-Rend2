@@ -90,7 +90,7 @@ R_ClearFlares
 ==================
 */
 void R_ClearFlares(void) {
-	int		i;
+	int		i = 0;
 
 	Com_Memset(r_flareStructs, 0, sizeof(r_flareStructs));
 	r_activeFlares = NULL;
@@ -111,8 +111,8 @@ This is called at surface tesselation time
 */
 void RB_AddFlare(void* surface, int fogNum, vec3_t point, vec3_t color, vec3_t normal)
 {
-	int				i;
-	flare_t* f;
+	int				i = 0;
+	flare_t* f = nullptr;
 	vec3_t			local;
 	float			d = 1.0f;
 	vec4_t			eye, clip, normalized, window;
@@ -199,8 +199,8 @@ RB_AddDlightFlares
 ==================
 */
 void RB_AddDlightFlares(void) {
-	dlight_t* l;
-	int				i, j, k;
+	dlight_t* l = nullptr;
+	int				i = 0, j = 0, k = 0;
 	fog_t* fog = NULL;
 
 	if (!r_flares->integer) {
@@ -257,9 +257,9 @@ static void RB_TestFlare(flare_t* f)
 {
 	float			depth = 0.0;
 	qboolean		visible;
-	float			fade;
-	float			screenZ;
-	FBO_t* oldFbo;
+	float			fade = 0.0f;
+	float			screenZ = 0.0f;
+	FBO_t* oldFbo = nullptr;
 
 	backEnd.pc.c_flareTests++;
 
@@ -328,7 +328,7 @@ static void RB_RenderFlare(flare_t* f)
 
 	backEnd.currentEntity = &backEnd.entityFlare;
 
-	shader_t* shader;
+	shader_t* shader = nullptr;
 	if (flare == nullptr)
 		shader = tr.flareShader;
 	else
@@ -339,7 +339,7 @@ static void RB_RenderFlare(flare_t* f)
 	vec3_t		dir;
 	vec3_t		left, up;
 	vec3_t		origin;
-	float		d, dist;
+	float		d = 0.0f, dist = 0.0f;
 
 	// calculate the xyz locations for the four corners
 	VectorMA(f->origin, 3, f->normal, origin);
@@ -397,8 +397,8 @@ extend past the portal edge will be overwritten.
 ==================
 */
 void RB_RenderFlares(void) {
-	flare_t* f;
-	flare_t** prev;
+	flare_t* f = nullptr;
+	flare_t** prev = nullptr;
 	qboolean	draw;
 
 	if (!r_flares->integer) {

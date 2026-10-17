@@ -761,7 +761,7 @@ static void Workshop_Set_Weapon_f(gentity_t* ent)
 		gi.Printf("usage: workshop_set_weapon <weapon name or 'me'>\n");
 		return;
 	}
-	int weaponNum;
+	int weaponNum = 0;
 	if (!Q_stricmp(gi.argv(1), "me"))
 	{
 		weaponNum = g_entities[0].s.weapon;
@@ -1360,7 +1360,7 @@ static void WP_RemovenpcSaber(gentity_t* ent, const int saberNum)
 static void WP_SetSaberNPCEntModelSkin(gentity_t* ent, gentity_t* saberent)
 {
 	const gentity_t* selected = &g_entities[selectedAI];
-	int saberModel;
+	int saberModel = 0;
 	qboolean newModel = qfalse;
 
 	if (!selected->client->ps.saber[0].model)
@@ -1408,7 +1408,7 @@ static void WP_SetSaberNPCEntModelSkin(gentity_t* ent, gentity_t* saberent)
 static void WP_SetSecondSaberNPCEntModelSkin(gentity_t* ent, gentity_t* saberent)
 {
 	const gentity_t* selected = &g_entities[selectedAI];
-	int saberModel;
+	int saberModel = 0;
 	qboolean newModel = qfalse;
 
 	if (!selected->client->ps.saber[1].model)
@@ -1630,7 +1630,7 @@ static void Workshop_Set_SaberColor_f(gentity_t* ent)
 	//FIXME: just list the colors, each additional listing sets that blade
 	int saberNum = atoi(gi.argv(1));
 	const char* color[MAX_BLADES]{};
-	int bladeNum;
+	int bladeNum = 0;
 
 	for (bladeNum = 0; bladeNum < MAX_BLADES; bladeNum++)
 	{
@@ -1688,7 +1688,7 @@ static void Workshop_Notarget_f(gentity_t* ent)
 static void Workshop_Undying_f(gentity_t* ent)
 {
 	gentity_t* selected = &g_entities[selectedAI];
-	const char* msg;
+	const char* msg = nullptr;
 	if (selected->flags & FL_UNDYING)
 	{
 		msg = "undead mode OFF\n";
@@ -1705,7 +1705,7 @@ static void Workshop_Undying_f(gentity_t* ent)
 static void Workshop_Shielding_f(gentity_t* ent)
 {
 	gentity_t* selected = &g_entities[selectedAI];
-	const char* msg;
+	const char* msg = nullptr;
 	if (selected->flags & FL_SHIELDED)
 	{
 		msg = "shielded mode OFF\n";

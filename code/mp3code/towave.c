@@ -240,12 +240,12 @@ int bFastEstimateOnly = 0; // MUST DEFAULT TO THIS VALUE!!!!!!!!!
 char* C_MP3_IsValid(void* pvData, const int iDataLen, const int bStereoDesired)
 {
 	//	char sTemp[1024];	/////////////////////////////////////////////////
-	unsigned int iRealDataStart;
+	unsigned int iRealDataStart = 0;
 	MPEG_HEAD head;
 	DEC_INFO decinfo;
 
-	int iBitRate;
-	int iFrameBytes;
+	int iBitRate = 0;
+	int iFrameBytes = 0;
 
 #ifdef _DEBUG
 	//	int iIgnoreThisForNowIJustNeedItToBreakpointOnToReadAValue = sizeof(MP3STREAM);
@@ -320,11 +320,11 @@ char* C_MP3_IsValid(void* pvData, const int iDataLen, const int bStereoDesired)
 //
 char* C_MP3_GetHeaderData(void* pvData, const int iDataLen, int* piRate, int* piWidth, int* piChannels, const int bStereoDesired)
 {
-	unsigned int iRealDataStart;
+	unsigned int iRealDataStart = 0;
 	MPEG_HEAD head;
 	DEC_INFO decinfo;
 
-	int iBitRate;
+	int iBitRate = 0;
 
 	memset(pMP3Stream, 0, sizeof(*pMP3Stream));
 
@@ -362,9 +362,9 @@ char* C_MP3_GetHeaderData(void* pvData, const int iDataLen, int* piRate, int* pi
 //
 char* C_MP3_GetUnpackedSize(void* pvData, int iSourceBytesRemaining, int* piUnpackedSize, const int bStereoDesired)
 {
-	unsigned int iRealDataStart;
+	unsigned int iRealDataStart = 0;
 	MPEG_HEAD head;
-	int iBitRate;
+	int iBitRate = 0;
 
 	char* pPCM_Buffer = PCM_Buffer;
 	char* psReturn = NULL;
@@ -455,9 +455,9 @@ char* C_MP3_GetUnpackedSize(void* pvData, int iSourceBytesRemaining, int* piUnpa
 char* C_MP3_UnpackRawPCM(void* pvData, int iSourceBytesRemaining, int* piUnpackedSize, void* pbUnpackBuffer,
 	const int bStereoDesired)
 {
-	unsigned int iRealDataStart;
+	unsigned int iRealDataStart = 0;
 	MPEG_HEAD head;
-	int iBitRate;
+	int iBitRate = 0;
 
 	char* psReturn = NULL;
 	//	int  iSourceReadIndex = 0;
@@ -548,7 +548,7 @@ char* C_MP3Stream_DecodeInit(const LP_MP3STREAM pSFX_MP3Stream, void* pvSourceDa
 	char* psReturn = NULL;
 	MPEG_HEAD head; // only relevant within this function during init
 	DEC_INFO decinfo; //   " "
-	int iBitRate; // not used after being filled in by head_info3()
+	int iBitRate = 0; // not used after being filled in by head_info3()
 
 	pMP3Stream = pSFX_MP3Stream;
 
@@ -645,7 +645,7 @@ char* C_MP3Stream_DecodeInit(const LP_MP3STREAM pSFX_MP3Stream, void* pvSourceDa
 //
 unsigned int C_MP3Stream_Decode(const LP_MP3STREAM pSFX_MP3Stream, const int bFastForwarding)
 {
-	unsigned int ui_decoded; // default to "finished"
+	unsigned int ui_decoded = 0; // default to "finished"
 
 	pMP3Stream = pSFX_MP3Stream;
 
@@ -702,8 +702,8 @@ char* C_MP3Stream_Rewind(const LP_MP3STREAM pSFX_MP3Stream)
 {
 	char* psReturn = NULL;
 	MPEG_HEAD head; // only relevant within this function during init
-	int iBitRate; // ditto
-	int iNULL;
+	int iBitRate = 0; // ditto
+	int iNULL = 0;
 
 	pMP3Stream = pSFX_MP3Stream;
 

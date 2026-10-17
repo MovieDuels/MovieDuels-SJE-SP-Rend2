@@ -109,8 +109,8 @@ static void R_PerformanceCounters(void)
 		for (int i = 0; i < numTimedBlocks; i++)
 		{
 			gpuTimedBlock_t* timedBlock = frame->timedBlocks + i;
-			GLuint64 startTime, endTime, diffInNs;
-			float diffInMs;
+			GLuint64 startTime = 0, endTime = 0, diffInNs = 0;
+			float diffInMs = 0.0f;
 
 			qglGetQueryObjectui64v(timedBlock->beginTimer, GL_QUERY_RESULT, &startTime);
 			qglGetQueryObjectui64v(timedBlock->endTimer, GL_QUERY_RESULT, &endTime);
@@ -142,7 +142,7 @@ R_IssueRenderCommands
 */
 static void R_IssueRenderCommands(const qboolean runPerformanceCounters)
 {
-	renderCommandList_t* cmdList;
+	renderCommandList_t* cmdList = nullptr;
 
 	cmdList = &backEndData->commands;
 	assert(cmdList);
@@ -186,7 +186,7 @@ make sure there is enough command space
 */
 static void* R_GetCommandBufferReserved(unsigned int bytes, const int reservedBytes)
 {
-	renderCommandList_t* cmdList;
+	renderCommandList_t* cmdList = nullptr;
 
 	cmdList = &backEndData->commands;
 	bytes = PAD(bytes, sizeof(void*));
@@ -224,7 +224,7 @@ R_AddDrawSurfCmd
 */
 void R_AddDrawSurfCmd(drawSurf_t* drawSurfs, const int numDrawSurfs)
 {
-	drawSurfsCommand_t* cmd;
+	drawSurfsCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -249,7 +249,7 @@ R_AddConvolveCubemapsCmd
 =============
 */
 void R_AddConvolveCubemapCmd(cubemap_t* cubemap, int cubemapId) {
-	convolveCubemapCommand_t* cmd;
+	convolveCubemapCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -271,7 +271,7 @@ R_PostProcessingCmd
 =============
 */
 void	R_AddPostProcessCmd() {
-	postProcessCommand_t* cmd;
+	postProcessCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -288,7 +288,7 @@ void	R_AddPostProcessCmd() {
 
 qhandle_t R_BeginTimedBlockCmd(const char* name)
 {
-	beginTimedBlockCommand_t* cmd;
+	beginTimedBlockCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return (qhandle_t)-1;
@@ -313,7 +313,7 @@ qhandle_t R_BeginTimedBlockCmd(const char* name)
 
 void R_EndTimedBlockCmd(qhandle_t timerHandle)
 {
-	endTimedBlockCommand_t* cmd;
+	endTimedBlockCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -341,7 +341,7 @@ Passing NULL will set the color to white
 =============
 */
 void	RE_SetColor(const float* rgba) {
-	setColorCommand_t* cmd;
+	setColorCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -382,7 +382,7 @@ RE_RotatePic
 */
 void RE_RotatePic(const float x, const float y, const float w, const float h, const float s1, const float t1, const float s2, const float t2, const float a, const qhandle_t hShader)
 {
-	rotatePicCommand_t* cmd;
+	rotatePicCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -411,7 +411,7 @@ RE_RotatePic2
 */
 void RE_RotatePic2(const float x, const float y, const float w, const float h, const float s1, const float t1, const float s2, const float t2, const float a, const qhandle_t hShader)
 {
-	rotatePicCommand_t* cmd;
+	rotatePicCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -440,7 +440,7 @@ RE_StretchPic
 */
 void RE_StretchPic(const float x, const float y, const float w, const float h, const float s1, const float t1, const float s2, const float t2, const qhandle_t hShader)
 {
-	stretchPicCommand_t* cmd;
+	stretchPicCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -517,7 +517,7 @@ RE_Scissor
 */
 void RE_Scissor(const float x, const float y, const float w, const float h)
 {
-	scissorCommand_t* cmd;
+	scissorCommand_t* cmd = nullptr;
 
 	cmd = (scissorCommand_t*)R_GetCommandBuffer(sizeof(*cmd));
 	if (!cmd) {
@@ -763,7 +763,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 			}
 			else if (stereoFrame == STEREO_RIGHT)
 			{
-				clearDepthCommand_t* cldcmd;
+				clearDepthCommand_t* cldcmd = nullptr;
 
 				if (!(cldcmd = (clearDepthCommand_t*)R_GetCommandBuffer(sizeof(*cldcmd))))
 					return;
@@ -836,7 +836,7 @@ Returns the number of msec spent in the back end
 =============
 */
 void RE_EndFrame(int* frontEndMsec, int* backEndMsec) {
-	swapBuffersCommand_t* cmd;
+	swapBuffersCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;
@@ -869,7 +869,7 @@ RE_TakeVideoFrame
 void RE_TakeVideoFrame(int width, int height,
 	byte* captureBuffer, byte* encodeBuffer, qboolean motionJpeg)
 {
-	videoFrameCommand_t* cmd;
+	videoFrameCommand_t* cmd = nullptr;
 
 	if (!tr.registered) {
 		return;

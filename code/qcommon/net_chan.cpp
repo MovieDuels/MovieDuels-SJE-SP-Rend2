@@ -162,7 +162,7 @@ void Netchan_Transmit(netchan_t* chan, const int length, const byte* data)
 	/* Fragment large reliable messages */
 	if (length >= FRAGMENT_SIZE)
 	{
-		int fragmentLength;
+		int fragmentLength = 0;
 		int fragmentStart = 0;
 
 		do
@@ -248,7 +248,7 @@ copied out.
 qboolean Netchan_Process(netchan_t* chan, msg_t* msg)
 {
 	//int			qport;
-	int fragmentStart, fragmentLength;
+	int fragmentStart = 0, fragmentLength = 0;
 	qboolean fragmented;
 
 	// get sequence numbers

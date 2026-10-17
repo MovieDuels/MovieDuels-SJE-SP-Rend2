@@ -98,7 +98,7 @@ namespace
 		const size_t avipadwidth = PAD(linelen, VIDEO_AVI_LINE_PADDING);
 		const size_t avipadlen = avipadwidth - linelen;
 		const byte* src = job->pixels.data();
-		byte* dest;
+		byte* dest = nullptr;
 
 		job->out.resize(avipadwidth * job->height);
 		dest = job->out.data();

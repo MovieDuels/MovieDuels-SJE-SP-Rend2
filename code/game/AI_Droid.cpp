@@ -292,8 +292,8 @@ void NPC_Droid_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* other,
 	if (!self || !self->client || !self->NPC)
 		return;
 
-	int anim;
-	float pain_chance;
+	int anim = 0;
+	float pain_chance = 0.0f;
 
 	if (self->NPC->ignorePain)
 	{

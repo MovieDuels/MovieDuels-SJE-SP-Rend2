@@ -40,7 +40,7 @@ void CG_MissionFailed()
 {
 	if (!cg.missionFailedScreen)
 	{
-		char* text;
+		char* text = nullptr;
 		cgi_UI_SetActive_Menu("missionfailed_menu");
 		cg.missionFailedScreen = qtrue;
 

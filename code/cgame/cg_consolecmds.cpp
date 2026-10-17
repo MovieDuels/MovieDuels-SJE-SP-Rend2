@@ -424,7 +424,7 @@ so it can perform tab completion
 */
 void CG_InitConsoleCommands()
 {
-	size_t i;
+	size_t i = 0;
 
 	for (i = 0; i < num_commands; i++)
 		cgi_AddCommand(commands[i].cmd);

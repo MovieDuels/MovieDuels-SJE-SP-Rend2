@@ -3053,7 +3053,7 @@ qboolean PM_SaberKataDone(const int curmove = LS_NONE, const int newmove = LS_NO
 			newmove == LS_A_R2L ||
 			newmove == LS_A_TR2BL)
 		{ //lower chaining tolerance for spinning saber anims
-			int chainTolerance;
+			int chainTolerance = 0;
 
 			if (pm->ps->saberAnimLevel == FORCE_LEVEL_1)
 			{
@@ -6173,8 +6173,8 @@ int PM_TorsoAnimForFrame(gentity_t* ent, const int torso_frame)
 
 qboolean PM_FinishedCurrentLegsAnim(gentity_t* self)
 {
-	int junk;
-	float currentFrame, animSpeed;
+	int junk = 0;
+	float currentFrame = 0.0f, animSpeed = 0.0f;
 
 	if (!self->client)
 	{
@@ -6229,7 +6229,7 @@ qboolean PM_HasAnimation(const gentity_t* ent, const int animation)
 
 int PM_PickAnim(const gentity_t* self, const int min_anim, const int max_anim)
 {
-	int anim;
+	int anim = 0;
 	int count = 0;
 
 	if (!self)
@@ -6875,7 +6875,7 @@ void PM_SetAnimFinal(int* torso_anim, int* legs_anim,
 		const bool walking = !!PM_WalkingAnim(anim);
 		const bool has_dual = gent->client->ps.saberAnimLevel == SS_DUAL;
 		const bool has_staff = gent->client->ps.saberAnimLevel == SS_STAFF;
-		float move_speed_of_anim; //g_noFootSlideRunScale->value;
+		float move_speed_of_anim = 0.0f; //g_noFootSlideRunScale->value;
 
 		if (anim == BOTH_CROUCH1WALK || anim == BOTH_CROUCH1WALKBACK)
 		{

@@ -55,7 +55,7 @@ static mdfour_ctx* m;
 /* this applies md4 to 64 byte chunks */
 static void mdfour64(const uint32_t* M)
 {
-	int j;
+	int j = 0;
 	uint32_t X[16]{};
 
 	for (j = 0; j < 16; j++)

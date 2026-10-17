@@ -130,7 +130,7 @@ static void AI_SetClosestBuddy(AIGroupInfo_t* group)
 
 static void AI_SortGroupByPathCostToEnemy(AIGroupInfo_t* group)
 {
-	int i;
+	int i = 0;
 	qboolean sort = qfalse;
 
 	if (group->enemy != nullptr)
@@ -170,7 +170,7 @@ static void AI_SortGroupByPathCostToEnemy(AIGroupInfo_t* group)
 	//Now sort
 	if (sort)
 	{
-		int j;
+		int j = 0;
 		AIGroupMember_t best_members[MAX_GROUP_MEMBERS]{};
 		//initialize bestMembers data
 		for (j = 0; j < group->numGroup; j++)
@@ -235,7 +235,7 @@ static qboolean AI_FindSelfInPreviousGroup(const gentity_t* self)
 
 static void AI_InsertGroupMember(AIGroupInfo_t* group, gentity_t* member)
 {
-	int i;
+	int i = 0;
 	//okay, you know what?  Check this damn group and make sure we're not already in here!
 	for (i = 0; i < group->numGroup; i++)
 	{
@@ -624,7 +624,7 @@ extern void ST_StartFlee(gentity_t* self, gentity_t* enemy, vec3_t danger_point,
 void AI_GroupMemberKilled(const gentity_t* self)
 {
 	AIGroupInfo_t* group = self->NPC->group;
-	gentity_t* member;
+	gentity_t* member = nullptr;
 	qboolean noflee = qfalse;
 
 	if (!group)
@@ -750,8 +750,8 @@ void AI_GroupUpdateSquadstates(AIGroupInfo_t* group, const gentity_t* member, co
 
 static qboolean AI_RefreshGroup(AIGroupInfo_t* group)
 {
-	gentity_t* member;
-	int i; //, j;
+	gentity_t* member = nullptr;
+	int i = 0; //, j;
 
 	//see if we should merge with another group
 	for (i = 0; i < MAX_FRAME_GROUPS; i++)

@@ -25,9 +25,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 float ProjectRadius(float r, vec3_t location)
 {
-	float pr;
-	float dist;
-	float c;
+	float pr = 0.0f;
+	float dist = 0.0f;
+	float c = 0.0f;
 	vec3_t	p;
 	float	projected[4];
 
@@ -76,8 +76,8 @@ R_CullModel
 */
 static int R_CullModel(mdvModel_t* model, trRefEntity_t* ent) {
 	vec3_t		bounds[2];
-	mdvFrame_t* oldFrame, * newFrame;
-	int			i;
+	mdvFrame_t* oldFrame = nullptr, * newFrame = nullptr;
+	int			i = 0;
 
 	// compute frame pointers
 	newFrame = model->frames + ent->e.frame;
@@ -105,7 +105,7 @@ static int R_CullModel(mdvModel_t* model, trRefEntity_t* ent) {
 		}
 		else
 		{
-			int sphereCull, sphereCullB;
+			int sphereCull = 0, sphereCullB = 0;
 
 			sphereCull = R_CullLocalPointAndRadius(newFrame->localOrigin, newFrame->radius);
 			if (newFrame == oldFrame) {
@@ -188,13 +188,13 @@ R_ComputeLOD
 */
 int R_ComputeLOD(trRefEntity_t* ent)
 {
-	float radius;
-	float flod, lodscale;
-	float projectedRadius;
-	mdvFrame_t* frame;
-	mdrHeader_t* mdr;
-	mdrFrame_t* mdrframe;
-	int lod;
+	float radius = 0.0f;
+	float flod = 0.0f, lodscale = 0.0f;
+	float projectedRadius = 0.0f;
+	mdvFrame_t* frame = nullptr;
+	mdrHeader_t* mdr = nullptr;
+	mdrFrame_t* mdrframe = nullptr;
+	int lod = 0;
 
 	if (tr.currentModel->numLods < 2)
 	{
@@ -208,7 +208,7 @@ int R_ComputeLOD(trRefEntity_t* ent)
 
 		if (tr.currentModel->type == MOD_MDR)
 		{
-			int frameSize;
+			int frameSize = 0;
 			mdr = tr.currentModel->data.mdr;
 			frameSize = (size_t)(&((mdrFrame_t*)0)->bones[mdr->numBones]);
 
@@ -267,10 +267,10 @@ R_ComputeFogNum
 =================
 */
 int R_ComputeFogNum(mdvModel_t* model, trRefEntity_t* ent) {
-	int				i, j = 0;
-	float			frameRadius;
-	fog_t* fog;
-	mdvFrame_t* mdvFrame;
+	int				i = 0, j = 0;
+	float			frameRadius = 0.0f;
+	fog_t* fog = nullptr;
+	mdvFrame_t* mdvFrame = nullptr;
 	vec3_t			localOrigin;
 
 	if (tr.refdef.rdflags & RDF_NOWORLDMODEL) {
@@ -411,8 +411,8 @@ void R_AddMD3Surfaces(trRefEntity_t* ent, int entityNum)
 		}
 		else if (ent->e.customSkin > 0 && ent->e.customSkin < tr.numSkins)
 		{
-			skin_t* skin;
-			int		j;
+			skin_t* skin = nullptr;
+			int		j = 0;
 
 			skin = R_GetSkinByHandle(ent->e.customSkin);
 

@@ -68,13 +68,13 @@ RB_ProjectionShadowDeform
 =================
 */
 void RB_ProjectionShadowDeform(void) {
-	float* xyz;
-	int		i;
-	float	h;
+	float* xyz = nullptr;
+	int		i = 0;
+	float	h = 0.0f;
 	vec3_t	ground;
 	vec3_t	light;
-	float	groundDist;
-	float	d;
+	float	groundDist = 0.0f;
+	float	d = 0.0f;
 	vec3_t	lightDir;
 
 	xyz = (float*)tess.xyz;

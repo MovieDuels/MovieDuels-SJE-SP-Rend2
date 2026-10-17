@@ -162,7 +162,7 @@ qboolean coplanar_tri_tri(vec3_t n, vec3_t v0, vec3_t v1, vec3_t v2,
 	vec3_t u0, vec3_t u1, vec3_t u2)
 {
 	vec3_t a{};
-	short i0, i1;
+	short i0 = 0, i1 = 0;
 	/* first project onto an axis-aligned plane, that maximizes the area */
 	/* of the triangles, compute indices: i0,i1. */
 	a[0] = fabs(n[0]);
@@ -212,15 +212,15 @@ qboolean tri_tri_intersect(vec3_t V0, vec3_t V1, vec3_t V2,
 {
 	vec3_t E1{}, E2{};
 	vec3_t N1{}, N2{};
-	float d2;
-	float dv0, dv1, dv2;
+	float d2 = 0.0f;
+	float dv0 = 0.0f, dv1 = 0.0f, dv2 = 0.0f;
 	vec3_t D{};
 	float isect1[2]{}, isect2[2]{};
-	float du0du1, du0du2, dv0dv1, dv0dv2;
-	short index;
-	float vp0, vp1, vp2;
-	float up0, up1, up2;
-	float b, c, max;
+	float du0du1 = 0.0f, du0du2 = 0.0f, dv0dv1 = 0.0f, dv0dv2 = 0.0f;
+	short index = 0;
+	float vp0 = 0.0f, vp1 = 0.0f, vp2 = 0.0f;
+	float up0 = 0.0f, up1 = 0.0f, up2 = 0.0f;
+	float b = 0.0f, c = 0.0f, max = 0.0f;
 
 	/* compute plane equation of triangle(V0,V1,V2) */
 	SUB(E1, V1, V0);
@@ -339,7 +339,7 @@ extern qboolean G_FindClosestPointOnLineSegment(const vec3_t start, const vec3_t
 float ShortestLineSegBewteen2LineSegs(vec3_t start1, vec3_t end1, vec3_t start2, vec3_t end2, vec3_t close_pnt1,
 	vec3_t close_pnt2)
 {
-	float current_dist;
+	float current_dist = 0.0f;
 	vec3_t new_pnt;
 	//start1, end1 : the first segment
 	//start2, end2 : the second segment

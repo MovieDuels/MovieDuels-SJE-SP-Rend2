@@ -97,7 +97,7 @@ RB_AddQuadStampExt
 */
 void RB_AddQuadStampExt(vec3_t origin, vec3_t left, vec3_t up, float color[4], float s1, float t1, float s2, float t2) {
 	vec3_t		normal;
-	int			ndx;
+	int			ndx = 0;
 
 	RB_CHECKOVERFLOW(4, 6);
 
@@ -255,7 +255,7 @@ RB_SurfaceSprite
 */
 static void RB_SurfaceSprite() {
 	vec3_t		left, up;
-	float		radius;
+	float		radius = 0.0f;
 	float			colors[4]{};
 	trRefEntity_t* ent = backEnd.currentEntity;
 
@@ -266,8 +266,8 @@ static void RB_SurfaceSprite() {
 		VectorScale(backEnd.viewParms.ori.axis[2], radius, up);
 	}
 	else {
-		float	s, c;
-		float	ang;
+		float	s = 0.0f, c = 0.0f;
+		float	ang = 0.0f;
 
 		ang = M_PI * ent->e.rotation / 180;
 		s = sin(ang);
@@ -296,7 +296,7 @@ RB_SurfaceOrientedQuad
 static void RB_SurfaceOrientedQuad(void)
 {
 	vec3_t	left, up;
-	float	radius;
+	float	radius = 0.0f;
 	float	color[4]{};
 
 	// calculate the xyz locations for the four corners
@@ -316,8 +316,8 @@ static void RB_SurfaceOrientedQuad(void)
 	else
 	{
 		vec3_t	tempLeft, tempUp;
-		float	s, c;
-		float	ang;
+		float	s = 0.0f, c = 0.0f;
+		float	ang = 0.0f;
 
 		ang = M_PI * backEnd.currentEntity->e.rotation / 180;
 		s = sin(ang);
@@ -350,8 +350,8 @@ RB_SurfacePolychain
 =============
 */
 static void RB_SurfacePolychain(srfPoly_t* p) {
-	int		i;
-	int		numv;
+	int		i = 0;
+	int		numv = 0;
 
 	RB_CHECKOVERFLOW(p->numVerts, 3 * (p->numVerts - 2));
 
@@ -382,15 +382,15 @@ static void RB_SurfacePolychain(srfPoly_t* p) {
 
 static void RB_SurfaceVertsAndIndexes(int numVerts, srfVert_t* verts, int numIndexes, glIndex_t* indexes, int dlightBits, int pshadowBits)
 {
-	int             i;
-	glIndex_t* inIndex;
-	srfVert_t* dv;
-	float* xyz, * texCoords, * lightCoords;
-	uint32_t* lightdir;
-	uint32_t* normal;
-	uint32_t* tangent;
-	glIndex_t* outIndex;
-	float* color;
+	int             i = 0;
+	glIndex_t* inIndex = nullptr;
+	srfVert_t* dv = nullptr;
+	float* xyz = nullptr, * texCoords = nullptr, * lightCoords = nullptr;
+	uint32_t* lightdir = nullptr;
+	uint32_t* normal = nullptr;
+	uint32_t* tangent = nullptr;
+	glIndex_t* outIndex = nullptr;
+	float* color = nullptr;
 	gpuFrame_t* currentFrame = backEndData->currentFrame;
 
 	RB_CheckVBOandIBO(currentFrame->dynamicVbo, currentFrame->dynamicIbo);
@@ -479,8 +479,8 @@ static qboolean RB_SurfaceVbo(
 	VBO_t* vbo, IBO_t* ibo, int numVerts, int numIndexes, int firstIndex,
 	int minIndex, int maxIndex, int dlightBits, int pshadowBits, qboolean shaderCheck)
 {
-	int i, mergeForward, mergeBack;
-	GLvoid* firstIndexOffset, * lastIndexOffset;
+	int i = 0, mergeForward = 0, mergeBack = 0;
+	GLvoid* firstIndexOffset = nullptr, * lastIndexOffset = nullptr;
 
 	if (!vbo || !ibo)
 	{
@@ -608,9 +608,9 @@ RB_SurfaceBeam
 static void RB_SurfaceBeam(void)
 {
 #define NUM_BEAM_SEGS 6
-	refEntity_t* e;
+	refEntity_t* e = nullptr;
 	shaderProgram_t* sp = &tr.textureColorShader[TEXCOLORDEF_USE_VERTICES];
-	int	i;
+	int	i = 0;
 	vec3_t perpvec;
 	vec3_t direction{}, normalized_direction{};
 	vec3_t	start_points[NUM_BEAM_SEGS]{}, end_points[NUM_BEAM_SEGS]{};
@@ -701,8 +701,8 @@ static void RB_SurfaceBeam(void)
 //------------------
 static void DoSprite(vec3_t origin, const float radius, const float rotation)
 {
-	float	s, c;
-	float	ang;
+	float	s = 0.0f, c = 0.0f;
+	float	ang = 0.0f;
 	vec3_t	left, up;
 	float	color[4]{};
 
@@ -770,8 +770,8 @@ RB_SurfaceLine
 
 static void DoLine(const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth)
 {
-	float		spanWidth2;
-	int			vbase;
+	float		spanWidth2 = 0.0f;
+	int			vbase = 0;
 
 	RB_CHECKOVERFLOW(4, 6);
 
@@ -815,7 +815,7 @@ static void DoLine(const vec3_t start, const vec3_t end, const vec3_t up, float 
 
 static void DoLine2(const vec3_t start, const vec3_t end, const vec3_t up, const float spanWidth, const float spanWidth2, const float tcStart = 0.0f, const float tcEnd = 1.0f)
 {
-	int			vbase;
+	int			vbase = 0;
 
 	RB_CHECKOVERFLOW(4, 6);
 
@@ -857,8 +857,8 @@ static void DoLine2(const vec3_t start, const vec3_t end, const vec3_t up, const
 
 static void DoLine_Oriented(const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth)
 {
-	float		spanWidth2;
-	int			vbase;
+	float		spanWidth2 = 0.0f;
+	int			vbase = 0;
 
 	vbase = tess.numVertexes;
 
@@ -901,7 +901,7 @@ static void DoLine_Oriented(const vec3_t start, const vec3_t end, const vec3_t u
 
 static void RB_SurfaceOrientedLine(void)
 {
-	refEntity_t* e;
+	refEntity_t* e = nullptr;
 	vec3_t		right;
 	vec3_t		start, end;
 
@@ -921,7 +921,7 @@ static void RB_SurfaceOrientedLine(void)
 //-----------------
 static void RB_SurfaceLine(void)
 {
-	refEntity_t* e;
+	refEntity_t* e = nullptr;
 	vec3_t		right;
 	vec3_t		start, end;
 	vec3_t		v1, v2;
@@ -951,8 +951,8 @@ RB_SurfaceCylinder
 // FIXME: use quad stamp?
 static void DoCylinderPart(polyVert_t* verts)
 {
-	int			vbase;
-	int			i;
+	int			vbase = 0;
+	int			i = 0;
 
 	RB_CHECKOVERFLOW(4, 6);
 
@@ -985,11 +985,11 @@ static void RB_SurfaceCylinder(void)
 {
 	static polyVert_t	lower_points[NUM_CYLINDER_SEGMENTS], upper_points[NUM_CYLINDER_SEGMENTS], verts[4];
 	vec3_t		vr, vu, midpoint, v1;
-	float		detail, length;
-	int			i;
-	int			segments;
-	refEntity_t* e;
-	int			nextSegment;
+	float		detail = 0.0f, length = 0.0f;
+	int			i = 0;
+	int			segments = 0;
+	refEntity_t* e = nullptr;
+	int			nextSegment = 0;
 
 	e = &backEnd.currentEntity->e;
 
@@ -1154,7 +1154,7 @@ static void DoBoltSeg(vec3_t start, vec3_t end, vec3_t right, const float radius
 	vec3_t fwd, old;
 	vec3_t off = { 10,10,10 };
 	vec3_t rt, up;
-	float oldPerc = 0.0f, perc, oldRadius;
+	float oldPerc = 0.0f, perc = 0.0f, oldRadius = 0.0f;
 
 	refEntity_t* e = &backEnd.currentEntity->e;
 
@@ -1294,11 +1294,11 @@ static void DoRailCore(const vec3_t start, const vec3_t end, const vec3_t up, co
 static void RB_SurfaceElectricity()
 //------------------------------------------
 {
-	refEntity_t* e;
+	refEntity_t* e = nullptr;
 	vec3_t		right, fwd;
 	vec3_t		start, end;
 	vec3_t		v1, v2;
-	float		radius, perc = 1.0f, dis;
+	float		radius = 0.0f, perc = 1.0f, dis = 0.0f;
 
 	e = &backEnd.currentEntity->e;
 	radius = e->radius;
@@ -1666,10 +1666,10 @@ static void LerpMeshVertexes_scalar(mdvSurface_t* surf, float backlerp)
 		VectorArrayNormalize((vec4_t*)tess.normal[tess.numVertexes], numVerts);
 	}
 #endif
-	float* outXyz;
-	uint32_t* outNormal;
-	mdvVertex_t* newVerts;
-	int		vertNum;
+	float* outXyz = nullptr;
+	uint32_t* outNormal = nullptr;
+	mdvVertex_t* newVerts = nullptr;
+	int		vertNum = 0;
 
 	newVerts = surf->verts + backEnd.currentEntity->e.frame * surf->numVerts;
 
@@ -1702,7 +1702,7 @@ static void LerpMeshVertexes_scalar(mdvSurface_t* surf, float backlerp)
 		// interpolate and copy the vertex and normal
 		//
 
-		mdvVertex_t* oldVerts;
+		mdvVertex_t* oldVerts = nullptr;
 
 		oldVerts = surf->verts + backEnd.currentEntity->e.oldframe * surf->numVerts;
 
@@ -1744,11 +1744,11 @@ RB_SurfaceMesh
 =============
 */
 static void RB_SurfaceMesh(mdvSurface_t* surface) {
-	int				j;
-	float			backlerp;
-	mdvSt_t* texCoords;
-	int				Bob, Doug;
-	int				numVerts;
+	int				j = 0;
+	float			backlerp = 0.0f;
+	mdvSt_t* texCoords = nullptr;
+	int				Bob = 0, Doug = 0;
+	int				numVerts = 0;
 
 	if (backEnd.currentEntity->e.oldframe == backEnd.currentEntity->e.frame) {
 		backlerp = 0;
@@ -1799,7 +1799,7 @@ static void RB_SurfaceBSPFace(srfBspSurface_t* srf)
 
 static float	LodErrorForVolume(vec3_t local, float radius) {
 	vec3_t		world{};
-	float		d;
+	float		d = 0.0f;
 
 	// never let it go negative
 	if (r_lodCurveError->value < 0) {
@@ -1835,23 +1835,23 @@ Just copy the grid of points and triangulate
 =============
 */
 static void RB_SurfaceBSPGrid(srfBspSurface_t* srf) {
-	int		i, j;
-	float* xyz;
-	float* texCoords, * lightCoords[MAXLIGHTMAPS]{};
-	uint32_t* normal;
-	uint32_t* tangent;
-	float* color;
-	uint32_t* lightdir;
-	srfVert_t* dv;
-	int		rows, irows, vrows;
-	int		used;
+	int		i = 0, j = 0;
+	float* xyz = nullptr;
+	float* texCoords = nullptr, * lightCoords[MAXLIGHTMAPS]{};
+	uint32_t* normal = nullptr;
+	uint32_t* tangent = nullptr;
+	float* color = nullptr;
+	uint32_t* lightdir = nullptr;
+	srfVert_t* dv = nullptr;
+	int		rows = 0, irows = 0, vrows = 0;
+	int		used = 0;
 	int		widthTable[MAX_GRID_SIZE]{};
 	int		heightTable[MAX_GRID_SIZE]{};
-	float	lodError;
-	int		lodWidth, lodHeight;
-	int		numVertexes;
-	int		dlightBits;
-	int     pshadowBits;
+	float	lodError = 0.0f;
+	int		lodWidth = 0, lodHeight = 0;
+	int		numVertexes = 0;
+	int		dlightBits = 0;
+	int     pshadowBits = 0;
 	//int		*vDlightBits;
 
 	if (RB_SurfaceVbo(srf->vbo, srf->ibo, srf->numVerts, srf->numIndexes,
@@ -1986,15 +1986,15 @@ static void RB_SurfaceBSPGrid(srfBspSurface_t* srf) {
 
 		// add the indexes
 		{
-			int		numIndexes;
-			int		w, h;
+			int		numIndexes = 0;
+			int		w = 0, h = 0;
 
 			h = rows - 1;
 			w = lodWidth - 1;
 			numIndexes = tess.numIndexes;
 			for (i = 0; i < h; i++) {
 				for (j = 0; j < w; j++) {
-					int		v1, v2, v3, v4;
+					int		v1 = 0, v2 = 0, v3 = 0, v4 = 0;
 
 					// vertex order to be reckognized as tristrips
 					v1 = numVertexes + i * lodWidth + j + 1;
@@ -2480,8 +2480,8 @@ static void RB_SurfaceVBOMesh(srfBspSurface_t* srf)
 
 static void RB_SurfaceVBOMDVMesh(srfVBOMDVMesh_t* surface)
 {
-	int i, mergeForward, mergeBack;
-	GLvoid* firstIndexOffset, * lastIndexOffset;
+	int i = 0, mergeForward = 0, mergeBack = 0;
+	GLvoid* firstIndexOffset = nullptr, * lastIndexOffset = nullptr;
 
 	GLimp_LogComment("--- RB_SurfaceVBOMDVMesh ---\n");
 
@@ -2698,7 +2698,7 @@ static void RB_SurfaceSprites(srfSprites_t* surf)
 		{ currentFrameUbo, tr.temporalInfoUboOffset, UNIFORM_BLOCK_TEMPORAL_INFO }
 	};
 
-	uint32_t numBindings;
+	uint32_t numBindings = 0;
 	UniformData* spriteUniformData = uniformDataWriter.Finish(frameAllocator);
 	SamplerBinding* spriteSamplerBinding = samplerBindingsWriter.Finish(
 		frameAllocator, &numBindings);

@@ -295,8 +295,8 @@ static void BG_IK_MoveLimb(CGhoul2Info_v& ghoul2, const int bolt_index, const ch
 	else if (*ik_in_progress)
 	{
 		//kill it
-		float c_frame, animSpeed;
-		int s_frame, e_frame, flags;
+		float c_frame = 0.0f, animSpeed = 0.0f;
+		int s_frame = 0, e_frame = 0, flags = 0;
 
 		gi.G2API_SetBoneIKState(ghoul2, time, "lower_lumbar", IKS_NONE, nullptr);
 		gi.G2API_SetBoneIKState(ghoul2, time, "upper_lumbar", IKS_NONE, nullptr);
@@ -613,7 +613,7 @@ static qboolean PM_AdjustAngleForWallRunold(gentity_t* ent, usercmd_t* ucmd, con
 		const vec3_t maxs = { ent->maxs[0], ent->maxs[1], 24 };
 		const vec3_t mins = { ent->mins[0], ent->mins[1], 0 };
 		trace_t trace;
-		float dist, yaw_adjust;
+		float dist = 0.0f, yaw_adjust = 0.0f;
 
 		AngleVectors(fwd_angles, fwd, rt, nullptr);
 
@@ -769,7 +769,7 @@ qboolean PM_AdjustAngleForWallRun(gentity_t* ent, usercmd_t* ucmd, const qboolea
 		const vec3_t maxs = { ent->maxs[0], ent->maxs[1], 24 };
 		const vec3_t mins = { ent->mins[0], ent->mins[1], 0 };
 		trace_t trace;
-		float dist, yaw_adjust;
+		float dist = 0.0f, yaw_adjust = 0.0f;
 
 		AngleVectors(fwd_angles, fwd, rt, nullptr);
 
@@ -988,7 +988,7 @@ void PM_WallRunChain(gentity_t* ent, const usercmd_t* ucmd)
 
 qboolean PM_AdjustAnglesForSpinningFlip(gentity_t* ent, usercmd_t* ucmd, const qboolean angles_only)
 {
-	float spin_start, spin_end, spin_amt;
+	float spin_start = 0.0f, spin_end = 0.0f, spin_amt = 0.0f;
 	animNumber_t spin_anim;
 
 	if (ent->client->ps.legsAnim == BOTH_JUMPFLIPSTABDOWN)
@@ -1061,7 +1061,7 @@ qboolean PM_AdjustAnglesForSpinningFlip(gentity_t* ent, usercmd_t* ucmd, const q
 	//do a dip in the view
 	if (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent))
 	{
-		float view_dip;
+		float view_dip = 0.0f;
 		if (elapsed_time < anim_length / 2.0f)
 		{
 			//starting anim
@@ -1433,7 +1433,7 @@ qboolean PM_AdjustAngleForWallJump(gentity_t* ent, usercmd_t* ucmd, const qboole
 		const vec3_t mins = { ent->mins[0], ent->mins[1], 0 };
 		trace_t trace;
 		constexpr float dist = 128;
-		float yaw_adjust;
+		float yaw_adjust = 0.0f;
 		switch (ent->client->ps.legsAnim)
 		{
 		case BOTH_FORCEWALLREBOUND_RIGHT:
@@ -1898,10 +1898,10 @@ are being updated isntead of a full move
 */
 void PM_UpdateViewAngles(int saberAnimLevel, playerState_t* ps, usercmd_t* cmd, gentity_t* gent)
 {
-	short temp;
+	short temp = 0;
 	float root_pitch = 0, pitch_min = -75, pitch_max = 75, yaw_min = 0, yaw_max = 0, locked_yaw_value = 0;
 	//just to shut up warnings
-	int i;
+	int i = 0;
 	vec3_t start, end, tmins, tmaxs, right;
 	trace_t trace;
 	qboolean locked_yaw = qfalse/*, clamped = qfalse*/;

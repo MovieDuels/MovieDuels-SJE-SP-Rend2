@@ -43,7 +43,7 @@ Called on game shutdown
 */
 static void G_WriteClientSessionData(const gclient_t* client)
 {
-	int i;
+	int i = 0;
 
 	const char* s = va("%i", client->sess.sessionTeam);
 	const char* var = va("session%i", client - level.clients);

@@ -348,7 +348,7 @@ static void Svcmd_SaberColor_f()
 {
 	int saberNum = atoi(gi.argv(1));
 	const char* color[MAX_BLADES]{};
-	int bladeNum;
+	int bladeNum = 0;
 
 	for (bladeNum = 0; bladeNum < MAX_BLADES; bladeNum++)
 	{
@@ -686,7 +686,7 @@ static void Svcmd_SaberAttackCycle_f()
 		return;
 	}
 
-	int saberAnimLevel;
+	int saberAnimLevel = 0;
 	if (!self->s.number)
 	{
 		saberAnimLevel = cg.saberAnimLevelPending;
@@ -874,7 +874,7 @@ static void Svcmd_RunScript_f()
 		const char* cmd3 = gi.argv(2);
 		if (cmd3 && cmd3[0])
 		{
-			const gentity_t* found;
+			const gentity_t* found = nullptr;
 			if ((found = G_Find(nullptr, FOFS(targetname), cmd2)) != nullptr)
 			{
 				Quake3Game()->RunScript(found, cmd3);
@@ -899,7 +899,7 @@ static void Svcmd_RunScript_f()
 static void Svcmd_Weather_f(void)
 {
 	char arg1[MAX_STRING_CHARS]{};
-	int num;
+	int num = 0;
 	CG_Argv(1);
 
 	if ((Q_stricmp(arg1, "snow") == 0) || (Q_stricmp(arg1, "1") == 0))

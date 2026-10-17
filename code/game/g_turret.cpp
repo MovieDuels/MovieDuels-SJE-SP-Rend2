@@ -1014,7 +1014,7 @@ Turret that hangs from the ceiling, will aim and shoot at enemies
 void SP_misc_turret(gentity_t* base)
 //-----------------------------------------------------
 {
-	char* s;
+	char* s = nullptr;
 	turret_set_models(base, qfalse);
 
 	gi.G2API_SetBoneAngles(&base->ghoul2[base->playerModel], "Bone_body", vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_Y,
@@ -1151,8 +1151,8 @@ destroyed, and it takes the MP keys.
 void SP_misc_turretG2(gentity_t* base)
 //-----------------------------------------------------
 {
-	char* s;
-	int custom_scale, allied_team;
+	char* s = nullptr;
+	int custom_scale = 0, allied_team = 0;
 
 	//the map has the MP spawnflags; from here on the turret code wants its own
 	const int map_flags = base->spawnflags;
@@ -2071,7 +2071,7 @@ void pas_think(gentity_t* ent)
 	}
 
 	qboolean moved = qfalse;
-	float diff_yaw, diff_pitch = 0.0f;
+	float diff_yaw = 0.0f, diff_pitch = 0.0f;
 	vec3_t front_angles, back_angles;
 
 	ent->speed = AngleNormalize360(ent->speed);

@@ -37,7 +37,7 @@ extern void Q3_TaskIDComplete(gentity_t* ent, taskID_t taskType);
 
 static void G_RoffNotetrackCallback(const gentity_t* cent, const char* notetrack)
 {
-	int i = 0, r = 0, object_id;
+	int i = 0, r = 0, object_id = 0;
 	char type[256]{};
 	char argument[512]{};
 	char addlArg[512]{};
@@ -314,8 +314,8 @@ static void G_FreeRoff(const int index)
 static qboolean G_InitRoff(char* file, unsigned char* data)
 {
 	const auto header = reinterpret_cast<roff_hdr_t*>(data);
-	int count;
-	int i;
+	int count = 0;
+	int i = 0;
 
 	roffs[num_roffs].fileName = G_NewString(file);
 
@@ -410,7 +410,7 @@ static qboolean G_InitRoff(char* file, unsigned char* data)
 
 			if (LittleLong hdr->mNumNotes)
 			{
-				char* start;
+				char* start = nullptr;
 
 				char* ptr = start = reinterpret_cast<char*>(&roff_data[i]);
 				int size = 0;
@@ -451,7 +451,7 @@ int G_LoadRoff(const char* fileName)
 {
 	char file[MAX_QPATH];
 	byte* data = nullptr;
-	int len, roff_id = 0;
+	int len = 0, roff_id = 0;
 
 	// Before even bothering with all of this, make sure we have a place to store it.
 	if (num_roffs >= MAX_ROFFS)

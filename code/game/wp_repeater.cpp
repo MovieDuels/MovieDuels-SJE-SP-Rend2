@@ -79,7 +79,7 @@ static void WP_RepeaterAltFire(gentity_t* ent)
 {
 	vec3_t start;
 	int damage = weaponData[WP_REPEATER].altDamage;
-	gentity_t* missile;
+	gentity_t* missile = nullptr;
 
 	VectorCopy(muzzle, start);
 	WP_TraceSetStart(ent, start);

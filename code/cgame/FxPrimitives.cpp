@@ -265,7 +265,7 @@ bool CParticle::UpdateOrigin()
 	// Only perform physics if this object is tagged to do so
 	if (mFlags & FX_APPLY_PHYSICS)
 	{
-		bool solid;
+		bool solid = false;
 
 		if (mFlags & FX_EXPENSIVE_PHYSICS
 			&& fx_expensivePhysics.integer)
@@ -1432,7 +1432,7 @@ void CEmitter::Draw()
 			// Only perform physics if this object is tagged to do so
 			if (mFlags & FX_APPLY_PHYSICS)
 			{
-				bool solid;
+				bool solid = false;
 
 				if (mFlags & FX_EXPENSIVE_PHYSICS
 					&& fx_expensivePhysics.integer)
@@ -2042,7 +2042,7 @@ void CPoly::PolyInit()
 		return;
 	}
 
-	int i;
+	int i = 0;
 	vec3_t org = { 0, 0, 0 };
 
 	// Find our midpoint

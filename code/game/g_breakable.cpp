@@ -288,7 +288,7 @@ void funcBBrushPain(gentity_t* self, gentity_t* inflictor, const gentity_t* atta
 
 static void InitBBrush(gentity_t* ent)
 {
-	float light;
+	float light = 0.0f;
 	vec3_t color;
 
 	VectorCopy(ent->s.origin, ent->pos1);
@@ -442,7 +442,7 @@ void SP_func_breakable(gentity_t* self)
 	{
 		self->radius *= num_chunks;
 	}
-	char* death_fx;
+	char* death_fx = nullptr;
 	G_SpawnString("playfx", "", &death_fx);
 	self->fxID = death_fx && death_fx[0] ? G_EffectIndex(death_fx) : 0;
 	G_SpawnInt("material", "0", reinterpret_cast<int*>(&self->material));
@@ -472,7 +472,7 @@ void SP_func_breakable(gentity_t* self)
 	}
 	InitBBrush(self);
 
-	char* s;
+	char* s = nullptr;
 	if (G_SpawnString("noise", "*NOSOUND*", &s))
 	{
 		char buffer[MAX_QPATH];
@@ -1224,7 +1224,7 @@ void SP_misc_model_breakable(gentity_t* ent)
 	qboolean b_has_scale = G_SpawnVector("modelscale_vec", "0 0 0", ent->s.modelScale);
 	if (!b_has_scale)
 	{
-		float temp;
+		float temp = 0.0f;
 		G_SpawnFloat("modelscale", "0", &temp);
 		if (temp != 0.0f)
 		{

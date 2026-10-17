@@ -249,7 +249,7 @@ GLimp_DetectAvailableModes
 */
 static bool GLimp_DetectAvailableModes()
 {
-	int i, j;
+	int i = 0, j = 0;
 	char buf[MAX_STRING_CHARS] = { 0 };
 	int numModes = 0;
 
@@ -344,7 +344,7 @@ GLimp_SetMode
 static rserr_t GLimp_SetMode(glconfig_t* glConfig, const windowDesc_t* windowDesc, const char* windowTitle, const int mode,
 	const qboolean fullscreen, const qboolean noborder)
 {
-	int depthBits;
+	int depthBits = 0;
 	Uint32 flags = SDL_WINDOW_SHOWN;
 	SDL_DisplayMode desktopMode;
 	int display = 0;
@@ -475,7 +475,7 @@ static rserr_t GLimp_SetMode(glconfig_t* glConfig, const windowDesc_t* windowDes
 
 	if (windowDesc->api == GRAPHICS_API_OPENGL)
 	{
-		int perChannelColorBits;
+		int perChannelColorBits = 0;
 		for (int i = 0; i < 16; i++)
 		{
 			// 0 - default
@@ -561,7 +561,7 @@ static rserr_t GLimp_SetMode(glconfig_t* glConfig, const windowDesc_t* windowDes
 
 				if (windowDesc->gl.profile == GLPROFILE_ES || compactVersion >= 320)
 				{
-					int profile;
+					int profile = 0;
 					switch (windowDesc->gl.profile)
 					{
 					default:
@@ -872,7 +872,7 @@ void GLimp_LogComment(char* comment)
 void WIN_SetGamma(const glconfig_t* glConfig, byte red[256], byte green[256], byte blue[256])
 {
 	Uint16 table[3][256]{};
-	int i, j;
+	int i = 0, j = 0;
 
 	if (!glConfig->deviceSupportsGamma || r_ignorehwgamma->integer > 0)
 		return;

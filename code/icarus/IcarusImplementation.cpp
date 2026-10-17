@@ -303,7 +303,7 @@ void CIcarus::DeleteSequence(CSequence* sequence)
 
 int CIcarus::AllocateSequences(const int num_sequences, const int* id_table)
 {
-	CSequence* sequence;
+	CSequence* sequence = nullptr;
 
 	for (int i = 0; i < num_sequences; i++)
 	{
@@ -326,13 +326,13 @@ void CIcarus::Precache(char* buffer, const long length)
 {
 	IGameInterface* game = IGameInterface::GetGame(m_flavor);
 	CBlockStream stream;
-	CBlockMember* block_member;
+	CBlockMember* block_member = nullptr;
 	CBlock block;
 
 	if (stream.Open(buffer, length) == 0)
 		return;
 
-	const char* s_val1;
+	const char* s_val1 = nullptr;
 
 	//Now iterate through all blocks of the script, searching for keywords
 	while (stream.BlockAvailable())
@@ -581,7 +581,7 @@ int CIcarus::Save()
 
 int CIcarus::LoadSignals()
 {
-	int num_signals;
+	int num_signals = 0;
 
 	BufferRead(&num_signals, sizeof num_signals);
 
@@ -619,8 +619,8 @@ int CIcarus::LoadSequence()
 
 int CIcarus::LoadSequences()
 {
-	CSequence* sequence;
-	int num_sequences;
+	CSequence* sequence = nullptr;
+	int num_sequences = 0;
 
 	//Get the number of sequences to read in
 	BufferRead(&num_sequences, sizeof num_sequences);
@@ -657,8 +657,8 @@ int CIcarus::LoadSequences()
 
 int CIcarus::LoadSequencers()
 {
-	CSequencer* sequencer;
-	int num_sequencers;
+	CSequencer* sequencer = nullptr;
+	int num_sequencers = 0;
 	IGameInterface* game = IGameInterface::GetGame(m_flavor);
 
 	//Get the number of sequencers to load

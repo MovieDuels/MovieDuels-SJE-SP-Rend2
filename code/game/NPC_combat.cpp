@@ -222,7 +222,7 @@ static qboolean G_CheckSaberAllyAttackDelay(const gentity_t* self, const gentity
 		{
 			return qtrue;
 		}
-		int delay;
+		int delay = 0;
 		if (distance > 2048)
 		{
 			//the farther they are, the shorter the delay
@@ -1745,7 +1745,7 @@ ShootThink
 */
 static void ShootThink()
 {
-	int delay;
+	int delay = 0;
 
 	ucmd.buttons |= BUTTON_ATTACK;
 
@@ -2297,10 +2297,10 @@ gentity_t* NPC_PickEnemy(const gentity_t* closest_to,
 
 	int         num_choices = 0;
 	int         choice[128] = { 0 }; // NOTE: hard cap on random choices
-	gentity_t* newenemy;
+	gentity_t* newenemy = nullptr;
 	gentity_t* closest_enemy = nullptr;
 	vec3_t      diff;
-	float       rel_dist;
+	float       rel_dist = 0.0f;
 	float       best_dist = Q3_INFINITE;
 	qboolean    failed = qfalse;
 	int         vis_checks = CHECK_360 | CHECK_FOV | CHECK_VISRANGE;
@@ -3404,7 +3404,7 @@ using combatPoint_m = std::map<float, int>;
 static int NPC_CollectCombatPoints(const vec3_t origin, const float radius, combatPoint_m& points, const int flags)
 {
 	const float radius_sqr = radius * radius;
-	float distance;
+	float distance = 0.0f;
 
 	//Collect all nearest
 	for (int i = 0; i < level.numCombatPoints; i++)

@@ -284,7 +284,7 @@ static menuDef_t* Pazaak_Menu(const int board)
 // Like Menu_ShowItemByName in ui_shared (static or with another signature in some of the mods): items by name or group
 static void Pazaak_Show(menuDef_t* menu, const char* p, const qboolean show)
 {
-	int i;
+	int i = 0;
 	if (!menu)
 	{
 		return;
@@ -310,7 +310,7 @@ static void Pazaak_Show(menuDef_t* menu, const char* p, const qboolean show)
 // Like Menu_ClearFocus in ui_shared (static there)
 static void Pazaak_ClearFocus(menuDef_t* menu)
 {
-	int i;
+	int i = 0;
 	if (!menu)
 	{
 		return;
@@ -332,7 +332,7 @@ Dialogs
 
 static void Pazaak_Dialog_Show(const char* line1, const char* line2, const int type, const PDlgCallback callback)
 {
-	menuDef_t* menu;
+	menuDef_t* menu = nullptr;
 	if (!callback || !activeBoard)
 	{
 		return;
@@ -386,7 +386,7 @@ static void Pazaak_Dialog_Show(const char* line1, const char* line2, const int t
 
 static void Pazaak_ApplyButtonState(menuDef_t* menu)
 {
-	int i;
+	int i = 0;
 	switch (PzkState.buttonstate)
 	{
 	case 0: // Disable all
@@ -425,7 +425,7 @@ static void Pazaak_ApplyButtonState(menuDef_t* menu)
 // The buttons of the card selection: Exit / Continue / How to play, the cards he has, his side deck
 static void Pazaak_ShowCardSelButtons(menuDef_t* menu)
 {
-	int i;
+	int i = 0;
 
 	Pazaak_Show(menu, "buttons_hitzone", qtrue);
 
@@ -450,7 +450,7 @@ static void Pazaak_ShowCardSelButtons(menuDef_t* menu)
 
 static void Pazaak_Dialog_Close(void)
 {
-	menuDef_t* menu;
+	menuDef_t* menu = nullptr;
 	if (!activeBoard)
 	{
 		return;
@@ -649,7 +649,7 @@ static int Pazaak_CanCardFlipValue(const int id)
 
 static void Pazaak_FlipHandCard(const int slot)
 {
-	int param;
+	int param = 0;
 	const int id = PzkState.hand[slot - 1].cardid;
 	if (!PzkState.active || slot < 1 || slot > 4)
 	{
@@ -693,7 +693,7 @@ static void Pazaak_DrawCardText(const char* text, const float x, const float y, 
 
 static void SJE_Pazaak_DrawCardSlot(const int slot, const float x, const float y, const float w, const float h)
 {
-	qhandle_t sh;
+	qhandle_t sh = 0;
 	if (!PzkState.active || slot < 1 || slot > 18)
 	{
 		return;
@@ -719,9 +719,9 @@ static void SJE_Pazaak_DrawCardSlot(const int slot, const float x, const float y
 
 static void SJE_Pazaak_DrawSelCardSlot(const int slot, const float x, const float y, const float w, const float h)
 {
-	qhandle_t sh;
+	qhandle_t sh = 0;
 	vec4_t color;
-	const char* text;
+	const char* text = nullptr;
 
 	if (!PzkState.active || slot < 0 || slot > 22 || !PzkState.playercards[slot].amount)
 	{
@@ -751,7 +751,7 @@ static void SJE_Pazaak_DrawSelCardSlot(const int slot, const float x, const floa
 
 static void SJE_Pazaak_DrawSideDeckSlot(const int slot, const float x, const float y, const float w, const float h)
 {
-	qhandle_t sh;
+	qhandle_t sh = 0;
 	vec4_t color;
 
 	if (!PzkState.active || slot < 0 || slot > 9)
@@ -780,7 +780,7 @@ static void SJE_Pazaak_DrawSideDeckSlot(const int slot, const float x, const flo
 static void SJE_Pazaak_DrawHandSlot(const int slot, const float x, const float y, const float w, const float h)
 {
 	vec4_t color;
-	qhandle_t sh;
+	qhandle_t sh = 0;
 
 	if (!PzkState.active || slot < 1 || slot > 8)
 	{
@@ -806,7 +806,7 @@ static void SJE_Pazaak_DrawHandSlot(const int slot, const float x, const float y
 
 static void SJE_Pazaak_DrawNames(const int player, float x, const float y)
 {
-	const char* text;
+	const char* text = nullptr;
 	char cleanText[64];
 	vec4_t shadow = { 0.15f, 0.15f, 0.15f, 1.0f };
 
@@ -827,7 +827,7 @@ static void SJE_Pazaak_DrawNames(const int player, float x, const float y)
 
 static void SJE_Pazaak_DrawPoints(const int player, float x, const float y)
 {
-	const char* text;
+	const char* text = nullptr;
 
 	if (!PzkState.active)
 	{
@@ -847,9 +847,9 @@ static void SJE_Pazaak_DrawPoints(const int player, float x, const float y)
 
 static void SJE_Pazaak_DrawDialog(const int line, float x, const float y, const float w)
 {
-	const char* text;
+	const char* text = nullptr;
 	vec4_t shadow = { 0.0f, 0.0f, 0.0f, 0.2f };
-	float width;
+	float width = 0.0f;
 
 	if (!PDlgData.InUse)
 	{
@@ -864,9 +864,9 @@ static void SJE_Pazaak_DrawDialog(const int line, float x, const float y, const 
 
 static void SJE_Pazaak_DrawTimeout(float x, const float y, const float w)
 {
-	const char* text;
-	float width;
-	int tr;
+	const char* text = nullptr;
+	float width = 0.0f;
+	int tr = 0;
 
 	if (!PzkState.active || !PzkState.timeout)
 	{
@@ -967,7 +967,7 @@ static float SJE_Pazaak_HowToWords(const char* text, const int len, const float 
 static void SJE_Pazaak_DrawHowTo(const float x, float y, const float w)
 {
 	static vec4_t heading = { 0.35f, 0.8f, 1.0f, 1.0f };
-	unsigned i;
+	unsigned i = 0;
 
 	// the title
 	{
@@ -1026,7 +1026,7 @@ static void SJE_Pazaak_DrawHowTo(const float x, float y, const float w)
 }
 qboolean UI_Pazaak_OwnerDraw(const int ownerDraw, const float x, const float y, const float w, const float h, const qhandle_t shader)
 {
-	int type, id;
+	int type = 0, id = 0;
 	if (ownerDraw < PZK_OD_BASE || ownerDraw >= PZK_OD_BASE + 1000)
 	{
 		return qfalse;
@@ -1094,7 +1094,7 @@ static void Pazaak_Dlg_Ok(const int response)
 
 static void Pazaak_ConfirmSideDeckDialog(const int response)
 {
-	menuDef_t* menu;
+	menuDef_t* menu = nullptr;
 
 	Pazaak_Dialog_Close();
 	PzkState.dlgid = 0;
@@ -1121,7 +1121,7 @@ static void Pazaak_ConfirmSideDeckDialog(const int response)
 
 static void Pazaak_ConfirmSideDeck(void)
 {
-	int i;
+	int i = 0;
 	for (i = 0; i < 10; i++)
 	{
 		if (PzkState.sidedeck[i] < PZCARD_PLUS_1)
@@ -1187,7 +1187,7 @@ qboolean UI_Pazaak_Script(const char* name, void* argsPtr)
 {
 	pzkArgs_t args = (pzkArgs_t)argsPtr;
 	int a = 0, b = 0;
-	menuDef_t* menu;
+	menuDef_t* menu = nullptr;
 
 	if (Q_stricmpn(name, "pzk_", 4))
 	{
@@ -1282,7 +1282,7 @@ qboolean UI_Pazaak_Script(const char* name, void* argsPtr)
 	}
 	else if (!Q_stricmp(name, "pzk_selectcard"))
 	{
-		int i;
+		int i = 0;
 		if (!Int_Parse(args, &a) || a < 0 || a > 22)
 		{
 			return qtrue;
@@ -1323,7 +1323,7 @@ qboolean UI_Pazaak_Script(const char* name, void* argsPtr)
 	}
 	else if (!Q_stricmp(name, "pzk_removesd"))
 	{
-		int card;
+		int card = 0;
 		if (!Int_Parse(args, &a) || a < 0 || a > 9)
 		{
 			return qtrue;
@@ -1356,7 +1356,7 @@ Instructions from the game ("pzk ...")
 
 static void Pazaak_Reset(void)
 {
-	int i;
+	int i = 0;
 
 	memset(&PzkState, 0, sizeof(PzkState));
 	memset(&PDlgData, 0, sizeof(PDlgData));
@@ -1389,7 +1389,7 @@ static void Pazaak_Reset(void)
 
 static void Pazaak_OpenBoard(const int board)
 {
-	menuDef_t* menu;
+	menuDef_t* menu = nullptr;
 
 	Pazaak_HowTo(0); // the card selection opens without the "how to play" page
 	Menus_CloseAll();
@@ -1427,8 +1427,8 @@ static int Pazaak_Int(const int argc, const char** argv, int* i, int* out)
 
 void UI_Pazaak_Process(const int argc, const char** argv)
 {
-	int i = 0, j, temp;
-	menuDef_t* menu;
+	int i = 0, j = 0, temp = 0;
+	menuDef_t* menu = nullptr;
 
 	while (i < argc)
 	{
@@ -1590,7 +1590,7 @@ void UI_Pazaak_Process(const int argc, const char** argv)
 		}
 		if (!Q_stricmp(token, "sc"))
 		{
-			int isNew;
+			int isNew = 0;
 			if (!Pazaak_Int(argc, argv, &i, &temp) || temp < 1 || temp > 18)
 			{
 				return;
@@ -2020,7 +2020,7 @@ static void Pazaak_LocalSend(pzkGame_t* game, const int pid, const char* text)
 {
 	char line[1024];
 	const char* argv[96];
-	int argc;
+	int argc = 0;
 	(void)game;
 
 	if (pid != 1)
@@ -2108,7 +2108,7 @@ static void Pazaak_StartLocal(const char* opponentName, const int opponentEnt, c
 {
 	int cards[PZK_NUM_SIDECARDS];
 	int aiDeck[PZK_SIDEDECK_SIZE];
-	const char* err;
+	const char* err = nullptr;
 	char playerName[64];
 
 	// A video started while the player sat down: no match now, he stands up again
@@ -2173,7 +2173,7 @@ qboolean UI_Pazaak_ConsoleCommand(const char* cmd)
 	{
 		// A board answer typed or scripted ("uipzk_action stand"), like "~pzk" in multiplayer
 		char text[256];
-		int i;
+		int i = 0;
 		text[0] = 0;
 		for (i = 1; i < Cmd_Argc(); i++)
 		{
@@ -2199,7 +2199,7 @@ qboolean UI_Pazaak_ConsoleCommand(const char* cmd)
 // Every UI frame: the queued board actions and the match timers
 void UI_Pazaak_Frame(void)
 {
-	int i;
+	int i = 0;
 	const int now = PZK_Millis();
 
 	if (!pzkLocal.inUse)
@@ -2211,7 +2211,7 @@ void UI_Pazaak_Frame(void)
 	{
 		char line[256];
 		const char* argv[16];
-		int argc;
+		int argc = 0;
 		Q_strncpyz(line, pzkActions[i], sizeof(line));
 		argc = Pazaak_Tokenize(line, argv, 16);
 		Pzk_Command(&pzkLocal, 1, argc, argv, now);

@@ -99,7 +99,7 @@ void unpack_sf_sub_MPEG1(SCALEFACT sf[],
 	const int scfsi, /* bit flag */
 	const int gr)
 {
-	int sfb;
+	int sfb = 0;
 
 	const int block_type = grdat->block_type;
 	const int mixed_block_flag = grdat->mixed_block_flag;
@@ -187,12 +187,12 @@ void unpack_sf_sub_MPEG2(SCALEFACT sf[],
 	GR* grdat,
 	int is_and_ch, IS_SF_INFO* sf_info)
 {
-	int sfb;
-	int slen1, slen2, slen3, slen4;
-	int nr1, nr2, nr3, nr4;
-	int i, k;
-	int preflag, intensity_scale;
-	int block_type, mixed_block_flag, scalefac_compress;
+	int sfb = 0;
+	int slen1 = 0, slen2 = 0, slen3 = 0, slen4 = 0;
+	int nr1 = 0, nr2 = 0, nr3 = 0, nr4 = 0;
+	int i = 0, k = 0;
+	int preflag = 0, intensity_scale = 0;
+	int block_type = 0, mixed_block_flag = 0, scalefac_compress = 0;
 
 	block_type = grdat->block_type;
 	mixed_block_flag = grdat->mixed_block_flag;

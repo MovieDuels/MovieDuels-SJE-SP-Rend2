@@ -127,7 +127,7 @@ int G2_Add_Bolt(const CGhoul2Info* ghlInfo, boltInfo_v& bltlist, const surfaceIn
 {
 	assert(ghlInfo && ghlInfo->mValid);
 	boltInfo_t			temp_bolt;
-	uint32_t			flags;
+	uint32_t			flags = 0;
 
 	assert(G2_MODEL_OK(ghlInfo));
 
@@ -176,7 +176,7 @@ int G2_Add_Bolt(const CGhoul2Info* ghlInfo, boltInfo_v& bltlist, const surfaceIn
 
 	const mdxaSkelOffsets_t* offsets = reinterpret_cast<mdxaSkelOffsets_t*>((byte*)ghlInfo->aHeader + sizeof(mdxaHeader_t));
 
-	int x;
+	int x = 0;
 	// walk the entire list of bones in the gla file for this model and see if any match the name of the bone we want to find
 	for (x = 0; x < ghlInfo->aHeader->numBones; x++)
 	{

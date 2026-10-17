@@ -144,8 +144,8 @@ void is_process_MPEG1(float x[][1152], /* intensity stereo */
 	CB_INFO cb_info[2], /* [ch] */
 	const int nsamp, const int ms_mode)
 {
-	int j, n, cb;
-	int isf;
+	int j = 0, n = 0, cb = 0;
+	int isf = 0;
 	float fls[3], frs[3];
 
 	int cb0 = cb_info[1].cbmax; /* start at end of right */
@@ -211,13 +211,13 @@ void is_process_MPEG2(
 	const int nsamp,
 	const int ms_mode)
 {
-	int i, j, k, n, cb;
-	float fl, fr;
-	int isf;
+	int i = 0, j = 0, k = 0, n = 0, cb = 0;
+	float fl = 0.0f, fr = 0.0f;
+	int isf = 0;
 	int il[21] = { 0 };
-	int tmp;
-	int r;
-	int cb0;
+	int tmp = 0;
+	int r = 0;
+	int cb0 = 0;
 
 	/* FIX: initialize il[] to avoid C6001 uninitialized memory warning */
 	for (int z = 0; z < 21; z++)

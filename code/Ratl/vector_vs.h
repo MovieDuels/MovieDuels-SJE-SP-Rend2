@@ -230,7 +230,7 @@ namespace ratl
 		////////////////////////////////////////////////////////////////////////////////////
 		void resize(const int nSize, const TTValue& value)
 		{
-			int i;
+			int i = 0;
 			for (i = mSize - 1; i >= nSize; i--)
 			{
 				mArray.destruct(i);
@@ -248,7 +248,7 @@ namespace ratl
 		////////////////////////////////////////////////////////////////////////////////////
 		void resize(const int nSize)
 		{
-			int i;
+			int i = 0;
 			for (i = mSize - 1; i >= nSize; i--)
 			{
 				mArray.destruct(i);
@@ -333,9 +333,9 @@ namespace ratl
 		{
 			// Temporary Data
 			//----------------
-			int HeapSize; // How Large The Heap Is (Grows In PHASE 1, Shrinks In PHASE 2)
-			int Pos; // The Location We Are AT During "re-heapify" Loops
-			int Compare; // The Location We Are Comparing AGAINST During "re-heapify" Loops
+			int HeapSize = 0; // How Large The Heap Is (Grows In PHASE 1, Shrinks In PHASE 2)
+			int Pos = 0; // The Location We Are AT During "re-heapify" Loops
+			int Compare = 0; // The Location We Are Comparing AGAINST During "re-heapify" Loops
 
 			// PHASE 1, CONSTRUCT THE HEAP										  O(n log n)
 			//===============================================================================

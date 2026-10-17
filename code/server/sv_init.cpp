@@ -204,8 +204,8 @@ clients along with it.
 */
 void SV_SpawnServer(const char* server, const ForceReload_e e_force_reload, const qboolean b_allow_screen_dissolve)
 {
-	int i;
-	int checksum;
+	int i = 0;
+	int checksum = 0;
 
 	re.RegisterMedia_LevelLoadBegin(server, e_force_reload, b_allow_screen_dissolve);
 

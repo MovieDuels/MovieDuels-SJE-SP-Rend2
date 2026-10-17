@@ -354,10 +354,10 @@ UI_DrawHandlePic
 */
 void UI_DrawHandlePic(const float x, const float y, float w, float h, const qhandle_t hShader)
 {
-	float s0;
-	float s1;
-	float t0;
-	float t1;
+	float s0 = 0.0f;
+	float s1 = 0.0f;
+	float t0 = 0.0f;
+	float t1 = 0.0f;
 
 	if (w < 0)
 	{

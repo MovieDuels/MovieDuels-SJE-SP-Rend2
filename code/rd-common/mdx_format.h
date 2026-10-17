@@ -327,7 +327,7 @@ static int G2_GetVertBoneIndex(const mdxmVertex_t* pVert, const int iWeightNum)
 static float G2_GetVertBoneWeight(const mdxmVertex_t* pVert, const int iWeightNum, float& fTotalWeight,
 	const int iNumWeights)
 {
-	float fBoneWeight;
+	float fBoneWeight = 0.0f;
 
 	if (iWeightNum == iNumWeights - 1)
 	{

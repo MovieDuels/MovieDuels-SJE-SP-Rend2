@@ -33,7 +33,7 @@ void RB_ToneMap(FBO_t* hdrFbo, vec4i_t hdrBox, FBO_t* ldrFbo, vec4i_t ldrBox, in
 		if (lastFrameCount == 0 || tr.frameCount < lastFrameCount || tr.frameCount - lastFrameCount > 5)
 		{
 			// determine average log luminance
-			FBO_t* srcFbo, * dstFbo, * tmp;
+			FBO_t* srcFbo = nullptr, * dstFbo = nullptr, * tmp = nullptr;
 			int size = 256;
 
 			lastFrameCount = tr.frameCount;
@@ -167,12 +167,12 @@ void RB_BokehBlur(FBO_t* src, vec4i_t srcBox, FBO_t* dst, vec4i_t dstBox, float 
 	else if (blur > 2.0f)
 	{
 		// blur 1/16th texture then replace
-		int i;
+		int i = 0;
 
 		for (i = 0; i < 2; i++)
 		{
 			vec2_t blurTexScale;
-			float subblur;
+			float subblur = 0.0f;
 
 			subblur = ((blur - 2.0f) / 2.0f) / 3.0f * (float)(i + 1);
 
@@ -235,7 +235,7 @@ static void RB_RadialBlur(FBO_t* srcFbo, FBO_t* dstFbo, int passes, float stretc
 	vec4_t color;
 	const float inc = 1.f / passes;
 	const float mul = powf(stretch, inc);
-	float scale;
+	float scale = 0.0f;
 
 	{
 		vec2_t texScale;
@@ -294,7 +294,7 @@ static qboolean RB_UpdateSunFlareVis(void)
 	/* debug code */
 	if (0)
 	{
-		int iter;
+		int iter = 0;
 		for (iter = 0; ; ++iter)
 		{
 			GLint available = 0;
@@ -313,7 +313,7 @@ static qboolean RB_UpdateSunFlareVis(void)
 void RB_SunRays(FBO_t* srcFbo, vec4i_t srcBox, FBO_t* dstFbo, vec4i_t dstBox)
 {
 	vec4_t color;
-	float dot;
+	float dot = 0.0f;
 	const float cutoff = 0.25f;
 	qboolean colorize = qtrue;
 
@@ -330,7 +330,7 @@ void RB_SunRays(FBO_t* srcFbo, vec4i_t srcBox, FBO_t* dstFbo, vec4i_t dstBox)
 
 	// From RB_DrawSun()
 	{
-		float dist;
+		float dist = 0.0f;
 		matrix_t trans, model;
 
 		Matrix16Translation(backEnd.viewParms.ori.origin, trans);
@@ -399,7 +399,7 @@ void RB_SunRays(FBO_t* srcFbo, vec4i_t srcBox, FBO_t* dstFbo, vec4i_t dstBox)
 	{
 		const float stretch_add = 2.f / 3.f;
 		float stretch = 1.f + stretch_add;
-		int i;
+		int i = 0;
 		for (i = 0; i < 2; ++i)
 		{
 			RB_RadialBlur(tr.quarterFbo[i & 1], tr.quarterFbo[(~i) & 1], 5, stretch, 0.f, 0.f, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height, pos[0], pos[1], 1.125f);
@@ -423,8 +423,8 @@ void RB_SunRays(FBO_t* srcFbo, vec4i_t srcBox, FBO_t* dstFbo, vec4i_t dstBox)
 
 static void RB_BlurAxis(FBO_t* srcFbo, FBO_t* dstFbo, float strength, qboolean horizontal)
 {
-	float dx, dy;
-	float xmul, ymul;
+	float dx = 0.0f, dy = 0.0f;
+	float xmul = 0.0f, ymul = 0.0f;
 	float weights[3] = {
 		0.227027027f,
 		0.316216216f,

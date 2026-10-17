@@ -78,9 +78,9 @@ const IMDCT_INIT_BLOCK* imdct_init_addr_6()
 /*--------------------------------------------------------------------*/
 void imdct18(float f[18]) /* 18 point */
 {
-	int p;
+	int p = 0;
 	float a[9], b[9];
-	float g1, g2;
+	float g1 = 0.0f, g2 = 0.0f;
 
 	for (p = 0; p < 4; p++)
 	{
@@ -167,7 +167,7 @@ void imdct18(float f[18]) /* 18 point */
 /* does 3, 6 pt dct.  changes order from f[i][window] c[window][i] */
 void imdct6_3(float f[]) /* 6 point */
 {
-	int w;
+	int w = 0;
 	float buf[18];
 
 	float* c = f;

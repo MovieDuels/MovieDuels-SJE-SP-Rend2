@@ -106,7 +106,7 @@ qboolean ShaderHashTableExists(void)
 
 static void ClearGlobalShader(void)
 {
-	int	i;
+	int	i = 0;
 
 	memset(&shader, 0, sizeof(shader));
 	memset(&stages, 0, sizeof(stages));
@@ -145,9 +145,9 @@ return a hash value for the filename
 ================
 */
 static long generateHashValue(const char* fname, const int size) {
-	int		i;
-	long	hash;
-	char	letter;
+	int		i = 0;
+	long	hash = 0;
+	char	letter = 0;
 
 	hash = 0;
 	i = 0;
@@ -167,9 +167,9 @@ static long generateHashValue(const char* fname, const int size) {
 void R_RemapShader(const char* shader_name, const char* new_shader_name, const char* timeOffset)
 {
 	char		strippedName[MAX_QPATH];
-	int			hash;
-	shader_t* sh, * sh2;
-	qhandle_t	h;
+	int			hash = 0;
+	shader_t* sh = nullptr, * sh2 = nullptr;
+	qhandle_t	h = 0;
 
 	sh = R_FindShaderByName(shader_name);
 	if (sh == NULL || sh == tr.defaultShader) {
@@ -217,8 +217,8 @@ ParseVector
 ===============
 */
 static qboolean ParseVector(const char** text, int count, float* v) {
-	char* token;
-	int		i;
+	char* token = nullptr;
+	int		i = 0;
 
 	// FIXME: spaces are currently required after parens, should change parseext...
 	token = COM_ParseExt(text, qfalse);
@@ -429,7 +429,7 @@ ParseWaveForm
 */
 static void ParseWaveForm(const char** text, waveForm_t* wave)
 {
-	char* token;
+	char* token = nullptr;
 
 	token = COM_ParseExt(text, qfalse);
 	if (token[0] == 0)
@@ -480,9 +480,9 @@ ParseTexMod
 */
 static void ParseTexMod(const char* _text, shaderStage_t* stage)
 {
-	const char* token;
+	const char* token = nullptr;
 	const char** text = &_text;
-	texModInfo_t* tmi;
+	texModInfo_t* tmi = nullptr;
 
 	if (stage->bundle[0].numTexMods == TR_MAX_TEXMODS) {
 		ri.Error(ERR_DROP, "ERROR: too many tcMod stages in shader '%s'", shader.name);
@@ -717,7 +717,7 @@ static const char* animMapNames[] = {
 
 static bool ParseSurfaceSprites(const char* buffer, shaderStage_t* stage)
 {
-	const char* token;
+	const char* token = nullptr;
 	const char** text = &buffer;
 	surfaceSpriteType_t sstype = SURFSPRITE_NONE;
 
@@ -886,9 +886,9 @@ static bool ParseSurfaceSpritesOptional(
 	shaderStage_t* stage
 )
 {
-	const char* token;
+	const char* token = nullptr;
 	const char** text = &buffer;
-	float value;
+	float value = 0.0f;
 
 	if (!stage->ss)
 	{
@@ -1197,7 +1197,7 @@ ParseStage
 */
 static qboolean ParseStage(shaderStage_t* stage, const char** text)
 {
-	char* token;
+	char* token = nullptr;
 	unsigned depthMaskBits = GLS_DEPTHMASK_TRUE;
 	unsigned blendSrcBits = 0;
 	unsigned blendDstBits = 0;
@@ -1458,7 +1458,7 @@ static qboolean ParseStage(shaderStage_t* stage, const char** text)
 
 			// parse up to MAX_IMAGE_ANIMATIONS animations
 			while (1) {
-				int		num;
+				int		num = 0;
 
 				token = COM_ParseExt(text, qfalse);
 				if (!token[0]) {
@@ -1629,7 +1629,7 @@ static qboolean ParseStage(shaderStage_t* stage, const char** text)
 		//
 		else if (!Q_stricmp(token, "specularexponent"))
 		{
-			float exponent;
+			float exponent = 0.0f;
 
 			token = COM_ParseExt(text, qfalse);
 			if (token[0] == 0)
@@ -2207,8 +2207,8 @@ deformVertexes text[0-7]
 ===============
 */
 static void ParseDeform(const char** text) {
-	char* token;
-	deformStage_t* ds;
+	char* token = nullptr;
+	deformStage_t* ds = nullptr;
 
 	token = COM_ParseExt(text, qfalse);
 	if (token[0] == 0)
@@ -2241,7 +2241,7 @@ static void ParseDeform(const char** text) {
 	}
 
 	if (!Q_stricmpn(token, "text", 4)) {
-		int		n;
+		int		n = 0;
 
 		n = token[4] - '0';
 		if (n < 0 || n > 7) {
@@ -2327,7 +2327,7 @@ static void ParseDeform(const char** text) {
 	}
 
 	if (!Q_stricmp(token, "move")) {
-		int		i;
+		int		i = 0;
 
 		for (i = 0; i < 3; i++) {
 			token = COM_ParseExt(text, qfalse);
@@ -2354,10 +2354,10 @@ skyParms <outerbox> <cloudheight> <innerbox>
 ===============
 */
 static void ParseSkyParms(const char** text) {
-	char* token;
+	char* token = nullptr;
 	static const char* suf[6] = { "rt", "lf", "bk", "ft", "up", "dn" };
 	char		pathname[MAX_QPATH];
-	int			i;
+	int			i = 0;
 	int imgFlags = IMGFLAG_MIPMAP | IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE;
 
 	if (shader.noTC)
@@ -2413,7 +2413,7 @@ ParseSort
 =================
 */
 static void ParseSort(const char** text) {
-	char* token;
+	char* token = nullptr;
 
 	token = COM_ParseExt(text, qfalse);
 	if (token[0] == 0) {
@@ -2480,8 +2480,8 @@ const char* materialNames[MATERIAL_LAST] =
 
 static void ParseMaterial(const char** text)
 {
-	char* token;
-	int		i;
+	char* token = nullptr;
+	int		i = 0;
 
 	token = COM_ParseExt(text, qfalse);
 	if (token[0] == 0)
@@ -2553,9 +2553,9 @@ surfaceparm <name>
 ===============
 */
 static void ParseSurfaceParm(const char** text) {
-	char* token;
+	char* token = nullptr;
 	int		numInfoParms = ARRAY_LEN(infoParms);
-	int		i;
+	int		i = 0;
 
 	token = COM_ParseExt(text, qfalse);
 	for (i = 0; i < numInfoParms; i++) {
@@ -2579,9 +2579,9 @@ will optimize it.
 */
 static qboolean ParseShader(const char** text)
 {
-	char* token;
+	char* token = nullptr;
 	const char* begin = *text;
-	int s;
+	int s = 0;
 
 	s = 0;
 
@@ -2636,7 +2636,7 @@ static qboolean ParseShader(const char** text)
 		}
 		// sun parms
 		else if (!Q_stricmp(token, "sun") || !Q_stricmp(token, "q3map_sun") || !Q_stricmp(token, "q3map_sunExt") || !Q_stricmp(token, "q3gl2_sun")) {
-			float	a, b;
+			float	a = 0.0f, b = 0.0f;
 			qboolean isGL2Sun = qfalse;
 
 			if (!Q_stricmp(token, "q3gl2_sun") && r_sunShadows->integer)
@@ -2957,7 +2957,7 @@ don't need to submit/copy all of them.
 */
 static void ComputeVertexAttribs(void)
 {
-	int i, stage;
+	int i = 0, stage = 0;
 
 	// dlights always need ATTR_NORMAL
 	shader.vertexAttribs = ATTR_POSITION | ATTR_NORMAL | ATTR_COLOR;
@@ -3137,7 +3137,7 @@ static void CollapseStagesToLightall(shaderStage_t* stage, shaderStage_t* lightm
 
 	if (r_normalMapping->integer)
 	{
-		image_t* diffuseImg;
+		image_t* diffuseImg = nullptr;
 		if (stage->bundle[TB_NORMALMAP].image[0])
 		{
 			if (stage->bundle[TB_NORMALMAP].image[0]->type == IMGTYPE_NORMALHEIGHT &&
@@ -3150,7 +3150,7 @@ static void CollapseStagesToLightall(shaderStage_t* stage, shaderStage_t* lightm
 		else if ((lightmap || useLightVector || useLightVertex) && (diffuseImg = stage->bundle[TB_DIFFUSEMAP].image[0]) != NULL)
 		{
 			char normalName[MAX_QPATH];
-			image_t* normalImg;
+			image_t* normalImg = nullptr;
 			int normalFlags = (diffuseImg->flags & ~(IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB)) | IMGFLAG_NOLIGHTSCALE;
 			// try a normalheight image first
 			COM_StripExtension(diffuseImg->imgName, normalName, sizeof(normalName));
@@ -3181,7 +3181,7 @@ static void CollapseStagesToLightall(shaderStage_t* stage, shaderStage_t* lightm
 
 	if (r_specularMapping->integer)
 	{
-		image_t* diffuseImg;
+		image_t* diffuseImg = nullptr;
 		if (stage->bundle[TB_SPECULARMAP].image[0])
 		{
 			if (stage->specularType == SPEC_SPECGLOSS)
@@ -3190,7 +3190,7 @@ static void CollapseStagesToLightall(shaderStage_t* stage, shaderStage_t* lightm
 		else if ((lightmap || useLightVector || useLightVertex) && (diffuseImg = stage->bundle[TB_DIFFUSEMAP].image[0]) != NULL)
 		{
 			char imageName[MAX_QPATH];
-			image_t* specularImg;
+			image_t* specularImg = nullptr;
 			int specularFlags = diffuseImg->flags & ~(IMGFLAG_GENNORMALMAP);
 
 			COM_StripExtension(diffuseImg->imgName, imageName, MAX_QPATH);
@@ -3259,7 +3259,7 @@ static void CollapseStagesToLightall(shaderStage_t* stage, shaderStage_t* lightm
 
 static qboolean CollapseStagesToGLSL(void)
 {
-	int i, j, numStages;
+	int i = 0, j = 0, numStages = 0;
 	qboolean skip = qfalse;
 
 	ri.Printf(PRINT_DEVELOPER, "Collapsing stages for shader '%s'\n", shader.name);
@@ -3364,7 +3364,7 @@ static qboolean CollapseStagesToGLSL(void)
 		for (i = 0; i < MAX_SHADER_STAGES; i++)
 		{
 			shaderStage_t* pStage = &stages[i];
-			shaderStage_t* diffuse, * lightmap;
+			shaderStage_t* diffuse = nullptr, * lightmap = nullptr;
 			qboolean tcgen, diffuselit, vertexlit;
 
 			if (!pStage->active)
@@ -3726,13 +3726,13 @@ static void FixRenderCommandList(int newShader) {
 				}
 				case RC_DRAW_SURFS:
 				{
-					int i;
-					drawSurf_t* drawSurf;
-					shader_t* shader;
-					int         postRender;
-					int			sortedIndex;
-					int			cubemap;
-					int			entityNum;
+					int i = 0;
+					drawSurf_t* drawSurf = nullptr;
+					shader_t* shader = nullptr;
+					int         postRender = 0;
+					int			sortedIndex = 0;
+					int			cubemap = 0;
+					int			entityNum = 0;
 					const drawSurfsCommand_t* ds_cmd = (const drawSurfsCommand_t*)curCmd;
 
 					for (i = 0, drawSurf = ds_cmd->drawSurfs; i < ds_cmd->numDrawSurfs; i++, drawSurf++) {
@@ -3779,9 +3779,9 @@ Sets shader->sortedIndex
 ==============
 */
 static void SortNewShader(void) {
-	int		i;
-	float	sort;
-	shader_t* newShader;
+	int		i = 0;
+	float	sort = 0.0f;
+	shader_t* newShader = nullptr;
 
 	newShader = tr.shaders[tr.numShaders - 1];
 	sort = newShader->sort;
@@ -3825,9 +3825,9 @@ GeneratePermanentShader
 ====================
 */
 static shader_t* GeneratePermanentShader(void) {
-	shader_t* newShader;
-	int			i, b;
-	int			size, hash;
+	shader_t* newShader = nullptr;
+	int			i = 0, b = 0;
+	int			size = 0, hash = 0;
 
 	if (tr.numShaders == MAX_SHADERS) {
 		ri.Printf(PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
@@ -3920,10 +3920,10 @@ what it is supposed to look like.
 =================
 */
 static void VertexLightingCollapse(void) {
-	int		stage;
-	shaderStage_t* bestStage;
-	int		bestImageRank;
-	int		rank;
+	int		stage = 0;
+	shaderStage_t* bestStage = nullptr;
+	int		bestImageRank = 0;
+	int		rank = 0;
 
 	// if we aren't opaque, just use the first pass
 	if (shader.sort == SS_OPAQUE) {
@@ -4036,7 +4036,7 @@ from the current global working shader
 =========================
 */
 static shader_t* FinishShader(void) {
-	int stage;
+	int stage = 0;
 	uint32_t shaderStateBits = 0;
 	qboolean hasLightmapStage = qfalse;
 
@@ -4057,7 +4057,7 @@ static shader_t* FinishShader(void) {
 		}
 	}
 
-	int lmStage;
+	int lmStage = 0;
 	for (lmStage = 0; lmStage < MAX_SHADER_STAGES; lmStage++)
 	{
 		shaderStage_t* pStage = &stages[lmStage];
@@ -4114,8 +4114,8 @@ static shader_t* FinishShader(void) {
 
 	if (lmStage < MAX_SHADER_STAGES)// && !r_fullbright->value)
 	{
-		int	numStyles;
-		int	i;
+		int	numStyles = 0;
+		int	i = 0;
 
 		for (numStyles = 0; numStyles < MAXLIGHTMAPS; numStyles++)
 		{
@@ -4188,7 +4188,7 @@ static shader_t* FinishShader(void) {
 		//
 		if (pStage->isDetail && !r_detailTextures->integer)
 		{
-			int index;
+			int index = 0;
 
 			for (index = stage + 1; index < MAX_SHADER_STAGES; index++)
 			{
@@ -4375,10 +4375,10 @@ If found, it will return a valid shader
 =====================
 */
 static const char* FindShaderInShaderText(const char* shadername) {
-	char* token;
-	const char* p;
+	char* token = nullptr;
+	const char* p = nullptr;
 
-	int i, hash;
+	int i = 0, hash = 0;
 
 	hash = generateHashValue(shadername, MAX_SHADERTEXT_HASH);
 
@@ -4411,8 +4411,8 @@ default shader if the real one can't be found.
 */
 shader_t* R_FindShaderByName(const char* name) {
 	char		strippedName[MAX_QPATH];
-	int			hash;
-	shader_t* sh;
+	int			hash = 0;
+	shader_t* sh = nullptr;
 
 	if ((name == NULL) || (name[0] == 0)) {
 		return tr.defaultShader;
@@ -4518,10 +4518,10 @@ most world construction surfaces.
 shader_t* R_FindShader(const char* name, const int* lightmapIndex, const byte* styles, const qboolean mip_raw_image)
 {
 	char		strippedName[MAX_QPATH];
-	int			hash, flags;
-	const char* shaderText;
-	image_t* image;
-	shader_t* sh;
+	int			hash = 0, flags = 0;
+	const char* shaderText = nullptr;
+	image_t* image = nullptr;
+	shader_t* sh = nullptr;
 
 	if (name[0] == 0)
 	{
@@ -4698,8 +4698,8 @@ shader_t* R_FindShader(const char* name, const int* lightmapIndex, const byte* s
 shader_t* R_FindServerShader(const char* name, const int* lightmapIndex, const byte* styles, qboolean mip_raw_image)
 {
 	char		strippedName[MAX_QPATH];
-	int			hash;
-	shader_t* sh;
+	int			hash = 0;
+	shader_t* sh = nullptr;
 
 	if (name[0] == 0) {
 		return tr.defaultShader;
@@ -4733,8 +4733,8 @@ shader_t* R_FindServerShader(const char* name, const int* lightmapIndex, const b
 }
 
 static qhandle_t RE_RegisterShaderFromImage(const char* name, const int* lightmapIndex, const byte* styles, image_t* image, qboolean mip_raw_image) {
-	int			hash;
-	shader_t* sh;
+	int			hash = 0;
+	shader_t* sh = nullptr;
 
 	hash = generateHashValue(name, FILE_HASH_SIZE);
 
@@ -4840,7 +4840,7 @@ way to ask for different implicit lighting modes (vertex, lightmap, etc)
 ====================
 */
 qhandle_t RE_RegisterShaderLightMap(const char* name, const int* lightmapIndex, const byte* styles) {
-	shader_t* sh;
+	shader_t* sh = nullptr;
 
 	if (strlen(name) >= MAX_QPATH) {
 		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n");
@@ -4873,7 +4873,7 @@ way to ask for different implicit lighting modes (vertex, lightmap, etc)
 ====================
 */
 qhandle_t RE_RegisterShader(const char* name) {
-	shader_t* sh;
+	shader_t* sh = nullptr;
 
 	if (strlen(name) >= MAX_QPATH) {
 		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n");
@@ -4902,7 +4902,7 @@ For menu graphics that should never be picmiped
 ====================
 */
 qhandle_t RE_RegisterShaderNoMip(const char* name) {
-	shader_t* sh;
+	shader_t* sh = nullptr;
 
 	if (strlen(name) >= MAX_QPATH) {
 		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n");
@@ -4959,9 +4959,9 @@ A second parameter will cause it to print in sorted order
 ===============
 */
 void	R_ShaderList_f(void) {
-	int			i;
-	int			count;
-	shader_t* shader;
+	int			i = 0;
+	int			count = 0;
+	shader_t* shader = nullptr;
 
 	ri.Printf(PRINT_ALL, "-----------------------\n");
 
@@ -5027,19 +5027,19 @@ static char* s_shaderBuffers[MAX_SHADER_FILES] = { nullptr };
 
 static void ScanAndLoadShaderFiles(void)
 {
-	char** shaderFiles;
-	const char* p;
-	int         numShaderFiles;
-	int         i;
-	char* oldp;
-	char* token;
-	char* hashMem;
-	char* textEnd;
+	char** shaderFiles = nullptr;
+	const char* p = nullptr;
+	int         numShaderFiles = 0;
+	int         i = 0;
+	char* oldp = nullptr;
+	char* token = nullptr;
+	char* hashMem = nullptr;
+	char* textEnd = nullptr;
 	int         shaderTextHashTableSizes[MAX_SHADERTEXT_HASH];
-	int         hash;
-	int         size;
+	int         hash = 0;
+	int         size = 0;
 	char        shaderName[MAX_QPATH];
-	int         shaderLine;
+	int         shaderLine = 0;
 
 	long        sum = 0;
 	long        summand = 0;
@@ -5079,7 +5079,7 @@ static void ScanAndLoadShaderFiles(void)
 
 		// Prefer a .mtr file if it exists, otherwise fall back to .shader
 		{
-			char* ext;
+			char* ext = nullptr;
 
 			Com_sprintf(filename, sizeof(filename), "shaders/%s", shaderFiles[i]);
 
@@ -5372,7 +5372,7 @@ static void CreateExternalShaders(void)
 	// HACK: if sunflare is missing, make one using the flare image or dlight image
 	if (tr.sunFlareShader->defaultShader)
 	{
-		image_t* image;
+		image_t* image = nullptr;
 
 		if (!tr.flareShader->defaultShader && tr.flareShader->stages[0] && tr.flareShader->stages[0]->bundle[0].image[0])
 			image = tr.flareShader->stages[0]->bundle[0].image[0];

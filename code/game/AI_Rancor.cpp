@@ -753,7 +753,7 @@ static void Rancor_Bite()
 				if (!Q_irand(0, 1))
 				{
 					//bite something off
-					int hit_loc;
+					int hit_loc = 0;
 					if (g_dismemberment->integer < 3)
 					{
 						hit_loc = Q_irand(HL_BACK_RT, HL_HAND_LT);

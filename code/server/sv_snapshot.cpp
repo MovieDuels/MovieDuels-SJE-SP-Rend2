@@ -57,8 +57,8 @@ Writes a delta update of an entityState_t list to the message.
 */
 static void SV_EmitPacketEntities(const clientSnapshot_t* from, const clientSnapshot_t* to, msg_t* msg)
 {
-	int oldnum, newnum;
-	int from_num_entities;
+	int oldnum = 0, newnum = 0;
+	int from_num_entities = 0;
 
 	// generate the delta update
 	if (!from)
@@ -138,8 +138,8 @@ SV_WriteSnapshotToClient
 */
 static void SV_WriteSnapshotToClient(client_t* client, msg_t* msg)
 {
-	clientSnapshot_t* oldframe;
-	int lastframe;
+	clientSnapshot_t* oldframe = nullptr;
+	int lastframe = 0;
 
 	// this is the snapshot we are creating
 	clientSnapshot_t* frame = &client->frames[client->netchan.outgoingSequence & PACKET_MASK];
@@ -373,14 +373,14 @@ SV_AddEntitiesVisibleFromPoint
 static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* frame,
 	snapshotEntityNumbers_t* eNums, const qboolean portal)
 {
-	int i;
-	gentity_t* ent;
-	svEntity_t* svEnt;
-	int l;
-	int clientarea, clientcluster;
-	int leafnum;
-	const byte* clientpvs;
-	const byte* bitvector;
+	int i = 0;
+	gentity_t* ent = nullptr;
+	svEntity_t* svEnt = nullptr;
+	int l = 0;
+	int clientarea = 0, clientcluster = 0;
+	int leafnum = 0;
+	const byte* clientpvs = nullptr;
+	const byte* bitvector = nullptr;
 #ifndef JK2_MODE
 	qboolean sightOn = qfalse;
 #endif
@@ -565,7 +565,7 @@ static clientSnapshot_t* SV_BuildClientSnapshot(client_t* client)
 {
 	vec3_t org;
 	snapshotEntityNumbers_t entityNumbers{};
-	int i;
+	int i = 0;
 
 	// bump the counter used to prevent double adding
 	sv.snapshotCounter++;
@@ -778,8 +778,8 @@ SV_SendClientMessages
 */
 void SV_SendClientMessages()
 {
-	int i;
-	client_t* c;
+	int i = 0;
+	client_t* c = nullptr;
 
 	// send a message to each connected client
 	for (i = 0, c = svs.clients; i < 1; i++, c++)

@@ -92,7 +92,7 @@ BaseWindingForPlane
 */
 winding_t* BaseWindingForPlane(vec3_t normal, const vec_t dist)
 {
-	vec_t v;
+	vec_t v = 0.0f;
 	vec3_t org, vright, vup;
 
 	// find the major axis
@@ -179,7 +179,7 @@ void ChopWindingInPlace(winding_t** inout, vec3_t normal, const vec_t dist, cons
 	int sides[MAX_POINTS_ON_WINDING + 4]{};
 	int counts[3]{};
 	static vec_t dot; // VC 4.2 optimizer bug if not static
-	int i;
+	int i = 0;
 	vec3_t mid{};
 
 	winding_t* in = *inout;

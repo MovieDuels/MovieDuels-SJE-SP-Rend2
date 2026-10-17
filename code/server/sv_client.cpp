@@ -37,8 +37,8 @@ A "connect" OOB command has been received
 void SV_DirectConnect(netadr_t from)
 {
 	char userinfo[MAX_INFO_STRING];
-	int i;
-	client_t* cl;
+	int i = 0;
+	client_t* cl = nullptr;
 
 	Com_DPrintf("SVC_DirectConnect ()\n");
 
@@ -331,7 +331,7 @@ SV_ExecuteClientCommand
 */
 void SV_ExecuteClientCommand(client_t* cl, const char* s)
 {
-	ucmd_t* u;
+	ucmd_t* u = nullptr;
 
 	Cmd_TokenizeString(s);
 
@@ -417,7 +417,7 @@ each of the backup packets.
 */
 static void SV_UserMove(client_t* cl, msg_t* msg)
 {
-	int i;
+	int i = 0;
 	usercmd_t nullcmd;
 	usercmd_t cmds[MAX_PACKET_USERCMDS]{};
 

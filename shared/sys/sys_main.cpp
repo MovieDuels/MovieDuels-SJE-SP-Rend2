@@ -202,7 +202,7 @@ static void NORETURN Sys_Exit(const int ex)
 #if !defined(DEDICATED)
 static void Sys_ErrorDialog(const char* error)
 {
-	time_t rawtime;
+	time_t rawtime = 0;
 	char timeStr[32] = {}; // should really only reach ~19 chars
 	char crashLogPath[MAX_OSPATH];
 
@@ -312,7 +312,7 @@ from executable path, then fs_basepath.
 */
 void* Sys_LoadDll(const char* name, const qboolean useSystemLib)
 {
-	void* dllhandle;
+	void* dllhandle = nullptr;
 
 	// Don't load any DLLs that end with the pk3 extension
 	if (COM_CompareExtension(name, ".pk3"))
@@ -395,8 +395,8 @@ enum SearchPathFlag
 static void* Sys_LoadDllFromPaths(const char* filename, const char* gamedir, const char** searchPaths,
 	const size_t numPaths, const uint32_t searchFlags, const char* callerName)
 {
-	char* fn;
-	void* libHandle;
+	char* fn = nullptr;
+	void* libHandle = nullptr;
 
 	if (searchFlags & SEARCH_PATH_MOD)
 	{

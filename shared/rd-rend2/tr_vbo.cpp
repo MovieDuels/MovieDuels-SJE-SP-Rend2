@@ -82,7 +82,7 @@ R_CreateVBO
 */
 VBO_t* R_CreateVBO(byte* vertexes, size_t vertexesSize, vboUsage_t usage, const char* debugName)
 {
-	VBO_t* vbo;
+	VBO_t* vbo = nullptr;
 
 	if (tr.numVBOs >= MAX_VBOS) {
 		ri.Error(ERR_DROP, "R_CreateVBO: MAX_VBOS hit");
@@ -133,7 +133,7 @@ R_CreateIBO
 */
 IBO_t* R_CreateIBO(byte* indexes, size_t indexesSize, vboUsage_t usage, const char* debugName)
 {
-	IBO_t* ibo;
+	IBO_t* ibo = nullptr;
 
 	if (tr.numIBOs >= MAX_IBOS) {
 		ri.Error(ERR_DROP, "R_CreateIBO: MAX_IBOS hit");
@@ -358,9 +358,9 @@ R_VBOList_f
 */
 void R_VBOList_f(void)
 {
-	int    i;
-	VBO_t* vbo;
-	IBO_t* ibo;
+	int    i = 0;
+	VBO_t* vbo = nullptr;
+	IBO_t* ibo = nullptr;
 	size_t vertexesSize = 0;
 	size_t indexesSize = 0;
 
@@ -640,7 +640,7 @@ void RB_UpdateVBOs(unsigned int attribBits)
 
 		R_BindVBO(frameVbo);
 
-		void* dstPtr;
+		void* dstPtr = nullptr;
 		if (glRefConfig.immutableBuffers)
 		{
 			dstPtr = (byte*)currentFrame->dynamicVboMemory + currentFrame->dynamicVboWriteOffset;
@@ -690,7 +690,7 @@ void RB_UpdateVBOs(unsigned int attribBits)
 			return;
 		}
 
-		void* dst;
+		void* dst = nullptr;
 		if (glRefConfig.immutableBuffers)
 		{
 			dst = (byte*)currentFrame->dynamicIboMemory + currentFrame->dynamicIboWriteOffset;

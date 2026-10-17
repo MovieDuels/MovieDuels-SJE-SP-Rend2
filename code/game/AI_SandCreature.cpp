@@ -356,7 +356,7 @@ static void SandCreature_Attack(const qboolean miss)
 
 static float SandCreature_EntScore(const gentity_t* ent)
 {
-	float move_speed;
+	float move_speed = 0.0f;
 
 	if (ent->client)
 	{
@@ -385,7 +385,7 @@ static void SandCreature_CheckMovingEnts()
 {
 	gentity_t* radius_ents[128];
 	const float radius = NPCInfo->stats.earshot;
-	int i;
+	int i = 0;
 	vec3_t mins{}, maxs{};
 
 	for (i = 0; i < 3; i++)
@@ -506,7 +506,7 @@ static void SandCreature_CheckAlerts()
 
 static float SandCreature_DistSqToGoal(const qboolean goal_is_enemy)
 {
-	float goalDistSq;
+	float goalDistSq = 0.0f;
 	if (!NPCInfo->goalEntity || goal_is_enemy)
 	{
 		if (!NPC->enemy)
@@ -585,7 +585,7 @@ static void SandCreature_Chase()
 		}
 		else
 		{
-			float move_speed;
+			float move_speed = 0.0f;
 			if (NPC->enemy->client)
 			{
 				move_speed = VectorLengthSquared(NPC->enemy->client->ps.velocity);

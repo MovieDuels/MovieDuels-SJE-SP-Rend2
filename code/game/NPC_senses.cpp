@@ -659,7 +659,7 @@ int G_CheckAlertEvents(gentity_t* self, const qboolean checkSight, const qboolea
 
 	if (checkSight)
 	{
-		int bestSightEvent;
+		int bestSightEvent = 0;
 		//get sight event
 		if (self->NPC)
 		{

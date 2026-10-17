@@ -48,8 +48,8 @@ efficient collision detection
 */
 void CG_BuildSolidList()
 {
-	int i;
-	centity_t* cent;
+	int i = 0;
+	centity_t* cent = nullptr;
 
 	cg_numSolidEntities = 0;
 
@@ -108,7 +108,7 @@ void CG_ClipMoveToEntities(const vec3_t start, const vec3_t mins, const vec3_t m
 	const int skip_number, const int mask, trace_t* tr)
 {
 	trace_t trace;
-	clipHandle_t cmodel;
+	clipHandle_t cmodel = 0;
 	vec3_t bmins{}, bmaxs{};
 
 	for (int i = 0; i < cg_numSolidEntities; i++)
@@ -378,7 +378,7 @@ cg.snap->player_state and cg.nextFrame->player_state
 */
 void CG_InterpolatePlayerState(const qboolean grab_angles)
 {
-	int i;
+	int i = 0;
 	vec3_t old_org;
 
 	playerState_t* out = &cg.predictedPlayerState;
@@ -466,7 +466,7 @@ void CG_InterpolatePlayerState(const qboolean grab_angles)
 		//		{
 		assert(pent);
 		vec3_t p1, p2, vel{};
-		float lerp_time;
+		float lerp_time = 0.0f;
 
 		EvaluateTrajectory(&pent->currentState.pos, cg.snap->serverTime, p1);
 		if (cg.nextSnap && cg.nextSnap->serverTime > cg.snap->serverTime && pent->nextState)

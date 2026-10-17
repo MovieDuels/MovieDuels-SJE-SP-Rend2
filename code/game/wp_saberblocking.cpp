@@ -1956,7 +1956,7 @@ void WP_SaberWearOnBlock(gentity_t* blocker, const gentity_t* attacker)
 	{
 		return; // a perfect block: no wear
 	}
-	float amount;
+	float amount = 0.0f;
 	qboolean heavy = qfalse;
 	if (unblockable || PM_SaberInSpecialAttack(aps->torsoAnim))
 	{

@@ -219,7 +219,7 @@ R_BindAnimatedImage
 =================
 */
 void R_BindAnimatedImage(const textureBundle_t* bundle) {
-	int		index;
+	int		index = 0;
 
 	if (bundle->isVideoMap) {
 		ri.CIN_RunCinematic(bundle->videoMapHandle);
@@ -649,7 +649,7 @@ Perform dynamic lighting with another rendering pass
 */
 static void ProjectDlightTexture2()
 {
-	int		i;
+	int		i = 0;
 	static byte clip_bits[SHADER_MAX_VERTEXES]; // off the stack (C6262)
 	memset(clip_bits, 0, sizeof(clip_bits)); // cleared each time, as the {} on the stack was
 	static float tex_coords_array[SHADER_MAX_VERTEXES][2]; // off the stack (C6262)
@@ -660,12 +660,12 @@ static void ProjectDlightTexture2()
 	memset(color_array, 0, sizeof(color_array)); // cleared each time, as the {} on the stack was
 	static glIndex_t hit_indexes[SHADER_MAX_INDEXES]; // off the stack (C6262)
 	memset(hit_indexes, 0, sizeof(hit_indexes)); // cleared each time, as the {} on the stack was
-	int		numIndexes;
-	float	radius;
+	int		numIndexes = 0;
+	float	radius = 0.0f;
 #ifndef JK2_MODE
-	int		fogging;
+	int		fogging = 0;
 #endif
-	shaderStage_t* d_stage;
+	shaderStage_t* d_stage = nullptr;
 	vec3_t	float_color{};
 	byte color_temp[4]{};
 
@@ -967,21 +967,21 @@ static void ProjectDlightTexture2()
 }
 static void ProjectDlightTexture()
 {
-	int		i;
-	float* tex_coords;
-	byte* colors;
+	int		i = 0;
+	float* tex_coords = nullptr;
+	byte* colors = nullptr;
 	static byte clip_bits[SHADER_MAX_VERTEXES]; // off the stack (C6262)
 	memset(clip_bits, 0, sizeof(clip_bits)); // cleared each time, as the {} on the stack was
 	static glIndex_t hit_indexes[SHADER_MAX_INDEXES]; // off the stack (C6262)
 	memset(hit_indexes, 0, sizeof(hit_indexes)); // cleared each time, as the {} on the stack was
-	int		numIndexes;
-	float	scale;
-	float	radius;
+	int		numIndexes = 0;
+	float	scale = 0.0f;
+	float	radius = 0.0f;
 #ifndef JK2_MODE
-	int		fogging;
+	int		fogging = 0;
 #endif
 	vec3_t	float_color{};
-	shaderStage_t* d_stage;
+	shaderStage_t* d_stage = nullptr;
 
 	if (!backEnd.refdef.num_dlights) {
 		return;
@@ -1010,7 +1010,7 @@ static void ProjectDlightTexture()
 
 		for (i = 0; i < tess.numVertexes; i++, tex_coords += 2, colors += 4) {
 			vec3_t	dist;
-			float	modulate;
+			float	modulate = 0.0f;
 
 			backEnd.pc.c_dlightVertexes++;
 
@@ -1046,7 +1046,7 @@ static void ProjectDlightTexture()
 				}
 			}
 
-			float d_use;
+			float d_use = 0.0f;
 			constexpr float max_scale = 1.5f;
 			constexpr float light_scale_tolerance = 0.1f;
 
@@ -1349,7 +1349,7 @@ ComputeColors
 */
 static void ComputeColors(shaderStage_t* p_stage, alphaGen_t force_alpha_gen, colorGen_t force_rgb_gen)
 {
-	int i;
+	int i = 0;
 
 	if (tess.shader != tr.projectionShadowShader && tess.shader != tr.shadowShader &&
 		backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2))
@@ -1559,7 +1559,7 @@ static void ComputeColors(shaderStage_t* p_stage, alphaGen_t force_alpha_gen, co
 		break;
 	case AGEN_PORTAL:
 	{
-		unsigned char alpha;
+		unsigned char alpha = 0;
 
 		for (i = 0; i < tess.numVertexes; i++)
 		{
@@ -1631,7 +1631,7 @@ ComputeTexCoords
 */
 static void ComputeTexCoords(shaderStage_t* p_stage)
 {
-	int		i;
+	int		i = 0;
 
 	for (int b = 0; b < NUM_TEXTURE_BUNDLES; b++) {
 		//

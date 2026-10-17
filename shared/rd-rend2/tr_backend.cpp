@@ -40,7 +40,7 @@ static float	s_flipMatrix[16] = {
 ** GL_Bind
 */
 void GL_Bind(image_t* image) {
-	int texnum;
+	int texnum = 0;
 
 	if (!image) {
 		ri.Printf(PRINT_WARNING, "GL_Bind: NULL image\n");
@@ -93,7 +93,7 @@ void GL_SelectTexture(int unit)
 */
 void GL_BindToTMU(image_t* image, int tmu)
 {
-	int		texnum;
+	int		texnum = 0;
 
 	if (!image)
 		texnum = 0;
@@ -944,7 +944,7 @@ SamplerBindingsWriter& SamplerBindingsWriter::AddStaticImage(image_t* image, int
 
 SamplerBindingsWriter& SamplerBindingsWriter::AddAnimatedImage(textureBundle_t* bundle, int unit)
 {
-	int index;
+	int index = 0;
 
 	if ((r_fullbright->integer
 		|| tr.refdef.doLAGoggles
@@ -1242,10 +1242,10 @@ static void RB_SubmitDrawSurfsForDepthFill(
 	drawSurf_t* drawSurf = drawSurfs;
 	for (int i = 0; i < numDrawSurfs; i++, drawSurf++)
 	{
-		shader_t* shader;
-		int cubemapIndex;
-		int postRender;
-		int entityNum;
+		shader_t* shader = nullptr;
+		int cubemapIndex = 0;
+		int postRender = 0;
+		int entityNum = 0;
 
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &cubemapIndex, &postRender);
 		assert(shader != nullptr);
@@ -1330,12 +1330,12 @@ static void RB_SubmitDrawSurfs(
 	drawSurf_t* drawSurf = drawSurfs;
 	for (int i = 0; i < numDrawSurfs; i++, drawSurf++)
 	{
-		shader_t* shader;
-		int cubemapIndex;
-		int postRender;
-		int entityNum;
-		int fogNum;
-		int dlighted;
+		shader_t* shader = nullptr;
+		int cubemapIndex = 0;
+		int postRender = 0;
+		int entityNum = 0;
+		int fogNum = 0;
+		int dlighted = 0;
 
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &cubemapIndex, &postRender);
 		assert(shader != nullptr);
@@ -1571,7 +1571,7 @@ RB_SetGL2D
 */
 void	RB_SetGL2D(void) {
 	matrix_t matrix;
-	int width, height;
+	int width = 0, height = 0;
 
 	if (backEnd.projection2D && backEnd.last2DFBO == glState.currentFBO)
 		return;
@@ -1622,8 +1622,8 @@ Used for cinematics.
 =============
 */
 void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* data, int client, qboolean dirty) {
-	int			i, j;
-	int			start, end;
+	int			i = 0, j = 0;
+	int			start = 0, end = 0;
 	vec4_t quadVerts[4]; // all set below; no {} (it made /analyze report a NULL dereference, C6011)
 	vec2_t texCoords[4]; // all set below; no {} (it made /analyze report a NULL dereference, C6011)
 
@@ -1719,7 +1719,7 @@ RB_SetColor
 =============
 */
 static const void* RB_SetColor(const void* data) {
-	const setColorCommand_t* cmd;
+	const setColorCommand_t* cmd = nullptr;
 
 	cmd = (const setColorCommand_t*)data;
 
@@ -1737,8 +1737,8 @@ RB_StretchPic
 =============
 */
 static const void* RB_StretchPic(const void* data) {
-	const stretchPicCommand_t* cmd;
-	shader_t* shader;
+	const stretchPicCommand_t* cmd = nullptr;
+	shader_t* shader = nullptr;
 
 	cmd = (const stretchPicCommand_t*)data;
 
@@ -1821,8 +1821,8 @@ RB_DrawRotatePic
 */
 static const void* RB_RotatePic(const void* data)
 {
-	const rotatePicCommand_t* cmd;
-	shader_t* shader;
+	const rotatePicCommand_t* cmd = nullptr;
+	shader_t* shader = nullptr;
 
 	cmd = (const rotatePicCommand_t*)data;
 
@@ -1915,8 +1915,8 @@ RB_DrawRotatePic2
 */
 static const void* RB_RotatePic2(const void* data)
 {
-	const rotatePicCommand_t* cmd;
-	shader_t* shader;
+	const rotatePicCommand_t* cmd = nullptr;
+	shader_t* shader = nullptr;
 
 	cmd = (const rotatePicCommand_t*)data;
 
@@ -2484,7 +2484,7 @@ static void RB_UpdateEntityLightConstants(
 	VectorCopy(refEntity->lightDir, entityBlock.lightOrigin);
 
 	vec3_t lightDir;
-	float lightRadius;
+	float lightRadius = 0.0f;
 	VectorCopy(refEntity->modelLightDir, lightDir);
 	lightRadius = 300.0f;
 	if (r_shadows->integer == 2)
@@ -2848,7 +2848,7 @@ RB_DrawBuffer
 =============
 */
 static const void* RB_DrawBuffer(const void* data) {
-	const drawBufferCommand_t* cmd;
+	const drawBufferCommand_t* cmd = nullptr;
 
 	cmd = (const drawBufferCommand_t*)data;
 
@@ -2870,10 +2870,10 @@ Also called by RE_EndRegistration
 ===============
 */
 void RB_ShowImages(void) {
-	int		i;
-	image_t* image;
-	float	x, y, w, h;
-	int		start, end;
+	int		i = 0;
+	image_t* image = nullptr;
+	float	x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
+	int		start = 0, end = 0;
 
 	RB_SetGL2D();
 
@@ -2986,7 +2986,7 @@ RB_SwapBuffers
 =============
 */
 static const void* RB_SwapBuffers(const void* data) {
-	const swapBuffersCommand_t* cmd;
+	const swapBuffersCommand_t* cmd = nullptr;
 
 	// finish any 2D drawing if needed
 	if (tess.numIndexes) {
@@ -3005,9 +3005,9 @@ static const void* RB_SwapBuffers(const void* data) {
 	// we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
 	if (r_measureOverdraw->integer) {
-		int i;
+		int i = 0;
 		long sum = 0;
-		unsigned char* stencilReadback;
+		unsigned char* stencilReadback = nullptr;
 
 		stencilReadback = (unsigned char*)Hunk_AllocateTempMemory(glConfig.vidWidth * glConfig.vidHeight);
 		qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback);
@@ -3065,7 +3065,7 @@ RB_PostProcess
 static const void* RB_PostProcess(const void* data)
 {
 	const postProcessCommand_t* cmd = (const postProcessCommand_t*)data;
-	FBO_t* srcFbo;
+	FBO_t* srcFbo = nullptr;
 	vec4i_t srcBox{}, dstBox{};
 	qboolean autoExposure;
 
@@ -3394,7 +3394,7 @@ RB_DrawSurfs
 =============
 */
 static const void* RB_DrawSurfs(const void* data) {
-	const drawSurfsCommand_t* cmd;
+	const drawSurfsCommand_t* cmd = nullptr;
 
 	// finish any 2D drawing if needed
 	if (tess.numIndexes) {
@@ -3425,7 +3425,7 @@ RB_ExecuteRenderCommands
 ====================
 */
 void RB_ExecuteRenderCommands(const void* data) {
-	int		t1, t2;
+	int		t1 = 0, t2 = 0;
 
 	t1 = ri.Milliseconds();
 

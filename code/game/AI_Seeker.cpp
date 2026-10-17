@@ -88,7 +88,7 @@ void NPC_Seeker_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* other, co
 //------------------------------------
 static void Seeker_MaintainHeight()
 {
-	float dif;
+	float dif = 0.0f;
 
 	// Update our angles regardless
 	NPC_UpdateAngles(qtrue, qtrue);
@@ -138,7 +138,7 @@ static void Seeker_MaintainHeight()
 	}
 	else
 	{
-		const gentity_t* goal;
+		const gentity_t* goal = nullptr;
 
 		if (NPCInfo->goalEntity) // Is there a goal?
 		{
@@ -196,7 +196,7 @@ static void Seeker_MaintainHeight()
 //------------------------------------
 void Seeker_Strafe()
 {
-	int side;
+	int side = 0;
 	vec3_t end, right;
 	trace_t tr;
 

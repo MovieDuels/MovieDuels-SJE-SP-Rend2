@@ -98,7 +98,7 @@ qboolean G_SpawnString(const char* key, const char* defaultString, char** out)
 
 qboolean G_SpawnFloat(const char* key, const char* defaultString, float* out)
 {
-	char* s;
+	char* s = nullptr;
 
 	const qboolean present = G_SpawnString(key, defaultString, &s);
 	*out = atof(s);
@@ -107,7 +107,7 @@ qboolean G_SpawnFloat(const char* key, const char* defaultString, float* out)
 
 qboolean G_SpawnInt(const char* key, const char* defaultString, int* out)
 {
-	char* s;
+	char* s = nullptr;
 
 	const qboolean present = G_SpawnString(key, defaultString, &s);
 	*out = atoi(s);
@@ -1038,7 +1038,7 @@ qboolean G_CallSpawn(gentity_t* ent)
 			return qtrue;
 		}
 	}
-	char* str;
+	char* str = nullptr;
 	G_SpawnString("origin", "?", &str);
 	//gi.Printf(S_COLOR_RED"ERROR: %s is not a spawn function @(%s)\n", ent->classname, str);
 	delayedShutDown = level.time + 100;
@@ -1103,7 +1103,7 @@ void Q3_SetParm(int entID, int parmNum, const char* parmValue);
 
 static void G_ParseField(const char* key, const char* value, gentity_t* ent)
 {
-	float v;
+	float v = 0.0f;
 
 	for (field_t* f = fields; f->name; f++)
 	{
@@ -1246,7 +1246,7 @@ level.spawnVars[], then call the class specfic spawn function
 
 void G_SpawnGEntityFromSpawnVars()
 {
-	int i;
+	int i = 0;
 
 	// get the next free entity
 	gentity_t* ent = G_Spawn();
@@ -1292,7 +1292,7 @@ void G_SpawnGEntityFromSpawnVars()
 
 static void G_SpawnSubBSPGEntityFromSpawnVars(vec3_t posOffset, vec3_t angOffset)
 {
-	int i;
+	int i = 0;
 
 	// get the next free entity
 	gentity_t* ent = G_Spawn();
@@ -1660,8 +1660,8 @@ Game Options
 */
 static void SP_worldspawn()
 {
-	char* s;
-	int i;
+	char* s = nullptr;
+	int i = 0;
 
 	g_entities[ENTITYNUM_WORLD].max_health = 0;
 
@@ -1807,7 +1807,7 @@ static qboolean SP_bsp_worldspawn()
 
 void G_SubBSPSpawnEntitiesFromString(const char* entityString, vec3_t posOffset, vec3_t angOffset)
 {
-	const char* entities;
+	const char* entities = nullptr;
 
 	entities = entityString;
 
@@ -1839,7 +1839,7 @@ void G_SubBSPSpawnEntitiesFromString(const char* entityString, vec3_t posOffset,
 
 void G_SpawnEntitiesFromString(const char* entity_string)
 {
-	const char* entities;
+	const char* entities = nullptr;
 
 	entities = entity_string;
 

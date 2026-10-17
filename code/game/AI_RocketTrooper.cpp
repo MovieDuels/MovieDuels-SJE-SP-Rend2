@@ -63,7 +63,7 @@ extern void NPC_BehaviorSet_Stormtrooper(int b_state);
 
 static void RT_RunStormtrooperAI()
 {
-	int b_state;
+	int b_state = 0;
 	//Execute our b_state
 	if (NPCInfo->tempBehavior)
 	{
@@ -630,7 +630,7 @@ static void RT_Flying_MaintainHeight()
 	}
 	else
 	{
-		const gentity_t* goal;
+		const gentity_t* goal = nullptr;
 
 		if (NPCInfo->goalEntity) // Is there a goal?
 		{
@@ -674,7 +674,7 @@ static void RT_Flying_MaintainHeight()
 
 static void RT_Flying_Strafe()
 {
-	int side;
+	int side = 0;
 	vec3_t end, right;
 	trace_t tr;
 

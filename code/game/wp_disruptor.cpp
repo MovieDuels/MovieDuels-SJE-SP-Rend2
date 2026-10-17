@@ -197,7 +197,7 @@ static void WP_DisruptorAltFire(gentity_t* ent)
 	vec3_t start;
 	vec3_t muzzle2, spot, dir;
 	trace_t tr;
-	gentity_t* tent;
+	gentity_t* tent = nullptr;
 	qboolean hit_dodged = qfalse, full_charge = qfalse;
 
 	VectorCopy(muzzle, muzzle2); // making a backup copy

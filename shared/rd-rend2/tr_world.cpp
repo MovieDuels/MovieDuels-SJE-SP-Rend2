@@ -53,7 +53,7 @@ static qboolean	R_CullSurface(msurface_t* surf, int entityNum) {
 	if (surf->cullinfo.type & CULLINFO_PLANE)
 	{
 		// Only true for SF_FACE, so treat like its own function
-		float			d;
+		float			d = 0.0f;
 		cullType_t ct;
 
 		if (!r_facePlaneCull->integer) {
@@ -114,7 +114,7 @@ static qboolean	R_CullSurface(msurface_t* surf, int entityNum) {
 
 	if (surf->cullinfo.type & CULLINFO_SPHERE)
 	{
-		int 	sphereCull;
+		int 	sphereCull = 0;
 
 		if (entityNum != REFENTITYNUM_WORLD) {
 			sphereCull = R_CullLocalPointAndRadius(surf->cullinfo.localOrigin, surf->cullinfo.radius);
@@ -131,7 +131,7 @@ static qboolean	R_CullSurface(msurface_t* surf, int entityNum) {
 
 	if (surf->cullinfo.type & CULLINFO_BOX)
 	{
-		int boxCull;
+		int boxCull = 0;
 
 		if (entityNum != REFENTITYNUM_WORLD) {
 			boxCull = R_CullLocalBox(surf->cullinfo.bounds);
@@ -159,9 +159,9 @@ more dlights if possible.
 ====================
 */
 static int R_DlightSurface(msurface_t* surf, int dlightBits) {
-	float       d;
-	int         i;
-	dlight_t* dl;
+	float       d = 0.0f;
+	int         i = 0;
+	dlight_t* dl = nullptr;
 
 	if (surf->cullinfo.type & CULLINFO_PLANE)
 	{
@@ -244,9 +244,9 @@ Just like R_DlightSurface, cull any we can
 ====================
 */
 static int R_PshadowSurface(msurface_t* surf, int pshadowBits) {
-	float       d;
-	int         i;
-	pshadow_t* ps;
+	float       d = 0.0f;
+	int         i = 0;
+	pshadow_t* ps = nullptr;
 
 	if (surf->cullinfo.type & CULLINFO_PLANE)
 	{
@@ -427,13 +427,13 @@ static float GetQuadArea(vec3_t v1, vec3_t v2, vec3_t v3, vec3_t v4)
 
 void RE_GetBModelVerts(int bmodelIndex, vec3_t* verts, vec3_t normal)
 {
-	int					surf;
-	srfBspSurface_t* face;
+	int					surf = 0;
+	srfBspSurface_t* face = nullptr;
 	//	Not sure if we really need to track the best two candidates
 	int					maxDist[2] = { 0,0 };
 	int					maxIndx[2] = { 0,0 };
 	int					dist = 0;
-	float				dot1, dot2;
+	float				dot1 = 0.0f, dot2 = 0.0f;
 
 	model_t* pModel = R_GetModelByHandle(bmodelIndex);
 	bmodel_t* bmodel = pModel->data.bmodel;
@@ -533,7 +533,7 @@ void R_RecursiveWorldNode(mnode_t* node, int planeBits, int dlightBits, int psha
 		// inside can be visible OPTIMIZE: don't do this all the way to leafs?
 
 		if (!r_nocull->integer) {
-			int		r;
+			int		r = 0;
 
 			if (planeBits & 1) {
 				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[0]);
@@ -646,8 +646,8 @@ void R_RecursiveWorldNode(mnode_t* node, int planeBits, int dlightBits, int psha
 
 	{
 		// leaf node, so add mark surfaces
-		int			c;
-		int surf, * view;
+		int			c = 0;
+		int surf = 0, * view = nullptr;
 
 		tr.pc.c_leafs++;
 
@@ -709,9 +709,9 @@ R_PointInLeaf
 ===============
 */
 static mnode_t* R_PointInLeaf(const vec3_t p) {
-	mnode_t* node;
-	float		d;
-	cplane_t* plane;
+	mnode_t* node = nullptr;
+	float		d = 0.0f;
+	cplane_t* plane = nullptr;
 
 	if (!tr.world) {
 		ri.Error(ERR_DROP, "R_PointInLeaf: bad model");
@@ -824,7 +824,7 @@ void R_MarkLeaves(void)
 
 	const byte* vis = R_ClusterPVS(tr.visClusters[tr.visIndex]);
 
-	int i;
+	int i = 0;
 
 	for (i = 0, leaf = tr.world->nodes; i < tr.world->numnodes; i++, leaf++)
 	{
@@ -864,7 +864,7 @@ R_AddWorldSurfaces
 =============
 */
 void R_AddWorldSurfaces(viewParms_t* viewParms, trRefdef_t* refdef) {
-	int planeBits, dlightBits, pshadowBits;
+	int planeBits = 0, dlightBits = 0, pshadowBits = 0;
 
 	if (!r_drawworld->integer) {
 		return;

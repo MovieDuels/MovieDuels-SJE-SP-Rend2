@@ -1081,8 +1081,8 @@ Fades volumes up or down depending on the action being taken on them.
 
 static void AS_UpdateSetVolumes()
 {
-	float scale;
-	int deltaTime;
+	float scale = 0.0f;
+	int deltaTime = 0;
 
 	//Get the sets and validate them
 	ambientSet_t* current = aSets->GetSet(currentSet);
@@ -1294,7 +1294,7 @@ S_AddLocalSet
 
 int S_AddLocalSet(const char* name, vec3_t listener_origin, vec3_t origin, const int entID, const int time)
 {
-	int currentTime;
+	int currentTime = 0;
 
 	if (!aSets)
 		return cl.serverTime;

@@ -248,7 +248,7 @@ void Use_Target_Speaker(gentity_t* ent, gentity_t* other, gentity_t* activator)
 
 void SP_target_speaker(gentity_t* ent)
 {
-	char* s;
+	char* s = nullptr;
 
 	if (VALIDSTRING(ent->soundSet))
 	{
@@ -593,7 +593,7 @@ void SP_target_position(gentity_t* self)
 //static -slc
 void target_location_linkup(gentity_t* ent)
 {
-	int i;
+	int i = 0;
 
 	if (level.locationLinked)
 		return;
@@ -1146,7 +1146,7 @@ void SP_target_level_change(gentity_t* self)
 	{
 		G_Error("target_level_change with no mapname!\n");
 	}
-	char* s;
+	char* s = nullptr;
 	if (G_SpawnString("tier_storyinfo", "", &s))
 	{
 		if (*s == '+')
@@ -1264,7 +1264,7 @@ will play.
 */
 void SP_target_play_music(gentity_t* self)
 {
-	char* s;
+	char* s = nullptr;
 	G_SetOrigin(self, self->s.origin);
 	if (!G_SpawnString("music", "", &s))
 	{
@@ -1278,7 +1278,7 @@ void SP_target_play_music(gentity_t* self)
 	{
 		//copy this puppy over
 		char buffer[MAX_QPATH];
-		fileHandle_t hFile;
+		fileHandle_t hFile = 0;
 
 		Q_strncpyz(buffer, s, sizeof buffer);
 		COM_DefaultExtension(buffer, sizeof buffer, ".mp3");

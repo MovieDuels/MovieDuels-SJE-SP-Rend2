@@ -50,7 +50,7 @@ COM_GetExtension
 */
 const char* COM_GetExtension(const char* name)
 {
-	const char* dot = strrchr(name, '.'), * slash;
+	const char* dot = strrchr(name, '.'), * slash = nullptr;
 	if (dot && (!((slash = strrchr(name, '/'))) || slash < dot))
 		return dot + 1;
 	return "";
@@ -63,7 +63,7 @@ COM_StripExtension
 */
 void COM_StripExtension(const char* in, char* out, int destsize)
 {
-	const char* dot = strrchr(in, '.'), * slash;
+	const char* dot = strrchr(in, '.'), * slash = nullptr;
 	if (dot && (!((slash = strrchr(in, '/'))) || slash < dot))
 		destsize = destsize < dot - in + 1 ? destsize : dot - in + 1;
 
@@ -103,7 +103,7 @@ COM_DefaultExtension
 */
 void COM_DefaultExtension(char* path, const int maxSize, const char* extension)
 {
-	const char* dot = strrchr(path, '.'), * slash;
+	const char* dot = strrchr(path, '.'), * slash = nullptr;
 	if (dot && (!((slash = strrchr(path, '/'))) || slash < dot))
 		return;
 	Q_strcat(path, maxSize, extension);
@@ -181,7 +181,7 @@ a newline.
 */
 const char* SkipWhitespace(const char* data, qboolean* hasNewLines)
 {
-	int c;
+	int c = 0;
 
 	if (parseDataCount < 0)
 		Com_Error(ERR_FATAL, "SkipWhitespace: parseDataCount < 0");
@@ -205,13 +205,13 @@ const char* SkipWhitespace(const char* data, qboolean* hasNewLines)
 
 int COM_Compress(char* data_p)
 {
-	char* out;
+	char* out = nullptr;
 	qboolean newline = qfalse, whitespace = qfalse;
 
 	char* in = out = data_p;
 	if (in)
 	{
-		int c;
+		int c = 0;
 		while ((c = *in) != 0)
 		{
 			// skip double slash comments
@@ -298,7 +298,7 @@ int COM_Compress(char* data_p)
 
 char* COM_ParseExt(const char** data_p, const qboolean allow_line_breaks)
 {
-	int c;
+	int c = 0;
 	qboolean hasNewLines = qfalse;
 
 	const char* data = *data_p;
@@ -471,7 +471,7 @@ COM_ParseVec4
 */
 qboolean COM_ParseVec4(const char** buffer, vec4_t* c)
 {
-	float f;
+	float f = 0.0f;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -543,7 +543,7 @@ Internal brace depths are properly skipped.
 =================
 */
 qboolean SkipBracedSection(const char** program, int depth) {
-	char* token;
+	char* token = nullptr;
 
 	do {
 		token = COM_ParseExt(program, qtrue);
@@ -567,7 +567,7 @@ SkipRestOfLine
 */
 void SkipRestOfLine(const char** data)
 {
-	int c;
+	int c = 0;
 
 	if (parseDataCount < 0)
 		Com_Error(ERR_FATAL, "SkipRestOfLine: parseDataCount < 0");
@@ -700,7 +700,7 @@ int Q_parseSaberColor(const char* p, float* color)
 		int val = 0;
 		for (int i = 0; i < 6; i++)
 		{
-			int readHex;
+			int readHex = 0;
 			c = p[i];
 			if (c >= '0' && c <= '9')
 			{
@@ -782,7 +782,7 @@ char* QDECL va(const char* format, ...)
 	va_list		argptr;
 	static char	string[MAX_VA_BUFFERS][MAX_VA_STRING];	// in case va is called by nested functions
 	static int	index = 0;
-	char* buf;
+	char* buf = nullptr;
 
 	va_start(argptr, format);
 	buf = (char*)&string[index++ & 3];

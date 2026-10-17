@@ -77,7 +77,7 @@ R_BindAnimatedImageToTMU
 =================
 */
 void R_BindAnimatedImageToTMU(textureBundle_t* bundle, int tmu) {
-	int		index;
+	int		index = 0;
 
 	if (bundle->isVideoMap) {
 		int oldtmu = glState.currenttmu;
@@ -169,7 +169,7 @@ extern float EvalWaveFormClamped(const waveForm_t* wf);
 
 static void ComputeTexMods(shaderStage_t* pStage, int bundleNum, float* outMatrix, float* outOffTurb)
 {
-	int tm;
+	int tm = 0;
 	float matrix[6], currentmatrix[6];
 	textureBundle_t* bundle = &pStage->bundle[bundleNum];
 
@@ -1019,9 +1019,9 @@ static void DrawNormals(shaderCommands_t* input) {
 }
 
 static void ProjectPshadowVBOGLSL(const shaderCommands_t* input, const VertexArraysProperties* vertexArrays) {
-	int		l;
+	int		l = 0;
 	vec3_t	origin;
-	float	radius;
+	float	radius = 0.0f;
 
 	if (!backEnd.refdef.num_pshadows) {
 		return;
@@ -1037,8 +1037,8 @@ static void ProjectPshadowVBOGLSL(const shaderCommands_t* input, const VertexArr
 	GL_VertexArraysToAttribs(attribs, ARRAY_LEN(attribs), vertexArrays);
 
 	for (l = 0; l < backEnd.refdef.num_pshadows; l++) {
-		pshadow_t* ps;
-		shaderProgram_t* sp;
+		pshadow_t* ps = nullptr;
+		shaderProgram_t* sp = nullptr;
 		vec4_t vector;
 
 		if (!(tess.pshadowBits & (1 << l))) {
@@ -1231,7 +1231,7 @@ static void RB_FogPass(shaderCommands_t* input, const VertexArraysProperties* ve
 
 	RB_FillDrawCommand(item.draw, GL_TRIANGLES, 1, input);
 
-	uint32_t key;
+	uint32_t key = 0;
 	if (input->shader->sort == SS_ENVIRONMENT)
 		key = RB_CreateSkySortKey(item, 14, input->shader->isSky ? backEnd.skyNumber : 0, input->shader->sort);
 	else
@@ -1320,7 +1320,7 @@ static unsigned int RB_CalcShaderVertexAttribs(const shader_t* shader)
 
 static shaderProgram_t* SelectShaderProgram(int stageIndex, shaderStage_t* stage, shaderProgram_t* glslShaderGroup, bool useAlphaTestGE192, bool forceRefraction)
 {
-	uint32_t index;
+	uint32_t index = 0;
 	shaderProgram_t* result = nullptr;
 
 	if (forceRefraction)
@@ -1586,10 +1586,10 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 	for (int stage = 0; stage < MAX_SHADER_STAGES; stage++)
 	{
 		shaderStage_t* pStage = input->xstages[stage];
-		shaderProgram_t* sp;
+		shaderProgram_t* sp = nullptr;
 		vec4_t texMatrix{};
 		vec4_t texOffTurb;
-		int stateBits;
+		int stateBits = 0;
 		colorGen_t forceRGBGen = CGEN_BAD;
 		alphaGen_t forceAlphaGen = AGEN_IDENTITY;
 		int index = 0;
@@ -1886,7 +1886,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		}
 		else if (pStage->glslShaderGroup == tr.lightallShader)
 		{
-			int i;
+			int i = 0;
 			vec4_t enableTextures = {};
 			enableTextures[0] = (float)pStage->glow;
 
@@ -2070,7 +2070,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 
 		RB_FillDrawCommand(item.draw, GL_TRIANGLES, 1, input);
 
-		uint32_t key;
+		uint32_t key = 0;
 		if (input->shader->sort == SS_ENVIRONMENT)
 			key = RB_CreateSkySortKey(item, stage + 1, input->shader->isSky ? backEnd.skyNumber : 0, input->shader->sort);
 		else
@@ -2225,7 +2225,7 @@ void RB_BinTriangleCounts(void)
 ** RB_EndSurface
 */
 void RB_EndSurface(void) {
-	shaderCommands_t* input;
+	shaderCommands_t* input = nullptr;
 
 	input = &tess;
 

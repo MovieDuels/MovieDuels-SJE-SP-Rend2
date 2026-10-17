@@ -150,7 +150,7 @@ Interrogator_MaintainHeight
 */
 static void Interrogator_MaintainHeight()
 {
-	float dif;
+	float dif = 0.0f;
 
 	NPC->s.loopSound = G_SoundIndex("sound/chars/interrogator/misc/torture_droid_lp");
 	// Update our angles regardless
@@ -175,7 +175,7 @@ static void Interrogator_MaintainHeight()
 	}
 	else
 	{
-		const gentity_t* goal;
+		const gentity_t* goal = nullptr;
 
 		if (NPCInfo->goalEntity) // Is there a goal?
 		{

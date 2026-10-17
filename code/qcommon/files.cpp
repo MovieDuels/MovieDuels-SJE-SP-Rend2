@@ -324,7 +324,7 @@ static long FS_HashFileName(const char* fname, const int hashSize) {
 }
 
 static fileHandle_t FS_HandleForFile() {
-	int		i;
+	int		i = 0;
 
 	for (i = 1; i < MAX_FILE_HANDLES; i++) {
 		if (fsh[i].handleFiles.file.o == nullptr) {
@@ -664,8 +664,8 @@ void FS_Rmdir(const char* osPath, const qboolean recursive) {
 	FS_CheckFilenameIsMutable(osPath, __func__);
 
 	if (recursive) {
-		int numfiles;
-		int i;
+		int numfiles = 0;
+		int i = 0;
 		char** filesToRemove = Sys_ListFiles(osPath, "", nullptr, &numfiles, qfalse);
 		for (i = 0; i < numfiles; i++) {
 			char fileOsPath[MAX_OSPATH];
@@ -1053,7 +1053,7 @@ Ignore case and separator char distinctions
 ===========
 */
 qboolean FS_FilenameCompare(const char* s1, const char* s2) {
-	int		c1;
+	int		c1 = 0;
 
 	do {
 		c1 = *s1++;
@@ -1536,7 +1536,7 @@ FS_Seek
 =================
 */
 int FS_Seek(const fileHandle_t f, const long offset, int origin) {
-	int		_origin;
+	int		_origin = 0;
 
 	FS_AssertInitialised();
 
@@ -1544,7 +1544,7 @@ int FS_Seek(const fileHandle_t f, const long offset, int origin) {
 		//FIXME: this is really, really crappy
 		//(but better than what was here before)
 		byte	buffer[PK3_SEEK_BUFFER_SIZE];
-		int		remainder;
+		int		remainder = 0;
 		const int		currentPosition = FS_FTell(f);
 
 		// change negative offsets into FS_SEEK_SET
@@ -1684,7 +1684,7 @@ a null buffer will just return the file length without loading
 ============
 */
 long FS_ReadFile(const char* qpath, void** buffer) {
-	fileHandle_t	h;
+	fileHandle_t	h = 0;
 
 	FS_AssertInitialised();
 
@@ -1794,7 +1794,7 @@ static pack_t* FS_LoadZipFile(const char* zipfile, const char* basename)
 	unz_global_info gi;
 	char			filename_inzip[MAX_ZPATH];
 	unz_file_info	file_info;
-	size_t			i;
+	size_t			i = 0;
 
 	int fs_numHeaderLongs = 0;
 
@@ -1956,8 +1956,8 @@ from all search paths
 static char** FS_ListFilteredFiles(const char* path, const char* extension, char* filter, int* numfiles)
 {
 	char* list[MAX_FOUND_FILES];
-	int				i;
-	int pathDepth;
+	int				i = 0;
+	int pathDepth = 0;
 	char			zpath[MAX_ZPATH];
 	qboolean		stripTrailingSlash = qfalse;
 	char			strippedPath[MAX_ZPATH];
@@ -1994,7 +1994,7 @@ static char** FS_ListFilteredFiles(const char* path, const char* extension, char
 			const pack_t* pak = search->pack;
 			const fileInPack_t* buildBuffer = pak->buildBuffer;
 			for (i = 0; i < pak->numfiles; i++) {
-				int depth;
+				int depth = 0;
 
 				// check for directory match
 				const char* name = buildBuffer[i].name;
@@ -2039,7 +2039,7 @@ static char** FS_ListFilteredFiles(const char* path, const char* extension, char
 			}
 		}
 		else if (search->dir) { // scan for files in the filesystem
-			int		numSysFiles;
+			int		numSysFiles = 0;
 
 			const char* netpath = FS_BuildOSPath(search->dir->path, search->dir->gamedir, path);
 			char** sysFiles = Sys_ListFiles(netpath, extension, filter, &numSysFiles, qfalse);
@@ -2115,7 +2115,7 @@ FS_GetFileList
 ================
 */
 int	FS_GetFileList(const char* path, const char* extension, char* listbuf, const int bufsize) {
-	int		nFiles;
+	int		nFiles = 0;
 
 	*listbuf = 0;
 	nFiles = 0;
@@ -2174,7 +2174,7 @@ static unsigned int Sys_CountFileList(char** fileList)
 static char** Sys_ConcatenateFileLists(char** list0, char** list1, char** list2)
 {
 	int totalLength = 0;
-	char** cat = nullptr, ** src;
+	char** cat = nullptr, ** src = nullptr;
 
 	totalLength += Sys_CountFileList(list0);
 	totalLength += Sys_CountFileList(list1);
@@ -2223,11 +2223,11 @@ The directories are searched in base path, cd path and home path
 ================
 */
 int	FS_GetModList(char* listbuf, const int bufsize) {
-	int nTotal, nPaks, nPotential;
+	int nTotal = 0, nPaks = 0, nPotential = 0;
 	char descPath[MAX_OSPATH]{};
-	fileHandle_t descHandle;
+	fileHandle_t descHandle = 0;
 
-	int dummy;
+	int dummy = 0;
 	qboolean bDrop = qfalse;
 
 	*listbuf = 0;
@@ -2344,9 +2344,9 @@ FS_Dir_f
 ================
 */
 static void FS_Dir_f() {
-	char* path;
-	char* extension;
-	int		ndirs;
+	char* path = nullptr;
+	char* extension = nullptr;
+	int		ndirs = 0;
 
 	if (Cmd_Argc() < 2 || Cmd_Argc() > 3) {
 		Com_Printf("usage: dir <directory> [extension]\n");
@@ -2395,7 +2395,7 @@ Ignore case and separator char distinctions
 ===========
 */
 static int FS_PathCmp(const char* s1, const char* s2) {
-	int		c1;
+	int		c1 = 0;
 
 	do {
 		c1 = *s1++;
@@ -2432,7 +2432,7 @@ FS_SortFileList
 ================
 */
 static void FS_SortFileList(char** filelist, const int numfiles) {
-	int j;
+	int j = 0;
 
 	char** sortedlist = static_cast<char**>(Z_Malloc((numfiles + 1) * sizeof(*sortedlist), TAG_FILESYS, qtrue));
 	sortedlist[0] = nullptr;
@@ -2459,7 +2459,7 @@ FS_NewDir_f
 ================
 */
 static void FS_NewDir_f() {
-	int		ndirs;
+	int		ndirs = 0;
 
 	if (Cmd_Argc() < 2) {
 		Com_Printf("usage: fdir <filter>\n");
@@ -2517,7 +2517,7 @@ arbitrary files furing an "fs_copyfiles 1" run.
 ============
 */
 static void FS_TouchFile_f() {
-	fileHandle_t	f;
+	fileHandle_t	f = 0;
 
 	if (Cmd_Argc() != 2) {
 		Com_Printf("Usage: touchFile <file>\n");
@@ -2618,10 +2618,10 @@ then loads the zip headers
 */
 #define	MAX_PAKFILES	1024
 static void FS_AddGameDirectory(const char* path, const char* dir) {
-	int				i;
-	pack_t* pak;
+	int				i = 0;
+	pack_t* pak = nullptr;
 	char			curpath[MAX_OSPATH + 1];
-	int				numfiles;
+	int				numfiles = 0;
 	char* sorted[MAX_PAKFILES]{};
 
 	// this fixes the case where fs_basepath is the same as fs_cdpath
@@ -2975,7 +2975,7 @@ Handle based file calls for virtual machines
 */
 
 int		FS_FOpenFileByMode(const char* qpath, fileHandle_t* f, const fsMode_t mode) {
-	int		r;
+	int		r = 0;
 
 	qboolean sync = qfalse;
 
@@ -3016,7 +3016,7 @@ int		FS_FOpenFileByMode(const char* qpath, fileHandle_t* f, const fsMode_t mode)
 }
 
 int		FS_FTell(const fileHandle_t f) {
-	int pos;
+	int pos = 0;
 	if (fsh[f].zipFile == qtrue) {
 		pos = unztell(fsh[f].handleFiles.file.z);
 	}
@@ -3031,7 +3031,7 @@ void	FS_Flush(const fileHandle_t f) {
 }
 
 void FS_FilenameCompletion(const char* dir, const char* ext, const qboolean stripExt, const callbackFunc_t callback, qboolean allowNonPureFilesOnDisk) {
-	int nfiles;
+	int nfiles = 0;
 
 	char** filenames = FS_ListFilteredFiles(dir, ext, nullptr, &nfiles);
 

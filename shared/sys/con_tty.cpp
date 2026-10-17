@@ -80,7 +80,7 @@ FIXME relevant?
 */
 static void CON_FlushIn( void )
 {
-	char key;
+	char key = 0;
 	while (read(STDIN_FILENO, &key, 1)!=-1);
 }
 
@@ -97,8 +97,8 @@ send "\b \b"
 */
 static void CON_Back( void )
 {
-	char key;
-	size_t UNUSED_VAR size;
+	char key = 0;
+	size_t UNUSED_VAR size = 0;
 
 	key = '\b';
 	size = write(STDOUT_FILENO, &key, 1);
@@ -120,7 +120,7 @@ static void CON_Hide( void )
 {
 	if( ttycon_on )
 	{
-		int i;
+		int i = 0;
 		if (ttycon_hide)
 		{
 			ttycon_hide++;
@@ -153,13 +153,13 @@ static void CON_Show( void )
 {
 	if( ttycon_on )
 	{
-		int i;
+		int i = 0;
 
 		assert(ttycon_hide>0);
 		ttycon_hide--;
 		if (ttycon_hide == 0)
 		{
-			size_t UNUSED_VAR size;
+			size_t UNUSED_VAR size = 0;
 			size = write(STDOUT_FILENO, TTY_CONSOLE_PROMPT, strlen(TTY_CONSOLE_PROMPT));
 			if (TTY_con.cursor)
 			{
@@ -198,7 +198,7 @@ Hist_Add
 */
 void Hist_Add(field_t *field)
 {
-	int i;
+	int i = 0;
 
 	// Don't save blank lines in history.
 	if (!field->cursor)
@@ -228,7 +228,7 @@ Hist_Prev
 */
 field_t *Hist_Prev( void )
 {
-	int hist_prev;
+	int hist_prev = 0;
 	assert(hist_count <= CON_HISTORY);
 	assert(hist_count >= 0);
 	assert(hist_current >= -1);
@@ -345,10 +345,10 @@ char *CON_Input( void )
 {
 	// we use this when sending back commands
 	static char text[MAX_EDIT_LINE];
-	int avail;
-	char key;
-	field_t *history;
-	size_t UNUSED_VAR size;
+	int avail = 0;
+	char key = 0;
+	field_t *history = nullptr;
+	size_t UNUSED_VAR size = 0;
 
 	if(ttycon_on)
 	{
@@ -467,7 +467,7 @@ char *CON_Input( void )
 	}
 	else if (stdin_active)
 	{
-		int     len;
+		int     len = 0;
 		fd_set  fdset;
 		struct timeval timeout;
 

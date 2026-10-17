@@ -125,8 +125,8 @@ The transition point from snap to nextSnap has passed
 */
 static void CG_TransitionSnapshot()
 {
-	centity_t* cent;
-	int i;
+	centity_t* cent = nullptr;
+	int i = 0;
 
 	if (!cg.snap)
 	{
@@ -249,7 +249,7 @@ valid snapshot.
 */
 static snapshot_t* CG_ReadNextSnapshot()
 {
-	snapshot_t* dest;
+	snapshot_t* dest = nullptr;
 
 	while (cg.processedSnapshotNum < cg.latestSnapshotNum)
 	{

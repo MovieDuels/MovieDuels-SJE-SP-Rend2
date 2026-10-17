@@ -931,7 +931,7 @@ qboolean NPC_MoveToGoal(qboolean tryStraight) //FIXME: tryStraight not even used
 		NPC_LadderMove(dir);
 	}
 
-	bool moveSuccess;
+	bool moveSuccess = false;
 	STEER::Activate(NPC);
 	{
 		// Attempt To Steer Directly To Our Goal

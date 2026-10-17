@@ -600,7 +600,7 @@ static int Thai_ValidTISCode(const byte* psString, int& iThaiBytes)
 
 		// thai codes can be up to 3 bytes long, so see how high we can get...
 		//
-		int i;
+		int i = 0;
 		for (i = 0; i < 3; i++)
 		{
 			CodeToTry.sChars[i] = psString[i];
@@ -752,7 +752,7 @@ unsigned int AnyLanguage_ReadCharFromString(char* psText, int* piAdvanceCount, q
 	return uiLetter;
 #else
 	auto psString = reinterpret_cast<const byte*>(psText);	// avoid sign-promote bug
-	unsigned int uiLetter;
+	unsigned int uiLetter = 0;
 
 	switch (GetLanguageEnum())
 	{
@@ -835,7 +835,7 @@ unsigned int AnyLanguage_ReadCharFromString(char* psText, int* piAdvanceCount, q
 
 	case eThai:
 	{
-		int iThaiBytes;
+		int iThaiBytes = 0;
 		uiLetter = Thai_ValidTISCode(psString, iThaiBytes);
 		if (uiLetter)
 		{
@@ -931,7 +931,7 @@ qboolean Language_UsesSpaces()
 //
 CFontInfo::CFontInfo(const char* _fontName)
 {
-	void* buff;
+	void* buff = nullptr;
 
 	// remove any special hack name insertions...
 	//
@@ -1018,7 +1018,7 @@ CFontInfo::CFontInfo(const char* _fontName)
 
 			// SBCS override languages...
 			//
-			fileHandle_t f;
+			fileHandle_t f = 0;
 			for (int i = 0; g_SBCSOverrideLanguages[i].m_psName; i++)
 			{
 				char ssTemp[MAX_QPATH];
@@ -1497,7 +1497,7 @@ int RE_Font_StrLenPixels(const char* psText, const int iFontHandle, const float 
 
 	while (*psText)
 	{
-		int iAdvanceCount;
+		int iAdvanceCount = 0;
 		unsigned int uiLetter = AnyLanguage_ReadCharFromString(const_cast<char*>(psText), &iAdvanceCount, nullptr);
 		psText += iAdvanceCount;
 
@@ -1546,7 +1546,7 @@ int RE_Font_StrLenChars(const char* psText)
 	{
 		// in other words, colour codes and CR/LF don't count as chars, all else does...
 		//
-		int iAdvanceCount;
+		int iAdvanceCount = 0;
 		const unsigned int uiLetter = AnyLanguage_ReadCharFromString(const_cast<char*>(psText), &iAdvanceCount, nullptr);
 		psText += iAdvanceCount;
 
@@ -1737,8 +1737,8 @@ void RE_Font_DrawString(int ox, int oy, const char* psText, const float* rgba, c
 	//let it remember the old color //RE_SetColor(NULL);
 #else
 	static qboolean gbInShadow = qfalse;	// MUST default to this
-	const glyphInfo_t* pLetter;
-	qhandle_t			hShader;
+	const glyphInfo_t* pLetter = nullptr;
+	qhandle_t			hShader = 0;
 
 	assert(psText);
 
@@ -1833,7 +1833,7 @@ void RE_Font_DrawString(int ox, int oy, const char* psText, const float* rgba, c
 	qboolean bNextTextWouldOverflow = qfalse;
 	while (*psText && !bNextTextWouldOverflow)
 	{
-		int iAdvanceCount;
+		int iAdvanceCount = 0;
 		unsigned int uiLetter = AnyLanguage_ReadCharFromString(const_cast<char*>(psText), &iAdvanceCount, nullptr);
 		psText += iAdvanceCount;
 

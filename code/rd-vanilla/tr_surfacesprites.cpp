@@ -105,7 +105,7 @@ vec3_t	ss_view_origin, ss_view_right, ss_view_up;
 static void R_SurfaceSpriteFrameUpdate()
 {
 	vec3_t ang, diff, retwindvec;
-	float targetspeed;
+	float targetspeed = 0.0f;
 	constexpr vec3_t up = { 0,0,1 };
 
 	if (backEnd.refdef.time == last_ss_update_time)
@@ -340,7 +340,7 @@ static void RB_VerticalSurfaceSprite(vec3_t loc, const float width, const float 
 	const byte alpha, const float wind, const float windidle, vec2_t fog, const int hangdown, vec2_t skew, const bool flattened)
 {
 	vec3_t loc2{}, right{};
-	float windsway;
+	float windsway = 0.0f;
 	float points[16]{};
 	color4ub_t color{};
 
@@ -536,25 +536,25 @@ static void RB_VerticalSurfaceSpriteWindPoint(vec3_t loc, const float width, con
 
 static void RB_DrawVerticalSurfaceSprites(shaderStage_t* stage, shaderCommands_t* input)
 {
-	int curindex, curvert;
+	int curindex = 0, curvert = 0;
 	vec3_t dist;
-	float triarea;
+	float triarea = 0.0f;
 	vec2_t vec1_to2{}, vec1_to3{};
 
-	float a1, a2, a3;
-	float l1, l2, l3;
+	float a1 = 0.0f, a2 = 0.0f, a3 = 0.0f;
+	float l1 = 0.0f, l2 = 0.0f, l3 = 0.0f;
 	vec2_t fog1{}, fog2{}, fog3{};
 	vec2_t winddiff1{}, winddiff2{}, winddiff3{};
-	float  windforce1, windforce2, windforce3;
+	float  windforce1 = 0.0f, windforce2 = 0.0f, windforce3 = 0.0f;
 
-	float posi, posj;
-	float step;
-	float fa, fb, fc;
+	float posi = 0.0f, posj = 0.0f;
+	float step = 0.0f;
+	float fa = 0.0f, fb = 0.0f, fc = 0.0f;
 
-	float width, height;
-	float alpha, alphapos, thisspritesfadestart, light;
+	float width = 0.0f, height = 0.0f;
+	float alpha = 0.0f, alphapos = 0.0f, thisspritesfadestart = 0.0f, light = 0.0f;
 
-	byte randomindex2;
+	byte randomindex2 = 0;
 
 	vec2_t skew = { 0,0 };
 	vec2_t fogv{};
@@ -921,8 +921,8 @@ static void RB_OrientedSurfaceSprite(vec3_t loc, float width, const float height
 
 static void RB_DrawOrientedSurfaceSprites(const shaderStage_t* stage, const shaderCommands_t* input)
 {
-	int curvert;
-	float minnormal;
+	int curvert = 0;
+	float minnormal = 0.0f;
 	vec2_t vec1_to2{}, vec1_to3{};
 
 	vec2_t fog1{}, fog2{}, fog3{};
@@ -1188,22 +1188,22 @@ static void RB_EffectSurfaceSprite(vec3_t loc, float width, const float height, 
 
 static void RB_DrawEffectSurfaceSprites(shaderStage_t* stage, shaderCommands_t* input)
 {
-	int curindex, curvert;
-	float triarea, minnormal;
+	int curindex = 0, curvert = 0;
+	float triarea = 0.0f, minnormal = 0.0f;
 	vec2_t vec1_to2{}, vec1_to3{};
 
-	float a1, a2, a3;
-	float l1, l2, l3;
+	float a1 = 0.0f, a2 = 0.0f, a3 = 0.0f;
+	float l1 = 0.0f, l2 = 0.0f, l3 = 0.0f;
 
-	float posi, posj;
-	float step;
-	float fa, fb, fc;
-	float effecttime, effectpos;
-	float density;
+	float posi = 0.0f, posj = 0.0f;
+	float step = 0.0f;
+	float fa = 0.0f, fb = 0.0f, fc = 0.0f;
+	float effecttime = 0.0f, effectpos = 0.0f;
+	float density = 0.0f;
 
-	float width, height;
-	float alpha, alphapos, thisspritesfadestart, light;
-	byte randomindex2;
+	float width = 0.0f, height = 0.0f;
+	float alpha = 0.0f, alphapos = 0.0f, thisspritesfadestart = 0.0f, light = 0.0f;
+	byte randomindex2 = 0;
 
 	float cutdist = stage->ss->fadeMax * rangescalefactor, cutdist2 = cutdist * cutdist;
 	float fadedist = stage->ss->fadeDist * rangescalefactor, fadedist2 = fadedist * fadedist;
@@ -1420,7 +1420,7 @@ void RB_DrawSurfaceSprites(shaderStage_t* stage, shaderCommands_t* input)
 {
 	const uint32_t	glbits = stage->stateBits;
 
-	int fogging;
+	int fogging = 0;
 
 	R_SurfaceSpriteFrameUpdate();
 

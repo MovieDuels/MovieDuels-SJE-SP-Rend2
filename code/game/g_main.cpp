@@ -375,7 +375,7 @@ static void G_DynamicMusicUpdate()
 	vec3_t center;
 	int danger = 0;
 	int battle = 0;
-	int entTeam;
+	int entTeam = 0;
 	qboolean clearLOS;
 
 	//player-based
@@ -1447,8 +1447,8 @@ static void G_Animate(gentity_t* self)
 			// ghoul2 requires some extra checks to see if the animation is done since it doesn't set the current frame directly
 			if (self->ghoul2.size())
 			{
-				float frame, junk2;
-				int junk;
+				float frame = 0.0f, junk2 = 0.0f;
+				int junk = 0;
 
 				// I guess query ghoul2 to find out what the current frame is and see if we are done.
 				gi.G2API_GetBoneAnimIndex(&self->ghoul2[self->playerModel], self->rootBone,
@@ -2106,11 +2106,11 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 
 		// Lock current anim frame on some key bones
 		{
-			float currentFrame;
-			int   startFrame;
-			int   endFrame;
-			int   flags;
-			float animSpeed;
+			float currentFrame = 0.0f;
+			int   startFrame = 0;
+			int   endFrame = 0;
+			int   flags = 0;
+			float animSpeed = 0.0f;
 
 			if (gi.G2API_GetBoneAnim(&ent->ghoul2[0], "model_root",
 				cg.time ? cg.time : level.time,
@@ -2595,7 +2595,7 @@ void G_RunFrame(const int level_time)
 	G_CheckAnimationStyleChange();
 	G_ApplyPlayerAnimationStyle();
 
-	gentity_t* ent;
+	gentity_t* ent = nullptr;
 	int ents_inuse = 0; // someone's gonna be pissed I put this here...
 #if	AI_TIMERS
 	AITime = 0;

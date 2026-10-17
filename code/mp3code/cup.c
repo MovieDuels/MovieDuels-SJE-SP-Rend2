@@ -260,7 +260,7 @@ static void unpack_ba()
 /*-------------------------------------------------------------------------*/
 static void unpack_sfs()	/* unpack scale factor selectors */
 {
-	int i;
+	int i = 0;
 
 	for (i = 0; i < pMP3Stream->max_sb; i++)
 	{
@@ -339,8 +339,8 @@ default:;
 /*-------------------------------------------------------------------------*/
 static void unpack_samp()	/* unpack samples */
 {
-	int n;
-	long tmp;
+	int n = 0;
+	long tmp = 0;
 
 	float* s = sample;
 	for (int i = 0; i < 3; i++)

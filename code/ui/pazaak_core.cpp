@@ -90,7 +90,7 @@ static int Pzk_SanitizeParam(const int id, const int param)
 
 void Pzk_DefaultCards(int* cards)
 {
-	int i;
+	int i = 0;
 	for (i = 0; i < PZK_NUM_SIDECARDS; i++)
 	{
 		cards[i] = 10;
@@ -185,7 +185,7 @@ static void Pzk_GenerateDeck(pzkGame_t* g)
 	int left[10];
 	int numbers[10];
 	int numCount = 10;
-	int i;
+	int i = 0;
 
 	for (i = 0; i < 10; i++)
 	{
@@ -212,7 +212,7 @@ static void Pzk_GenerateHand(pzkGame_t* g, pzkPlayer_t* p)
 {
 	int cards[PZK_SIDEDECK_SIZE];
 	int count = PZK_SIDEDECK_SIZE;
-	int i;
+	int i = 0;
 
 	memcpy(cards, p->sideDeck, sizeof(cards));
 	for (i = 0; i < PZK_HAND_SIZE; i++)
@@ -226,7 +226,7 @@ static void Pzk_GenerateHand(pzkGame_t* g, pzkPlayer_t* p)
 
 static int Pzk_IsValidSideDeck(const int* sideDeck)
 {
-	int i;
+	int i = 0;
 	for (i = 0; i < PZK_SIDEDECK_SIZE; i++)
 	{
 		if (!Pzk_IsSideCard(sideDeck[i]))
@@ -239,7 +239,7 @@ static int Pzk_IsValidSideDeck(const int* sideDeck)
 
 static int Pzk_IsValidDeck(const int* cards)
 {
-	int i, count = 0;
+	int i = 0, count = 0;
 	for (i = 0; i < PZK_NUM_SIDECARDS; i++)
 	{
 		if (cards[i] < 0)
@@ -255,7 +255,7 @@ static int Pzk_IsValidDeck(const int* cards)
 static int Pzk_ValidateSideDeck(const int* sideDeck, const int* cards)
 {
 	int count[PZK_NUM_SIDECARDS];
-	int i;
+	int i = 0;
 
 	memset(count, 0, sizeof(count));
 	for (i = 0; i < PZK_SIDEDECK_SIZE; i++)
@@ -283,7 +283,7 @@ static int Pzk_FinishSideDeck(pzkGame_t* g, int* sideDeck, const int* cards)
 	int avail[PZK_NUM_SIDECARDS * 16];
 	int numAvail = 0;
 	int empty = 0;
-	int i, j;
+	int i = 0, j = 0;
 
 	memcpy(remaining, cards, sizeof(remaining));
 	for (i = 0; i < PZK_SIDEDECK_SIZE; i++)
@@ -328,7 +328,7 @@ static int Pzk_FinishSideDeck(pzkGame_t* g, int* sideDeck, const int* cards)
 
 static void Pzk_PrepareForNewSet(pzkGame_t* g)
 {
-	int p, i;
+	int p = 0, i = 0;
 	for (p = 0; p < 2; p++)
 	{
 		for (i = 0; i < PZK_FIELD_SIZE; i++)
@@ -351,7 +351,7 @@ Setup
 
 void Pzk_Init(pzkGame_t* g, const pzkSendFunc_t send, const pzkFinishFunc_t finish, const unsigned int seed)
 {
-	int p;
+	int p = 0;
 	memset(g, 0, sizeof(*g));
 	g->inUse = 1;
 	g->send = send;
@@ -361,7 +361,7 @@ void Pzk_Init(pzkGame_t* g, const pzkSendFunc_t send, const pzkFinishFunc_t fini
 	g->newSet = 1;
 	for (p = 0; p < 2; p++)
 	{
-		int i;
+		int i = 0;
 		g->players[p].present = 1;
 		for (i = 0; i < PZK_SIDEDECK_SIZE; i++)
 		{
@@ -377,7 +377,7 @@ void Pzk_Init(pzkGame_t* g, const pzkSendFunc_t send, const pzkFinishFunc_t fini
 void Pzk_SetPlayer(pzkGame_t* g, const int pid, const char* name, const int isAI)
 {
 	pzkPlayer_t* p = Pzk_P(g, pid);
-	int i;
+	int i = 0;
 
 	p->isAI = isAI;
 	p->present = 1;
@@ -422,14 +422,14 @@ static void Pzk_CleanUp(pzkGame_t* g);
 
 static void Pzk_CardSelection(pzkGame_t* g)
 {
-	int pid;
+	int pid = 0;
 	g->phase = -1;
 
 	for (pid = 1; pid <= 2; pid++)
 	{
 		const pzkPlayer_t* p = Pzk_P(g, pid);
 		char buf[512];
-		int len, i;
+		int len = 0, i = 0;
 
 		if (p->isAI)
 		{
@@ -550,7 +550,7 @@ static void Pzk_PrepareMatch(pzkGame_t* g)
 {
 	pzkPlayer_t* p1 = Pzk_P(g, 1);
 	pzkPlayer_t* p2 = Pzk_P(g, 2);
-	int pid;
+	int pid = 0;
 
 	Pzk_RemoveTimeout(g);
 	p1->ready = 1;
@@ -612,8 +612,8 @@ static void Pzk_RunPhase1(pzkGame_t* g)
 // Phase 2: draw a card from the main deck
 static void Pzk_RunPhase2(pzkGame_t* g)
 {
-	int pid, oid, slot, card;
-	pzkPlayer_t* player;
+	int pid = 0, oid = 0, slot = 0, card = 0;
+	pzkPlayer_t* player = nullptr;
 
 	Pzk_GetTurnIDs(g, &pid, &oid);
 	player = Pzk_P(g, pid);
@@ -655,7 +655,7 @@ static void Pzk_RunPhase2(pzkGame_t* g)
 // 2&4 and 3&6: flip the sign of every matching card on the field
 static int Pzk_FlipField(pzkPlayer_t* player, const int a, const int b, char* bufP, char* bufO, const int bufSize)
 {
-	int i, pts = 0;
+	int i = 0, pts = 0;
 	for (i = 0; i < PZK_FIELD_SIZE; i++)
 	{
 		const int card = player->field[i];
@@ -692,9 +692,9 @@ static void Pzk_PlayCard(pzkGame_t* g, const int handSlot, int param)
 {
 	char bufP[768];
 	char bufO[768];
-	int pid, oid, cardid, slot;
-	size_t len;
-	pzkPlayer_t* player;
+	int pid = 0, oid = 0, cardid = 0, slot = 0;
+	size_t len = 0;
+	pzkPlayer_t* player = nullptr;
 
 	Pzk_GetTurnIDs(g, &pid, &oid);
 	player = Pzk_P(g, pid);
@@ -765,7 +765,7 @@ typedef struct
 
 static int Pzk_AIOptions(const pzkPlayer_t* self, pzkAIOption_t* out)
 {
-	int n = 0, i;
+	int n = 0, i = 0;
 	for (i = 0; i < PZK_HAND_SIZE; i++)
 	{
 		const int card = self->hand[i];
@@ -778,7 +778,7 @@ static int Pzk_AIOptions(const pzkPlayer_t* self, pzkAIOption_t* out)
 		}
 		else if ((card >= PZCARD_FLIP_1 && card <= PZCARD_FLIP_6) || card == PZCARD_TIEBREAKER)
 		{
-			int s;
+			int s = 0;
 			for (s = 0; s < 2; s++)
 			{
 				out[n].slot = i + 1;
@@ -789,7 +789,7 @@ static int Pzk_AIOptions(const pzkPlayer_t* self, pzkAIOption_t* out)
 		}
 		else if (card == PZCARD_FLIP12)
 		{
-			int s;
+			int s = 0;
 			for (s = 0; s < 4; s++)
 			{
 				out[n].slot = i + 1;
@@ -813,7 +813,7 @@ static void Pzk_AINormal(pzkGame_t* g, int* outSlot, int* outParam, int* outStan
 	int best = self->points;        // closest we can get to 20 with a hand card
 	int bestOpt = -1;
 	int use = -1;
-	int i;
+	int i = 0;
 
 	for (i = 0; i < numOpts; i++)
 	{
@@ -918,15 +918,15 @@ static void Pzk_AINormal(pzkGame_t* g, int* outSlot, int* outParam, int* outStan
 // Phase 3: the player may use a hand card, stand or end the turn; the AI decides at once
 static void Pzk_RunPhase3(pzkGame_t* g)
 {
-	int pid, oid;
-	pzkPlayer_t* player;
+	int pid = 0, oid = 0;
+	pzkPlayer_t* player = nullptr;
 
 	Pzk_GetTurnIDs(g, &pid, &oid);
 	player = Pzk_P(g, pid);
 
 	if (player->isAI)
 	{
-		int slot, param, stand;
+		int slot = 0, param = 0, stand = 0;
 		Pzk_AINormal(g, &slot, &param, &stand);
 		if (slot)
 		{
@@ -963,7 +963,7 @@ static void Pzk_RunPhase3(pzkGame_t* g)
 
 static void Pzk_P3EndTurn(pzkGame_t* g)
 {
-	int pid, oid;
+	int pid = 0, oid = 0;
 	Pzk_RemoveTimeout(g);
 	Pzk_GetTurnIDs(g, &pid, &oid);
 	Pzk_P(g, pid)->canUseCard = 0;
@@ -975,8 +975,8 @@ static void Pzk_P3EndTurn(pzkGame_t* g)
 
 static void Pzk_P3Stand(pzkGame_t* g)
 {
-	int pid, oid;
-	pzkPlayer_t* player;
+	int pid = 0, oid = 0;
+	pzkPlayer_t* player = nullptr;
 
 	Pzk_RemoveTimeout(g);
 	Pzk_GetTurnIDs(g, &pid, &oid);
@@ -991,8 +991,8 @@ static void Pzk_P3Stand(pzkGame_t* g)
 
 static void Pzk_P3UseCard(pzkGame_t* g, const int handSlot, const int param)
 {
-	int pid, oid;
-	pzkPlayer_t* player;
+	int pid = 0, oid = 0;
+	pzkPlayer_t* player = nullptr;
 
 	Pzk_GetTurnIDs(g, &pid, &oid);
 	player = Pzk_P(g, pid);
@@ -1048,12 +1048,12 @@ static void Pzk_RunPhase4(pzkGame_t* g)
 {
 	char bufP[256];
 	char bufO[256];
-	int pid, oid;
+	int pid = 0, oid = 0;
 	int cont = 1;
 	int gotoPhase5 = 0;
 	int setWinner = 0; // 0 = none/tie, else pid
-	pzkPlayer_t* player;
-	pzkPlayer_t* opponent;
+	pzkPlayer_t* player = nullptr;
+	pzkPlayer_t* opponent = nullptr;
 
 	Pzk_GetTurnIDs(g, &pid, &oid);
 	player = Pzk_P(g, pid);
@@ -1157,9 +1157,9 @@ static void Pzk_RunPhase4(pzkGame_t* g)
 // Phase 5: the match is over
 static void Pzk_RunPhase5(pzkGame_t* g)
 {
-	int pid, oid, pdlg, odlg;
-	pzkPlayer_t* player;
-	pzkPlayer_t* opponent;
+	int pid = 0, oid = 0, pdlg = 0, odlg = 0;
+	pzkPlayer_t* player = nullptr;
+	pzkPlayer_t* opponent = nullptr;
 
 	Pzk_GetTurnIDs(g, &pid, &oid);
 	player = Pzk_P(g, pid);
@@ -1353,7 +1353,7 @@ static void Pzk_PlayerSetSideDeck(pzkGame_t* g, const int pid, const int argc, c
 {
 	const int oid = pid == 1 ? 2 : 1;
 	pzkPlayer_t* player = Pzk_P(g, pid);
-	int i;
+	int i = 0;
 
 	if (g->phase != -1 || player->ready)
 	{
@@ -1440,7 +1440,7 @@ void Pzk_Frame(pzkGame_t* g, const int now)
 
 void Pzk_Command(pzkGame_t* g, const int pid, const int argc, const char** argv, const int now)
 {
-	const char* cmd;
+	const char* cmd = nullptr;
 
 	if (!g->inUse || pid < 1 || pid > 2 || argc < 1 || Pzk_P(g, pid)->isAI || !Pzk_P(g, pid)->present)
 	{
@@ -1499,7 +1499,7 @@ void Pzk_Command(pzkGame_t* g, const int pid, const int argc, const char** argv,
 void Pzk_PlayerGone(pzkGame_t* g, const int pid, const int now)
 {
 	const int oid = pid == 1 ? 2 : 1;
-	pzkPlayer_t* player;
+	pzkPlayer_t* player = nullptr;
 
 	if (!g->inUse || pid < 1 || pid > 2)
 	{

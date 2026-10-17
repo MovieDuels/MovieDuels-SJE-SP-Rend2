@@ -220,8 +220,8 @@ void RB_ShadowTessEnd()
 
 void RB_DoShadowTessEnd(vec3_t light_pos)
 {
-	int		i;
-	int		num_tris;
+	int		i = 0;
+	int		num_tris = 0;
 	vec3_t	lightDir;
 
 	if (glConfig.stencilBits < 4) {
@@ -283,7 +283,7 @@ void RB_DoShadowTessEnd(vec3_t light_pos)
 
 	num_tris = tess.numIndexes / 3;
 	for (i = 0; i < num_tris; i++) {
-		float	d;
+		float	d = 0.0f;
 
 		const int i1 = tess.indexes[i * 3 + 0];
 		const int i2 = tess.indexes[i * 3 + 1];
@@ -591,8 +591,8 @@ qboolean tr_distortionNegate = qfalse; //negative blend mode
 void RB_DistortionFill()
 {
 	float alpha = tr_distortionAlpha;
-	float spost;
-	float spost2;
+	float spost = 0.0f;
+	float spost2 = 0.0f;
 
 	if (glConfig.stencilBits < 4)
 	{

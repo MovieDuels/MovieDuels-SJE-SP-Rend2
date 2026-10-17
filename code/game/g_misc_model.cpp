@@ -226,7 +226,7 @@ void SP_misc_model_ghoul(gentity_t* ent)
 	qboolean bHasScale = G_SpawnVector("modelscale_vec", "1 1 1", ent->s.modelScale);
 	if (!bHasScale)
 	{
-		float temp;
+		float temp = 0.0f;
 		G_SpawnFloat("modelscale", "0", &temp);
 		if (temp != 0.0f)
 		{
@@ -392,7 +392,7 @@ void SP_misc_model_gun_rack(gentity_t* ent)
 	int ct = 0;
 	float ofz[3]{};
 	gitem_t* itemList[3]{};
-	char* s;
+	char* s = nullptr;
 
 	G_SpawnString("icon", "", &s);
 
@@ -496,7 +496,7 @@ extern gitem_t* FindItemForAmmo(ammo_t ammo);
 //---------------------------------------------
 void SP_misc_model_ammo_rack(gentity_t* ent)
 {
-	char* s;
+	char* s = nullptr;
 
 	G_SpawnString("icon", "", &s);
 

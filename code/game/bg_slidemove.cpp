@@ -46,11 +46,11 @@ extern qboolean PM_InSpecialJump(int anim);
 
 qboolean PM_SlideMove(const float grav_mod)
 {
-	int bumpcount;
-	int numPlanes;
+	int bumpcount = 0;
+	int numPlanes = 0;
 	vec3_t normal, planes[MAX_CLIP_PLANES]{};
 	vec3_t primal_velocity;
-	int i;
+	int i = 0;
 	trace_t trace;
 	vec3_t end_velocity;
 	qboolean damage_self;

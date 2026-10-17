@@ -39,7 +39,7 @@ the back end (before doing the lighting calculation)
 ===============
 */
 void R_TransformDlights(const int count, dlight_t* dl, const orientationr_t* ori) {
-	int		i;
+	int		i = 0;
 	vec3_t	temp;
 
 	for (i = 0; i < count; i++, dl++) {
@@ -59,10 +59,10 @@ Determine which dynamic lights may effect this bmodel
 */
 void R_DlightBmodel(const bmodel_t* bmodel, trRefEntity_t* ent)
 {
-	int			i, j;
-	dlight_t* dl;
-	int			mask;
-	msurface_t* surf;
+	int			i = 0, j = 0;
+	dlight_t* dl = nullptr;
+	int			mask = 0;
+	msurface_t* surf = nullptr;
 
 	// transform all the lights
 	R_TransformDlights(tr.refdef.num_dlights, tr.refdef.dlights, &tr.ori);
@@ -134,12 +134,12 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world)
 {
 	vec3_t	lightOrigin;
 	int		pos[3]{};
-	int		i, j;
+	int		i = 0, j = 0;
 	float	frac[3]{};
 	int		gridStep[3]{};
 	vec3_t	direction;
-	float	totalFactor;
-	uint32_t startGridPos;
+	float	totalFactor = 0.0f;
+	uint32_t startGridPos = 0;
 
 	if (r_fullbright->integer || r_ambientScale->integer == -1 || tr.refdef.doLAGoggles)
 	{
@@ -161,7 +161,7 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world)
 
 	VectorSubtract(lightOrigin, world->lightGridOrigin, lightOrigin);
 	for (i = 0; i < 3; i++) {
-		float	v;
+		float	v = 0.0f;
 
 		v = lightOrigin[i] * world->lightGridInverseSize[i];
 		pos[i] = floor(v);
@@ -188,10 +188,10 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world)
 
 	totalFactor = 0;
 	for (i = 0; i < 8; i++) {
-		float	factor;
-		mgrid_t* data;
-		uint32_t gridPos;
-		int		lat, lng;
+		float	factor = 0.0f;
+		mgrid_t* data = nullptr;
+		uint32_t gridPos = 0;
+		int		lat = 0, lng = 0;
 		vec3_t	normal{};
 
 #if idppc
@@ -303,7 +303,7 @@ LogLight
 ===============
 */
 static void LogLight(const trRefEntity_t* ent) {
-	int	max1, max2;
+	int	max1 = 0, max2 = 0;
 
 	if (!(ent->e.renderfx & RF_FIRST_PERSON)) {
 		return;
@@ -337,8 +337,8 @@ by the Calc_* functions
 =================
 */
 void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
-	int				i;
-	float			d;
+	int				i = 0;
+	float			d = 0.0f;
 	vec3_t			lightDir;
 	vec3_t			lightOrigin;
 
@@ -529,8 +529,8 @@ int R_DLightsForPoint(const vec3_t point, const float radius)
 	int dlightBits = 0;
 	vec3_t delta;
 	dlight_t currentDlight;
-	float distance;
-	float radiusSum;
+	float distance = 0.0f;
+	float radiusSum = 0.0f;
 	for (int i = 0; i < tr.refdef.num_dlights; i++)
 	{
 		currentDlight = tr.refdef.dlights[i];
@@ -551,13 +551,13 @@ int R_CubemapForPoint(const vec3_t point)
 
 	if (r_cubeMapping->integer && tr.numCubemaps)
 	{
-		int i;
+		int i = 0;
 		float shortest = (float)WORLD_SIZE * (float)WORLD_SIZE;
 
 		for (i = 0; i < tr.numCubemaps; i++)
 		{
 			vec3_t diff;
-			float length;
+			float length = 0.0f;
 
 			VectorSubtract(point, tr.cubemaps[i].origin, diff);
 			length = DotProduct(diff, diff);

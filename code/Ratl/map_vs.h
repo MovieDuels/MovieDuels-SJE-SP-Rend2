@@ -242,10 +242,10 @@ namespace ratl
 				return tree_node::NULL_NODE; // There Are No Excess Red Children (No Childeren At All, Actually)
 			}
 
-			int nxtChild; // The Child We Will Eventually Add Underneath
+			int nxtChild = 0; // The Child We Will Eventually Add Underneath
 			//int		altChild;						// The "other" Child
-			bool nxtRotateLeft;
-			int excessRedChild; // If The Insert Results In An Excess Red Child, This Will Be It
+			bool nxtRotateLeft = false;
+			int excessRedChild = 0; // If The Insert Results In An Excess Red Child, This Will Be It
 
 			// Choose Which Side To Add The New Node Under
 			//---------------------------------------------
@@ -510,7 +510,7 @@ namespace ratl
 		////////////////////////////////////////////////////////////////////////////////////
 		void rotate(int& at, const bool left)
 		{
-			int t;
+			int t = 0;
 			if (left)
 			{
 				assert(T::node(mPool[at]).right() != tree_node::NULL_NODE);

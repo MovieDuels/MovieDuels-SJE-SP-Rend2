@@ -44,7 +44,7 @@ static float look_c_valueL1[16]; // effectively constant
 /*======================================================================*/
 static void unpack_baL1()
 {
-	int j;
+	int j = 0;
 
 	pMP3Stream->bit_skip = 0;
 	int nstereo = pMP3Stream->stereo_sb;
@@ -97,7 +97,7 @@ static void unpack_sfL1(void) /* unpack scale factor */
 /*-------------------------------------------------------------------------*/
 static void unpack_sampL1() /* unpack samples */
 {
-	long tmp;
+	long tmp = 0;
 
 	float* s = sample;
 	for (int j = 0; j < 12; j++)
@@ -224,13 +224,13 @@ int L1audio_decode_init(const MPEG_HEAD* h, const int framebytes_arg,
 	int reduction_code, int transform_code, int convert_code,
 	int freq_limit)
 {
-	int i;
+	int i = 0;
 	static int first_pass = 1;
 
 	/*--- sf init done by layer II init ---*/
 	if (first_pass)
 	{
-		long step;
+		long step = 0;
 		for (step = 4, i = 1; i < 16; i++, step <<= 1)
 			look_c_valueL1[i] = (float)(2.0 / (step - 1));
 		first_pass = 0;

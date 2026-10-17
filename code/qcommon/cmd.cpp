@@ -177,7 +177,7 @@ Cbuf_Execute
 */
 void Cbuf_Execute()
 {
-	int i;
+	int i = 0;
 	char line[MAX_CMD_LINE];
 
 	// This will keep // style comments all on one line by not breaking on
@@ -806,8 +806,8 @@ Cmd_List_f
 */
 static void Cmd_List_f()
 {
-	const cmd_function_t* cmd;
-	int i, j;
+	const cmd_function_t* cmd = nullptr;
+	int i = 0, j = 0;
 	const char* match = nullptr;
 
 	if (Cmd_Argc() > 1)

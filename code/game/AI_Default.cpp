@@ -53,7 +53,7 @@ extern void NPC_AngerSound();
 void npc_check_speak(gentity_t* speaker_npc)
 {
 	vec3_t enemy_dir, enemy_movedir, enemy_dest;
-	float enemy_dist, enemy_movespeed;
+	float enemy_dist = 0.0f, enemy_movespeed = 0.0f;
 
 	//See where enemy will be 300 ms from now
 	jedi_set_enemy_info(enemy_dest, enemy_dir, &enemy_dist, enemy_movedir, &enemy_movespeed, 300);

@@ -78,7 +78,7 @@ int MP3_GetUnpackedSize(const char* psLocalFilename, void* pvData, const int iDa
 int MP3_UnpackRawPCM(const char* psLocalFilename, void* pvData, const int iDataLen, byte* pbUnpackBuffer,
 	const qboolean bStereoDesired /* = qfalse */)
 {
-	int iUnpackedSize;
+	int iUnpackedSize = 0;
 	char* psError = C_MP3_UnpackRawPCM(pvData, iDataLen, &iUnpackedSize, pbUnpackBuffer, bStereoDesired);
 
 	if (psError)
@@ -97,7 +97,7 @@ qboolean MP3Stream_InitPlayingTimeFields(const LP_MP3STREAM lpMP3Stream, const c
 {
 	qboolean bRetval = qfalse;
 
-	int iRate, iWidth, iChannels;
+	int iRate = 0, iWidth = 0, iChannels = 0;
 
 	char* psError = C_MP3_GetHeaderData(pvData, iDataLen, &iRate, &iWidth, &iChannels, bStereoDesired);
 	if (psError)

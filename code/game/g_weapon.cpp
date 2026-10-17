@@ -952,7 +952,7 @@ void WP_FireVehicleWeapon(gentity_t* ent, vec3_t start, vec3_t dir, const vehWea
 			WP_RocketLock(ent, 16384);
 			if (ent->client && ent->client->rocketLockIndex != ENTITYNUM_NONE)
 			{
-				int dif;
+				int dif = 0;
 				float r_time = ent->client->rocketLockTime;
 
 				if (r_time == -1)
@@ -1089,7 +1089,7 @@ static void FireVehicleWeapon(gentity_t* ent, const qboolean alt_fire)
 		// NOTE: Wings open also denotes that it has already launched.
 	{
 		//fighters can only fire when wings are open
-		int weapon_num;
+		int weapon_num = 0;
 		qboolean linked_firing = qfalse;
 
 		if (!alt_fire)
@@ -1144,7 +1144,7 @@ static void FireVehicleWeapon(gentity_t* ent, const qboolean alt_fire)
 			//invalid vehicle weapon
 			return;
 		}
-		int i, num_muzzles = 0, num_muzzles_ready = 0, cumulativeDelay = 0, cumulativeAmmo = 0;
+		int i = 0, num_muzzles = 0, num_muzzles_ready = 0, cumulativeDelay = 0, cumulativeAmmo = 0;
 		qboolean sent_ammo_warning = qfalse;
 
 		const vehWeaponInfo_t* veh_weapon = &g_vehWeaponInfo[veh_weapon_index];
@@ -1688,7 +1688,7 @@ void FireWeapon(gentity_t* ent, const qboolean alt_fire)
 			//player driving an AT-ST
 			//SIGH... because we can't anticipate alt-fire, must calc muzzle here and now
 			mdxaBone_t bolt_matrix;
-			int bolt;
+			int bolt = 0;
 
 			if (ent->client->ps.weapon == WP_ATST_MAIN)
 			{

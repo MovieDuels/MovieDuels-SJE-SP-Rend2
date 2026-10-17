@@ -481,8 +481,8 @@ Chooses a player start, deathmatch start, etc
 */
 gentity_t* SelectSpawnPoint(vec3_t avoid_point, vec3_t origin, vec3_t angles)
 {
-	gentity_t* spot;
-	gentity_t* nearest_spot;
+	gentity_t* spot = nullptr;
+	gentity_t* nearest_spot = nullptr;
 
 	if (level.spawntarget[0])
 	{
@@ -902,13 +902,13 @@ extern gitem_t* FindItemForInventory(int inv);
 void Player_CacheFromPrevLevel()
 {
 	char s[MAX_STRING_CHARS];
-	int i;
+	int i = 0;
 
 	gi.Cvar_VariableStringBuffer(sCVARNAME_PLAYERSAVE, s, sizeof s);
 
 	if (s[0]) // actually this would be safe anyway because of the way sscanf() works, but this is clearer
 	{
-		int iDummy, ibits;
+		int iDummy = 0, ibits = 0;
 		const int parsed = sscanf(s, "%i %i %i",
 			&iDummy, // client->ps.stats[STAT_HEALTH]
 			&iDummy, // client->ps.stats[STAT_ARMOR]
@@ -1610,8 +1610,8 @@ qboolean G_SetG2PlayerModelInfo(gentity_t* ent, const char* model_name, const ch
 	{
 		// we found the model ok
 		constexpr vec3_t angles = { 0, 0, 0 };
-		const char* token;
-		const char* p;
+		const char* token = nullptr;
+		const char* p = nullptr;
 
 		//Now turn on/off any surfaces
 		if (surf_off && surf_off[0])
@@ -3462,9 +3462,9 @@ qboolean G_CheckPlayerDarkSide()
 
 qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loaded)
 {
-	int index;
-	gclient_t* client;
-	int i;
+	int index = 0;
+	gclient_t* client = nullptr;
+	int i = 0;
 	clientInfo_t saved_ci;
 	usercmd_t ucmd;
 	qboolean beam_in_effect = qfalse;
@@ -3611,7 +3611,7 @@ qboolean ClientSpawn(gentity_t* ent, SavedGameJustLoaded_e e_saved_game_just_loa
 	}
 	else
 	{
-		gentity_t* spawn_point;
+		gentity_t* spawn_point = nullptr;
 		int persistant[MAX_PERSISTANT] = { 0 };
 		clientSession_t savedSess;
 		clientPersistant_t saved;

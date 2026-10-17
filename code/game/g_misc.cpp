@@ -246,7 +246,7 @@ void TeleportMover(gentity_t* mover, vec3_t origin, vec3_t diff_angles, const qb
 {
 	//FIXME: need an effect
 	vec3_t new_angle;
-	float speed;
+	float speed = 0.0f;
 
 	// unlink to make sure it can't possibly interfere with G_KillBox
 	gi.unlinkentity(mover);
@@ -408,9 +408,9 @@ SP_misc_model_static
 */
 void SP_misc_model_static(gentity_t* ent)
 {
-	char* value;
-	float temp;
-	float zOff;
+	char* value = nullptr;
+	float temp = 0.0f;
+	float zOff = 0.0f;
 	vec3_t scale{ 1.0f, 1.0f, 1.0f };   /* default safe scale */
 
 	/* Read modelscale_vec */
@@ -598,7 +598,7 @@ The target for a misc_portal_surface.  You can set either angles or target anoth
 */
 void SP_misc_portal_camera(gentity_t* ent)
 {
-	float roll;
+	float roll = 0.0f;
 
 	VectorClear(ent->mins);
 	VectorClear(ent->maxs);
@@ -618,9 +618,9 @@ void G_SubBSPSpawnEntitiesFromString(const char* entityString, vec3_t posOffset,
 void SP_misc_bsp(gentity_t* ent)
 {
 	char temp[MAX_QPATH];
-	char* out;
-	float newAngle;
-	int tempint;
+	char* out = nullptr;
+	float newAngle = 0.0f;
+	int tempint = 0;
 
 	G_SpawnFloat("angle", "0", &newAngle);
 	if (newAngle != 0.0)
@@ -745,8 +745,8 @@ Use a fog brush instead.
 void SP_misc_skyportal(gentity_t* ent)
 {
 	vec3_t fogv; //----(SA)
-	int fogn; //----(SA)
-	int fogf; //----(SA)
+	int fogn = 0; //----(SA)
+	int fogf = 0; //----(SA)
 	int isfog = 0; // (SA)
 
 	isfog += G_SpawnVector("fogcolor", "0 0 0", fogv);
@@ -1383,7 +1383,7 @@ void health_use(gentity_t* self, gentity_t* other, gentity_t* activator)
 	}
 	else
 	{
-		int dif;
+		int dif = 0;
 		if (other->client)
 		{
 			// He's dead, Jim. Don't give him health
@@ -1520,7 +1520,7 @@ void ammo_use(gentity_t* self, gentity_t* other, gentity_t* activator)
 	}
 	else
 	{
-		int dif;
+		int dif = 0;
 		if (other->client)
 		{
 			dif = ammoData[AMMO_BLASTER].max - other->client->ps.ammo[AMMO_BLASTER];
@@ -2089,7 +2089,7 @@ void shield_power_converter_use(gentity_t* self, gentity_t* other, const gentity
 
 		if (dif > 0 && self->count) // Already at full armor?..and do I even have anything to give
 		{
-			int add;
+			int add = 0;
 			if (dif > MAX_AMMO_GIVE)
 			{
 				add = MAX_AMMO_GIVE;
@@ -2167,7 +2167,7 @@ USETARGET - when used it fires off target
 //------------------------------------------------------------
 void SP_misc_model_shield_power_converter(gentity_t* ent)
 {
-	char* s;
+	char* s = nullptr;
 
 	G_SpawnString("icon", "", &s);
 
@@ -2381,7 +2381,7 @@ USETARGET - when used it fires off target
 //------------------------------------------------------------
 void SP_misc_shield_floor_unit(gentity_t* ent)
 {
-	char* s;
+	char* s = nullptr;
 
 	G_SpawnString("icon", "", &s);
 
@@ -2474,7 +2474,7 @@ void ammo_power_converter_use(gentity_t* self, gentity_t* other, const gentity_t
 		// Has it got any power left...and can we even use any of it?
 		if (self->count && (difBlaster > 0 || difPowerCell > 0 || difMetalBolts > 0))
 		{
-			int add;
+			int add = 0;
 			// at least one of the ammo types could stand to take on a bit more ammo
 			self->setTime = level.time + 100;
 			self->s.loopSound = G_SoundIndex("sound/interface/ammocon_run.wav");
@@ -2570,7 +2570,7 @@ USETARGET - when used it fires off target
 //------------------------------------------------------------
 void SP_misc_model_ammo_power_converter(gentity_t* ent)
 {
-	char* s;
+	char* s = nullptr;
 
 	G_SpawnString("icon", "", &s);
 
@@ -2612,7 +2612,7 @@ USETARGET - when used it fires off target
 //------------------------------------------------------------
 void SP_misc_ammo_floor_unit(gentity_t* ent)
 {
-	char* s;
+	char* s = nullptr;
 
 	G_SpawnString("icon", "", &s);
 
@@ -3068,7 +3068,7 @@ void misc_atst_use(gentity_t* self, gentity_t* other, gentity_t* activator)
 	}
 
 	int tempLocDmg[HL_MAX]{};
-	int hl, tempHealth;
+	int hl = 0, tempHealth = 0;
 
 	if (activator->client->NPC_class != CLASS_ATST)
 	{

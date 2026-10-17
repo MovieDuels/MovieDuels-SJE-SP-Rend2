@@ -284,7 +284,7 @@ distribution and the specified mean value.
 */
 float erandom(const float mean)
 {
-	float	r;
+	float	r = 0.0f;
 
 	do {
 		r = Q_flrand(0.0f, 1.0f);
@@ -614,7 +614,7 @@ void RotateAroundDirection(matrix3_t axis, const float yaw) {
 }
 
 void vectoangles(const vec3_t value1, vec3_t angles) {
-	float	yaw, pitch;
+	float	yaw = 0.0f, pitch = 0.0f;
 
 	if (value1[1] == 0 && value1[0] == 0) {
 		yaw = 0;
@@ -1327,8 +1327,8 @@ void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up) 
 */
 void PerpendicularVector(vec3_t dst, const vec3_t src)
 {
-	int	pos;
-	int i;
+	int	pos = 0;
+	int i = 0;
 	float minelem = 1.0f;
 	vec3_t tempvec;
 

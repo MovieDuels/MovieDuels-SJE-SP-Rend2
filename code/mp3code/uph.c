@@ -220,11 +220,11 @@ static unsigned int bitget_1bit()
 /*========================================================*/
 void unpack_huff(int xy[][2], int n, const int ntable)
 {
-	int i;
-	const HUFF_ELEMENT* t;
-	int bits;
-	int code;
-	int x, y;
+	int i = 0;
+	const HUFF_ELEMENT* t = NULL;
+	int bits = 0;
+	int code = 0;
+	int x = 0, y = 0;
 
 	if (n <= 0)
 		return;
@@ -336,10 +336,10 @@ void unpack_huff(int xy[][2], int n, const int ntable)
 /*==========================================================*/
 int unpack_huff_quad(int vwxy[][4], int n, int nbits, const int ntable)
 {
-	int i;
-	int code;
-	int x, y, v, w;
-	int tmp;
+	int i = 0;
+	int code = 0;
+	int x = 0, y = 0, v = 0, w = 0;
+	int tmp = 0;
 
 	int tmp_nz = 15;
 	int i_non_zero = -1;

@@ -770,7 +770,7 @@ demos/video<date>_<time>.avi, next to the MP demos (homepath: Documents/My Games
 */
 static void CL_VideoFilename(char* buf, const int bufSize)
 {
-	time_t rawtime;
+	time_t rawtime = 0;
 	char timeStr[32] = { 0 };
 
 	time(&rawtime);

@@ -472,7 +472,7 @@ static void ProcessMoveCommands(Vehicle_t* p_veh)
 	/************************************************************************************/
 
 	//Client sets ucmds and such for speed alterations
-	float speedInc, speedIdleDec, speedIdle, speedIdleAccel, speedMin, speedMax;
+	float speedInc = 0.0f, speedIdleDec = 0.0f, speedIdle = 0.0f, speedIdleAccel = 0.0f, speedMin = 0.0f, speedMax = 0.0f;
 	bgEntity_t* parent = p_veh->m_pParentEntity;
 	qboolean is_landing_or_launching;
 #ifndef _JK2MP//SP
@@ -1363,12 +1363,12 @@ static void ProcessOrientCommands(Vehicle_t* p_veh)
 	/********************************************************************************/
 
 	bgEntity_t* parent = p_veh->m_pParentEntity;
-	playerState_t* parent_ps, * rider_ps;
-	float angle_time_mod;
+	playerState_t* parent_ps = nullptr, * rider_ps = nullptr;
+	float angle_time_mod = 0.0f;
 #ifdef QAGAME
 	constexpr float ground_fraction = 0.1f;
 #endif
-	float cur_roll;
+	float cur_roll = 0.0f;
 	qboolean is_dead;
 	qboolean is_landing_or_landed;
 	const qboolean arcade = FighterArcade(p_veh); // (2026-10-13)
@@ -1591,7 +1591,7 @@ static void ProcessOrientCommands(Vehicle_t* p_veh)
 				|| parent_ps->speed > MIN_LANDING_SPEED)
 				//if ( ( p_veh->m_LandTrace.fraction >= 1.0f || p_veh->m_ucmd.forwardmove != 0 ) && p_veh->m_LandTrace.fraction >= 0.0f )
 			{
-				float f_yaw_delta;
+				float f_yaw_delta = 0.0f;
 
 #ifdef _JK2MP
 				FighterPitchAdjust(p_veh, rider_ps, parent_ps);

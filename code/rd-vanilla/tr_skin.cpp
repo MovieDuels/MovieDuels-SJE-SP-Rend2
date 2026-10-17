@@ -43,7 +43,7 @@ compatible with our normal parsing rules.
 ==================
 */
 static char* CommaParse(char** data_p) {
-	int c;
+	int c = 0;
 	static	char	com_token[MAX_TOKEN_CHARS];
 
 	char* data = *data_p;
@@ -153,7 +153,7 @@ AnimationCFGs_t AnimationCFGs;
 //
 int RE_GetAnimationCFG(const char* ps_cfg_filename, char* ps_dest, const int i_dest_size)
 {
-	char* ps_text;
+	char* ps_text = nullptr;
 
 	const auto it = AnimationCFGs.find(ps_cfg_filename);
 	if (it != AnimationCFGs.end())
@@ -164,7 +164,7 @@ int RE_GetAnimationCFG(const char* ps_cfg_filename, char* ps_dest, const int i_d
 	{
 		// not found, so load it...
 		//
-		fileHandle_t f;
+		fileHandle_t f = 0;
 		const int i_len = ri.FS_FOpenFileRead(ps_cfg_filename, &f, qfalse);
 		if (i_len <= 0)
 		{
@@ -263,8 +263,8 @@ bool RE_SplitSkins(const char* i_nname, char* skinhead, char* skintorso, char* s
 // given a name, go get the skin we want and return
 qhandle_t RE_RegisterIndividualSkin(const char* name, const qhandle_t h_skin)
 {
-	skinSurface_t* surf;
-	char* text = nullptr, * text_p;
+	skinSurface_t* surf = nullptr;
+	char* text = nullptr, * text_p = nullptr;
 	char		surf_name[MAX_QPATH];
 
 	// load and parse the skin file
@@ -356,8 +356,8 @@ RE_RegisterSkin
 */
 qhandle_t RE_RegisterSkin(const char* name)
 {
-	qhandle_t	h_skin;
-	skin_t* skin;
+	qhandle_t	h_skin = 0;
+	skin_t* skin = nullptr;
 
 	if (!tr.numSkins)
 	{
@@ -426,7 +426,7 @@ qhandle_t RE_RegisterSkin(const char* name)
 		{
 			// Very ugly way of doing this, need to stop the game from registering the last listed "model_" skin in the menu as the lower skin can get cut off.
 			// If using a model_ skin, we'll register the head (which shouldn't be cut off). Otherwise, keep the original behavior for the custom skins.
-			char* skin;
+			char* skin = nullptr;
 			skin = strrchr(skinhead, '/');
 			if (!strncmp(skin, "/model_", 7))
 			{

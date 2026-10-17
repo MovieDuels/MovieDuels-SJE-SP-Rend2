@@ -43,10 +43,10 @@ static void R_ChopPolyBehindPlane(const int num_in_points, vec3_t in_points[MAX_
 	float		dists[MAX_VERTS_ON_POLY + 4] = { 0 };
 	int			sides[MAX_VERTS_ON_POLY + 4] = { 0 };
 	int			counts[3];
-	float		dot;
-	int			i, j;
-	float* p1, * p2, * clip;
-	float		d;
+	float		dot = 0.0f;
+	int			i = 0, j = 0;
+	float* p1 = nullptr, * p2 = nullptr, * clip = nullptr;
+	float		d = 0.0f;
 
 	// don't clip if it might overflow
 	if (num_in_points >= MAX_VERTS_ON_POLY - 2) {
@@ -135,9 +135,9 @@ R_BoxSurfaces_r
 */
 void R_BoxSurfaces_r(const mnode_t* node, vec3_t mins, vec3_t maxs, surfaceType_t** list, const int listsize, int* listlength, vec3_t dir)
 {
-	int			s, c;
-	msurface_t* surf;
-	int* mark;
+	int			s = 0, c = 0;
+	msurface_t* surf = nullptr;
+	int* mark = nullptr;
 
 	// do the tail recursion in a loop
 	while (node->contents == -1) {
@@ -158,7 +158,7 @@ void R_BoxSurfaces_r(const mnode_t* node, vec3_t mins, vec3_t maxs, surfaceType_
 	mark = tr.world->marksurfaces + node->firstmarksurface;
 	c = node->nummarksurfaces;
 	while (c--) {
-		int* surfViewCount;
+		int* surfViewCount = nullptr;
 		//
 		if (*listlength >= listsize) break;
 		//
@@ -203,8 +203,8 @@ R_AddMarkFragments
 */
 void R_AddMarkFragments(int num_clip_points, vec3_t clip_points[2][MAX_VERTS_ON_POLY], const int numPlanes, vec3_t* normals, const float* dists, const int max_points, vec3_t point_buffer, int max_fragments, markFragment_t* fragment_buffer, int* returned_points, int* returned_fragments, vec3_t mins, vec3_t maxs)
 {
-	int pingPong, i;
-	markFragment_t* mf;
+	int pingPong = 0, i = 0;
+	markFragment_t* mf = nullptr;
 
 	// Skip polygons that are nowhere near the mark before chopping them by all planes:
 	// big triangle meshes / grids would otherwise chop every triangle for every mark
@@ -288,20 +288,20 @@ static bool R_MarkTriangleOutside(const vec3_t a, const vec3_t b, const vec3_t c
 
 int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection, const int max_points, vec3_t point_buffer, const int max_fragments, markFragment_t* fragment_buffer)
 {
-	int				numsurfaces, numPlanes;
-	int				i, j, k, m, n;
+	int				numsurfaces = 0, numPlanes = 0;
+	int				i = 0, j = 0, k = 0, m = 0, n = 0;
 	surfaceType_t* surfaces[64];
 	vec3_t			mins, maxs;
-	int				returned_fragments;
-	int				returned_points;
+	int				returned_fragments = 0;
+	int				returned_points = 0;
 	vec3_t			normals[MAX_VERTS_ON_POLY + 2];
 	float			dists[MAX_VERTS_ON_POLY + 2];
 	vec3_t			clip_points[2][MAX_VERTS_ON_POLY];
-	int				num_clip_points;
-	float* v;
-	srfBspSurface_t* cv;
-	glIndex_t* tri;
-	srfVert_t* dv;
+	int				num_clip_points = 0;
+	float* v = nullptr;
+	srfBspSurface_t* cv = nullptr;
+	glIndex_t* tri = nullptr;
+	srfVert_t* dv = nullptr;
 	vec3_t			normal;
 	vec3_t			projectionDir;
 	vec3_t			v1, v2;

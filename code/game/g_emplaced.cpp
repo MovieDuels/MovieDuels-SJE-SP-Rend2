@@ -125,7 +125,7 @@ static void EWebPositionUser(gentity_t* owner, gentity_t* eweb)
 			{
 				//moved past the threshold from last position
 				vec3_t o_right;
-				int strafe_anim;
+				int strafe_anim = 0;
 
 				VectorCopy(p, eweb->pos4); //update the position
 				//find out what direction he moved in

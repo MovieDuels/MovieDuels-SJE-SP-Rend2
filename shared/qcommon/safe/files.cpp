@@ -59,7 +59,7 @@ namespace FS
 
 	FileBuffer ReadFile(gsl::czstring path)
 	{
-		void* buffer;
+		void* buffer = nullptr;
 #if defined( SP_GAME )
 		const long size = gi.FS_ReadFile(path, &buffer);
 #else

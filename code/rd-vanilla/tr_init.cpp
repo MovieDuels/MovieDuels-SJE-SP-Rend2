@@ -539,7 +539,7 @@ static void GLimp_InitExtensions()
 		Com_Printf("...GL_EXT_compiled_vertex_array not found\n");
 	}
 
-	bool b_nv_register_combiners;
+	bool b_nv_register_combiners = false;
 	// Register Combiners.
 	if (ri.GL_ExtensionSupported("GL_NV_register_combiners"))
 	{
@@ -593,7 +593,7 @@ static void GLimp_InitExtensions()
 	// function pointers. ARB rocks!
 
 	// Vertex Programs.
-	bool b_arb_vertex_program;
+	bool b_arb_vertex_program = false;
 	if (ri.GL_ExtensionSupported("GL_ARB_vertex_program"))
 	{
 		b_arb_vertex_program = true;
@@ -605,7 +605,7 @@ static void GLimp_InitExtensions()
 	}
 
 	// Fragment Programs.
-	bool b_arb_fragment_program;
+	bool b_arb_fragment_program = false;
 	if (ri.GL_ExtensionSupported("GL_ARB_fragment_program"))
 	{
 		b_arb_fragment_program = true;
@@ -827,7 +827,7 @@ Return value must be freed with Hunk_FreeTempMemory()
 
 byte* RB_ReadPixels(const int x, const int y, const int width, const int height, size_t* offset, int* padlen)
 {
-	GLint pack_align;
+	GLint pack_align = 0;
 
 	qglGetIntegerv(GL_PACK_ALIGNMENT, &pack_align);
 
@@ -852,9 +852,9 @@ R_TakeScreenshot
 ==================
 */
 static void R_TakeScreenshot(const int x, const int y, const int width, const int height, const char* fileName) {
-	byte* destptr;
+	byte* destptr = nullptr;
 
-	int padlen;
+	int padlen = 0;
 	size_t offset = 18;
 
 	byte* allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
@@ -934,7 +934,7 @@ RB_TakeVideoFrameCmd (as MP)
 */
 const void* RB_TakeVideoFrameCmd(const void* data)
 {
-	GLint pack_align;
+	GLint pack_align = 0;
 
 	const auto cmd = static_cast<const videoFrameCommand_t*>(data);
 
@@ -981,7 +981,7 @@ R_TakeScreenshotJPEG
 */
 static void R_TakeScreenshotJPEG(const int x, const int y, const int width, const int height, const char* fileName) {
 	size_t offset = 0;
-	int padlen;
+	int padlen = 0;
 
 	byte* buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
 	const size_t memcount = (width * 3 + padlen) * height;
@@ -1000,7 +1000,7 @@ R_ScreenshotFilename
 ==================
 */
 static void R_ScreenshotFilename(char* buf, const int buf_size, const char* ext) {
-	time_t rawtime;
+	time_t rawtime = 0;
 	char time_str[32] = { 0 }; // should really only reach ~19 chars
 
 	time(&rawtime);
@@ -1021,8 +1021,8 @@ the menu system, sampled down from full screen distorted images
 static void R_LevelShot() {
 	char		checkname[MAX_OSPATH];
 	size_t		offset = 0;
-	int			padlen;
-	int g, b;
+	int			padlen = 0;
+	int g = 0, b = 0;
 
 	Com_sprintf(checkname, sizeof checkname, "levelshots/%s.tga", tr.world->baseName);
 
@@ -1433,7 +1433,7 @@ static void R_AtiHackToggle_f()
  ************************************************************************************************/
 static void R_FogDistance_f()
 {
-	float	distance;
+	float	distance = 0.0f;
 
 	if (!tr.world)
 	{
@@ -1779,8 +1779,8 @@ extern void R_InitWorldEffects();
 
 void R_Init(void)
 {
-	int	err;
-	int i;
+	int	err = 0;
+	int i = 0;
 
 	ri.Printf(PRINT_ALL, "-----Loading SP Performance Mode-----\n");
 

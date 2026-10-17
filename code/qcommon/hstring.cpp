@@ -47,7 +47,7 @@ public:
 		// Alloc node storage for MAPBLOCK_SIZE_NODES worth of nodes.
 		mNodes=(SMapNode *)((((unsigned long)mRaw)+MAP_NODE_SIZE)&~(unsigned long)0x1f);
 		// Set all nodes to initially be free.
-		int i;
+		int i = 0;
 		for(i=0;i<MAPBLOCK_SIZE_NODES;i++)
 		{
 			mNodes[i].mMapBlockNum=id;
@@ -98,7 +98,7 @@ CMapPoolLow::~CMapPoolLow()
 #endif
 #endif
 
-	int i;
+	int i = 0;
 	for (i=0;i<mMapBlocks.size();i++)
 	{
 		delete mMapBlocks[i];
@@ -160,8 +160,8 @@ void CMapPoolLow::Free(void *p)
 
 void CMapPoolLow::TouchMem()
 {
-	int				i,j;
-	unsigned char	*memory;
+	int				i = 0,j = 0;
+	unsigned char	*memory = nullptr;
 	int				totSize=0;
 	for(i=0;i<mMapBlocks.size();i++)
 	{
@@ -193,7 +193,7 @@ int HashFunction(const char *key)
 {
 	long	hash=0;
 	int		i=0;
-	unsigned char	letter;
+	unsigned char	letter = 0;
 
 	letter = (unsigned char)*key++;
 	while (letter)
@@ -215,7 +215,7 @@ class CHashHelper
 public:
 	CHashHelper()
 	{
-		int i;
+		int i = 0;
 		for (i=0;i<MAX_HASH;i++)
 		{
 			mHashes[i]=0;
@@ -250,7 +250,7 @@ public:
 	}
 	void TouchMem()
 	{
-		int	i;
+		int	i = 0;
 		for(i=0;i<sizeof(mHashes);i+=256)
 		{
 			HaHaOptimizer2+=((unsigned char	*)mHashes)[i];
@@ -329,7 +329,7 @@ public:
 
 	~CPool(void)
 	{
-		int i;
+		int i = 0;
 		for (i=0;i<mBlockVec.size();i++)
 		{
 			delete mBlockVec[i];
@@ -366,7 +366,7 @@ public:
 
 	bool operator== (const CPool &pool) const
 	{
-		int i;
+		int i = 0;
 		for(i=0;i<mBlockVec.size();i++)
 		{
 			if(!(*mBlockVec[i]==*pool.mBlockVec[i]))
@@ -379,8 +379,8 @@ public:
 
 	void TouchMem()
 	{
-		int				i,j;
-		unsigned char	*memory;
+		int				i = 0,j = 0;
+		unsigned char	*memory = nullptr;
 		int				totSize=0;
 		for(i=0;i<mBlockVec.size();i++)
 		{

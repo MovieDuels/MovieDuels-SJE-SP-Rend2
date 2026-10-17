@@ -65,7 +65,7 @@ NPC_Howler_Precache
 */
 void NPC_Howler_Precache()
 {
-	int i;
+	int i = 0;
 	G_EffectIndex("howler/sonic");
 	G_SoundIndex("sound/chars/howler/howl.mp3");
 	for (i = 1; i < 3; i++)

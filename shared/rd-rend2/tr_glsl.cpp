@@ -192,10 +192,10 @@ static void GLSL_PrintProgramInfoLog(GLuint object, qboolean developerOnly)
 
 static void GLSL_PrintShaderInfoLog(GLuint object, qboolean developerOnly)
 {
-	char* msg;
+	char* msg = nullptr;
 	static char     msgPart[1024];
 	int             maxLength = 0;
-	int             i;
+	int             i = 0;
 	int             printLevel = developerOnly ? PRINT_DEVELOPER : PRINT_ALL;
 
 	qglGetShaderiv(object, GL_INFO_LOG_LENGTH, &maxLength);
@@ -264,7 +264,7 @@ static size_t GLSL_GetShaderHeader(
 	char* dest,
 	size_t size)
 {
-	float fbufWidthScale, fbufHeightScale;
+	float fbufWidthScale = 0.0f, fbufHeightScale = 0.0f;
 
 	dest[0] = '\0';
 
@@ -423,7 +423,7 @@ static size_t GLSL_GetShaderHeader(
 
 static bool GLSL_IsGPUShaderCompiled(GLuint shader)
 {
-	GLint compiled;
+	GLint compiled = 0;
 	qglGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
 	return (compiled == GL_TRUE);
 }
@@ -541,7 +541,7 @@ static void GLSL_LinkProgram(GLuint program)
 {
 	qglLinkProgram(program);
 
-	GLint linked;
+	GLint linked = 0;
 	qglGetProgramiv(program, GL_LINK_STATUS, &linked);
 	if (linked != GL_TRUE)
 	{
@@ -553,8 +553,8 @@ static void GLSL_LinkProgram(GLuint program)
 
 static void GLSL_ShowProgramUniforms(GLuint program)
 {
-	int             i, count, size;
-	GLenum			type;
+	int             i = 0, count = 0, size = 0;
+	GLenum			type = 0;
 	char            uniformName[1000];
 
 	// install the executables in the program object as part of current state.
@@ -1271,7 +1271,7 @@ void GLSL_SetUniformFloatN(shaderProgram_t* program, int uniformNum, const float
 void GLSL_SetUniformMatrix4x3(shaderProgram_t* program, int uniformNum, const float* matrix, int numElements)
 {
 	GLint* uniforms = program->uniforms;
-	float* compare;
+	float* compare = nullptr;
 
 	if (uniforms[uniformNum] == -1)
 		return;
@@ -1299,7 +1299,7 @@ void GLSL_SetUniformMatrix4x3(shaderProgram_t* program, int uniformNum, const fl
 void GLSL_SetUniformMatrix4x4(shaderProgram_t* program, int uniformNum, const float* matrix, int numElements)
 {
 	GLint* uniforms = program->uniforms;
-	float* compare;
+	float* compare = nullptr;
 
 	if (uniforms[uniformNum] == -1)
 		return;
@@ -1433,7 +1433,7 @@ static const GPUProgramDesc* LoadProgramSource(
 
 	if (r_externalGLSL->integer)
 	{
-		char* buffer;
+		char* buffer = nullptr;
 		char programPath[MAX_QPATH];
 		Com_sprintf(programPath, sizeof(programPath), "glsl/%s.glsl", programName);
 
@@ -2814,7 +2814,7 @@ void GLSL_LoadGPUShaders()
 
 void GLSL_ShutdownGPUShaders(void)
 {
-	int i;
+	int i = 0;
 
 	ri.Printf(PRINT_ALL, "------- GLSL_ShutdownGPUShaders -------\n");
 

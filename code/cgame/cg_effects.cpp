@@ -774,15 +774,15 @@ constexpr auto TIME_DECAY_FAST = 0.009f;
 
 void CG_DoGlass(vec3_t verts[], vec3_t dmg_pt, vec3_t dmg_dir, const float dmg_radius)
 {
-	int i, t;
-	int mx_height, mx_width;
-	float height, width;
-	float step_width, step_height;
-	float time_decay;
-	float x, z;
-	float xx, zz;
-	int time;
-	bool stick;
+	int i = 0, t = 0;
+	int mx_height = 0, mx_width = 0;
+	float height = 0.0f, width = 0.0f;
+	float step_width = 0.0f, step_height = 0.0f;
+	float time_decay = 0.0f;
+	float x = 0.0f, z = 0.0f;
+	float xx = 0.0f, zz = 0.0f;
+	int time = 0;
+	bool stick = false;
 
 	// To do a smarter tesselation, we should figure out the relative height and width of the brush face,
 	//	then use this to pick a lod value from 1-3 in each axis.  This will give us 1-9 lod levels, which will
@@ -983,7 +983,7 @@ void CG_PlayEffectBolted(const char* fx_name, const int modelIndex, const int bo
 {
 	vec3_t axis[3];
 	//FIXME: shouldn't this be initialized to something?  It isn't in the EV_PLAY_EFFECT call... irrelevant?
-	int boltInfo;
+	int boltInfo = 0;
 
 	//pack the data into boltInfo as if we were going to send it over the network
 	gi.G2API_AttachEnt(&boltInfo,

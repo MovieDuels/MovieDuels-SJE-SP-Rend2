@@ -69,7 +69,7 @@ static image_t* R_ExtendImagesPool()
 ** R_GammaCorrect
 */
 void R_GammaCorrect(byte* buffer, int bufSize) {
-	int i;
+	int i = 0;
 
 	for (i = 0; i < bufSize; i++) {
 		buffer[i] = s_gammatable[buffer[i]];
@@ -96,9 +96,9 @@ return a hash value for the filename
 ================
 */
 static long generateHashValue(const char* fname) {
-	int		i;
-	long	hash;
-	char	letter;
+	int		i = 0;
+	long	hash = 0;
+	char	letter = 0;
 
 	hash = 0;
 	i = 0;
@@ -119,8 +119,8 @@ GL_TextureMode
 ===============
 */
 void GL_TextureMode(const char* string) {
-	int		i;
-	image_t* glt;
+	int		i = 0;
+	image_t* glt = nullptr;
 
 	for (i = 0; i < 6; i++) {
 		if (!Q_stricmp(modes[i].name, string)) {
@@ -170,8 +170,8 @@ R_SumOfUsedImages
 ===============
 */
 int R_SumOfUsedImages(void) {
-	int	total;
-	int i;
+	int	total = 0;
+	int i = 0;
 	image_t* image = tr.images;
 
 	total = 0;
@@ -216,9 +216,9 @@ R_ImageList_f
 ===============
 */
 void R_ImageList_f(void) {
-	int i;
+	int i = 0;
 	int estTotalSize = 0;
-	const char* sizeSuffix;
+	const char* sizeSuffix = nullptr;
 	image_t* image = tr.images;
 
 	ri.Printf(PRINT_ALL, "\n      -w-- -h-- type  -size- --name-------\n");
@@ -226,7 +226,7 @@ void R_ImageList_f(void) {
 	for (i = 0; i < tr.numImages; i++, image = image->poolNext)
 	{
 		const char* format = "???? ";
-		int estSize;
+		int estSize = 0;
 
 		estSize = image->uploadHeight * image->uploadWidth;
 
@@ -332,11 +332,11 @@ before or after.
 */
 static void ResampleTexture(byte* in, int inwidth, int inheight, byte* out,
 	int outwidth, int outheight) {
-	int		i, j;
-	byte* inrow, * inrow2;
-	int		frac, fracstep;
+	int		i = 0, j = 0;
+	byte* inrow = nullptr, * inrow2 = nullptr;
+	int		frac = 0, fracstep = 0;
 	static int p1[2048], p2[2048]; // off the stack (C6262); [0, outwidth) is written before it is read
-	byte* pix1, * pix2, * pix3, * pix4;
+	byte* pix1 = nullptr, * pix2 = nullptr, * pix3 = nullptr, * pix4 = nullptr;
 
 	if (outwidth > 2048)
 		ri.Error(ERR_DROP, "ResampleTexture: max width");
@@ -372,7 +372,7 @@ static void ResampleTexture(byte* in, int inwidth, int inheight, byte* out,
 
 static void RGBAtoYCoCgA(const byte* in, byte* out, int width, int height)
 {
-	int x, y;
+	int x = 0, y = 0;
 
 	for (y = 0; y < height; y++)
 	{
@@ -381,7 +381,7 @@ static void RGBAtoYCoCgA(const byte* in, byte* out, int width, int height)
 
 		for (x = 0; x < width; x++)
 		{
-			byte r, g, b, a, rb2;
+			byte r = 0, g = 0, b = 0, a = 0, rb2 = 0;
 
 			r = *inbyte++;
 			g = *inbyte++;
@@ -399,7 +399,7 @@ static void RGBAtoYCoCgA(const byte* in, byte* out, int width, int height)
 
 static void YCoCgAtoRGBA(const byte* in, byte* out, int width, int height)
 {
-	int x, y;
+	int x = 0, y = 0;
 
 	for (y = 0; y < height; y++)
 	{
@@ -408,7 +408,7 @@ static void YCoCgAtoRGBA(const byte* in, byte* out, int width, int height)
 
 		for (x = 0; x < width; x++)
 		{
-			byte _Y, Co, Cg, a;
+			byte _Y = 0, Co = 0, Cg = 0, a = 0;
 
 			_Y = *inbyte++;
 			Co = *inbyte++;
@@ -426,7 +426,7 @@ static void YCoCgAtoRGBA(const byte* in, byte* out, int width, int height)
 // uses a sobel filter to change a texture to a normal map
 static void RGBAtoNormal(const byte* in, byte* out, int width, int height, qboolean clampToEdge)
 {
-	int x, y, max;
+	int x = 0, y = 0, max = 0;
 
 	// convert to heightmap, storing in alpha
 	// same as converting to Y in YCoCg
@@ -475,7 +475,7 @@ static void RGBAtoNormal(const byte* in, byte* out, int width, int height, qbool
 			// 6 7 8
 
 			byte s[9];
-			int x2, y2, i;
+			int x2 = 0, y2 = 0, i = 0;
 			vec3_t normal;
 
 			i = 0;
@@ -541,8 +541,8 @@ static void RGBAtoNormal(const byte* in, byte* out, int width, int height, qbool
 // only performs FCBI on specified component
 static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 {
-	int x, y;
-	byte* outbyte, * inbyte;
+	int x = 0, y = 0;
+	byte* outbyte = nullptr, * inbyte = nullptr;
 
 	// copy in to out
 	for (y = 2; y < height - 2; y += 2)
@@ -597,8 +597,8 @@ static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 		//
 		// only b, f, j, and l need to be sampled on next iteration
 
-		byte sa, sb, sc, sd, se, sf, sg, sh, si, sj, sk, sl;
-		byte* line1, * line2, * line3, * line4;
+		byte sa = 0, sb = 0, sc = 0, sd = 0, se = 0, sf = 0, sg = 0, sh = 0, si = 0, sj = 0, sk = 0, sl = 0;
+		byte* line1 = nullptr, * line2 = nullptr, * line3 = nullptr, * line4 = nullptr;
 
 		x = 3;
 
@@ -628,7 +628,7 @@ static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 
 		for (; x < width - 3; x += 2)
 		{
-			int NWd, NEd, NWp, NEp;
+			int NWd = 0, NEd = 0, NWp = 0, NEp = 0;
 
 			// original
 			//                       SAMPLE2(sa, x-1, y-3); SAMPLE2(sb, x+1, y-3);
@@ -667,7 +667,7 @@ static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 			}
 			else
 			{
-				int NWdd, NEdd;
+				int NWdd = 0, NEdd = 0;
 
 				//NEdd = abs(sg + sd + sb - 3 * (se + sh) + sk + si + sf);
 				//NWdd = abs(sa + se + sj - 3 * (sd + si) + sc + sh + sl);
@@ -742,8 +742,8 @@ static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 		//
 		// only b, e, g, j, and l need to be sampled on next iteration
 
-		byte sa, sb, sc, sd, se, sf, sg, sh, si, sj, sk, sl;
-		byte* line1, * line2, * line3, * line4, * line5;
+		byte sa = 0, sb = 0, sc = 0, sd = 0, se = 0, sf = 0, sg = 0, sh = 0, si = 0, sj = 0, sk = 0, sl = 0;
+		byte* line1 = nullptr, * line2 = nullptr, * line3 = nullptr, * line4 = nullptr, * line5 = nullptr;
 
 		//x = (y + 1) % 2;
 		x = (y + 1) % 2 + 2;
@@ -777,7 +777,7 @@ static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 
 		for (; x < width - 3; x += 2)
 		{
-			int hd, vd, hp, vp;
+			int hd = 0, vd = 0, hp = 0, vp = 0;
 
 			//            SAMPLE2(sa, x-1, y-2); SAMPLE2(sb, x+1, y-2);
 			//SAMPLE2(sc, x-2, y-1); SAMPLE2(sd, x,   y-1); SAMPLE2(se, x+2, y-1);
@@ -818,7 +818,7 @@ static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 			}
 			else
 			{
-				int hdd, vdd;
+				int hdd = 0, vdd = 0;
 
 				//hdd = abs(sc[i] + sd[i] + se[i] - 3 * (sf[i] + sg[i]) + sh[i] + si[i] + sj[i]);
 				//vdd = abs(sa[i] + sf[i] + sk[i] - 3 * (sd[i] + si[i]) + sb[i] + sg[i] + sl[i]);
@@ -851,8 +851,8 @@ static void DoFCBI(byte* in, byte* out, int width, int height, int component)
 // Similar to FCBI, but throws out the second order derivatives for speed
 static void DoFCBIQuick(byte* in, byte* out, int width, int height, int component)
 {
-	int x, y;
-	byte* outbyte, * inbyte;
+	int x = 0, y = 0;
+	byte* outbyte = nullptr, * inbyte = nullptr;
 
 	// copy in to out
 	for (y = 2; y < height - 2; y += 2)
@@ -870,8 +870,8 @@ static void DoFCBIQuick(byte* in, byte* out, int width, int height, int componen
 
 	for (y = 3; y < height - 4; y += 2)
 	{
-		byte sd, se, sh, si;
-		byte* line2, * line3;
+		byte sd = 0, se = 0, sh = 0, si = 0;
+		byte* line2 = nullptr, * line3 = nullptr;
 
 		x = 3;
 
@@ -885,7 +885,7 @@ static void DoFCBIQuick(byte* in, byte* out, int width, int height, int componen
 
 		for (; x < width - 4; x += 2)
 		{
-			int NWd, NEd, NWp, NEp;
+			int NWd = 0, NEd = 0, NWp = 0, NEp = 0;
 
 			se = *line2; line2 += 8;
 			si = *line3; line3 += 8;
@@ -923,8 +923,8 @@ static void DoFCBIQuick(byte* in, byte* out, int width, int height, int componen
 
 	for (y = 2; y < height - 3; y++)
 	{
-		byte sd, sf, sg, si;
-		byte* line2, * line3, * line4;
+		byte sd = 0, sf = 0, sg = 0, si = 0;
+		byte* line2 = nullptr, * line3 = nullptr, * line4 = nullptr;
 
 		x = (y + 1) % 2 + 2;
 
@@ -938,7 +938,7 @@ static void DoFCBIQuick(byte* in, byte* out, int width, int height, int componen
 
 		for (; x < width - 3; x += 2)
 		{
-			int hd, vd, hp, vp;
+			int hd = 0, vd = 0, hp = 0, vp = 0;
 
 			sd = *line2; line2 += 8;
 			sg = *line3; line3 += 8;
@@ -965,8 +965,8 @@ static void DoFCBIQuick(byte* in, byte* out, int width, int height, int componen
 // as well, this operates on all four components
 static void DoLinear(byte* in, byte* out, int width, int height)
 {
-	int x, y, i;
-	byte* outbyte, * inbyte;
+	int x = 0, y = 0, i = 0;
+	byte* outbyte = nullptr, * inbyte = nullptr;
 
 	// copy in to out
 	for (y = 2; y < height - 2; y += 2)
@@ -987,7 +987,7 @@ static void DoLinear(byte* in, byte* out, int width, int height)
 	for (y = 1; y < height - 1; y += 2)
 	{
 		byte sd[4] = { 0 }, se[4] = { 0 }, sh[4] = { 0 }, si[4] = { 0 };
-		byte* line2, * line3;
+		byte* line2 = nullptr, * line3 = nullptr;
 
 		x = 1;
 
@@ -1035,7 +1035,7 @@ static void DoLinear(byte* in, byte* out, int width, int height)
 	for (y = 1; y < height - 1; y++)
 	{
 		byte sd[4], sf[4], sg[4], si[4];
-		byte* line2, * line3, * line4;
+		byte* line2 = nullptr, * line3 = nullptr, * line4 = nullptr;
 
 		x = y % 2 + 1;
 
@@ -1067,7 +1067,7 @@ static void DoLinear(byte* in, byte* out, int width, int height)
 
 static void ExpandHalfTextureToGrid(byte* data, int width, int height)
 {
-	int x, y;
+	int x = 0, y = 0;
 
 	for (y = height / 2; y > 0; y--)
 	{
@@ -1086,7 +1086,7 @@ static void ExpandHalfTextureToGrid(byte* data, int width, int height)
 
 static void FillInNormalizedZ(const byte* in, byte* out, int width, int height)
 {
-	int x, y;
+	int x = 0, y = 0;
 
 	for (y = 0; y < height; y++)
 	{
@@ -1095,8 +1095,8 @@ static void FillInNormalizedZ(const byte* in, byte* out, int width, int height)
 
 		for (x = 0; x < width; x++)
 		{
-			byte nx, ny, nz, h;
-			float fnx, fny, fll, fnz;
+			byte nx = 0, ny = 0, nz = 0, h = 0;
+			float fnx = 0.0f, fny = 0.0f, fll = 0.0f, fnz = 0.0f;
 
 			nx = *inbyte++;
 			ny = *inbyte++;
@@ -1131,9 +1131,9 @@ static void FCBIByBlock(byte* data, int width, int height, qboolean clampToEdge,
 {
 	static byte workdata[WORKBLOCK_REALSIZE * WORKBLOCK_REALSIZE * 4]; // off the stack (C6262)
 	static byte outdata[WORKBLOCK_REALSIZE * WORKBLOCK_REALSIZE * 4]; // off the stack (C6262)
-	byte* inbyte, * outbyte;
-	int x, y;
-	int srcx, srcy;
+	byte* inbyte = nullptr, * outbyte = nullptr;
+	int x = 0, y = 0;
+	int srcx = 0, srcy = 0;
 
 	ExpandHalfTextureToGrid(data, width, height);
 
@@ -1141,8 +1141,8 @@ static void FCBIByBlock(byte* data, int width, int height, qboolean clampToEdge,
 	{
 		for (x = 0; x < width; x += WORKBLOCK_SIZE)
 		{
-			int x2, y2;
-			int workwidth, workheight, fullworkwidth, fullworkheight;
+			int x2 = 0, y2 = 0;
+			int workwidth = 0, workheight = 0, fullworkwidth = 0, fullworkheight = 0;
 
 			workwidth = MIN(WORKBLOCK_SIZE, width - x);
 			workheight = MIN(WORKBLOCK_SIZE, height - y);
@@ -1254,8 +1254,8 @@ void R_LightScaleTexture(byte* in, int inwidth, int inheight, qboolean only_gamm
 	{
 		if (!glConfig.deviceSupportsGamma)
 		{
-			int		i, c;
-			byte* p;
+			int		i = 0, c = 0;
+			byte* p = nullptr;
 
 			p = in;
 
@@ -1270,8 +1270,8 @@ void R_LightScaleTexture(byte* in, int inwidth, int inheight, qboolean only_gamm
 	}
 	else
 	{
-		int		i, c;
-		byte* p;
+		int		i = 0, c = 0;
+		byte* p = nullptr;
 
 		p = in;
 
@@ -1307,12 +1307,12 @@ Proper linear filter
 ================
 */
 static void R_MipMap2(byte* in, int inWidth, int inHeight) {
-	int			i, j, k;
-	byte* outpix;
-	int			inWidthMask, inHeightMask;
-	int			total;
-	int			outWidth, outHeight;
-	unsigned* temp;
+	int			i = 0, j = 0, k = 0;
+	byte* outpix = nullptr;
+	int			inWidthMask = 0, inHeightMask = 0;
+	int			total = 0;
+	int			outWidth = 0, outHeight = 0;
+	unsigned* temp = nullptr;
 
 	outWidth = inWidth >> 1;
 	outHeight = inHeight >> 1;
@@ -1356,9 +1356,9 @@ static void R_MipMap2(byte* in, int inWidth, int inHeight) {
 
 static void R_MipMapsRGB(byte* in, int inWidth, int inHeight)
 {
-	int			i, j, k;
-	int			outWidth, outHeight;
-	byte* temp;
+	int			i = 0, j = 0, k = 0;
+	int			outWidth = 0, outHeight = 0;
+	byte* temp = nullptr;
 
 	outWidth = inWidth >> 1;
 	outHeight = inHeight >> 1;
@@ -1370,7 +1370,7 @@ static void R_MipMapsRGB(byte* in, int inWidth, int inHeight)
 		byte* inbyte2 = in + ((i * 2 + 1) * inWidth) * 4;
 		for (j = 0; j < outWidth; j++) {
 			for (k = 0; k < 3; k++) {
-				float total, current;
+				float total = 0.0f, current = 0.0f;
 
 				current = ByteToFloat(inbyte1[0]); total = sRGBtoRGB((double)current);
 				current = ByteToFloat(inbyte1[4]); total += sRGBtoRGB((double)current);
@@ -1408,7 +1408,7 @@ static void R_MipMap(byte* in, int width, int height) {
 
 static void R_MipMapLuminanceAlpha(const byte* in, byte* out, int width, int height)
 {
-	int  i, j, row;
+	int  i = 0, j = 0, row = 0;
 
 	if (width == 1 && height == 1) {
 		return;
@@ -1441,8 +1441,8 @@ static void R_MipMapLuminanceAlpha(const byte* in, byte* out, int width, int hei
 
 static void R_MipMapNormalHeight(const byte* in, byte* out, int width, int height, qboolean swizzle)
 {
-	int		i, j;
-	int		row;
+	int		i = 0, j = 0;
+	int		row = 0;
 	int sx = swizzle ? 3 : 0;
 	int sa = swizzle ? 0 : 3;
 
@@ -1497,8 +1497,8 @@ Apply a color blend over a set of pixels
 ==================
 */
 static void R_BlendOverTexture(byte* data, int pixelCount, byte blend[4]) {
-	int		i;
-	int		inverseAlpha;
+	int		i = 0;
+	int		inverseAlpha = 0;
 	int		premult[3];
 
 	inverseAlpha = 255 - blend[3];
@@ -1534,8 +1534,8 @@ byte	mipBlendColors[16][4] = {
 
 static void RawImage_SwizzleRA(byte* data, int width, int height)
 {
-	int i;
-	byte* ptr = data, swap;
+	int i = 0;
+	byte* ptr = data, swap = 0;
 
 	for (i = 0; i < width * height; i++, ptr += 4)
 	{
@@ -1556,8 +1556,8 @@ static void RawImage_ScaleToPower2(byte** data, int* inout_width, int* inout_hei
 {
 	int width = *inout_width;
 	int height = *inout_height;
-	int scaled_width;
-	int scaled_height;
+	int scaled_width = 0;
+	int scaled_height = 0;
 	qboolean picmip = (qboolean)(flags & IMGFLAG_PICMIP);
 	qboolean mipmap = (qboolean)(flags & IMGFLAG_MIPMAP);
 	qboolean clampToEdge = (qboolean)(flags & IMGFLAG_CLAMPTOEDGE);
@@ -1584,7 +1584,7 @@ static void RawImage_ScaleToPower2(byte** data, int* inout_width, int* inout_hei
 	if (picmip && data && resampledBuffer && r_imageUpsample->integer &&
 		scaled_width < r_imageUpsampleMaxSize->integer && scaled_height < r_imageUpsampleMaxSize->integer)
 	{
-		int finalwidth, finalheight;
+		int finalwidth = 0, finalheight = 0;
 		//int startTime, endTime;
 
 		//startTime = ri.Milliseconds();
@@ -1612,8 +1612,8 @@ static void RawImage_ScaleToPower2(byte** data, int* inout_width, int* inout_hei
 		}
 		else
 		{
-			byte* inbyte, * outbyte;
-			int i;
+			byte* inbyte = nullptr, * outbyte = nullptr;
+			int i = 0;
 
 			inbyte = *data;
 			outbyte = *resampledBuffer;
@@ -1671,7 +1671,7 @@ static void RawImage_ScaleToPower2(byte** data, int* inout_width, int* inout_hei
 
 static qboolean RawImage_HasAlpha(const byte* scan, int numPixels)
 {
-	int i;
+	int i = 0;
 
 	if (!scan)
 		return qtrue;
@@ -1898,7 +1898,7 @@ static qboolean ShouldUseImmutableTextures(int imageFlags, GLenum internalformat
 
 static void RawImage_UploadTexture(byte* data, int x, int y, int width, int height, GLenum internalFormat, imgType_t type, int flags, qboolean subtexture)
 {
-	int dataFormat, dataType;
+	int dataFormat = 0, dataType = 0;
 
 	switch (internalFormat)
 	{
@@ -2050,8 +2050,8 @@ static void Upload32(byte* data, int width, int height, imgType_t type, int flag
 	byte* resampledBuffer = NULL;
 	int			scaled_width = width;
 	int			scaled_height = height;
-	int			i, c;
-	byte* scan;
+	int			i = 0, c = 0;
+	byte* scan = nullptr;
 
 	if (!IsPowerOfTwo(width) || !IsPowerOfTwo(height))
 	{
@@ -2213,7 +2213,7 @@ done:
 static void EmptyTexture(int width, int height, imgType_t type, int flags,
 	qboolean lightMap, GLenum internalFormat, int* pUploadWidth, int* pUploadHeight)
 {
-	int			scaled_width, scaled_height;
+	int			scaled_width = 0, scaled_height = 0;
 
 	RawImage_ScaleToPower2(NULL, &width, &height, &scaled_width, &scaled_height, type, flags, NULL);
 
@@ -2260,7 +2260,7 @@ static void EmptyTexture(int width, int height, imgType_t type, int flags,
 
 static image_t* R_AllocImage()
 {
-	image_t* result;
+	image_t* result = nullptr;
 
 	result = tr.imagesFreeList;
 	if (!result)
@@ -2325,10 +2325,10 @@ This is the only way any 2d image_t are created
 ================
 */
 image_t* R_CreateImage(const char* name, byte* pic, int width, int height, imgType_t type, int flags, int internalFormat) {
-	image_t* image;
+	image_t* image = nullptr;
 	qboolean	isLightmap = qfalse;
-	long		hash;
-	int         glWrapClampMode;
+	long		hash = 0;
+	int         glWrapClampMode = 0;
 
 	if (strlen(name) >= MAX_QPATH) {
 		ri.Error(ERR_DROP, "R_CreateImage: \"%s\" is too long", name);
@@ -2476,10 +2476,10 @@ This is the only way any 2d array sampler image_t are created
 */
 image_t* R_Create2DImageArray(const char* name, byte* pic, int width, int height, int layers, imgType_t type, int flags, int internalFormat)
 {
-	image_t* image;
-	long		hash;
-	int         glWrapClampMode;
-	int			format;
+	image_t* image = nullptr;
+	long		hash = 0;
+	int         glWrapClampMode = 0;
+	int			format = 0;
 
 	if (strlen(name) >= MAX_QPATH) {
 		ri.Error(ERR_DROP, "R_Create2DImageArray: \"%s\" is too long", name);
@@ -2567,8 +2567,8 @@ image_t* R_Create2DImageArray(const char* name, byte* pic, int width, int height
 
 image_t* R_CreateImage3D(const char* name, byte* data, int width, int height, int depth, int internalFormat)
 {
-	image_t* image;
-	long hash;
+	image_t* image = nullptr;
+	long hash = 0;
 
 	if (strlen(name) >= MAX_QPATH) {
 		ri.Error(ERR_DROP, "R_CreateImage3D: \"%s\" is too long", name);
@@ -2627,7 +2627,7 @@ void R_UpdateSubImage(image_t* image, byte* pic, int x, int y, int width, int he
 {
 	byte* scaledBuffer = NULL;
 	byte* resampledBuffer = NULL;
-	int	 scaled_width, scaled_height, scaled_x, scaled_y;
+	int	 scaled_width = 0, scaled_height = 0, scaled_x = 0, scaled_y = 0;
 	byte* data = pic;
 
 	// normals are always swizzled
@@ -2718,8 +2718,8 @@ done:
 }
 
 image_t* R_GetLoadedImage(const char* name, int flags) {
-	long	hash;
-	image_t* image;
+	long	hash = 0;
+	image_t* image = nullptr;
 
 	hash = generateHashValue(name);
 	for (image = hashTable[hash]; image; image = image->next) {
@@ -2739,9 +2739,9 @@ image_t* R_GetLoadedImage(const char* name, int flags) {
 void R_LoadPackedMaterialImage(shaderStage_t* stage, const char* packedImageName, int flags)
 {
 	char	packedName[MAX_QPATH];
-	int		packedWidth, packedHeight;
-	byte* packedPic;
-	image_t* image;
+	int		packedWidth = 0, packedHeight = 0;
+	byte* packedPic = nullptr;
+	image_t* image = nullptr;
 
 	if (!packedImageName) {
 		return;
@@ -2833,9 +2833,9 @@ void R_LoadPackedMaterialImage(shaderStage_t* stage, const char* packedImageName
 image_t* R_BuildSDRSpecGlossImage(shaderStage_t* stage, const char* specImageName, int flags)
 {
 	char	sdrName[MAX_QPATH];
-	int		specWidth, specHeight;
-	byte* specPic;
-	image_t* image;
+	int		specWidth = 0, specHeight = 0;
+	byte* specPic = nullptr;
+	image_t* image = nullptr;
 
 	if (!specImageName)
 		return NULL;
@@ -2882,9 +2882,9 @@ image_t* R_BuildSDRSpecGlossImage(shaderStage_t* stage, const char* specImageNam
 static void R_CreateNormalMap(const char* name, byte* pic, int width, int height, int flags)
 {
 	char normalName[MAX_QPATH];
-	image_t* normalImage;
-	int normalWidth, normalHeight;
-	int normalFlags;
+	image_t* normalImage = nullptr;
+	int normalWidth = 0, normalHeight = 0;
+	int normalFlags = 0;
 
 	normalFlags = (flags & ~(IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB)) | IMGFLAG_NOLIGHTSCALE;
 
@@ -2897,8 +2897,8 @@ static void R_CreateNormalMap(const char* name, byte* pic, int width, int height
 	// if not, generate it
 	if (normalImage == NULL)
 	{
-		byte* normalPic;
-		int x, y;
+		byte* normalPic = nullptr;
+		int x = 0, y = 0;
 
 		normalWidth = width;
 		normalHeight = height;
@@ -2992,9 +2992,9 @@ Returns NULL if it fails, not a default image.
 */
 image_t* R_FindImageFile(const char* name, imgType_t type, int flags)
 {
-	image_t* image;
-	int		width, height;
-	byte* pic;
+	image_t* image = nullptr;
+	int		width = 0, height = 0;
+	byte* pic = nullptr;
 	int internalFormat = 0;
 	int loadFlags = flags;
 
@@ -3070,8 +3070,8 @@ R_CreateDlightImage
 */
 #define	DLIGHT_SIZE	16
 static void R_CreateDlightImage(void) {
-	int		width, height;
-	byte* pic;
+	int		width = 0, height = 0;
+	byte* pic = nullptr;
 
 	R_LoadImage("gfx/2d/dlight", &pic, &width, &height);
 	if (pic)
@@ -3081,14 +3081,14 @@ static void R_CreateDlightImage(void) {
 	}
 	else
 	{	// if we dont get a successful load
-		int		x, y;
+		int		x = 0, y = 0;
 		byte	data[DLIGHT_SIZE][DLIGHT_SIZE][4];
-		int		b;
+		int		b = 0;
 
 		// make a centered inverse-square falloff blob for dynamic lighting
 		for (x = 0; x < DLIGHT_SIZE; x++) {
 			for (y = 0; y < DLIGHT_SIZE; y++) {
-				float	d;
+				float	d = 0.0f;
 
 				d = (DLIGHT_SIZE / 2 - 0.5f - x) * (DLIGHT_SIZE / 2 - 0.5f - x) +
 					(DLIGHT_SIZE / 2 - 0.5f - y) * (DLIGHT_SIZE / 2 - 0.5f - y);
@@ -3115,9 +3115,9 @@ R_InitFogTable
 =================
 */
 void R_InitFogTable(void) {
-	int		i;
-	float	d;
-	float	exp;
+	int		i = 0;
+	float	d = 0.0f;
+	float	exp = 0.0f;
 
 	exp = 0.5;
 
@@ -3138,7 +3138,7 @@ and for each vertex of transparent shaders in fog dynamically
 ================
 */
 float	R_FogFactor(float s, float t) {
-	float	d;
+	float	d = 0.0f;
 
 	s -= 1.0 / 512;
 	if (s < 0) {
@@ -3171,9 +3171,9 @@ R_CreateFogImage
 #define	FOG_S	256
 #define	FOG_T	32
 static void R_CreateFogImage(void) {
-	int		x, y;
-	byte* data;
-	float	d;
+	int		x = 0, y = 0;
+	byte* data = nullptr;
+	float	d = 0.0f;
 	float	borderColor[4];
 
 	data = (byte*)Hunk_AllocateTempMemory(FOG_S * FOG_T * 4);
@@ -3323,7 +3323,7 @@ R_CreateDefaultImage
 */
 #define	DEFAULT_SIZE	16
 static void R_CreateDefaultImage(void) {
-	int		x;
+	int		x = 0;
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	// the default image will be a box, to allow you to see the mapping coordinates
@@ -3382,7 +3382,7 @@ R_CreateBuiltinImages
 ==================
 */
 void R_CreateBuiltinImages(void) {
-	int		x, y;
+	int		x = 0, y = 0;
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	R_CreateDefaultImage();
@@ -3516,7 +3516,7 @@ void R_CreateBuiltinImages(void) {
 
 	{
 		unsigned short sdata[4];
-		void* p;
+		void* p = nullptr;
 
 		if (hdrFormat == GL_RGBA16F)
 		{
@@ -3632,9 +3632,9 @@ R_SetColorMappings
 ===============
 */
 void R_SetColorMappings(void) {
-	int		i, j;
-	float	g;
-	int		inf;
+	int		i = 0, j = 0;
+	float	g = 0.0f;
+	int		inf = 0;
 
 	// setup the overbright lighting
 	tr.overbrightBits = r_overBrightBits->integer;

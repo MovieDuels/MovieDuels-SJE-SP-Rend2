@@ -396,7 +396,7 @@ bool CPrimitiveTemplate::ParseMax(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseLife(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -419,7 +419,7 @@ bool CPrimitiveTemplate::ParseLife(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseDelay(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -442,7 +442,7 @@ bool CPrimitiveTemplate::ParseDelay(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseCount(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -465,7 +465,7 @@ bool CPrimitiveTemplate::ParseCount(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseElasticity(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -542,7 +542,7 @@ bool CPrimitiveTemplate::ParseOrigin2(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseRadius(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -565,7 +565,7 @@ bool CPrimitiveTemplate::ParseRadius(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseHeight(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -588,7 +588,7 @@ bool CPrimitiveTemplate::ParseHeight(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseWindModifier(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -611,7 +611,7 @@ bool CPrimitiveTemplate::ParseWindModifier(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseRotation(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == qtrue)
 	{
@@ -634,7 +634,7 @@ bool CPrimitiveTemplate::ParseRotation(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseRotationDelta(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == qtrue)
 	{
@@ -862,7 +862,7 @@ bool CPrimitiveTemplate::ParseAcceleration(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseGravity(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -887,7 +887,7 @@ bool CPrimitiveTemplate::ParseGravity(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseDensity(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -913,7 +913,7 @@ bool CPrimitiveTemplate::ParseDensity(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseVariance(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -986,7 +986,7 @@ bool CPrimitiveTemplate::ParseRGBEnd(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseRGBParm(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1009,7 +1009,7 @@ bool CPrimitiveTemplate::ParseRGBParm(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseRGBFlags(const gsl::cstring_view& val)
 {
-	int flags;
+	int flags = 0;
 
 	if (ParseGroupFlags(val, flags) == true)
 	{
@@ -1033,7 +1033,7 @@ bool CPrimitiveTemplate::ParseRGBFlags(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseAlphaStart(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1056,7 +1056,7 @@ bool CPrimitiveTemplate::ParseAlphaStart(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseAlphaEnd(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1079,7 +1079,7 @@ bool CPrimitiveTemplate::ParseAlphaEnd(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseAlphaParm(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1102,7 +1102,7 @@ bool CPrimitiveTemplate::ParseAlphaParm(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseAlphaFlags(const gsl::cstring_view& val)
 {
-	int flags;
+	int flags = 0;
 
 	if (ParseGroupFlags(val, flags) == true)
 	{
@@ -1126,7 +1126,7 @@ bool CPrimitiveTemplate::ParseAlphaFlags(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSizeStart(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1149,7 +1149,7 @@ bool CPrimitiveTemplate::ParseSizeStart(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSizeEnd(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1172,7 +1172,7 @@ bool CPrimitiveTemplate::ParseSizeEnd(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSizeParm(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1195,7 +1195,7 @@ bool CPrimitiveTemplate::ParseSizeParm(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSizeFlags(const gsl::cstring_view& val)
 {
-	int flags;
+	int flags = 0;
 
 	if (ParseGroupFlags(val, flags) == true)
 	{
@@ -1219,7 +1219,7 @@ bool CPrimitiveTemplate::ParseSizeFlags(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSize2Start(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1242,7 +1242,7 @@ bool CPrimitiveTemplate::ParseSize2Start(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSize2End(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1265,7 +1265,7 @@ bool CPrimitiveTemplate::ParseSize2End(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSize2Parm(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1288,7 +1288,7 @@ bool CPrimitiveTemplate::ParseSize2Parm(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseSize2Flags(const gsl::cstring_view& val)
 {
-	int flags;
+	int flags = 0;
 
 	if (ParseGroupFlags(val, flags) == true)
 	{
@@ -1312,7 +1312,7 @@ bool CPrimitiveTemplate::ParseSize2Flags(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseLengthStart(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1335,7 +1335,7 @@ bool CPrimitiveTemplate::ParseLengthStart(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseLengthEnd(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1358,7 +1358,7 @@ bool CPrimitiveTemplate::ParseLengthEnd(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseLengthParm(const gsl::cstring_view& val)
 {
-	float min, max;
+	float min = 0.0f, max = 0.0f;
 
 	if (ParseFloat(val, min, max) == true)
 	{
@@ -1381,7 +1381,7 @@ bool CPrimitiveTemplate::ParseLengthParm(const gsl::cstring_view& val)
 //------------------------------------------------------
 bool CPrimitiveTemplate::ParseLengthFlags(const gsl::cstring_view& val)
 {
-	int flags;
+	int flags = 0;
 
 	if (ParseGroupFlags(val, flags) == true)
 	{

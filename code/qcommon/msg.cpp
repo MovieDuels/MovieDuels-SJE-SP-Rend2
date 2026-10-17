@@ -308,7 +308,7 @@ void MSG_WriteString(msg_t* sb, const char* s)
 // returns -1 if no more characters are available
 int MSG_ReadByte(msg_t* msg)
 {
-	int c;
+	int c = 0;
 
 	if (msg->readcount + 1 > msg->cursize)
 	{
@@ -324,7 +324,7 @@ int MSG_ReadByte(msg_t* msg)
 
 int MSG_ReadShort(msg_t* msg)
 {
-	int c;
+	int c = 0;
 
 	if (msg->readcount + 2 > msg->cursize)
 	{
@@ -340,7 +340,7 @@ int MSG_ReadShort(msg_t* msg)
 
 static int MSG_ReadSShort(msg_t* msg)
 {
-	int c;
+	int c = 0;
 
 	if (msg->readcount + 2 > msg->cursize)
 	{
@@ -356,7 +356,7 @@ static int MSG_ReadSShort(msg_t* msg)
 
 int MSG_ReadLong(msg_t* msg)
 {
-	int c;
+	int c = 0;
 
 	if (msg->readcount + 4 > msg->cursize)
 	{
@@ -1316,10 +1316,10 @@ MSG_WriteDeltaPlayerstate
 */
 void MSG_WriteDeltaPlayerstate(msg_t* msg, playerState_t* from, playerState_t* to)
 {
-	int i;
+	int i = 0;
 	playerState_t dummy{};
 	int weaponbits[MAX_WEAPONBITS]{};
-	const netField_t* field;
+	const netField_t* field = nullptr;
 
 	if (!from)
 	{
@@ -1487,11 +1487,11 @@ MSG_ReadDeltaPlayerstate
 */
 void MSG_ReadDeltaPlayerstate(msg_t* msg, playerState_t* from, playerState_t* to)
 {
-	int i;
-	int bits;
-	const netField_t* field;
-	int start_bit;
-	int print;
+	int i = 0;
+	int bits = 0;
+	const netField_t* field = nullptr;
+	int start_bit = 0;
+	int print = 0;
 	playerState_t dummy{};
 
 	if (!from)
@@ -1629,7 +1629,7 @@ void MSG_ReadDeltaPlayerstate(msg_t* msg, playerState_t* from, playerState_t* to
 
 	if (print)
 	{
-		int endBit;
+		int endBit = 0;
 		if (msg->bit == 0)
 		{
 			endBit = msg->readcount * 8 - GENTITYNUM_BITS;

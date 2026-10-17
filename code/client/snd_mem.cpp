@@ -200,7 +200,7 @@ resample / decimate to the current source rate
 */
 static void ResampleSfx(sfx_t* sfx, const int i_in_rate, const int i_in_width, byte* p_data)
 {
-	int		i_sample;
+	int		i_sample = 0;
 
 	const float f_step_scale = static_cast<float>(i_in_rate) / dma.speed;	// this is usually 0.5, 1, or 2
 
@@ -613,7 +613,7 @@ static qboolean S_LoadSound_FileLoadAndNameAdjuster(char* ps_filename, byte** p_
 		//
 		if (com_buildScript->integer)
 		{
-			fileHandle_t h_file;
+			fileHandle_t h_file = 0;
 			//German
 			strncpy(psVoice, "chr_d", 5);	// same number of letters as "chars"
 			FS_FOpenFileRead(ps_filename, &h_file, qfalse);		//cache the wav
@@ -774,9 +774,9 @@ of a forced fallback of a player specific sound	(or of a wav/mp3 substitution no
 qboolean gbInsideLoadSound = qfalse;
 static qboolean S_LoadSound_Actual(sfx_t* sfx)
 {
-	byte* data;
+	byte* data = nullptr;
 	wavinfo_t	info{};
-	int		size;
+	int		size = 0;
 	char	s_load_name[MAX_QPATH];
 
 	int		len = strlen(sfx->sSoundName);

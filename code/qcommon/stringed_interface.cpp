@@ -144,7 +144,7 @@ static void SE_R_ListFiles(const char* psExtension, const char* psDir, std::stri
 {
 	//	Com_Printf(va("Scanning Dir: %s\n",psDir));
 
-	int numSysFiles, i, numdirs;
+	int numSysFiles = 0, i = 0, numdirs = 0;
 
 	char** dirFiles = FS_ListFiles(psDir, "/", &numdirs);
 	for (i = 0; i < numdirs; i++)

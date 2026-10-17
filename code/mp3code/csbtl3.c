@@ -51,7 +51,7 @@ void sbt_mono_L3(float* sample, short* pcm, int ch)
 /*------------------------------------------------------------*/
 void sbt_dual_L3(float* sample, short* pcm, const int n)
 {
-	int i;
+	int i = 0;
 
 	if (n == 0)
 	{
@@ -97,7 +97,7 @@ void sbt16_mono_L3(float* sample, short* pcm, int ch)
 /*------------------------------------------------------------*/
 void sbt16_dual_L3(float* sample, short* pcm, const int ch)
 {
-	int i;
+	int i = 0;
 
 	if (ch == 0)
 	{
@@ -142,7 +142,7 @@ void sbt8_mono_L3(float* sample, short* pcm, int ch)
 /*------------------------------------------------------------*/
 void sbt8_dual_L3(float* sample, short* pcm, const int ch)
 {
-	int i;
+	int i = 0;
 
 	if (ch == 0)
 	{
@@ -187,7 +187,7 @@ void sbtB_mono_L3(float* sample, unsigned char* pcm, int ch)
 /*------------------------------------------------------------*/
 void sbtB_dual_L3(float* sample, unsigned char* pcm, const int ch)
 {
-	int i;
+	int i = 0;
 
 	if (ch == 0)
 	{
@@ -233,7 +233,7 @@ void sbtB16_mono_L3(float* sample, unsigned char* pcm, int ch)
 /*------------------------------------------------------------*/
 void sbtB16_dual_L3(float* sample, unsigned char* pcm, const int ch)
 {
-	int i;
+	int i = 0;
 
 	if (ch == 0)
 	{
@@ -278,7 +278,7 @@ void sbtB8_mono_L3(float* sample, unsigned char* pcm, int ch)
 /*------------------------------------------------------------*/
 void sbtB8_dual_L3(float* sample, unsigned char* pcm, const int ch)
 {
-	int i;
+	int i = 0;
 
 	if (ch == 0)
 	{

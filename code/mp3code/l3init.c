@@ -79,7 +79,7 @@ int L3table_init()
 
 	if (!iOnceOnly++)
 	{
-		int i;
+		int i = 0;
 		/*================ quant ===============================*/
 
 		/* 8 bit plus 2 lookup x = pow(2.0, 0.25*(global_gain-210)) */
@@ -157,7 +157,7 @@ void hwin_init()
 
 	if (!iOnceOnly++)
 	{
-		int i;
+		int i = 0;
 		ARRAY36* win = hwin_init_addr();
 
 		const double pi = 4.0 * atan(1.0);
@@ -219,8 +219,8 @@ void imdct_init()
 
 	if (!iOnceOnly++)
 	{
-		int p;
-		int k;
+		int p = 0;
+		int k = 0;
 		/*--- 18 point --*/
 		const IMDCT_INIT_BLOCK* addr = imdct_init_addr_18();
 		float* w = addr->w;
@@ -279,7 +279,7 @@ void msis_init()
 
 	if (!iOnceOnly++)
 	{
-		int i;
+		int i = 0;
 		ARRAY8_2* lr = msis_init_addr();
 
 		const double pi = 4.0 * atan(1.0);

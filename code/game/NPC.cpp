@@ -414,7 +414,7 @@ static int BodyRemovalPadTime(const gentity_t* ent)
 {
 	const char* info = CG_ConfigString(CS_SERVERINFO);
 	const char* s = Info_ValueForKey(info, "mapname");
-	int time;
+	int time = 0;
 
 	if (!ent || !ent->client)
 		return 0;

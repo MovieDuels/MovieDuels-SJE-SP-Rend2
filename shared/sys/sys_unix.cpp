@@ -112,7 +112,7 @@ Sys_RandomBytes
 */
 bool Sys_RandomBytes( byte *string, int len )
 {
-	FILE *fp;
+	FILE *fp = nullptr;
 
 	fp = fopen( "/dev/urandom", "r" );
 	if( !fp )
@@ -137,7 +137,7 @@ bool Sys_RandomBytes( byte *string, int len )
  */
 char *Sys_GetCurrentUser( void )
 {
-	struct passwd *p;
+	struct passwd *p = nullptr;
 
 	if ( (p = getpwuid( getuid() )) == NULL ) {
 		return "player";
@@ -197,8 +197,8 @@ Sys_ListFiles
 void Sys_ListFilteredFiles( const char *basedir, char *subdirs, char *filter, char **list, int *numfiles ) {
 	char		search[MAX_OSPATH], newsubdirs[MAX_OSPATH];
 	char		filename[MAX_OSPATH];
-	DIR			*fdir;
-	struct dirent *d;
+	DIR			*fdir = nullptr;
+	struct dirent *d = nullptr;
 	struct stat st;
 
 	if ( *numfiles >= MAX_FOUND_FILES - 1 ) {
@@ -247,14 +247,14 @@ void Sys_ListFilteredFiles( const char *basedir, char *subdirs, char *filter, ch
 
 char **Sys_ListFiles( const char *directory, const char *extension, char *filter, int *numfiles, qboolean wantsubs )
 {
-	struct dirent *d;
-	DIR		*fdir;
+	struct dirent *d = nullptr;
+	DIR		*fdir = nullptr;
 	qboolean dironly = wantsubs;
 	char		search[MAX_OSPATH];
-	int			nfiles;
-	char		**listCopy;
+	int			nfiles = 0;
+	char		**listCopy = nullptr;
 	char		*list[MAX_FOUND_FILES];
-	int			i;
+	int			i = 0;
 	struct stat st;
 
 	if (filter) {
@@ -339,7 +339,7 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 }
 
 void	Sys_FreeFileList( char **fileList ) {
-	int		i;
+	int		i = 0;
 
 	if ( !fileList ) {
 		return;
@@ -425,7 +425,7 @@ char *Sys_Cwd( void )
 /* Returns true if resulting paths are valid and the same, otherwise false */
 bool Sys_PathCmp( const char *path1, const char *path2 )
 {
-	char *r1, *r2;
+	char *r1 = nullptr, *r2 = nullptr;
 
 	r1 = realpath(path1, NULL);
 	r2 = realpath(path2, NULL);
@@ -471,7 +471,7 @@ char *Sys_DefaultHomePath(void)
 #else
 char *Sys_DefaultHomePath(void)
 {
-	char *p;
+	char *p = nullptr;
 
 	if ( !homePath[0] )
 	{
@@ -504,7 +504,7 @@ char *Sys_DefaultHomePath(void)
 
 void Sys_SetProcessorAffinity( void ) {
 #if defined(__linux__)
-	uint32_t cores;
+	uint32_t cores = 0;
 
 	if ( sscanf( com_affinity->string, "%X", &cores ) != 1 )
 		cores = 1; // set to first core only

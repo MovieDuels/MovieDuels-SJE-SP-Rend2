@@ -114,7 +114,7 @@ G_TestEntityPosition
 gentity_t* G_TestEntityPosition(const gentity_t* ent)
 {
 	trace_t tr;
-	int mask;
+	int mask = 0;
 
 	if (ent->client && ent->health <= 0 || !ent->clipmask)
 	{
@@ -283,7 +283,7 @@ If qfalse is returned, *obstacle will be the blocking entity
 */
 qboolean G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** obstacle)
 {
-	int i;
+	int i = 0;
 	vec3_t mins{}, maxs{};
 	vec3_t pusherMins, pusherMaxs, totalMins{}, totalMaxs{};
 	static gentity_t* entity_list[MAX_GENTITIES];
@@ -508,7 +508,7 @@ G_MoverTeam
 */
 static void G_MoverTeam(gentity_t* ent)
 {
-	gentity_t* part, * obstacle;
+	gentity_t* part = nullptr, * obstacle = nullptr;
 
 	obstacle = nullptr;
 
@@ -643,7 +643,7 @@ SetMoverState
 static void SetMoverState(gentity_t* ent, const moverState_t moverState, const int time)
 {
 	vec3_t delta;
-	float f;
+	float f = 0.0f;
 
 	ent->moverState = moverState;
 
@@ -825,8 +825,8 @@ Use_BinaryMover_Go
 */
 void Use_BinaryMover_Go(gentity_t* ent)
 {
-	int total;
-	int partial;
+	int total = 0;
+	int partial = 0;
 	//	gentity_t	*other = ent->enemy;
 	gentity_t* activator = ent->activator;
 
@@ -1098,7 +1098,7 @@ void G_SpawnModel2Scale(gentity_t* ent)
 
 void InitMover(gentity_t* ent)
 {
-	float light;
+	float light = 0.0f;
 	vec3_t color;
 
 	// if the "model2" key is set, use a seperate model
@@ -1427,7 +1427,7 @@ qboolean G_EntIsUnlockedDoor(const int entityNum)
 	if (G_EntIsDoor(entityNum))
 	{
 		const gentity_t* ent = &g_entities[entityNum];
-		gentity_t* owner;
+		gentity_t* owner = nullptr;
 		if (ent->flags & FL_TEAMSLAVE)
 		{
 			//not the master door, get the master door
@@ -1519,7 +1519,7 @@ void SP_func_door(gentity_t* ent)
 {
 	vec3_t abs_movedir{};
 	vec3_t size;
-	float lip;
+	float lip = 0.0f;
 
 	ent->e_BlockedFunc = blockedF_Blocked_Door;
 
@@ -1585,7 +1585,7 @@ void SP_func_door(gentity_t* ent)
 
 	if (!(ent->flags & FL_TEAMSLAVE))
 	{
-		int health;
+		int health = 0;
 
 		G_SpawnInt("health", "0", &health);
 
@@ -1719,7 +1719,7 @@ Plats are always drawn in the extended position so they will light correctly.
 */
 void SP_func_plat(gentity_t* ent)
 {
-	float lip, height;
+	float lip = 0.0f, height = 0.0f;
 
 	//	ent->sound1to2 = ent->sound2to1 = G_SoundIndex("sound/movers/plats/pt1_strt.wav");
 	//	ent->soundPos1 = ent->soundPos2 = G_SoundIndex("sound/movers/plats/pt1_end.wav");
@@ -1811,7 +1811,7 @@ void SP_func_button(gentity_t* ent)
 {
 	vec3_t abs_movedir{};
 	vec3_t size;
-	float lip;
+	float lip = 0.0f;
 
 	//	ent->sound1to2 = G_SoundIndex("sound/movers/switches/butn2.wav");
 
@@ -1901,7 +1901,7 @@ Reached_Train
 */
 void Reached_Train(gentity_t* ent)
 {
-	float speed;
+	float speed = 0.0f;
 	vec3_t move;
 
 	// copy the apropriate values
@@ -2205,7 +2205,7 @@ void SP_func_train(gentity_t* self)
 		return;
 	}
 
-	char* noise;
+	char* noise = nullptr;
 
 	G_SpawnInt("startframe", "0", &self->startFrame);
 	G_SpawnInt("endframe", "0", &self->endFrame);
@@ -2335,7 +2335,7 @@ void SP_func_static(gentity_t* ent)
 
 	// "hyperspace" 1: this brush is the hyperspace tunnel. The cgame draws it around the view of a ship that is
 	// jumping, and nowhere else (CG_Mover). As in SerenityJediEngine2026 and MP.
-	int test;
+	int test = 0;
 	G_SpawnInt("hyperspace", "0", &test);
 	if (test)
 	{
@@ -2604,8 +2604,8 @@ Normally bobs on the Z axis
 */
 void SP_func_bobbing(gentity_t* ent)
 {
-	float height;
-	float phase;
+	float height = 0.0f;
+	float phase = 0.0f;
 
 	G_SpawnFloat("speed", "4", &ent->speed);
 	G_SpawnFloat("height", "32", &height);
@@ -2680,8 +2680,8 @@ Pendulum frequency is a physical constant based on the length of the beam and gr
 */
 void SP_func_pendulum(gentity_t* ent)
 {
-	float phase;
-	float speed;
+	float phase = 0.0f;
+	float speed = 0.0f;
 
 	G_SpawnFloat("speed", "30", &speed);
 	G_SpawnInt("dmg", "2", &ent->damage);

@@ -759,7 +759,7 @@ void RestoreGhoul2InfoArray()
 	// into the wrong list (crash in G2API_AttachG2Model / G2_GetBoltMatrixLow).
 	TheGhoul2InfoArray();
 
-	size_t size;
+	size_t size = 0;
 	const void* data = ri.PD_Load(PERSISTENT_G2DATA, &size);
 	if (data == nullptr)
 	{
@@ -817,7 +817,7 @@ int G2API_InitGhoul2Model(
 	const int model_flags,
 	const int lod_bias)
 {
-	int model;
+	int model = 0;
 
 	// ------------------------------------------------------------
 	// Validate filename (avoid NULL dereference, fix C6011)
@@ -1285,7 +1285,7 @@ qboolean G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, cons
 			G2NOTE(ghlInfo->mBlist[iBoneIndex].flags & (BONE_ANIM_OVERRIDE_LOOP | BONE_ANIM_OVERRIDE), "GetBoneAnim on non-animating bone.");
 			if (ghlInfo->mBlist[iBoneIndex].flags & (BONE_ANIM_OVERRIDE_LOOP | BONE_ANIM_OVERRIDE))
 			{
-				int sf, ef;
+				int sf = 0, ef = 0;
 				ret = G2_Get_Bone_Anim_Index(ghlInfo->mBlist,// boneInfo_v &blist,
 					iBoneIndex,		// const int index,
 					currentTime,	// const int currentTime,

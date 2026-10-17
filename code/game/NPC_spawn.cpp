@@ -2098,7 +2098,7 @@ static bool NPC_SafeSpawn(const gentity_t* ent, const float safeRadius)
 	gentity_t* radius_ents[MAX_SAFESPAWN_ENTS];
 	vec3_t safeMins{}, safeMaxs{};
 	const float safeRadiusSquared = safeRadius * safeRadius;
-	int i;
+	int i = 0;
 
 	if (!ent)
 	{
@@ -3025,7 +3025,7 @@ extern void NPC_PrecacheAnimationCFG(const char* npc_type);
 
 void SP_NPC_spawner(gentity_t* self)
 {
-	float f_delay;
+	float f_delay = 0.0f;
 
 	if (!self->count)
 	{
@@ -5427,7 +5427,7 @@ static void NPC_Spawn_f()
 	vec3_t forward, end;
 	trace_t trace;
 	qboolean isVehicle = qfalse;
-	char* target;
+	char* target = nullptr;
 
 	if (!NPCspawner)
 	{
@@ -5702,7 +5702,7 @@ NPC_Kill_f
 
 static void NPC_Kill_f()
 {
-	int n;
+	int n = 0;
 	team_t killTeam = TEAM_FREE;
 	qboolean killNonSF = qfalse;
 
@@ -5890,7 +5890,7 @@ void Svcmd_NPC_f()
 	else if (Q_stricmp(cmd, "score") == 0)
 	{
 		char* cmd2 = gi.argv(2);
-		gentity_t* ent;
+		gentity_t* ent = nullptr;
 
 		if (!cmd2 || !cmd2[0])
 		{

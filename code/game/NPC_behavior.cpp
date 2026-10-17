@@ -717,7 +717,7 @@ constexpr auto JUMP_SPEED = 200.0f;
 void NPC_BSJump()
 {
 	vec3_t dir, p1, p2, apex;
-	float time, height, forward, z, xy, dist, apexHeight;
+	float time = 0.0f, height = 0.0f, forward = 0.0f, z = 0.0f, xy = 0.0f, dist = 0.0f, apexHeight = 0.0f;
 
 	animFlags_t flags = NPCBehaviour_Animationstyletable(NPC);
 

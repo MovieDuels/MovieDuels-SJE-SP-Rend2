@@ -123,7 +123,7 @@ static void S_TransferPaintBuffer(const int endtime)
 	}
 	else
 	{
-		int val;
+		int val = 0;
 		// general case
 		auto p = reinterpret_cast<int*>(paintbuffer);
 		int count = (endtime - s_paintedtime) * dma.channels;
@@ -189,7 +189,7 @@ static void S_PaintChannelFrom16(const channel_t* ch, const sfx_t* sfx, const in
 
 static void S_PaintChannelFromMP3(channel_t* ch, const sfx_t* sc, int count, const int sampleOffset, const int bufferOffset)
 {
-	int data;
+	int data = 0;
 	static short tempMP3Buffer[PAINTBUFFER_SIZE];
 
 	MP3Stream_GetSamples(ch, sampleOffset, count, tempMP3Buffer, qfalse); // qfalse = not stereo
@@ -256,9 +256,9 @@ static void ChannelPaint(channel_t* ch, const sfx_t* sc, const int count, const 
 
 void S_PaintChannels(const int endtime)
 {
-	int i;
-	int sampleOffset;
-	int normal_vol;
+	int i = 0;
+	int sampleOffset = 0;
+	int normal_vol = 0;
 
 	snd_vol = normal_vol = s_volume->value * 256.0f;
 	const int voice_vol = (s_volumeVoice->value * 256.0f);

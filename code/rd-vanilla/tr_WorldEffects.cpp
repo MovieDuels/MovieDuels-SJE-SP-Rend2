@@ -412,7 +412,7 @@ bool R_GetWindSpeed(float& windSpeed, vec3_t atpoint)
 
 bool R_GetWindGusting(vec3_t atpoint)
 {
-	float windSpeed;
+	float windSpeed = 0.0f;
 	R_GetWindSpeed(windSpeed, atpoint);
 	return windSpeed > 1000.0f;
 }
@@ -704,7 +704,7 @@ public:
 		else
 		{
 			CVec3		CurPos{};
-			int			x;
+			int			x = 0;
 
 			f = WriteCachedWeatherFile();
 
@@ -801,7 +801,7 @@ public:
 			SWeatherZone	wz = mWeatherZones[zone];
 			if (wz.mExtents.In(pos))
 			{
-				int		bit, x, y, z;
+				int		bit = 0, x = 0, y = 0, z = 0;
 				wz.ConvertToCell(pos, x, y, z, bit);
 				return wz.CellOutside(x, y, z, bit);
 			}
@@ -819,7 +819,7 @@ public:
 			SWeatherZone	wz = mWeatherZones[zone];
 			if (wz.mExtents.In(pos))
 			{
-				int		bit, x, y, z;
+				int		bit = 0, x = 0, y = 0, z = 0;
 				wz.ConvertToCell(pos, x, y, z, bit);
 				if (width < POINTCACHE_CELL_SIZE || height < POINTCACHE_CELL_SIZE)
 				{
@@ -1648,7 +1648,7 @@ void RE_WorldEffectCommand(const char* command) // vanilla sp
 		return;
 	}
 
-	const char* token;//, *origCommand;
+	const char* token = nullptr;//, *origCommand;
 
 	COM_BeginParseSession();
 
@@ -1927,7 +1927,7 @@ void RE_WorldEffectCommand(const char* command) // vanilla sp
 	//---------------------
 	else if (Q_stricmp(token, "spacedust") == 0)
 	{
-		int count;
+		int count = 0;
 		if (mParticleClouds.full())
 		{
 			COM_EndParseSession();

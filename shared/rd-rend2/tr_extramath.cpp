@@ -139,7 +139,7 @@ void Matrix16View(vec3_t axes[3], vec3_t origin, matrix_t out)
 void Matrix16SimpleInverse(const matrix_t in, matrix_t out)
 {
 	vec3_t v;
-	float invSqrLen;
+	float invSqrLen = 0.0f;
 
 	VectorCopy(in + 0, v);
 	invSqrLen = 1.0f / DotProduct(v, v); VectorScale(v, invSqrLen, v);
@@ -191,7 +191,7 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 
 int NextPowerOfTwo(int in)
 {
-	int out;
+	int out = 0;
 
 	for (out = 1; out < in; out <<= 1)
 		;
@@ -201,7 +201,7 @@ int NextPowerOfTwo(int in)
 
 unsigned short FloatToHalf(float in)
 {
-	unsigned short out;
+	unsigned short out = 0;
 
 	union
 	{
@@ -209,8 +209,8 @@ unsigned short FloatToHalf(float in)
 		unsigned int i;
 	} f32;
 
-	int sign, inExponent, inFraction;
-	int outExponent, outFraction;
+	int sign = 0, inExponent = 0, inFraction = 0;
+	int outExponent = 0, outFraction = 0;
 
 	f32.f = in;
 

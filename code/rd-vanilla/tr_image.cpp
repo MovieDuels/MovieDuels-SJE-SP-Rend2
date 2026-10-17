@@ -109,8 +109,8 @@ GL_TextureMode
 ===============
 */
 void GL_TextureMode(const char* string) {
-	size_t	i;
-	image_t* glt;
+	size_t	i = 0;
+	image_t* glt = nullptr;
 
 	for (i = 0; i < numTextureModes; i++) {
 		if (!Q_stricmp(modes[i].name, string)) {
@@ -210,7 +210,7 @@ R_SumOfUsedImages
 float R_SumOfUsedImages(const qboolean bUseFormat)
 {
 	int	total = 0;
-	image_t* pImage;
+	image_t* pImage = nullptr;
 
 	R_Images_StartIteration();
 	while ((pImage = R_Images_GetNextIteration()) != nullptr)
@@ -238,7 +238,7 @@ R_ImageList_f
 */
 void R_ImageList_f() {
 	int		i = 0;
-	image_t* image;
+	image_t* image = nullptr;
 	int		texels = 0;
 	//	int		totalFileSizeK = 0;
 	float	texBytes = 0.0f;
@@ -350,7 +350,7 @@ static void R_LightScaleTexture(unsigned* in, const int inwidth, const int inhei
 	}
 	else
 	{
-		int		i;
+		int		i = 0;
 
 		byte* p = reinterpret_cast<byte*>(in);
 
@@ -433,7 +433,7 @@ Operates in place, quartering the size of the texture
 ================
 */
 static void R_MipMap(byte* in, int width, int height) {
-	int		i;
+	int		i = 0;
 
 	if (width == 1 && height == 1) {
 		return;
@@ -528,7 +528,7 @@ static void Upload32(unsigned* data,
 {
 	if (format == GL_RGBA)
 	{
-		int			i;
+		int			i = 0;
 		float		rMax = 0, gMax = 0, bMax = 0;
 		int			width = *pUploadWidth;
 		int			height = *pUploadHeight;
@@ -810,7 +810,7 @@ void R_Images_DeleteImage(image_t* pImage)
 //
 void R_Images_Clear()
 {
-	image_t* pImage;
+	image_t* pImage = nullptr;
 	//	int iNumImages =
 	R_Images_StartIteration();
 	while ((pImage = R_Images_GetNextIteration()) != nullptr)
@@ -824,7 +824,7 @@ void R_Images_Clear()
 
 void RE_RegisterImages_Info_f()
 {
-	image_t* pImage;
+	image_t* pImage = nullptr;
 	int iImage = 0;
 	int iTexels = 0;
 
@@ -1027,8 +1027,8 @@ Returns NULL if it fails, not a default image.
 ==============
 */
 image_t* R_FindImageFile(const char* name, const qboolean mipmap, const qboolean allowPicmip, const qboolean allowTC, int glWrapClampMode) {
-	int		width, height;
-	byte* pic;
+	int		width = 0, height = 0;
+	byte* pic = nullptr;
 
 	if (!name) {
 		return nullptr;
@@ -1101,8 +1101,8 @@ static void R_CreateDlightImage()
 	}
 	tr.dlightImage = R_CreateImage("*dlight", (byte*)data, DLIGHT_SIZE, DLIGHT_SIZE, GL_RGBA, qfalse, qfalse, qfalse, GL_CLAMP);
 #else
-	int		width, height;
-	byte* pic;
+	int		width = 0, height = 0;
+	byte* pic = nullptr;
 
 	R_LoadImage("gfx/2d/dlight", &pic, &width, &height);
 	if (pic)
@@ -1265,7 +1265,7 @@ R_CreateBuiltinImages
 void R_UpdateSaveGameImage(const char* filename);
 
 void R_CreateBuiltinImages() {
-	int		x;
+	int		x = 0;
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	R_CreateDefaultImage();
@@ -1345,8 +1345,8 @@ R_SetColorMappings
 ===============
 */
 void R_SetColorMappings() {
-	int		i;
-	int		inf;
+	int		i = 0;
+	int		inf = 0;
 
 	// setup the overbright lighting
 	tr.overbrightBits = r_overBrightBits->integer;

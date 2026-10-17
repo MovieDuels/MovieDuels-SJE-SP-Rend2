@@ -321,7 +321,7 @@ static QINLINE void CopyLongSwap(void* dest, const void* src)
 
 static QINLINE float FloatSwap(const float f)
 {
-	float out;
+	float out = 0.0f;
 	CopyLongSwap(&out, &f);
 	return out;
 }

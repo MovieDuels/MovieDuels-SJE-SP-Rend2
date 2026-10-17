@@ -620,14 +620,14 @@ LOAD/UNLOAD DLL
 UnpackDLLResult Sys_UnpackDLL(const char* name)
 {
 	UnpackDLLResult result = {};
-	void* data;
+	void* data = nullptr;
 	const long len = FS_ReadFile(name, &data);
 
 	if (len >= 1)
 	{
 		if (FS_FileIsInPAK(name, nullptr) == 1)
 		{
-			char* tempFileName;
+			char* tempFileName = nullptr;
 			if (FS_WriteToTemporaryFile(data, len, &tempFileName))
 			{
 				result.tempDLLPath = tempFileName;

@@ -328,7 +328,7 @@ void* Z_Malloc(const int iSize, const memtag_t eTag, const qboolean bZeroit, con
 				int iBytesFreed = SND_FreeOldestSound();
 				if (iBytesFreed)
 				{
-					int i_these_bytes_freed;
+					int i_these_bytes_freed = 0;
 					while ((i_these_bytes_freed = SND_FreeOldestSound()) != 0)
 					{
 						iBytesFreed += i_these_bytes_freed;

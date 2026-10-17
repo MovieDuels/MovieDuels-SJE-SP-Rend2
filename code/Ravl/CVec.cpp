@@ -163,8 +163,8 @@ int CVec4::MaxElementIndex() const
 ////////////////////////////////////////////////////////////////////////////////////////
 void CVec4::VecToAng()
 {
-	float yaw;
-	float pitch;
+	float yaw = 0.0f;
+	float pitch = 0.0f;
 
 	if (!v[1] && !v[0])
 	{
@@ -263,8 +263,8 @@ void CVec4::AngToVec(CVec4& Right, CVec4& Up)
 ////////////////////////////////////////////////////////////////////////////////////////
 void CVec4::VecToAngRad()
 {
-	float yaw;
-	float pitch;
+	float yaw = 0.0f;
+	float pitch = 0.0f;
 
 	if (!v[1] && !v[0])
 	{
@@ -730,8 +730,8 @@ int CVec3::MaxElementIndex() const
 ////////////////////////////////////////////////////////////////////////////////////////
 void CVec3::VecToAng()
 {
-	float yaw;
-	float pitch;
+	float yaw = 0.0f;
+	float pitch = 0.0f;
 
 	if (!v[1] && !v[0])
 	{
@@ -825,8 +825,8 @@ void CVec3::AngToVec(CVec3& Right, CVec3& Up)
 ////////////////////////////////////////////////////////////////////////////////////////
 void CVec3::VecToAngRad()
 {
-	float yaw;
-	float pitch;
+	float yaw = 0.0f;
+	float pitch = 0.0f;
 
 	if (!v[1] && !v[0])
 	{

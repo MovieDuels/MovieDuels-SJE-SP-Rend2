@@ -76,7 +76,7 @@ Transpose
 ============
 */
 static void Transpose(const int width, const int height, drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE]) {
-	int		i, j;
+	int		i = 0, j = 0;
 	drawVert_t	temp;
 
 	if (width > height) {
@@ -121,10 +121,10 @@ Handles all the complicated wrapping and degenerate cases
 =================
 */
 static void MakeMeshNormals(const int width, const int height, drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE]) {
-	int		i, k;
+	int		i = 0, k = 0;
 	vec3_t	delta;
 	qboolean	good[8]{};
-	float		len;
+	float		len = 0.0f;
 	static	int	neighbors[8][2] = {
 		{ 0,1 },{ 1,1 },{ 1,0 },{ 1,-1 },{ 0,-1 },{ -1,-1 },{ -1,0 },{ -1,1 }
 	};
@@ -242,7 +242,7 @@ InvertErrorTable
 =================
 */
 static void InvertErrorTable(float errorTable[2][MAX_GRID_SIZE], const int width, const int height) {
-	int		i;
+	int		i = 0;
 	float	copy[2][MAX_GRID_SIZE];
 
 	memcpy(copy, errorTable, sizeof(copy));
@@ -263,7 +263,7 @@ PutPointsOnCurve
 */
 static void PutPointsOnCurve(drawVert_t	ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE],
 	const int width, const int height) {
-	int			i, j;
+	int			i = 0, j = 0;
 	drawVert_t	prev, next;
 
 	for (i = 0; i < width; i++) {
@@ -291,14 +291,14 @@ R_SubdividePatchToGrid
 */
 srfGridMesh_t* R_SubdividePatchToGrid(int width, int height, drawVert_t points[MAX_PATCH_SIZE * MAX_PATCH_SIZE])
 {
-	int			i, j, k;
+	int			i = 0, j = 0, k = 0;
 	drawVert_t	prev, next, mid;
-	int			t;
+	int			t = 0;
 	static drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE]; // off the stack (C6262)
 	memset(ctrl, 0, sizeof(ctrl)); // zeroed each call, as the {} on the stack was
 	float		errorTable[2][MAX_GRID_SIZE]{};
-	srfGridMesh_t* grid;
-	drawVert_t* vert;
+	srfGridMesh_t* grid = nullptr;
+	drawVert_t* vert = nullptr;
 	vec3_t		tmp_vec;
 
 	for (i = 0; i < width; i++) {

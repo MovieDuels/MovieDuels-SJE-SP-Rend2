@@ -253,7 +253,7 @@ void Add_Ammo(const gentity_t* ent, const int weapon, const int count)
 //-------------------------------------------------------
 static int Pickup_Ammo(const gentity_t* ent, const gentity_t* other)
 {
-	int quantity;
+	int quantity = 0;
 
 	if (ent->count)
 	{
@@ -294,7 +294,7 @@ void Add_Batteries(gentity_t* ent, int* count)
 //-------------------------------------------------------
 static int Pickup_Battery(const gentity_t* ent, gentity_t* other)
 {
-	int quantity;
+	int quantity = 0;
 
 	if (ent->count)
 	{
@@ -585,7 +585,7 @@ extern void CG_ChangeWeapon(int num);
 
 static int Pickup_Weapon(gentity_t* ent, gentity_t* other)
 {
-	int quantity;
+	int quantity = 0;
 	qboolean hadWeapon = qfalse;
 
 	// dropped items are always picked up
@@ -705,7 +705,7 @@ int ITM_AddHealth(gentity_t* ent, const int count)
 
 static int Pickup_Health(const gentity_t* ent, gentity_t* other)
 {
-	int quantity;
+	int quantity = 0;
 
 	const int max = other->client->ps.stats[STAT_MAX_HEALTH];
 
@@ -882,7 +882,7 @@ extern cvar_t* g_AdvancedWeaponPickup;
 
 void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace)
 {
-	int respawn;
+	int respawn = 0;
 
 	if (!other->client)
 	{
@@ -1210,7 +1210,7 @@ Spawns an item and tosses it forward
 */
 gentity_t* Drop_Item(gentity_t* ent, gitem_t* item, const float angle, const qboolean copytarget)
 {
-	gentity_t* dropped;
+	gentity_t* dropped = nullptr;
 	vec3_t velocity;
 	vec3_t angles;
 
@@ -1952,7 +1952,7 @@ void G_RunItem(gentity_t* ent)
 {
 	vec3_t origin;
 	trace_t tr;
-	int mask;
+	int mask = 0;
 
 	// if groundentity has been set to -1, it may have been pushed off an edge
 	if (ent->s.groundEntityNum == ENTITYNUM_NONE)

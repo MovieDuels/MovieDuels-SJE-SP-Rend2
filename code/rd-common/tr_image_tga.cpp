@@ -264,7 +264,7 @@ void LoadTGA(const char* name, byte** pic, int* width, int* height)
 			// I've no idea if this stuff works, I normally reject RLE targas, but this is from ID's code
 			//	so maybe I should try and support it...
 			//
-			byte packetHeader, packetSize, j;
+			byte packetHeader = 0, packetSize = 0, j = 0;
 
 			for (int y = p_header->wImageHeight - 1; y >= 0; y--)
 			{

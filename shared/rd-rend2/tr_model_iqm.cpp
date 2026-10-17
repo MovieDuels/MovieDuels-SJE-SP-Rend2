@@ -107,7 +107,7 @@ static void JointToMatrix(vec4_t rot, vec3_t scale, vec3_t trans,
 static void Matrix34Invert(float* inMat, float* outMat)
 {
 	vec3_t trans;
-	float invSqrLen, * v;
+	float invSqrLen = 0.0f, * v = nullptr;
 
 	outMat[0] = inMat[0]; outMat[1] = inMat[4]; outMat[2] = inMat[8];
 	outMat[4] = inMat[1]; outMat[5] = inMat[5]; outMat[6] = inMat[9];
@@ -134,23 +134,23 @@ Load an IQM model and compute the joint matrices for every frame.
 =================
 */
 qboolean R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_name) {
-	iqmHeader_t* header;
-	iqmVertexArray_t* vertexarray;
-	iqmTriangle_t* triangle;
-	iqmMesh_t* mesh;
-	iqmJoint_t* joint;
-	iqmPose_t* pose;
-	iqmBounds_t* bounds;
-	unsigned short* framedata;
-	char* str;
-	int			i, j;
+	iqmHeader_t* header = nullptr;
+	iqmVertexArray_t* vertexarray = nullptr;
+	iqmTriangle_t* triangle = nullptr;
+	iqmMesh_t* mesh = nullptr;
+	iqmJoint_t* joint = nullptr;
+	iqmPose_t* pose = nullptr;
+	iqmBounds_t* bounds = nullptr;
+	unsigned short* framedata = nullptr;
+	char* str = nullptr;
+	int			i = 0, j = 0;
 	float			jointInvMats[IQM_MAX_JOINTS * 12];
-	float* mat, * matInv;
-	size_t			size, joint_names;
-	iqmData_t* iqmData;
-	srfIQModel_t* surface;
+	float* mat = nullptr, * matInv = nullptr;
+	size_t			size = 0, joint_names = 0;
+	iqmData_t* iqmData = nullptr;
+	srfIQModel_t* surface = nullptr;
 	char			meshName[MAX_QPATH];
-	byte			blendIndexesType, blendWeightsType;
+	byte			blendIndexesType = 0, blendWeightsType = 0;
 
 	if (filesize < sizeof(iqmHeader_t)) {
 		return qfalse;
@@ -216,7 +216,7 @@ qboolean R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_nam
 	}
 	vertexarray = (iqmVertexArray_t*)((byte*)header + header->ofs_vertexarrays);
 	for (i = 0; i < header->num_vertexarrays; i++, vertexarray++) {
-		int	n, * intPtr;
+		int	n = 0, * intPtr = nullptr;
 
 		if (vertexarray->size <= 0 || vertexarray->size > 4) {
 			return qfalse;
@@ -639,7 +639,7 @@ qboolean R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_nam
 	// copy vertexarrays and indexes
 	vertexarray = (iqmVertexArray_t*)((byte*)header + header->ofs_vertexarrays);
 	for (i = 0; i < header->num_vertexarrays; i++, vertexarray++) {
-		int	n;
+		int	n = 0;
 
 		// total number of values
 		n = header->numVertexes * vertexarray->size;
@@ -752,8 +752,8 @@ R_CullIQM
 */
 static int R_CullIQM(iqmData_t* data, trRefEntity_t* ent) {
 	vec3_t		bounds[2];
-	float* oldBounds, * newBounds;
-	int		i;
+	float* oldBounds = nullptr, * newBounds = nullptr;
+	int		i = 0;
 
 	if (!data->bounds) {
 		tr.pc.c_box_cull_md3_clip++;
@@ -792,13 +792,13 @@ R_ComputeIQMFogNum
 =================
 */
 int R_ComputeIQMFogNum(iqmData_t* data, trRefEntity_t* ent) {
-	int			i, j;
-	fog_t* fog;
-	const float* bounds;
+	int			i = 0, j = 0;
+	fog_t* fog = nullptr;
+	const float* bounds = nullptr;
 	const float		defaultBounds[6] = { -8, -8, -8, 8, 8, 8 };
 	vec3_t			diag, center;
 	vec3_t			localOrigin;
-	float			radius;
+	float			radius = 0.0f;
 
 	if (tr.refdef.rdflags & RDF_NOWORLDMODEL) {
 		return 0;
@@ -842,15 +842,15 @@ Add all surfaces of this model
 =================
 */
 void R_AddIQMSurfaces(trRefEntity_t* ent, int entityNum) {
-	iqmData_t* data;
-	srfIQModel_t* surface;
-	int			i, j;
+	iqmData_t* data = nullptr;
+	srfIQModel_t* surface = nullptr;
+	int			i = 0, j = 0;
 	qboolean		personalModel;
-	int			cull;
-	int			fogNum;
-	int         cubemapIndex;
-	shader_t* shader;
-	skin_t* skin;
+	int			cull = 0;
+	int			fogNum = 0;
+	int         cubemapIndex = 0;
+	shader_t* shader = nullptr;
+	skin_t* skin = nullptr;
 
 	data = tr.currentModel->data.iqm;
 	surface = data->surfaces;
@@ -947,9 +947,9 @@ void R_AddIQMSurfaces(trRefEntity_t* ent, int entityNum) {
 
 static void ComputePoseMats(iqmData_t* data, int frame, int oldframe,
 	float backlerp, float* mat) {
-	float* mat1, * mat2;
+	float* mat1 = nullptr, * mat2 = nullptr;
 	int* joint = data->jointParents;
-	int	i;
+	int	i = 0;
 
 	if (data->num_poses == 0) {
 		for (i = 0; i < data->num_joints; i++, joint++) {
@@ -998,8 +998,8 @@ static void ComputePoseMats(iqmData_t* data, int frame, int oldframe,
 
 static void ComputeJointMats(iqmData_t* data, int frame, int oldframe,
 	float backlerp, float* mat) {
-	float* mat1;
-	int	i;
+	float* mat1 = nullptr;
+	int	i = 0;
 
 	ComputePoseMats(data, frame, oldframe, backlerp, mat);
 
@@ -1024,21 +1024,21 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	srfIQModel_t* surf = (srfIQModel_t*)surface;
 	iqmData_t* data = surf->data;
 	float		jointMats[IQM_MAX_JOINTS * 12];
-	int		i;
+	int		i = 0;
 
-	vec4_t* outXYZ;
-	uint32_t* outNormal;
-	uint32_t* outTangent;
+	vec4_t* outXYZ = nullptr;
+	uint32_t* outNormal = nullptr;
+	uint32_t* outTangent = nullptr;
 	vec2_t(*outTexCoord)[NUM_TESS_TEXCOORDS];
-	vec4_t* outColor;
+	vec4_t* outColor = nullptr;
 
 	int	frame = data->numFrames ? backEnd.currentEntity->e.frame % data->numFrames : 0;
 	int	oldframe = data->numFrames ? backEnd.currentEntity->e.oldframe % data->numFrames : 0;
 	float	backlerp = backEnd.currentEntity->e.backlerp;
 
-	int* tri;
-	glIndex_t* ptr;
-	glIndex_t	base;
+	int* tri = nullptr;
+	glIndex_t* ptr = nullptr;
+	glIndex_t	base = 0;
 
 	RB_CHECKOVERFLOW(surf->numVertexes, surf->num_triangles * 3);
 
@@ -1056,12 +1056,12 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	// transform vertexes and fill other data
 	for (i = 0; i < surf->numVertexes;
 		i++, outXYZ++, outNormal++, outTexCoord++, outColor++) {
-		int	j, k;
+		int	j = 0, k = 0;
 		float	vtxMat[12];
 		float	nrmMat[9];
 		int	vtx = i + surf->first_vertex;
 		float	blendWeights[4];
-		int		numWeights;
+		int		numWeights = 0;
 
 		for (numWeights = 0; numWeights < 4; numWeights++) {
 			if (data->blendWeightsType == IQM_FLOAT)
@@ -1164,7 +1164,7 @@ int R_IQMLerpTag(orientation_t* tag, iqmData_t* data,
 	int startFrame, int endFrame,
 	float frac, const char* tagName) {
 	float	jointMats[IQM_MAX_JOINTS * 12];
-	int	joint;
+	int	joint = 0;
 	char* names = data->names;
 
 	// get joint number by reading the joint names

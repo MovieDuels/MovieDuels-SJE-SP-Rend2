@@ -728,7 +728,7 @@ static void CG_UpdateThirdPersonTargetDamp()
 		}
 		else
 		{
-			float ratio;
+			float ratio = 0.0f;
 			vec3_t targetdiff;
 			// Calculate the difference from the current position to the new one.
 			VectorSubtract(cameraIdealTarget, cameraCurTarget, targetdiff);
@@ -758,7 +758,7 @@ static void CG_UpdateThirdPersonTargetDamp()
 	}
 	else if (cg_thirdPersonTargetDamp.value >= 0.0)
 	{
-		float ratio;
+		float ratio = 0.0f;
 		vec3_t targetdiff;
 		// Calculate the difference from the current position to the new one.
 		VectorSubtract(cameraIdealTarget, cameraCurTarget, targetdiff);
@@ -879,7 +879,7 @@ static void CG_UpdateThirdPersonCameraDamp()
 	}
 	else if (dampfactor >= 0.0)
 	{
-		float ratio;
+		float ratio = 0.0f;
 		vec3_t locdiff;
 		// Calculate the difference from the current position to the new one.
 		VectorSubtract(cameraIdealLoc, cameraCurLoc, locdiff);
@@ -1466,12 +1466,12 @@ extern int PM_AnimLength(const int index, const animNumber_t anim);
 
 static void CG_OffsetFirstPersonView(const qboolean first_person_saber)
 {
-	float bob;
-	float delta;
-	float speed;
-	float f;
+	float bob = 0.0f;
+	float delta = 0.0f;
+	float speed = 0.0f;
+	float f = 0.0f;
 	vec3_t predicted_velocity;
-	int time_delta;
+	int time_delta = 0;
 
 	// Ensure snapshot exists before dereferencing.
 	if (cg.snap == NULL)
@@ -1500,7 +1500,7 @@ static void CG_OffsetFirstPersonView(const qboolean first_person_saber)
 	// Knockdown / get‑up tilt.
 	if (g_entities[0].client && PM_InKnockDown(&g_entities[0].client->ps))
 	{
-		float perc;
+		float perc = 0.0f;
 		const float anim_len = (float)PM_AnimLength(
 			g_entities[0].client->clientInfo.animFileIndex,
 			(animNumber_t)g_entities[0].client->ps.legsAnim);
@@ -1530,7 +1530,7 @@ static void CG_OffsetFirstPersonView(const qboolean first_person_saber)
 	int kick_time = cg.time - cg.kick_time;
 	if (kick_time < 800)
 	{
-		float kick_perc;
+		float kick_perc = 0.0f;
 		if (kick_time <= 200)
 		{
 			// Winding up.
@@ -1805,7 +1805,7 @@ qboolean CG_CalcFOVFromX(float fov_x)
 
 float CG_ForceSpeedFOV()
 {
-	float fov;
+	float fov = 0.0f;
 	const float time_left = player->client->ps.forcePowerDuration[FP_SPEED] - cg.time;
 	const float length = FORCE_SPEED_DURATION * forceSpeedValue[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
 	const float amt = forceSpeedFOVMod[FP_TableLevel(player->client->ps.forcePowerLevel[FP_SPEED])];
@@ -1940,7 +1940,7 @@ static qboolean CG_CalcFov()
 
 					if (zoom_sound_time < cg.time)
 					{
-						sfxHandle_t snd;
+						sfxHandle_t snd = 0;
 
 						if (cg.zoomMode == 1)
 						{
@@ -2063,7 +2063,7 @@ void CG_SaberClashFlare()
 	// RGBA: R_SetColor reads 4 floats. This was a vec3_t, so the alpha came from past the end of
 	// the array (ASan stack-buffer-overflow on every saber clash flare).
 	const vec4_t color = { 0.8f, 0.8f, 0.8f, 1.0f };
-	int x, y;
+	int x = 0, y = 0;
 	float len = VectorNormalize(dif);
 
 	// clamp to a known range
@@ -2154,7 +2154,7 @@ Sets cg.refdef view values
 */
 static qboolean CG_CalcViewValues()
 {
-	playerState_t* ps;
+	playerState_t* ps = nullptr;
 	qboolean view_ent_is_cam = qfalse;
 
 	memset(&cg.refdef, 0, sizeof cg.refdef);
@@ -2431,7 +2431,7 @@ extern void cgi_CM_SnapPVS(vec3_t origin, byte* buffer);
 
 static void CG_DrawSkyBoxPortal()
 {
-	const char* cstr;
+	const char* cstr = nullptr;
 
 	cstr = CG_ConfigString(CS_SKYBOXORG);
 

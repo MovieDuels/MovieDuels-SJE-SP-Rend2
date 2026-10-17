@@ -95,7 +95,7 @@ static int R_CullModel(md3Header_t* header, const trRefEntity_t* ent) {
 		}
 		else
 		{
-			int sphere_cull_b;
+			int sphere_cull_b = 0;
 
 			const int sphere_cull = R_CullLocalPointAndRadius(newFrame->localOrigin, newFrame->radius);
 			if (newFrame == old_frame) {
@@ -174,9 +174,9 @@ R_ComputeLOD
 =================
 */
 static int R_ComputeLOD(trRefEntity_t* ent) {
-	float radius;
-	float flod;
-	float projected_radius;
+	float radius = 0.0f;
+	float flod = 0.0f;
+	float projected_radius = 0.0f;
 
 	if (tr.currentModel->numLods < 2)
 	{	// model has only 1 LOD level, skip computations and bias
@@ -281,7 +281,7 @@ R_AddMD3Surfaces
 =================
 */
 void R_AddMD3Surfaces(trRefEntity_t* ent) {
-	const shader_t* shader;
+	const shader_t* shader = nullptr;
 
 	// don't add third_person objects if not in a portal
 	const auto personalModel = static_cast<qboolean>(ent->e.renderfx & RF_THIRD_PERSON && !tr.viewParms.is_portal);

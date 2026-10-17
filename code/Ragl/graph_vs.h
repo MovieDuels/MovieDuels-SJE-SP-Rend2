@@ -821,7 +821,7 @@ namespace ragl
 				return;
 			}
 
-			int	link_num;
+			int	link_num = 0;
 
 			for (link_num = 0; link_num < mLinks[nodeA].size(); link_num++)
 			{

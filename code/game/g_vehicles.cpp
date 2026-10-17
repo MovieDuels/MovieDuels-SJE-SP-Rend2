@@ -199,8 +199,8 @@ float G_CanJumpToEnemyVeh(Vehicle_t* p_veh, const usercmd_t* pUcmd)
 // Spawn this vehicle into the world.
 void G_VehicleSpawn(gentity_t* self)
 {
-	float yaw;
-	gentity_t* vehEnt;
+	float yaw = 0.0f;
+	gentity_t* vehEnt = nullptr;
 
 	VectorCopy(self->currentOrigin, self->s.origin);
 
@@ -282,9 +282,9 @@ static void G_WalkerHeadPitch(const Vehicle_t* p_veh, gentity_t* parent)
 // Attachs an entity to the vehicle it's riding (it's owner).
 void G_AttachToVehicle(gentity_t* pEnt, usercmd_t** ucmd)
 {
-	gentity_t* vehEnt;
+	gentity_t* vehEnt = nullptr;
 	mdxaBone_t bolt_matrix;
-	gentity_t* ent;
+	gentity_t* ent = nullptr;
 	vec3_t model_angles;
 
 	if (!pEnt || !ucmd)
@@ -816,7 +816,7 @@ static bool VEH_TryEject(const Vehicle_t* p_veh,
 	const int ejectDir,
 	vec3_t vExitPos)
 {
-	float fEntDiag;
+	float fEntDiag = 0.0f;
 	vec3_t vEntMins, vEntMaxs, vVehLeaveDir, vVehAngles;
 	trace_t m_ExitTrace;
 
@@ -941,13 +941,13 @@ static void G_EjectDroidUnit(Vehicle_t* p_veh, qboolean kill)
 // Eject the pilot from the vehicle.
 static bool Eject(Vehicle_t* p_veh, bgEntity_t* pEnt, const qboolean force_eject)
 {
-	gentity_t* parent;
+	gentity_t* parent = nullptr;
 	vec3_t vExitPos;
 #ifndef _JK2MP
 	vec3_t vPlayerDir;
 #endif
 	auto ent = pEnt;
-	int firstEjectDir;
+	int firstEjectDir = 0;
 
 #ifdef _JK2MP
 	qboolean	taintedRider = qfalse;
@@ -1462,7 +1462,7 @@ extern void ChangeWeapon(const gentity_t* ent, int new_weapon);
 static bool Initialize(Vehicle_t* p_veh)
 {
 	auto parent = p_veh->m_pParentEntity;
-	int i;
+	int i = 0;
 
 	if (!parent || !parent->client)
 		return false;
@@ -1566,12 +1566,12 @@ static bool Update(Vehicle_t* p_veh, const usercmd_t* pUmcd)
 	auto parent = p_veh->m_pParentEntity;
 	//static float fMod = 1000.0f / 60.0f;
 	vec3_t vVehAngles;
-	int i;
-	int prevSpeed;
-	int nextSpeed;
-	int curTime;
-	int halfMaxSpeed;
-	playerState_t* parent_ps;
+	int i = 0;
+	int prevSpeed = 0;
+	int nextSpeed = 0;
+	int curTime = 0;
+	int halfMaxSpeed = 0;
+	playerState_t* parent_ps = nullptr;
 	constexpr qboolean link_held = qfalse;
 
 #ifdef _JK2MP

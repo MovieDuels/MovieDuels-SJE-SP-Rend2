@@ -218,8 +218,8 @@ constexpr auto MAX_TOTAL_ENT_LEAFS = 128;
 void SV_LinkEntity(gentity_t* g_ent)
 {
 	int leafs[MAX_TOTAL_ENT_LEAFS];
-	int i;
-	int lastLeaf;
+	int i = 0;
+	int lastLeaf = 0;
 
 	// this should never be called with a freed entity
 	if (!g_ent->inuse)

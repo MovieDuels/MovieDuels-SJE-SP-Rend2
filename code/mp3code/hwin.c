@@ -58,8 +58,8 @@ ARRAY36* hwin_init_addr()
 int hybrid(float xin[], float xprev[], float y[18][32],
 	int btype, const int nlong, const int ntot, const int nprev)
 {
-	int i, j;
-	float xa;
+	int i = 0, j = 0;
+	float xa = 0.0f;
 
 	if (btype == 2)
 		btype = 0;
@@ -157,8 +157,8 @@ int hybrid(float xin[], float xprev[], float y[18][32],
 int hybrid_sum(float xin[], float xin_left[], float y[18][32],
 	int btype, const int nlong, const int ntot)
 {
-	int i, j;
-	float xa;
+	int i = 0, j = 0;
+	float xa = 0.0f;
 
 	if (btype == 2)
 		btype = 0;

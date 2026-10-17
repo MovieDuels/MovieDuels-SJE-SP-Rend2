@@ -182,7 +182,7 @@ PopCommand
 
 CBlock* CSequence::PopCommand(const int type)
 {
-	CBlock* command;
+	CBlock* command = nullptr;
 
 	//Make sure everything is ok
 	assert(type == POP_FRONT || type == POP_BACK);
@@ -351,8 +351,8 @@ int CSequence::SaveCommand(const CBlock* block)
 {
 	const auto pIcarus = static_cast<CIcarus*>(IIcarusInterface::GetIcarus());
 
-	unsigned char flags;
-	int num_members, b_id, size;
+	unsigned char flags = 0;
+	int num_members = 0, b_id = 0, size = 0;
 
 	//Save out the block ID
 	b_id = block->GetBlockID();
@@ -388,10 +388,10 @@ int CSequence::SaveCommand(const CBlock* block)
 int CSequence::LoadCommand(CBlock* block, CIcarus* icarus)
 {
 	IGameInterface* game = icarus->GetGame();
-	int b_id, b_size;
-	void* b_data;
-	unsigned char flags;
-	int id, num_members;
+	int b_id = 0, b_size = 0;
+	void* b_data = nullptr;
+	unsigned char flags = 0;
+	int id = 0, num_members = 0;
 
 	// Data expected/loaded here (IBLK) (with the size as : 'IBSZ' ).
 	//	Block ID.
@@ -507,7 +507,7 @@ int CSequence::Save()
 	const auto p_icarus = static_cast<CIcarus*>(IIcarusInterface::GetIcarus());
 
 	block_l::iterator bi;
-	int id;
+	int id = 0;
 
 	// Save the parent (by GUID).
 	id = m_parent != nullptr ? m_parent->GetID() : -1;
@@ -560,8 +560,8 @@ Load
 
 int CSequence::Load(CIcarus* icarus)
 {
-	CSequence* sequence;
-	int id;
+	CSequence* sequence = nullptr;
+	int id = 0;
 
 	// Data expected/loaded here (ISEQ) (with the size as : 'ISSZ' ).
 	//	Parent ID.
@@ -609,7 +609,7 @@ int CSequence::Load(CIcarus* icarus)
 	//Get the number of iterations
 	icarus->BufferRead(&m_iterations, sizeof m_iterations);
 
-	int num_commands;
+	int num_commands = 0;
 
 	//Get the number of commands
 	icarus->BufferRead(&num_commands, sizeof num_commands);

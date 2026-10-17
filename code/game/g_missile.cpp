@@ -413,7 +413,7 @@ void G_MissileBouncedoffSaber(gentity_t* ent, gentity_t* missile, vec3_t forward
 			// Player reflection: bias toward crosshair based on defense level
 			vec3_t deflect_dir;
 			vec3_t missile_dir;
-			float  force_factor;
+			float  force_factor = 0.0f;
 
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, deflect_dir);
 			VectorCopy(missile->s.pos.trDelta, missile_dir);
@@ -958,7 +958,7 @@ static int G_GetBlockerDefenseLevel(const gentity_t* blocker)
 static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forward)
 {
 	vec3_t  bounce_dir;
-	int     i;
+	int     i = 0;
 	qboolean saber_block_reflection = qfalse;
 	qboolean bolt_block_reflection = qfalse;
 	qboolean npc_reflection = qfalse;
@@ -1102,7 +1102,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 	}
 	else if (bolt_block_reflection && !npc_reflection) // GOES TO ENEMY
 	{
-		gentity_t* attacker;
+		gentity_t* attacker = nullptr;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
@@ -1187,7 +1187,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 	}
 	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection) // GOES TO ENEMY
 	{
-		gentity_t* enemy;
+		gentity_t* enemy = nullptr;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
@@ -1297,7 +1297,7 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 		else // deflect off at an angle toward crosshair
 		{
 			vec3_t deflect_dir, missile_dir;
-			float  force_factor;
+			float  force_factor = 0.0f;
 
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, deflect_dir);
 			VectorCopy(missile->s.pos.trDelta, missile_dir);
@@ -3257,14 +3257,14 @@ constexpr auto BUMPCLIP = 1.5f;
 
 static void G_RollMissile(gentity_t* ent)
 {
-	int numPlanes;
+	int numPlanes = 0;
 	vec3_t planes[MAX_CLIP_PLANES]{};
 	vec3_t primal_velocity;
-	int i;
+	int i = 0;
 	trace_t trace;
 	vec3_t end_velocity;
 	pml_t objPML;
-	float bounceAmt;
+	float bounceAmt = 0.0f;
 
 	memset(&objPML, 0, sizeof objPML);
 
@@ -4126,7 +4126,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			VectorNormalize(missile_dir);
 			VectorNormalize(deflect_dir);
 
-			float force_factor;
+			float force_factor = 0.0f;
 			switch (G_GetDefenseLevel(blocker))
 			{
 			case FORCE_LEVEL_1: force_factor = 2.0f; break;
@@ -4243,7 +4243,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 	// INITIAL SETUP
 	// -----------------------------------------------------------------
 	vec3_t bounce_dir;
-	int i;
+	int i = 0;
 	qboolean saber_block_reflection = qfalse;
 	qboolean bolt_block_reflection = qfalse;
 	qboolean npc_reflection = qfalse;
@@ -4369,7 +4369,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		}
 
 		// Force point cost
-		int force_points_used_used;
+		int force_points_used_used = 0;
 
 		if (accurate_missile_blocking)
 		{
@@ -4396,7 +4396,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 	// -----------------------------------------------------------------
 	else if (bolt_block_reflection && !npc_reflection)
 	{
-		gentity_t* attacker;
+		gentity_t* attacker = nullptr;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
@@ -4463,7 +4463,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 			}
 
 			// Force point cost
-			int force_points_used_used;
+			int force_points_used_used = 0;
 
 			if (accurate_missile_blocking)
 			{
@@ -4496,7 +4496,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 	// -----------------------------------------------------------------
 	else if (npc_reflection && !saber_block_reflection && !bolt_block_reflection)
 	{
-		gentity_t* enemy;
+		gentity_t* enemy = nullptr;
 
 		if (blocker->enemy && Q_irand(0, 3))
 		{
@@ -4567,7 +4567,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 				}
 			}
 
-			int force_points_used_used;
+			int force_points_used_used = 0;
 
 			if (accurate_missile_blocking)
 			{
@@ -4626,7 +4626,7 @@ static void wp_handle_bolt_block_sje_forcepoints(gentity_t* ent, gentity_t* miss
 		else
 		{
 			vec3_t deflect_dir, missile_dir;
-			float force_factor;
+			float force_factor = 0.0f;
 
 			VectorSubtract(g_crosshairWorldCoord, missile->currentOrigin, deflect_dir);
 			VectorCopy(missile->s.pos.trDelta, missile_dir);

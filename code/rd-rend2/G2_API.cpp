@@ -335,7 +335,7 @@ static size_t GetSizeOfGhoul2Info(const CGhoul2Info& g2Info)
 static size_t SerializeGhoul2Info(char* buffer, const CGhoul2Info& g2Info)
 {
 	char* base = buffer;
-	size_t blockSize;
+	size_t blockSize = 0;
 
 	// Oh the ugliness...
 	blockSize = offsetof(CGhoul2Info, mTransformedVertsArray) - offsetof(CGhoul2Info, mModelindex);
@@ -433,7 +433,7 @@ class Ghoul2InfoArray : public IGhoul2InfoArray
 public:
 	Ghoul2InfoArray()
 	{
-		int i;
+		int i = 0;
 		for (i = 0; i < MAX_G2_MODELS; i++)
 		{
 			m_ids_[i] = MAX_G2_MODELS + i;
@@ -496,7 +496,7 @@ public:
 	size_t Deserialize(const char* buffer, size_t size)
 	{
 		const char* base = buffer;
-		size_t count;
+		size_t count = 0;
 
 		// Free indices
 		count = *(int*)buffer;
@@ -720,7 +720,7 @@ void RestoreGhoul2InfoArray()
 	// into the wrong list (crash in G2API_AttachG2Model / G2_GetBoltMatrixLow).
 	TheGhoul2InfoArray();
 
-	size_t size;
+	size_t size = 0;
 	const void* data = ri.PD_Load(PERSISTENT_G2DATA, &size);
 	if (data == nullptr)
 	{
@@ -1092,9 +1092,9 @@ static qboolean G2API_DoesBoneExist(CGhoul2Info_v& ghoul2, const int modelIndex,
 		mdxaHeader_t* mdxa = ghlInfo->currentModel->data.gla;
 		if (mdxa)
 		{ //get the skeleton data and iterate through the bones
-			int i;
-			mdxaSkel_t* skel;
-			mdxaSkelOffsets_t* offsets;
+			int i = 0;
+			mdxaSkel_t* skel = nullptr;
+			mdxaSkelOffsets_t* offsets = nullptr;
 
 			offsets = (mdxaSkelOffsets_t*)((byte*)mdxa + sizeof(mdxaHeader_t));
 
@@ -1345,7 +1345,7 @@ qboolean G2API_GetBoneAnimIndex(CGhoul2Info* ghlInfo, const int iBoneIndex, cons
 				"GetBoneAnim on non-animating bone.");
 			if (ghlInfo->mBlist[iBoneIndex].flags & (BONE_ANIM_OVERRIDE_LOOP | BONE_ANIM_OVERRIDE))
 			{
-				int sf, ef;
+				int sf = 0, ef = 0;
 				ret = G2_Get_Bone_Anim_Index(ghlInfo->mBlist, // boneInfo_v &blist,
 					iBoneIndex, // const int index,
 					currentTime, // const int currentTime,
@@ -1659,7 +1659,7 @@ qboolean G2API_RemoveBone(CGhoul2Info* ghlInfo, const char* boneName)
 // This is G2API_AnimateG2Models
 void G2API_AnimateG2ModelsRag(CGhoul2Info_v& ghoul2, const int acurrent_time, CRagDollUpdateParams* params)
 {
-	int model;
+	int model = 0;
 	int currentTime = G2API_GetTime(acurrent_time);
 
 	// Walk the list and find all models that are active
@@ -2298,7 +2298,7 @@ char* G2API_GetSurfaceName(CGhoul2Info* ghlInfo, const int surfNumber)
 		model_t* mod = (model_t*)ghlInfo->currentModel;
 		mdxmSurface_t* surf = 0;
 		mdxmSurfHierarchy_t* surfInfo = 0;
-		mdxmHeader_t* mdxm;
+		mdxmHeader_t* mdxm = nullptr;
 
 		mdxm = mod->data.glm->header;
 
@@ -2402,8 +2402,8 @@ static qboolean G2API_SkinlessModel(CGhoul2Info_v& ghoul2, int modelIndex)
 			mod->data.glm &&
 			mod->data.glm->header)
 		{
-			mdxmSurfHierarchy_t* surf;
-			int i;
+			mdxmSurfHierarchy_t* surf = nullptr;
+			int i = 0;
 			mdxmHeader_t* mdxm = mod->data.glm->header;
 
 			surf = (mdxmSurfHierarchy_t*)((byte*)mdxm + mdxm->ofsSurfHierarchy);
@@ -2497,7 +2497,7 @@ void G2API_AddSkinGore(CGhoul2Info_v& ghoul2, SSkinGoreData& gore)
 		TransformPoint(t, gore.uaxis, &worldMatrixInv);
 	}
 
-	int lod;
+	int lod = 0;
 	ResetGoreTag();
 	const int lodbias = Com_Clamp(0, 2, G2_DecideTraceLod(ghoul2[0], r_lodbias->integer));
 	const int maxLod = Com_Clamp(0, ghoul2[0].currentModel->numLods, 3);	//limit to the number of lods the main model has

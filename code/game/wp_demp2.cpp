@@ -87,7 +87,7 @@ void DEMP2_AltRadiusDamage(gentity_t* ent)
 {
 	float frac = (level.time - ent->fx_time) / 1300.0f; // synchronize with demp2 effect
 	static gentity_t* entity_list[MAX_GENTITIES];
-	int i;
+	int i = 0;
 	vec3_t mins{}, maxs{};
 	vec3_t v{}, dir;
 

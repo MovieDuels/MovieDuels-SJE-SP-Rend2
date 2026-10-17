@@ -144,7 +144,7 @@ extern "C" Q_EXPORT intptr_t QDECL vmMain(const intptr_t command, const intptr_t
 	intptr_t arg3,
 	intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7)
 {
-	centity_t* cent;
+	centity_t* cent = nullptr;
 
 	switch (command)
 	{
@@ -800,8 +800,8 @@ CG_RegisterCvars
 */
 static void CG_RegisterCvars()
 {
-	size_t i;
-	cvarTable_t* cv;
+	size_t i = 0;
+	cvarTable_t* cv = nullptr;
 
 	for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++)
 	{
@@ -820,8 +820,8 @@ CG_UpdateCvars
 */
 void CG_UpdateCvars()
 {
-	size_t i;
-	cvarTable_t* cv;
+	size_t i = 0;
+	cvarTable_t* cv = nullptr;
 
 	for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++)
 	{
@@ -1044,7 +1044,7 @@ called during a precache command
 */
 static void CG_RegisterSounds()
 {
-	int i;
+	int i = 0;
 
 	CG_AS_Register();
 
@@ -1464,8 +1464,8 @@ extern cvar_t* g_delayedShutdown;
 
 static void CG_RegisterEffects()
 {
-	char* effectName;
-	int i, numFailed = 0;
+	char* effectName = nullptr;
+	int i = 0, numFailed = 0;
 
 	// Register external effects
 	for (i = 1; i < MAX_FX; i++)
@@ -2173,7 +2173,7 @@ void CG_CreateMiscEnts();
 
 static void CG_RegisterGraphics()
 {
-	int i;
+	int i = 0;
 	char items[MAX_ITEMS + 1];
 	const char* sb_nums[11] = {
 		"gfx/2d/numbers/zero",
@@ -2894,7 +2894,7 @@ static void CG_RegisterGraphics()
 	for (i = 1; i < MAX_SUB_BSP; i++)
 	{
 		vec3_t mins, maxs;
-		int j;
+		int j = 0;
 
 		const char* bspName = CG_ConfigString(CS_BSP_MODELS + i);
 		if (!bspName[0])
@@ -2994,7 +2994,7 @@ CG_StartMusic
 */
 void CG_StartMusic(const qboolean bForceStart)
 {
-	const char* s;
+	const char* s = nullptr;
 	char parm1[MAX_QPATH], parm2[MAX_QPATH];
 
 	// start the background music
@@ -3759,8 +3759,8 @@ constexpr auto MAX_MENUDEFFILE = 4096;
 //
 static qboolean CG_Asset_Parse(const char** p)
 {
-	const char* tempStr;
-	int pointSize;
+	const char* tempStr = nullptr;
+	int pointSize = 0;
 
 	const char* token = COM_ParseExt(p, qtrue);
 
@@ -3830,7 +3830,7 @@ static qboolean CG_Asset_Parse(const char** p)
 		// font
 		if (Q_stricmp(token, "bigfont") == 0)
 		{
-			int point_size;
+			int point_size = 0;
 			if (!COM_ParseString(p, &tempStr) || !COM_ParseInt(p, &point_size))
 			{
 				return qfalse;
@@ -4064,8 +4064,8 @@ CG_ParseMenu();
 */
 static void CG_ParseMenu(const char* menuFile)
 {
-	char* token;
-	char* buf;
+	char* token = nullptr;
+	char* buf = nullptr;
 
 	//Com_Printf("Parsing menu file:%s\n", menuFile);
 
@@ -4173,8 +4173,8 @@ CG_LoadMenus();
 */
 void CG_LoadMenus(const char* menuFile)
 {
-	const char* p;
-	fileHandle_t f;
+	const char* p = nullptr;
+	fileHandle_t f = 0;
 	char buf[MAX_MENUDEFFILE];
 
 	//start = cgi_Milliseconds();
@@ -4501,9 +4501,9 @@ CG_DrawInventorySelect
 */
 void CG_DrawInventorySelect()
 {
-	int i;
-	int iconCnt;
-	int sideLeftIconCnt, sideRightIconCnt;
+	int i = 0;
+	int iconCnt = 0;
+	int sideLeftIconCnt = 0, sideRightIconCnt = 0;
 	constexpr vec4_t textColor = { .312f, .75f, .621f, 1.0f };
 	char text[1024] = { 0 };
 
@@ -4537,7 +4537,7 @@ void CG_DrawInventorySelect()
 		return;
 	}
 
-	int x2, y2, w2, h2;
+	int x2 = 0, y2 = 0, w2 = 0, h2 = 0;
 	if (!cgi_UI_GetMenuInfo("inventoryselecthud", &x2, &y2, &w2, &h2))
 	{
 		return;
@@ -4716,7 +4716,7 @@ void cg_draw_inventory_select_side()
 		return;
 	}
 
-	int x2, y2, w2, h2;
+	int x2 = 0, y2 = 0, w2 = 0, h2 = 0;
 	if (!cgi_UI_GetMenuInfo("inventoryselecthud", &x2, &y2, &w2, &h2))
 	{
 		return;
@@ -4777,7 +4777,7 @@ void CG_DrawInventorySelect_text()
 		return;
 	}
 
-	int x2, y2, w2, h2;
+	int x2 = 0, y2 = 0, w2 = 0, h2 = 0;
 	if (!cgi_UI_GetMenuInfo("inventoryselecthud", &x2, &y2, &w2, &h2))
 	{
 		return;
@@ -4878,9 +4878,9 @@ CG_DrawDataPadInventorySelect
 */
 void CG_DrawDataPadInventorySelect()
 {
-	int i;
-	int iconCnt;
-	int sideLeftIconCnt, sideRightIconCnt;
+	int i = 0;
+	int iconCnt = 0;
+	int sideLeftIconCnt = 0, sideRightIconCnt = 0;
 	char text[1024] = { 0 };
 	constexpr vec4_t textColor = { .312f, .75f, .621f, 1.0f };
 
@@ -5346,13 +5346,13 @@ CG_DrawForceSelect
 */
 void CG_DrawForceSelect()
 {
-	int i;
-	int sideLeftIconCnt, sideRightIconCnt;
-	int iconCnt;
+	int i = 0;
+	int sideLeftIconCnt = 0, sideRightIconCnt = 0;
+	int iconCnt = 0;
 	char text[1024] = { 0 };
 	constexpr int yOffset = 0;
-	int sideMax;
-	int smallIconSize, bigIconSize;
+	int sideMax = 0;
+	int smallIconSize = 0, bigIconSize = 0;
 
 	// don't display if dead
 	if (cg.predictedPlayerState.stats[STAT_HEALTH] <= 0 || cg.snap->ps.viewEntity > 0 && cg.snap->ps.viewEntity <
@@ -5867,9 +5867,9 @@ CG_DrawDataPadForceSelect
 */
 void CG_DrawDataPadForceSelect()
 {
-	int i;
-	int sideLeftIconCnt, sideRightIconCnt;
-	int iconCnt;
+	int i = 0;
+	int sideLeftIconCnt = 0, sideRightIconCnt = 0;
+	int iconCnt = 0;
 	char text[1024] = { 0 };
 	char text2[1024] = { 0 };
 
@@ -6610,7 +6610,7 @@ void CG_DrawMDWheel()
 		const float a = 2.0f * static_cast<float>(M_PI) * static_cast<float>(n) / static_cast<float>(mdWheel.numItems);
 		const float size = n == mdWheel.hover ? iconSize * MDW_ICON_HOVER / MDW_ICON : iconSize;
 		const float x = mx + sinf(a) * MDW_RADIUS * ax, y = my - cosf(a) * MDW_RADIUS;
-		qhandle_t icon;
+		qhandle_t icon = 0;
 		vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		if (mdWheel.ring == 0)

@@ -39,9 +39,9 @@ portable C
 /*-------------------------------------------------------------------------*/
 void window(const float* vbuf, const int vb_ptr, short* pcm)
 {
-	int i, j;
-	float sum;
-	long tmp;
+	int i = 0, j = 0;
+	float sum = 0.0f;
+	long tmp = 0;
 
 	int si = vb_ptr + 16;
 	int bx = (si + 32) & 511;
@@ -106,9 +106,9 @@ void window(const float* vbuf, const int vb_ptr, short* pcm)
 /*------------------------------------------------------------*/
 void window_dual(const float* vbuf, const int vb_ptr, short* pcm)
 {
-	int i, j; /* dual window interleaves output */
-	float sum;
-	long tmp;
+	int i = 0, j = 0; /* dual window interleaves output */
+	float sum = 0.0f;
+	long tmp = 0;
 
 	int si = vb_ptr + 16;
 	int bx = (si + 32) & 511;
@@ -177,9 +177,9 @@ void window_dual(const float* vbuf, const int vb_ptr, short* pcm)
 /*------------------- 16 pt window ------------------------------*/
 void window16(const float* vbuf, const int vb_ptr, short* pcm)
 {
-	int i, j;
-	float sum;
-	long tmp;
+	int i = 0, j = 0;
+	float sum = 0.0f;
+	long tmp = 0;
 
 	unsigned char si = vb_ptr + 8;
 	unsigned char bx = si + 16;
@@ -246,9 +246,9 @@ void window16(const float* vbuf, const int vb_ptr, short* pcm)
 /*--------------- 16 pt dual window (interleaved output) -----------------*/
 void window16_dual(const float* vbuf, const int vb_ptr, short* pcm)
 {
-	int i, j;
-	float sum;
-	long tmp;
+	int i = 0, j = 0;
+	float sum = 0.0f;
+	long tmp = 0;
 
 	unsigned char si = vb_ptr + 8;
 	unsigned char bx = si + 16;
@@ -318,9 +318,9 @@ void window16_dual(const float* vbuf, const int vb_ptr, short* pcm)
 /*------------------- 8 pt window ------------------------------*/
 void window8(const float* vbuf, const int vb_ptr, short* pcm)
 {
-	int i, j;
-	float sum;
-	long tmp;
+	int i = 0, j = 0;
+	float sum = 0.0f;
+	long tmp = 0;
 
 	int si = vb_ptr + 4;
 	int bx = (si + 8) & 127;
@@ -387,9 +387,9 @@ void window8(const float* vbuf, const int vb_ptr, short* pcm)
 /*--------------- 8 pt dual window (interleaved output) -----------------*/
 void window8_dual(const float* vbuf, const int vb_ptr, short* pcm)
 {
-	int i, j;
-	float sum;
-	long tmp;
+	int i = 0, j = 0;
+	float sum = 0.0f;
+	long tmp = 0;
 
 	int si = vb_ptr + 4;
 	int bx = (si + 8) & 127;

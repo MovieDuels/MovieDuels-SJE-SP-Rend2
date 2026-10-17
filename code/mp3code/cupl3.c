@@ -266,7 +266,7 @@ unsigned int bitget_1bit()
 /*====================================================================*/
 static void Xform_mono(void* pcm, const int igr)
 {
-	int n2;
+	int n2 = 0;
 
 	/*--- hybrid + sbt ---*/
 	int n1 = n2 = nsamp[igr][0]; /* total number bands */
@@ -292,7 +292,7 @@ static void Xform_mono(void* pcm, const int igr)
 /*--------------------------------------------------------------------*/
 static void Xform_dual_right(void* pcm, const int igr)
 {
-	int n2;
+	int n2 = 0;
 
 	/*--- hybrid + sbt ---*/
 	int n1 = n2 = nsamp[igr][1]; /* total number bands */
@@ -317,7 +317,7 @@ static void Xform_dual_right(void* pcm, const int igr)
 /*--------------------------------------------------------------------*/
 static void Xform_dual(void* pcm, const int igr)
 {
-	int n2;
+	int n2 = 0;
 
 	/*--- hybrid + sbt ---*/
 	const int igr_prev = igr ^ 1;
@@ -345,7 +345,7 @@ static void Xform_dual(void* pcm, const int igr)
 /*--------------------------------------------------------------------*/
 static void Xform_dual_mono(void* pcm, const int igr)
 {
-	int n1, n2, n3;
+	int n1 = 0, n2 = 0, n3 = 0;
 
 	/*--- hybrid + sbt ---*/
 	const int igr_prev = igr ^ 1;
@@ -401,8 +401,8 @@ static void Xform_dual_mono(void* pcm, const int igr)
 /*====================================================================*/
 static int unpack_side_MPEG1()
 {
-	int ch;
-	int side_bytes;
+	int ch = 0;
+	int side_bytes = 0;
 
 	/* decode partial header plus initial side info */
 	/* at entry bit getter points at id, sync skipped by caller */
@@ -509,7 +509,7 @@ static int unpack_side_MPEG1()
 /*====================================================================*/
 static int unpack_side_MPEG2(const int igr)
 {
-	int side_bytes;
+	int side_bytes = 0;
 
 	/* decode partial header plus initial side info */
 	/* at entry bit getter points at id, sync skipped by caller */
@@ -634,8 +634,8 @@ static int unpack_side_MPEG2(const int igr)
 /*-----------------------------------------------------------------*/
 static void unpack_main(unsigned char* pcm, const int igr)
 {
-	int ch;
-	int n1;
+	int ch = 0;
+	int n1 = 0;
 
 	for (ch = 0; ch < pMP3Stream->nchan; ch++)
 	{
@@ -701,7 +701,7 @@ static void unpack_main(unsigned char* pcm, const int igr)
 	/*--- ms stereo processing  ---*/
 	if (pMP3Stream->ms_mode)
 	{
-		int m0;
+		int m0 = 0;
 		if (pMP3Stream->is_mode == 0)
 		{
 			m0 = nsamp[igr][0]; /* process to longer of left/right */
@@ -1094,7 +1094,7 @@ int L3audio_decode_init(const MPEG_HEAD* h, const int framebytes_arg,
 	int reduction_code, int transform_code, int convert_code,
 	int freq_limit)
 {
-	int i;
+	int i = 0;
 
 	pMP3Stream->buf_ptr0 = 0;
 	pMP3Stream->buf_ptr1 = 0;

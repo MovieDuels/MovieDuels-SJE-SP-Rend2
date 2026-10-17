@@ -126,8 +126,8 @@ A NULL client will broadcast to all clients.
 void SV_SendServerCommand(client_t* cl, const char* fmt, ...)
 {
 	va_list argptr;
-	client_t* client;
-	int j;
+	client_t* client = nullptr;
+	int j = 0;
 
 	byte* message = static_cast<byte*>(malloc(MAX_MSGLEN));
 	if (message == nullptr)
@@ -354,8 +354,8 @@ SV_ReadPackets
 */
 void SV_PacketEvent(const netadr_t from, msg_t* msg)
 {
-	int i;
-	client_t* cl;
+	int i = 0;
+	client_t* cl = nullptr;
 
 	// check for connectionless packet (0xffffffff) first
 	if (msg->cursize >= 4 && *reinterpret_cast<int*>(msg->data) == -1)

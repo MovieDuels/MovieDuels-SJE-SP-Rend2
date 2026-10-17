@@ -52,7 +52,7 @@ qboolean CG_IsFemale(const char* infostring)
 const char* CG_PlaceString(int rank)
 {
 	static char str[64];
-	char* s, * t;
+	char* s = nullptr, * t = nullptr;
 
 	if (rank & RANK_TIED_FLAG)
 	{
@@ -387,7 +387,7 @@ extern void cancel_firing(gentity_t* ent);
 
 void CG_EntityEvent(centity_t* cent, vec3_t position)
 {
-	const char* s;
+	const char* s = nullptr;
 	vec3_t dir;
 
 	entityState_t* es = &cent->currentState;
@@ -505,7 +505,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 	case EV_STEP_16: // smooth out step up transitions
 		DEBUGNAME("EV_STEP");
 		{
-			float old_step;
+			float old_step = 0.0f;
 
 			if (clientNum != cg.predictedPlayerState.clientNum)
 			{
@@ -897,10 +897,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 		DEBUGNAME("EV_DISINTEGRATION");
 		qboolean make_not_solid;
 		const int disint_pw = es->eventParm;
-		int disint_effect;
-		int disint_length;
-		qhandle_t disint_sound1;
-		qhandle_t disint_sound2;
+		int disint_effect = 0;
+		int disint_length = 0;
+		qhandle_t disint_sound1 = 0;
+		qhandle_t disint_sound2 = 0;
 
 		switch (disint_pw)
 		{
@@ -1064,7 +1064,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 
 	case EV_PAIN:
 	{
-		char* snd;
+		char* snd = nullptr;
 		const int health = es->eventParm;
 
 		if (cent->gent && cent->gent->NPC && cent->gent->NPC->aiFlags & NPCAI_DIE_ON_IMPACT)
@@ -1188,7 +1188,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position)
 
 			if (s && s[0])
 			{
-				const char* s2;
+				const char* s2 = nullptr;
 				if (cent->gent->delay)
 				{
 					s2 = CG_ConfigString(CS_EFFECTS + cent->gent->delay);

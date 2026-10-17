@@ -453,7 +453,7 @@ model_t* R_GetAnimModelByHandle(const CGhoul2Info* ghlInfo, qhandle_t index)
 		return tr.models[0];
 	}
 
-	model_t* mod;
+	model_t* mod = nullptr;
 
 	if (ghlInfo->animModelIndexOffset)
 	{
@@ -561,11 +561,11 @@ asked for again.
 */
 static qhandle_t RE_RegisterModel_Actual(const char* name)
 {
-	model_t* mod;
+	model_t* mod = nullptr;
 	unsigned* buf = nullptr;
-	int			lod;
+	int			lod = 0;
 	qboolean	loaded;
-	modelHash_t* mh;
+	modelHash_t* mh = nullptr;
 	/*
 	Ghoul2 Insert End
 	*/
@@ -795,12 +795,12 @@ R_LoadMD3
 */
 static qboolean R_LoadMD3(model_t* mod, int lod, void* buffer, const char* name, qboolean& bAlreadyCached)
 {
-	int j;
-	md3Header_t* pinmodel;
-	md3Surface_t* surf;
-	md3Shader_t* shader;
-	int					version;
-	int					size;
+	int j = 0;
+	md3Header_t* pinmodel = nullptr;
+	md3Surface_t* surf = nullptr;
+	md3Shader_t* shader = nullptr;
+	int					version = 0;
+	int					size = 0;
 
 #ifdef Q3_BIG_ENDIAN
 	md3Frame_t* frame;
@@ -1029,8 +1029,8 @@ R_Modellist_f
 ================
 */
 void R_Modellist_f() {
-	int j;
-	int		lods;
+	int j = 0;
+	int		lods = 0;
 
 	int total = 0;
 	for (int i = 1; i < tr.numModels; i++) {
@@ -1111,10 +1111,10 @@ R_LerpTag
 */
 int	R_LerpTag(orientation_t* tag, const qhandle_t handle, const int startFrame, const int endFrame, const float frac, const char* tagName)
 {
-	md3Tag_t* start, * finish;
-	int		i;
-	float		frontLerp, backLerp;
-	model_t* model;
+	md3Tag_t* start = nullptr, * finish = nullptr;
+	int		i = 0;
+	float		frontLerp = 0.0f, backLerp = 0.0f;
+	model_t* model = nullptr;
 
 	model = R_GetModelByHandle(handle);
 	if (model->md3[0])

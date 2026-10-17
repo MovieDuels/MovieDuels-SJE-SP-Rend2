@@ -1003,7 +1003,7 @@ static void Route_Load(const qboolean report)
 
 static void Route_Save()
 {
-	fileHandle_t f;
+	fileHandle_t f = 0;
 	gi.FS_FOpenFile(Route_FileName(), &f, FS_WRITE);
 	if (!f)
 	{
@@ -1403,7 +1403,7 @@ static qboolean Fighter_HangarExit(const gentity_t* ship, const Vehicle_t* p_veh
 	vec3_t want;
 	VectorCopy(out_dir, want);
 	float step = max_step;
-	int cruise; // the speed it leaves at: slow enough to climb out of the trench before its far wall
+	int cruise = 0; // the speed it leaves at: slow enough to climb out of the trench before its far wall
 	if (tr.fraction < 1.0f)
 	{
 		// under the hangar's roof: straight on out

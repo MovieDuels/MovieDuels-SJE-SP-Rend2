@@ -905,9 +905,9 @@ R_AComputeFogNum
 =================
 */
 static int R_GComputeFogNum(const trRefEntity_t* ent) {
-	int				i, j = 0;
-	float			frameRadius;
-	fog_t* fog;
+	int				i = 0, j = 0;
+	float			frameRadius = 0.0f;
+	fog_t* fog = nullptr;
 	vec3_t			localOrigin;
 
 	if (tr.refdef.rdflags & RDF_NOWORLDMODEL) {
@@ -970,9 +970,9 @@ static int R_GComputeFogNum(const trRefEntity_t* ent) {
 // work out lod for this entity.
 static int G2_ComputeLOD(trRefEntity_t* ent, const model_t* currentModel, int lodBias)
 {
-	float flod, lodscale;
-	float projectedRadius;
-	int lod;
+	float flod = 0.0f, lodscale = 0.0f;
+	float projectedRadius = 0.0f;
+	int lod = 0;
 
 	if (currentModel->numLods < 2)
 	{	// model has only 1 LOD level, skip computations and bias
@@ -1052,7 +1052,7 @@ static void G2_CreateQuaterion(const mdxaBone_t* mat, vec4_t quat)
 {
 	// this is revised for the 3x4 matrix we use in G2.
 	float t = 1 + mat->matrix[0][0] + mat->matrix[1][1] + mat->matrix[2][2];
-	float s;
+	float s = 0.0f;
 
 	// If the trace of the matrix is greater than zero, then
 	// perform an "instant" calculation.
@@ -1265,7 +1265,7 @@ void G2_TimingModel(
 	// Compute time in "frames" based on animSpeed and startTime
 	// --------------------------------------------------------
 	const float animSpeed = bone.animSpeed;
-	float time;
+	float time = 0.0f;
 
 	if (bone.pauseTime != 0)
 	{
@@ -1544,12 +1544,12 @@ int G2_Find_Bone(const model_t* mod, boneInfo_v& blist, const char* boneName);
 void G2_RagGetAnimMatrix(CGhoul2Info& ghoul2, const int bone_num, mdxaBone_t& matrix, const int frame)
 {
 	mdxaBone_t animMatrix{};
-	mdxaSkel_t* skel;
-	mdxaSkel_t* pskel;
-	mdxaSkelOffsets_t* offsets;
-	int parent;
-	int bListIndex;
-	int parentBlistIndex;
+	mdxaSkel_t* skel = nullptr;
+	mdxaSkel_t* pskel = nullptr;
+	mdxaSkelOffsets_t* offsets = nullptr;
+	int parent = 0;
+	int bListIndex = 0;
+	int parentBlistIndex = 0;
 #ifdef _RAG_PRINT_TEST
 	bool actuallySet = false;
 #endif
@@ -2168,10 +2168,10 @@ static void G2_ProcessSurfaceBolt(
 	surfaceInfo_t* surfInfo,
 	model_t* mod)
 {
-	mdxmVertex_t* v, * vert0, * vert1, * vert2;
+	mdxmVertex_t* v = nullptr, * vert0 = nullptr, * vert1 = nullptr, * vert2 = nullptr;
 	vec3_t axes[3], sides[3];
-	float pTri[3][3], d;
-	int j, k;
+	float pTri[3][3], d = 0.0f;
+	int j = 0, k = 0;
 
 	// now there are two types of tag surface - model ones and procedural
 	// generated types - lets decide which one we have here.
@@ -2459,7 +2459,7 @@ static void RenderSurfaces(CRenderSurface& RS, const trRefEntity_t* ent, int ent
 	G2PerformanceTimer_RenderSurfaces.Start();
 #endif
 
-	int i;
+	int i = 0;
 	const shader_t* shader = 0;
 	int offFlags = 0;
 #ifdef _G2_GORE
@@ -2497,7 +2497,7 @@ static void RenderSurfaces(CRenderSurface& RS, const trRefEntity_t* ent, int ent
 		}
 		else if (RS.skin)
 		{
-			int		j;
+			int		j = 0;
 
 			// match the surface name to something in the skin file
 			shader = R_GetShaderByHandle(surfInfo->shaderIndex);
@@ -2517,7 +2517,7 @@ static void RenderSurfaces(CRenderSurface& RS, const trRefEntity_t* ent, int ent
 		}
 
 		// Get dlightBits and Cubemap
-		float radius;
+		float radius = 0.0f;
 		// scale the radius if needed
 		float largestScale = MAX(ent->e.modelScale[0], MAX(ent->e.modelScale[1], ent->e.modelScale[2]));
 		radius = ent->e.radius * largestScale;
@@ -2598,7 +2598,7 @@ static void RenderSurfaces(CRenderSurface& RS, const trRefEntity_t* ent, int ent
 									kcur->second.mGoreGrowOffset));
 						}
 #endif
-						shader_t* gshader;
+						shader_t* gshader = nullptr;
 						if (kcur->second.shader)
 						{
 							gshader = R_GetShaderByHandle(kcur->second.shader);
@@ -2744,7 +2744,7 @@ void ProcessModelBoltSurfaces(
 // build the used bone list so when doing bone transforms we can determine if we need to do it or not
 void G2_ConstructUsedBoneList(CConstructBoneList& CBL)
 {
-	int	 		i, j;
+	int	 		i = 0, j = 0;
 	int			offFlags = 0;
 	mdxmHeader_t* mdxm = CBL.currentModel->data.glm->header;
 
@@ -2759,7 +2759,7 @@ void G2_ConstructUsedBoneList(CConstructBoneList& CBL)
 	const model_t* mod_a = R_GetModelByHandle(mdxm->animIndex);
 	mdxaHeader_t* mdxa = mod_a->data.gla;
 	const mdxaSkelOffsets_t* offsets = (mdxaSkelOffsets_t*)((byte*)mdxa + sizeof(mdxaHeader_t));
-	const mdxaSkel_t* skel, * childSkel;
+	const mdxaSkel_t* skel = nullptr, * childSkel = nullptr;
 
 	// see if we have an override surface in the surface list
 	const surfaceInfo_t* surfOverride = G2_FindOverrideSurface(CBL.surfaceNum, CBL.rootSList);
@@ -2929,7 +2929,7 @@ static void* G2_FindSurface_BC(const model_s* mod, int index, int lod)
 
 	// point at first lod list
 	byte* current = (byte*)((intptr_t)mdxm + (intptr_t)mdxm->ofsLODs);
-	int i;
+	int i = 0;
 
 	//walk the lods
 	assert(lod >= 0 && lod < mdxm->numLODs);
@@ -3328,7 +3328,7 @@ void R_AddGhoulSurfaces(trRefEntity_t* ent, int entityNum)
 	int fogNum = R_GComputeFogNum(ent);
 
 	// order sort the ghoul 2 models so bolt ons get bolted to the right model
-	int modelCount;
+	int modelCount = 0;
 	G2_Sort_Models(ghoul2, model_list, ARRAY_LEN(model_list), &modelCount);
 	assert(model_list[255] == 548);
 
@@ -3479,7 +3479,7 @@ void G2_ConstructGhoulSkeleton(
 #ifdef G2_PERFORMANCE_ANALYSIS
 	G2PerformanceTimer_G2_ConstructGhoulSkeleton.Start();
 #endif
-	int modelCount;
+	int modelCount = 0;
 	mdxaBone_t rootMatrix;
 	int model_list[256]{};
 
@@ -3543,7 +3543,7 @@ void G2_ConstructGhoulSkeleton(
 
 static inline float G2_GetVertBoneWeightNotSlow(const mdxmVertex_t* pVert, const int iWeightNum)
 {
-	float fBoneWeight;
+	float fBoneWeight = 0.0f;
 
 	int iTemp = pVert->BoneWeightings[iWeightNum];
 
@@ -3588,7 +3588,7 @@ void RB_TransformBones(const trRefEntity_t* ent, const trRefdef_t* refdef, int c
 	model_list[255] = 548;
 
 	// order sort the ghoul 2 models so bolt ons get bolted to the right model
-	int modelCount;
+	int modelCount = 0;
 	G2_Sort_Models(ghoul2, model_list, ARRAY_LEN(model_list), &modelCount);
 	assert(model_list[255] == 548);
 
@@ -3805,8 +3805,8 @@ void RB_SurfaceGhoul(CRenderableSurface* surf)
 #ifdef _G2_GORE
 	}
 #endif
-	int i, mergeForward, mergeBack;
-	GLvoid* firstIndexOffset, * lastIndexOffset;
+	int i = 0, mergeForward = 0, mergeBack = 0;
+	GLvoid* firstIndexOffset = nullptr, * lastIndexOffset = nullptr;
 
 	// merge this into any existing multidraw primitives
 	mergeForward = -1;
@@ -4042,13 +4042,13 @@ int NewToOldRemapTable[53] = {
 
 qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached)
 {
-	int					i, l, j;
-	mdxmHeader_t* pinmodel, * mdxm;
-	mdxmLOD_t* lod;
-	mdxmSurface_t* surf;
-	int					version;
-	int					size;
-	mdxmSurfHierarchy_t* surfInfo;
+	int					i = 0, l = 0, j = 0;
+	mdxmHeader_t* pinmodel = nullptr, * mdxm = nullptr;
+	mdxmLOD_t* lod = nullptr;
+	mdxmSurface_t* surf = nullptr;
+	int					version = 0;
+	int					size = 0;
+	mdxmSurfHierarchy_t* surfInfo = nullptr;
 
 	pinmodel = static_cast<mdxmHeader_t*>(buffer);
 	//
@@ -4118,7 +4118,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	}
 
 	char  animGLAName[MAX_QPATH];
-	char* strippedName;
+	char* strippedName = nullptr;
 	char* slash = NULL;
 	const char* mapname = sv_mapname->string;
 
@@ -4205,7 +4205,7 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 			LL(surfInfo->childIndexes[j]);
 		}
 
-		shader_t* sh;
+		shader_t* sh = nullptr;
 		// get the shader name
 		sh = R_FindShader(surfInfo->shader, lightmapsNone, stylesDefault, qtrue);
 		// insert it in the surface list
@@ -4312,18 +4312,18 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 	for (l = 0; l < mdxm->numLODs; l++)
 	{
 		mdxmVBOModel_t* vboModel = &mod->data.glm->vboModels[l];
-		mdxmVBOMesh_t* vboMeshes;
+		mdxmVBOMesh_t* vboMeshes = nullptr;
 
-		vec3_t* verts;
-		uint32_t* normals;
-		vec2_t* texcoords;
-		byte* bonerefs;
-		byte* weights;
-		uint32_t* tangents;
+		vec3_t* verts = nullptr;
+		uint32_t* normals = nullptr;
+		vec2_t* texcoords = nullptr;
+		byte* bonerefs = nullptr;
+		byte* weights = nullptr;
+		uint32_t* tangents = nullptr;
 
-		byte* data;
+		byte* data = nullptr;
 		int dataSize = 0;
-		int ofsPosition, ofsNormals, ofsTexcoords, ofsBoneRefs, ofsWeights, ofsTangents, ofsColor, ofsLMCoords, ofsLightDir;
+		int ofsPosition = 0, ofsNormals = 0, ofsTexcoords = 0, ofsBoneRefs = 0, ofsWeights = 0, ofsTangents = 0, ofsColor = 0, ofsLMCoords = 0, ofsLightDir = 0;
 		int stride = 0;
 		int numVerts = 0;
 		int numTriangles = 0;
@@ -4825,9 +4825,9 @@ R_LoadMDXA - load a Ghoul 2 animation file
 */
 qboolean R_LoadMDXA(model_t* mod, void* buffer, const char* mod_name, qboolean& bAlreadyCached)
 {
-	mdxaHeader_t* pinmodel, * mdxa;
-	int version;
-	int size;
+	mdxaHeader_t* pinmodel = nullptr, * mdxa = nullptr;
+	int version = 0;
+	int size = 0;
 #ifdef CREATE_LIMB_HIERARCHY
 	int oSize = 0;
 	byte* sizeMarker;

@@ -554,7 +554,7 @@ Com_StringContains
 */
 static const char* Com_StringContains(const char* str1, const char* str2, const int casesensitive)
 {
-	int j;
+	int j = 0;
 
 	const int len = strlen(str1) - strlen(str2);
 	for (int i = 0; i <= len; i++, str1++)
@@ -592,7 +592,7 @@ Com_Filter
 int Com_Filter(const char* filter, const char* name, const int casesensitive)
 {
 	char buf[MAX_TOKEN_CHARS]{};
-	int i;
+	int i = 0;
 
 	while (*filter)
 	{
@@ -689,7 +689,7 @@ Com_FilterPath
 */
 int Com_FilterPath(const char* filter, const char* name, const int casesensitive)
 {
-	int i;
+	int i = 0;
 	char new_filter[MAX_QPATH]{};
 	char new_name[MAX_QPATH]{};
 
@@ -1156,7 +1156,7 @@ void Com_Init(char* commandLine)
 
 	try
 	{
-		char* s;
+		char* s = nullptr;
 		Com_InitZoneMemory();
 		Cvar_Init();
 
@@ -1389,7 +1389,7 @@ Com_ModifyMsec
 
 static int Com_ModifyMsec(int msec, float& fraction)
 {
-	int clampTime;
+	int clampTime = 0;
 
 	fraction = 0.0f;
 
@@ -1480,7 +1480,7 @@ void Com_Frame()
 	try
 	{
 		int time_before_first_events = 0, time_before_server = 0, time_before_events = 0, time_before_client = 0, time_after = 0;
-		int min_msec;
+		int min_msec = 0;
 		static int last_time = 0, bias = 0;
 
 		// write config file if anything changed
@@ -1756,7 +1756,7 @@ FindMatches
 */
 static void FindMatches(const char* s)
 {
-	int i;
+	int i = 0;
 
 	if (Q_stricmpn(s, completionString, strlen(completionString)))
 	{
@@ -1962,7 +1962,7 @@ void Field_CompleteCommand(char* cmd, const qboolean doCommands, const qboolean 
 	if (completionArgument > 1)
 	{
 		const char* baseCmd = Cmd_Argv(0);
-		char* p;
+		char* p = nullptr;
 
 		if (baseCmd[0] == '\\' || baseCmd[0] == '/')
 			baseCmd++;

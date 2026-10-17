@@ -86,8 +86,8 @@ static void IT_SetDefaults()
 
 static void IT_Name(const char** hold_buf)
 {
-	int itemNum;
-	const char* token_str;
+	int itemNum = 0;
+	const char* token_str = nullptr;
 
 	if (COM_ParseString(hold_buf, &token_str))
 	{
@@ -290,7 +290,7 @@ static void IT_Name(const char** hold_buf)
 
 static void IT_ClassName(const char** hold_buf)
 {
-	const char* token_str;
+	const char* token_str = nullptr;
 
 	if (COM_ParseString(hold_buf, &token_str))
 	{
@@ -312,7 +312,7 @@ static void IT_ClassName(const char** hold_buf)
 
 static void IT_WorldModel(const char** hold_buf)
 {
-	const char* token_str;
+	const char* token_str = nullptr;
 
 	if (COM_ParseString(hold_buf, &token_str))
 	{
@@ -332,8 +332,8 @@ static void IT_WorldModel(const char** hold_buf)
 
 static void IT_Tag(const char** hold_buf)
 {
-	int tag;
-	const char* token_str;
+	int tag = 0;
+	const char* token_str = nullptr;
 
 	if (COM_ParseString(hold_buf, &token_str))
 	{
@@ -603,8 +603,8 @@ static void IT_Tag(const char** hold_buf)
 
 static void IT_Type(const char** hold_buf)
 {
-	int type;
-	const char* token_str;
+	int type = 0;
+	const char* token_str = nullptr;
 
 	if (COM_ParseString(hold_buf, &token_str))
 	{
@@ -638,7 +638,7 @@ static void IT_Type(const char** hold_buf)
 
 static void IT_Icon(const char** hold_buf)
 {
-	const char* token_str;
+	const char* token_str = nullptr;
 
 	if (COM_ParseString(hold_buf, &token_str))
 	{
@@ -658,7 +658,7 @@ static void IT_Icon(const char** hold_buf)
 
 static void IT_Count(const char** hold_buf)
 {
-	int token_int;
+	int token_int = 0;
 
 	if (COM_ParseInt(hold_buf, &token_int))
 	{
@@ -676,7 +676,7 @@ static void IT_Count(const char** hold_buf)
 
 static void IT_Min(const char** hold_buf)
 {
-	int token_int;
+	int token_int = 0;
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -692,7 +692,7 @@ static void IT_Min(const char** hold_buf)
 
 static void IT_Max(const char** hold_buf)
 {
-	int token_int;
+	int token_int = 0;
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -708,7 +708,7 @@ static void IT_Max(const char** hold_buf)
 
 static void IT_PickupSound(const char** hold_buf)
 {
-	const char* token_str;
+	const char* token_str = nullptr;
 
 	if (COM_ParseString(hold_buf, &token_str))
 	{
@@ -728,7 +728,7 @@ static void IT_PickupSound(const char** hold_buf)
 
 static void IT_ParseWeaponParms(const char** hold_buf)
 {
-	int i;
+	int i = 0;
 
 	while (hold_buf)
 	{
@@ -759,7 +759,7 @@ static void IT_ParseWeaponParms(const char** hold_buf)
 
 static void IT_ParseParms(const char* buffer)
 {
-	const char* hold_buf;
+	const char* hold_buf = nullptr;
 
 	//	bg_numItems = 0;
 	hold_buf = buffer;

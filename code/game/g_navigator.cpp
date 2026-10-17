@@ -1547,13 +1547,13 @@ bool NAV::LoadFromEntitiesAndSaveToFile(const char* filename, int checksum)
 
 	// PHASE II: SCAN THROUGH EXISTING NODES AND GENERATE EDGES TO OTHER NODES WAY POINTS
 	//====================================================================================
-	CWayNode* at;
-	int atHandle;
+	CWayNode* at = nullptr;
+	int atHandle = 0;
 #ifdef _DEBUG
 	const char* atNameStr;
 #endif // _DEBUG
-	int tgtNum;
-	int tgtHandle;
+	int tgtNum = 0;
+	int tgtHandle = 0;
 	hstring tgtName;
 #ifdef _DEBUG
 	const char* tgtNameStr;
@@ -1562,7 +1562,7 @@ bool NAV::LoadFromEntitiesAndSaveToFile(const char* filename, int checksum)
 	CWayEdge atToTgt;
 	CVec3 atFloor{};
 	CVec3 atRoof{};
-	bool atOnFloor;
+	bool atOnFloor = false;
 
 	TNameToNodeMap::iterator nameFinder;
 	TGraph::TNodes::iterator nodeIter;
@@ -3423,7 +3423,7 @@ bool NAV::UpdatePath(gentity_t* actor, const TNodeHandle target, const float Max
 	//-----------------------------------
 	CVec3 At(actor->currentOrigin);
 	TPath& path = mPathUsers[pathUserNum].mPath;
-	bool in_reached_radius;
+	bool in_reached_radius = false;
 	bool ReachedAnything = false;
 	assert(path.size() > 0);
 
@@ -3538,7 +3538,7 @@ float NAV::PathDangerLevel(gentity_t* actor)
 	float DangerLevel = 0.0f;
 	CVec3 enemyPos{};
 	float enemySafeDist = 0.0f;
-	TEdgeHandle cur_edge;
+	TEdgeHandle cur_edge = 0;
 	int curPathAt = Path.size() - 1;
 	TAlertList& al = mEntityAlertList[actor->s.number];
 	TNodeHandle prevNode = GetNearestNode(actor);
@@ -3793,8 +3793,8 @@ void NAV::ShowDebugInfo(const vec3_t& PlayerPosition, int player_waypoint)
 	}
 	if (NAVDEBUG_showGrid)
 	{
-		float x1, y1;
-		float x2, y2;
+		float x1 = 0.0f, y1 = 0.0f;
+		float x2 = 0.0f, y2 = 0.0f;
 		float z = 0.0f;
 
 		for (int x = 0; x < TGraphCells::SIZEX; x++)
@@ -4933,7 +4933,7 @@ float STEER::Path(gentity_t* actor)
 	if (NAV::HasPath(actor))
 	{
 		CVec3 NextPosition;
-		float NextSlowingRadius;
+		float NextSlowingRadius = 0.0f;
 		bool Fly = false;
 		bool Jump = false;
 

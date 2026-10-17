@@ -102,7 +102,7 @@ static qboolean	CM_NeedsSubdivision(vec3_t a, vec3_t b, vec3_t c) {
 	vec3_t		cmid{};
 	vec3_t		lmid{};
 	vec3_t		delta;
-	int			i;
+	int			i = 0;
 
 	// calculate the linear midpoint
 	for (i = 0; i < 3; i++) {
@@ -145,7 +145,7 @@ Swaps the rows and columns in place
 =================
 */
 static void CM_TransposeGrid(cGrid_t* grid) {
-	int			i, j;
+	int			i = 0, j = 0;
 	vec3_t		temp;
 
 	if (grid->width > grid->height) {
@@ -198,7 +198,7 @@ If the left and right columns are exactly equal, set grid->wrapWidth qtrue
 ===================
 */
 static void CM_SetGridWrapWidth(cGrid_t* grid) {
-	int		i, j;
+	int		i = 0, j = 0;
 
 	for (i = 0; i < grid->height; i++) {
 		for (j = 0; j < 3; j++) {
@@ -229,7 +229,7 @@ from the true curve
 =================
 */
 static void CM_SubdivideGridColumns(cGrid_t* grid) {
-	int j, k;
+	int j = 0, k = 0;
 
 	for (int i = 0; i < grid->width - 2; ) {
 		// grid->points[i][x] is an interpolating control point
@@ -320,7 +320,7 @@ If there are any identical columns, remove them
 =================
 */
 static void CM_RemoveDegenerateColumns(cGrid_t* grid) {
-	int j;
+	int j = 0;
 
 	for (int i = 0; i < grid->width - 1; i++) {
 		for (j = 0; j < grid->height; j++) {
@@ -528,9 +528,9 @@ CM_EdgePlaneNum
 ==================
 */
 static int CM_EdgePlaneNum(cGrid_t* grid, int gridPlanes[CM_MAX_GRID_SIZE][CM_MAX_GRID_SIZE][2], const int i, const int j, const int k) {
-	float* p1, * p2;
+	float* p1 = nullptr, * p2 = nullptr;
 	vec3_t		up;
-	int			p;
+	int			p = 0;
 
 	switch (k) {
 	case 0:	// top border
@@ -606,7 +606,7 @@ CM_SetBorderInward
 static void CM_SetBorderInward(facet_t* facet, cGrid_t* grid, int gridPlanes[CM_MAX_GRID_SIZE][CM_MAX_GRID_SIZE][2], int i, int j, int which)
 {
 	float* points[4]{};
-	int		numPoints;
+	int		numPoints = 0;
 
 	switch (which) {
 	case -1:
@@ -679,8 +679,8 @@ If the facet isn't bounded by its borders, we screwed up.
 */
 static qboolean CM_ValidateFacet(const facet_t* facet) {
 	float		plane[4];
-	int			j;
-	winding_t* w;
+	int			j = 0;
+	winding_t* w = nullptr;
 	vec3_t		bounds[2]{};
 
 	if (facet->surfacePlane == -1) {
@@ -730,10 +730,10 @@ CM_AddFacetBevels
 ==================
 */
 static void CM_AddFacetBevels(facet_t* facet) {
-	int i, j, k, l;
-	int axis, dir, order, flipped;
-	float plane[4], d, newplane[4];
-	winding_t* w, * w2;
+	int i = 0, j = 0, k = 0, l = 0;
+	int axis = 0, dir = 0, order = 0, flipped = 0;
+	float plane[4], d = 0.0f, newplane[4];
+	winding_t* w = nullptr, * w2 = nullptr;
 	vec3_t mins, maxs, vec2;
 
 #ifndef ADDBEVELS
@@ -1147,7 +1147,7 @@ Points is packed as concatenated rows.
 patchCollide_s* CM_GeneratePatchCollide(int width, int height, vec3_t* points)
 {
 	cGrid_t* grid = NULL;
-	int i, j;
+	int i = 0, j = 0;
 
 	if (width <= 2 || height <= 2 || points == NULL)
 	{
@@ -1346,12 +1346,12 @@ static void CM_TracePointThroughPatchCollide(traceWork_t* tw, const patchCollide
 	static qboolean frontFacing[MAX_PATCH_PLANES];
 	static float    intersection[MAX_PATCH_PLANES];
 
-	float               intersect;
-	const patchPlane_t* planes;
-	const facet_t* facet;
-	int                 i, j, k;
-	float               offset;
-	float               d1, d2;
+	float               intersect = 0.0f;
+	const patchPlane_t* planes = nullptr;
+	const facet_t* facet = nullptr;
+	int                 i = 0, j = 0, k = 0;
+	float               offset = 0.0f;
+	float               d1 = 0.0f, d2 = 0.0f;
 
 #ifndef BSPC
 	// Safe static pointer; initialize lazily
@@ -1488,7 +1488,7 @@ CM_CheckFacetPlane
 ====================
 */
 static int CM_CheckFacetPlane(const float* plane, vec3_t start, vec3_t end, float* enter_frac, float* leave_frac, int* hit) {
-	float f;
+	float f = 0.0f;
 
 	*hit = qfalse;
 
@@ -1536,10 +1536,10 @@ CM_TraceThroughPatchCollide
 */
 void CM_TraceThroughPatchCollide(traceWork_t* tw, const patchCollide_s* pc)
 {
-	int j, hit, hitnum;
-	float offset, enter_frac, leave_frac, t;
-	patchPlane_t* planes;
-	facet_t* facet;
+	int j = 0, hit = 0, hitnum = 0;
+	float offset = 0.0f, enter_frac = 0.0f, leave_frac = 0.0f, t = 0.0f;
+	patchPlane_t* planes = nullptr;
+	facet_t* facet = nullptr;
 	float plane[4] = { 0.0f }, bestplane[4] = { 0.0f };
 #ifndef BSPC
 	static cvar_t* cv;
@@ -1696,11 +1696,11 @@ qboolean CM_PositionTestInPatchCollide(traceWork_t* tw, const struct patchCollid
 	// FIX: move huge array off stack → static scratch buffer
 	static int cross[MAX_PATCH_PLANES];
 
-	const patchPlane_t* planes;
-	const facet_t* facet;
-	int                 i, j, k;
-	float               offset;
-	float               d;
+	const patchPlane_t* planes = nullptr;
+	const facet_t* facet = nullptr;
+	int                 i = 0, j = 0, k = 0;
+	float               offset = 0.0f;
+	float               d = 0.0f;
 
 #ifndef CULL_BBOX
 	// quick AABB reject

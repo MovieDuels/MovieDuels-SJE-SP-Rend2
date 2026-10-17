@@ -632,7 +632,7 @@ void Rail_Update()
 							playerToMoverDistance < WOOSH_TUNNEL_RANGE && mover.mRows > 10))
 					{
 						mover.mSoundPlayed = true;
-						int wooshSound;
+						int wooshSound = 0;
 
 						// The Centered Entities Play Right On The Player's Head For Full Volume
 						//-----------------------------------------------------------------------
@@ -744,8 +744,8 @@ void CRailTrack::Update()
 {
 	mNextUpdateTime = level.time + mNextUpdateDelay;
 
-	int startCol;
-	int stopCol;
+	int startCol = 0;
+	int stopCol = 0;
 
 	for (int attempt = 0; attempt < mNumMoversPerRow; attempt++)
 	{

@@ -113,12 +113,12 @@ void dequant(SAMPLE Sample[], int* nsamp,
 	const GR* gr,
 	CB_INFO* cb_info, const int ncbl_mixed)
 {
-	int j;
-	int cb, n, w;
-	float xs;
+	int j = 0;
+	int cb = 0, n = 0, w = 0;
+	float xs = 0.0f;
 	float xsb[3];
-	double tmp;
-	int non_zero;
+	double tmp = 0.0f;
+	int non_zero = 0;
 	int cbmax[3];
 
 	const int nbands = *nsamp;

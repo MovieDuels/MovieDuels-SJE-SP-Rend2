@@ -179,7 +179,7 @@ void CQuickSpriteSystem::StartGroup(textureBundle_t* bundle, const uint32_t glbi
 		mUseFog = qfalse;
 	}
 
-	int cullingOn;
+	int cullingOn = 0;
 	qglGetIntegerv(GL_CULL_FACE, &cullingOn);
 
 	if (cullingOn)

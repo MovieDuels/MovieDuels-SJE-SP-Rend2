@@ -868,7 +868,7 @@ Q3_CheckStringCounterIncrement
 */
 static float Q3_CheckStringCounterIncrement(const char* string)
 {
-	char* numString;
+	char* numString = nullptr;
 	float val = 0.0f;
 
 	if (string[0] == '+')
@@ -1207,7 +1207,7 @@ returns qtrue if changed to ms
 #define JADEN_VOICES_CUSTOM
 static qboolean G_AddSexToPlayerString(char* string, const qboolean qDoBoth)
 {
-	char* start;
+	char* start = nullptr;
 	bool bUseCustomDirectory = false;
 
 	if VALIDSTRING(string) {
@@ -3297,7 +3297,7 @@ static void Q3_SetWatchTarget(const int entID, const char* name)
 
 static void Q3_SetLoopSound(const int entID, const char* name)
 {
-	sfxHandle_t index;
+	sfxHandle_t index = 0;
 	gentity_t* self = &g_entities[entID];
 
 	if (Q_stricmp("NULL", name) == 0 || Q_stricmp("NONE", name) == 0)
@@ -3966,7 +3966,7 @@ Q3_SetCount
 static void Q3_SetCount(const int entID, const char* data)
 {
 	gentity_t* self = &g_entities[entID];
-	float val;
+	float val = 0.0f;
 
 	//FIXME: use FOFS() stuff here to make a generic entity field setting?
 	if (!self)
@@ -4331,7 +4331,7 @@ Q3_SetParm
 void Q3_SetParm(const int entID, const int parmNum, const char* parmValue)
 {
 	gentity_t* ent = &g_entities[entID];
-	float val;
+	float val = 0.0f;
 
 	if (!ent)
 	{
@@ -7278,7 +7278,7 @@ Q3_Remove
 static void Q3_Remove(const int entID, const char* name)
 {
 	gentity_t* ent = &g_entities[entID];
-	gentity_t* victim;
+	gentity_t* victim = nullptr;
 
 	if (!Q_stricmp("self", name))
 	{
@@ -7545,7 +7545,7 @@ void CQuake3GameInterface::SetVar(int taskID, int entID, const char* type_name, 
 
 	if (vret != VTYPE_NONE)
 	{
-		float val;
+		float val = 0.0f;
 		switch (vret)
 		{
 		case VTYPE_FLOAT:
@@ -8749,8 +8749,8 @@ int CQuake3GameInterface::GetTag(const int entID, const char* name, const int lo
 void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, const char* data)
 {
 	gentity_t* ent = &g_entities[entID];
-	float float_data;
-	int int_data;
+	float float_data = 0.0f;
+	int int_data = 0;
 	vec3_t vector_data{};
 
 	// eezstreet: Add support for cvars getting modified thru ICARUS script
@@ -10621,7 +10621,7 @@ void CQuake3GameInterface::Deactivate(const int entID, const char* name)
 void CQuake3GameInterface::Kill(const int entID, const char* name)
 {
 	gentity_t* ent = &g_entities[entID];
-	gentity_t* victim;
+	gentity_t* victim = nullptr;
 
 	if (!Q_stricmp(name, "self"))
 	{
@@ -10665,7 +10665,7 @@ void CQuake3GameInterface::Kill(const int entID, const char* name)
 void CQuake3GameInterface::Remove(const int entID, const char* name)
 {
 	gentity_t* ent = &g_entities[entID];
-	gentity_t* victim;
+	gentity_t* victim = nullptr;
 
 	if (!Q_stricmp("self", name))
 	{
@@ -12374,7 +12374,7 @@ void CQuake3GameInterface::PrecacheFromSet(const char* setname, const char* file
 	case SET_VIDEO_PLAY: //in game cinematic
 		if (com_buildScript->integer)
 		{
-			fileHandle_t file;
+			fileHandle_t file = 0;
 			char name[MAX_OSPATH];
 
 			if (strstr(filename, "/") == nullptr && strstr(filename, "\\") == nullptr)

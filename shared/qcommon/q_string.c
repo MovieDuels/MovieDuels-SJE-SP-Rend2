@@ -63,7 +63,7 @@ int Q_isalpha(const int c)
 
 qboolean Q_isanumber(const char* s)
 {
-	char* p;
+	char* p = NULL;
 
 	if (*s == '\0')
 		return qfalse;
@@ -119,7 +119,7 @@ void Q_strncpyz(char* dest, const char* src, const int destsize)
 
 int Q_stricmpn(const char* s1, const char* s2, int n)
 {
-	int c1;
+	int c1 = 0;
 
 	if (s1 == NULL)
 	{
@@ -167,7 +167,7 @@ int Q_stricmp(const char* s1, const char* s2)
 
 int Q_strncmp(const char* s1, const char* s2, int n)
 {
-	int c1;
+	int c1 = 0;
 
 	do
 	{
@@ -233,11 +233,11 @@ void Q_strcat(char* dest, const int size, const char* src)
 */
 const char* Q_stristr(const char* s, const char* find)
 {
-	char c;
+	char c = 0;
 
 	if ((c = *find++) != 0)
 	{
-		char sc;
+		char sc = 0;
 		if (c >= 'a' && c <= 'z')
 		{
 			c -= 'a' - 'A';
@@ -339,7 +339,7 @@ This function modifies INPUT (is mutable)
 void Q_StripColor(char* text)
 {
 	qboolean doPass = qtrue;
-	char* write;
+	char* write = NULL;
 
 	while (doPass)
 	{
@@ -385,7 +385,7 @@ Q_strstrip( "Bo\nb is h\rairy!!", "\n\r!", NULL );	// "Bob is hairy"
 
 void Q_strstrip(char* string, const char* strip, const char* repl)
 {
-	char* out = string, * p = string, c;
+	char* out = string, * p = string, c = 0;
 	const int replaceLen = repl ? strlen(repl) : 0;
 
 	while ((c = *p++) != '\0')

@@ -922,7 +922,7 @@ static void MD_BG_GenerateEraIndexes(void) {
 }
 
 static const char* MD_UI_SelectedTeamHead(int index, int* actual) {
-	int i, c = 0;
+	int i = 0, c = 0;
 	for (i = eraIndex[uiEra]; i < eraIndex[uiEra + 1]; i++) {
 		if (i >= eraIndex[uiEra] && i < eraIndex[uiEra + 1]) {
 			if (c == index) {
@@ -938,12 +938,12 @@ static const char* MD_UI_SelectedTeamHead(int index, int* actual) {
 }
 
 static const char* MD_UI_SelectedTeamHead_SubDivs(int index, int* actual) {
-	int i, c = 0;
+	int i = 0, c = 0;
 
 	for (i = eraIndex[uiEra]; i < eraIndex[uiEra + 1]; i++) {
 		if (i >= eraIndex[uiEra] && i < eraIndex[uiEra + 1]) {
 			if (!charMD[i].isSubDiv) { // hasSubDiv
-				int k;
+				int k = 0;
 				for (k = 1; k < NO_OF_MD_MODELS; k++) {
 					if (charMD[i + k].isSubDiv)
 						c--;
@@ -2493,7 +2493,7 @@ Return true if the menu script should be deferred for later
 */
 static qboolean UI_DeferMenuScript(const char** args)
 {
-	const char* name;
+	const char* name = nullptr;
 
 	// Whats the reason for being deferred?
 	if (!String_Parse(args, &name))
@@ -2504,7 +2504,7 @@ static qboolean UI_DeferMenuScript(const char** args)
 	// Handle the custom cases
 	if (!Q_stricmp(name, "VideoSetup"))
 	{
-		const char* warningMenuName;
+		const char* warningMenuName = nullptr;
 
 		// No warning menu specified
 		if (!String_Parse(args, &warningMenuName))
@@ -2559,7 +2559,7 @@ UI_RunMenuScript
 */
 static qboolean UI_RunMenuScript(const char** args)
 {
-	const char* name, * name2, * mapName, * menuName, * warningMenuName;
+	const char* name = nullptr, * name2 = nullptr, * mapName = nullptr, * menuName = nullptr, * warningMenuName = nullptr;
 
 	if (String_Parse(args, &name))
 	{
@@ -2877,7 +2877,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		else if (Q_stricmp(name, "md_npc") == 0)
 		{
 			const char* targetname = va("%s%d", charMD[uiVariantIndex].npc, Q_irand(0, 9999));
-			const char* team;
+			const char* team = nullptr;
 			const int npcHealth = ui_char_health_select.integer;
 
 			switch (ui_char_team_select.integer)
@@ -3088,7 +3088,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		{
 			// a gun icon of the weapon wheel: in "Equip" mode (ui_wheelmode 0) take it and close the wheel, in "On Person"
 			// mode toggle whether it is drawn on the body when carried (cg_holsterHide, a hex mask of weapon numbers)
-			const char* weaponText;
+			const char* weaponText = nullptr;
 			const int weapon = String_Parse(args, &weaponText) ? atoi(weaponText) : 0;
 			if (weapon > 0)
 			{
@@ -3273,7 +3273,7 @@ static qboolean UI_RunMenuScript(const char** args)
 
 			if (menu)
 			{
-				const char* itemName;
+				const char* itemName = nullptr;
 				String_Parse(args, &itemName);
 				const auto item = Menu_FindItemByName(menu, itemName);
 				if (item)
@@ -3432,14 +3432,14 @@ static qboolean UI_RunMenuScript(const char** args)
 #endif // !JK2_MODE
 		else if (Q_stricmp(name, "initallocforcepower") == 0)
 		{
-			const char* forceName;
+			const char* forceName = nullptr;
 			String_Parse(args, &forceName);
 
 			UI_InitAllocForcePowers(forceName);
 		}
 		else if (Q_stricmp(name, "affectforcepowerlevel") == 0)
 		{
-			const char* forceName;
+			const char* forceName = nullptr;
 			String_Parse(args, &forceName);
 
 			UI_AffectForcePowerLevel(forceName);
@@ -3472,7 +3472,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "showforceleveldesc") == 0)
 		{
-			const char* forceName;
+			const char* forceName = nullptr;
 			String_Parse(args, &forceName);
 
 			UI_ShowForceLevelDesc(forceName);
@@ -3504,7 +3504,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "loadmissionselectmenu") == 0)
 		{
-			const char* cvarName;
+			const char* cvarName = nullptr;
 			String_Parse(args, &cvarName);
 
 			if (cvarName)
@@ -3520,16 +3520,16 @@ static qboolean UI_RunMenuScript(const char** args)
 #endif // !JK2_MODE
 		else if (Q_stricmp(name, "giveweapon") == 0)
 		{
-			const char* weaponIndex;
+			const char* weaponIndex = nullptr;
 			String_Parse(args, &weaponIndex);
 			UI_GiveWeapon(atoi(weaponIndex));
 		}
 		else if (Q_stricmp(name, "giveammo") == 0)
 		{
-			const char* ammoIndex;
+			const char* ammoIndex = nullptr;
 			String_Parse(args, &ammoIndex);
 
-			const char* ammoAmount;
+			const char* ammoAmount = nullptr;
 			String_Parse(args, &ammoAmount);
 
 			const char* soundfile = nullptr;
@@ -3539,48 +3539,48 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "equipweapon") == 0)
 		{
-			const char* weaponIndex;
+			const char* weaponIndex = nullptr;
 			String_Parse(args, &weaponIndex);
 			UI_EquipWeapon(atoi(weaponIndex));
 		}
 		else if (Q_stricmp(name, "addweaponselection") == 0)
 		{
-			const char* weaponIndex;
+			const char* weaponIndex = nullptr;
 			String_Parse(args, &weaponIndex);
 			if (!weaponIndex)
 			{
 				return qfalse;
 			}
 
-			const char* ammoIndex;
+			const char* ammoIndex = nullptr;
 			String_Parse(args, &ammoIndex);
 			if (!ammoIndex)
 			{
 				return qfalse;
 			}
 
-			const char* ammoAmount;
+			const char* ammoAmount = nullptr;
 			String_Parse(args, &ammoAmount);
 			if (!ammoAmount)
 			{
 				return qfalse;
 			}
 
-			const char* itemName;
+			const char* itemName = nullptr;
 			String_Parse(args, &itemName);
 			if (!itemName)
 			{
 				return qfalse;
 			}
 
-			const char* litItemName;
+			const char* litItemName = nullptr;
 			String_Parse(args, &litItemName);
 			if (!litItemName)
 			{
 				return qfalse;
 			}
 
-			const char* backgroundName;
+			const char* backgroundName = nullptr;
 			String_Parse(args, &backgroundName);
 			if (!backgroundName)
 			{
@@ -3595,42 +3595,42 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "addpistolselection") == 0)
 		{
-			const char* weaponIndex;
+			const char* weaponIndex = nullptr;
 			String_Parse(args, &weaponIndex);
 			if (!weaponIndex)
 			{
 				return qfalse;
 			}
 
-			const char* ammoIndex;
+			const char* ammoIndex = nullptr;
 			String_Parse(args, &ammoIndex);
 			if (!ammoIndex)
 			{
 				return qfalse;
 			}
 
-			const char* ammoAmount;
+			const char* ammoAmount = nullptr;
 			String_Parse(args, &ammoAmount);
 			if (!ammoAmount)
 			{
 				return qfalse;
 			}
 
-			const char* itemName;
+			const char* itemName = nullptr;
 			String_Parse(args, &itemName);
 			if (!itemName)
 			{
 				return qfalse;
 			}
 
-			const char* litItemName;
+			const char* litItemName = nullptr;
 			String_Parse(args, &litItemName);
 			if (!litItemName)
 			{
 				return qfalse;
 			}
 
-			const char* backgroundName;
+			const char* backgroundName = nullptr;
 			String_Parse(args, &backgroundName);
 			if (!backgroundName)
 			{
@@ -3645,49 +3645,49 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "addthrowweaponselection") == 0)
 		{
-			const char* weaponIndex;
+			const char* weaponIndex = nullptr;
 			String_Parse(args, &weaponIndex);
 			if (!weaponIndex)
 			{
 				return qfalse;
 			}
 
-			const char* ammoIndex;
+			const char* ammoIndex = nullptr;
 			String_Parse(args, &ammoIndex);
 			if (!ammoIndex)
 			{
 				return qfalse;
 			}
 
-			const char* ammoAmount;
+			const char* ammoAmount = nullptr;
 			String_Parse(args, &ammoAmount);
 			if (!ammoAmount)
 			{
 				return qfalse;
 			}
 
-			const char* itemName;
+			const char* itemName = nullptr;
 			String_Parse(args, &itemName);
 			if (!itemName)
 			{
 				return qfalse;
 			}
 
-			const char* litItemName;
+			const char* litItemName = nullptr;
 			String_Parse(args, &litItemName);
 			if (!litItemName)
 			{
 				return qfalse;
 			}
 
-			const char* backgroundName;
+			const char* backgroundName = nullptr;
 			String_Parse(args, &backgroundName);
 			if (!backgroundName)
 			{
 				return qfalse;
 			}
 
-			const char* soundfile;
+			const char* soundfile = nullptr;
 			String_Parse(args, &soundfile);
 
 			UI_AddThrowWeaponSelection(atoi(weaponIndex), atoi(ammoIndex), atoi(ammoAmount), itemName, litItemName,
@@ -3695,7 +3695,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "removeweaponselection") == 0)
 		{
-			const char* weaponIndex;
+			const char* weaponIndex = nullptr;
 			String_Parse(args, &weaponIndex);
 			if (weaponIndex)
 			{
@@ -3720,7 +3720,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "normalweaponselection") == 0)
 		{
-			const char* slotIndex;
+			const char* slotIndex = nullptr;
 			String_Parse(args, &slotIndex);
 			if (!slotIndex)
 			{
@@ -3735,7 +3735,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "highlightweaponselection") == 0)
 		{
-			const char* slotIndex;
+			const char* slotIndex = nullptr;
 			String_Parse(args, &slotIndex);
 			if (!slotIndex)
 			{
@@ -3754,7 +3754,7 @@ static qboolean UI_RunMenuScript(const char** args)
 		}
 		else if (Q_stricmp(name, "giveinventory") == 0)
 		{
-			const char* inventoryIndex, * amount;
+			const char* inventoryIndex = nullptr, * amount = nullptr;
 			String_Parse(args, &inventoryIndex);
 			String_Parse(args, &amount);
 			UI_GiveInventory(atoi(inventoryIndex), atoi(amount));
@@ -3851,7 +3851,7 @@ const char* kyleForceStatusSounds[] =
 #ifndef JK2_MODE
 static void UI_CalcForceStatus()
 {
-	short index;
+	short index = 0;
 	qboolean lukeFlag = qtrue;
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 	char value[256];
@@ -4536,7 +4536,7 @@ static qboolean UI_ParseAnimFileSet(const char* animCFG, int* animFileIndex)
 	//Not going to bother parsing the sound config here.
 	char afilename[MAX_QPATH];
 	char strippedName[MAX_QPATH];
-	int i;
+	int i = 0;
 
 	Q_strncpyz(strippedName, animCFG, sizeof strippedName);
 	char* slash = strrchr(strippedName, '/');
@@ -4587,7 +4587,7 @@ static qboolean UI_ParseAnimFileSet(const char* animCFG, int* animFileIndex)
 
 static int UI_G2SetAnim(CGhoul2Info* ghlInfo, const char* boneName, const int animNum, const qboolean freeze)
 {
-	int animIndex;
+	int animIndex = 0;
 
 	const char* GLAName = re.G2API_GetGLAName(ghlInfo);
 
@@ -4734,7 +4734,7 @@ builds path and scans for valid image extentions
 static qboolean IsImageFile(const char* dirptr, const char* skinname, const qboolean building)
 {
 	char fpath[MAX_QPATH];
-	int f;
+	int f = 0;
 
 	Com_sprintf(fpath, MAX_QPATH, "models/players/%s/icon_%s.jpg", dirptr, skinname);
 	ui.FS_FOpenFile(fpath, &f, FS_READ);
@@ -5412,8 +5412,8 @@ UI_RegisterCvars
 */
 static void UI_RegisterCvars()
 {
-	size_t i;
-	const cvarTable_t* cv;
+	size_t i = 0;
+	const cvarTable_t* cv = nullptr;
 
 	for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++)
 	{
@@ -5430,7 +5430,7 @@ UI_ParseMenu
 */
 void UI_ParseMenu(const char* menuFile) // not static: the Pazaak board loads its menu on demand (ui_pazaak.cpp)
 {
-	char* buffer, * holdBuffer;
+	char* buffer = nullptr, * holdBuffer = nullptr;
 	//	pc_token_t token;
 
 	//Com_DPrintf("Parsing menu file: %s\n", menuFile);
@@ -5539,7 +5539,7 @@ UI_LoadMenus
 void UI_LoadMenus(const char* menuFile, const qboolean reset)
 {
 	char* buffer = nullptr;
-	const char* holdBuffer;
+	const char* holdBuffer = nullptr;
 
 	const int start = Sys_Milliseconds();
 
@@ -5602,7 +5602,7 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 16/10/2026 ---------------------\n");// build date
+	Com_Printf("--------------------- Build Date 17/10/2026 ---------------------\n");// build date
 	Com_Printf("--------------------------- Build 10 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
@@ -5622,7 +5622,7 @@ UI_Load
 */
 void UI_Load()
 {
-	const char* menuSet;
+	const char* menuSet = nullptr;
 	char lastName[1024];
 	const menuDef_t* menu = Menu_GetFocused();
 
@@ -5668,8 +5668,8 @@ Asset_Parse
 */
 qboolean Asset_Parse(char** buffer)
 {
-	const char* tempStr;
-	int pointSize;
+	const char* tempStr = nullptr;
+	int pointSize = 0;
 
 	char* token = PC_ParseExt();
 
@@ -6165,7 +6165,7 @@ qboolean Asset_Parse(char** buffer)
 		{
 			if (PC_Script_Parse(&tempStr))
 			{
-				char* soundFile;
+				char* soundFile = nullptr;
 				do
 				{
 					soundFile = COM_ParseExt(&tempStr, qfalse);
@@ -6425,8 +6425,8 @@ UI_UpdateCvars
 */
 void UI_UpdateCvars()
 {
-	size_t i;
-	const cvarTable_t* cv;
+	size_t i = 0;
+	const cvarTable_t* cv = nullptr;
 
 	for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++)
 	{
@@ -7100,7 +7100,7 @@ void UI_GetVideoSetup()
 
 static void UI_SetSexandSoundForModel(const char* char_model)
 {
-	int f;
+	int f = 0;
 	char soundpath[MAX_QPATH]{};
 	qboolean isFemale = qfalse;
 
@@ -7423,7 +7423,7 @@ static qboolean UI_GetForcePowerIndex(const char* forceName, short* forcePowerI)
 static void UI_InitAllocForcePowers(const char* forceName)
 {
 	short forcePowerI = 0;
-	int forcelevel;
+	int forcelevel = 0;
 
 	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
 
@@ -7481,7 +7481,7 @@ static void UI_InitAllocForcePowers(const char* forceName)
 // Flip flop between being able to see the text showing the Force Point has or hasn't been allocated (Used by Force Power Allocation screen)
 static void UI_SetPowerTitleText(const qboolean showAllocated)
 {
-	itemDef_t* item;
+	itemDef_t* item = nullptr;
 
 	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
 
@@ -7958,7 +7958,7 @@ static void UI_RecordWeapons()
 static void UI_ShutdownForceHelp()
 {
 	char itemName[128];
-	itemDef_t* item;
+	itemDef_t* item = nullptr;
 	vec4_t color = { 0.65f, 0.65f, 0.65f, 1.0f };
 
 	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
@@ -8061,7 +8061,7 @@ static void UI_ShutdownForceHelp()
 // Decrement force power level (Used by Force Power Allocation screen)
 static void UI_DecrementCurrentForcePower()
 {
-	itemDef_t* item;
+	itemDef_t* item = nullptr;
 	vec4_t color = { 0.65f, 0.65f, 0.65f, 1.0f };
 
 	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
@@ -8074,7 +8074,7 @@ static void UI_DecrementCurrentForcePower()
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 	playerState_t* pState = nullptr;
-	int forcelevel;
+	int forcelevel = 0;
 
 	if (cl)
 	{
@@ -8177,7 +8177,7 @@ static void UI_AffectForcePowerLevel(const char* forceName)
 	// Get player state
 	const client_t* cl = &svs.clients[0]; // 0 because only ever us as a player
 	playerState_t* pState = nullptr;
-	int forcelevel;
+	int forcelevel = 0;
 	if (cl)
 	{
 		pState = cl->gentity->client;
@@ -8218,7 +8218,7 @@ static void UI_AffectForcePowerLevel(const char* forceName)
 	// A field was updated, so make it so others can't be
 	if (uiInfo.forcePowerUpdated > FP_UPDATED_NONE)
 	{
-		itemDef_t* item;
+		itemDef_t* item = nullptr;
 		vec4_t color = { 0.25f, 0.25f, 0.25f, 1.0f };
 
 		// Make it so none of the other buttons can be clicked
@@ -8337,7 +8337,7 @@ static void UI_ResetForceLevels()
 		// Decrement that power
 		pState->forcePowerLevel[powerEnums[uiInfo.forcePowerUpdated].powerEnum]--;
 
-		itemDef_t* item;
+		itemDef_t* item = nullptr;
 
 		const menuDef_t* menu = Menu_GetFocused(); // Get current menu
 
@@ -8379,7 +8379,7 @@ static void UI_ResetForceLevels()
 // Set the Players known saber style
 static void UI_UpdateFightingStyle()
 {
-	int saberStyle;
+	int saberStyle = 0;
 
 	const int fightingStyle = Cvar_VariableIntegerValue("ui_newfightingstyle");
 
@@ -8426,7 +8426,7 @@ static void UI_ResetCharacterListBoxes()
 
 	if (menu)
 	{
-		listBoxDef_t* listPtr;
+		listBoxDef_t* listPtr = nullptr;
 		auto item = Menu_FindItemByName(menu, "headlistbox");
 		if (item)
 		{
@@ -9002,8 +9002,8 @@ static void UI_AddPistolSelection(const int weaponIndex,
 // Update the player weapons with the chosen weapon
 static void UI_RemoveWeaponSelection(const int weapon_selection_index)
 {
-	const char* chosen_item_name, * chosen_button_name, * background;
-	int ammo_index, weapon_index;
+	const char* chosen_item_name = nullptr, * chosen_button_name = nullptr, * background = nullptr;
+	int ammo_index = 0, weapon_index = 0;
 
 	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
 
@@ -9266,7 +9266,7 @@ static void UI_Normalpistolselection()
 
 static void UI_HighLightWeaponSelection(const int selectionslot)
 {
-	itemDef_s* item;
+	itemDef_s* item = nullptr;
 
 	const menuDef_t* menu = Menu_GetFocused(); // Get current menu
 	if (!menu)
@@ -9815,8 +9815,8 @@ static void UI_UpdateSaberHilt(const qboolean secondSaber)
 		return;
 	}
 
-	const char* itemName;
-	const char* saberCvarName;
+	const char* itemName = nullptr;
+	const char* saberCvarName = nullptr;
 	if (secondSaber)
 	{
 		itemName = "saber2";

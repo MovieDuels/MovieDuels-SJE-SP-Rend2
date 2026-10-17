@@ -89,10 +89,10 @@ Adds all the scene's polys into this view's drawsurf list
 */
 void R_AddPolygonSurfaces(const trRefdef_t* refdef)
 {
-	srfPoly_t* poly;
+	srfPoly_t* poly = nullptr;
 	int	fogMask = -((refdef->rdflags & RDF_NOFOG) == 0);
 
-	int i;
+	int i = 0;
 	for (i = 0, poly = refdef->polys; i < refdef->numPolys; i++, poly++)
 	{
 		shader_t* sh = R_GetShaderByHandle(poly->hShader);
@@ -108,10 +108,10 @@ RE_AddPolyToScene
 */
 void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int numPolys)
 {
-	srfPoly_t* poly;
-	int			i, j;
-	int			fogIndex;
-	fog_t* fog;
+	srfPoly_t* poly = nullptr;
+	int			i = 0, j = 0;
+	int			fogIndex = 0;
+	fog_t* fog = nullptr;
 	vec3_t		bounds[2]{};
 
 	if (!tr.registered) {
@@ -314,8 +314,8 @@ void RE_BeginScene(const refdef_t* fd)
 	// will force a reset of the visible leafs even if the view hasn't moved
 	tr.refdef.areamaskModified = qfalse;
 	if (!(tr.refdef.rdflags & RDF_NOWORLDMODEL)) {
-		int		areaDiff;
-		int		i;
+		int		areaDiff = 0;
+		int		i = 0;
 
 		// compare the area bits
 		areaDiff = 0;
@@ -520,7 +520,7 @@ to handle mirrors,
 */
 void RE_RenderScene(const refdef_t* fd)
 {
-	int				startTime;
+	int				startTime = 0;
 
 	if (!tr.registered) {
 		return;

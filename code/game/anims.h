@@ -5771,7 +5771,7 @@ inline int AnimCFG_FrameLerp(float fps, qboolean* clamped)
 		fps = 1.0f;
 	}
 
-	int lerp;
+	int lerp = 0;
 
 	if (fps < 0.0f)
 	{

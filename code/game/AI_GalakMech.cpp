@@ -171,7 +171,7 @@ void GM_Dying(gentity_t* self)
 		self->client->ps.powerups[PW_SHOCKED] = level.time + 1000;
 		if (TIMER_Done(self, "dyingExplosion"))
 		{
-			int new_bolt;
+			int new_bolt = 0;
 			switch (Q_irand(1, 14))
 			{
 				// Find place to generate explosion
@@ -320,7 +320,7 @@ void NPC_GM_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, con
 		{
 			if (self->delay < level.time)
 			{
-				int speech;
+				int speech = 0;
 				switch (self->count)
 				{
 				default:
@@ -780,7 +780,7 @@ static void NPC_BSGM_Attack()
 			if (TIMER_Done(NPC, "beamDelay"))
 			{
 				//time to start the beam
-				int laser_anim;
+				int laser_anim = 0;
 				if (Q_irand(0, 1))
 				{
 					laser_anim = BOTH_ATTACK2;
@@ -878,7 +878,7 @@ static void NPC_BSGM_Attack()
 			if (TIMER_Done(NPC, "attackDelay"))
 			{
 				//animate me
-				int swing_anim;
+				int swing_anim = 0;
 				if (NPC->locationDamage[HL_GENERIC1] > GENERATOR_HEALTH)
 				{
 					//generator down, use random melee

@@ -55,7 +55,7 @@ static float* TableForFunc(genFunc_t func)
 */
 static float EvalWaveForm(const waveForm_t* wf)
 {
-	float* table;
+	float* table = nullptr;
 
 	if (wf->func == GF_NOISE) {
 		return  (wf->base + R_NoiseGet4f(0, 0, 0, (backEnd.refdef.floatTime + wf->phase) * wf->frequency) * wf->amplitude);
@@ -96,7 +96,7 @@ static float EvalWaveFormClamped(const waveForm_t* wf)
 */
 void RB_CalcStretchTexMatrix(const waveForm_t* wf, float* matrix)
 {
-	float p;
+	float p = 0.0f;
 
 	p = 1.0f / EvalWaveForm(wf);
 
@@ -120,12 +120,12 @@ RB_CalcDeformVertexes
 */
 void RB_CalcDeformVertexes(deformStage_t* ds)
 {
-	int i;
+	int i = 0;
 	vec3_t	offset;
-	float	scale;
+	float	scale = 0.0f;
 	float* xyz = (float*)tess.xyz;
 	uint32_t* normal = (uint32_t*)tess.normal;
-	float* table;
+	float* table = nullptr;
 
 	if (ds->deformationWave.frequency == 0)
 	{
@@ -170,8 +170,8 @@ Wiggle the normals for wavy environment mapping
 =========================
 */
 void RB_CalcDeformNormals(deformStage_t* ds) {
-	int i;
-	float	scale;
+	int i = 0;
+	float	scale = 0.0f;
 	float* xyz = (float*)tess.xyz;
 	uint32_t* normal = (uint32_t*)tess.normal;
 
@@ -208,17 +208,17 @@ RB_CalcBulgeVertexes
 ========================
 */
 void RB_CalcBulgeVertexes(deformStage_t* ds) {
-	int i;
+	int i = 0;
 	const float* st = (const float*)tess.texCoords[0];
 	float* xyz = (float*)tess.xyz;
 	uint32_t* normal = (uint32_t*)tess.normal;
-	float		now;
+	float		now = 0.0f;
 
 	now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
 
 	for (i = 0; i < tess.numVertexes; i++, xyz += 4, st += NUM_TESS_TEXCOORDS * 2, normal++) {
-		int		off;
-		float scale;
+		int		off = 0;
+		float scale = 0.0f;
 		vec3_t fNormal;
 
 		R_VboUnpackNormal(fNormal, *normal);
@@ -241,10 +241,10 @@ A deformation that can move an entire surface along a wave path
 ======================
 */
 void RB_CalcMoveVertexes(deformStage_t* ds) {
-	int			i;
-	float* xyz;
-	float* table;
-	float		scale;
+	int			i = 0;
+	float* xyz = nullptr;
+	float* table = nullptr;
+	float		scale = 0.0f;
 	vec3_t		offset;
 
 	table = TableForFunc(ds->deformationWave.func);
@@ -270,12 +270,12 @@ Change a polygon into a bunch of text polygons
 =============
 */
 void DeformText(const char* text) {
-	int		i;
+	int		i = 0;
 	vec3_t	origin, width, height;
-	int		len;
-	int		ch;
+	int		len = 0;
+	int		ch = 0;
 	float	color[4];
-	float	bottom, top;
+	float	bottom = 0.0f, top = 0.0f;
 	vec3_t	mid;
 	vec3_t fNormal;
 
@@ -325,8 +325,8 @@ void DeformText(const char* text) {
 		ch &= 255;
 
 		if (ch != ' ') {
-			int		row, col;
-			float	frow, fcol, size;
+			int		row = 0, col = 0;
+			float	frow = 0.0f, fcol = 0.0f, size = 0.0f;
 
 			row = ch >> 4;
 			col = ch & 15;
@@ -361,11 +361,11 @@ quads, rebuild them as forward facing sprites
 =====================
 */
 static void AutospriteDeform(void) {
-	int		i;
-	int		oldVerts;
-	float* xyz;
+	int		i = 0;
+	int		oldVerts = 0;
+	float* xyz = nullptr;
 	vec3_t	mid, delta;
-	float	radius;
+	float	radius = 0.0f;
 	vec3_t	left, up;
 	vec3_t	leftDir, upDir;
 
@@ -404,7 +404,7 @@ static void AutospriteDeform(void) {
 
 		// compensate for scale in the axes if necessary
 		if (backEnd.currentEntity->e.nonNormalizedAxes) {
-			float axisLength;
+			float axisLength = 0.0f;
 			axisLength = VectorLength(backEnd.currentEntity->e.axis[0]);
 			if (!axisLength) {
 				axisLength = 0;
@@ -437,9 +437,9 @@ int edgeVerts[6][2] = {
 };
 
 static void Autosprite2Deform(void) {
-	int		i, j, k;
-	int		indexes;
-	float* xyz;
+	int		i = 0, j = 0, k = 0;
+	int		indexes = 0;
+	float* xyz = nullptr;
 	vec3_t	forward;
 
 	if (tess.numVertexes & 3) {
@@ -459,7 +459,7 @@ static void Autosprite2Deform(void) {
 		int		nums[2];
 		vec3_t	mid[2];
 		vec3_t	major, minor;
-		float* v1, * v2;
+		float* v1 = nullptr, * v2 = nullptr;
 
 		// find the midpoint
 		xyz = tess.xyz[i];
@@ -469,7 +469,7 @@ static void Autosprite2Deform(void) {
 		lengths[0] = lengths[1] = 999999;
 
 		for (j = 0; j < 6; j++) {
-			float	l;
+			float	l = 0.0f;
 			vec3_t	temp;
 
 			v1 = xyz + 4 * edgeVerts[j][0];
@@ -508,7 +508,7 @@ static void Autosprite2Deform(void) {
 
 		// re-project the points
 		for (j = 0; j < 2; j++) {
-			float	l;
+			float	l = 0.0f;
 
 			v1 = xyz + 4 * edgeVerts[nums[j]][0];
 			v2 = xyz + 4 * edgeVerts[nums[j]][1];
@@ -543,8 +543,8 @@ RB_DeformTessGeometry
 =====================
 */
 void RB_DeformTessGeometry(void) {
-	int		i;
-	deformStage_t* ds;
+	int		i = 0;
+	deformStage_t* ds = nullptr;
 
 	if (!ShaderRequiresCPUDeforms(tess.shader))
 	{
@@ -606,7 +606,7 @@ COLORS
 */
 float RB_CalcWaveColorSingle(const waveForm_t* wf)
 {
-	float glow;
+	float glow = 0.0f;
 
 	if (wf->func == GF_NOISE) {
 		glow = wf->base + R_NoiseGet4f(0, 0, 0, (tess.shaderTime + wf->phase) * wf->frequency) * wf->amplitude;
@@ -637,7 +637,7 @@ float RB_CalcWaveAlphaSingle(const waveForm_t* wf)
 ** RB_CalcModulateColorsByFog
 */
 void RB_CalcModulateColorsByFog(unsigned char* colors) {
-	int		i;
+	int		i = 0;
 	float	texCoords[SHADER_MAX_VERTEXES][2];
 
 	// calculate texcoords so we can derive density
@@ -671,12 +671,12 @@ doesn't fit our shader data.
 ========================
 */
 void RB_CalcFogTexCoords(float* st) {
-	int			i;
-	float* v;
-	float		s, t;
-	float		eyeT;
+	int			i = 0;
+	float* v = nullptr;
+	float		s = 0.0f, t = 0.0f;
+	float		eyeT = 0.0f;
 	qboolean	eyeOutside;
-	fog_t* fog;
+	fog_t* fog = nullptr;
 	vec3_t		local;
 	vec4_t		fogDistanceVector, fogDepthVector = { 0, 0, 0, 0 };
 
@@ -777,7 +777,7 @@ void RB_CalcScaleTexMatrix(const float scale[2], float* matrix)
 void RB_CalcScrollTexMatrix(const float scrollSpeed[2], float* matrix)
 {
 	float timeScale = tess.shaderTime;
-	float adjustedScrollS, adjustedScrollT;
+	float adjustedScrollS = 0.0f, adjustedScrollT = 0.0f;
 
 	adjustedScrollS = scrollSpeed[0] * timeScale;
 	adjustedScrollT = scrollSpeed[1] * timeScale;
@@ -806,9 +806,9 @@ void RB_CalcTransformTexMatrix(const texModInfo_t* tmi, float* matrix)
 void RB_CalcRotateTexMatrix(float degsPerSecond, float* matrix)
 {
 	float timeScale = tess.shaderTime;
-	float degs;
-	int index;
-	float sinValue, cosValue;
+	float degs = 0.0f;
+	int index = 0;
+	float sinValue = 0.0f, cosValue = 0.0f;
 
 	degs = -degsPerSecond * timeScale;
 	index = degs * (FUNCTABLE_SIZE / 360.0f);

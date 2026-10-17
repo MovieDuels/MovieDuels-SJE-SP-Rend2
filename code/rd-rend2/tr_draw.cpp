@@ -27,15 +27,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 void RE_GetScreenShot(byte* buffer, const int w, const int h)
 {
-	byte* source;
-	byte* src, * dst;
-	size_t offset = 0, memcount;
-	int padlen;
+	byte* source = nullptr;
+	byte* src = nullptr, * dst = nullptr;
+	size_t offset = 0, memcount = 0;
+	int padlen = 0;
 
-	int			x, y;
-	int			r, g, b;
-	float		xScale, yScale;
-	int			xx, yy;
+	int			x = 0, y = 0;
+	int			r = 0, g = 0, b = 0;
+	float		xScale = 0.0f, yScale = 0.0f;
+	int			xx = 0, yy = 0;
 
 	source = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
 	memcount = (glConfig.vidWidth * 3 + padlen) * glConfig.vidHeight;
@@ -94,7 +94,7 @@ static byte* RE_ReSample(byte* pbLoadedPic, const int iLoadedWidth, const int iL
 		float	fYStep = (float)iLoadedHeight / (float)*piHeight;
 		int		iTotPixelsPerDownSample = (int)ceil(fXStep) * (int)ceil(fYStep);
 
-		int 	r, g, b;
+		int 	r = 0, g = 0, b = 0;
 
 		byte* pbDst = pb_re_sample_buffer;
 
@@ -168,7 +168,7 @@ byte* RE_TempRawImage_ReadFromFile(const char* psLocalFilename, int* piWidth, in
 
 	if (psLocalFilename && piWidth && piHeight)
 	{
-		int	 iLoadedWidth, iLoadedHeight;
+		int	 iLoadedWidth = 0, iLoadedHeight = 0;
 
 		R_LoadImage(psLocalFilename, &pbLoadedPic, &iLoadedWidth, &iLoadedHeight);
 		if (pbLoadedPic)

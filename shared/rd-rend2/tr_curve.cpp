@@ -67,7 +67,7 @@ Transpose
 ============
 */
 static void Transpose(const int width, const int height, srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE]) {
-	int		i, j;
+	int		i = 0, j = 0;
 	srfVert_t	temp;
 
 	if (width > height) {
@@ -113,18 +113,18 @@ Handles all the complicated wrapping and degenerate cases
 */
 static void MakeMeshNormals(const int width, const int height, srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE])
 {
-	int		i, j, k, dist;
+	int		i = 0, j = 0, k = 0, dist = 0;
 	vec3_t	normal;
 	vec3_t	sum;
 	int		count = 0;
 	vec3_t	base;
 	vec3_t	delta;
-	int		x, y;
-	srfVert_t* dv;
+	int		x = 0, y = 0;
+	srfVert_t* dv = nullptr;
 	vec3_t		around[8]{}, temp;
 	qboolean	good[8]{};
 	qboolean	wrapWidth, wrapHeight;
-	float		len;
+	float		len = 0.0f;
 	static	int	neighbors[8][2] = {
 		{ 0,1 },{ 1,1 },{ 1,0 },{ 1,-1 },{ 0,-1 },{ -1,-1 },{ -1,0 },{ -1,1 }
 	};
@@ -219,10 +219,10 @@ static void MakeMeshNormals(const int width, const int height, srfVert_t ctrl[MA
 
 static void MakeMeshTangentVectors(int width, int height, srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE], int numIndexes, glIndex_t indexes[(MAX_GRID_SIZE - 1) * (MAX_GRID_SIZE - 1) * 2 * 3])
 {
-	int             i, j;
+	int             i = 0, j = 0;
 	srfVert_t* dv[3]{};
 	static srfVert_t       ctrl2[MAX_GRID_SIZE * MAX_GRID_SIZE];
-	glIndex_t* tri;
+	glIndex_t* tri = nullptr;
 
 	// FIXME: use more elegant way
 	for (i = 0; i < width; i++)
@@ -258,10 +258,10 @@ static void MakeMeshTangentVectors(int width, int height, srfVert_t ctrl[MAX_GRI
 static int MakeMeshIndexes(int width, int height, srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE],
 	glIndex_t indexes[(MAX_GRID_SIZE - 1) * (MAX_GRID_SIZE - 1) * 2 * 3])
 {
-	int             i, j;
-	int             numIndexes;
-	int             w, h;
-	srfVert_t* dv;
+	int             i = 0, j = 0;
+	int             numIndexes = 0;
+	int             w = 0, h = 0;
+	srfVert_t* dv = nullptr;
 	static srfVert_t       ctrl2[MAX_GRID_SIZE * MAX_GRID_SIZE];
 
 	h = height - 1;
@@ -271,7 +271,7 @@ static int MakeMeshIndexes(int width, int height, srfVert_t ctrl[MAX_GRID_SIZE][
 	{
 		for (j = 0; j < w; j++)
 		{
-			int             v1, v2, v3, v4;
+			int             v1 = 0, v2 = 0, v3 = 0, v4 = 0;
 
 			// vertex order to be reckognized as tristrips
 			v1 = i * width + j + 1;
@@ -308,7 +308,7 @@ InvertCtrl
 ============
 */
 static void InvertCtrl(const int width, const int height, srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE]) {
-	int		i, j;
+	int		i = 0, j = 0;
 	srfVert_t	temp;
 
 	for (i = 0; i < height; i++) {
@@ -326,7 +326,7 @@ InvertErrorTable
 =================
 */
 static void InvertErrorTable(float errorTable[2][MAX_GRID_SIZE], const int width, const int height) {
-	int		i;
+	int		i = 0;
 	float	copy[2][MAX_GRID_SIZE];
 
 	Com_Memcpy(copy, errorTable, sizeof(copy));
@@ -347,7 +347,7 @@ PutPointsOnCurve
 */
 static void PutPointsOnCurve(srfVert_t	ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE],
 	int width, int height) {
-	int			i, j;
+	int			i = 0, j = 0;
 	srfVert_t	prev, next;
 
 	for (i = 0; i < width; i++) {
@@ -374,10 +374,10 @@ R_CreateSurfaceGridMesh
 */
 static srfBspSurface_t* R_CreateSurfaceGridMesh(int width, int height, srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE], float errorTable[2][MAX_GRID_SIZE], int numIndexes, glIndex_t indexes[(MAX_GRID_SIZE - 1) * (MAX_GRID_SIZE - 1) * 2 * 3])
 {
-	int i, j, size;
-	srfVert_t* vert;
+	int i = 0, j = 0, size = 0;
+	srfVert_t* vert = nullptr;
 	vec3_t		tmpVec;
-	srfBspSurface_t* grid;
+	srfBspSurface_t* grid = nullptr;
 
 	// copy the results out to a grid
 	size = (width * height - 1) * sizeof(srfVert_t) + sizeof(*grid);
@@ -443,20 +443,20 @@ R_SubdividePatchToGrid
 */
 srfBspSurface_t* R_SubdividePatchToGrid(int width, int height, srfVert_t points[MAX_PATCH_SIZE * MAX_PATCH_SIZE])
 {
-	int			i, j, k, l;
+	int			i = 0, j = 0, k = 0, l = 0;
 	srfVert_t prev;
 	srfVert_t next;
 	srfVert_t mid;
-	float		len, maxLen;
-	int			dir;
-	int			t;
+	float		len = 0.0f, maxLen = 0.0f;
+	int			dir = 0;
+	int			t = 0;
 	// static: this grid is ~660 KB, too big for the 1 MB main-thread stack (map load only, never re-entered)
 	static srfVert_t	ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE];
 	float		errorTable[2][MAX_GRID_SIZE]{};
 	Com_Memset(ctrl, 0, sizeof(ctrl));
-	int			numIndexes;
+	int			numIndexes = 0;
 	static glIndex_t indexes[(MAX_GRID_SIZE - 1) * (MAX_GRID_SIZE - 1) * 2 * 3];
-	int consecutiveComplete;
+	int consecutiveComplete = 0;
 
 	Com_Memset(&prev, 0, sizeof(prev));
 	Com_Memset(&next, 0, sizeof(next));
@@ -488,7 +488,7 @@ srfBspSurface_t* R_SubdividePatchToGrid(int width, int height, srfVert_t points[
 				vec3_t		midxyz2;
 				vec3_t		dir;
 				vec3_t		projected;
-				float		d;
+				float		d = 0.0f;
 
 				// calculate the point on the curve
 				for (l = 0; l < 3; l++) {
@@ -628,15 +628,15 @@ R_GridInsertColumn
 */
 srfBspSurface_t* R_GridInsertColumn(srfBspSurface_t* grid, int column, int row, vec3_t point, float loderror)
 {
-	int i, j;
-	int width, height, oldwidth;
+	int i = 0, j = 0;
+	int width = 0, height = 0, oldwidth = 0;
 	// static: this grid is ~660 KB, too big for the 1 MB main-thread stack (map load only, never re-entered)
 	static srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE];
 	float errorTable[2][MAX_GRID_SIZE]{};
 	Com_Memset(ctrl, 0, sizeof(ctrl));
-	float lodRadius;
+	float lodRadius = 0.0f;
 	vec3_t lodOrigin;
-	int    numIndexes;
+	int    numIndexes = 0;
 	static glIndex_t indexes[(MAX_GRID_SIZE - 1) * (MAX_GRID_SIZE - 1) * 2 * 3];
 
 	oldwidth = 0;
@@ -691,15 +691,15 @@ R_GridInsertRow
 */
 srfBspSurface_t* R_GridInsertRow(srfBspSurface_t* grid, int row, int column, vec3_t point, float loderror)
 {
-	int i, j;
-	int width, height, oldheight;
+	int i = 0, j = 0;
+	int width = 0, height = 0, oldheight = 0;
 	// static: this grid is ~660 KB, too big for the 1 MB main-thread stack (map load only, never re-entered)
 	static srfVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE];
 	float errorTable[2][MAX_GRID_SIZE]{};
 	Com_Memset(ctrl, 0, sizeof(ctrl));
-	float lodRadius;
+	float lodRadius = 0.0f;
 	vec3_t lodOrigin;
-	int             numIndexes;
+	int             numIndexes = 0;
 	static glIndex_t indexes[(MAX_GRID_SIZE - 1) * (MAX_GRID_SIZE - 1) * 2 * 3];
 
 	oldheight = 0;

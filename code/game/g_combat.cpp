@@ -180,7 +180,7 @@ extern cvar_t* g_WeaponRemovalTime;
 
 static int WeaponRemovalTime()
 {
-	int time;
+	int time = 0;
 
 	if (g_WeaponRemovalTime->integer <= 0)
 	{
@@ -464,7 +464,7 @@ gentity_t* TossClientItems(gentity_t* self)
 static void G_DropKey(gentity_t* self)
 {
 	//drop whatever security key I was holding
-	gitem_t* item;
+	gitem_t* item = nullptr;
 	if (!Q_stricmp("goodie", self->message))
 	{
 		item = FindItemForInventory(INV_GOODIE_KEY);
@@ -698,7 +698,7 @@ void G_AlertTeam(const gentity_t* victim, gentity_t* attacker, const float radiu
 {
 	gentity_t* radius_ents[128];
 	vec3_t mins{}, maxs{};
-	int i;
+	int i = 0;
 	const float snd_dist_sq = sound_dist * sound_dist;
 
 	if (attacker == nullptr || attacker->client == nullptr)
@@ -1680,9 +1680,9 @@ static int G_GetHitLocation(const gentity_t* target, const vec3_t ppoint)
 	vec3_t point, point_dir;
 	vec3_t forward, right, up;
 	vec3_t tangles, tcenter;
-	int vertical;
-	int Forward;
-	int lateral;
+	int vertical = 0;
+	int Forward = 0;
+	int lateral = 0;
 
 	//get target forward, right and up
 	if (target->client)
@@ -2201,7 +2201,7 @@ static qboolean G_LimbLost(const gentity_t* ent, const int hit_loc)
 
 static void G_RemoveWeaponsWithLimbs(gentity_t* ent, gentity_t* limb, const int limb_anim)
 {
-	int check_anim;
+	int check_anim = 0;
 
 	for (int weapon_model_num = 0; weapon_model_num < MAX_INHAND_WEAPONS; weapon_model_num++)
 	{
@@ -2544,7 +2544,7 @@ static qboolean G_Dismemberable(const gentity_t* self, const int hit_loc)
 		if (g_dismemberProbabilities->value > 0.0f)
 		{
 			//use the ent-specific dismemberProbabilities
-			float dismember_prob;
+			float dismember_prob = 0.0f;
 			// check which part of the body it is. Then check the npc's probability
 			// of that body part coming off, if it doesn't pass, return out.
 			switch (hit_loc)
@@ -4497,8 +4497,8 @@ extern void Boba_NoDeadFlameThrower(const gentity_t* self);
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	const int damage, const int means_of_death, const int dflags, const int hit_loc)
 {
-	int      anim;
-	int      contents;
+	int      anim = 0;
+	int      contents = 0;
 	qboolean death_script = qfalse;
 	qboolean last_in_group = qfalse;
 	qboolean special_anim = qfalse;
@@ -4777,7 +4777,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 			extern void RunEmplacedWeapon(gentity_t * ent, usercmd_t * *ucmd);
 
 			usercmd_t cmd;
-			usercmd_t* ad_cmd;
+			usercmd_t* ad_cmd = nullptr;
 
 			memset(&cmd, 0, sizeof(cmd));
 
@@ -5963,7 +5963,7 @@ void PlayerPain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, cons
 					&& !PM_InKnockDown(&self->client->ps))
 				{
 					//strong attacks and spins cannot be interrupted by pain, no pain when in knockdown
-					int parts;
+					int parts = 0;
 					if (self->client->ps.groundEntityNum != ENTITYNUM_NONE &&
 						!PM_SpinningSaberAnim(self->client->ps.legsAnim) &&
 						!PM_FlippingAnim(self->client->ps.legsAnim) &&
@@ -6019,7 +6019,7 @@ CheckArmor
 */
 static int CheckArmor(const gentity_t* ent, const int damage, const int dflags, const int mod)
 {
-	int save;
+	int save = 0;
 
 	if (!damage)
 		return 0;
@@ -6357,7 +6357,7 @@ void G_Slapdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, flo
 			if (self->s.number >= MAX_CLIENTS)
 			{
 				//randomize getup times
-				int add_time;
+				int add_time = 0;
 				if (jedi_is_kick_resistant(self))
 				{
 					add_time = 0;
@@ -6578,7 +6578,7 @@ void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 			if (self->s.number >= MAX_CLIENTS)
 			{
 				//randomize getup times
-				int add_time;
+				int add_time = 0;
 				if (jedi_is_kick_resistant(self))
 				{
 					add_time = 0;
@@ -6791,7 +6791,7 @@ void G_KnockOver(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, co
 			if (self->s.number >= MAX_CLIENTS)
 			{
 				//randomize getup times
-				int add_time;
+				int add_time = 0;
 				if (jedi_is_kick_resistant(self))
 				{
 					add_time = 0;
@@ -6994,7 +6994,7 @@ void G_BlastDown(gentity_t* self, gentity_t* attacker, const vec3_t push_dir, fl
 			if (self->s.number >= MAX_CLIENTS)
 			{
 				//randomize getup times
-				int add_time;
+				int add_time = 0;
 				if (jedi_is_kick_resistant(self))
 				{
 					add_time = 0;
@@ -7362,7 +7362,7 @@ void G_ApplyKnockback(gentity_t* targ, vec3_t new_dir, float knockback)
 	}
 
 	vec3_t kvel;
-	float mass;
+	float mass = 0.0f;
 
 	if (targ->client &&
 		(targ->client->NPC_class == CLASS_ATST ||
@@ -7446,7 +7446,7 @@ static void G_ApplyLightningKnockback(gentity_t* targ, vec3_t new_dir, float kno
 		Com_Printf(S_COLOR_CYAN"WINDU LIGHTNING KNOCKBACK CORRECT\n");
 	}
 	vec3_t kvel;
-	float mass;
+	float mass = 0.0f;
 
 	if (targ
 		&& targ->client
@@ -7900,10 +7900,10 @@ extern void G_SetOnFire(gentity_t* self, gentity_t* attacker); // wp_saber.cpp (
 
 void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const vec3_t dir, const vec3_t point, int damage, int dflags, int mod, int hit_loc)
 {
-	gclient_t* client;
-	int take;
+	gclient_t* client = nullptr;
+	int take = 0;
 	int asave = 0;
-	int knockback;
+	int knockback = 0;
 	vec3_t new_dir;
 	qboolean already_dead = qfalse;
 	float shield_absorbed = 0;
@@ -9134,10 +9134,10 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			|| inflictor->s.weapon == WP_DROIDEKA
 			|| inflictor->s.weapon == WP_JAWA)
 		{
-			float targ_maxs2;
-			int height;
-			float z_rel;
-			float z_ratio;
+			float targ_maxs2 = 0.0f;
+			int height = 0;
+			float z_rel = 0.0f;
+			float z_ratio = 0.0f;
 
 			targ_maxs2 = targ->maxs[2];
 
@@ -9189,7 +9189,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		|| mod == MOD_ENERGY
 		|| mod == MOD_ENERGY_SPLASH) && shield_absorbed)
 	{
-		gentity_t* ev_ent;
+		gentity_t* ev_ent = nullptr;
 		vec3_t vec3;
 		// Send off an event to show a shield shell on the player, pointing in the right direction.
 		ev_ent = G_TempEntity(targ->currentOrigin, EV_SHIELD_HIT);
@@ -9248,7 +9248,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 	{
 		if (!already_dead)
 		{
-			int add;
+			int add = 0;
 			if (take > targ->health)
 			{
 				add = targ->health;
@@ -9710,7 +9710,7 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 	vec3_t mins{}, maxs{};
 	vec3_t v{};
 	vec3_t dir;
-	int i;
+	int i = 0;
 	int dflags = DAMAGE_RADIUS;
 
 	if (radius < 1)
@@ -9785,7 +9785,7 @@ void G_RadiusDamage(const vec3_t origin, gentity_t* attacker, const float damage
 
 			vec3_t veh_move_direction;
 
-			float mass;
+			float mass = 0.0f;
 			G_GetMassAndVelocityForEnt(bike, &mass, veh_move_direction);
 			const float veh_move_speed = VectorNormalize(veh_move_direction);
 			if (veh_move_speed > 300.0f)

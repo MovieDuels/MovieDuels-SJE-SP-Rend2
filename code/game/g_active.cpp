@@ -1002,7 +1002,7 @@ void G_GetMassAndVelocityForEnt(const gentity_t* ent, float* mass, vec3_t veloci
 
 void DoImpact(gentity_t* self, gentity_t* other, const qboolean damage_self, const trace_t* trace)
 {
-	float magnitude, my_mass;
+	float magnitude = 0.0f, my_mass = 0.0f;
 	bool thrown = false;
 	vec3_t velocity;
 	const char* info = CG_ConfigString(CS_SERVERINFO);
@@ -1642,7 +1642,7 @@ ClientImpacts
 */
 static void ClientImpacts(gentity_t* ent, const pmove_t* pm)
 {
-	int j;
+	int j = 0;
 	trace_t trace;
 
 	memset(&trace, 0, sizeof trace);
@@ -1688,9 +1688,9 @@ This version checks at 6 unit steps between last and current origins
 */
 static void G_TouchTriggersLerped(gentity_t* ent)
 {
-	int num;
-	float dist;
-	gentity_t* hit;
+	int num = 0;
+	float dist = 0.0f;
+	gentity_t* hit = nullptr;
 	trace_t trace;
 	vec3_t diff;
 	constexpr vec3_t range = { 40, 40, 52 };
@@ -1968,7 +1968,7 @@ void G_MatchPlayerWeapon(gentity_t* ent)
 	if (g_entities[0].inuse && g_entities[0].client)
 	{
 		//player is around
-		int new_weap;
+		int new_weap = 0;
 		if (g_entities[0].client->ps.weapon > WP_CONCUSSION)
 		{
 			new_weap = WP_BLASTER_PISTOL;
@@ -2375,8 +2375,8 @@ extern qboolean PM_PainAnim(const int anim);
 
 static void ClientEvents(gentity_t* ent, const int old_event_sequence)
 {
-	int event;
-	gclient_t* client;
+	int event = 0;
+	gclient_t* client = nullptr;
 #ifndef FINAL_BUILD
 	qboolean	fired = qfalse;
 #endif
@@ -3303,7 +3303,7 @@ static void G_CamPullBackForLegsAnim(const gentity_t* ent, const qboolean use_to
 		const float elapsed_time = anim_length - (use_torso
 			? ent->client->ps.torsoAnimTimer
 			: ent->client->ps.legsAnimTimer);
-		float back_dist;
+		float back_dist = 0.0f;
 		if (elapsed_time < anim_length / 2.0f)
 		{
 			//starting anim
@@ -6302,7 +6302,7 @@ NPC_GetWalkSpeed
 
 static int NPC_GetWalkSpeed(const gentity_t* ent)
 {
-	int walk_speed;
+	int walk_speed = 0;
 
 	if (ent->client == nullptr || ent->NPC == nullptr)
 		return 0;
@@ -6326,7 +6326,7 @@ NPC_GetRunSpeed
 
 static int NPC_GetRunSpeed(const gentity_t* ent)
 {
-	int run_speed;
+	int run_speed = 0;
 
 	if (ent->client == nullptr || ent->NPC == nullptr)
 		return 0;
@@ -7569,7 +7569,7 @@ static void G_CheckClientIdleGuns(gentity_t* ent, const usercmd_t* ucmd)
 	else if (GunisShort(ent) && level.time - ent->client->idleTime > 3000)
 	{
 		//been idle for 2 seconds
-		int idle_anim;
+		int idle_anim = 0;
 
 		if (ent->weaponModel[1] > 0)
 		{
@@ -8070,7 +8070,7 @@ static void ClientAlterSpeed(gentity_t* ent, usercmd_t* ucmd, const qboolean con
 
 					// Slow down on turns to avoid orbiting
 					{
-						float turndelta;
+						float turndelta = 0.0f;
 
 						if (client->renderInfo.renderFlags & RF_LOCKEDANGLE)
 						{
@@ -9571,11 +9571,11 @@ extern void WP_SaberWearThink(gentity_t* ent, int msec);
 
 static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 {
-	gclient_t* client;
+	gclient_t* client = nullptr;
 	pmove_t pm;
 	vec3_t old_origin;
-	int old_event_sequence;
-	int msec;
+	int old_event_sequence = 0;
+	int msec = 0;
 	qboolean in_spin_flip_attack = PM_AdjustAnglesForSpinningFlip(ent, ucmd, qfalse);
 	qboolean controlled_by_player = qfalse;
 	Vehicle_t* p_veh = nullptr;
@@ -9632,7 +9632,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 			//don't update if in backstab unless don't currently have an enemy
 		{
 			//NOTE: doesn't keep updating to nearest enemy once you're dead
-			int new_look_target;
+			int new_look_target = 0;
 			if (!G_ValidateLookEnemy(ent, ent->enemy))
 			{
 				ent->enemy = nullptr;
@@ -11057,7 +11057,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 	{
 		ent->eventTime = level.time;
 		{
-			int seq;
+			int seq = 0;
 
 			seq = client->ps.eventSequence - 1 & MAX_PS_EVENTS - 1;
 			ent->s.event = client->ps.events[seq] | (ent->client->ps.eventSequence & 3) << 8;
@@ -11137,7 +11137,7 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 		{
 			//keep facing enemy
 			vec3_t dead_dir;
-			float dead_yaw;
+			float dead_yaw = 0.0f;
 			VectorSubtract(ent->enemy->currentOrigin, ent->currentOrigin, dead_dir);
 			dead_yaw = AngleNormalize180(vectoyaw(dead_dir));
 			if (dead_yaw > client->ps.stats[STAT_DEAD_YAW] + 1)
@@ -11512,7 +11512,7 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 		PM_CheckForceUseButton(ent, ucmd);
 	}
 
-	Vehicle_t* p_vehicle;
+	Vehicle_t* p_vehicle = nullptr;
 
 	if ((p_vehicle = G_IsRidingVehicle(ent)) != nullptr)
 	{

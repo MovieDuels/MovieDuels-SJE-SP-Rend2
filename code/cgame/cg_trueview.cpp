@@ -199,7 +199,7 @@ int BG_SiegeGetPairedValue(const char* buf, char* key, char* outbuf)
 //Based on CG_InitSagaMode and tck's tck_InitBuffer
 void CG_TrueViewInit()
 {
-	fileHandle_t f;
+	fileHandle_t f = 0;
 
 	const int len = gi.FS_FOpenFile("trueview.cfg", &f, FS_READ);
 
@@ -282,7 +282,7 @@ void CG_TrueViewSave_f()
 	char value[32];
 	int n = 0;
 	qboolean done = qfalse;
-	fileHandle_t f;
+	fileHandle_t f = 0;
 
 	if (!true_view_model[0] || !Q_stricmp(true_view_model, "-"))
 	{

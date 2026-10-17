@@ -182,7 +182,7 @@ Cvar_Flags
 */
 int Cvar_Flags(const char* var_name)
 {
-	cvar_t* var;
+	cvar_t* var = nullptr;
 
 	if (!(var = Cvar_FindVar(var_name)))
 		return CVAR_NONEXISTENT;
@@ -215,7 +215,7 @@ Cvar_Validate
 */
 static const char* Cvar_Validate(const cvar_t* var, const char* value, const qboolean warn)
 {
-	float valuef;
+	float valuef = 0.0f;
 	qboolean changed = qfalse;
 
 	if (!var->validate)
@@ -319,9 +319,9 @@ The flags will be or'ed in if the variable exists.
 */
 cvar_t* Cvar_Get(const char* var_name, const char* var_value, int flags)
 {
-	cvar_t* var;
-	long hash;
-	int index;
+	cvar_t* var = nullptr;
+	long hash = 0;
+	int index = 0;
 
 	if (!var_name || !var_value)
 	{
@@ -612,7 +612,7 @@ Cvar_Set2
 */
 cvar_t* Cvar_Set2(const char* var_name, const char* value, const qboolean force)
 {
-	cvar_t* var;
+	cvar_t* var = nullptr;
 
 	//Com_DPrintf( "Cvar_Set2: %s %s\n", var_name, value );
 
@@ -1078,8 +1078,8 @@ Cvar_List_f
 */
 static void Cvar_List_f()
 {
-	const cvar_t* var;
-	int i;
+	const cvar_t* var = nullptr;
+	int i = 0;
 	const char* match = nullptr;
 
 	if (Cmd_Argc() > 1)
@@ -1524,7 +1524,7 @@ static void Cvar_Realloc(char** string, char* memPool, int& memPoolUsed)
 //Turns many small allocation blocks into one big one.
 void Cvar_Defrag()
 {
-	cvar_t* var;
+	cvar_t* var = nullptr;
 	int totalMem = 0;
 
 	for (var = cvar_vars; var; var = var->next)

@@ -68,7 +68,7 @@ static void forward_bf(const int m, const int n, float x[], float f[], float coe
 /*------------------------------------------------------------*/
 static void back_bf(const int m, const int n, float x[], float f[])
 {
-	int j;
+	int j = 0;
 
 	int p0 = 0;
 	const int n2 = n >> 1;
@@ -92,7 +92,7 @@ void fdct32(float x[], float c[])
 {
 	float a[32]; /* ping pong buffers */
 	float b[32];
-	int p, q;
+	int p = 0, q = 0;
 
 	const float* src = x;
 
@@ -168,7 +168,7 @@ void fdct16(float x[], float c[])
 {
 	float a[16]; /* ping pong buffers */
 	float b[16];
-	int p, q;
+	int p = 0, q = 0;
 
 	/* special first stage (drop highest sb) */
 	a[0] = x[0];
@@ -244,7 +244,7 @@ void fdct8(float x[], float c[])
 {
 	float a[8]; /* ping pong buffers */
 	float b[8];
-	int p, q;
+	int p = 0, q = 0;
 
 	/* special first stage  */
 
