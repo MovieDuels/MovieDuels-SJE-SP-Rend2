@@ -2995,7 +2995,7 @@ static void CG_AddCEntity(centity_t* cent)
 	Ghoul2 Insert Start
 	*/
 	// do this before we copy the data to refEnts
-	if (cent->gent->ghoul2.IsValid())
+	if (cent->gent && cent->gent->ghoul2.IsValid()) // SJE: gent tested just above
 	{
 		trap_G2_SetGhoul2ModelIndexes(cent->gent->ghoul2, cgs.model_draw, cgs.skins);
 	}

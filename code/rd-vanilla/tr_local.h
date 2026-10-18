@@ -976,6 +976,14 @@ using trGlobals_t = struct trGlobals_t {
 	// Image used to downsample and blur scene to.	- AReis
 	GLuint					blurImage;
 
+	// SJE: gamma correction using vertex/pixel programs (r_gammaShaders, ported from MP)
+	GLuint					gammaCorrectLUTImage;
+	GLuint					gammaCorrectVtxShader;
+	GLuint					gammaCorrectPxShader;
+
+	// SJE: bloom bright-pass pixel program (r_dynamicGlowBloom)
+	GLuint					bloomPShader;
+
 	shader_t* defaultShader;
 	shader_t* shadowShader;
 	shader_t* distortionShader;
@@ -1055,6 +1063,15 @@ void	 R_Images_DeleteImage(image_t* pImage);
 extern backEndState_t	backEnd;
 extern trGlobals_t	tr;
 extern glconfig_t	glConfig;		// outside of TR since it shouldn't be cleared during ref re-init
+
+// SJE: renderer-only GL capabilities (kept out of glconfig_t, which the engine shares)
+struct glconfigExt_t
+{
+	qboolean doGammaCorrectionWithShaders;	// r_gammaShaders (or no hardware gamma)
+	qboolean doBloomWithShaders;			// r_dynamicGlowBloom
+	qboolean doAlphaToCoverage;				// r_ext_alpha_to_coverage (multisampled framebuffer)
+};
+extern glconfigExt_t glConfigExt;
 extern glstate_t	glState;		// outside of TR since it shouldn't be cleared during ref re-init
 extern window_t		window;
 
@@ -1145,6 +1162,10 @@ extern cvar_t* r_DynamicGlowSoft;
 extern cvar_t* r_DynamicGlowWidth;
 extern cvar_t* r_DynamicGlowHeight;
 extern cvar_t* r_Dynamic_AMD_Fix;
+extern cvar_t* r_dynamicGlowBloom;
+extern cvar_t* r_dynamicGlowBloomThreshold;
+extern cvar_t* r_ext_alpha_to_coverage;
+extern cvar_t* r_gammaShaders;
 
 extern	cvar_t* r_nobind;						// turns off binding to appropriate textures
 extern	cvar_t* r_singleShader;				// make most world faces use default shader
@@ -1273,6 +1294,14 @@ void	GL_Cull(int cullType);
 #define GLS_ATEST_GE_C0							0x80000000
 #define	GLS_ATEST_BITS							0xF0000000
 
+// SJE: alpha-to-coverage / multisample constants (not in the GL 1.1 headers)
+#ifndef GL_SAMPLE_ALPHA_TO_COVERAGE_ARB
+#define GL_SAMPLE_ALPHA_TO_COVERAGE_ARB			0x809E
+#endif
+#ifndef GL_SAMPLE_BUFFERS_ARB
+#define GL_SAMPLE_BUFFERS_ARB					0x80A8
+#endif
+
 #define GLS_DEFAULT			GLS_DEPTHMASK_TRUE
 #define GLS_ALPHA			(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
 
@@ -1309,6 +1338,7 @@ image_t* R_CreateImage(const char* name, const byte* pic, int width, int height,
 
 qboolean	R_GetModeInfo(int* width, int* height, int mode);
 
+void		R_SetGammaCorrectionLUT();
 void		R_SetColorMappings();
 void		R_GammaCorrect(byte* buffer, int bufSize);
 

@@ -99,6 +99,7 @@ extern cvar_t* g_SaberPerfectBlockingTimerMissile;
 extern cvar_t* g_SerenityJediEngineMode;
 extern void WP_ForcePowerDrain(const gentity_t* self, forcePowers_t force_power, int override_amt);
 extern void WP_BlockPointsDrain(const gentity_t* self, int fatigue);
+extern int WP_ClassBlockPointCost(const gentity_t* blocker, int cost, qboolean vs_blaster);
 extern void PM_AddBlockFatigue(playerState_t* ps, int fatigue);
 extern void jedi_decloak(gentity_t* self);
 extern void player_Decloak(gentity_t* self);
@@ -3948,7 +3949,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 		}
 		else
 		{
-			WP_BlockPointsDrain(blocker, cost);
+			WP_BlockPointsDrain(blocker, WP_ClassBlockPointCost(blocker, cost, qtrue));
 		}
 
 		reflected = qtrue;
@@ -4014,7 +4015,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			}
 			else
 			{
-				WP_BlockPointsDrain(blocker, cost);
+				WP_BlockPointsDrain(blocker, WP_ClassBlockPointCost(blocker, cost, qtrue));
 			}
 
 			reflected = qtrue;
@@ -4088,7 +4089,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			}
 			else
 			{
-				WP_BlockPointsDrain(blocker, cost);
+				WP_BlockPointsDrain(blocker, WP_ClassBlockPointCost(blocker, cost, qtrue));
 			}
 
 			reflected = qtrue;
@@ -4173,7 +4174,7 @@ static void wp_handle_bolt_block_sje_blockpoints(gentity_t* ent, gentity_t* miss
 			G_AddWildness(bounce_dir, 0.4f);
 		}
 
-		WP_BlockPointsDrain(blocker, punish);
+		WP_BlockPointsDrain(blocker, WP_ClassBlockPointCost(blocker, punish, qtrue));
 		wp_bolt_block_victim_reflected(blocker);
 
 		blocker->client->ps.saberBlocked = BLOCKED_NONE;

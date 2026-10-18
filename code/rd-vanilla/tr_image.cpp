@@ -335,7 +335,7 @@ static void R_LightScaleTexture(unsigned* in, const int inwidth, const int inhei
 {
 	if (only_gamma)
 	{
-		if (!glConfig.deviceSupportsGamma)
+		if (!glConfig.deviceSupportsGamma && !glConfigExt.doGammaCorrectionWithShaders)
 		{
 			byte* p = reinterpret_cast<byte*>(in);
 
@@ -356,7 +356,7 @@ static void R_LightScaleTexture(unsigned* in, const int inwidth, const int inhei
 
 		const int c = inwidth * inheight;
 
-		if (glConfig.deviceSupportsGamma)
+		if (glConfig.deviceSupportsGamma || glConfigExt.doGammaCorrectionWithShaders)
 		{
 			for (i = 0; i < c; i++, p += 4)
 			{
@@ -1314,6 +1314,28 @@ void R_CreateBuiltinImages() {
 	qglTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qglTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
+
+	// SJE: gamma/overbright lookup texture (r_gammaShaders, ported from MP)
+	if (glConfigExt.doGammaCorrectionWithShaders)
+	{
+		qglEnable(GL_TEXTURE_3D);
+		// SJE: own GL name (not from the image counter, which restarts at 1024 when images are cleared and
+		// could hand the same name to a 2D image, then delete it with that image)
+		if (tr.gammaCorrectLUTImage)
+		{
+			qglDeleteTextures(1, &tr.gammaCorrectLUTImage);
+		}
+		qglGenTextures(1, &tr.gammaCorrectLUTImage);
+		qglBindTexture(GL_TEXTURE_3D, tr.gammaCorrectLUTImage);
+		qglTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, 64, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		qglDisable(GL_TEXTURE_3D);
+	}
+
 	qglEnable(GL_TEXTURE_2D);
 
 	// with overbright bits active, we need an image which is some fraction of full color,
@@ -1350,12 +1372,12 @@ void R_SetColorMappings() {
 
 	// setup the overbright lighting
 	tr.overbrightBits = r_overBrightBits->integer;
-	if (!glConfig.deviceSupportsGamma) {
+	if (!glConfig.deviceSupportsGamma && !glConfigExt.doGammaCorrectionWithShaders) {
 		tr.overbrightBits = 0;		// need hardware gamma for overbright
 	}
 
-	// never overbright in windowed mode
-	if (!glConfig.isFullscreen)
+	// never overbright in windowed mode (SJE: unless gamma is done with shaders, which does not touch the desktop)
+	if (!glConfig.isFullscreen && !glConfigExt.doGammaCorrectionWithShaders)
 	{
 		tr.overbrightBits = 0;
 	}
@@ -1410,9 +1432,57 @@ void R_SetColorMappings() {
 		s_intensitytable[i] = j;
 	}
 
-	if (glConfig.deviceSupportsGamma)
+	if (glConfig.deviceSupportsGamma && !glConfigExt.doGammaCorrectionWithShaders)
 	{
 		ri.WIN_SetGamma(&glConfig, s_gammatable, s_gammatable, s_gammatable);
+	}
+}
+
+// SJE: gamma/overbright lookup texture for the r_gammaShaders post-process (ported from MP)
+void R_SetGammaCorrectionLUT()
+{
+	if (glConfigExt.doGammaCorrectionWithShaders && tr.gammaCorrectLUTImage)
+	{
+		int inf = 0;
+		const int shift = tr.overbrightBits;
+		const float g = r_gamma->value;
+		byte gamma_corrected[64]{};
+
+		for (int i = 0; i < 64; i++)
+		{
+			if (g == 1.0f)
+			{
+				inf = static_cast<int>(static_cast<float>(i) / 63.0f * 255.0f + 0.5f);
+			}
+			else
+			{
+				inf = static_cast<int>(255.0f * pow(static_cast<float>(i) / 63.0f, 1.0f / g) + 0.5f);
+			}
+
+			gamma_corrected[i] = Com_Clampi(0, 255, inf << shift);
+		}
+
+		const auto lut_table = static_cast<byte*>(R_Malloc(64 * 64 * 64 * 3, TAG_TEMP_WORKSPACE, qfalse));
+		byte* write = lut_table;
+		for (const unsigned char z : gamma_corrected)
+		{
+			for (const unsigned char y : gamma_corrected)
+			{
+				for (const unsigned char x : gamma_corrected)
+				{
+					*write++ = x;
+					*write++ = y;
+					*write++ = z;
+				}
+			}
+		}
+
+		qglBindTexture(GL_TEXTURE_3D, tr.gammaCorrectLUTImage);
+		qglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		qglTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, 64, 64, 64, GL_RGB, GL_UNSIGNED_BYTE, lut_table);
+		qglPixelStorei(GL_UNPACK_ALIGNMENT, 4); // SJE: restore the GL default - fonts and other textures uploaded later assume it
+
+		R_Free(lut_table);
 	}
 }
 
@@ -1429,6 +1499,8 @@ void	R_InitImages() {
 
 	// create default texture and white texture
 	R_CreateBuiltinImages();
+
+	R_SetGammaCorrectionLUT(); // SJE
 }
 
 /*

@@ -391,6 +391,19 @@ void GL_State(uint32_t stateBits)
 		}
 	}
 
+	// SJE: alpha-to-coverage (set by RB_IterateStagesGeneric for cut-out stages, see r_ext_alpha_to_coverage)
+	if (diff & GLS_ALPHA_TO_COVERAGE)
+	{
+		if (stateBits & GLS_ALPHA_TO_COVERAGE)
+		{
+			qglEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		}
+		else
+		{
+			qglDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		}
+	}
+
 	glState.glStateBits = stateBits;
 }
 

@@ -1132,6 +1132,11 @@ static qboolean MenuParse_itemDef(itemDef_t* item)
 	if (menu->itemCount < MAX_MENUITEMS)
 	{
 		itemDef_t* newItem = menu->items[menu->itemCount] = static_cast<itemDef_s*>(UI_Alloc(sizeof(itemDef_t)));
+		if (!newItem)
+		{
+			// SJE: UI memory pool exhausted - fail the parse instead of writing through NULL
+			return qfalse;
+		}
 		Item_Init(newItem);
 		if (!Item_Parse(newItem))
 		{
@@ -1848,10 +1853,10 @@ static void Menu_TransitionItemByName(const menuDef_t* menu, const char* p, cons
 			item->window.offsetTime = time;
 			memcpy(&item->window.rectClient, rectFrom, sizeof(rectDef_t));
 			memcpy(&item->window.rectEffects, rectTo, sizeof(rectDef_t));
-			item->window.rectEffects2.x = abs(rectTo->x - rectFrom->x) / amt;
-			item->window.rectEffects2.y = abs(rectTo->y - rectFrom->y) / amt;
-			item->window.rectEffects2.w = abs(rectTo->w - rectFrom->w) / amt;
-			item->window.rectEffects2.h = abs(rectTo->h - rectFrom->h) / amt;
+			item->window.rectEffects2.x = fabs(rectTo->x - rectFrom->x) / amt;
+			item->window.rectEffects2.y = fabs(rectTo->y - rectFrom->y) / amt;
+			item->window.rectEffects2.w = fabs(rectTo->w - rectFrom->w) / amt;
+			item->window.rectEffects2.h = fabs(rectTo->h - rectFrom->h) / amt;
 			Item_UpdatePosition(item);
 		}
 	}
@@ -1897,16 +1902,16 @@ static void Menu_Transition3ItemByName(const menuDef_t* menu, const char* p, con
 
 				//				VectorSet(modelptr->g2maxs2, maxx, maxy, maxz);
 
-				modelptr->g2maxsEffect[0] = abs(modelptr->g2maxs2[0] - modelptr->g2maxs[0]) / amt;
-				modelptr->g2maxsEffect[1] = abs(modelptr->g2maxs2[1] - modelptr->g2maxs[1]) / amt;
-				modelptr->g2maxsEffect[2] = abs(modelptr->g2maxs2[2] - modelptr->g2maxs[2]) / amt;
+				modelptr->g2maxsEffect[0] = fabs(modelptr->g2maxs2[0] - modelptr->g2maxs[0]) / amt;
+				modelptr->g2maxsEffect[1] = fabs(modelptr->g2maxs2[1] - modelptr->g2maxs[1]) / amt;
+				modelptr->g2maxsEffect[2] = fabs(modelptr->g2maxs2[2] - modelptr->g2maxs[2]) / amt;
 
-				modelptr->g2minsEffect[0] = abs(modelptr->g2mins2[0] - modelptr->g2mins[0]) / amt;
-				modelptr->g2minsEffect[1] = abs(modelptr->g2mins2[1] - modelptr->g2mins[1]) / amt;
-				modelptr->g2minsEffect[2] = abs(modelptr->g2mins2[2] - modelptr->g2mins[2]) / amt;
+				modelptr->g2minsEffect[0] = fabs(modelptr->g2mins2[0] - modelptr->g2mins[0]) / amt;
+				modelptr->g2minsEffect[1] = fabs(modelptr->g2mins2[1] - modelptr->g2mins[1]) / amt;
+				modelptr->g2minsEffect[2] = fabs(modelptr->g2mins2[2] - modelptr->g2mins[2]) / amt;
 
-				modelptr->fov_Effectx = abs(modelptr->fov_x2 - modelptr->fov_x) / amt;
-				modelptr->fov_Effecty = abs(modelptr->fov_y2 - modelptr->fov_y) / amt;
+				modelptr->fov_Effectx = fabs(modelptr->fov_x2 - modelptr->fov_x) / amt;
+				modelptr->fov_Effecty = fabs(modelptr->fov_y2 - modelptr->fov_y) / amt;
 			}
 		}
 	}
@@ -5043,6 +5048,11 @@ static void Item_TextScroll_BuildLines(const itemDef_t* item)
 	const char* psCurrentTextReadPos = psText;
 	const char* psReadPosAtLineStart = psCurrentTextReadPos;
 	const char* psBestLineBreakSrcPos = psCurrentTextReadPos;
+
+	if (!scrollPtr)
+	{
+		return; // SJE: typeData alloc can fail
+	}
 
 	scrollPtr->iLineCount = 0;
 	memset(scrollPtr->pLines, 0, sizeof scrollPtr->pLines);

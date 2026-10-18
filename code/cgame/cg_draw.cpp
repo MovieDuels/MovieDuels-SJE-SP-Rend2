@@ -4234,7 +4234,10 @@ static void CG_DrawATSTHud()
 			STAT_ARMOR];
 	}
 
-	CG_DrawItemHealth(health, g_entities[cg.snap->ps.viewEntity].activator->max_health);
+	// SJE: activator can be NULL here (the else branch above handles it) - fall back to the view entity's own max
+	CG_DrawItemHealth(health, g_entities[cg.snap->ps.viewEntity].activator
+		? g_entities[cg.snap->ps.viewEntity].activator->max_health
+		: g_entities[cg.snap->ps.viewEntity].max_health);
 
 	if (cgi_UI_GetMenuItemInfo(
 		"atsthud",
@@ -4901,9 +4904,12 @@ static void CG_DrawHUD(const centity_t* cent)
 				CG_DrawSmallStringColor(section_x_pos, section_y_pos - 60, va("Ammo:%d", value),
 					colorTable[CT_HUD_GREEN]);
 			}
-			CG_DrawSmallStringColor(section_x_pos, section_y_pos - 40,
-				va("Force:%d", cent->gent->client->ps.forcePower),
-				colorTable[CT_HUD_GREEN]);
+			if (cent->gent && cent->gent->client) // SJE: gent is tested just above, so it can be NULL
+			{
+				CG_DrawSmallStringColor(section_x_pos, section_y_pos - 40,
+					va("Force:%d", cent->gent->client->ps.forcePower),
+					colorTable[CT_HUD_GREEN]);
+			}
 		}
 
 		// Print frame

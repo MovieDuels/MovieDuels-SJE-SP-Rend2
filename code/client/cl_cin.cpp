@@ -1610,7 +1610,7 @@ e_status CIN_RunCinematic(const int handle)
 	}
 
 	const int this_time = Sys_Milliseconds() * com_timescale->value;
-	if (cinTable[currentHandle].shader && abs(this_time - static_cast<double>(cinTable[currentHandle].lastTime)) > 100)
+	if (cinTable[currentHandle].shader && fabs(this_time - static_cast<double>(cinTable[currentHandle].lastTime)) > 100)
 	{
 		cinTable[currentHandle].startTime += this_time - cinTable[currentHandle].lastTime;
 	}

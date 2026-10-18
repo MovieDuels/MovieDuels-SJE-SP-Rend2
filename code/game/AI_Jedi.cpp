@@ -4902,7 +4902,7 @@ int jedi_re_calc_parry_time(const gentity_t* self, const evasionType_t evasion_t
 			}
 			if (g_SerenityJediEngineMode->integer == 2)
 			{
-				base_time = base_time += 400 * Q_irand(1, 2);
+				base_time += 400 * Q_irand(1, 2);
 			}
 			else
 			{
@@ -4918,7 +4918,7 @@ int jedi_re_calc_parry_time(const gentity_t* self, const evasionType_t evasion_t
 				else
 				{
 					//force users are kinda slow
-					base_time = base_time += 400 * Q_irand(1, 2);
+					base_time += 400 * Q_irand(1, 2);
 				}
 			}
 

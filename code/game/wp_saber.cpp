@@ -279,6 +279,8 @@ void G_StaggerAttacker(gentity_t* atk);
 extern qboolean PM_LungRollAnim(int anim);
 extern qboolean jedi_win_po(const gentity_t* self);
 void WP_BlockPointsDrain(const gentity_t* self, int fatigue);
+qboolean WP_BlockMasterClass(const gentity_t* self);
+int WP_ClassBlockPointCost(const gentity_t* blocker, int cost, qboolean vs_blaster);
 extern qboolean sab_beh_attack_vs_block(gentity_t* attacker, gentity_t* blocker, int saberNum, int bladeNum, vec3_t hit_loc);
 extern qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, int saberNum, int bladeNum, vec3_t hit_loc);
 extern void g_fatigue_bp_knockaway(gentity_t* blocker);
@@ -7333,6 +7335,41 @@ qboolean WP_SaberDisarmed(gentity_t* self, vec3_t throw_dir);
 qboolean WP_saberKnockOutOfHand(gentity_t* self, vec3_t throw_dir);
 void G_Stagger(gentity_t* hitEnt);
 
+void G_Stumble(gentity_t* hitEnt);
+
+// SJE: blaster-bolt block reactions. Only BOLT_BLOCK_STAGGER_CHANCE % of them are a full stagger, the rest are a
+// stumble. After a stagger the victim can only stumble for BOLT_BLOCK_STAGGER_COOLDOWN ms, so he never chains
+// stagger, stagger, stagger. Kept per entity here (not in gclient_t) so the savegame layout is untouched.
+#define BOLT_BLOCK_STAGGER_CHANCE	20		// percent
+#define BOLT_BLOCK_STAGGER_COOLDOWN	10000	// ms
+static int s_bolt_block_stagger_until[MAX_GENTITIES];
+
+static void WP_BoltBlockStaggerOrStumble(gentity_t* victim)
+{
+	if (!victim || !victim->client)
+	{
+		return;
+	}
+
+	int& stagger_until = s_bolt_block_stagger_until[victim->s.number];
+
+	// a time left over from an earlier map / savegame (level.time restarted) - forget it
+	if (stagger_until - level.time > BOLT_BLOCK_STAGGER_COOLDOWN)
+	{
+		stagger_until = 0;
+	}
+
+	if (level.time >= stagger_until && Q_irand(1, 100) <= BOLT_BLOCK_STAGGER_CHANCE)
+	{
+		G_Stagger(victim);
+		stagger_until = level.time + BOLT_BLOCK_STAGGER_COOLDOWN;
+	}
+	else
+	{
+		G_Stumble(victim);
+	}
+}
+
 qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
 {
 	if (!victim || !victim->client)
@@ -7348,7 +7385,7 @@ qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
 		victim->client->ps.forcePower <= BLOCKPOINTS_TEN)
 	{
 		//knock their asses down!!
-		G_Stagger(victim);
+		WP_BoltBlockStaggerOrStumble(victim);
 
 		vec3_t throw_dir = { 0, 0, 350 };
 
@@ -7419,7 +7456,7 @@ qboolean wp_bolt_block_victim_reflected(gentity_t* victim)
 	// Severe threshold → knockdown + saber disarm
 	if (severeThreshold == qtrue)
 	{
-		G_Stagger(victim);
+		WP_BoltBlockStaggerOrStumble(victim);
 
 		vec3_t throw_dir = { 0.0f, 0.0f, 350.0f };
 
@@ -7437,7 +7474,7 @@ qboolean wp_bolt_block_victim_reflected(gentity_t* victim)
 	}
 
 	// Mild threshold → stagger only
-	G_Stagger(victim);
+	WP_BoltBlockStaggerOrStumble(victim);
 	return qtrue;
 }
 
@@ -10922,7 +10959,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 								else
 								{
 									g_fatigue_bp_knockaway(hit_owner);
-									PM_AddBlockFatigue(&hit_owner->client->ps, BLOCKPOINTS_TEN);
+									PM_AddBlockFatigue(&hit_owner->client->ps, WP_ClassBlockPointCost(hit_owner, BLOCKPOINTS_TEN, qfalse));
 								}
 
 								if (d_blockinfo->integer || g_DebugSaberCombat->integer)
@@ -43509,6 +43546,45 @@ void WP_BlockPointsDrain(const gentity_t* self, const int fatigue)
 	}
 }
 
+// MD: veteran saber masters (Sith Lord, Desann, Vader, Kyle, Galen, Tavion, Yoda, Luke) tire less when blocking:
+// 20% fewer block points against sabers, 40% fewer against blaster bolts. Only used for the blocker's cost.
+// SJE: the master-level saber classes - they pay fewer block points (WP_ClassBlockPointCost) and
+// regenerate them 25% faster (WP_BlockPointsUpdate)
+qboolean WP_BlockMasterClass(const gentity_t* self)
+{
+	if (!self || !self->client)
+	{
+		return qfalse;
+	}
+
+	switch (self->client->NPC_class)
+	{
+	case CLASS_SITHLORD:
+	case CLASS_DESANN:
+	case CLASS_VADER:
+	case CLASS_KYLE:
+	case CLASS_GALEN:
+	case CLASS_TAVION:
+	case CLASS_YODA:
+	case CLASS_LUKE:
+		return qtrue;
+	default:
+		return qfalse;
+	}
+}
+
+int WP_ClassBlockPointCost(const gentity_t* blocker, const int cost, const qboolean vs_blaster)
+{
+	if (cost <= 0 || !WP_BlockMasterClass(blocker))
+	{
+		return cost;
+	}
+
+	const int percent = vs_blaster ? 60 : 80; // pay 60% / 80% of the normal cost
+	const int reduced = (cost * percent + 50) / 100; // rounded
+	return reduced < 1 ? 1 : reduced;
+}
+
 extern void Cmd_UseProjection_f(gentity_t* ent);
 
 void WP_ForcePowerStart(gentity_t* self, const forcePowers_t force_power, int override_amt)
@@ -46829,7 +46905,7 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 	}
 }
 
-void WP_BlockPointsUpdate(const gentity_t* self)
+static void WP_BlockPointsUpdate_Base(const gentity_t* self)
 {
 	const qboolean is_holding_block_button = self->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ? qtrue : qfalse;
 	//Normal Blocking
@@ -46934,6 +47010,23 @@ void WP_BlockPointsUpdate(const gentity_t* self)
 				}
 			}
 		}
+	}
+}
+
+// SJE: the block master classes (WP_BlockMasterClass) regenerate block points 25% faster - every regen wait the
+// update above sets is cut to 80% of its length (1 / 1.25)
+void WP_BlockPointsUpdate(const gentity_t* self)
+{
+	const int prev_debounce = self->client->ps.BlockPointsRegenDebounceTime;
+
+	WP_BlockPointsUpdate_Base(self);
+
+	if (self->client->ps.BlockPointsRegenDebounceTime != prev_debounce
+		&& self->client->ps.BlockPointsRegenDebounceTime > level.time
+		&& WP_BlockMasterClass(self))
+	{
+		const int wait = self->client->ps.BlockPointsRegenDebounceTime - level.time;
+		self->client->ps.BlockPointsRegenDebounceTime = level.time + wait * 4 / 5;
 	}
 }
 

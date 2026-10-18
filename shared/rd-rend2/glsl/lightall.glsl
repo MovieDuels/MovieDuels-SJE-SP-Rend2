@@ -1106,6 +1106,16 @@ void main()
 		if (diffuse.a < 1.00)
 			discard;
 	}
+	else if (u_AlphaTestType == ALPHA_TEST_GE128_A2C || u_AlphaTestType == ALPHA_TEST_GE192_A2C)
+	{
+		// SJE: alpha-to-coverage - sharpen the alpha around the cut-off so the edge fades over about one pixel
+		// and becomes MSAA sample coverage (anti-aliased foliage / fences) instead of a hard jagged discard
+		float cutoff = (u_AlphaTestType == ALPHA_TEST_GE128_A2C) ? 0.5 : 0.75;
+		diffuse.a = (diffuse.a - cutoff) / max(fwidth(diffuse.a), 0.0001) + 0.5;
+		if (diffuse.a <= 0.0)
+			discard;
+		diffuse.a = clamp(diffuse.a, 0.0, 1.0);
+	}
 #endif
 
 #if defined(PER_PIXEL_LIGHTING)

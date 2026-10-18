@@ -784,7 +784,7 @@ static void CG_DrawLoadingScreen(const qhandle_t levelshot, const char* map_name
 	vec4_t color;
 	qhandle_t background = 0;
 	int forcepowers = 0;
-	char weapons[WP_NUM_WEAPONS];
+	char weapons[WP_NUM_WEAPONS] = {}; // SJE: zeroed - a short playerweaps string (old save) left the rest as garbage icons
 
 	// Get mission briefing for load screen
 	if (cgi_SP_GetStringTextString(va("BRIEFINGS_%s", map_name), nullptr, 0) == 0)

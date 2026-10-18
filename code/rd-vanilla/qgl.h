@@ -354,6 +354,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define qglTexGeniv glTexGeniv
 #define qglTexImage1D glTexImage1D
 #define qglTexImage2D glTexImage2D
+#if defined(__APPLE__)
+#define qglTexImage3D glTexImage3D
+#define qglTexSubImage3D glTexSubImage3D
+#endif
 #define qglTexParameterf glTexParameterf
 #define qglTexParameterfv glTexParameterfv
 #define qglTexParameteri glTexParameteri
@@ -396,6 +400,11 @@ extern PFNGLSTENCILOPSEPARATEPROC qglStencilOpSeparate;
 extern PFNGLACTIVETEXTUREARBPROC qglActiveTextureARB;
 extern PFNGLCLIENTACTIVETEXTUREARBPROC qglClientActiveTextureARB;
 extern PFNGLMULTITEXCOORD2FARBPROC qglMultiTexCoord2fARB;
+#if !defined(__APPLE__)
+// SJE: 3D textures for the r_gammaShaders lookup table
+extern PFNGLTEXIMAGE3DPROC qglTexImage3D;
+extern PFNGLTEXSUBIMAGE3DPROC qglTexSubImage3D;
+#endif
 
 extern PFNGLCOMBINERPARAMETERFVNVPROC qglCombinerParameterfvNV;
 extern PFNGLCOMBINERPARAMETERIVNVPROC qglCombinerParameterivNV;

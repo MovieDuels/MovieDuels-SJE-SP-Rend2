@@ -360,12 +360,16 @@ static size_t GLSL_GetShaderHeader(
 			"#define ALPHA_TEST_LT128 %i\n"
 			"#define ALPHA_TEST_GE128 %i\n"
 			"#define ALPHA_TEST_GE192 %i\n"
-			"#define ALPHA_TEST_E255 %i\n",
+			"#define ALPHA_TEST_E255 %i\n"
+			"#define ALPHA_TEST_GE128_A2C %i\n"
+			"#define ALPHA_TEST_GE192_A2C %i\n",
 			ALPHA_TEST_GT0,
 			ALPHA_TEST_LT128,
 			ALPHA_TEST_GE128,
 			ALPHA_TEST_GE192,
-			ALPHA_TEST_E255));
+			ALPHA_TEST_E255,
+			ALPHA_TEST_GE128_A2C,
+			ALPHA_TEST_GE192_A2C));
 
 	Q_strcat(dest, size,
 		va("#define MAX_G2_BONES %i\n",

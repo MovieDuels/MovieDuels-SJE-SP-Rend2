@@ -663,6 +663,16 @@ void main()
 		if (color.a < 1.00)
 			discard;
 	}
+	else if (u_AlphaTestType == ALPHA_TEST_GE128_A2C || u_AlphaTestType == ALPHA_TEST_GE192_A2C)
+	{
+		// SJE: alpha-to-coverage - sharpen the alpha around the cut-off so the edge fades over about one pixel
+		// and becomes MSAA sample coverage (anti-aliased foliage / fences) instead of a hard jagged discard
+		float cutoff = (u_AlphaTestType == ALPHA_TEST_GE128_A2C) ? 0.5 : 0.75;
+		color.a = (color.a - cutoff) / max(fwidth(color.a), 0.0001) + 0.5;
+		if (color.a <= 0.0)
+			discard;
+		color.a = clamp(color.a, 0.0, 1.0);
+	}
 #endif
 
 #if defined(USE_FOG)

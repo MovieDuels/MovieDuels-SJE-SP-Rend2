@@ -112,6 +112,15 @@ cvar_t* r_texturebitslm;
 cvar_t* r_lightmap;
 cvar_t* r_vertexLight;
 cvar_t* r_shadows;
+glconfigExt_t glConfigExt;				// SJE: renderer-only GL capabilities
+#if !defined(__APPLE__)
+PFNGLTEXIMAGE3DPROC qglTexImage3D;			// SJE: 3D textures for the r_gammaShaders lookup table
+PFNGLTEXSUBIMAGE3DPROC qglTexSubImage3D;
+#endif
+cvar_t* r_dynamicGlowBloom;			// SJE: bloom intensity (0 = off, up to 2)
+cvar_t* r_dynamicGlowBloomThreshold;	// SJE: bloom bright-pass threshold (0-0.95)
+cvar_t* r_ext_alpha_to_coverage;		// SJE: anti-aliased cut-out textures when multisampling
+cvar_t* r_gammaShaders;				// SJE: gamma/overbright as a post-process (ported from MP)
 cvar_t* r_shadowRange;
 cvar_t* r_flares;
 cvar_t* r_nobind;
@@ -412,6 +421,11 @@ GLimp_InitExtensions
 extern bool g_bDynamicGlowSupported;
 static void GLimp_InitExtensions()
 {
+	// SJE: start with the extra post-process features off; detected below
+	glConfigExt.doGammaCorrectionWithShaders = qfalse;
+	glConfigExt.doBloomWithShaders = qfalse;
+	glConfigExt.doAlphaToCoverage = qfalse;
+
 	if (!r_allowExtensions->integer)
 	{
 		Com_Printf("*** IGNORING OPENGL EXTENSIONS ***\n");
@@ -676,6 +690,30 @@ static void GLimp_InitExtensions()
 	if (b_nv_register_combiners)
 		qglGetIntegerv(GL_MAX_GENERAL_COMBINERS_NV, &i_num_general_combiners);
 
+	// SJE: gamma/overbright with shaders (ported from MP) - on by default (r_gammaShaders 1), works in windowed mode
+	glConfigExt.doGammaCorrectionWithShaders = qfalse;
+	if (r_gammaShaders->integer && qglActiveTextureARB && b_tex_rect_supported && b_arb_vertex_program && b_arb_fragment_program)
+	{
+#if !defined(__APPLE__)
+		qglTexImage3D = reinterpret_cast<PFNGLTEXIMAGE3DPROC>(ri.GL_GetProcAddress("glTexImage3D"));
+		qglTexSubImage3D = reinterpret_cast<PFNGLTEXSUBIMAGE3DPROC>(ri.GL_GetProcAddress("glTexSubImage3D"));
+		if (qglTexImage3D && qglTexSubImage3D)
+		{
+			glConfigExt.doGammaCorrectionWithShaders = qtrue;
+		}
+#else
+		glConfigExt.doGammaCorrectionWithShaders = qtrue;
+#endif
+	}
+
+	// SJE: alpha-to-coverage needs a multisampled framebuffer (r_ext_multisample)
+	{
+		GLint sample_buffers = 0;
+		qglGetIntegerv(GL_SAMPLE_BUFFERS_ARB, &sample_buffers);
+		glConfigExt.doAlphaToCoverage = sample_buffers > 0 ? qtrue : qfalse;
+		qglGetError(); // GL_SAMPLE_BUFFERS is unknown on GL 1.1-only drivers - ignore that
+	}
+
 	// Only allow dynamic glows/flares if they have the hardware
 	if (b_tex_rect_supported && b_arb_vertex_program && qglActiveTextureARB && glConfig.maxActiveTextures >= 4 &&
 		(b_nv_register_combiners && i_num_general_combiners >= 2 || b_arb_fragment_program))
@@ -687,6 +725,9 @@ static void GLimp_InitExtensions()
 		g_bDynamicGlowSupported = false;
 		ri.Cvar_Set("r_DynamicGlow", "0");
 	}
+
+	// SJE: bloom rides on the dynamic glow path and needs ARB fragment programs
+	glConfigExt.doBloomWithShaders = g_bDynamicGlowSupported && b_tex_rect_supported && b_arb_fragment_program ? qtrue : qfalse;
 
 #if !defined(__APPLE__)
 	qglStencilOpSeparate = reinterpret_cast<PFNGLSTENCILOPSEPARATEPROC>(ri.GL_GetProcAddress("glStencilOpSeparate"));
@@ -895,7 +936,7 @@ static void R_TakeScreenshot(const int x, const int y, const int width, const in
 	const size_t memcount = linelen * height;
 
 	// gamma correct
-	if (glConfig.deviceSupportsGamma)
+	if (glConfig.deviceSupportsGamma && !glConfigExt.doGammaCorrectionWithShaders)
 		R_GammaCorrect(allbuf + offset, memcount);
 
 	ri.FS_WriteFile(fileName, buffer, memcount + 18);
@@ -948,7 +989,7 @@ const void* RB_TakeVideoFrameCmd(const void* data)
 	// the read back is done here; the compression and the writing run on workers (tr_video_encoder.cpp) - compressing
 	// here cost tens of milliseconds per captured frame
 	R_VideoCaptureFrame(R_VideoReadbackGL(), cmd->width, cmd->height, padwidth, r_aviMotionJpegQuality->integer,
-		cmd->motionJpeg, glConfig.deviceSupportsGamma ? R_GammaCorrect : nullptr, ri.CL_WriteAVIVideoFrame);
+		cmd->motionJpeg, glConfig.deviceSupportsGamma && !glConfigExt.doGammaCorrectionWithShaders ? R_GammaCorrect : nullptr, ri.CL_WriteAVIVideoFrame);
 
 	return cmd + 1;
 }
@@ -987,7 +1028,7 @@ static void R_TakeScreenshotJPEG(const int x, const int y, const int width, cons
 	const size_t memcount = (width * 3 + padlen) * height;
 
 	// gamma correct
-	if (glConfig.deviceSupportsGamma)
+	if (glConfig.deviceSupportsGamma && !glConfigExt.doGammaCorrectionWithShaders)
 		R_GammaCorrect(buffer + offset, memcount);
 
 	RE_SaveJPG(fileName, r_screenshotJpegQuality->integer, width, height, buffer + offset, padlen);
@@ -1060,7 +1101,7 @@ static void R_LevelShot() {
 	}
 
 	// gamma correct
-	if (tr.overbrightBits > 0 && glConfig.deviceSupportsGamma) {
+	if (tr.overbrightBits > 0 && glConfig.deviceSupportsGamma && !glConfigExt.doGammaCorrectionWithShaders) {
 		R_GammaCorrect(buffer + 18, LEVELSHOTSIZE * LEVELSHOTSIZE * 3);
 	}
 
@@ -1335,7 +1376,11 @@ void GfxInfo_f()
 	{
 		ri.Printf(PRINT_ALL, "N/A\n");
 	}
-	if (glConfig.deviceSupportsGamma)
+	if (glConfigExt.doGammaCorrectionWithShaders)
+	{
+		ri.Printf(PRINT_ALL, "GAMMA: shader w/ %d overbright bits\n", tr.overbrightBits);
+	}
+	else if (glConfig.deviceSupportsGamma)
 	{
 		ri.Printf(PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits);
 	}
@@ -1599,6 +1644,12 @@ static void R_Register()
 	r_DynamicGlowHeight = ri.Cvar_Get("r_DynamicGlowHeight", "240", CVAR_ARCHIVE_ND | CVAR_LATCH);
 	r_Dynamic_AMD_Fix = ri.Cvar_Get("r_Dynamic_AMD_Fix", "0", CVAR_ARCHIVE_ND);
 
+	r_dynamicGlowBloom = ri.Cvar_Get("r_dynamicGlowBloom", "0.0", CVAR_ARCHIVE_ND);
+	ri.Cvar_CheckRange(r_dynamicGlowBloom, 0.f, 2.f, qfalse);
+	r_dynamicGlowBloomThreshold = ri.Cvar_Get("r_dynamicGlowBloomThreshold", "0.65", CVAR_ARCHIVE_ND);
+	ri.Cvar_CheckRange(r_dynamicGlowBloomThreshold, 0.f, 0.95f, qfalse);
+	r_ext_alpha_to_coverage = ri.Cvar_Get("r_ext_alpha_to_coverage", "1", CVAR_ARCHIVE_ND);
+	r_gammaShaders = ri.Cvar_Get("r_gammaShaders", "1", CVAR_ARCHIVE_ND | CVAR_LATCH);
 	r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	ri.Cvar_CheckRange(r_picmip, 0, 16, qtrue);
 	r_colorMipLevels = ri.Cvar_Get("r_colorMipLevels", "0", CVAR_LATCH);
@@ -1910,6 +1961,30 @@ void RE_Shutdown(qboolean destroyWindow, qboolean restarting)
 
 		// Release the blur texture.
 		qglDeleteTextures(1, &tr.blurImage);
+	}
+
+	// SJE: release the bloom program (created whatever r_dynamicglow is set to)
+	if (tr.bloomPShader && qglDeleteProgramsARB)
+	{
+		qglDeleteProgramsARB(1, &tr.bloomPShader);
+		tr.bloomPShader = 0;
+	}
+
+	// SJE: release the gamma correction programs and lookup texture
+	if (tr.gammaCorrectVtxShader && qglDeleteProgramsARB)
+	{
+		qglDeleteProgramsARB(1, &tr.gammaCorrectVtxShader);
+		tr.gammaCorrectVtxShader = 0;
+	}
+	if (tr.gammaCorrectPxShader && qglDeleteProgramsARB)
+	{
+		qglDeleteProgramsARB(1, &tr.gammaCorrectPxShader);
+		tr.gammaCorrectPxShader = 0;
+	}
+	if (tr.gammaCorrectLUTImage)
+	{
+		qglDeleteTextures(1, &tr.gammaCorrectLUTImage);
+		tr.gammaCorrectLUTImage = 0;
 	}
 
 	R_ShutdownWorldEffects();

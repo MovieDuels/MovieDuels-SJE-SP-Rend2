@@ -1838,8 +1838,20 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 		const float parallaxBias = r_forceParallaxBias->value > 0.0f ? r_forceParallaxBias->value : pStage->parallaxBias;
 		uniformDataWriter.SetUniformFloat(UNIFORM_PARALLAXBIAS, parallaxBias);
 
-		const AlphaTestType alphaTestType =
+		AlphaTestType alphaTestType =
 			useAlphaTestGE192 ? ALPHA_TEST_GE192 : pStage->alphaTestType;
+
+		// SJE: alpha-to-coverage (r_ext_alpha_to_coverage). Opaque cut-out stages (GE128 / GE192, no blending) drawn
+		// into the multisampled scene buffer get anti-aliased edges. Not for the depth pre-pass, shadow maps or refraction.
+		if (r_ext_alpha_to_coverage && r_ext_alpha_to_coverage->integer
+			&& tr.msaaResolveFbo && glState.currentFBO == tr.renderFbo
+			&& !backEnd.depthFill && !(backEnd.viewParms.flags & VPF_DEPTHSHADOW) && !forceRefraction
+			&& !(stateBits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS))
+			&& (alphaTestType == ALPHA_TEST_GE128 || alphaTestType == ALPHA_TEST_GE192))
+		{
+			alphaTestType = alphaTestType == ALPHA_TEST_GE128 ? ALPHA_TEST_GE128_A2C : ALPHA_TEST_GE192_A2C;
+			stateBits |= static_cast<int>(GLS_ALPHA_TO_COVERAGE);
+		}
 		uniformDataWriter.SetUniformInt(UNIFORM_ALPHA_TEST_TYPE, alphaTestType);
 
 		if (forceRefraction)

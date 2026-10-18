@@ -149,6 +149,7 @@ extern cvar_t* r_ext_multi_draw_arrays;
 extern cvar_t* r_ext_texture_float;
 extern cvar_t* r_arb_half_float_pixel;
 extern cvar_t* r_ext_framebuffer_multisample;
+extern cvar_t* r_ext_alpha_to_coverage;	// SJE
 extern cvar_t* r_arb_seamless_cube_map;
 
 extern cvar_t* r_smaa;
@@ -927,6 +928,8 @@ enum AlphaTestType
 	ALPHA_TEST_GE128,
 	ALPHA_TEST_GE192,
 	ALPHA_TEST_E255,
+	ALPHA_TEST_GE128_A2C,	// SJE: GE128 / GE192 drawn with alpha-to-coverage (r_ext_alpha_to_coverage + MSAA)
+	ALPHA_TEST_GE192_A2C,
 };
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
@@ -1169,6 +1172,13 @@ enum
 
 	GLS_DEFAULT = GLS_DEPTHMASK_TRUE
 };
+
+// SJE: alpha-to-coverage for cut-out stages (r_ext_alpha_to_coverage). Bit 31 - kept out of the enum above,
+// whose values are int.
+#define GLS_ALPHA_TO_COVERAGE 0x80000000u
+#ifndef GL_SAMPLE_ALPHA_TO_COVERAGE
+#define GL_SAMPLE_ALPHA_TO_COVERAGE 0x809E
+#endif
 
 struct Attribute
 {

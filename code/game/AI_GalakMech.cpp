@@ -1223,7 +1223,7 @@ static void NPC_BSGM_Attack()
 	}
 
 	//also:
-	if (NPC->enemy->s.weapon == WP_TURRET && !Q_stricmp("PAS", NPC->enemy->classname))
+	if (NPC->enemy && NPC->enemy->s.weapon == WP_TURRET && !Q_stricmp("PAS", NPC->enemy->classname)) // SJE: enemy can be NULL
 	{
 		//crush turrets
 		if (G_BoundsOverlap(NPC->absmin, NPC->absmax, NPC->enemy->absmin, NPC->enemy->absmax))

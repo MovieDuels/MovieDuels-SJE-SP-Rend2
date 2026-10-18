@@ -107,6 +107,38 @@ constexpr unsigned char g_strGlowPShaderARB[] =
 	\
 	END"
 };
+
+// SJE: gamma correction programs (r_gammaShaders) - ported from MP
+static const char* gammaCorrectVtxShader =
+"!!ARBvp1.0\
+MOV result.position, vertex.position;\
+MOV result.texcoord[0], vertex.texcoord[0];\
+END";
+
+static const char* gammaCorrectPxShader =
+"!!ARBfp1.0\
+TEMP r0;\
+TEX r0, fragment.texcoord[0], texture[0], RECT;\
+TEX result.color, r0, texture[1], 3D;\
+END";
+
+// SJE: bloom bright-pass (r_dynamicGlowBloom). Keeps only the bright part of the normal scene,
+// scaled by intensity, so the existing glow blur spreads it. env[1] = threshold, intensity, 1/(1-threshold).
+static const char* bloomBrightPassPxShader =
+"!!ARBfp1.0\n"
+"OPTION ARB_precision_hint_fastest;\n"
+"PARAM Bloom = program.env[1];\n"
+"PARAM LumW = { 0.2126, 0.7152, 0.0722, 1.0 };\n"
+"TEMP c;\n"
+"TEMP l;\n"
+"TEX c, fragment.texcoord[0], texture[0], RECT;\n"
+"DP3 l.x, c, LumW;\n"
+"SUB l.x, l.x, Bloom.x;\n"
+"MUL_SAT l.x, l.x, Bloom.z;\n"
+"MUL l.x, l.x, Bloom.y;\n"
+"MUL result.color.xyz, c, l.x;\n"
+"MOV result.color.w, LumW.w;\n"
+"END\n";
 /***********************************************************************************************************/
 
 #define GL_PROGRAM_ERROR_STRING_ARB						0x8874
@@ -189,4 +221,49 @@ void ARB_InitGlowShaders() {
 		qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &i_err_pos);
 		assert(i_err_pos == -1);
 	}
+	// SJE: gamma correction programs (ported from MP)
+	if (glConfigExt.doGammaCorrectionWithShaders)
+	{
+		int error_char = -1;
+		qglGenProgramsARB(1, &tr.gammaCorrectVtxShader);
+		qglBindProgramARB(GL_VERTEX_PROGRAM_ARB, tr.gammaCorrectVtxShader);
+		qglProgramStringARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen(gammaCorrectVtxShader)), gammaCorrectVtxShader);
+		qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &error_char);
+		if (error_char != -1)
+		{
+			Com_Printf(S_COLOR_RED "ERROR: Failed to compile gamma correction vertex shader. Error at character %d\n", error_char);
+			glConfigExt.doGammaCorrectionWithShaders = qfalse;
+		}
+		else
+		{
+			qglGenProgramsARB(1, &tr.gammaCorrectPxShader);
+			qglBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tr.gammaCorrectPxShader);
+			qglProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen(gammaCorrectPxShader)), gammaCorrectPxShader);
+			qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &error_char);
+			if (error_char != -1)
+			{
+				Com_Printf(S_COLOR_RED "Failed to compile gamma correction pixel shader. Error at character %d\n", error_char);
+				glConfigExt.doGammaCorrectionWithShaders = qfalse;
+			}
+		}
+	}
+
+	// SJE: bloom bright-pass program (only when the hardware can do it - see GLimp_InitExtensions)
+	tr.bloomPShader = 0;
+	if (glConfigExt.doBloomWithShaders)
+	{
+		int bloom_err = -1;
+		qglGenProgramsARB(1, &tr.bloomPShader);
+		qglBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tr.bloomPShader);
+		qglProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen(bloomBrightPassPxShader)), bloomBrightPassPxShader);
+		qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &bloom_err);
+		if (bloom_err != -1)
+		{
+			Com_Printf(S_COLOR_RED "ERROR: Failed to compile bloom pixel shader. Error at character %d\n", bloom_err);
+			qglDeleteProgramsARB(1, &tr.bloomPShader);
+			tr.bloomPShader = 0;
+			glConfigExt.doBloomWithShaders = qfalse;
+		}
+	}
+
 }

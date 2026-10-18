@@ -887,7 +887,7 @@ void CFxScheduler::PlayEffect(const char* file, const int client_id, const bool 
 
 		if (prim->mSpawnFlags & FX_EVEN_DISTRIBUTION)
 		{
-			factor = abs(prim->mSpawnDelay.GetMax() - prim->mSpawnDelay.GetMin()) / static_cast<float>(count);
+			factor = fabs(prim->mSpawnDelay.GetMax() - prim->mSpawnDelay.GetMin()) / static_cast<float>(count);
 		}
 
 		// Schedule the random number of bits
@@ -1191,7 +1191,7 @@ void CFxScheduler::PlayEffect(const int id, vec3_t origin, vec3_t axis[3], const
 
 		if (prim->mSpawnFlags & FX_EVEN_DISTRIBUTION)
 		{
-			factor = abs(prim->mSpawnDelay.GetMax() - prim->mSpawnDelay.GetMin()) / static_cast<float>(count);
+			factor = fabs(prim->mSpawnDelay.GetMax() - prim->mSpawnDelay.GetMin()) / static_cast<float>(count);
 		}
 
 		// Schedule the random number of bits
