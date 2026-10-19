@@ -62,7 +62,7 @@ cvar_t* com_skippingcin;
 cvar_t* com_speedslog; // 1 = buffer log, 2 = flush after each print
 cvar_t* com_homepath;
 cvar_t* com_outcast;
-cvar_t* g_update7firststartup;
+cvar_t* g_update8firststartup;
 cvar_t* g_totgfirststartup;
 cvar_t* g_Weather;
 cvar_t* com_kotor;
@@ -1081,7 +1081,7 @@ static void Com_ExecuteCfg()
 		Cbuf_ExecuteText(EXEC_NOW, "exec autoexec_sp.cfg\n");
 		Cbuf_Execute();
 
-		if (g_update7firststartup->integer > 0) //playing academy
+		if (g_update8firststartup->integer > 0) //playing academy
 		{
 			//
 		}
@@ -1213,7 +1213,7 @@ void Com_Init(char* commandLine)
 
 		g_Weather = Cvar_Get("r_weather", "0", CVAR_ARCHIVE);
 
-		g_update7firststartup = Cvar_Get("g_update7firststartup", "1", 0);
+		g_update8firststartup = Cvar_Get("g_update8firststartup", "1", 0);
 
 		g_totgfirststartup = Cvar_Get("g_totgfirststartup", "1", 0);
 

@@ -480,7 +480,6 @@ vmCvar_t cg_drawSelectionScrollBar;
 vmCvar_t cg_trueguns;
 vmCvar_t cg_holsteredweapons; // cg_holster.cpp: 0 = off, 1 = the player only, 2 = everyone
 vmCvar_t cg_holsterHide; // cg_holster.cpp: the guns the player doesn't carry on his body (hex mask of weapon numbers; weapon wheel "On Person")
-vmCvar_t cg_weaponWheelOld; // 1: +md_wheel opens the old menu wheel instead of the radial one (CG_DrawMDWheel)
 vmCvar_t cg_holsterdebug;
 vmCvar_t cg_holsterdebug_boneindex;
 vmCvar_t cg_holsterdebug_posoffset;
@@ -727,7 +726,6 @@ static cvarTable_t cvarTable[] = {
 	{ &cg_trueguns, "cg_trueguns", "1", CVAR_ARCHIVE },
 	{ &cg_holsteredweapons, "cg_holsteredweapons", "2", CVAR_ARCHIVE },
 	{ &cg_holsterHide, "cg_holsterHide", "", CVAR_ARCHIVE },
-	{ &cg_weaponWheelOld, "cg_weaponWheelOld", "0", CVAR_ARCHIVE },
 	{ &cg_holsterdebug, "cg_holsterdebug", "0", 0 },
 	{ &cg_holsterdebug_boneindex, "cg_holsterdebug_boneindex", "0", 0 },
 	{ &cg_holsterdebug_posoffset, "cg_holsterdebug_posoffset", "0.0 0.0 0.0", 0 },
@@ -6082,7 +6080,6 @@ Hold the key bound to +md_wheel: a radial overlay of the weapons the player carr
 he knows. Point with the mouse, let go of the key or press attack to take it; alt attack toggles a gun's "On Person"
 (cg_holsterHide, as the old menu wheel; red = not on the body). While the wheel is open the game runs at a quarter
 speed and the mouse turns the view only a little (the turn moves the pointer; the view is given back on close).
-cg_weaponWheelOld 1: +md_wheel opens the old menu wheel instead.
 ===============================================================================
 */
 constexpr int MDW_MAX_ITEMS = 64;
@@ -6281,11 +6278,6 @@ static void CG_MDWheel_Open(const int ring)
 // +md_wheel / -md_wheel: held open, the pick on letting go
 void CG_MDWheel_Down_f()
 {
-	if (cg_weaponWheelOld.integer)
-	{
-		cgi_SendConsoleCommand("uimenu ingameweaponwheelMenu\n");
-		return;
-	}
 	CG_MDWheel_Open(mdWheel.ring);
 }
 
@@ -6295,14 +6287,9 @@ void CG_MDWheel_Up_f()
 }
 
 // "md_wheel_menu [force]": the old wheel menus' binds ("uimenu ingameweaponwheelMenu" / "uimenu ingameforcewheelMenu",
-// the only ones the Controls menu can set) run this from the menus' onOpen. Unless cg_weaponWheelOld asks for the old
-// menu, it is closed again and the radial wheel opens instead, toggled: the key again or attack picks.
+// the only ones the Controls menu can set) run this from the menus' onOpen.
 void CG_MDWheel_Menu_f()
 {
-	if (cg_weaponWheelOld.integer)
-	{
-		return;
-	}
 	cgi_UI_MenuCloseAll(); // the UI lets go of the keys (and the pause) on the next key event
 	if (mdWheel.open)
 	{
