@@ -3648,6 +3648,7 @@ void PM_CheckGrab();
 // on it (the ground start is jump + strafe + forward next to a wall, PM_CheckJump). Player only (like the long leap),
 // once per airtime. Same wall rules as the ground start (flat wall, Force Jump 2+, saber flags), same lift, cost, sound.
 static qboolean s_airWallRan[MAX_CLIENTS]; // started one in this airtime (cleared on landing; not worth saving)
+static qboolean s_airJumped[MAX_CLIENTS]; // jump was pressed in this airtime (cleared on landing): only a jump starts an air wall-run
 static void PM_CheckAirWallRun()
 {
 	if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer() || !pm->gent || !pm->gent->client)
@@ -3659,10 +3660,20 @@ static void PM_CheckAirWallRun()
 	if (pm->ps->groundEntityNum != ENTITYNUM_NONE)
 	{
 		s_airWallRan[idx] = qfalse;
+		s_airJumped[idx] = qfalse;
 		return;
 	}
 
+	// Only a jump (even a tap) lifts the player into a wall-run: running round a corner close to a wall, or dropping
+	// off a step, leaves the ground for a moment too and must not pull the player onto the wall. The jump's own frame
+	// counts (PM_CheckJump has already left the ground when this runs).
+	if (pm->cmd.upmove > 0)
+	{
+		s_airJumped[idx] = qtrue;
+	}
+
 	if (s_airWallRan[idx]
+		|| !s_airJumped[idx]
 		|| pm->ps->pm_flags & (PMF_STUCK_TO_WALL | PMF_RESPAWNED | PMF_TRIGGER_PUSHED)
 		|| pm->cmd.forwardmove <= 0
 		|| pm->ps->forcePowerLevel[FP_LEVITATION] < FORCE_LEVEL_2
