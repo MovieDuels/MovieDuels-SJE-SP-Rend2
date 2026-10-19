@@ -13836,7 +13836,7 @@ static int PM_GetWalkWithSaberOnAnim(const pmove_t* pm, const qboolean is_holdin
 					}
 					else
 					{// NON-ANIMATED MODE
-						return BOTH_WALK2_BEN;
+						return BOTH_WALK2;//JKA WALK
 					}
 				}
 			}
@@ -13911,7 +13911,7 @@ static int PM_GetWalkWithSaberOnAnim(const pmove_t* pm, const qboolean is_holdin
 				}
 				else
 				{// NON-ANIMATED MODE
-					return BOTH_WALK2_BEN;
+					return BOTH_WALK2;//JKA WALK
 				}
 			}
 		}

@@ -6100,6 +6100,7 @@ constexpr float MDW_POINTER_SCALE = 20.0f; // pointer units per degree of that (
 constexpr float MDW_TIMESCALE = 0.25f; // the game speed while the wheel is open
 
 extern cvar_t* g_timescale;
+extern cvar_t* g_IconBackgroundSlow; // "Slowmo Selection" in the User Interface menu
 extern qboolean playerUsableWeapons[WP_NUM_WEAPONS];
 void CG_ChangeWeapon(int num);
 
@@ -6267,9 +6268,10 @@ static void CG_MDWheel_Open(const int ring)
 	mdWheel.px = mdWheel.py = 0.0f;
 	mdWheel.hover = -1;
 
-	// slow the game down (not when force speed or a cinematic skip runs the timescale already)
+	// slow the game down (not when force speed or a cinematic skip runs the timescale already) - only with
+	// "Slowmo Selection" (g_iconbackgroundslow) on in the User Interface menu
 	mdWheel.oldTimescale = 0.0f;
-	if (fabsf(g_timescale->value - 1.0f) < 0.001f)
+	if (g_IconBackgroundSlow && g_IconBackgroundSlow->integer && fabsf(g_timescale->value - 1.0f) < 0.001f)
 	{
 		mdWheel.oldTimescale = g_timescale->value;
 		cgi_Cvar_Set("timescale", va("%g", MDW_TIMESCALE));
