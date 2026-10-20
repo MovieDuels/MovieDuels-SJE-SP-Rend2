@@ -137,7 +137,7 @@ extern qboolean IsSurrendering(const gentity_t* self);
 extern qboolean IsRESPECTING(const gentity_t* self);
 extern qboolean IsCowering(const gentity_t* self);
 extern qboolean is_anim_requires_responce(const gentity_t* self);
-extern qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t push_dir);
+extern qboolean WP_AbsorbKick(gentity_t* hitEnt, gentity_t* pusher, const vec3_t push_dir);
 extern qboolean BG_InKnockDown(int anim);
 extern void ForceGrasp(gentity_t* ent);
 extern qboolean WP_SaberAttacking(const gentity_t* self);
@@ -6039,8 +6039,10 @@ static evasionType_t jedi_check_evade_special_attacks()
 		//check some other attacks?
 		//check roll-stab
 		if (NPC->enemy->client->ps.torsoAnim == BOTH_ROLL_STAB
-			|| NPC->enemy->client->ps.torsoAnim == BOTH_ROLL_F && (NPC->enemy->client->pers.lastCommand.buttons &
-				BUTTON_ATTACK || NPC->enemy->client->ps.pm_flags & PMF_ATTACK_HELD))
+			|| (NPC->enemy->client->ps.torsoAnim == BOTH_ROLL_F
+				|| NPC->enemy->client->ps.torsoAnim == BOTH_ROLL_F1 ||
+				NPC->enemy->client->ps.torsoAnim == BOTH_ROLL_F2) && (NPC->enemy->client->pers.lastCommand.buttons &
+					BUTTON_ATTACK || NPC->enemy->client->ps.pm_flags & PMF_ATTACK_HELD))
 		{
 			//either already in a roll-stab or may go into one
 			if (NPCInfo->aiFlags & NPCAI_BOSS_CHARACTER || NPCInfo->aiFlags & NPCAI_BOSS_SERENITYJEDIENGINE

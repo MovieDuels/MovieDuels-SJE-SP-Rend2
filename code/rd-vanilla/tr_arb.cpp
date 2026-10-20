@@ -265,5 +265,4 @@ void ARB_InitGlowShaders() {
 			glConfigExt.doBloomWithShaders = qfalse;
 		}
 	}
-
 }

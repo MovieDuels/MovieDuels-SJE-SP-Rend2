@@ -2128,4 +2128,4 @@ static void RB_DrawGlowOverlay()
 	qglPopMatrix();
 	qglMatrixMode(GL_MODELVIEW);
 	qglPopMatrix();
-}
+}

@@ -67,7 +67,7 @@ extern void NPC_CheckEvasion();
 extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_allowgunnerbash;
 extern qboolean char_can_gun_bash(const gentity_t* self);
-extern qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t push_dir);
+extern qboolean WP_AbsorbKick(gentity_t* hitEnt, gentity_t* pusher, const vec3_t push_dir);
 extern void speaker_speech(const gentity_t* self, int speech_type, float fail_chance);
 extern void NPC_AngerSound();
 

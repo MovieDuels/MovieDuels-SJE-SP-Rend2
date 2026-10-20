@@ -5509,8 +5509,22 @@ static qboolean PM_TryRoll()
 		}
 		else
 		{
-			anim = BOTH_ROLL_F;
-			VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			if (pm->ps->weapon == WP_SABER)
+			{
+				anim = BOTH_ROLL_F;
+				VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			}
+			else if (pm->ps->weapon == WP_MELEE)
+			{
+				anim = BOTH_ROLL_F2;
+				VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			}
+			else
+			{
+				//GUNNERS WILL DO THIS
+				anim = BOTH_ROLL_F1;
+				VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			}
 		}
 	}
 	else if (pm->cmd.rightmove > 0)
@@ -8688,10 +8702,6 @@ qboolean BG_InFlipBack(const int anim)
 	case BOTH_FLIP_BACK1:
 	case BOTH_FLIP_BACK2:
 	case BOTH_BASHED1:
-	case BOTH_ROLL_F:
-	case BOTH_ROLL_B:
-	case BOTH_ROLL_R:
-	case BOTH_ROLL_L:
 	case BOTH_PAIN2:
 	case BOTH_PAIN3:
 		return qtrue;
@@ -9467,6 +9477,8 @@ void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd)
 	switch (ps->legsAnim)
 	{
 	case BOTH_ROLL_F:
+	case BOTH_ROLL_F1:
+	case BOTH_ROLL_F2:
 		p_cmd->forwardmove = 127;
 		p_cmd->rightmove = 0;
 		break;
@@ -9630,6 +9642,8 @@ qboolean PM_InRollIgnoreTimer(const playerState_t* ps)
 	switch (ps->legsAnim)
 	{
 	case BOTH_ROLL_F:
+	case BOTH_ROLL_F1:
+	case BOTH_ROLL_F2:
 	case BOTH_ROLL_B:
 	case BOTH_ROLL_R:
 	case BOTH_ROLL_L:
@@ -10709,6 +10723,8 @@ qboolean PM_RollingAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_ROLL_F: //# Roll forward
+	case BOTH_ROLL_F1: //# Roll forward (variant 1)
+	case BOTH_ROLL_F2: //# Roll forward (variant 2)
 	case BOTH_ROLL_B: //# Roll backward
 	case BOTH_ROLL_L: //# Roll left
 	case BOTH_ROLL_R: //# Roll right

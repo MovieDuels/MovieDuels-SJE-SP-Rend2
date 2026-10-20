@@ -2609,7 +2609,80 @@ static qboolean G_CanBeEnemy(const gentity_t* self, const gentity_t* enemy)
 	return qtrue;
 }
 
-qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t push_dir)
+// ============================================================
+// Helper: Saber deactivate with correct sound logic (SP version)
+// ============================================================
+static void WP_SP_SaberDeactivateWithSound(gentity_t* ent)
+{
+	if (!ent || !ent->client)
+		return;
+
+	if (!ent->client->ps.SaberActive())
+		return;
+
+	// Play correct saber-off sound depending on which blade is active
+	if (ent->client->ps.saber[1].Active())
+	{
+		G_Sound(ent, ent->client->ps.saber[1].soundOff);
+	}
+	else if (ent->client->ps.saber[0].Active())
+	{
+		G_Sound(ent, ent->client->ps.saber[0].soundOff);
+	}
+
+	ent->client->ps.SaberDeactivate();
+}
+
+extern qboolean PM_KnockDownAnim(int anim);
+// ============================================================
+// Helper: Knockdown + drain + fatigue + punch sound
+// ============================================================
+static void WP_KnockdownAndDrain(gentity_t* hitEnt, const gentity_t* pusher, int knockAnimMin, int knockAnimMax, qboolean addFatigueBonus, qboolean useAbsorbDrain)
+{
+	const qboolean isNPC = (qboolean)(hitEnt->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(hitEnt));
+
+	if (!hitEnt || !hitEnt->client)
+	{
+		return;
+	}
+
+	NPC_SetAnim(hitEnt, SETANIM_BOTH, (knockAnimMin == knockAnimMax) ? knockAnimMin : Q_irand(knockAnimMin, knockAnimMax), SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+
+	if (useAbsorbDrain)
+	{
+		WP_BlockPointsDrain(hitEnt, FATIGUE_BP_ABSORB);
+	}
+	else
+	{
+		WP_BlockPointsDrain(hitEnt, FATIGUE_BLOCKPOINTDRAIN);
+	}
+
+	if (addFatigueBonus && pusher)
+	{
+		AddFatigueMeleeBonus(pusher, hitEnt);
+	}
+
+	G_Sound(hitEnt, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+
+	WP_SP_SaberDeactivateWithSound(hitEnt);
+
+	if (isNPC)
+	{
+		hitEnt->client->ps.legsAnimTimer += NPC_KNOCKDOWN_HOLD_EXTRA_TIME;
+		hitEnt->client->ps.torsoAnimTimer += NPC_KNOCKDOWN_HOLD_EXTRA_TIME;
+	}
+	else
+	{
+		//player holds extra long so you have more time to decide to do the quick getup
+		if (PM_KnockDownAnim(hitEnt->client->ps.legsAnim))
+		{
+			hitEnt->client->ps.legsAnimTimer += PLAYER_KNOCKDOWN_HOLD_EXTRA_TIME;
+			hitEnt->client->ps.torsoAnimTimer += PLAYER_KNOCKDOWN_HOLD_EXTRA_TIME;
+		}
+	}
+}
+
+qboolean WP_AbsorbKick(gentity_t* hitEnt, gentity_t* pusher, const vec3_t push_dir)
 {
 	if (!hitEnt || !hitEnt->client || !pusher || !pusher->client)
 	{
@@ -2801,6 +2874,28 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, const gentity_t* pusher, const vec3_t 
         } else { \
             DRAIN_FORCE(hitEnt, FATIGUE_KICKHIT); \
         }
+	// -------------------------
+	// Uppercut / melee stance
+	// -------------------------
+	if (pusher->client->ps.torsoAnim == BOTH_MELEEUP ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_HOLD_T ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_HOLD_LT ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_HOLD_RT ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_HOLD_BR ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_HOLD_BL ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_HOLD_B ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_T ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_LT ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_RT ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_BR ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_BL ||
+		pusher->client->ps.torsoAnim == MELEE_STANCE_B)
+	{
+		WP_KnockdownAndDrain(hitEnt, pusher, BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2, qtrue, qfalse);
+		G_Knockdown(hitEnt, pusher, push_dir, 2, qtrue);
+
+		return qtrue;
+	}
 
 	// -------------------------
 	// FRONT KICK / TUSKEN
@@ -5019,14 +5114,17 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 					}
 				}
 				break;
-				//case MELEE_STANCE_HOLD_T://right slap
-				//case MELEE_STANCE_HOLD_RT://right slap
-				//case MELEE_STANCE_HOLD_BR:
-				//case BOTH_MELEE_R://right slap
+			case MELEE_STANCE_HOLD_T: //right slap
+			case MELEE_STANCE_HOLD_RT: //right slap
+			case MELEE_STANCE_HOLD_BR:
+			case MELEE_STANCE_T: //right slap
+			case MELEE_STANCE_RT: //right slap
+			case MELEE_STANCE_BR:
+			case BOTH_MELEE_R: //right slap
 			case BOTH_MELEE2: //right slap
-				//case BOTH_MELEE4://right slap
-				//case BOTH_MELEEUP://right slap
-				//case BOTH_WOOKIE_SLAP:
+			case BOTH_MELEE4: //right slap
+			case BOTH_MELEEUP: //right slap
+			case BOTH_WOOKIE_SLAP:
 			case BOTH_FJSS_TL_BR:
 				kick_sound_on_walls = qtrue;
 				//FIXME: push right?
@@ -6019,6 +6117,57 @@ qboolean G_CheckClampUcmd(gentity_t* ent, usercmd_t* ucmd)
 			ent->client->ps.forceJumpCharge = 0;
 		}
 		overridAngles = PM_LockAngles(ent, ucmd) ? qtrue : overridAngles;
+	}
+	// manualdodge
+	else if (ent->client->ps.legsAnim == BOTH_DODGE_MANUAL_BL ||
+		ent->client->ps.legsAnim == BOTH_DODGE_MANUAL_BR ||
+		ent->client->ps.legsAnim == BOTH_DODGE_MANUAL_FL ||
+		ent->client->ps.legsAnim == BOTH_DODGE_MANUAL_L ||
+		ent->client->ps.legsAnim == BOTH_DODGE_MANUAL_R ||
+		ent->client->ps.legsAnim == BOTH_DODGE_MANUAL_FR)
+	{
+		//can't move
+		ucmd->rightmove = 0;
+		ucmd->upmove = 0;
+		ucmd->forwardmove = 0;
+	}
+	else if (ent->client->ps.legsAnim == BOTH_MANUAL_BL ||
+		ent->client->ps.legsAnim == BOTH_MANUAL_BR ||
+		ent->client->ps.legsAnim == BOTH_MANUAL_FL ||
+		ent->client->ps.legsAnim == BOTH_MANUAL_L ||
+		ent->client->ps.legsAnim == BOTH_MANUAL_R ||
+		ent->client->ps.legsAnim == BOTH_DODGE_B ||
+		ent->client->ps.legsAnim == BOTH_CROUCHDODGE ||
+		ent->client->ps.legsAnim == BOTH_MANUAL_FR)
+	{
+		//can't move
+		ucmd->rightmove = 0;
+		ucmd->upmove = 0;
+		ucmd->forwardmove = 0;
+	}
+	else if (ent->client->ps.legsAnim == MELEE_STANCE_HOLD_BL ||
+		ent->client->ps.legsAnim == MELEE_STANCE_HOLD_BR ||
+		ent->client->ps.legsAnim == MELEE_STANCE_HOLD_LT ||
+		ent->client->ps.legsAnim == MELEE_STANCE_HOLD_RT ||
+		ent->client->ps.legsAnim == MELEE_STANCE_HOLD_T ||
+		ent->client->ps.legsAnim == MELEE_STANCE_HOLD_B)
+	{
+		//can't move
+		ucmd->rightmove = 0;
+		ucmd->upmove = 0;
+		ucmd->forwardmove = 0;
+	}
+	else if (ent->client->ps.legsAnim == MELEE_STANCE_BL ||
+		ent->client->ps.legsAnim == MELEE_STANCE_BR ||
+		ent->client->ps.legsAnim == MELEE_STANCE_LT ||
+		ent->client->ps.legsAnim == MELEE_STANCE_RT ||
+		ent->client->ps.legsAnim == MELEE_STANCE_T ||
+		ent->client->ps.legsAnim == MELEE_STANCE_B)
+	{
+		//can't move
+		ucmd->rightmove = 0;
+		ucmd->upmove = 0;
+		ucmd->forwardmove = 0;
 	}
 	else if ((ent->client->ps.legsAnim == BOTH_HOP_R ||
 		ent->client->ps.legsAnim == BOTH_HOP_L ||
