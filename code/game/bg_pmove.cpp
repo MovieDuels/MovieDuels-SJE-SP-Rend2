@@ -3648,6 +3648,7 @@ void PM_CheckGrab();
 // on it (the ground start is jump + strafe + forward next to a wall, PM_CheckJump). Player only (like the long leap),
 // once per airtime. Same wall rules as the ground start (flat wall, Force Jump 2+, saber flags), same lift, cost, sound.
 static qboolean s_airWallRan[MAX_CLIENTS]; // started one in this airtime (cleared on landing; not worth saving)
+static qboolean s_airJumped[MAX_CLIENTS]; // jump was pressed in this airtime (cleared on landing): only a jump starts an air wall-run
 static void PM_CheckAirWallRun()
 {
 	if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer() || !pm->gent || !pm->gent->client)
@@ -3659,10 +3660,20 @@ static void PM_CheckAirWallRun()
 	if (pm->ps->groundEntityNum != ENTITYNUM_NONE)
 	{
 		s_airWallRan[idx] = qfalse;
+		s_airJumped[idx] = qfalse;
 		return;
 	}
 
+	// Only a jump (even a tap) lifts the player into a wall-run: running round a corner close to a wall, or dropping
+	// off a step, leaves the ground for a moment too and must not pull the player onto the wall. The jump's own frame
+	// counts (PM_CheckJump has already left the ground when this runs).
+	if (pm->cmd.upmove > 0)
+	{
+		s_airJumped[idx] = qtrue;
+	}
+
 	if (s_airWallRan[idx]
+		|| !s_airJumped[idx]
 		|| pm->ps->pm_flags & (PMF_STUCK_TO_WALL | PMF_RESPAWNED | PMF_TRIGGER_PUSHED)
 		|| pm->cmd.forwardmove <= 0
 		|| pm->ps->forcePowerLevel[FP_LEVITATION] < FORCE_LEVEL_2
@@ -5498,8 +5509,23 @@ static qboolean PM_TryRoll()
 		}
 		else
 		{
-			anim = BOTH_ROLL_F;
-			VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			if (pm->ps->weapon == WP_SABER)
+			{
+				anim = BOTH_ROLL_F;
+				VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			}
+			else if (pm->ps->weapon == WP_MELEE)
+			{
+				anim = BOTH_ROLL_F2;
+				VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			}
+			else
+			{
+				//GUNNERS WILL DO THIS
+				anim = BOTH_ROLL_F;
+				//anim = BOTH_ROLL_F1;
+				VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
+			}
 		}
 	}
 	else if (pm->cmd.rightmove > 0)
@@ -8677,10 +8703,6 @@ qboolean BG_InFlipBack(const int anim)
 	case BOTH_FLIP_BACK1:
 	case BOTH_FLIP_BACK2:
 	case BOTH_BASHED1:
-	case BOTH_ROLL_F:
-	case BOTH_ROLL_B:
-	case BOTH_ROLL_R:
-	case BOTH_ROLL_L:
 	case BOTH_PAIN2:
 	case BOTH_PAIN3:
 		return qtrue;
@@ -9456,6 +9478,8 @@ void PM_CmdForRoll(playerState_t* ps, usercmd_t* p_cmd)
 	switch (ps->legsAnim)
 	{
 	case BOTH_ROLL_F:
+	case BOTH_ROLL_F1:
+	case BOTH_ROLL_F2:
 		p_cmd->forwardmove = 127;
 		p_cmd->rightmove = 0;
 		break;
@@ -9619,6 +9643,8 @@ qboolean PM_InRollIgnoreTimer(const playerState_t* ps)
 	switch (ps->legsAnim)
 	{
 	case BOTH_ROLL_F:
+	case BOTH_ROLL_F1:
+	case BOTH_ROLL_F2:
 	case BOTH_ROLL_B:
 	case BOTH_ROLL_R:
 	case BOTH_ROLL_L:
@@ -10698,6 +10724,8 @@ qboolean PM_RollingAnim(const int anim)
 	switch (anim)
 	{
 	case BOTH_ROLL_F: //# Roll forward
+	case BOTH_ROLL_F1: //# Roll forward (variant 1)
+	case BOTH_ROLL_F2: //# Roll forward (variant 2)
 	case BOTH_ROLL_B: //# Roll backward
 	case BOTH_ROLL_L: //# Roll left
 	case BOTH_ROLL_R: //# Roll right
@@ -13836,7 +13864,7 @@ static int PM_GetWalkWithSaberOnAnim(const pmove_t* pm, const qboolean is_holdin
 					}
 					else
 					{// NON-ANIMATED MODE
-						return BOTH_WALK2_BEN;
+						return BOTH_WALK2;//JKA WALK
 					}
 				}
 			}
@@ -13911,7 +13939,7 @@ static int PM_GetWalkWithSaberOnAnim(const pmove_t* pm, const qboolean is_holdin
 				}
 				else
 				{// NON-ANIMATED MODE
-					return BOTH_WALK2_BEN;
+					return BOTH_WALK2;//JKA WALK
 				}
 			}
 		}

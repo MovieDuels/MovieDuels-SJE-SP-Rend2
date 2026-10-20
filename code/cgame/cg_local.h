@@ -718,7 +718,6 @@ extern vmCvar_t cg_drawSelectionScrollBar;
 extern vmCvar_t cg_trueguns;
 extern vmCvar_t cg_holsteredweapons;
 extern vmCvar_t cg_holsterHide;
-extern vmCvar_t cg_weaponWheelOld;
 void CG_MDWheel_Down_f();
 void CG_MDWheel_Up_f();
 void CG_MDWheel_Menu_f();

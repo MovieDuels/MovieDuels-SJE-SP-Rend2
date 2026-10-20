@@ -2323,6 +2323,52 @@ static bool UpdateRider(Vehicle_t* p_veh, bgEntity_t* pRider, usercmd_t* pUmcd)
 				return false;
 			}
 		}
+
+		// Roll off.
+#ifdef _JK2MP
+		if (pUmcd->upmove < 0)
+		{
+			animNumber_t Anim = BOTH_ROLL_B;
+			p_veh->m_EjectDir = VEH_EJECT_REAR;
+			if (pUmcd->rightmove > 0)
+			{
+				Anim = BOTH_ROLL_R;
+				p_veh->m_EjectDir = VEH_EJECT_RIGHT;
+			}
+			else if (pUmcd->rightmove < 0)
+			{
+				Anim = BOTH_ROLL_L;
+				p_veh->m_EjectDir = VEH_EJECT_LEFT;
+			}
+			else if (pUmcd->forwardmove < 0)
+			{
+				Anim = BOTH_ROLL_B;
+				p_veh->m_EjectDir = VEH_EJECT_REAR;
+			}
+			else if (pUmcd->forwardmove > 0)
+			{
+				Anim = BOTH_ROLL_F;
+				p_veh->m_EjectDir = VEH_EJECT_FRONT;
+			}
+
+			if (p_veh->m_pVehicleInfo->Eject(p_veh, pRider, qfalse))
+			{
+				if (!(p_veh->m_ulFlags & VEH_FLYING))
+				{
+					VectorScale(parent->client->ps.velocity, 0.25f, rider->client->ps.velocity);
+#if 1
+					Vehicle_SetAnim(rider, SETANIM_BOTH, Anim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD | SETANIM_FLAG_HOLDLESS, 300);
+#else
+
+#endif
+					//PM_SetAnim(pm,SETANIM_BOTH,anim,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD|SETANIM_FLAG_HOLDLESS);
+					rider->client->ps.weaponTime = rider->client->ps.torsoAnimTimer - 200;//just to make sure it's cleared when roll is done
+					G_AddEvent(rider, EV_ROLL, 0);
+				}
+				return false;
+			}
+		}
+#endif
 	}
 
 	return true;
