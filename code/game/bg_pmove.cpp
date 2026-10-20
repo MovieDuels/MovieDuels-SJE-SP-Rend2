@@ -5522,7 +5522,8 @@ static qboolean PM_TryRoll()
 			else
 			{
 				//GUNNERS WILL DO THIS
-				anim = BOTH_ROLL_F1;
+				anim = BOTH_ROLL_F;
+				//anim = BOTH_ROLL_F1;
 				VectorMA(pm->ps->origin, roll_dist, fwd, traceto);
 			}
 		}

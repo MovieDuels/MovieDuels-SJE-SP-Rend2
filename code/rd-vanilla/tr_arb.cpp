@@ -144,125 +144,202 @@ static const char* bloomBrightPassPxShader =
 #define GL_PROGRAM_ERROR_STRING_ARB						0x8874
 #define GL_PROGRAM_ERROR_POSITION_ARB					0x864B
 
-void ARB_InitGlowShaders() {
+void ARB_InitGlowShaders()
+{
+	// Validate required ARB program entry points before attempting to use them.
+	const qboolean arbProgramSupported =
+		(
+			qglGenProgramsARB &&
+			qglBindProgramARB &&
+			qglProgramStringARB
+			) ? qtrue : qfalse;
+
 	// Allocate and Load the global 'Glow' Vertex Program. - AReis
-	if (qglGenProgramsARB)
+	if (arbProgramSupported)
 	{
 		qglGenProgramsARB(1, &tr.glowVShader);
 		qglBindProgramARB(GL_VERTEX_PROGRAM_ARB, tr.glowVShader);
-		qglProgramStringARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen((char*)g_strGlowVShaderARB)), g_strGlowVShaderARB);
+		qglProgramStringARB(
+			GL_VERTEX_PROGRAM_ARB,
+			GL_PROGRAM_FORMAT_ASCII_ARB,
+			static_cast<GLsizei>(strlen((char*)g_strGlowVShaderARB)),
+			g_strGlowVShaderARB);
 
-		//		const GLubyte *strErr = qglGetString( GL_PROGRAM_ERROR_STRING_ARB );
+		// const GLubyte *strErr = qglGetString(GL_PROGRAM_ERROR_STRING_ARB);
 		int i_err_pos = 0;
 		qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &i_err_pos);
 		assert(i_err_pos == -1);
 	}
 
-	// NOTE: I make an assumption here. If you have (current) nvidia hardware, you obviously support register combiners instead of fragment
-	// programs, so use those. The problem with this is that nv30 WILL support fragment shaders, breaking this logic. The good thing is that
-	// if you always ask for regcoms before fragment shaders, you'll always just use regcoms (problem solved... for now). - AReis
+	// NOTE: I make an assumption here. If you have (current) nvidia hardware,
+	// you obviously support register combiners instead of fragment programs,
+	// so use those. The problem with this is that nv30 WILL support fragment
+	// shaders, breaking this logic. The good thing is that if you always ask
+	// for regcoms before fragment shaders, you'll always just use regcoms
+	// (problem solved... for now). - AReis
 
 	// Load Pixel Shaders (either regcoms or fragprogs).
 	if (qglCombinerParameteriNV)
 	{
-		// The purpose of this regcom is to blend all the pixels together from the 4 texture units, but with their
-		// texture coordinates offset by 1 (or more) texels, effectively letting us blend adjoining pixels. The weight is
-		// used to either strengthen or weaken the pixel intensity. The more it diffuses (the higher the radius of the glow),
-		// the higher the intensity should be for a noticable effect.
-		// Regcom result is: ( tex1 * fBlurWeight ) + ( tex2 * fBlurWeight ) + ( tex2 * fBlurWeight ) + ( tex2 * fBlurWeight )
+		// The purpose of this regcom is to blend all the pixels together from
+		// the 4 texture units, but with their texture coordinates offset by 1
+		// (or more) texels, effectively letting us blend adjoining pixels.
+		// The weight is used to either strengthen or weaken the pixel intensity.
+		// The more it diffuses (the higher the radius of the glow), the higher
+		// the intensity should be for a noticeable effect.
 
-		// VV guys, this is the pixel shader you would use instead :-)
-		/*
-		// c0 is the blur weight.
-		ps 1.1
-		tex		t0
-		tex		t1
-		tex		t2
-		tex		t3
-
-		mul		r0, c0, t0;
-		madd	r0, c0, t1, r0;
-		madd	r0, c0, t2, r0;
-		madd	r0, c0, t3, r0;
-		*/
 		tr.glowPShader = qglGenLists(1);
+
 		qglNewList(tr.glowPShader, GL_COMPILE);
+
 		qglCombinerParameteriNV(GL_NUM_GENERAL_COMBINERS_NV, 2);
 
 		// spare0 = fBlend * tex0 + fBlend * tex1.
-		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_A_NV, GL_TEXTURE0_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_B_NV, GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_C_NV, GL_TEXTURE1_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_D_NV, GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerOutputNV(GL_COMBINER0_NV, GL_RGB, GL_DISCARD_NV, GL_DISCARD_NV, GL_SPARE0_NV, GL_NONE, GL_NONE, GL_FALSE, GL_FALSE, GL_FALSE);
+		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_A_NV,
+			GL_TEXTURE0_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_B_NV,
+			GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_C_NV,
+			GL_TEXTURE1_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglCombinerInputNV(GL_COMBINER0_NV, GL_RGB, GL_VARIABLE_D_NV,
+			GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+
+		qglCombinerOutputNV(GL_COMBINER0_NV, GL_RGB,
+			GL_DISCARD_NV, GL_DISCARD_NV, GL_SPARE0_NV,
+			GL_NONE, GL_NONE, GL_FALSE, GL_FALSE, GL_FALSE);
 
 		// spare1 = fBlend * tex2 + fBlend * tex3.
-		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_A_NV, GL_TEXTURE2_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_B_NV, GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_C_NV, GL_TEXTURE3_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_D_NV, GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglCombinerOutputNV(GL_COMBINER1_NV, GL_RGB, GL_DISCARD_NV, GL_DISCARD_NV, GL_SPARE1_NV, GL_NONE, GL_NONE, GL_FALSE, GL_FALSE, GL_FALSE);
+		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_A_NV,
+			GL_TEXTURE2_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_B_NV,
+			GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_C_NV,
+			GL_TEXTURE3_ARB, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglCombinerInputNV(GL_COMBINER1_NV, GL_RGB, GL_VARIABLE_D_NV,
+			GL_CONSTANT_COLOR0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
 
-		// ( A * B ) + ( ( 1 - A ) * C ) + D = ( spare0 * 1 ) + ( ( 1 - spare0 ) * 0 ) + spare1 == spare0 + spare1.
-		qglFinalCombinerInputNV(GL_VARIABLE_A_NV, GL_SPARE0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglFinalCombinerInputNV(GL_VARIABLE_B_NV, GL_ZERO, GL_UNSIGNED_INVERT_NV, GL_RGB);
-		qglFinalCombinerInputNV(GL_VARIABLE_C_NV, GL_ZERO, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
-		qglFinalCombinerInputNV(GL_VARIABLE_D_NV, GL_SPARE1_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglCombinerOutputNV(GL_COMBINER1_NV, GL_RGB,
+			GL_DISCARD_NV, GL_DISCARD_NV, GL_SPARE1_NV,
+			GL_NONE, GL_NONE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		// (A * B) + ((1 - A) * C) + D
+		// = (spare0 * 1) + ((1 - spare0) * 0) + spare1
+		// = spare0 + spare1.
+		qglFinalCombinerInputNV(GL_VARIABLE_A_NV,
+			GL_SPARE0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglFinalCombinerInputNV(GL_VARIABLE_B_NV,
+			GL_ZERO, GL_UNSIGNED_INVERT_NV, GL_RGB);
+		qglFinalCombinerInputNV(GL_VARIABLE_C_NV,
+			GL_ZERO, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+		qglFinalCombinerInputNV(GL_VARIABLE_D_NV,
+			GL_SPARE1_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+
 		qglEndList();
 	}
-	else if (qglGenProgramsARB)
+	else if (arbProgramSupported)
 	{
 		qglGenProgramsARB(1, &tr.glowPShader);
 		qglBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tr.glowPShader);
-		qglProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen((char*)g_strGlowPShaderARB)), g_strGlowPShaderARB);
+		qglProgramStringARB(
+			GL_FRAGMENT_PROGRAM_ARB,
+			GL_PROGRAM_FORMAT_ASCII_ARB,
+			static_cast<GLsizei>(strlen((char*)g_strGlowPShaderARB)),
+			g_strGlowPShaderARB);
 
-		//		const GLubyte *strErr = qglGetString( GL_PROGRAM_ERROR_STRING_ARB );
+		// const GLubyte *strErr = qglGetString(GL_PROGRAM_ERROR_STRING_ARB);
 		int i_err_pos = 0;
 		qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &i_err_pos);
 		assert(i_err_pos == -1);
 	}
+
 	// SJE: gamma correction programs (ported from MP)
-	if (glConfigExt.doGammaCorrectionWithShaders)
+	if (glConfigExt.doGammaCorrectionWithShaders && arbProgramSupported)
 	{
 		int error_char = -1;
+
 		qglGenProgramsARB(1, &tr.gammaCorrectVtxShader);
 		qglBindProgramARB(GL_VERTEX_PROGRAM_ARB, tr.gammaCorrectVtxShader);
-		qglProgramStringARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen(gammaCorrectVtxShader)), gammaCorrectVtxShader);
+		qglProgramStringARB(
+			GL_VERTEX_PROGRAM_ARB,
+			GL_PROGRAM_FORMAT_ASCII_ARB,
+			static_cast<GLsizei>(strlen(gammaCorrectVtxShader)),
+			gammaCorrectVtxShader);
+
 		qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &error_char);
+
 		if (error_char != -1)
 		{
-			Com_Printf(S_COLOR_RED "ERROR: Failed to compile gamma correction vertex shader. Error at character %d\n", error_char);
+			Com_Printf(
+				S_COLOR_RED
+				"ERROR: Failed to compile gamma correction vertex shader. "
+				"Error at character %d\n",
+				error_char);
+
 			glConfigExt.doGammaCorrectionWithShaders = qfalse;
 		}
 		else
 		{
 			qglGenProgramsARB(1, &tr.gammaCorrectPxShader);
 			qglBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tr.gammaCorrectPxShader);
-			qglProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen(gammaCorrectPxShader)), gammaCorrectPxShader);
+			qglProgramStringARB(
+				GL_FRAGMENT_PROGRAM_ARB,
+				GL_PROGRAM_FORMAT_ASCII_ARB,
+				static_cast<GLsizei>(strlen(gammaCorrectPxShader)),
+				gammaCorrectPxShader);
+
 			qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &error_char);
+
 			if (error_char != -1)
 			{
-				Com_Printf(S_COLOR_RED "Failed to compile gamma correction pixel shader. Error at character %d\n", error_char);
+				Com_Printf(
+					S_COLOR_RED
+					"Failed to compile gamma correction pixel shader. "
+					"Error at character %d\n",
+					error_char);
+
 				glConfigExt.doGammaCorrectionWithShaders = qfalse;
 			}
 		}
 	}
+	else
+	{
+		glConfigExt.doGammaCorrectionWithShaders = qfalse;
+	}
 
-	// SJE: bloom bright-pass program (only when the hardware can do it - see GLimp_InitExtensions)
+	// SJE: bloom bright-pass program
+	// (only when the hardware can do it - see GLimp_InitExtensions)
 	tr.bloomPShader = 0;
-	if (glConfigExt.doBloomWithShaders)
+
+	if (glConfigExt.doBloomWithShaders && arbProgramSupported)
 	{
 		int bloom_err = -1;
+
 		qglGenProgramsARB(1, &tr.bloomPShader);
 		qglBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tr.bloomPShader);
-		qglProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, static_cast<GLsizei>(strlen(bloomBrightPassPxShader)), bloomBrightPassPxShader);
+		qglProgramStringARB(
+			GL_FRAGMENT_PROGRAM_ARB,
+			GL_PROGRAM_FORMAT_ASCII_ARB,
+			static_cast<GLsizei>(strlen(bloomBrightPassPxShader)),
+			bloomBrightPassPxShader);
+
 		qglGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &bloom_err);
+
 		if (bloom_err != -1)
 		{
-			Com_Printf(S_COLOR_RED "ERROR: Failed to compile bloom pixel shader. Error at character %d\n", bloom_err);
+			Com_Printf(
+				S_COLOR_RED
+				"ERROR: Failed to compile bloom pixel shader. "
+				"Error at character %d\n",
+				bloom_err);
+
 			qglDeleteProgramsARB(1, &tr.bloomPShader);
+
 			tr.bloomPShader = 0;
 			glConfigExt.doBloomWithShaders = qfalse;
 		}
+	}
+	else
+	{
+		glConfigExt.doBloomWithShaders = qfalse;
 	}
 }
