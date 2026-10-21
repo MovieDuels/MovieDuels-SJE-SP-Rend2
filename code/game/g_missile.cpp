@@ -990,11 +990,9 @@ static void G_BoltBlockMissile(gentity_t* ent, gentity_t* missile, vec3_t forwar
 		return;
 	}
 
-	const qboolean manual_blocking =
-		(blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_0) ? qtrue : qfalse;
+	const qboolean manual_blocking =(blocker->client->ps.forcePowerLevel[FP_SABER_DEFENSE] > FORCE_LEVEL_0) ? qtrue : qfalse;
 	const qboolean manual_proj_blocking = WalkCheck(blocker) ? qtrue : qfalse;
-	const qboolean npc_is_blocking =
-		(blocker->client->ps.ManualBlockingFlags & (1 << MBF_JKAMODENPCBLOCKING)) ? qtrue : qfalse;
+	const qboolean npc_is_blocking =(blocker->client->ps.ManualBlockingFlags & (1 << MBF_JKAMODENPCBLOCKING)) ? qtrue : qfalse;
 
 	float slop_factor =
 		(FATIGUE_AUTOBOLTBLOCK - 6) *

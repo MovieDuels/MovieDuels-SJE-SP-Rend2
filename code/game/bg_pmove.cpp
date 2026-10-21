@@ -127,7 +127,7 @@ extern qboolean G_TryingJumpForwardAttack(const gentity_t* self, const usercmd_t
 extern void WP_SaberSwingSound(const gentity_t* ent, int saberNum, swingType_t swing_type);
 extern qboolean WP_UseFirstValidSaberStyle(const gentity_t* ent, int* saberAnimLevel);
 extern qboolean WP_SaberStyleValidForSaber(const gentity_t* ent, int saberAnimLevel);
-extern int jedi_re_calc_parry_time(const gentity_t* self, evasionType_t evasion_type);
+extern int Jedi_ReCalcParryTime(const gentity_t* self, evasionType_t evasion_type);
 extern qboolean PM_SaberInKata(saberMoveName_t saberMove);
 extern qboolean PM_InKataAnim(int anim);
 extern qboolean Block_Button_Held(const gentity_t* defender);
@@ -27328,7 +27328,7 @@ static qboolean PM_SaberBlocking()
 						//can't attack for twice whatever your skill level's parry debounce time is
 						if (pm->gent)
 						{
-							pm->ps->weaponTime = jedi_re_calc_parry_time(pm->gent, EVASION_PARRY);
+							pm->ps->weaponTime = Jedi_ReCalcParryTime(pm->gent, EVASION_PARRY);
 						}
 						else
 						{
@@ -27651,7 +27651,7 @@ static qboolean PM_SaberBlocking()
 					//can't attack for twice whatever your skill level's parry debounce time is
 					if (pm->gent)
 					{
-						pm->ps->weaponTime = jedi_re_calc_parry_time(pm->gent, EVASION_PARRY);
+						pm->ps->weaponTime = Jedi_ReCalcParryTime(pm->gent, EVASION_PARRY);
 					}
 					else
 					{

@@ -4853,7 +4853,7 @@ static evasionType_t jedi_check_flip_evasions(gentity_t* self, const float right
 	return EVASION_NONE;
 }
 
-int jedi_re_calc_parry_time(const gentity_t* self, const evasionType_t evasion_type)
+int Jedi_ReCalcParryTime(const gentity_t* self, const evasionType_t evasion_type)
 {
 	if (!self->client)
 	{
@@ -5962,7 +5962,7 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 	// ======================================================================
 	// recalc parry timing
 	// ======================================================================
-	const int parry_re_calc_time = jedi_re_calc_parry_time(self, evasion_type);
+	const int parry_re_calc_time = Jedi_ReCalcParryTime(self, evasion_type);
 
 	if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE]
 		< level.time + parry_re_calc_time)
@@ -6364,7 +6364,7 @@ static qboolean jedi_saber_block()
 				}
 
 				//debounce our parry recalc time
-				const int parry_re_calc_time = jedi_re_calc_parry_time(NPC, evasion_type);
+				const int parry_re_calc_time = Jedi_ReCalcParryTime(NPC, evasion_type);
 
 				TIMER_Set(NPC, "parryReCalcTime", Q_irand(0, parry_re_calc_time));
 

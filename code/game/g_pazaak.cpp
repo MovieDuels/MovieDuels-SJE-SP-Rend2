@@ -123,7 +123,7 @@ void G_Pazaak_Init()
 	pzkBarMode = qfalse;
 	pzkPendingSignal = qfalse;
 	pzkSignalAfterMatch = qfalse;
-	g_pazaakAllowed = gi.cvar("g_pazaakAllowed", "1", CVAR_SAVEGAME);
+	g_pazaakAllowed = gi.cvar("g_pazaakAllowed", "0", CVAR_ROM | CVAR_SAVEGAME);
 	g_pazaakScriptLog = gi.cvar("g_pazaakScriptLog", "0", 0);
 }
 

@@ -175,7 +175,7 @@ extern int PM_PowerLevelForSaberAnim(const playerState_t* ps, int saberNum = 0);
 extern void PM_VelocityForSaberMove(const playerState_t* ps, vec3_t throw_dir);
 extern qboolean PM_VelocityForBlockedMove(const playerState_t* ps, vec3_t throw_dir);
 extern qboolean PM_SaberCanInterruptMove(int move, int anim);
-extern int jedi_re_calc_parry_time(const gentity_t* self, evasionType_t evasion_type);
+extern int Jedi_ReCalcParryTime(const gentity_t* self, evasionType_t evasion_type);
 extern qboolean jedi_dodge_evasion(gentity_t* self, gentity_t* shooter, trace_t* tr, int hit_loc);
 extern void jedi_play_deflect_sound(const gentity_t* self);
 extern void jedi_play_blocked_push_sound(const gentity_t* self);
@@ -18282,7 +18282,7 @@ qboolean wp_saber_block_check_random(gentity_t* self, vec3_t hitloc)
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -18642,7 +18642,7 @@ qboolean WP_SaberBlockNonRandom(gentity_t* self, vec3_t hitloc, const qboolean m
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -18977,7 +18977,7 @@ qboolean WP_SaberMBlockDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -19338,7 +19338,7 @@ qboolean WP_SaberMBlockDirectionNPC(gentity_t* self, vec3_t hitloc, const qboole
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -19608,7 +19608,7 @@ qboolean WP_SaberFatigueDirection(gentity_t* self, vec3_t hitloc, const qboolean
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -19878,7 +19878,7 @@ qboolean WP_SaberBounceDirection(gentity_t* self, vec3_t hitloc, const qboolean 
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parryReCalcTime = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parryReCalcTime = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parryReCalcTime)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parryReCalcTime;
@@ -20421,7 +20421,7 @@ qboolean WP_SaberBlockNonRandom_MD(gentity_t* self, vec3_t hitloc, const qboolea
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -20775,7 +20775,7 @@ qboolean WP_SaberBlockBolt_MD(gentity_t* self, vec3_t hitloc, const qboolean mis
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -21045,7 +21045,7 @@ qboolean WP_SaberFatiguedParryDirection(gentity_t* self, vec3_t hitloc, const qb
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -22356,7 +22356,7 @@ qboolean WP_SaberBlockBolt_AMD(gentity_t* self, vec3_t hitloc, const qboolean mi
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.saberBlocked != BLOCKED_NONE)
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] < level.time + parry_re_calc_time)
 		{
 			self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] = level.time + parry_re_calc_time;
@@ -48059,7 +48059,7 @@ qboolean wp_saber_Off_Dash_Evasion(gentity_t* self, vec3_t hitloc)
 
 	if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
 	{
-		const int parry_re_calc_time = jedi_re_calc_parry_time(self, EVASION_PARRY);
+		const int parry_re_calc_time = Jedi_ReCalcParryTime(self, EVASION_PARRY);
 		if (self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE] <
 			level.time + parry_re_calc_time)
 		{
