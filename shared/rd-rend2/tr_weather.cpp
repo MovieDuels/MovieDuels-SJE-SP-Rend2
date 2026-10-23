@@ -627,6 +627,16 @@ void RE_WorldEffectCommand(const char* command) // rend2 sp
 		return;
 	}
 
+#ifdef REND2_SP
+	// r_weather -1 is the menu's "Off" (the menu clears the weather first): the bare "r_weather"
+	// command that follows has nothing to add (it printed the list of valid commands)
+	if ((!token[0] || (token[0] >= '0' && token[0] <= '9') || token[0] == '-') && g_Weather->integer < 0)
+	{
+		COM_EndParseSession();
+		return;
+	}
+#endif
+
 	//Die - clean up the whole weather system -rww
 	if (Q_stricmp(token, "die") == 0)
 	{

@@ -3149,6 +3149,15 @@ void WP_SetSaber(gentity_t* ent, const int saberNum, const char* saber_name)
 		ent->client->ps.saberStylesKnown |= ent->client->ps.saber[saberNum].singleBladeStyle;
 	}
 	WP_UseFirstValidSaberStyle(ent, &ent->client->ps.saberAnimLevel);
+	if (saberNum == 1 && ent->client->ps.dualSabers
+		&& !(ent->client->ps.saber[0].stylesForbidden & 1 << SS_DUAL)
+		&& !(ent->client->ps.saber[1].stylesForbidden & 1 << SS_DUAL))
+	{
+		// given a second saber (a script's SET_SABER2): dual stance. Before, the NPC kept the single
+		// saber style it had (fast/medium/strong) with a saber in each hand.
+		ent->client->ps.saberStylesKnown |= 1 << SS_DUAL;
+		ent->client->ps.saberAnimLevel = SS_DUAL;
+	}
 	if (ent->s.number < MAX_CLIENTS)
 	{
 		cg.saberAnimLevelPending = ent->client->ps.saberAnimLevel;

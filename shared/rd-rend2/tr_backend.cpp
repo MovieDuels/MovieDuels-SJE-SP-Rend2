@@ -1740,6 +1740,13 @@ static const void* RB_SetColor(const void* data) {
 	backEnd.color2D[1] = cmd->color[1];
 	backEnd.color2D[2] = cmd->color[2];
 	backEnd.color2D[3] = cmd->color[3];
+	// the dynamic HUD fade is applied when a 2D batch is drawn (RB_HudFadeStage), so quads with a different fade
+	// must not share a batch (it only changes when cgame starts and ends the HUD, so this flushes twice a frame at most)
+	if (cmd->hudFade != backEnd.hudFade2D && tess.numIndexes)
+	{
+		RB_EndSurface();
+	}
+	backEnd.hudFade2D = cmd->hudFade;
 
 	return (const void*)(cmd + 1);
 }

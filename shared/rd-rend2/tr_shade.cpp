@@ -1572,6 +1572,52 @@ void RB_ShadowTessEnd(shaderCommands_t* input, const VertexArraysProperties* ver
 	RB_AddDrawItem(backEndData->currentPass, key, item);
 }
 
+// Dynamic HUD (cg_dynamicHud): RE_SetColor records how far the HUD is faded (r_hudAlpha) and each 2D stage fades here,
+// after its colours are computed (the shader colour is u_VertColor * vertex colour + u_BaseColor, so scaling both scales
+// the result). That way the fade also reaches shaders that ignore the vertex colour/alpha (rgbGen/alphaGen identity,
+// additive or unblended stages - the DF HUD rings and style icons), which used to stay fully visible and then vanish.
+static int RB_HudFadeStage(int stateBits, vec4_t baseColor, vec4_t vertColor, bool* dropAlphaTest)
+{
+	if (!backEnd.projection2D || backEnd.hudFade2D <= 0.0f)
+	{
+		return stateBits;
+	}
+	const float keep = backEnd.hudFade2D >= 1.0f ? 0.0f : 1.0f - backEnd.hudFade2D;
+	const int src = stateBits & GLS_SRCBLEND_BITS;
+	const int dst = stateBits & GLS_DSTBLEND_BITS;
+
+	if (src == GLS_SRCBLEND_DST_COLOR && dst == GLS_DSTBLEND_ZERO || src == GLS_SRCBLEND_ZERO && dst == GLS_DSTBLEND_SRC_COLOR)
+	{ // filter (multiplies what is under it): fade towards white, which leaves the screen as it was
+		for (int k = 0; k < 3; k++)
+		{
+			vertColor[k] *= keep;
+			baseColor[k] = baseColor[k] * keep + (1.0f - keep);
+		}
+		return stateBits;
+	}
+	if (src == GLS_SRCBLEND_ONE && dst == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
+	{ // premultiplied alpha: fade colour and alpha together
+		VectorScale4(baseColor, keep, baseColor);
+		VectorScale4(vertColor, keep, vertColor);
+		return stateBits;
+	}
+	if (dst == GLS_DSTBLEND_ONE && src != GLS_SRCBLEND_SRC_ALPHA)
+	{ // additive (GL_ONE GL_ONE and the like): fade the colour that gets added
+		VectorScale(baseColor, keep, baseColor);
+		VectorScale(vertColor, keep, vertColor);
+		return stateBits;
+	}
+	if (src == 0 && dst == 0 || src == GLS_SRCBLEND_ONE && dst == GLS_DSTBLEND_ZERO)
+	{ // not blended: blend it by alpha while it fades
+		stateBits = stateBits & ~(GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS) | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+	}
+	// alpha blended: fade the alpha (an alpha test would cut the image away instead of fading it, so drop it meanwhile)
+	baseColor[3] *= keep;
+	vertColor[3] *= keep;
+	*dropAlphaTest = true;
+	return stateBits;
+}
+
 static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysProperties* vertexArrays)
 {
 	Allocator& frameAllocator = *backEndData->perFrameMemory;
@@ -1724,6 +1770,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 			}
 		}
 
+		bool hudFadeNoAlphaTest = false;
 		if (!backEnd.currentEntity || !(backEnd.currentEntity->e.renderfx & RF_VOLUMETRIC)) // currentEntity is NULL-checked above too
 		{
 			vec4_t baseColor{};
@@ -1753,6 +1800,8 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 				baseColor[3] = backEnd.currentEntity->e.shaderRGBA[3] / 255.0f;
 				vertColor[3] = 0.0f;
 			}
+
+			stateBits = RB_HudFadeStage(stateBits, baseColor, vertColor, &hudFadeNoAlphaTest);
 
 			uniformDataWriter.SetUniformVec4(UNIFORM_BASECOLOR, baseColor);
 			uniformDataWriter.SetUniformVec4(UNIFORM_VERTCOLOR, vertColor);
@@ -1840,6 +1889,10 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 
 		AlphaTestType alphaTestType =
 			useAlphaTestGE192 ? ALPHA_TEST_GE192 : pStage->alphaTestType;
+		if (hudFadeNoAlphaTest)
+		{
+			alphaTestType = ALPHA_TEST_NONE;
+		}
 
 		// SJE: alpha-to-coverage (r_ext_alpha_to_coverage). Opaque cut-out stages (GE128 / GE192, no blending) drawn
 		// into the multisampled scene buffer get anti-aliased edges. Not for the depth pre-pass, shadow maps or refraction.

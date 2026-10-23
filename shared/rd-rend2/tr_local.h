@@ -2490,6 +2490,7 @@ typedef struct {
 
 	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
 	float		color2D[4];
+	float		hudFade2D;	// dynamic HUD fade of the current 2D colour (see RB_HudFadeStage)
 	trRefEntity_t	entity2D;		// currentEntity will point at this when doing 2D rendering
 	trRefEntity_t	entityFlare;	// currentEntity will point at this when doing flare rendering
 
@@ -3631,6 +3632,7 @@ typedef struct renderCommandList_s {
 typedef struct setColorCommand_s {
 	int		commandId;
 	float	color[4];
+	float	hudFade;	// dynamic HUD: how far this 2D colour is faded (0 = not at all, 1 = gone)
 } setColorCommand_t;
 
 typedef struct drawBufferCommand_s {

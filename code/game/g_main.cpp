@@ -998,7 +998,7 @@ static void G_InitCvars()
 
 	g_AllowSmashDown = gi.cvar("g_allowsmashdown", "0", CVAR_ARCHIVE);
 
-	g_NPCAnimationStyle = gi.cvar("g_npcanimationstyle", "0", CVAR_ARCHIVE);
+	g_NPCAnimationStyle = gi.cvar("g_npcanimationstyle", "0", CVAR_ROM);
 }
 
 /*

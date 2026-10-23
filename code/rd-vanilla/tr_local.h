@@ -921,6 +921,7 @@ using backEndState_t = struct backEndState_t {
 
 	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
 	byte		color2D[4];
+	float		hudFade2D;	// dynamic HUD fade of the current 2D colour (see RB_HudFadeStage)
 	qboolean	vertexes2D;		// shader needs to be finished
 	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
 };
@@ -1698,6 +1699,7 @@ using renderCommandList_t = struct {
 using setColorCommand_t = struct {
 	int		commandId;
 	float	color[4];
+	float	hudFade;	// dynamic HUD: how far this 2D colour is faded (0 = not at all, 1 = gone)
 };
 
 using drawBufferCommand_t = struct {

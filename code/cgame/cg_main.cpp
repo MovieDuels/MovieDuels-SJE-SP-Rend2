@@ -716,9 +716,9 @@ static cvarTable_t cvarTable[] = {
 	{ &cg_IsSaberDoingAttackDamage, "g_IsSaberDoingAttackDamage", "0", CVAR_ARCHIVE },
 
 	{ &cg_drawRadar, "cg_drawRadar", "0", CVAR_ARCHIVE },
-	{ &cg_dynamicHud, "cg_dynamicHud", "1", CVAR_ARCHIVE },
-	{ &cg_dynamicHudTime, "cg_dynamicHudTime", "15000", CVAR_ARCHIVE },
-	{ &cg_dynamicHudRange, "cg_dynamicHudRange", "1024", CVAR_ARCHIVE },
+	{ &cg_dynamicHud, "cg_dynamicHud", "0", CVAR_ARCHIVE },
+	{ &cg_dynamicHudTime, "cg_dynamicHudTime", "3000", CVAR_ARCHIVE },
+	{ &cg_dynamicHudRange, "cg_dynamicHudRange", "700", CVAR_ARCHIVE },
 	{ &cg_drawVehLeadIndicator, "cg_drawVehLeadIndicator", "1", CVAR_ARCHIVE },
 
 	{ &cg_drawSelectionScrollBar, "cg_drawSelectionScrollBar", "0", CVAR_ARCHIVE },

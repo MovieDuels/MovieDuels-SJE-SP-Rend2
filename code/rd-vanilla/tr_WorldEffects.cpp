@@ -690,6 +690,28 @@ public:
 
 		// all this piece of code does really is fill in the bool "SWeatherZone::mMarkedOutside", plus the mPointCache[] for each zone,
 		//	so we can diskload those. Maybe.
+		// No brush in this map has inside/outside contents (no shader of the map carries those flags):
+		// the scan below would test every 32-unit cell of the weather zones (with no zones, the whole
+		// map: millions of point checks - the game froze for seconds, sound looping, the first time
+		// weather was switched on) and mark nothing. Same result, at once.
+		{
+			bool anyInsideOutside = false;
+			for (int i = 0; i < tr.world->numShaders; i++)
+			{
+				if (tr.world->shaders[i].contentFlags & (CONTENTS_INSIDE | CONTENTS_OUTSIDE))
+				{
+					anyInsideOutside = true;
+					break;
+				}
+			}
+			if (!anyInsideOutside)
+			{
+				mCacheInit = true;
+				SWeatherZone::mMarkedOutside = false;		// Assume All Is Outside, Except Solid
+				return;
+			}
+		}
+
 		fileHandle_t f = ReadCachedWeatherFile();
 		if (f)
 		{
@@ -1658,6 +1680,28 @@ void RE_WorldEffectCommand(const char* command) // vanilla sp
 	{
 		COM_EndParseSession();
 		return;
+	}
+
+	// The bare "r_weather" command (the menu's: "weather clear; wait 100; r_weather") or a number:
+	// the r_weather cvar picks the preset. 5 and 6 are the named fog commands below (they had no
+	// preset of their own here, so heavy rain fog and fog did nothing), and -1 is the menu's "Off":
+	// the menu has already cleared the weather, so there is nothing to add (it printed the list of
+	// valid commands, as if the value were wrong).
+	if (!token[0] || (token[0] >= '0' && token[0] <= '9') || token[0] == '-')
+	{
+		if (g_Weather->integer < 0)
+		{
+			COM_EndParseSession();
+			return;
+		}
+		if (g_Weather->integer == 5)
+		{
+			token = "heavyrainfog";
+		}
+		else if (g_Weather->integer == 6)
+		{
+			token = "fog";
+		}
 	}
 
 	// Clear - Removes All Particle Clouds And Wind Zones
