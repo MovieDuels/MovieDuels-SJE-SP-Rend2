@@ -1968,7 +1968,9 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input, const VertexArraysP
 				r_sunlightMode->integer)
 			{
 				samplerBindingsWriter.AddStaticImage(tr.sunShadowArrayImage, TB_SHADOWMAP);
-				if (backEnd.viewParms.flags & VPF_USESUNLIGHT)
+				// 2D pics keep the last 3D view's flags; sunlight there has no ambient and draws them black
+				// (the light amp goggles and binoculars window)
+				if (backEnd.viewParms.flags & VPF_USESUNLIGHT && !backEnd.projection2D)
 				{
 					enableTextures[2] = 1.0f;
 				}
