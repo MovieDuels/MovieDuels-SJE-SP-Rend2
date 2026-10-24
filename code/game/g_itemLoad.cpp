@@ -825,5 +825,12 @@ void IT_LoadWeatherParms(void)
 
 	cgi_Cvar_Register(&mapname, "mapname", "", CVAR_SERVERINFO | CVAR_ROM);
 
-	gi.SendConsoleCommand(va("execq Weather/%s", mapname.string, mapname.string, mapname.string));
+	// The map's Weather/<mapname>.cfg ("r_weather N" lines: the renderers now use the number given, they used to
+	// read the r_weather cvar, which SV_Map_ sets to 0 - every map file cleared the weather). This runs at game and
+	// at cgame start, so the weather is cleared first: the file's weather once, not twice (vanilla adds a particle
+	// cloud per command). Maps without a file are left alone, as before.
+	if (gi.FS_ReadFile(va("Weather/%s.cfg", mapname.string), nullptr) > 0)
+	{
+		gi.SendConsoleCommand(va("weather clear\nexecq Weather/%s\n", mapname.string));
+	}
 }

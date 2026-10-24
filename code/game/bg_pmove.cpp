@@ -19309,6 +19309,7 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 
 	// Explicit qboolean: is the player/NPC actively blocking + attacking?
 	const qboolean is_holding_block_button_and_attack = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+	const qboolean is_walking_and_blocking = (is_holding_block_button_and_attack && (pm->cmd.buttons & BUTTON_WALKING)) ? qtrue : qfalse;
 
 	// Movement inputs (signed chars)
 	const signed char forwardmove = pm->cmd.forwardmove;
@@ -20097,15 +20098,115 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON_DOOKU;
 			}
 			else
-			{
+			{// new sje stances 2027
+				if (is_walking_and_blocking == qtrue)
+				{
+					switch (pm->ps->saberAnimLevel)
+					{
+					case SS_FAST:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERFAST_STANCE_JKA;
+						break;
+					case SS_TAVION:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERTAVION_STANCE;
+						break;
+					case SS_STRONG:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERSLOW_STANCE;
+						break;
+					case SS_DESANN:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERDESANN_STANCE;
+						break;
+					case SS_MEDIUM:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_STAND2;
+						break;
+					case SS_NONE:
+					default:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_STAND2;
+						break;
+					}
+				}
+				else
+				{
+					switch (pm->ps->saberAnimLevel)
+					{
+					case SS_FAST:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERFAST_STANCE_JKA;
+						break;
+					case SS_TAVION:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERTAVION_STANCE;
+						break;
+					case SS_STRONG:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERSLOW_STANCE;
+						break;
+					case SS_DESANN:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERDESANN_STANCE;
+						break;
+					case SS_MEDIUM:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND2;
+						break;
+					case SS_NONE:
+					default:
+						anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND2;
+						break;
+					}
+				}
+
 				// Pressing block only
-				anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON;
+				//anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON;
 			}
 		}
 		else
-		{
+		{// new sje stances 2027
+			if (is_walking_and_blocking == qtrue)
+			{
+				switch (pm->ps->saberAnimLevel)
+				{
+				case SS_FAST:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERFAST_STANCE_JKA;
+					break;
+				case SS_TAVION:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERTAVION_STANCE;
+					break;
+				case SS_STRONG:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERSLOW_STANCE;
+					break;
+				case SS_DESANN:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_SABERDESANN_STANCE;
+					break;
+				case SS_MEDIUM:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_STAND2;
+					break;
+				case SS_NONE:
+				default:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_STAND_BLOCKING_ON : BOTH_STAND2;
+					break;
+				}
+			}
+			else
+			{
+				switch (pm->ps->saberAnimLevel)
+				{
+				case SS_FAST:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERFAST_STANCE_JKA;
+					break;
+				case SS_TAVION:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERTAVION_STANCE;
+					break;
+				case SS_STRONG:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERSLOW_STANCE;
+					break;
+				case SS_DESANN:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_SABERDESANN_STANCE;
+					break;
+				case SS_MEDIUM:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND2;
+					break;
+				case SS_NONE:
+				default:
+					anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND2;
+					break;
+				}
+			}
 			// Pressing block only
-			anim = (g_RealisticBlockingMode->integer != 0) ? BOTH_SABERSINGLECROUCH : BOTH_STAND_BLOCKING_ON;
 		}
 	}
 

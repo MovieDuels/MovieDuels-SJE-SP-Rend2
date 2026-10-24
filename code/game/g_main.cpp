@@ -277,6 +277,7 @@ cvar_t* g_allowgunnerbash;
 cvar_t* g_noAutoFollow;
 
 cvar_t* g_AllowLedgeGrab;
+cvar_t* g_saberscanstickinwall;
 cvar_t* g_saberscanstickinenemy; // 0 = thrown sabers never stick in an enemy's body
 cvar_t* g_candojumpdash;         // 0 = no air (jump) dash
 cvar_t* g_candodoublejump;       // 0 = no double jump
@@ -900,7 +901,8 @@ static void G_InitCvars()
 
 	g_AllowLedgeGrab = gi.cvar("g_allowledgegrab", "0", CVAR_ARCHIVE);
 	// internal move locks (no menu entries): 1 = allowed, 0 = turned off
-	g_saberscanstickinenemy = gi.cvar("g_saberscanstickinenemy", "1", CVAR_ARCHIVE);
+	g_saberscanstickinenemy = gi.cvar("g_saberscanstickinenemy", "0", CVAR_ARCHIVE);
+	g_saberscanstickinwall = gi.cvar("g_saberscanstickinwall", "0", CVAR_ARCHIVE);
 	g_candojumpdash = gi.cvar("g_candojumpdash", "1", CVAR_ARCHIVE);
 	g_candodoublejump = gi.cvar("g_candodoublejump", "1", CVAR_ARCHIVE);
 

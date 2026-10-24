@@ -299,6 +299,7 @@ extern cvar_t* g_SerenityJediEngineMode;
 extern cvar_t* g_IsSaberDoingAttackDamage;
 extern cvar_t* g_DebugSaberCombat;
 extern cvar_t* g_saberscanstickinenemy;
+extern cvar_t* g_saberscanstickinwall;
 extern cvar_t* g_lightningdamage;
 extern cvar_t* com_outcast;
 extern cvar_t* g_SaberBounceOnWalls;
@@ -13552,6 +13553,7 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 	//===========================
 	if (g_SerenityJediEngineMode &&
 		g_SerenityJediEngineMode->integer &&
+		g_saberscanstickinwall->integer &&
 		g_SaberMustReturn &&
 		g_SaberMustReturn->integer < 1 &&
 		owner &&
@@ -13561,7 +13563,7 @@ static void WP_SaberImpact(gentity_t* owner, gentity_t* saber, trace_t* trace)
 			owner->client &&
 			owner->client->ps.saberEntityState == SES_LEAVING &&
 			other->s.number == ENTITYNUM_WORLD && // hit solid world
-			owner->client->ps.forcePowerLevel[FP_SABERTHROW] >= FORCE_LEVEL_3)
+			owner->client->ps.forcePowerLevel[FP_SABERTHROW] >= FORCE_LEVEL_2)
 		{
 			// Reject floors and ceilings
 			if (trace->plane.normal[2] >= 0.8f || trace->plane.normal[2] <= -0.8f)
