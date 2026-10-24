@@ -75,35 +75,36 @@ const char* lightside_jedi2[] = {
 	"md_luke_rotj", "md_luke_crait", "md_rey_skywalker", "md_rahn", "md_kyle", "md_mara", "rosh_penin",
 	"md_shaakti_tfu", "militiatrooper", "md_ahsoka_tm", "md_luke_hooded_tm", "md_kento_marek", "md_kota", "md_galen",
 	"md_bastila", "md_jed_nikto", "md_halsey", "md_ima_gundi", "md_knox", "md_tera_sinube", "md_nahdar",
-	"md_oppo_rancisis", "md_thongla_jur", "md_falon_grey", "jedi_vrook", "md_revan_jedi"
+	"md_oppo_rancisis", "md_thongla_jur", "md_falon_grey", "jedi_vrook", "md_revan_jedi", "md_cere"
 };
 const char* lightside_gunners[] = {
 	"md_pad_ga", "md_clo_cody", "md_clo_rex", "md_clo_ep2", "md_duchess_satine", "md_nien_nunb",
 	"md_bail_organa_tfu", "md_ackbar", "bespincop", "md_dindjarin", "md_grogu", "md_greef", "md_cara_dune", "md_kuiil",
 	"md_new_rep_sec_droid", "rebel2", "militiasaboteur", "md_poe", "jan", "md_hera", "md_rex_old", "md_leia_anh",
 	"md_han_esb", "md_chewie", "md_lando_bespin", "md_mon_mothma", "md_cassian", "md_bodhi", "md_chirrut", "md_jarjar",
-	"md_baze_malbus", "md_jyn_erso", "md_finn", "md_rose_tico", "md_k2so", "md_rebel_pilot", "md_mando_dw", "md_luthen"
+	"md_baze_malbus", "md_jyn_erso", "md_finn", "md_rose_tico", "md_k2so", "md_rebel_pilot", "md_mando_dw", "md_luthen",
+	"bespinelite", "bespinlobot"
 };
 const char* darkside_sith1[] = {
 	"md_dooku", "md_magnaguard", "md_clone_assassin", "md_kylo_shirtless", "md_sidious_ep3_robed", "md_ani_sith",
 	"md_maul", "md_grievous", "md_gua_am", "md_kyle_emp", "md_sidious_tcw", "md_savage", "md_dooku_tcw",
 	"md_maul_cyber_tcw", "md_maul_tcw_staff", "md_ventress", "darthdesolous", "darthphobos", "shadowtrooper", "reborn",
 	"md_vader", "md_emperor2", "md_royalguard", "md_shadowguard", "md_royalcombat", "purge_trooper", "md_mando_vizsla",
-	"md_malak", "md_nihilus", "md_traya", "md_thexan", "md_visas", "md_sion"
+	"md_malak", "md_nihilus", "md_traya", "md_thexan", "md_visas", "md_sion", "jhd", "md_10thbrother", "md_11thbrother"
 };
 const char* darkside_sith2[] = {
 	"stormie_tfa_riot", "md_emperor_ros_blind", "md_kylo_ros_helmet", "md_pguard", "md_maw", "md_yun", "md_boc",
 	"md_pic", "md_gorc", "md_jerec", "md_sariss", "tavion", "alora_dual", "md_desann", "gamorrean", "vizam_tgpoc",
 	"md_mau_luke", "md_plagueis", "md_starkiller", "md_revan", "md_7thsister", "md_5thbrother", "md_templeguard_inquisitor",
 	"md_8thbrother", "md_maul_rebels6", "md_2ndsister", "md_shin", "md_baylan", "md_dagan", "md_arcann", "md_bandon",
-	"md_bane_armor", "md_malgus_hooded"
+	"md_bane_armor", "md_malgus_hooded", "md_13thsister", "md_tualon"
 };
 const char* darkside_gunners[] = {
 	"md_sbd_am", "md_tus2_tc", "battledroid", "md_sithtrooper", "md_hondo", "swamptrooper", "md_embo", "md_phasma",
 	"md_tarkin", "saboteur", "md_bossk", "md_hux", "md_fennec", "md_greedo", "md_krennic", "md_thrawn", "weequay",
 	"stormtrooper", "md_deathtrooper", "md_shoretrooper", "md_darktrooper", "md_gideon", "stormie_tfa", "impworker",
 	"md_mother_talzin", "md_cadbane", "md_durge", "md_jango", "boba_fett_esb", "md_mando_maul3", "md_mandalore_ultimate",
-	"md_neocrusader_red", "md_hk47"
+	"md_neocrusader_red", "md_hk47", "bxdroid", "human_merc", "Daine",
 };
 
 /*
@@ -3627,7 +3628,7 @@ void SP_NPC_Jedi(gentity_t* self)
 			int sanityCheck = 20; //just in case
 			while (sanityCheck--)
 			{
-				switch (Q_irand(0, 11))
+				switch (Q_irand(0, 41))
 				{
 				case 0:
 					self->NPC_type = "jedi_hf1";
@@ -3636,33 +3637,125 @@ void SP_NPC_Jedi(gentity_t* self)
 					self->NPC_type = "jedi_hf2";
 					break;
 				case 2:
-					self->NPC_type = "jedi_hm1";
+					self->NPC_type = "jedi_hf3";
 					break;
 				case 3:
-					self->NPC_type = "jedi_hm2";
+					self->NPC_type = "jedi_hf4";
 					break;
 				case 4:
-					self->NPC_type = "jedi_kdm1";
+					self->NPC_type = "jedi_hf5";
 					break;
 				case 5:
-					self->NPC_type = "jedi_kdm2";
+					self->NPC_type = "jedi_hf6";
 					break;
 				case 6:
-					self->NPC_type = "jedi_rm1";
+					self->NPC_type = "jedi_hm1";
 					break;
 				case 7:
-					self->NPC_type = "jedi_rm2";
+					self->NPC_type = "jedi_hm2";
 					break;
 				case 8:
-					self->NPC_type = "jedi_tf1";
+					self->NPC_type = "jedi_hm3";
 					break;
 				case 9:
-					self->NPC_type = "jedi_tf2";
+					self->NPC_type = "jedi_hm4";
 					break;
 				case 10:
-					self->NPC_type = "jedi_zf1";
+					self->NPC_type = "jedi_hm5";
 					break;
 				case 11:
+					self->NPC_type = "jedi_hm6";
+					break;
+				case 12:
+					self->NPC_type = "jedi_kdm1";
+					break;
+				case 13:
+					self->NPC_type = "jedi_kdm2";
+					break;
+				case 14:
+					self->NPC_type = "jedi_kdm3";
+					break;
+				case 15:
+					self->NPC_type = "jedi_kdm4";
+					break;
+				case 16:
+					self->NPC_type = "jedi_kdm5";
+					break;
+				case 17:
+					self->NPC_type = "jedi_kdm6";
+					break;
+				case 18:
+					self->NPC_type = "jedi_rm1";
+					break;
+				case 19:
+					self->NPC_type = "jedi_rm2";
+					break;
+				case 20:
+					self->NPC_type = "jedi_rm3";
+					break;
+				case 21:
+					self->NPC_type = "jedi_rm4";
+					break;
+				case 22:
+					self->NPC_type = "jedi_rm5";
+					break;
+				case 23:
+					self->NPC_type = "jedi_rm6";
+					break;
+				case 24:
+					self->NPC_type = "jedi_tf1";
+					break;
+				case 25:
+					self->NPC_type = "jedi_tf2";
+					break;
+				case 26:
+					self->NPC_type = "jedi_tf3";
+					break;
+				case 27:
+					self->NPC_type = "jedi_tf4";
+					break;
+				case 28:
+					self->NPC_type = "jedi_tf5";
+					break;
+				case 29:
+					self->NPC_type = "jedi_tf6";
+					break;
+				case 30:
+					self->NPC_type = "jedi_zf1";
+					break;
+				case 31:
+					self->NPC_type = "jedi_zf2";
+					break;
+				case 32:
+					self->NPC_type = "jedi_zf3";
+					break;
+				case 33:
+					self->NPC_type = "jedi_zf4";
+					break;
+				case 34:
+					self->NPC_type = "jedi_zf5";
+					break;
+				case 35:
+					self->NPC_type = "jedi_zf6";
+					break;
+				case 36:
+					self->NPC_type = "jedi_zm1";
+					break;
+				case 37:
+					self->NPC_type = "jedi_zm2";
+					break;
+				case 38:
+					self->NPC_type = "jedi_zm3";
+					break;
+				case 39:
+					self->NPC_type = "jedi_zm4";
+					break;
+				case 40:
+					self->NPC_type = "jedi_zm5";
+					break;
+				case 41:
+					self->NPC_type = "jedi_zm6";
+					break;
 				default: //just in case
 					self->NPC_type = "jedi_zf2";
 					break;
@@ -3719,31 +3812,31 @@ void SP_NPC_md_lightside_jedi1_random(gentity_t* self)
 
 void SP_NPC_md_lightside_jedi2_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(lightside_jedi2[Q_irand2(0, 46)]);
+	self->NPC_type = const_cast<char*>(lightside_jedi2[Q_irand2(0, 47)]);
 	SP_NPC_spawner(self);
 }
 
 void SP_NPC_md_lightside_gunners_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(lightside_gunners[Q_irand2(0, 37)]);
+	self->NPC_type = const_cast<char*>(lightside_gunners[Q_irand2(0, 39)]);
 	SP_NPC_spawner(self);
 }
 
 void SP_NPC_md_darkside_sith1_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(darkside_sith1[Q_irand2(0, 32)]);
+	self->NPC_type = const_cast<char*>(darkside_sith1[Q_irand2(0, 35)]);
 	SP_NPC_spawner(self);
 }
 
 void SP_NPC_md_darkside_sith2_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(darkside_sith2[Q_irand2(0, 32)]);
+	self->NPC_type = const_cast<char*>(darkside_sith2[Q_irand2(0, 34)]);
 	SP_NPC_spawner(self);
 }
 
 void SP_NPC_md_darkside_gunners_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(darkside_gunners[Q_irand2(0, 32)]);
+	self->NPC_type = const_cast<char*>(darkside_gunners[Q_irand2(0, 35)]);
 	SP_NPC_spawner(self);
 }
 
