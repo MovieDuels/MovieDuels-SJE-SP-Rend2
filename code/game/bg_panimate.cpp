@@ -7216,6 +7216,7 @@ static bool TorsoAgainstWindTest(gentity_t* ent)
 {
 	if (ent && //valid ent
 		ent->client && //a client
+		!in_camera && //not in a cutscene: the script's anim (sitting, talking) stays
 		ent->client->ps.groundEntityNum != ENTITYNUM_NONE &&
 		(ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)) &&
 		gi.WE_GetWindGusting(ent->currentOrigin) &&

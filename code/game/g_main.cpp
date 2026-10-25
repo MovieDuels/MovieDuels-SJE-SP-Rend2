@@ -205,6 +205,7 @@ cvar_t* g_fighterArcade; // (2026-10-13) fighters: 1 = responsive flight, 0 = th
 cvar_t* g_fighterTurnScale; // (2026-10-13) fighters, g_fighterArcade 1: top turn rate = turningSpeed x this x 12 deg/s
 
 cvar_t* g_char_model;
+cvar_t* g_transitionSaberFix;
 cvar_t* g_char_skin_head;
 cvar_t* g_char_skin_torso;
 cvar_t* g_char_skin_legs;
@@ -821,6 +822,7 @@ static void G_InitCvars()
 	g_fighterTurnScale = gi.cvar("g_fighterTurnScale", "1.6", CVAR_ARCHIVE); // (2026-10-13)
 
 	g_char_model = gi.cvar("g_char_model", "jedi_hm", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_transitionSaberFix = gi.cvar("g_transitionSaberFix", "1", CVAR_ARCHIVE); // no empty second saber after a level change (T-pose)
 	g_char_skin_head = gi.cvar("g_char_skin_head", "head_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	g_char_skin_torso = gi.cvar("g_char_skin_torso", "torso_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
 	g_char_skin_legs = gi.cvar("g_char_skin_legs", "lower_a1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);

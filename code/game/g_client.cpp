@@ -68,6 +68,7 @@ extern qboolean JET_Flying(const gentity_t* self);
 extern cvar_t* com_kotor;
 extern cvar_t* g_allowdualpistols;
 extern cvar_t* g_char_model;
+extern cvar_t* g_transitionSaberFix;
 extern cvar_t* g_char_skin_head;
 extern cvar_t* g_char_skin_torso;
 extern cvar_t* g_char_skin_legs;
@@ -1078,7 +1079,15 @@ static void Player_RestoreFromPrevLevel(gentity_t* ent)
 			{
 				ent->client->ps.saber[0].name = G_NewString(saber0_name);
 			}
-			if (saber1_name[0] && Q_stricmp("(null)", saber1_name) != 0)
+			if (saber1_name[0] && Q_stricmp("(null)", saber1_name) != 0 && g_transitionSaberFix->integer)
+			{
+				// the second saber only comes along if it is a real one, with its data parsed now: a removed second saber
+				// keeps the default name (WP_SaberSetDefaults), and a fresh start never parsed it, so after a level change
+				// (a character change in game removes the sabers first) the player held an empty second saber: no move
+				// speed and no anims, a T-pose. g_transitionSaberFix 0: the old behaviour
+				ent->client->ps.dualSabers = WP_SaberParseParms(saber1_name, &ent->client->ps.saber[1], qfalse) ? qtrue : qfalse;
+			}
+			else if (saber1_name[0] && Q_stricmp("(null)", saber1_name) != 0)
 			{
 				ent->client->ps.saber[1].name = G_NewString(saber1_name);
 				ent->client->ps.dualSabers = qtrue;

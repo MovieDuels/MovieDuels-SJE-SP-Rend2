@@ -2317,6 +2317,8 @@ tryJetPack:
 
 extern int killPlayerTimer;
 
+extern cvar_t* g_transitionSaberFix;
+
 void G_ChangeMap(const char* mapname, const char* spawntarget, const qboolean hub)
 {
 	if (g_entities[0].client->ps.pm_type == PM_DEAD)
@@ -2341,6 +2343,16 @@ void G_ChangeMap(const char* mapname, const char* spawntarget, const qboolean hu
 	if (spawntarget == nullptr)
 	{
 		spawntarget = ""; //prevent it from becoming "(null)"
+	}
+	if (g_transitionSaberFix->integer && g_entities[0].client && !g_entities[0].client->ps.dualSabers)
+	{
+		// the level-change data names the second saber: none for a player who holds no second one (a removed
+		// second saber keeps the default name, which brought an empty saber along: no move speed, T-pose)
+		if (g_entities[0].client->ps.saber[1].name && gi.bIsFromZone(g_entities[0].client->ps.saber[1].name, TAG_G_ALLOC))
+		{
+			gi.Free(g_entities[0].client->ps.saber[1].name);
+		}
+		g_entities[0].client->ps.saber[1].name = nullptr;
 	}
 	if (hub == qtrue)
 	{

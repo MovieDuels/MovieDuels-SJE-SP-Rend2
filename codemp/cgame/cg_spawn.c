@@ -188,9 +188,22 @@ void SP_misc_model_static(void) {
 		}
 	}
 
-	if (!CG_SpawnVector("modelscale_vec", "1 1 1", vScale)) {
-		if (CG_SpawnFloat("modelscale", "1", &scale)) {
-			VectorSet(vScale, scale, scale, scale);
+	// modelscale_vec "x y z". SP maps also carry a single number ("1.5") or an empty value there:
+	// a single number scales all three axes, anything else falls back to modelscale or 1 1 1, as the
+	// SP game does (g_misc.cpp). CG_SpawnVector would print a warning and leave the scale at 0 0 0,
+	// which made the model vanish.
+	{
+		char* scaleStr = NULL;
+		const qboolean hasVec = CG_SpawnString("modelscale_vec", "", &scaleStr);
+		const int parsed = hasVec ? sscanf(scaleStr, "%f %f %f", &vScale[0], &vScale[1], &vScale[2]) : 0;
+		if (parsed == 1) {
+			vScale[1] = vScale[2] = vScale[0];
+		}
+		else if (parsed != 3) {
+			VectorSet(vScale, 1.0f, 1.0f, 1.0f);
+			if (CG_SpawnFloat("modelscale", "1", &scale) && scale != 0.0f) {
+				VectorSet(vScale, scale, scale, scale);
+			}
 		}
 	}
 
