@@ -2536,11 +2536,12 @@ static void RenderSurfaces(CRenderSurface& RS, const trRefEntity_t* ent, int ent
 			newSurf->boneCache = RS.boneCache;
 			newSurf->dlightBits = dlightBits;
 
-			// render shadows?
-			if (r_shadows->integer == 2
-				&& (RS.renderfx & (RF_NOSHADOW | RF_DEPTHHACK))
-				&& shader->sort == SS_OPAQUE)
-				newSurf->genShadows = qtrue;
+			// render shadows? No stencil shadow volumes for Ghoul2 models in rend2 (DH 2026-10-25): the old test was
+			// inverted (it asked for RF_NOSHADOW | RF_DEPTHHACK), so only menu models (RF_NOSHADOW) and first person
+			// views got them, and rend2 builds the volumes from tess.xyz, which GPU-skinned surfaces don't fill. Result:
+			// hard black shards over the menu character (SJE character creation, cg_shadows 2). Characters in a level
+			// never got these volumes, so nothing changes there.
+			newSurf->genShadows = qfalse;
 
 			R_AddDrawSurf(
 				(surfaceType_t*)newSurf,
