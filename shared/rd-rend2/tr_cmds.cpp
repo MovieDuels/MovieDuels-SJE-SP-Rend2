@@ -371,7 +371,7 @@ void	RE_SetColor(const float* rgba) {
 	}
 	// the fade is applied per shader stage in the backend (RB_HudFadeStage), so shaders that ignore the vertex alpha fade too
 	cmd->hudFade = 0.0f;
-	if (r_hudAlpha && r_hudAlpha->value < 1.0f)
+	if (r_hudAlpha&& r_hudAlpha->value < 1.0f)
 	{
 		cmd->hudFade = r_hudAlpha->value > 0.0f ? 1.0f - r_hudAlpha->value : 1.0f;
 	}

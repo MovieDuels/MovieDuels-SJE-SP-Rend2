@@ -225,7 +225,7 @@ void RE_SetColor(const float* rgba) {
 		r_hudAlpha = ri.Cvar_Get("r_hudAlpha", "1", CVAR_TEMP);
 	}
 	cmd->hudFade = 0.0f;
-	if (r_hudAlpha && r_hudAlpha->value < 1.0f)
+	if (r_hudAlpha&& r_hudAlpha->value < 1.0f)
 	{
 		cmd->hudFade = r_hudAlpha->value > 0.0f ? 1.0f - r_hudAlpha->value : 1.0f;
 	}

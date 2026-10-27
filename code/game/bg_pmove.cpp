@@ -13357,7 +13357,6 @@ static int PM_GetWalkWithSaberOnAnim(const pmove_t* pm, const qboolean is_holdin
 			(pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) ||
 			(is_holding_block_button == qtrue))
 		{// in camera or npc or holding block button, use default dual walk
-
 			if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) //npc
 			{
 				if (in_camera)
@@ -20272,7 +20271,6 @@ int PM_BlockingPoseForSaberAnimLevelSingleAMD(void)
 		}
 		else
 		{// Cosmetic mode ON
-
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 			{
 				if (flags.isAnakin == qtrue)
