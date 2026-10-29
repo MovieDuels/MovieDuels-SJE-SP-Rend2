@@ -1569,6 +1569,13 @@ during times of significant packet loss.
 
 constexpr auto RESET_TIME = 300;
 
+// how far (msec) the client's time ran past the newest snapshot since the last one arrived (CL_SetCGameTime). The
+// player is drawn between the last two snapshots (CG_InterpolatePlayerState); past the newest one he is drawn
+// extrapolated and pulled back when the next snapshot arrives. After the game was slowed down (the MD wheel's
+// timescale) or paused the time could stay up to ~50 msec ahead, and the 1-2 msec a snapshot drift below needed
+// seconds to take it back: the player and the view shook at the snapshot rate (MD team 2026-10-29)
+static int cl_extrapolatedMsec = 0;
+
 void CL_AdjustTimeDelta()
 {
 	cl.newSnapshots = qfalse;
@@ -1578,6 +1585,7 @@ void CL_AdjustTimeDelta()
 
 	if (deltaDelta > RESET_TIME)
 	{
+		cl_extrapolatedMsec = 0;
 		cl.serverTimeDelta = newDelta;
 		cl.oldServerTime = cl.frame.serverTime; // FIXME: is this a problem for cgame?
 		cl.serverTime = cl.frame.serverTime;
@@ -1593,10 +1601,25 @@ void CL_AdjustTimeDelta()
 		{
 			Com_Printf("<FAST> ");
 		}
+		cl_extrapolatedMsec = 0;
 		cl.serverTimeDelta = (cl.serverTimeDelta + newDelta) >> 1;
+	}
+	else if (cl_extrapolatedMsec > 10 + cls.frametime)
+	{
+		// well past the newest snapshot (after a slow-down or a pause; one frame's time past it is normal at a low
+		// frame rate): take most of it back now, not 2 msec a snapshot (time is held, never run backwards, while it
+		// catches up: CL_SetCGameTime)
+		cl.serverTimeDelta -= cl_extrapolatedMsec / 2 + 2;
+		cl.extrapolatedSnapshot = qfalse;
+		cl_extrapolatedMsec = 0;
+		if (cl_showTimeDelta->integer)
+		{
+			Com_Printf("<CATCHUP> ");
+		}
 	}
 	else
 	{
+		cl_extrapolatedMsec = 0;
 		// slow drift adjust, only move 1 or 2 msec
 
 		// if any of the frames between this and the previous snapshot
@@ -1714,6 +1737,11 @@ void CL_SetCGameTime()
 	if (cls.realtime + cl.serverTimeDelta >= cl.frame.serverTime - 5)
 	{
 		cl.extrapolatedSnapshot = qtrue;
+		const int over = cls.realtime + cl.serverTimeDelta - (cl.frame.serverTime - 5);
+		if (over > cl_extrapolatedMsec)
+		{
+			cl_extrapolatedMsec = over;
+		}
 	}
 
 	// if we have gotten new snapshots, drift serverTimeDelta

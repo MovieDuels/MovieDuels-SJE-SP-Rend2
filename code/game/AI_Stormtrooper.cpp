@@ -3620,6 +3620,133 @@ static void Melee_GrabEnemy()
 	TIMER_Set(NPC, "grabEnemyDebounce", NPC->client->ps.torsoAnimTimer + Q_irand(4000, 20000));
 }
 
+/*
+-------------------------
+ST_SelectGunForRange
+
+NPCs carrying more than one gun take the one made for the enemy's range (MD team 2026-10-29), as MP bots' weapon
+ranges: pistols close, rifles / carbines / repeaters mid, sniper rifles and launchers far. Only guns: an NPC with a
+saber, melee or an explosive in hand is left alone, and so are the Boba Fett / Jango / Mandalorian / rocket trooper
+AIs, which pick their own weapons by tactic.
+-------------------------
+*/
+#define ST_GUN_CLOSE	384.0f	// closer than this: close range
+#define ST_GUN_LONG		1100.0f	// further than this: long range
+
+// 0 close, 1 mid, 2 long; -1 not a gun that takes part
+static int ST_GunRange(const int weapon)
+{
+	switch (weapon)
+	{
+	case WP_BLASTER_PISTOL:
+	case WP_BRYAR_PISTOL:
+	case WP_DUAL_PISTOL:
+	case WP_DUAL_CLONEPISTOL:
+	case WP_CLONEPISTOL:
+	case WP_JAWA:
+	case WP_REBELBLASTER:
+	case WP_REY:
+	case WP_JANGO:
+	case WP_WRIST_BLASTER:
+	case WP_FLECHETTE:
+		return 0;
+	case WP_BLASTER:
+	case WP_BOBA:
+	case WP_CLONECARBINE:
+	case WP_BATTLEDROID:
+	case WP_THEFIRSTORDER:
+	case WP_CLONERIFLE:
+	case WP_CLONECOMMANDO:
+	case WP_REBELRIFLE:
+	case WP_REPEATER:
+	case WP_Z6_ROTARY_CANNON:
+	case WP_BOWCASTER:
+	case WP_DEMP2:
+		return 1;
+	case WP_DISRUPTOR:
+	case WP_TUSKEN_RIFLE:
+	case WP_ROCKET_LAUNCHER:
+	case WP_CONCUSSION:
+	case WP_RAPID_FIRE_CONC:
+		return 2;
+	default:
+		return -1;
+	}
+}
+
+// a gun whose shot blows up: never used on an enemy this close
+static bool ST_GunExplodes(const int weapon)
+{
+	switch (weapon)
+	{
+	case WP_ROCKET_LAUNCHER:
+	case WP_CONCUSSION:
+	case WP_RAPID_FIRE_CONC:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void ST_SelectGunForRange(void)
+{
+	if (!NPC->enemy || !NPC->client || in_camera || NPC->client->ps.weaponTime > 0 || !TIMER_Done(NPC, "gunSwitch"))
+	{
+		return;
+	}
+	switch (NPC->client->NPC_class)
+	{
+	case CLASS_BOBAFETT:
+	case CLASS_JANGO:
+	case CLASS_JANGODUAL:
+	case CLASS_MANDALORIAN:
+	case CLASS_ROCKETTROOPER:
+		return;
+	default:
+		break;
+	}
+	const int current = ST_GunRange(NPC->client->ps.weapon);
+	if (current < 0)
+	{
+		return;
+	}
+	const float dist = sqrtf(enemyDist);
+	// a little either side of a border keeps the range of the gun in hand (no switching back and forth)
+	const float closeEdge = current == 0 ? ST_GUN_CLOSE * 1.15f : ST_GUN_CLOSE * 0.85f;
+	const float longEdge = current == 2 ? ST_GUN_LONG * 0.85f : ST_GUN_LONG * 1.15f;
+	const int want = dist < closeEdge ? 0 : dist < longEdge ? 1 : 2;
+	if (want == current && !(dist < 256.0f && ST_GunExplodes(NPC->client->ps.weapon)))
+	{
+		return;
+	}
+	// the gun for that range; if he has none, the next range towards it (nothing worse than the gun in hand)
+	static const int order[3][3] = { { 0, 1, 2 }, { 1, 2, 0 }, { 2, 1, 0 } };
+	int best = WP_NONE;
+	for (int k = 0; k < 3 && best == WP_NONE; k++)
+	{
+		const int band = order[want][k];
+		for (int w = WP_NONE + 1; w < WP_NUM_WEAPONS; w++)
+		{
+			if (w != NPC->client->ps.weapon && NPC->client->ps.weapons[w] && ST_GunRange(w) == band
+				&& !(dist < 256.0f && ST_GunExplodes(w)))
+			{
+				best = w;
+				break;
+			}
+		}
+		if (band == current && !ST_GunExplodes(NPC->client->ps.weapon))
+		{
+			break; // the gun in hand is as good as the rest
+		}
+	}
+	if (best != WP_NONE)
+	{
+		NPC_ChangeWeapon(best);
+		TIMER_Set(NPC, "gunSwitch", Q_irand(2500, 4000));
+	}
+}
+
+
 void NPC_BSST_Attack(void)
 {
 	//Don't do anything if we're hurt
@@ -3777,6 +3904,7 @@ void NPC_BSST_Attack(void)
 	hitAlly = qfalse;
 	VectorClear(impactPos);
 	enemyDist = DistanceSquared(NPC->currentOrigin, NPC->enemy->currentOrigin);
+	ST_SelectGunForRange(); // more than one gun: the one for this range (MD team 2026-10-29)
 
 	vec3_t enemy_dir, shoot_dir;
 	VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, enemy_dir);
@@ -5821,6 +5949,13 @@ static void NPC_BSST_AttackAdvanced(void)
 	if (in_camera == qfalse)
 	{
 		NPC_CheckEvasion();
+	}
+
+	// more than one gun: the one for this range (MD team 2026-10-29)
+	if (NPC->enemy)
+	{
+		enemyDist = DistanceSquared(NPC->currentOrigin, NPC->enemy->currentOrigin);
+		ST_SelectGunForRange();
 	}
 
 	// Main enhanced combat

@@ -9251,7 +9251,7 @@ static void WP_SaberDamageTrace(gentity_t* ent, int saberNum, int bladeNum)
 
 		if (saberHitFraction < 1.0f)
 		{
-			if (!collision_resolved && base_damage)
+			if (!collision_resolved && base_damage && hit_owner && hit_owner->client) // the hit saber may have no owner (MD team 2026-10-29)
 			{
 				//some other kind of in-hand saber collision
 				//handle my reaction
@@ -10856,7 +10856,7 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 				(ent->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING || ent->client->ps.ManualBlockingFlags & 1
 					<< MBF_HOLDINGBLOCK);
 
-			if (!collision_resolved && base_damage)
+			if (!collision_resolved && base_damage && hit_owner && hit_owner->client) // the hit saber may have no owner (MD team 2026-10-29)
 			{
 				//some other kind of in-hand saber collision
 				//handle my reaction
@@ -12268,7 +12268,7 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 				(ent->client->ps.ManualBlockingFlags & 1 << MBF_NPCBLOCKING || ent->client->ps.ManualBlockingFlags & 1
 					<< MBF_HOLDINGBLOCK);
 
-			if (!collision_resolved && base_damage)
+			if (!collision_resolved && base_damage && hit_owner && hit_owner->client) // the hit saber may have no owner (MD team 2026-10-29)
 			{
 				//some other kind of in-hand saber collision
 				//handle my reaction

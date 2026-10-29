@@ -3114,7 +3114,19 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 									hitEnt->client->otherKillerWeaponType = WP_NONE;
 									hitEnt->client->ps.saberMove = LS_READY;
 								}
-								G_Kick_Throw(hitEnt, kick_dir, 75);
+								// a hilt bash only shoves him a little (MD team 2026-10-29). Each kick counts once: this path never set
+								// kickedDebounce, so while the kick anim lasted it hit again each time the knockback timer ran out and each
+								// hit added to the throw - a hilt bash could send him flying across the map
+								if (ent->client->ps.torsoAnim == BOTH_A7_HILT)
+								{
+									G_Kick_Throw(hitEnt, kick_dir, 20);
+									TIMER_Set(hitEnt, "kickedDebounce", ent->client->ps.torsoAnimTimer > 500 ? ent->client->ps.torsoAnimTimer : 500);
+								}
+								else
+								{
+									G_Kick_Throw(hitEnt, kick_dir, 75);
+									TIMER_Set(hitEnt, "kickedDebounce", 500);
+								}
 								return hitEnt;
 							}
 						}
