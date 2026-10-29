@@ -6729,6 +6729,70 @@ static void CG_MDWheel_DrawSlices(const int current)
 	cgi_R_RenderScene(&rd);
 }
 
+// a soft dark disc (radius r, centre x, y in wheel units, y up) over an icon
+static void CG_MDWheel_DarkDisc(const float x, const float y, const float r, const float alpha)
+{
+	const int steps = 32;
+	vec4_t dark = { 0.0f, 0.0f, 0.0f, 0.0f };
+	vec4_t clear = { 0.0f, 0.0f, 0.0f, 0.0f };
+	dark[3] = alpha;
+	for (int i = 0; i < steps; i++)
+	{
+		const float a0 = 2.0f * static_cast<float>(M_PI) * static_cast<float>(i) / static_cast<float>(steps), a1 = 2.0f * static_cast<float>(M_PI) * static_cast<float>(i + 1) / static_cast<float>(steps);
+		polyVert_t v[4];
+		// the solid middle
+		CG_MDWheel_VertXY(&v[0], x, y, dark);
+		CG_MDWheel_VertXY(&v[1], x + sinf(a0) * r * 0.85f, y + cosf(a0) * r * 0.85f, dark);
+		CG_MDWheel_VertXY(&v[2], x + sinf(a1) * r * 0.85f, y + cosf(a1) * r * 0.85f, dark);
+		cgi_R_AddPolyToScene(mdWheel.sliceShader, 3, v);
+		// the soft edge
+		CG_MDWheel_VertXY(&v[0], x + sinf(a0) * r * 0.85f, y + cosf(a0) * r * 0.85f, dark);
+		CG_MDWheel_VertXY(&v[1], x + sinf(a0) * r * 1.05f, y + cosf(a0) * r * 1.05f, clear);
+		CG_MDWheel_VertXY(&v[2], x + sinf(a1) * r * 1.05f, y + cosf(a1) * r * 1.05f, clear);
+		cgi_R_AddPolyToScene(mdWheel.sliceShader, 3, v);
+		CG_MDWheel_VertXY(&v[0], x + sinf(a0) * r * 0.85f, y + cosf(a0) * r * 0.85f, dark);
+		CG_MDWheel_VertXY(&v[1], x + sinf(a1) * r * 1.05f, y + cosf(a1) * r * 1.05f, clear);
+		CG_MDWheel_VertXY(&v[2], x + sinf(a1) * r * 0.85f, y + cosf(a1) * r * 0.85f, dark);
+		cgi_R_AddPolyToScene(mdWheel.sliceShader, 3, v);
+	}
+}
+
+// the force powers not known, greyed out as the weapons not carried: their icons' shaders ignore the draw colour (they
+// stayed bright), so a dark disc goes over each, drawn after the icons (Jace 2026-10-29)
+static void CG_MDWheel_GreyUnknownForce(const float iconSize)
+{
+	int dark = 0;
+	if (mdWheel.ring != 1 || !mdWheel.sliceShader || mdWheel.numItems <= 0 || cgs.glconfig.vidHeight <= 0)
+	{
+		return;
+	}
+	cgi_R_ClearScene();
+	for (int n = 0; n < mdWheel.numItems; n++)
+	{
+		if (mdWheel.avail[n])
+		{
+			continue;
+		}
+		const float a = 2.0f * static_cast<float>(M_PI) * static_cast<float>(n) / static_cast<float>(mdWheel.numItems);
+		const float size = n == mdWheel.hover ? iconSize * MDW_ICON_HOVER / MDW_ICON : iconSize;
+		CG_MDWheel_DarkDisc(sinf(a) * MDW_RADIUS, cosf(a) * MDW_RADIUS, size * 0.5f, 0.68f);
+		dark++;
+	}
+	if (!dark)
+	{
+		return;
+	}
+	refdef_t rd = {};
+	rd.rdflags = RDF_NOWORLDMODEL;
+	AxisClear(rd.viewaxis);
+	rd.fov_x = rd.fov_y = 90.0f;
+	rd.width = rd.height = (int)(2.0f * MDW_PANEL * static_cast<float>(cgs.glconfig.vidHeight) / 480.0f);
+	rd.x = (cgs.glconfig.vidWidth - rd.width) / 2;
+	rd.y = (cgs.glconfig.vidHeight - rd.height) / 2;
+	rd.time = cg.time;
+	cgi_R_RenderScene(&rd);
+}
+
 void CG_DrawMDWheel()
 {
 	static constexpr vec4_t dim = { 0.0f, 0.0f, 0.0f, 0.35f };
@@ -6809,6 +6873,7 @@ void CG_DrawMDWheel()
 		}
 	}
 	cgi_R_SetColor(nullptr);
+	CG_MDWheel_GreyUnknownForce(iconSize);
 
 	// the centre: ring name, the pointed item, its ammo / On Person (or why it can't be picked), the controls
 	CG_MDWheel_CenterText(my - 86.0f, 0.6f, gold, mdWheel.ring == 0 ? "WEAPONS" : "FORCE POWERS", ax);

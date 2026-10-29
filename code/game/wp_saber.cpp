@@ -14061,12 +14061,13 @@ static qboolean WP_SaberValidateEnemy(gentity_t* self, gentity_t* enemy)
 		return qfalse;
 
 	// ----------------------------------------------------
-	// NPCs cannot target Jedi unless they are Jedi themselves
-	// (prevents non‑Jedi NPCs from cheating with saber throw)
+	// The homing saber doesn't go after NPCs who know the Force (other Jedi), as JKA (NPCs can still home in
+	// on the player). This was flipped (== 0: only Force users were targets), so a level 3 throw never homed in on
+	// troopers, droids and the like (Jace 2026-10-29)
 	// ----------------------------------------------------
 	if (enemy->s.number >= MAX_CLIENTS)
 	{
-		if (enemy->client->ps.forcePowersKnown == 0)
+		if (enemy->client->ps.forcePowersKnown)
 			return qfalse;
 	}
 
@@ -14527,8 +14528,12 @@ static void WP_RunSaber(gentity_t* self, gentity_t* saber)
 				}
 				else
 				{
-					//pick an enemy
-					enemy = WP_SaberFindEnemy(self, saber);
+					//pick an enemy - not in MD mode (g_SerenityJediEngineMode 2): there the thrown saber flies where it is
+					//aimed (Jace / MD team 2026-10-29); JKA mode (0) and 1 home in as JKA
+					if (g_SerenityJediEngineMode->integer != 2)
+					{
+						enemy = WP_SaberFindEnemy(self, saber);
+					}
 					if (enemy)
 					{
 						//home in on enemy
