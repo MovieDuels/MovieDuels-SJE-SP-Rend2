@@ -269,8 +269,11 @@ extern Vehicle_t* G_IsRidingVehicle(const gentity_t* pEnt);
 
 // Meditating (the meditate anims, not their ends - as CG_MeditateCameraOrbit): the game holds the view (PM_LockAngles),
 // but the mouse input must not be reset to the held angles, or CG_MeditateCameraOrbit (cg_view.cpp) never sees the
-// mouse move and the third person camera can't orbit (MP doesn't reset it either)
-static qboolean CG_PlayerMeditating()
+// mouse move and the third person camera can't orbit (MP doesn't reset it either). CG_MeditateCameraOrbit uses this too:
+// the game's state, a snapshot ahead of cg.predictedPlayerState - with the snapshot's anim the orbit was read from the
+// mouse input for a frame or two after it had been reset to the held angles here, and the camera snapped back behind
+// the player instead of swinging back (Jace 2026-10-29)
+qboolean CG_PlayerMeditating()
 {
 	if (!g_entities[0].inuse || !g_entities[0].client || g_entities[0].client->ps.stats[STAT_HEALTH] <= 0)
 	{

@@ -280,13 +280,13 @@ void CG_RegisterWeapon(const int weapon_num)
 	// setup the shader we will use for the icon
 	if (weaponData[weapon_num].weapon_Icon_file[0])
 	{
-		weaponInfo->weapon_Icon = cgi_R_RegisterShaderNoMip(weaponData[weapon_num].weapon_Icon_file);
+		weaponInfo->weaponIcon = cgi_R_RegisterShaderNoMip(weaponData[weapon_num].weapon_Icon_file);
 		weaponInfo->weaponIconNoAmmo = cgi_R_RegisterShaderNoMip(va("%s_na", weaponData[weapon_num].weapon_Icon_file));
 	}
 
 	if (weaponData[weapon_num].alt_weapon_Icon_file[0])
 	{
-		weaponInfo->alt_weapon_Icon = cgi_R_RegisterShaderNoMip(weaponData[weapon_num].alt_weapon_Icon_file);
+		weaponInfo->altweaponIcon = cgi_R_RegisterShaderNoMip(weaponData[weapon_num].alt_weapon_Icon_file);
 		weaponInfo->alt_weaponIconNoAmmo = cgi_R_RegisterShaderNoMip(va("%s_na", weaponData[weapon_num].alt_weapon_Icon_file));
 	}
 
@@ -3069,7 +3069,7 @@ void CG_DrawDataPadWeaponSelect()
 			}
 			else
 			{
-				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->weapon_Icon);
+				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->weaponIcon);
 			}
 
 			hold_x -= small_icon_size + pad;
@@ -3099,7 +3099,7 @@ void CG_DrawDataPadWeaponSelect()
 		else
 		{
 			CG_DrawPic(center_x_pos - big_icon_size / 2, graphic_y_pos - (big_icon_size - small_icon_size) / 2 + 10,
-				big_icon_size, big_icon_size, weaponInfo->weapon_Icon);
+				big_icon_size, big_icon_size, weaponInfo->weaponIcon);
 		}
 	}
 
@@ -3160,7 +3160,7 @@ void CG_DrawDataPadWeaponSelect()
 			}
 			else
 			{
-				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->weapon_Icon);
+				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->weaponIcon);
 			}
 
 			hold_x += small_icon_size + pad;
@@ -3322,7 +3322,7 @@ void CG_DrawDataPadWeaponSelect_kotor()
 			}
 			else
 			{
-				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->alt_weapon_Icon);
+				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->altweaponIcon);
 			}
 
 			hold_x -= small_icon_size + pad;
@@ -3352,7 +3352,7 @@ void CG_DrawDataPadWeaponSelect_kotor()
 		else
 		{
 			CG_DrawPic(center_x_pos - big_icon_size / 2, graphic_y_pos - (big_icon_size - small_icon_size) / 2 + 10,
-				big_icon_size, big_icon_size, weaponInfo->alt_weapon_Icon);
+				big_icon_size, big_icon_size, weaponInfo->altweaponIcon);
 		}
 	}
 
@@ -3413,7 +3413,7 @@ void CG_DrawDataPadWeaponSelect_kotor()
 			}
 			else
 			{
-				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->alt_weapon_Icon);
+				CG_DrawPic(hold_x, graphic_y_pos, small_icon_size, small_icon_size, weaponInfo->altweaponIcon);
 			}
 
 			hold_x += small_icon_size + pad;
@@ -3764,7 +3764,7 @@ void CG_DrawWeaponSelect()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->weapon_Icon);
+					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->weaponIcon);
 				}
 			}
 			else
@@ -3776,7 +3776,7 @@ void CG_DrawWeaponSelect()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->weapon_Icon);
+					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->weaponIcon);
 				}
 			}
 
@@ -3806,7 +3806,7 @@ void CG_DrawWeaponSelect()
 			else
 			{
 				CG_DrawPic(x - big_icon_size / static_cast<float>(2), y - (static_cast<float>(big_icon_size) - small_icon_size) / 2 + y_offset, big_icon_size,
-					big_icon_size, weaponInfo->weapon_Icon);
+					big_icon_size, weaponInfo->weaponIcon);
 			}
 		}
 		else
@@ -3821,7 +3821,7 @@ void CG_DrawWeaponSelect()
 			{
 				CG_DrawPic(x - big_icon_size / static_cast<float>(2), y - (static_cast<float>(big_icon_size) - small_icon_size) / 2 + 10 + y_offset,
 					big_icon_size,
-					big_icon_size, weaponInfo->weapon_Icon);
+					big_icon_size, weaponInfo->weaponIcon);
 			}
 		}
 	}
@@ -3921,7 +3921,7 @@ void CG_DrawWeaponSelect()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->weapon_Icon);
+					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->weaponIcon);
 				}
 			}
 			else
@@ -3933,7 +3933,7 @@ void CG_DrawWeaponSelect()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->weapon_Icon);
+					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->weaponIcon);
 				}
 			}
 
@@ -4207,7 +4207,7 @@ void CG_DrawWeaponSelect_kotor()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->alt_weapon_Icon);
+					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->altweaponIcon);
 				}
 			}
 			else
@@ -4219,7 +4219,7 @@ void CG_DrawWeaponSelect_kotor()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->alt_weapon_Icon);
+					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->altweaponIcon);
 				}
 			}
 
@@ -4249,7 +4249,7 @@ void CG_DrawWeaponSelect_kotor()
 			else
 			{
 				CG_DrawPic(x - big_icon_size / static_cast<float>(2), y - (static_cast<float>(big_icon_size) - small_icon_size) / 2 + y_offset, big_icon_size,
-					big_icon_size, weaponInfo->alt_weapon_Icon);
+					big_icon_size, weaponInfo->altweaponIcon);
 			}
 		}
 		else
@@ -4264,7 +4264,7 @@ void CG_DrawWeaponSelect_kotor()
 			{
 				CG_DrawPic(x - big_icon_size / static_cast<float>(2), y - (static_cast<float>(big_icon_size) - small_icon_size) / 2 + 10 + y_offset,
 					big_icon_size,
-					big_icon_size, weaponInfo->alt_weapon_Icon);
+					big_icon_size, weaponInfo->altweaponIcon);
 			}
 		}
 	}
@@ -4364,7 +4364,7 @@ void CG_DrawWeaponSelect_kotor()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->alt_weapon_Icon);
+					CG_DrawPic(hold_x, y + y_offset, small_icon_size, small_icon_size, weaponInfo->altweaponIcon);
 				}
 			}
 			else
@@ -4376,7 +4376,7 @@ void CG_DrawWeaponSelect_kotor()
 				}
 				else
 				{
-					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->alt_weapon_Icon);
+					CG_DrawPic(hold_x, y + 10 + y_offset, small_icon_size, small_icon_size, weaponInfo->altweaponIcon);
 				}
 			}
 

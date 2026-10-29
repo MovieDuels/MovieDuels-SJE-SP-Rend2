@@ -6776,7 +6776,7 @@ void CG_DrawMDWheel()
 			const int perShot = weaponData[item].energyPerShot < weaponData[item].altEnergyPerShot
 				? weaponData[item].energyPerShot : weaponData[item].altEnergyPerShot;
 			const bool usable = !mdWheel.avail[n] || ammoIndex == AMMO_NONE || cg.snap->ps.ammo[ammoIndex] >= perShot;
-			icon = usable || !cg_weapons[item].weaponIconNoAmmo ? cg_weapons[item].weapon_Icon : cg_weapons[item].weaponIconNoAmmo;
+			icon = usable || !cg_weapons[item].weaponIconNoAmmo ? cg_weapons[item].weaponIcon : cg_weapons[item].weaponIconNoAmmo;
 			if (!mdWheel.avail[n])
 			{
 				color[3] = 0.25f; // not carried

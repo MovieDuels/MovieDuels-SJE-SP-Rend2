@@ -2068,8 +2068,8 @@ using weaponInfo_t = struct weaponInfo_s
 
 	vec3_t weaponMidpoint; // so it will rotate centered instead of by tag
 
-	qhandle_t weapon_Icon; // The version of the icon with a glowy background
-	qhandle_t alt_weapon_Icon; // The version of the icon with a glowy background - kotor
+	qhandle_t weaponIcon; // The version of the icon with a glowy background
+	qhandle_t altweaponIcon; // The version of the icon with a glowy background - kotor
 	qhandle_t weaponIconNoAmmo; // The version of the icon with no ammo warning
 	qhandle_t alt_weaponIconNoAmmo; // The version of the icon with no ammo warning - kotor
 	qhandle_t ammoIcon;

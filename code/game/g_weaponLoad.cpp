@@ -862,7 +862,7 @@ void WPN_WeaponIcon(const char** hold_buf)
 	if (len > 64)
 	{
 		len = 64;
-		gi.Printf(S_COLOR_YELLOW"WARNING: weapon_Icon too long in external WEAPONS.DAT '%s'\n", token_str);
+		gi.Printf(S_COLOR_YELLOW"WARNING: weaponIcon too long in external WEAPONS.DAT '%s'\n", token_str);
 	}
 
 	Q_strncpyz(weaponData[wpnParms.weaponNum].weapon_Icon_file, token_str, len);
@@ -882,7 +882,7 @@ void WPN_AltWeaponIcon(const char** hold_buf)
 	if (len > 64)
 	{
 		len = 64;
-		gi.Printf(S_COLOR_YELLOW"WARNING: alt_weapon_Icon too long in external WEAPONS.DAT '%s'\n", token_str);
+		gi.Printf(S_COLOR_YELLOW"WARNING: altweaponIcon too long in external WEAPONS.DAT '%s'\n", token_str);
 	}
 
 	Q_strncpyz(weaponData[wpnParms.weaponNum].alt_weapon_Icon_file, token_str, len);
