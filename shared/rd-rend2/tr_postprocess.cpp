@@ -306,8 +306,18 @@ static qboolean RB_UpdateSunFlareVis(void)
 		ri.Printf(PRINT_DEVELOPER, "Waited %d iterations\n", iter);
 	}
 
+	// GPU sync point (2026-10-30): reading GL_QUERY_RESULT before the GPU has finished last frame's sun test made the
+	// CPU wait for it. Not ready yet: keep the last answer (the sun rays lag a frame at most).
+	static qboolean sunWasVisible = qfalse;
+	GLint available = 0;
+	qglGetQueryObjectiv(tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT_AVAILABLE, &available);
+	if (!available)
+	{
+		return sunWasVisible;
+	}
 	qglGetQueryObjectuiv(tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT, &sampleCount);
-	return (qboolean)(sampleCount > 0);
+	sunWasVisible = (qboolean)(sampleCount > 0);
+	return sunWasVisible;
 }
 
 void RB_SunRays(FBO_t* srcFbo, vec4i_t srcBox, FBO_t* dstFbo, vec4i_t dstBox)

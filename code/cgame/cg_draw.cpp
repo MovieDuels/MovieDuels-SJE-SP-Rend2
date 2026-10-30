@@ -783,9 +783,13 @@ static void cg_drawweapontype(const centity_t* cent)
 		{
 			wp_index = OHB_KOTOR_PISTOL1;
 		}
+		else if (otherHUDBits[OHB_CLONEPISTOL_DUAL].background)
+		{
+			wp_index = OHB_CLONEPISTOL_DUAL; // the dual pistols icon (2026-10-30)
+		}
 		else
 		{
-			wp_index = OHB_CLONEPISTOL;
+			wp_index = OHB_CLONEPISTOL; // a hud.menu without the weapontype_clonepistoldual item
 		}
 	}
 	else if (cent->currentState.weapon == WP_WRIST_BLASTER)

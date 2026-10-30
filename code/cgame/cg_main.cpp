@@ -2136,6 +2136,7 @@ HUDMenuItem_t otherHUDBits[] =
 	{ "righthud", "force_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_FORCE_ICON_DF
 	{ "righthud", "block_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_BLOCK_ICON_DF
 	{ "righthud", "ammo_icon_df", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_AMMO_ICON_DF
+	{ "righthud", "weapontype_clonepistoldual", 0, 0, 0, 0,{ 0.0f, 0.0f, 0.0f, 0.0f }, NULL_HANDLE }, // OHB_CLONEPISTOL_DUAL
 };
 
 extern void CG_NPC_Precache(gentity_t* spawner);

@@ -226,6 +226,40 @@ if(MSVC)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
 
+	# Optional AVX2 build (2026-10-30): x64 always has SSE2 (/arch:SSE2 changes nothing there); /arch:AVX2 lets the
+	# compiler use 256-bit vector instructions in the maths-heavy code (skinning, cloth, traces). The game will NOT
+	# start on a CPU without AVX2 (before Intel Haswell 2013 / AMD Excavator 2015), so keep it OFF for public releases
+	# unless you ship a second set of binaries.
+	option(UseAVX2 "MSVC: build with /arch:AVX2 (needs a CPU with AVX2 to run)" OFF)
+	if(UseAVX2)
+		string(REPLACE "/arch:SSE2" "/arch:AVX2" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+		string(REPLACE "/arch:SSE2" "/arch:AVX2" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	endif()
+
+	# Profile-guided optimisation (2026-10-30), Release only. The compiler lays out and inlines the code by how it
+	# really runs. Three steps:
+	#   1. configure with -D MSVC_PGO=GEN, build Release, copy the binaries to the game as usual (also copy
+	#      pgort140.dll from the Visual Studio folder ...\VC\Tools\MSVC\<version>\bin\Hostx64\x64 next to the exe),
+	#      set the environment variable VCPROFILE_PATH to this build's Release folder, then play typical scenes
+	#      (SP missions, MP bot fights, saber duels). It runs slowly; that is normal. Quit normally: the .pgc files
+	#      are written then.
+	#   2. configure with -D MSVC_PGO=USE and build Release again: the linker reads the .pgd + .pgc files.
+	#   3. ship the USE build. OFF = the normal build.
+	set(MSVC_PGO "OFF" CACHE STRING "MSVC profile-guided optimisation: OFF, GEN (instrumented build) or USE (optimised build)")
+	set_property(CACHE MSVC_PGO PROPERTY STRINGS OFF GEN USE)
+	if(MSVC_PGO STREQUAL "GEN")
+		set(PgoLinkFlag "/GENPROFILE")
+	elseif(MSVC_PGO STREQUAL "USE")
+		set(PgoLinkFlag "/USEPROFILE")
+	else()
+		set(PgoLinkFlag "")
+	endif()
+	if(PgoLinkFlag)
+		message(STATUS "MSVC profile-guided optimisation: ${MSVC_PGO}")
+		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${PgoLinkFlag}")
+		set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} ${PgoLinkFlag}")
+	endif()
+
 	# C++17 removed some old library pieces the engine code may use (std::random_shuffle, auto_ptr, unary_function...):
 	# keep them available. std::byte off, so it can't clash with the engine's own 'byte' type.
 	set(SharedDefines ${SharedDefines} "_HAS_AUTO_PTR_ETC=1")

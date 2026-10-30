@@ -248,6 +248,7 @@ using otherhudbits_t = enum
 	OHB_FORCE_ICON_DF,
 	OHB_BLOCK_ICON_DF,
 	OHB_AMMO_ICON_DF,
+	OHB_CLONEPISTOL_DUAL, // dual clone pistols icon (hud.menu item weapontype_clonepistoldual), 2026-10-30
 
 	OHB_MAX
 };

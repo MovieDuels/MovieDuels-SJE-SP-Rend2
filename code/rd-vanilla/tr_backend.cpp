@@ -1746,7 +1746,9 @@ static const void* RB_SwapBuffers(const void* data)
 		R_Free(stencil_readback);
 	}
 
-	if (!glState.finishCalled) {
+	// GPU sync point (2026-10-30, as SJE / MD9): only with r_finish 1. Frames with no 3D view (menus, loading screens)
+	// never reach RB_BeginDrawingView, so they used to glFinish every swap - stalling map loads on the driver's uploads.
+	if (!glState.finishCalled && r_finish->integer) {
 		qglFinish();
 	}
 
