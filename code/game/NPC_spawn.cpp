@@ -66,7 +66,8 @@ const char* lightside_jedi1[] = {
 	"md_jocasta", "md_barriss", "md_ongree", "md_sora", "md_tarados", "md_obi_ep3", "md_ani_ep3", "md_foul_moudama",
 	"md_youngling", "md_jed1", "md_jed6", "md_jed10", "md_jbrute", "md_ezra", "md_kanan", "md_caleb",
 	"md_gungan_warrior", "md_bultar", "md_agen", "cal_kestis", "md_sabine", "md_joopi", "md_tsuichoi", "md_stass_allie",
-	"md_sarissa_jeng", "md_redath", "md_micah", "md_bolla_ropal", "md_koffi", "md_corran", "md_jolee", "md_atris", "md_meetra"
+	"md_sarissa_jeng", "md_redath", "md_micah", "md_bolla_ropal", "md_koffi", "md_corran", "md_jolee", "md_atris",
+	"md_meetra", "md_indara", "md_kelnacca_clothes"
 };
 const char* lightside_jedi2[] = {
 	"md_ahsoka_rebels", "md_plo_tcw", "md_fisto_tcw", "md_adi_tcw", "md_eeth_koth", "md_even_piell", "md_quinlan",
@@ -75,7 +76,8 @@ const char* lightside_jedi2[] = {
 	"md_luke_rotj", "md_luke_crait", "md_rey_skywalker", "md_rahn", "md_kyle", "md_mara", "rosh_penin",
 	"md_shaakti_tfu", "militiatrooper", "md_ahsoka_tm", "md_luke_hooded_tm", "md_kento_marek", "md_kota", "md_galen",
 	"md_bastila", "md_jed_nikto", "md_halsey", "md_ima_gundi", "md_knox", "md_tera_sinube", "md_nahdar",
-	"md_oppo_rancisis", "md_thongla_jur", "md_falon_grey", "jedi_vrook", "md_revan_jedi", "md_cere"
+	"md_oppo_rancisis", "md_thongla_jur", "md_falon_grey", "jedi_vrook", "md_revan_jedi", "md_cere", "md_ahmar", "md_sol",
+	"md_vernestra", "md_deak_starkiller"
 };
 const char* lightside_gunners[] = {
 	"md_pad_ga", "md_clo_cody", "md_clo_rex", "md_clo_ep2", "md_duchess_satine", "md_nien_nunb",
@@ -83,7 +85,7 @@ const char* lightside_gunners[] = {
 	"md_new_rep_sec_droid", "rebel2", "militiasaboteur", "md_poe", "jan", "md_hera", "md_rex_old", "md_leia_anh",
 	"md_han_esb", "md_chewie", "md_lando_bespin", "md_mon_mothma", "md_cassian", "md_bodhi", "md_chirrut", "md_jarjar",
 	"md_baze_malbus", "md_jyn_erso", "md_finn", "md_rose_tico", "md_k2so", "md_rebel_pilot", "md_mando_dw", "md_luthen",
-	"bespinelite", "bespinlobot"
+	"bespinelite", "bespinlobot", "Rebel_HumanH"
 };
 const char* darkside_sith1[] = {
 	"md_dooku", "md_magnaguard", "md_clone_assassin", "md_kylo_shirtless", "md_sidious_ep3_robed", "md_ani_sith",
@@ -97,7 +99,7 @@ const char* darkside_sith2[] = {
 	"md_pic", "md_gorc", "md_jerec", "md_sariss", "tavion", "alora_dual", "md_desann", "gamorrean", "vizam_tgpoc",
 	"md_mau_luke", "md_plagueis", "md_starkiller", "md_revan", "md_7thsister", "md_5thbrother", "md_templeguard_inquisitor",
 	"md_8thbrother", "md_maul_rebels6", "md_2ndsister", "md_shin", "md_baylan", "md_dagan", "md_arcann", "md_bandon",
-	"md_bane_armor", "md_malgus_hooded", "md_13thsister", "md_tualon"
+	"md_bane_armor", "md_malgus_hooded", "md_13thsister", "md_tualon", "md_qimir", "md_vader_mcquarrie"
 };
 const char* darkside_gunners[] = {
 	"md_sbd_am", "md_tus2_tc", "battledroid", "md_sithtrooper", "md_hondo", "swamptrooper", "md_embo", "md_phasma",
@@ -3806,19 +3808,19 @@ void SP_NPC_Jedi(gentity_t* self)
 
 void SP_NPC_md_lightside_jedi1_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(lightside_jedi1[Q_irand2(0, 48)]);
+	self->NPC_type = const_cast<char*>(lightside_jedi1[Q_irand2(0, 50)]);
 	SP_NPC_spawner(self);
 }
 
 void SP_NPC_md_lightside_jedi2_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(lightside_jedi2[Q_irand2(0, 47)]);
+	self->NPC_type = const_cast<char*>(lightside_jedi2[Q_irand2(0, 51)]);
 	SP_NPC_spawner(self);
 }
 
 void SP_NPC_md_lightside_gunners_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(lightside_gunners[Q_irand2(0, 39)]);
+	self->NPC_type = const_cast<char*>(lightside_gunners[Q_irand2(0, 40)]);
 	SP_NPC_spawner(self);
 }
 
@@ -3830,7 +3832,7 @@ void SP_NPC_md_darkside_sith1_random(gentity_t* self)
 
 void SP_NPC_md_darkside_sith2_random(gentity_t* self)
 {
-	self->NPC_type = const_cast<char*>(darkside_sith2[Q_irand2(0, 34)]);
+	self->NPC_type = const_cast<char*>(darkside_sith2[Q_irand2(0, 36)]);
 	SP_NPC_spawner(self);
 }
 

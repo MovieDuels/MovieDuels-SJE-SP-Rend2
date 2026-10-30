@@ -1731,7 +1731,7 @@ static void R_Register(void)
 	r_noServerGhoul2 = ri_Cvar_Get_NoComm("r_noghoul2", "0", CVAR_CHEAT, "");
 	r_Ghoul2AnimSmooth = ri_Cvar_Get_NoComm("r_ghoul2animsmooth", "0.3", CVAR_TEMP, "");
 	r_Ghoul2UnSqashAfterSmooth = ri_Cvar_Get_NoComm("r_ghoul2unsqashaftersmooth", "1", CVAR_TEMP, "");
-	broadsword = ri_Cvar_Get_NoComm("broadsword", "0", CVAR_ARCHIVE, "");
+	broadsword = ri_Cvar_Get_NoComm("broadsword", "1", CVAR_ARCHIVE, "");
 	broadsword_kickbones = ri_Cvar_Get_NoComm("broadsword_kickbones", "1", CVAR_TEMP, "");
 	broadsword_kickorigin = ri_Cvar_Get_NoComm("broadsword_kickorigin", "1", CVAR_TEMP, "");
 	broadsword_dontstopanim = ri_Cvar_Get_NoComm("broadsword_dontstopanim", "0", CVAR_TEMP, "");
