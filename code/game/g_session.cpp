@@ -133,7 +133,9 @@ void G_ReadSessionData(gclient_t* client)
 	gi.Cvar_VariableStringBuffer(var, s, sizeof(s));
 
 	// Clear all objectives
-	for (i = 0; i < MAX_OBJECTIVES; i++)
+	// C6201: MAX_OBJECTIVES (the objectives enum count) is larger than the array (MAX_MISSION_OBJ): this wrote past
+	// mission_objectives into the session data after it
+	for (i = 0; i < MAX_MISSION_OBJ; i++)
 	{
 		client->sess.mission_objectives[i].display = qfalse;
 		client->sess.mission_objectives[i].status = OBJECTIVE_STAT_PENDING;

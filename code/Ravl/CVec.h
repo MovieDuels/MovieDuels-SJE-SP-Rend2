@@ -107,7 +107,7 @@ public:
 	// Constructors
 	////////////////////////////////////////////////////////////////////////////////////
 #ifndef _DEBUG
-	CVec4() {}
+	CVec4() { v[0] = v[1] = v[2] = v[3] = 0.0f; } // C26495: initialised in release too
 #else
 	CVec4() { v[0] = v[1] = v[2] = v[3] = RAVL_VEC_UDF; } // DEBUG INITIALIZATION
 #endif

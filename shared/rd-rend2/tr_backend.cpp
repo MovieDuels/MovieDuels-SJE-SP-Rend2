@@ -1277,6 +1277,10 @@ static void RB_SubmitDrawSurfsForDepthFill(
 
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &cubemapIndex, &postRender);
 		assert(shader != nullptr);
+		if (!shader)
+		{
+			continue; // C6011: a bad sort key is skipped instead of crashing
+		}
 
 		if (shader->sort != SS_OPAQUE || shader->useDistortion || shader->depthPrepass == DEPTHPREPASS_SKIP)
 		{
@@ -1367,6 +1371,10 @@ static void RB_SubmitDrawSurfs(
 
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &cubemapIndex, &postRender);
 		assert(shader != nullptr);
+		if (!shader)
+		{
+			continue; // C6011: a bad sort key is skipped instead of crashing
+		}
 		fogNum = drawSurf->fogIndex;
 		dlighted = drawSurf->dlightBits;
 

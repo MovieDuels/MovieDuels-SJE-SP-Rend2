@@ -1134,6 +1134,7 @@ static tbool AssignRecur(const int piTriListIn[], STriInfo psTriInfos[],
 	else if (pVerts[1] == iVertRep) i = 1;
 	else if (pVerts[2] == iVertRep) i = 2;
 	assert(i >= 0 && i < 3);
+	if (i < 0) return TFALSE; // C6385/C6386: no vertex matched (release builds have no assert)
 
 	// early out
 	if (pMyTriInfo->AssignedGroup[i] == pGroup) return TTRUE;
@@ -1221,6 +1222,7 @@ static tbool GenerateTSpaces(STSpace psTspace[], const STriInfo pTriInfos[], con
 			else if (pTriInfos[f].AssignedGroup[1] == pGroup) index = 1;
 			else if (pTriInfos[f].AssignedGroup[2] == pGroup) index = 2;
 			assert(index >= 0 && index < 3);
+			if (index < 0) continue; // C6385: not in this group (release builds have no assert)
 
 			iVertIndex = piTriListIn[f * 3 + index];
 			assert(iVertIndex == pGroup->iVertexRepresentitive);

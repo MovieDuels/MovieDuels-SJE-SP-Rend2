@@ -5088,10 +5088,22 @@ static bool UI_CopySpeciesArray(T*& dst, const T* src, const int count, const in
 static bool UI_CopySpecies(playerSpeciesInfo_t* dst, const playerSpeciesInfo_t* src)
 {
 	*dst = *src;
-	const bool ok = UI_CopySpeciesArray(dst->SkinHead, src->SkinHead, src->SkinHeadCount, src->SkinHeadMax)
-		& UI_CopySpeciesArray(dst->SkinTorso, src->SkinTorso, src->SkinTorsoCount, src->SkinTorsoMax)
-		& UI_CopySpeciesArray(dst->SkinLeg, src->SkinLeg, src->SkinLegCount, src->SkinLegMax)
-		& UI_CopySpeciesArray(dst->Color, src->Color, src->ColorCount, src->ColorMax);
+	// All four copies must run, even after one fails: *dst = *src left dst holding src's pointers, and each copy
+	// replaces one of them with its own buffer (or nullptr). Stopping early (&&) would leave src's pointers in dst
+	// and UI_FreeSpecies(dst) below would free src's arrays. Written out so the analyser sees it is intended.
+	bool ok = UI_CopySpeciesArray(dst->SkinHead, src->SkinHead, src->SkinHeadCount, src->SkinHeadMax);
+	if (!UI_CopySpeciesArray(dst->SkinTorso, src->SkinTorso, src->SkinTorsoCount, src->SkinTorsoMax))
+	{
+		ok = false;
+	}
+	if (!UI_CopySpeciesArray(dst->SkinLeg, src->SkinLeg, src->SkinLegCount, src->SkinLegMax))
+	{
+		ok = false;
+	}
+	if (!UI_CopySpeciesArray(dst->Color, src->Color, src->ColorCount, src->ColorMax))
+	{
+		ok = false;
+	}
 	if (!ok)
 	{
 		UI_FreeSpecies(dst);
@@ -5876,8 +5888,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 29/10/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 19 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 30/10/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 20 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");

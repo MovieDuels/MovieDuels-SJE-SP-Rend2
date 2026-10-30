@@ -111,7 +111,7 @@ namespace ragl
 	class CNode
 	{
 	public:
-		CNode()
+		CNode() : mPoint(0.0f) // C26495
 		{}
 
 		CNode(const CVec3& Pt) : mPoint(Pt)

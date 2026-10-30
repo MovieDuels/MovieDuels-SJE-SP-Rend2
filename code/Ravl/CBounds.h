@@ -68,7 +68,8 @@ public:
 		mAim(Stop),
 		mRange(0),
 		mRangeMax(0),
-		mPoint(Stop)
+		mPoint(Stop),
+		mNormal(0.0f) // C26495
 	{
 		mAim -= Start;
 		mLength = mAim.Norm();
