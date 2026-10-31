@@ -3066,9 +3066,10 @@ qboolean G_DoDismembermentcin(gentity_t* self, vec3_t point, const int mod, cons
 	return qfalse;
 }
 
-static qboolean G_DoGunDismemberment(gentity_t* self, vec3_t point, const int mod, const int hit_loc)
+static qboolean G_DoGunDismemberment(gentity_t* self, vec3_t point, const int mod, const int hit_loc, const qboolean gun_shot)
 {
-	if (mod == MOD_BLASTER
+	if (gun_shot
+		|| mod == MOD_BLASTER
 		|| mod == MOD_BLASTER_ALT
 		|| mod == MOD_REBELBLASTER
 		|| mod == MOD_REBELBLASTER_ALT
@@ -3090,9 +3091,7 @@ static qboolean G_DoGunDismemberment(gentity_t* self, vec3_t point, const int mo
 		|| mod == MOD_FLECHETTE
 		|| mod == MOD_BRYAR_ALT
 		|| mod == MOD_BRYAR
-		|| mod == MOD_EMPLACED
-		|| mod == MOD_HEADSHOT
-		|| mod == MOD_BODYSHOT)
+		|| mod == MOD_EMPLACED)
 	{
 		if (g_gundismemberment->integer > 0)
 		{
@@ -4436,9 +4435,52 @@ GibEntity
 static void GibEntity(gentity_t* self)
 {
 	G_AddEvent(self, EV_GIB_PLAYER, 0);
-	self->takedamage = qfalse;
-	self->s.eType = ET_INVISIBLE;
-	self->contents = 0;
+}
+
+// A gun head or body shot, set by G_Damage for player_die. The MOD stays the real weapon.
+enum
+{
+	GUN_SHOT_NONE,
+	GUN_SHOT_BODY,
+	GUN_SHOT_HEAD
+};
+static int s_die_gun_shot = GUN_SHOT_NONE;
+
+// The MODs the head/body shot weapons fire. Force powers and other non-gun damage can have the attacker as the
+// inflictor, so the weapon they hold doesn't make it a gun hit.
+static qboolean G_IsGunMOD(const int mod)
+{
+	switch (mod)
+	{
+	case MOD_BLASTER:
+	case MOD_BLASTER_ALT:
+	case MOD_REBELBLASTER:
+	case MOD_REBELBLASTER_ALT:
+	case MOD_CLONECOMMANDO:
+	case MOD_CLONECOMMANDO_ALT:
+	case MOD_REBELRIFLE:
+	case MOD_REBELRIFLE_ALT:
+	case MOD_REY:
+	case MOD_REY_ALT:
+	case MOD_CLONEPISTOL:
+	case MOD_CLONEPISTOL_ALT:
+	case MOD_JANGO:
+	case MOD_JANGO_ALT:
+	case MOD_BOBA:
+	case MOD_BOBA_ALT:
+	case MOD_BOWCASTER:
+	case MOD_BOWCASTER_ALT:
+	case MOD_REPEATER:
+	case MOD_FLECHETTE:
+	case MOD_FLECHETTE_ALT:
+	case MOD_EMPLACED:
+	case MOD_ENERGY:
+	case MOD_BRYAR:
+	case MOD_BRYAR_ALT:
+		return qtrue;
+	default:
+		return qfalse;
+	}
 }
 
 static void GibEntity_Headshot(gentity_t* self)
@@ -4497,6 +4539,8 @@ extern void Boba_NoDeadFlameThrower(const gentity_t* self);
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 	const int damage, const int means_of_death, const int dflags, const int hit_loc)
 {
+	const int gun_shot = s_die_gun_shot;
+	s_die_gun_shot = GUN_SHOT_NONE;
 	int      anim = 0;
 	int      contents = 0;
 	qboolean death_script = qfalse;
@@ -4547,7 +4591,8 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 			{
 				G_DoDismemberment(self, self->pos1, means_of_death, hit_loc);
 			}
-			else if ((means_of_death == MOD_BLASTER
+			else if (g_gundismemberment->integer > 0
+				&& (means_of_death == MOD_BLASTER
 				|| means_of_death == MOD_BLASTER_ALT
 				|| means_of_death == MOD_REBELBLASTER
 				|| means_of_death == MOD_REBELBLASTER_ALT
@@ -4573,7 +4618,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 				&& !NPC_IsNotDismemberable(self))
 			{
 				GibEntity(self);
-				G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc);
+				G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc, qfalse);
 			}
 
 			if (anim >= 0)
@@ -5753,15 +5798,15 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 		}
 	}
 
-	if (means_of_death == MOD_BODYSHOT && !NPC_IsNotDismemberable(self))
+	if (gun_shot == GUN_SHOT_BODY && !NPC_IsNotDismemberable(self))
 	{
 		GibEntity(self);
-		G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc);
+		G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc, qtrue);
 	}
-	else if (means_of_death == MOD_HEADSHOT && !NPC_IsNotDismemberable(self))
+	else if (gun_shot == GUN_SHOT_HEAD && !NPC_IsNotDismemberable(self))
 	{
 		GibEntity_Headshot(self);
-		G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc);
+		G_DoGunDismemberment(self, self->pos1, means_of_death, hit_loc, qtrue);
 	}
 	else
 	{
@@ -9105,8 +9150,10 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 		}
 	}
 
+	int gun_shot = GUN_SHOT_NONE;
+
 	// point can be NULL (e.g. G_KillBox telefrag damage) - the head shot code below reads point[2]
-	if (point && targ->client && attacker->client && targ->health > 0 &&
+	if (g_gundismemberment->integer > 0 && G_IsGunMOD(mod) && point && targ->client && attacker->client && targ->health > 0 &&
 		g_standard_humanoid(targ) && !NPC_IsNotDismemberable(targ))
 	{
 		// do head shots
@@ -9170,13 +9217,11 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 				// Existing logic
 				if (z_ratio > 0.90f)
 				{
-					take = G_LocationDamage(point, targ, take);
-					mod = MOD_HEADSHOT;
+					gun_shot = GUN_SHOT_HEAD;
 				}
 				else
 				{
-					take = G_LocationDamage(point, targ, take);
-					mod = MOD_BODYSHOT;
+					gun_shot = GUN_SHOT_BODY;
 				}
 			}
 		}
@@ -9602,7 +9647,9 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 					VectorLength(targ->client->ps.velocity));
 			}
 
+			s_die_gun_shot = gun_shot;
 			GEntity_DieFunc(targ, inflictor, attacker, take, mod, dflags, hit_loc);
+			s_die_gun_shot = GUN_SHOT_NONE;
 		}
 		else
 		{

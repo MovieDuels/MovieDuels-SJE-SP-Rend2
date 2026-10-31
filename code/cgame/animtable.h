@@ -1355,6 +1355,7 @@ stringID_table_t animTable[MAX_ANIMATIONS + 1] =
 	ENUM2STRING(BOTH_WALKBACK2), //# Walk2 backwards
 	ENUM2STRING(BOTH_RUNBACK1), //# Run1 backwards
 	ENUM2STRING(BOTH_RUNBACK2), //# Run1 backwards
+	ENUM2STRING(BOTH_WALKBACK1_BLASTER),
 
 	//# #sep BOTH_ JUMPING
 	ENUM2STRING(BOTH_JUMP1), //# Jump - wind-up and leave ground

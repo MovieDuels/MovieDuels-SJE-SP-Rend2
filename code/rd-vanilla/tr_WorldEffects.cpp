@@ -684,7 +684,10 @@ public:
 		//---------------------------------------------------------------------
 		if (!mWeatherZones.size())
 		{
-			Com_Printf("WARNING: No Weather Zones Encountered\n");
+			if (ri.Cvar_VariableIntegerValue("developer")) // DH 2026-10-31: developer only
+			{
+				Com_Printf("WARNING: No Weather Zones Encountered\n");
+			}
 			AddWeatherZone(tr.world->bmodels[0].bounds[0], tr.world->bmodels[0].bounds[1]);
 		}
 

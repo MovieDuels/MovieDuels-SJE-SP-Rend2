@@ -532,7 +532,7 @@ public:
 		//---------------------------------------------------------------------
 		if (!mWeatherZones.size())
 		{
-			ri->Printf(PRINT_ALL, "WARNING: No Weather Zones Encountered\n");
+			ri->Printf(PRINT_DEVELOPER, "WARNING: No Weather Zones Encountered\n"); // DH 2026-10-31: developer only
 			AddWeatherZone(tr.world->bmodels[0].bounds[0], tr.world->bmodels[0].bounds[1]);
 		}
 
