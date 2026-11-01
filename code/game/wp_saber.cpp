@@ -759,6 +759,10 @@ void G_CreateG2AttachedWeaponModel(gentity_t* ent, const char* ps_weapon_model, 
 	}
 	if (!ps_weapon_model || !ps_weapon_model[0])
 	{
+		if (ent->client && ent->client->ps.weapon == WP_NONE)
+		{
+			return; // WP_NONE has no model: empty hands, not the default saber (2026-11-01, MD team report)
+		}
 		ps_weapon_model = DEFAULT_SABER_MODEL;
 	}
 	if (ent->playerModel == -1)
