@@ -1907,6 +1907,8 @@ static void G_RagGripHang(gentity_t* ent, vec3_t ragAngles)
 	gi.G2API_RagForceSolve(ent->ghoul2, qtrue);
 }
 
+extern qboolean WP_SaberBodyNoCut(const gentity_t* body);
+
 qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 {
 	vec3_t    G2Angles;
@@ -1939,6 +1941,12 @@ qboolean G_RagDoll(gentity_t* ent, vec3_t forcedAngles)
 		ent->ghoul2.size() == 0 ||
 		!G_RagWantsHumanoidsOnly(&ent->ghoul2[ent->playerModel]))
 	{
+		return qfalse;
+	}
+
+	if (!ent->client->isRagging && WP_SaberBodyNoCut(ent))
+	{// a thrown saber is stuck in this body: a normal death, never a ragdoll, also after it falls out (DH 2026-11-01)
+		ent->client->noRagTime = -1;
 		return qfalse;
 	}
 

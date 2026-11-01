@@ -2737,9 +2737,15 @@ qboolean G_GetRootSurfNameWithVariant(gentity_t* ent, const char* root_surf_name
 
 extern qboolean g_standard_humanoid(gentity_t* self);
 
+extern qboolean WP_SaberBodyNoCut(const gentity_t* body);
+
 qboolean G_DoDismemberment(gentity_t* self, vec3_t point, const int mod, const int hit_loc,
 	const qboolean force = qfalse)
 {
+	if (mod == MOD_SABER && WP_SaberBodyNoCut(self))
+	{// a thrown saber sticks (or is stuck) in this body: a normal death, no saber cut or dismemberment (DH 2026-11-01)
+		return qfalse;
+	}
 	if ((g_dismemberment->integer || g_saberRealisticCombat->integer > 1) && mod == MOD_SABER) //only lightsaber
 	{
 		if (g_standard_humanoid(self)

@@ -699,6 +699,11 @@ void DrawItemSetVertexAttributes(
 {
 	drawItem.numAttributes = count;
 	drawItem.attributes = ojkAllocArray<vertexAttribute_t>(allocator, count);
+	if (!drawItem.attributes)
+	{
+		drawItem.numAttributes = 0; // per-frame memory full (2026-11-01)
+		return;
+	}
 	memcpy(
 		drawItem.attributes, attributes, sizeof(*drawItem.attributes) * count);
 }
@@ -711,6 +716,11 @@ void DrawItemSetSamplerBindings(
 {
 	drawItem.numSamplerBindings = count;
 	drawItem.samplerBindings = ojkAllocArray<SamplerBinding>(allocator, count);
+	if (!drawItem.samplerBindings)
+	{
+		drawItem.numSamplerBindings = 0; // per-frame memory full (2026-11-01)
+		return;
+	}
 	memcpy(
 		drawItem.samplerBindings,
 		bindings,
@@ -726,6 +736,11 @@ void DrawItemSetUniformBlockBindings(
 	drawItem.numUniformBlockBindings = count;
 	drawItem.uniformBlockBindings = ojkAllocArray<UniformBlockBinding>(
 		allocator, count);
+	if (!drawItem.uniformBlockBindings)
+	{
+		drawItem.numUniformBlockBindings = 0; // per-frame memory full (2026-11-01)
+		return;
+	}
 	memcpy(
 		drawItem.uniformBlockBindings,
 		bindings,
@@ -913,6 +928,9 @@ UniformData* UniformDataWriter::Finish(Allocator& destHeap)
 	UniformData* endSentinel = ojkAlloc<UniformData>(scratch);
 	if (failed || !endSentinel)
 	{
+		scratch.Reset(); // 2026-11-01: was left full, so the next item started on a full scratch buffer
+		failed = false;
+		shaderProgram = nullptr;
 		return nullptr;
 	}
 
@@ -922,6 +940,14 @@ UniformData* UniformDataWriter::Finish(Allocator& destHeap)
 
 	// Copy scratch buffer to per-frame heap
 	void* finalMemory = destHeap.Alloc(uniformDataSize);
+	if (!finalMemory)
+	{
+		// per-frame memory full: no uniforms for this item instead of a write through a null pointer (2026-11-01)
+		scratch.Reset();
+		failed = false;
+		shaderProgram = nullptr;
+		return nullptr;
+	}
 	UniformData* result = static_cast<UniformData*>(finalMemory);
 	memcpy(finalMemory, scratch.Base(), uniformDataSize);
 	scratch.Reset();
@@ -1022,6 +1048,17 @@ SamplerBinding* SamplerBindingsWriter::Finish(Allocator& destHeap, uint32_t* num
 	}
 
 	SamplerBinding* result = ojkAllocArray<SamplerBinding>(destHeap, count);
+	if (!result)
+	{
+		// per-frame memory full (2026-11-01)
+		if (numBindings)
+		{
+			*numBindings = 0;
+		}
+		failed = false;
+		count = 0;
+		return nullptr;
+	}
 
 	if (numBindings)
 	{

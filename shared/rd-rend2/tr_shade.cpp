@@ -681,7 +681,7 @@ void RB_FillDrawCommand(
 				ojkAllocArray<GLsizei>(*backEndData->perFrameMemory, input->multiDrawPrimitives);
 			memcpy(drawCmd.params.multiIndexed.numIndices,
 				input->multiDrawNumIndexes,
-				sizeof(GLsizei*) * input->multiDrawPrimitives);
+				sizeof(GLsizei) * input->multiDrawPrimitives); // was sizeof(GLsizei*): copied twice the array size (2026-11-01)
 		}
 	}
 	else

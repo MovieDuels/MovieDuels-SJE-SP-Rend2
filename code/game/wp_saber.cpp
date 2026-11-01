@@ -2858,6 +2858,8 @@ extern qboolean PM_SaberInTransitionDamageMove(const playerState_t* ps);
 extern cvar_t* g_dismemberProbabilities;
 
 static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const vec3_t hit_dir, int damage);
+static qboolean WP_SaberBodyCanStick(gentity_t* owner, gentity_t* victim);
+static void WP_SaberBodyNoCutThisHit(const gentity_t* victim);
 static qboolean WP_SaberThrowerIsYoda(const gentity_t* owner);
 
 static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, const int base_d_flags,
@@ -3217,6 +3219,10 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 						damage = ceil(totalDmg[i]);
 					}
 					const int vic_health_before = victim->health;
+					if (thrown_saber && vic_was_alive && WP_SaberBodyCanStick(ent, victim))
+					{// the throw sticks in the body if this hit kills: a normal death, no saber cut / dismemberment, no ragdoll (DH 2026-11-01)
+						WP_SaberBodyNoCutThisHit(victim);
+					}
 					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, dflags, MOD_SABER,
 						hitDismemberLoc[i]);
 					if (thrown_saber && g_DebugSaberCombat->integer)
@@ -4277,6 +4283,10 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 						}
 					}
 					const int vic_health_before = victim->health;
+					if (thrown_saber && vic_was_alive && WP_SaberBodyCanStick(ent, victim))
+					{// the throw sticks in the body if this hit kills: a normal death, no saber cut / dismemberment, no ragdoll (DH 2026-11-01)
+						WP_SaberBodyNoCutThisHit(victim);
+					}
 					G_Damage(victim, inflictor, ent, dmgDir[i], dmgSpot[i], damage, dflags, MOD_SABER,
 						hitDismemberLoc[i]);
 					if (thrown_saber && g_DebugSaberCombat->integer)
@@ -13108,6 +13118,66 @@ constexpr float SABER_BODY_HILT_OFFSET = 10.0f; // hilt this far in front of the
 constexpr int SABER_BODY_DAMAGE_INTERVAL = 500; // Yoda's throw stuck in a living target: its hit repeats this often (ms)
 static int s_saberBodyDamage[MAX_GENTITIES]; // by saber entity: the damage that repeats (0 = none, a corpse)
 static int s_saberBodyNextDamage[MAX_GENTITIES]; // by saber entity: when it next repeats
+static int s_saberBodyNextPrint[MAX_GENTITIES]; // by saber entity: next g_DebugSaberCombat placement print (2026-11-01)
+static int s_saberInBody[MAX_GENTITIES]; // by body: the saber entity stuck in it + 1 (DH 2026-11-01: no cut, no ragdoll)
+static int s_saberNoCutEnt = ENTITYNUM_NONE; // this hit's victim, when the throw sticks in it if the hit kills
+static int s_saberNoCutTime = -1;
+
+static void WP_SaberBodyNoCutThisHit(const gentity_t* victim)
+{
+	s_saberNoCutEnt = victim->s.number;
+	s_saberNoCutTime = level.time;
+}
+
+// DH 2026-11-01: a body a thrown saber sticks in (or is stuck in) dies a normal death: no saber cut, no dismemberment
+// (g_combat.cpp G_DoDismemberment) and no ragdoll (g_main.cpp G_RagDoll)
+qboolean WP_SaberBodyNoCut(const gentity_t* body)
+{
+	if (!body)
+	{
+		return qfalse;
+	}
+	if (body->s.number == s_saberNoCutEnt && level.time == s_saberNoCutTime)
+	{
+		return qtrue;
+	}
+	const int n = s_saberInBody[body->s.number] - 1;
+	if (n <= 0 || n >= ENTITYNUM_WORLD)
+	{
+		return qfalse;
+	}
+	const gentity_t* saber = &g_entities[n];
+	const gentity_t* owner = saber->owner;
+	return saber->inuse && saber->activator == body && owner && owner->client
+		&& owner->client->ps.saberEntityNum == n && owner->client->ps.saberEntityState == SES_STUCK_BODY ? qtrue : qfalse;
+}
+
+// DH 2026-11-01 (TFU: lift an enemy with grip, throw the saber into him): the enemy my grip / grasp holds, or nullptr.
+// g_saberThrowGripAim 0 = the throw goes where the crosshair is, as before
+static gentity_t* WP_SaberThrowGripTarget(const gentity_t* self)
+{
+	static cvar_t* grip_aim = nullptr;
+	if (!grip_aim)
+	{
+		grip_aim = gi.cvar("g_saberThrowGripAim", "1", CVAR_ARCHIVE);
+	}
+	if (!grip_aim->integer || !self->client
+		|| !(self->client->ps.forcePowersActive & (1 << FP_GRIP | 1 << FP_GRASP)))
+	{
+		return nullptr;
+	}
+	const int n = self->client->ps.forceGripEntityNum;
+	if (n < 0 || n >= ENTITYNUM_WORLD || n == self->s.number)
+	{
+		return nullptr;
+	}
+	gentity_t* target = &g_entities[n];
+	if (!target->inuse || !target->client || target->health <= 0)
+	{
+		return nullptr;
+	}
+	return target;
+}
 
 // Yoda's throw sticks in the target on every hit that does damage (not only a kill), and keeps hurting it
 static qboolean WP_SaberThrowerIsYoda(const gentity_t* owner)
@@ -13159,6 +13229,33 @@ static qboolean WP_SaberBodyBoneFrame(gentity_t* victim, vec3_t org_out, vec3_t 
 	return qtrue;
 }
 
+// the player's throw would stick in victim if this hit kills it (the checks of WP_SaberTryStickInBody, before G_Damage)
+static qboolean WP_SaberBodyCanStick(gentity_t* owner, gentity_t* victim)
+{
+	vec3_t org, axis[3];
+
+	if (!g_saberscanstickinenemy->integer || !owner || !owner->client || !victim || victim == owner || !victim->client)
+	{
+		return qfalse;
+	}
+	if (owner->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(owner))
+	{//players only
+		return qfalse;
+	}
+	if (owner->client->ps.forcePowerLevel[FP_SABERTHROW] < FORCE_LEVEL_3
+		|| !owner->client->ps.saberInFlight
+		|| owner->client->ps.saberEntityNum <= 0 || owner->client->ps.saberEntityNum >= ENTITYNUM_WORLD
+		|| (owner->client->ps.saberEntityState != SES_LEAVING && owner->client->ps.saberEntityState != SES_RETURNING))
+	{
+		return qfalse;
+	}
+	if (g_entities[owner->client->ps.saberEntityNum].s.pos.trType != TR_LINEAR)
+	{//not flying (dropped, stuck in a wall)
+		return qfalse;
+	}
+	return WP_SaberBodyBoneFrame(victim, org, axis);
+}
+
 // puts the saber where it sits in the body now (the body moves, falls, ragdolls)
 static qboolean WP_SaberBodyStuckPlace(gentity_t* saber)
 {
@@ -13186,6 +13283,14 @@ static qboolean WP_SaberBodyStuckPlace(gentity_t* saber)
 	G_SetOrigin(saber, hilt);
 	G_SetAngles(saber, angles);
 	gi.linkentity(saber);
+	if (g_DebugSaberCombat->integer && level.time >= s_saberBodyNextPrint[saber->s.number])
+	{// 2026-11-01 (DH: saber sometimes hangs in the air over the fallen body): where the chest bone says the body is
+		const gentity_t* body = saber->activator;
+		const float* body_org = body->client->isRagging ? body->client->ps.origin : body->currentOrigin;
+		s_saberBodyNextPrint[saber->s.number] = level.time + 500;
+		Com_Printf("SABER BODY STICK: place rag %d bone (%.0f %.0f %.0f) body (%.0f %.0f %.0f) health %d at %i\n",
+			body->client->isRagging, org[0], org[1], org[2], body_org[0], body_org[1], body_org[2], body->health, level.time);
+	}
 	return qtrue;
 }
 
@@ -13266,6 +13371,7 @@ static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const ve
 	}
 
 	saber->activator = victim;
+	s_saberInBody[victim->s.number] = saber->s.number + 1; // no cut, no ragdoll for this body (WP_SaberBodyNoCut)
 	saber->attackDebounceTime = level.time + Q_irand(2000, 5000);
 	saber->painDebounceTime = 0;
 	// still alive (Yoda's throw): the hit repeats while it is stuck
@@ -13280,6 +13386,7 @@ static void WP_SaberTryStickInBody(gentity_t* owner, gentity_t* victim, const ve
 	saber->bounceCount = 0;
 
 	owner->client->ps.saberEntityState = SES_STUCK_BODY;
+	G_Sound(saber, G_SoundIndex("sound/weapons/saber/saber_impale_sizzle.mp3")); // the impale sizzle, once, as the thrown saber sticks in the body (DH 2026-11-01)
 	owner->client->ps.saberstuckinwalltimer = level.time; // same retrieve delay as the wall stick
 	owner->client->ps.saber[0].DeactivateTrail(75);
 
@@ -13359,6 +13466,11 @@ void WP_SaberBallisticsThink(gentity_t* ent)
 	{//stuck in a body: move with it, fall out after its time (or when the body or the owner is gone)
 		if (owner->health <= 0 || level.time >= ent->attackDebounceTime || !WP_SaberBodyStuckPlace(ent))
 		{
+			if (g_DebugSaberCombat->integer)
+			{
+				Com_Printf("SABER BODY STICK: falls out (owner health %d, time up %d) at %i\n", owner->health,
+					level.time >= ent->attackDebounceTime ? 1 : 0, level.time);
+			}
 			WP_SaberFallFromBody(owner, ent);
 		}
 		else
@@ -14550,6 +14662,20 @@ static void WP_RunSaber(gentity_t* self, gentity_t* saber)
 						saber->enemy = enemy;
 						//FIXME: lock onto that enemy for a minimum amount of time (unless they become invalid?)
 					}
+				}
+			}
+
+			// DH 2026-11-01 (TFU combo): holding an enemy with grip / grasp, the thrown saber flies into his chest
+			// (he is lifted in front of me, the throw starts at my right hand) instead of where the crosshair is
+			if (self->client->ps.saberEntityState == SES_LEAVING)
+			{
+				gentity_t* grip_target = WP_SaberThrowGripTarget(self);
+				if (grip_target)
+				{
+					VectorCopy(grip_target->currentOrigin, saber_dest);
+					saber_dest[2] += grip_target->maxs[2] / 2.0f;
+					enemy = grip_target;
+					saber->enemy = grip_target;
 				}
 			}
 
