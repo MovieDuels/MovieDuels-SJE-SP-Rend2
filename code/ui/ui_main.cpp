@@ -2051,7 +2051,7 @@ vmCvar_t ui_SerenityJediEngineMode;
 vmCvar_t ui_char_model_angle;
 
 vmCvar_t ui_com_outcast;
-vmCvar_t ui_update7firststartup;
+vmCvar_t ui_update8firststartup;
 vmCvar_t ui_totgfirststartup;
 vmCvar_t ui_cursor;
 
@@ -2205,7 +2205,7 @@ static cvarTable_t cvarTable[] =
 
 	{ &ui_com_outcast, "com_outcast", "0", nullptr, CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 
-	{ &ui_update7firststartup, "g_update8firststartup", "1", nullptr, 0 },
+	{ &ui_update8firststartup, "g_update8firststartup", "1", nullptr, 0 },
 
 	{ &ui_totgfirststartup, "g_totgfirststartup", "1", nullptr, 0 },
 
@@ -5910,8 +5910,8 @@ void UI_LoadMenus(const char* menuFile, const qboolean reset)
 	Com_Printf("----------------------- MovieDuels-SJE-SP -----------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Update 8.0 ---------------------------\n");
-	Com_Printf("--------------------- Build Date 31/10/2026 ---------------------\n");// build date
-	Com_Printf("--------------------------- Build 21 ----------------------------\n");
+	Com_Printf("--------------------- Build Date 01/11/2026 ---------------------\n");// build date
+	Com_Printf("--------------------------- Build 01 ----------------------------\n");
 	Com_Printf("-----------------------------------------------------------------\n");
 	Com_Printf("-------------------------- Lightsaber ---------------------------\n");
 	Com_Printf("---------- An elegant weapon for a more civilized age -----------\n");
