@@ -4176,9 +4176,8 @@ static void UI_CalcForceStatus()
 		pState->forcePowerLevel[FP_TELEPATHY] +
 		pState->forcePowerLevel[FP_PROTECT] +
 		pState->forcePowerLevel[FP_ABSORB] +
-		pState->forcePowerLevel[FP_STASIS] +
-		pState->forcePowerLevel[FP_GRASP] +
 		pState->forcePowerLevel[FP_REPULSE] +
+		pState->forcePowerLevel[FP_LIGHTNING_STRIKE] +
 		pState->forcePowerLevel[FP_PROJECTION] +
 		pState->forcePowerLevel[FP_BLAST];
 
@@ -4187,7 +4186,7 @@ static void UI_CalcForceStatus()
 		pState->forcePowerLevel[FP_RAGE] +
 		pState->forcePowerLevel[FP_DRAIN] +
 		pState->forcePowerLevel[FP_DESTRUCTION] +
-		pState->forcePowerLevel[FP_LIGHTNING_STRIKE] +
+		pState->forcePowerLevel[FP_STASIS] +
 		pState->forcePowerLevel[FP_FEAR] +
 		pState->forcePowerLevel[FP_DEADLYSIGHT];
 
