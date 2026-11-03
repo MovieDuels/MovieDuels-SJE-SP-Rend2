@@ -633,6 +633,9 @@ using cgMedia_t = struct
 
 	qhandle_t batteryChargeShader;
 	qhandle_t useableHint;
+	qhandle_t npcBarBack;	// the NPC overhead bars (cg_draw.cpp CG_DrawOverheadBars)
+	qhandle_t npcBarFill;
+	qhandle_t npcBarFrame;
 
 	qhandle_t hackerIconShader;
 

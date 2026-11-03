@@ -2416,6 +2416,9 @@ static void CG_RegisterGraphics()
 	cgs.media.batteryChargeShader = cgi_R_RegisterShader("gfx/2d/battery");
 	cgi_R_RegisterShader("gfx/2d/droid_view");
 	cgs.media.useableHint = cgi_R_RegisterShader("gfx/hud/useableHint");
+	cgs.media.npcBarBack = cgi_R_RegisterShaderNoMip("gfx/2d/npcbar_back");
+	cgs.media.npcBarFill = cgi_R_RegisterShaderNoMip("gfx/2d/npcbar_fill");
+	cgs.media.npcBarFrame = cgi_R_RegisterShaderNoMip("gfx/2d/npcbar_frame");
 
 	cgs.media.hackerIconShader = cgi_R_RegisterShader("gfx/mp/c_icon_tech");
 
