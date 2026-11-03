@@ -728,9 +728,9 @@ static constexpr charMD_t charMD[] = {
 	{ "Cassian Andor",					"[Rogue One - Parka Jacket]",			"",				"md_cassian_parka",				"cassian",				"model_parka",					"menu_wp_rebelrifle",		"",						"",				"",			0,		0,		ERA_REBELS,			TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/cassian/misc/victory3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CASSIAN_ANDOR",				 qtrue },
 	{ "Cassian Andor",					"[Rogue One - Protective Vest]",		"",				"md_cassian_vest",				"cassian",				"model_vest",					"menu_wp_rebelrifle",		"",						"",				"",			0,		0,		ERA_REBELS,			TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/cassian/misc/victory3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CASSIAN_ANDOR",				 qtrue },
 	{ "Cassian Andor",					"[Rogue One - Scarif]",					"",				"md_cassian_scarif",			"cassian",				"model_scarif",					"menu_wp_blaster_pistol",	"",						"",				"",			0,		0,		ERA_REBELS,			TORSO_WEAPONREST2,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/cassian/misc/victory3.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CASSIAN_ANDOR",				 qtrue },
-	{ "Cere Junda",						"[Jedi Fallen Order]",					"",				"md_cere",						"cere_junda",			"model_default",				"inquisitor_single",		"",						"green",		"",			5,		38,		ERA_REBELS,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/female_jedi1/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CERE_JUNDA",					qfalse },
-	{ "Cere Junda",						"[Jedi Fallen Order - Jedi]",			"",				"md_cere_jedi",					"cere_jedi",			"model_default",				"inquisitor_single",		"",						"green",		"",			5,		38,		ERA_REBELS,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/female_jedi1/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CERE_JUNDA",					 qtrue },
-	{ "Cere Junda",						"[Jedi Fallen Order - Jedi Robed]",		"",				"md_cere_jedi_robed",			"cere_jedi",			"model_robed",					"inquisitor_single",		"",						"green",		"",			5,		38,		ERA_REBELS,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/female_jedi1/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CERE_JUNDA",					 qtrue },
+	{ "Cere Junda",						"[Jedi Fallen Order]",					"",				"md_cere",						"cere_junda",			"model_default",				"inquisitor_single",		"",						"red",			"",			5,		38,		ERA_REBELS,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/female_jedi1/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CERE_JUNDA",					qfalse },
+	{ "Cere Junda",						"[Jedi Fallen Order - Jedi]",			"",				"md_cere_jedi",					"cere_jedi",			"model_default",				"luminara",					"",						"green",		"",			5,		38,		ERA_REBELS,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/female_jedi1/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CERE_JUNDA",					 qtrue },
+	{ "Cere Junda",						"[Jedi Fallen Order - Jedi Robed]",		"",				"md_cere_jedi_robed",			"cere_jedi",			"model_robed",					"luminara",					"",						"green",		"",			5,		38,		ERA_REBELS,			BOTH_SABERFAST_STANCE_JKA,			BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/female_jedi1/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CERE_JUNDA",					 qtrue },
 	{ "Chewbacca",						"[Episode IV]",							"",				"md_chewie",					"chewbacca",			"model_ot",						"menu_wp_bowcaster",		"",						"",				"",			0,		0,		ERA_REBELS,			TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/chewbacca/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CHEWBACCA",					qfalse },
 	{ "Chewbacca",						"[Episode V - Bespin]",					"",				"md_chewie_bespin",				"chewbacca",			"model_bespin",					"menu_wp_bowcaster",		"",						"",				"",			0,		0,		ERA_REBELS,			TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/chewbacca/misc/taunt1.mp3",			"",		1.0f,	"@MD_CHAR_DESC_CHEWBACCA",					 qtrue },
 	{ "Chirrut Imwe",					"[Rogue One]",							"",				"md_chirrut",					"Chirrut",				"model_default",				"menu_wp_bowcaster",		"",						"",				"",			0,		0,		ERA_REBELS,			TORSO_WEAPONREST3,					BOTH_PAIN1,			BOTH_PAIN2,			"sound/chars/chirrut/misc/taunt4.mp3",				"",		1.0f,	"@MD_CHAR_DESC_CHIRRUT_IMWE",				qfalse },
@@ -1285,18 +1285,19 @@ static constexpr duelMaps_t duelMaps[] = {
 	{ "@MD_MENU_MAIN_DM_C_JTO",				"@MD_MENU_MAIN_DM_C_JTO_DESC",			"duel_jt_outside",				"levelshots/bg_jt_outside" },
 	{ "@MD_MENU_MAIN_DM_C_JT",				"@MD_MENU_MAIN_DM_C_JT_DESC",			"duel_jeditemple",				"levelshots/bg_jeditemple" },
 	{ "@MD_MENU_MAIN_DM_JT_TR",				"@MD_MENU_MAIN_DM_JT_TR_DESC",			"duel_jt_training",				"levelshots/bg_jt_training" },
-	{ "@MD_MENU_MAIN_DM_JT_TG",				"@MD_MENU_MAIN_DM_JT_TG_DESC",			"duel_jt_garden",				"levelshots/bg_jt_garden" },
-
 	{ "@MD_MENU_MAIN_DM_C_SC",				"@MD_MENU_MAIN_DM_C_SC_DESC",			"duel_senate",					"levelshots/bg_senate" },
 	{ "@MD_MENU_MAIN_DM_M_MF",				"@MD_MENU_MAIN_DM_M_MF_DESC",			"duel_mustafar",				"levelshots/bg_mustafar" },
 	{ "@MD_MENU_MAIN_DM_M_MFD",				"@MD_MENU_MAIN_DM_M_MFD_DESC",			"duel_mus_both",				"levelshots/bg_mus_both" },
+	{ "@MD_MENU_MAIN_DM_M_LR",				"@MD_MENU_MAIN_DM_M_LR_DESC",			"duel_mus_both2",				"levelshots/bg_mus_both2" },
 
 	// Clone Wars and Rebels
 	{ "",									"",										"",								"" },
 	{ "@MD_MENU_MAIN_DM_CW_REBELS",			"",										"",								"" },
+	{ "@MD_MENU_MAIN_DM_A_PW",				"@MD_MENU_MAIN_DM_A_PW_DESC",			"duel_abafar",					"levelshots/bg_abafar" },
+	{ "@MD_MENU_MAIN_DM_JT_D",				"@MD_MENU_MAIN_DM_JT_D_DESC",			"duel_jedi_dojo",				"levelshots/bg_jedi_dojo" },
+	{ "@MD_MENU_MAIN_DM_JT_TG",				"@MD_MENU_MAIN_DM_JT_TG_DESC",			"duel_jt_garden",				"levelshots/bg_jt_garden" },
 	{ "@MD_MENU_MAIN_DM_M_SPD",				"@MD_MENU_MAIN_DM_M_SPD_DESC",			"duel_mandalore",				"levelshots/bg_mandalore" },
 	{ "@MD_MENU_MAIN_DM_M_SPN",				"@MD_MENU_MAIN_DM_M_SPN_DESC",			"duel_mandalore_night",			"levelshots/bg_mandalore_night" },
-	{ "@MD_MENU_MAIN_DM_JT_D",				"@MD_MENU_MAIN_DM_JT_D_DESC",			"duel_jedi_dojo",				"levelshots/bg_jedi_dojo" },
 	{ "@MD_MENU_MAIN_DM_S_WBW",				"@MD_MENU_MAIN_DM_S_WBW_DESC",			"duel_wbw",						"levelshots/bg_wbw" },
 
 	// The Force Unleashed
@@ -1336,7 +1337,8 @@ static constexpr duelMaps_t duelMaps[] = {
 	{ "",									"",										"",								"" },
 	{ "@MD_MENU_MAIN_DM_EPISODE_5",			"",										"",								"" },
 	{ "@MD_MENU_MAIN_DM_H_EB",				"@MD_MENU_MAIN_DM_H_EB_DESC",			"duel_hoth",					"levelshots/bg_hoth" },
-	{ "@MD_MENU_MAIN_DM_B_CC",				"@MD_MENU_MAIN_DM_B_CC_DESC",			"duel_cloudcity",				"levelshots/bg_cloudcity" },
+	{ "@MD_MENU_MAIN_DM_B_CCCFD",			"@MD_MENU_MAIN_DM_B_CCCFD_DESC",		"duel_cloudcity",				"levelshots/bg_cloudcity" },
+	{ "@MD_MENU_MAIN_DM_B_CCCD",			"@MD_MENU_MAIN_DM_B_CCCD_DESC",			"duel_cloudy",					"levelshots/bg_cloudy" },
 	{ "@MD_MENU_MAIN_DM_B_CFC",				"@MD_MENU_MAIN_DM_B_CFC_DESC",			"duel_carbon",					"levelshots/bg_carbon" },
 
 	// Episode 6
@@ -1387,6 +1389,8 @@ static constexpr duelMaps_t duelMaps[] = {
 	{ "@MD_MENU_MAIN_DM_EXTRA",				"",										"",								"" },
 	{ "@MD_MENU_MAIN_DM_C_CA",				"@MD_MENU_MAIN_DM_C_CA_DESC",			"duel_calodan",					"levelshots/bg_calodan" },
 	{ "@MD_MENU_MAIN_DM_K_F",				"@MD_MENU_MAIN_DM_K_F_DESC",			"duel_khofar",					"levelshots/bg_khofar" },
+	{ "@MD_MENU_MAIN_DM_M_DVSH",			"@MD_MENU_MAIN_DM_M_DVSH_DESC",			"duel_vader_sanctuary",			"levelshots/bg_vader_sanctuary" },
+	{ "@MD_MENU_MAIN_DM_V_B",				"@MD_MENU_MAIN_DM_V_B_DESC",			"duel_vj_bastcastle",			"levelshots/bg_vj_bastcastle" },
 	{ "@MD_MENU_MAIN_DM_YV_DA",				"@MD_MENU_MAIN_DM_YV_DA_DESC",			"duel_vong",					"levelshots/bg_vong" },
 
 	// Dark Force 2
