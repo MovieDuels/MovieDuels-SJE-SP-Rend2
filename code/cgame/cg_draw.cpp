@@ -6308,6 +6308,8 @@ constexpr float OVERHEAD_BAR_S0 = 20.0f / 1024.0f;	// columns of the back (the f
 constexpr float OVERHEAD_BAR_S1 = 1004.0f / 1024.0f;
 constexpr float OVERHEAD_BAR_HEIGHT = OVERHEAD_BAR_WIDTH * (OVERHEAD_BAR_T1 - OVERHEAD_BAR_T0) * 128.0f / 1024.0f;
 constexpr float OVERHEAD_HEAD_GAP = 6.0f;	// world units from the top of the bounding box to the anchor
+constexpr float OVERHEAD_BAR_SPACING = 1.0f;
+constexpr float OVERHEAD_NAME_SPACING = 3.0f;
 constexpr float OVERHEAD_NAME_SCALE = 0.4f;
 constexpr auto BLOCKPOINT_BAR_RANGE = 200;
 constexpr auto Fatigue_BAR_RANGE = 200;
@@ -6351,15 +6353,23 @@ static void CG_DrawOverheadBar(const float cx, const float y, const float w, con
 {
 	const float x = cx - w / 2.0f;
 	const vec4_t white = { 1.0f, 1.0f, 1.0f, alpha };
+
+	// Draw the black background.
 	cgi_R_SetColor(white);
 	cgi_R_DrawStretchPic(x, y, w, h, 0.0f, OVERHEAD_BAR_T0, 1.0f, OVERHEAD_BAR_T1, cgs.media.npcBarBack);
+
+	// Only draw the coloured fill when there is something available.
 	if (frac > 0.0f)
 	{
-		const float s = OVERHEAD_BAR_S0 + (frac > 1.0f ? 1.0f : frac) * (OVERHEAD_BAR_S1 - OVERHEAD_BAR_S0);
+		const float clampedFrac = frac > 1.0f ? 1.0f : frac;
+		const float s = OVERHEAD_BAR_S0 + clampedFrac * (OVERHEAD_BAR_S1 - OVERHEAD_BAR_S0);
+
 		const vec4_t fill = { color[0], color[1], color[2], color[3] * alpha };
 		cgi_R_SetColor(fill);
 		cgi_R_DrawStretchPic(x, y, w * s, h, 0.0f, OVERHEAD_BAR_T0, s, OVERHEAD_BAR_T1, cgs.media.npcBarFill);
 	}
+
+	// Draw the gold frame.
 	cgi_R_SetColor(white);
 	cgi_R_DrawStretchPic(x, y, w, h, 0.0f, OVERHEAD_BAR_T0, 1.0f, OVERHEAD_BAR_T1, cgs.media.npcBarFrame);
 	cgi_R_SetColor(nullptr);
@@ -6417,9 +6427,9 @@ static qboolean CG_InBarList(const int* list, const int count, const int entNum)
 // force), drawFatigue (stamina) and drawHealth
 static void CG_DrawOverheadBars(const qboolean drawHealth, const qboolean drawBlock, const qboolean drawFatigue)
 {
-	static const vec4_t healthColor = { 1.0f, 0.0f, 0.0f, 0.9f };
-	static const vec4_t blockColor = { 1.0f, 0.0f, 1.0f, 0.9f };
-	static const vec4_t forceColor = { 0.5f, 0.7f, 1.0f, 0.9f };
+	static const vec4_t healthColor = { 0.9f, 0.0f, 0.0f, 0.9f };
+	static const vec4_t blockColor = { 0.9f, 0.0f, 0.9f, 0.9f };
+	static const vec4_t forceColor = { 0.0f, 0.55f, 0.9f, 0.9f };
 	static const vec4_t fatigueColor = { 0.8f, 0.8f, 0.8f, 0.9f };
 	const int* lists[3] = { cg_healthBarEnts, cg_BlockPointBarEnts, cg_FatiguePointBarEnts };
 	const int counts[3] = { drawHealth ? cg_numHealthBarEnts : 0, drawBlock ? cg_numBlockPointBarEnts : 0,
@@ -6490,7 +6500,7 @@ static void CG_DrawOverheadBars(const qboolean drawHealth, const qboolean drawBl
 			const float h = OVERHEAD_BAR_HEIGHT * scale;
 			for (int b = 0; b < bars; b++)
 			{	// bottom up, frame to frame
-				y -= h;
+				y -= h + (OVERHEAD_BAR_SPACING * scale);
 				CG_DrawOverheadBar(x, y, w, h, frac[b] < 0.0f ? 0.0f : frac[b], colors[b], alpha);
 			}
 			cg_overheadTop[num] = y;
@@ -6512,7 +6522,7 @@ static void CG_DrawOverheadName(const centity_t* cent, const char* name, const v
 	float alpha = CG_OverheadFade(Distance(cent->lerpOrigin, cg.refdef.vieworg), 256.0f);
 	if (cg_overheadTime[num] == cg.time)
 	{
-		y = cg_overheadTop[num];
+		y = cg_overheadTop[num] - (OVERHEAD_NAME_SPACING * scale);
 		alpha = cg_overheadAlpha[num];
 	}
 	if (alpha <= 0.0f)
