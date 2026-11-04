@@ -610,6 +610,7 @@ using cgMedia_t = struct
 	//
 	qhandle_t qhFontSmall;
 	qhandle_t qhFontMedium;
+	qhandle_t qhFontMenu;
 
 	// special effects models / etc.
 	qhandle_t personalShieldShader;

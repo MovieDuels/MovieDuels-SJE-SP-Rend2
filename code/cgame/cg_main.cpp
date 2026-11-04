@@ -3328,6 +3328,7 @@ void CG_Init(const int serverCommandSequence)
 
 	cgs.media.qhFontSmall = cgi_R_RegisterFont("ocr_a");
 	cgs.media.qhFontMedium = cgi_R_RegisterFont("ergoec");
+	cgs.media.qhFontMenu = cgi_R_RegisterFont("albertus_bold");
 
 	cgs.media.whiteShader = cgi_R_RegisterShader("white");
 	cgs.media.loadTick = cgi_R_RegisterShaderNoMip("gfx/hud/load_tick");
@@ -6544,15 +6545,21 @@ static void CG_MDWheel_CenterText(const float y, float scale, const vec4_t color
 	if (text && text[0])
 	{
 		// long names are scaled down to stay inside the inner ring
-		const float maxWidth = 230.0f * ax;
-		float width = static_cast<float>(cgi_R_Font_StrLenPixels(text, cgs.media.qhFontSmall, scale));
+		const float maxWidth = 190.0f * ax;
+		const float originalScale = scale;
+		float width = static_cast<float>(cgi_R_Font_StrLenPixels(text, cgs.media.qhFontMenu, scale));
 		if (width > maxWidth)
 		{
 			scale *= maxWidth / width;
-			width = static_cast<float>(cgi_R_Font_StrLenPixels(text, cgs.media.qhFontSmall, scale));
+			width = static_cast<float>(cgi_R_Font_StrLenPixels(text, cgs.media.qhFontMenu, scale));
 		}
-		cgi_R_Font_DrawString(static_cast<int>(320.0f - width * 0.5f), static_cast<int>(y), text, color,
-			cgs.media.qhFontSmall, -1, scale);
+
+		// Move scaled-down text slightly lower to maintain visual centring.
+		const float scaleDifference = originalScale - scale;
+		const float adjustedY = y + (scaleDifference * 70.0f);
+
+		cgi_R_Font_DrawString(static_cast<int>(320.0f - width * 0.5f), static_cast<int>(adjustedY), text, color,
+			cgs.media.qhFontMenu, -1, scale);
 	}
 }
 
@@ -6884,10 +6891,10 @@ void CG_DrawMDWheel()
 	CG_MDWheel_GreyUnknownForce(iconSize);
 
 	// the centre: ring name, the pointed item, its ammo / On Person (or why it can't be picked), the controls
-	CG_MDWheel_CenterText(my - 86.0f, 0.6f, gold, mdWheel.ring == 0 ? "WEAPONS" : "FORCE POWERS", ax);
+	CG_MDWheel_CenterText(my - 86.0f, 0.15f, gold, mdWheel.ring == 0 ? "WEAPONS" : "FORCE POWERS", ax);
 	if (mdWheel.numItems == 0)
 	{
-		CG_MDWheel_CenterText(my - 20.0f, 0.7f, grey, mdWheel.ring == 0 ? "No weapons" : "No force powers", ax);
+		CG_MDWheel_CenterText(my - 26.0f, 0.15f, grey, mdWheel.ring == 0 ? "No Weapons" : "No Force Powers", ax);
 	}
 	else if (mdWheel.hover >= 0)
 	{
@@ -6895,22 +6902,22 @@ void CG_DrawMDWheel()
 		const bool avail = mdWheel.avail[mdWheel.hover];
 		if (mdWheel.ring == 0 && item > WP_NONE && item < WP_NUM_WEAPONS)
 		{
-			CG_MDWheel_CenterText(my - 38.0f, 0.75f, avail ? white : greyed, CG_MDWheel_WeaponName(item), ax);
+			CG_MDWheel_CenterText(my - 26.0f, 0.15f, avail ? white : greyed, CG_MDWheel_WeaponName(item), ax);
 			if (!avail)
 			{
-				CG_MDWheel_CenterText(my - 12.0f, 0.6f, greyed, "Not carried", ax);
+				CG_MDWheel_CenterText(my - 2.0f, 0.13f, greyed, "Not Carried", ax);
 			}
 			else
 			{
 				if (weaponData[item].ammoIndex != AMMO_NONE)
 				{
-					CG_MDWheel_CenterText(my - 12.0f, 0.6f, grey,
+					CG_MDWheel_CenterText(my - 2.0f, 0.13f, grey,
 						va("Ammo: %d", cg.snap->ps.ammo[weaponData[item].ammoIndex]), ax);
 				}
 				if (item != WP_THERMAL && item != WP_TRIP_MINE && item != WP_DET_PACK && item < 64)
 				{
-					CG_MDWheel_CenterText(my + 10.0f, 0.6f, hidden & 1ull << item ? red : grey,
-						hidden & 1ull << item ? "Not on person" : "On person", ax);
+					CG_MDWheel_CenterText(my + 20.0f, 0.13f, hidden & 1ull << item ? red : grey,
+						hidden & 1ull << item ? "Holster: Disabled" : "Holster: Enabled", ax);
 				}
 			}
 		}
@@ -6921,18 +6928,20 @@ void CG_DrawMDWheel()
 			{
 				Q_strncpyz(text, CG_ForcePowerName(item), sizeof text);
 			}
-			CG_MDWheel_CenterText(my - 26.0f, 0.75f, avail ? white : greyed, text, ax);
+			CG_MDWheel_CenterText(my - 26.0f, 0.15f, avail ? white : greyed, text, ax);
 			if (!avail)
 			{
-				CG_MDWheel_CenterText(my - 2.0f, 0.6f, greyed, "Not known", ax);
+				CG_MDWheel_CenterText(my - 2.0f, 0.13f, greyed, "Not Known", ax);
+			}
+			else {
+				CG_MDWheel_CenterText(my - 2.0f, 0.13f, grey, va("Level: %d", player->client->ps.forcePowerLevel[showPowers[item]]), ax);
 			}
 		}
 	}
-	CG_MDWheel_CenterText(my + 44.0f, 0.45f, grey,
-		mdWheel.ring == 0 ? "Mouse wheel: force powers" : "Mouse wheel: weapons", ax);
+	CG_MDWheel_CenterText(my + 56.0f, 0.11f, grey, mdWheel.ring == 0 ? "Mouse Wheel: Force Powers" : "Mouse Wheel: Weapons", ax);
 	if (mdWheel.ring == 0)
 	{
-		CG_MDWheel_CenterText(my + 58.0f, 0.45f, grey, "Alt attack: on person", ax);
+		CG_MDWheel_CenterText(my + 70.0f, 0.11f, grey, "Alt Attack: Holster", ax);
 	}
 
 	// the pointer
