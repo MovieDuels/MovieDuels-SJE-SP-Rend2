@@ -21644,7 +21644,7 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 						g_entities[pm->ps->clientNum].client->IsBlockingLightning == qtrue)
 					{
 						// Lightning override: top block
-							anim = BOTH_P7_S7_T__MD;
+						anim = BOTH_P7_S7_T__MD;
 					}
 					else
 					{
@@ -21654,7 +21654,7 @@ int PM_BlockingPoseForSaberAnimLevelStaffAMD(void)
 						}
 						else
 						{
-							anim = BOTH_P7_S7_T__MD; 
+							anim = BOTH_P7_S7_T__MD;
 						}
 					}
 				}

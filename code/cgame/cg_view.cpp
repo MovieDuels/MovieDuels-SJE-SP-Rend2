@@ -1113,8 +1113,9 @@ static void CG_UpdateCameraBlends()
 		else
 		{
 			float value = cg_cameraBlendSaved.active & f.bit ? cg_cameraBlendSaved.*f.field : f.normal->value;
-			// the side shift: over the right shoulder, sized to the model (cg_aimShoulder)
-			const float aim_value = f.bit == CG_OVERRIDE_3RD_PERSON_HOF ? CG_AimShoulderOffset(value) : f.aim;
+			// the side shift: over the right shoulder, sized to the model (cg_aimShoulder), from cg_aimCamHorzOffset, not the
+			// preset's cg_thirdPersonHorzOffset, so the aiming camera is the same on every camera preset (DH 2026-11-04)
+			const float aim_value = f.bit == CG_OVERRIDE_3RD_PERSON_HOF ? CG_AimShoulderOffset(cg_aimCamHorzOffset.value) : f.aim;
 			value = CG_CameraBlendLerp(value, aim_value, aim);
 			if (f.lockSets)
 			{

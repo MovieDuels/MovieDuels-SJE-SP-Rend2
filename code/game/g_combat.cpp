@@ -4599,28 +4599,28 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 			}
 			else if (g_gundismemberment->integer > 0
 				&& (means_of_death == MOD_BLASTER
-				|| means_of_death == MOD_BLASTER_ALT
-				|| means_of_death == MOD_REBELBLASTER
-				|| means_of_death == MOD_REBELBLASTER_ALT
-				|| means_of_death == MOD_CLONECOMMANDO
-				|| means_of_death == MOD_CLONECOMMANDO_ALT
-				|| means_of_death == MOD_REBELRIFLE
-				|| means_of_death == MOD_REBELRIFLE_ALT
-				|| means_of_death == MOD_REY
-				|| means_of_death == MOD_REY_ALT
-				|| means_of_death == MOD_CLONEPISTOL
-				|| means_of_death == MOD_CLONEPISTOL_ALT
-				|| means_of_death == MOD_JANGO
-				|| means_of_death == MOD_JANGO_ALT
-				|| means_of_death == MOD_BOBA
-				|| means_of_death == MOD_BOBA_ALT
-				|| means_of_death == MOD_BOWCASTER
-				|| means_of_death == MOD_BOWCASTER_ALT
-				|| means_of_death == MOD_REPEATER
-				|| means_of_death == MOD_FLECHETTE
-				|| means_of_death == MOD_BRYAR_ALT
-				|| means_of_death == MOD_BRYAR
-				|| means_of_death == MOD_EMPLACED)
+					|| means_of_death == MOD_BLASTER_ALT
+					|| means_of_death == MOD_REBELBLASTER
+					|| means_of_death == MOD_REBELBLASTER_ALT
+					|| means_of_death == MOD_CLONECOMMANDO
+					|| means_of_death == MOD_CLONECOMMANDO_ALT
+					|| means_of_death == MOD_REBELRIFLE
+					|| means_of_death == MOD_REBELRIFLE_ALT
+					|| means_of_death == MOD_REY
+					|| means_of_death == MOD_REY_ALT
+					|| means_of_death == MOD_CLONEPISTOL
+					|| means_of_death == MOD_CLONEPISTOL_ALT
+					|| means_of_death == MOD_JANGO
+					|| means_of_death == MOD_JANGO_ALT
+					|| means_of_death == MOD_BOBA
+					|| means_of_death == MOD_BOBA_ALT
+					|| means_of_death == MOD_BOWCASTER
+					|| means_of_death == MOD_BOWCASTER_ALT
+					|| means_of_death == MOD_REPEATER
+					|| means_of_death == MOD_FLECHETTE
+					|| means_of_death == MOD_BRYAR_ALT
+					|| means_of_death == MOD_BRYAR
+					|| means_of_death == MOD_EMPLACED)
 				&& !NPC_IsNotDismemberable(self))
 			{
 				GibEntity(self);

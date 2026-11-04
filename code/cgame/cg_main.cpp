@@ -524,6 +524,7 @@ vmCvar_t cg_saberLockCinematicCamera;
 
 vmCvar_t cg_AimingCinematicCamera;
 vmCvar_t cg_aimShoulder;
+vmCvar_t cg_aimCamHorzOffset;
 
 vmCvar_t cg_allowcallout;
 
@@ -779,6 +780,7 @@ static cvarTable_t cvarTable[] = {
 
 	{ &cg_AimingCinematicCamera, "g_AimingCinematicCamera", "1", CVAR_ARCHIVE },
 	{ &cg_aimShoulder, "cg_aimShoulder", "1", CVAR_ARCHIVE }, // aiming camera over the right shoulder (x model size); 0 = centred
+	{ &cg_aimCamHorzOffset, "cg_aimCamHorzOffset", "0", CVAR_ARCHIVE }, // aiming camera's side offset, used instead of cg_thirdPersonHorzOffset (same on every camera preset)
 
 	{ &cg_jumpSounds, "cg_jumpSounds", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART },
 

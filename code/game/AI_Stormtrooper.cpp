@@ -3720,7 +3720,7 @@ static void ST_SelectGunForRange(void)
 		return;
 	}
 	// the gun for that range; if he has none, the next range towards it (nothing worse than the gun in hand)
-	static const int order[3][3] = { { 0, 1, 2 }, { 1, 2, 0 }, { 2, 1, 0 } };
+	static const int order[3][3] = { { 0, 1, 2 },{ 1, 2, 0 },{ 2, 1, 0 } };
 	int best = WP_NONE;
 	for (int k = 0; k < 3 && best == WP_NONE; k++)
 	{
@@ -3745,7 +3745,6 @@ static void ST_SelectGunForRange(void)
 		TIMER_Set(NPC, "gunSwitch", Q_irand(2500, 4000));
 	}
 }
-
 
 void NPC_BSST_Attack(void)
 {
