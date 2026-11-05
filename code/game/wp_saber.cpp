@@ -43204,7 +43204,7 @@ void ForceGrasp(gentity_t* self)
 			}
 			else
 			{
-				traceEnt->s.loopSound = G_SoundIndex("sound/weapons/force/grip.wav");
+				traceEnt->s.loopSound = G_SoundIndex("sound/weapons/force/force_grasp.mp3");
 			}
 		}
 	}
@@ -43228,7 +43228,7 @@ void ForceGrasp(gentity_t* self)
 		}
 		else
 		{
-			G_SoundOnEnt(self, CHAN_BODY, "sound/weapons/force/grip.wav");
+			G_SoundOnEnt(self, CHAN_BODY, "sound/weapons/force/force_grasp.mp3");
 		}
 	}
 }
