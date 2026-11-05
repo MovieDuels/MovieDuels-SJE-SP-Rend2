@@ -658,9 +658,12 @@ void CG_HolsteredWeapons(centity_t* cent, const vec3_t g2Angles, const vec3_t or
 	for (int p = 0; p < HLP_NUM; p++)
 	{
 		const hlsGun_t* gun = places[p] ? Hls_Gun(places[p]) : nullptr;
-		if (places[p] && (!has(places[p]) || !gun || !enabled(Hls_PlaceType(gun, p))))
+		if (places[p] && (!has(places[p]) || !gun || !enabled(Hls_PlaceType(gun, p))
+			|| isPlayer && places[p] < 64 && hideMask & 1ull << places[p]))
 		{
-			places[p] = WP_NONE; // he no longer has it (or his model has no such place)
+			// he no longer has it (or his model has no such place, or the player just set it to "Holster: Disabled" in
+			// the weapon wheel: it goes at once, no map restart needed)
+			places[p] = WP_NONE;
 		}
 		if (places[p])
 		{
