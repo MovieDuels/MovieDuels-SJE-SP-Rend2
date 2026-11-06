@@ -658,6 +658,11 @@ using setType_t = enum //# setType_e
 
 	SET_CONSOLE_COMMAND,
 
+	SET_PLAYER_CLEAR_ALL,
+	SET_PLAYER_CLEAR_INVENTORY,
+	SET_PLAYER_CLEAR_WEAPONS,
+	SET_PLAYER_CLEAR_FORCE,
+
 	SET_UNDYINGPLAYERVICTORYSCRIPT,
 	//## %s="NULL" !!"W:\game\base\scripts\!!#*.txt" # Script to run when killed someone
 

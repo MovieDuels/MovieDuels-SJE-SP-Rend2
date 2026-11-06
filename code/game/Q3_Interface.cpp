@@ -76,8 +76,7 @@ extern void WP_SetSaberOrigin(gentity_t* self, vec3_t new_org);
 extern void Rail_LockCenterOfTrack(const char* trackName);
 extern void Rail_UnLockCenterOfTrack(const char* trackName);
 extern void G_GetBoltPosition(gentity_t* self, int bolt_index, vec3_t pos, int modelIndex = 0);
-extern qboolean G_DoDismembermentcin(gentity_t* self, vec3_t point, int mod, int hit_loc,
-	qboolean force = qfalse);
+extern qboolean G_DoDismembermentcin(gentity_t* self, vec3_t point, int mod, int hit_loc, qboolean force = qfalse);
 extern void G_ChangeScale(const char* data);
 extern void UnLockDoors(const gentity_t* ent);
 extern void LockDoors(const gentity_t* ent);
@@ -697,6 +696,11 @@ stringID_table_t setTable[] =
 	ENUM2STRING(SET_MORELIGHT_PLAYER),
 
 	ENUM2STRING(SET_CONSOLE_COMMAND),
+
+	ENUM2STRING(SET_PLAYER_CLEAR_ALL),
+	ENUM2STRING(SET_PLAYER_CLEAR_INVENTORY),
+	ENUM2STRING(SET_PLAYER_CLEAR_WEAPONS),
+	ENUM2STRING(SET_PLAYER_CLEAR_FORCE),
 
 	ENUM2STRING(SET_UNDYINGPLAYERVICTORYSCRIPT),
 
@@ -7401,6 +7405,46 @@ static void Q3_setVaderBreathdamaged(const int entID, const qboolean usable)
 	}
 }
 
+static void Q3_ClearInventory()
+{
+	gentity_t* ent = &g_entities[0];
+
+	if (ent && ent->client)
+	{
+		for (int& i : ent->client->ps.inventory)
+		{
+			i = 0;
+		}
+	}
+}
+
+static void Q3_ClearWeapons()
+{
+	gentity_t* ent = &g_entities[0];
+
+	if (ent && ent->client)
+	{
+		for (char& weapon : ent->client->ps.weapons)
+		{
+			weapon = 0;
+		}
+
+		ent->client->ps.weapon = WP_NONE;
+	}
+}
+
+static void Q3_ClearForce()
+{
+	gentity_t* ent = &g_entities[0];
+
+	if (ent && ent->client)
+	{
+		memset(ent->client->ps.forcePowerLevel, 0, sizeof(ent->client->ps.forcePowerLevel));
+		ent->client->ps.forcePowersKnown = 0;
+		ent->client->ps.saberStylesKnown = 0;
+	}
+}
+
 /*
 ============
 RemoveOwner
@@ -10470,6 +10514,24 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 
 	case SET_CONSOLE_COMMAND:
 		gi.SendConsoleCommand(va("cl_noprint 1; helpusobi 1; %s ; cl_noprint 0\n", const_cast<char*>(data)));
+		break;
+
+	case SET_PLAYER_CLEAR_ALL:
+		Q3_ClearInventory();
+		Q3_ClearWeapons();
+		Q3_ClearForce();
+		break;
+
+	case SET_PLAYER_CLEAR_INVENTORY:
+		Q3_ClearInventory();
+		break;
+
+	case SET_PLAYER_CLEAR_WEAPONS:
+		Q3_ClearWeapons();
+		break;
+
+	case SET_PLAYER_CLEAR_FORCE:
+		Q3_ClearForce();
 		break;
 
 	case SET_FFAMODE:
