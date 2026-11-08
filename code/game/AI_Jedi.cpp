@@ -5128,6 +5128,8 @@ extern qboolean G_FindClosestPointOnLineSegment(const vec3_t start, const vec3_t
 // ============================
 // SECTION 1 — Setup & Early Outs
 // ============================
+extern qboolean G_NPCCinematicNoBlock(const gentity_t* ent);
+
 evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitloc, vec3_t phit_dir,
 	const gentity_t* incoming, float dist = 0.0f)
 {
@@ -5156,6 +5158,12 @@ evasionType_t jedi_saber_block_go(gentity_t* self, usercmd_t* cmd, vec3_t p_hitl
 
 	if (jedi_in_no_ai_anim(self))
 	{
+		return EVASION_NONE;
+	}
+
+	if (G_NPCCinematicNoBlock(self))
+	{
+		//cutscene / BS_CINEMATIC: no autoblock or dodge (g_cinematicblocking)
 		return EVASION_NONE;
 	}
 

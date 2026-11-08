@@ -31673,6 +31673,17 @@ static void PM_Weapon()
 		return;
 	}
 
+	// A kick with a gun (or any non-saber weapon) sets saberMove to LS_KICK_*, but only PM_WeaponLightsaber ever
+	// moves a saberMove on, so it stayed a kick after the anim ended and blocked the dash/roll (IsPressingDashButton,
+	// ForceSpeedDash), further kicks and the air dash until a weapon change. Clear it once the kick anim is over.
+	if (pm->ps->weapon != WP_SABER
+		&& PM_KickMove(pm->ps->saberMove)
+		&& !PM_KickingAnim(pm->ps->legsAnim)
+		&& !PM_KickingAnim(pm->ps->torsoAnim))
+	{
+		pm->ps->saberMove = LS_NONE;
+	}
+
 	if (PM_InKnockDown(pm->ps) || PM_InRoll(pm->ps))
 	{
 		//in knockdown

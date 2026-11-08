@@ -83,6 +83,7 @@ extern qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* a
 extern qboolean WalkCheck(const gentity_t* self);
 extern qboolean Rosh_BeingHealed(const gentity_t* self);
 extern qboolean G_InCinematicSaberAnim(const gentity_t* self);
+extern qboolean G_NPCCinematicNoBlock(const gentity_t* ent);
 extern qboolean PM_SuperBreakLoseAnim(int anim);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1070,7 +1071,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 		return qfalse;
 	}
 
-	if (G_InCinematicSaberAnim(blocker)) {
+	if (G_InCinematicSaberAnim(blocker) || G_NPCCinematicNoBlock(blocker)) { //g_cinematicblocking
 		return qfalse;
 	}
 

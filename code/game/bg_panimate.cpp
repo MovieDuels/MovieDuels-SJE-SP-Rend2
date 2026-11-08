@@ -81,6 +81,7 @@ extern qboolean InFront(vec3_t spot, vec3_t from, vec3_t fromAngles, float thres
 extern void WP_ForcePowerDrain(const gentity_t* self, forcePowers_t force_power, int override_amt);
 extern qboolean ValidAnimFileIndex(int index);
 extern qboolean PM_ControlledByPlayer();
+extern qboolean PM_KickingAnim(int anim);
 extern qboolean PM_DroidMelee(int npc_class);
 extern qboolean PM_PainAnim(const int anim);
 extern qboolean PM_JumpingAnim(int anim);
@@ -10181,6 +10182,14 @@ void PM_TorsoAnimation()
 		&& pm->ps->torsoAnimTimer > 0)
 	{
 		//in a force anim, don't do a stand anim
+		return;
+	}
+
+	// a kick (e.g. the crouched back kick) is a whole-body anim: while it plays, the gun torso code below must not
+	// put the arms back in a weapon pose (crouched counts as "weapon busy" and forces TORSO_WEAPONREADY with override)
+	if (PM_KickingAnim(pm->ps->torsoAnim)
+		&& pm->ps->torsoAnimTimer > 0)
+	{
 		return;
 	}
 

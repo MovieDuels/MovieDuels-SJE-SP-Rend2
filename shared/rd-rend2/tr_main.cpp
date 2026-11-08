@@ -1871,7 +1871,13 @@ R_SortAndSubmitDrawSurfs
 void R_SortAndSubmitDrawSurfs(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	// it is possible for some views to not have any surfaces
 	if (numDrawSurfs < 1)
+	{
+		// a shadow map view still has to clear its depth, or the last picture drawn into that shadow map stays and
+		// keeps casting an old shadow (2026-11-08)
+		if ((tr.viewParms.flags & VPF_DEPTHSHADOW) && tr.viewParms.targetFbo)
+			R_AddDrawSurfCmd(drawSurfs, 0);
 		return;
+	}
 
 	// if we overflowed MAX_DRAWSURFS, the drawsurfs
 	// wrapped around in the buffer and we will be missing

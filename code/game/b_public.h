@@ -51,6 +51,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define NPCAI_FORM_TELE_NAV		0x00010000	//Tells formation people to use nav info to get to
 #define NPCAI_ENROUTE_TO_HOMEWP 0x00020000	//Lets us know to run our lostenemyscript when we get to homeWp
 #define NPCAI_MATCHPLAYERWEAPON 0x00040000	//Match the player's weapon except when it changes during cinematics
+#define NPCAI_NO_AUTOBLOCK		0x00080000	//Script SET_AUTOBLOCKING_OFF true: NPC doesn't autoblock, parry or dodge
 #define NPCAI_DIE_ON_IMPACT		0x00100000	//Next time you crashland, die!
 #define NPCAI_WALKING			0x00200000
 #define NPCAI_STOP_AT_LOS		0x00400000	//Stop Running When We Hit LOS

@@ -290,6 +290,7 @@ extern void jet_fly_stop(gentity_t* self);
 extern qboolean g_standard_humanoid(gentity_t* self);
 
 extern cvar_t* g_saberAutoBlocking;
+extern qboolean G_NPCCinematicNoBlock(const gentity_t* ent);
 extern cvar_t* g_saberRealisticCombat;
 extern cvar_t* g_saberDamageCapping;
 extern cvar_t* g_saberNewControlScheme;
@@ -6826,7 +6827,7 @@ qboolean WP_SaberParry(gentity_t* victim, gentity_t* attacker, const int saberNu
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}
@@ -6896,7 +6897,7 @@ qboolean WP_SaberBlockedBounceBlock(gentity_t* victim, gentity_t* attacker, cons
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}
@@ -6958,7 +6959,7 @@ qboolean WP_SaberNPCParry(gentity_t* victim, gentity_t* attacker, const int sabe
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}
@@ -7020,7 +7021,7 @@ qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, const int saberN
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}
@@ -7082,7 +7083,7 @@ qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, const int sab
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}
@@ -7144,7 +7145,7 @@ qboolean WP_SaberNPCFatiguedParry(gentity_t* victim, gentity_t* attacker, const 
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}
@@ -7206,7 +7207,7 @@ qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, const i
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}
@@ -7268,7 +7269,7 @@ qboolean WP_SaberFatiguedParry(gentity_t* victim, gentity_t* attacker, const int
 	{
 		return qfalse;
 	}
-	if (G_InCinematicSaberAnim(victim))
+	if (G_InCinematicSaberAnim(victim) || G_NPCCinematicNoBlock(victim)) //g_cinematicblocking
 	{
 		return qfalse;
 	}

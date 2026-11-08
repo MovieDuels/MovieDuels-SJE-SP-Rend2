@@ -630,6 +630,7 @@ stringID_table_t setTable[] =
 	ENUM2STRING(SET_NO_FALLTODEATH),
 	ENUM2STRING(SET_DISMEMBERABLE),
 	ENUM2STRING(SET_NO_ACROBATICS),
+	ENUM2STRING(SET_AUTOBLOCKING_OFF),
 	ENUM2STRING(SET_MUSIC_STATE),
 	ENUM2STRING(SET_USE_SUBTITLES),
 	ENUM2STRING(SET_CLEAN_DAMAGING_ENTS),
@@ -5653,6 +5654,34 @@ static void Q3_SetNoAcrobatics(const int entID, const qboolean add)
 
 /*
 ============
+Q3_SetAutoBlockingOff
+
+true: the NPC doesn't autoblock, parry or dodge (for cinematics, see G_NPCCinematicNoBlock); false: normal again
+============
+*/
+static void Q3_SetAutoBlockingOff(const int entID, const qboolean add)
+{
+	const gentity_t* ent = &g_entities[entID];
+
+	if (!ent->NPC)
+	{
+		Quake3Game()->DebugPrint(IGameInterface::WL_ERROR, "Q3_SetAutoBlockingOff: '%s' is not an NPC!\n",
+			ent->targetname);
+		return;
+	}
+
+	if (add)
+	{
+		ent->NPC->aiFlags |= NPCAI_NO_AUTOBLOCK;
+	}
+	else
+	{
+		ent->NPC->aiFlags &= ~NPCAI_NO_AUTOBLOCK;
+	}
+}
+
+/*
+============
 Q3_SetUseSubtitles
 
 ?
@@ -9482,6 +9511,13 @@ void CQuake3GameInterface::Set(int taskID, int entID, const char* type_name, con
 			Q3_SetNoAcrobatics(entID, qtrue);
 		else
 			Q3_SetNoAcrobatics(entID, qfalse);
+		break;
+
+	case SET_AUTOBLOCKING_OFF:
+		if (!Q_stricmp("true", data))
+			Q3_SetAutoBlockingOff(entID, qtrue);
+		else
+			Q3_SetAutoBlockingOff(entID, qfalse);
 		break;
 
 	case SET_USE_SUBTITLES:
