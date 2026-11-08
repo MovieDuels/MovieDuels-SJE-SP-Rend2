@@ -894,7 +894,11 @@ qboolean NPC_MoveToGoal(qboolean tryStraight) //FIXME: tryStraight not even used
 #if	AI_TIMERS
 	int	startTime = GetTime(0);
 #endif//	AI_TIMERS
-	if (PM_InKnockDown(&NPC->client->ps) || ((NPC->s.legsAnim >= BOTH_PAIN1) && (NPC->s.legsAnim <= BOTH_PAIN19 && (NPC->client->ps.legsAnimTimer > 0))))
+	// BOTH_PAIN19 is not next to BOTH_PAIN1..18 in anims.h (it was added much later), so "<= BOTH_PAIN19" took in
+	// ~1900 anims (stands, walks, runs...) and any NPC with a legs timer left never moved (the bespin_streets R5)
+	const int legs_anim = NPC->client->ps.legsAnim;
+	if (PM_InKnockDown(&NPC->client->ps) || ((legs_anim >= BOTH_PAIN1 && legs_anim <= BOTH_PAIN18 || legs_anim == BOTH_PAIN19)
+		&& NPC->client->ps.legsAnimTimer > 0))
 	{
 		//If taking full body pain, don't move
 		return qtrue;

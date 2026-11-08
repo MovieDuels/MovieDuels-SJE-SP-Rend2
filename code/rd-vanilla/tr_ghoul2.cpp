@@ -3576,9 +3576,15 @@ qboolean R_LoadMDXM(model_t* mod, void* buffer, const char* mod_name, qboolean& 
 			*slash = 0;
 		}
 		strippedName = COM_SkipPath(animGLAName);
-		if (VALIDSTRING(strippedName))
+		// *default (droids, sentries, turrets: their own skeleton) never has a map's cutscene GLA, and a name past MAX_QPATH
+		// can't be a file: both failed and were retried for every model load ("Model name exceeds MAX_QPATH" flood)
+		if (VALIDSTRING(strippedName) && strippedName[0] != '*')
 		{
-			RE_RegisterModel(va("models/players/%s_%s/%s_%s.gla", strippedName, mapname, strippedName, mapname));
+			const char* cinematic_gla = va("models/players/%s_%s/%s_%s.gla", strippedName, mapname, strippedName, mapname);
+			if (strlen(cinematic_gla) < MAX_QPATH)
+			{
+				RE_RegisterModel(cinematic_gla);
+			}
 		}
 	}
 

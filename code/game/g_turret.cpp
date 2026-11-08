@@ -1830,6 +1830,13 @@ static void pas_fire(gentity_t* ent)
 
 	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, ORIGIN, org);
 	gi.G2API_GiveMeVectorFromMatrix(bolt_matrix, POSITIVE_Y, fwd);
+	// the shot goes where the barrel points: its pitch (ent->random) and world yaw (ent->speed), which pas_think turns
+	// onto the target. The muzzle tag's own axis lies ~23 degrees below the barrel on the JKO / JK2 sentry model
+	// (measured: barrel pitch -5.8, shot pitch +17.5), so every shot went into the floor in front of it.
+	{
+		const vec3_t barrel_angles = { ent->random, ent->speed, 0.0f };
+		AngleVectors(barrel_angles, fwd, nullptr, nullptr);
+	}
 
 	G_PlayEffect("turret/muzzle_flash", org, fwd);
 

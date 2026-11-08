@@ -163,7 +163,10 @@ namespace NAV
 
 		CHECK_JUMP = 0,
 		CHECK_START_OPEN = 1,
-		CHECK_START_SOLID = 1,
+		// 0 as SerenityJediEngine: a nav point whose box starts in solid (JK2 maps put navgoals on the floor, by lifts and
+		// movers) is kept. With 1 such points were dropped at load ("Nav in solid", developer 1), so scripted NPCs never
+		// reached them: bespin_streets R5 never left the lift for wait_lift (SET_NAVGOAL ran, the goal was not in the graph).
+		CHECK_START_SOLID = 0,
 	};
 }
 

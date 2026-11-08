@@ -25007,7 +25007,7 @@ static void WP_ForceKnockdown(gentity_t* self, gentity_t* pusher, const qboolean
 				}
 				else
 				{
-					knock_anim = PM_PickAnim(self, BOTH_PAIN1, BOTH_PAIN19);
+					knock_anim = PM_PickAnim(self, BOTH_PAIN1, BOTH_PAIN18); // BOTH_PAIN19 is far from PAIN1..18 in anims.h
 				}
 			}
 			else if (PM_CrouchAnim(self->client->ps.legsAnim))

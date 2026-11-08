@@ -3385,11 +3385,17 @@ void CP_FindCombatPointWaypoints()
 		level.combatPoints[i].waypoint = NAV::GetNearestNode(level.combatPoints[i].origin);
 		if (level.combatPoints[i].waypoint == WAYPOINT_NONE)
 		{
-			//assert(0);
-			level.combatPoints[i].waypoint = NAV::GetNearestNode(level.combatPoints[i].origin);
-			gi.Printf(S_COLOR_RED"ERROR: Combat Point at %s has no waypoint!\n", vtos(level.combatPoints[i].origin));
-			//`delayedShutDown = level.time + 100;
+			// JK2 maps: their combat points can sit above or below the nearest node, so allow a node at another height
+			level.combatPoints[i].waypoint = NAV::GetNearestNode(level.combatPoints[i].origin, 0, 0, ENTITYNUM_NONE, true);
 		}
+#ifndef FINAL_BUILD
+		if (level.combatPoints[i].waypoint == WAYPOINT_NONE)
+		{
+			// as JK2: a warning, not an assert / shutdown (a combat point without a waypoint is only used by the
+			// clear-path checks)
+			gi.Printf(S_COLOR_YELLOW"WARNING: Combat Point at %s has no waypoint\n", vtos(level.combatPoints[i].origin));
+		}
+#endif
 	}
 }
 

@@ -1930,9 +1930,16 @@ void NPC_Begin(gentity_t* ent)
 
 	client->ps.friction = 6;
 
-	if (ent->client->ps.weapon == WP_NONE)
+	if (ent->client->ps.weapon == WP_NONE
+		&& ent->client->NPC_class != CLASS_PROTOCOL
+		&& ent->client->NPC_class != CLASS_R2D2
+		&& ent->client->NPC_class != CLASS_R5D2
+		&& ent->client->NPC_class != CLASS_GONK
+		&& ent->client->NPC_class != CLASS_MOUSE)
 	{
 		//not set by the NPCs.cfg
+		// (unarmed droids keep WP_NONE: NPC_WeaponsForTeam gives every TEAM_PLAYER NPC a blaster, so a
+		// TEAM_PLAYER C-3PO with WP_NONE, md_c3po_char, spawned holding one and stood still)
 		NPC_SetWeapons(ent);
 	}
 	//select the weapon
