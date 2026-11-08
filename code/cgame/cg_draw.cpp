@@ -9160,8 +9160,10 @@ static void CG_UseIcon()
 
 		float distSq = VectorLengthSquared(diff);
 
-		// Only show hint if within 256 units
-		if (distSq < (256.0f * 256.0f))
+		// Only show hint if within 256 units (the gonk under the crosshair). CanUseInfrontOf already only finds things
+		// within reach (64 units, or a USE_BUTTON trigger the player stands in), and in front of a console or in a trigger
+		// the crosshair entity is the world or something far away, so the distance check hid the icon there.
+		if (cg_usingInFrontOf || distSq < (256.0f * 256.0f))
 		{
 			if (cg_SerenityJediEngineHudMode.integer == 4)
 			{
