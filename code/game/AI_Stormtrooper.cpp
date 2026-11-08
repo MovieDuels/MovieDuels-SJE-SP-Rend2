@@ -379,6 +379,307 @@ static void ST_Speech(const gentity_t* self, const int speech_type, const float 
 	self->NPC->blockedSpeechDebounceTime = level.time + 2000;
 }
 
+// ---------------------------------------------------------------------------------------------
+// Squad tactics (g_squadTactics, g_squadAdvancers)
+//
+// Without this every gunner decides on its own to push in, so a squad swamps the player in a huddle.
+// With it, at most g_squadAdvancers gunners per target are "advancers" and fight as before; the
+// others are "holders": they move until they can see the target, then hold there (crouch, strafe,
+// shoot, keep apart from squadmates). When an advancer dies the closest holder takes its slot after a
+// short pause, and advancers hand their slot on every 8-15 s so it isn't always the same one.
+//
+// The state is transient (not in savegames): after a load or a map change the slots are handed out
+// again within a frame. Only NPCs that went through NPC_BSST_Default this frame take part, so other
+// AIs that call NPC_BSST_Attack behave as before.
+// ---------------------------------------------------------------------------------------------
+constexpr float SQUAD_HOLD_MIN_DIST = 320.0f; // a holder closer than this to its target backs off
+constexpr float SQUAD_SPREAD_DIST = 128.0f; // holders closer than this to a squadmate step apart
+
+static int squad_lastThink[MAX_GENTITIES]; // level.time (+1) the NPC last ran NPC_BSST_Default with an enemy
+static int squad_advanceUntil[MAX_GENTITIES]; // advancer slot held until this time
+static int squad_advanceTarget[MAX_GENTITIES]; // target entity of that slot
+static int squad_restUntil[MAX_GENTITIES]; // after handing a slot on, don't take one again before this
+static int squad_nextPromote[MAX_GENTITIES]; // per target: earliest time the next slot may be filled
+static int squad_members[MAX_GENTITIES]; // per target: gunners on it this frame
+static int squad_spreadUntil[MAX_GENTITIES];
+static vec3_t squad_spreadDir[MAX_GENTITIES];
+static int squad_cacheTime = -1;
+
+extern void G_UcmdMoveForDir(const gentity_t* self, usercmd_t* cmd, vec3_t dir);
+extern qboolean NPC_MoveDirClear(int forwardmove, int rightmove, qboolean reset);
+
+static void Squad_Reset()
+{
+	memset(squad_lastThink, 0, sizeof squad_lastThink);
+	memset(squad_advanceUntil, 0, sizeof squad_advanceUntil);
+	memset(squad_advanceTarget, 0, sizeof squad_advanceTarget);
+	memset(squad_restUntil, 0, sizeof squad_restUntil);
+	memset(squad_nextPromote, 0, sizeof squad_nextPromote);
+	memset(squad_members, 0, sizeof squad_members);
+	memset(squad_spreadUntil, 0, sizeof squad_spreadUntil);
+	memset(squad_spreadDir, 0, sizeof squad_spreadDir);
+}
+
+static int Squad_MaxAdvancers()
+{
+	int max_adv = g_squadAdvancers ? g_squadAdvancers->integer : 2;
+	if (max_adv < 1)
+	{
+		max_adv = 1;
+	}
+	else if (max_adv > 8)
+	{
+		max_adv = 8;
+	}
+	return max_adv;
+}
+
+// Called from NPC_BSST_Default for gunners that have an enemy
+static void Squad_Stamp(const gentity_t* self)
+{
+	if (!g_squadTactics || !g_squadTactics->integer || !self || !self->client || !self->enemy)
+	{
+		return;
+	}
+	switch (self->s.weapon)
+	{
+	case WP_NONE:
+	case WP_SABER:
+	case WP_MELEE:
+	case WP_NOGHRI_STICK:
+		return; // melee fighters have to close in
+	default:
+		break;
+	}
+	if (level.time < squad_cacheTime)
+	{
+		// time went backwards: new map or loaded game
+		Squad_Reset();
+		squad_cacheTime = -1;
+	}
+	squad_lastThink[self->s.number] = level.time + 1;
+}
+
+static bool Squad_IsMember(const gentity_t* ent, const int now)
+{
+	return ent->inuse && ent->NPC && ent->client && ent->health > 0
+		&& ent->enemy && ent->enemy->inuse && ent->enemy->health > 0
+		&& squad_lastThink[ent->s.number] > 0 && squad_lastThink[ent->s.number] >= now - 500;
+}
+
+// Once per frame: count gunners and advancers per target, release dead/expired slots, fill free ones
+static void Squad_Update()
+{
+	const int now = level.time;
+	if (now == squad_cacheTime)
+	{
+		return;
+	}
+	if (now < squad_cacheTime)
+	{
+		Squad_Reset();
+	}
+	squad_cacheTime = now;
+
+	static int advancers[MAX_GENTITIES];
+	static int best[MAX_GENTITIES];
+	static float best_dist[MAX_GENTITIES];
+	memset(advancers, 0, sizeof advancers);
+	memset(squad_members, 0, sizeof squad_members);
+	for (int& b : best)
+	{
+		b = -1;
+	}
+
+	const int num = globals.num_entities < MAX_GENTITIES ? globals.num_entities : MAX_GENTITIES; // SP never sets level.num_entities
+	for (int i = 0; i < num; i++)
+	{
+		const gentity_t* ent = &g_entities[i];
+		if (!Squad_IsMember(ent, now))
+		{
+			if (squad_advanceUntil[i] > now)
+			{
+				// an advancer died or stopped fighting: the next one goes after a short pause
+				const int t = squad_advanceTarget[i];
+				if (t >= 0 && t < MAX_GENTITIES)
+				{
+					squad_nextPromote[t] = now + Q_irand(1000, 2000);
+				}
+			}
+			squad_advanceUntil[i] = 0;
+			continue;
+		}
+
+		const int t = ent->enemy->s.number;
+		squad_members[t]++;
+
+		if (squad_advanceUntil[i] > now && squad_advanceTarget[i] == t)
+		{
+			advancers[t]++;
+			continue;
+		}
+		if (squad_advanceUntil[i] != 0)
+		{
+			// slot ran out (or the target changed): rest a while and let another one go
+			squad_advanceUntil[i] = 0;
+			squad_restUntil[i] = now + Q_irand(6000, 10000);
+		}
+		if (squad_restUntil[i] > now)
+		{
+			continue;
+		}
+
+		const float d = DistanceSquared(ent->currentOrigin, ent->enemy->currentOrigin);
+		if (best[t] == -1 || d < best_dist[t])
+		{
+			best[t] = i;
+			best_dist[t] = d;
+		}
+	}
+
+	const int max_adv = Squad_MaxAdvancers();
+	for (int t = 0; t < num; t++)
+	{
+		if (best[t] == -1 || advancers[t] >= max_adv || now < squad_nextPromote[t])
+		{
+			continue;
+		}
+		if (squad_members[t] <= max_adv)
+		{
+			continue; // small group: everyone may advance anyway
+		}
+		const int i = best[t];
+		squad_advanceUntil[i] = now + Q_irand(8000, 15000);
+		squad_advanceTarget[i] = t;
+		squad_nextPromote[t] = now + Q_irand(1000, 2000);
+		if (advancers[t] > 0)
+		{
+			ST_Speech(&g_entities[i], SPEECH_CHASE, 0.5f); // "move in" while another one is already pushing
+		}
+	}
+	// g_squadDebug 1: once a second, each target's gunners (A = advancer, H = holder, R = resting holder) and distance
+	static int next_debug = 0;
+	if (g_squadDebug && g_squadDebug->integer && now >= next_debug)
+	{
+		next_debug = now + 1000;
+		for (int t = 0; t < num; t++)
+		{
+			if (squad_members[t] <= 0)
+			{
+				continue;
+			}
+			char line[1024];
+			Com_sprintf(line, sizeof line, "SQUAD %d t=%d members=%d adv=%d:", now, t, squad_members[t], advancers[t]);
+			for (int i = 0; i < num; i++)
+			{
+				const gentity_t* ent = &g_entities[i];
+				if (!Squad_IsMember(ent, now) || ent->enemy->s.number != t)
+				{
+					continue;
+				}
+				const char role = squad_members[t] <= max_adv || squad_advanceUntil[i] > now ? 'A' : squad_restUntil[i] > now ? 'R' : 'H';
+				Q_strcat(line, sizeof line, va(" %d%c%d", i, role, static_cast<int>(Distance(ent->currentOrigin, ent->enemy->currentOrigin))));
+			}
+			gi.Printf("%s\n", line);
+		}
+	}
+}
+
+// qtrue = fight as before (push in when the AI wants to); qfalse = hold position
+static qboolean Squad_MayAdvance(const gentity_t* self)
+{
+	if (!g_squadTactics || !g_squadTactics->integer || !self || !self->NPC || !self->client || !self->enemy)
+	{
+		return qtrue;
+	}
+	const int n = self->s.number;
+	if (squad_lastThink[n] <= 0 || squad_lastThink[n] < level.time - 500)
+	{
+		return qtrue; // not taking part (other AI calling into the stormtrooper code)
+	}
+	Squad_Update();
+
+	const int t = self->enemy->s.number;
+	if (squad_members[t] <= Squad_MaxAdvancers())
+	{
+		return qtrue;
+	}
+	return squad_advanceUntil[n] > level.time && squad_advanceTarget[n] == t ? qtrue : qfalse;
+}
+
+// Holders step away from a squadmate standing right next to them (uses the NPC/ucmd globals)
+static void Squad_KeepApart()
+{
+	const int n = NPC->s.number;
+	if (squad_spreadUntil[n] > level.time)
+	{
+		usercmd_t test = ucmd;
+		G_UcmdMoveForDir(NPC, &test, squad_spreadDir[n]);
+		if (NPC_MoveDirClear(test.forwardmove, test.rightmove, qfalse) == qtrue)
+		{
+			ucmd.forwardmove = test.forwardmove;
+			ucmd.rightmove = test.rightmove;
+		}
+		else
+		{
+			squad_spreadUntil[n] = 0;
+		}
+		return;
+	}
+	if (!TIMER_Done(NPC, "squadSpreadCheck"))
+	{
+		return;
+	}
+	TIMER_Set(NPC, "squadSpreadCheck", Q_irand(400, 700));
+
+	vec3_t mins, maxs;
+	for (int k = 0; k < 3; k++)
+	{
+		mins[k] = NPC->currentOrigin[k] - SQUAD_SPREAD_DIST;
+		maxs[k] = NPC->currentOrigin[k] + SQUAD_SPREAD_DIST;
+	}
+	gentity_t* list[MAX_GENTITIES];
+	const int count = gi.EntitiesInBox(mins, maxs, list, MAX_GENTITIES);
+	const gentity_t* closest = nullptr;
+	float closest_dist = SQUAD_SPREAD_DIST * SQUAD_SPREAD_DIST;
+	for (int k = 0; k < count; k++)
+	{
+		const gentity_t* other = list[k];
+		if (!other || other == NPC || !other->client || !other->NPC || other->health <= 0
+			|| other->client->playerTeam != NPC->client->playerTeam)
+		{
+			continue;
+		}
+		const float d = DistanceHorizontalSquared(other->currentOrigin, NPC->currentOrigin);
+		if (d < closest_dist)
+		{
+			closest_dist = d;
+			closest = other;
+		}
+	}
+	if (!closest)
+	{
+		return;
+	}
+
+	vec3_t away;
+	VectorSubtract(NPC->currentOrigin, closest->currentOrigin, away);
+	away[2] = 0.0f;
+	if (VectorNormalize(away) < 1.0f)
+	{
+		// standing on the same spot: pick a side
+		AngleVectors(NPC->currentAngles, nullptr, away, nullptr);
+		away[2] = 0.0f;
+		VectorNormalize(away);
+		if (Q_irand(0, 1))
+		{
+			VectorScale(away, -1.0f, away);
+		}
+	}
+	VectorCopy(away, squad_spreadDir[n]);
+	squad_spreadUntil[n] = level.time + Q_irand(400, 800);
+}
+
 void ST_MarkToCover(const gentity_t* self)
 {
 	if (!self || !self->NPC)
@@ -2381,7 +2682,7 @@ static void ST_TrackEnemy(const gentity_t* self, vec3_t enemy_pos)
 	}
 }
 
-static int ST_ApproachEnemy(const gentity_t* self)
+static int ST_ApproachEnemy_Base(const gentity_t* self)
 {
 	TIMER_Set(self, "attackDelay", Q_irand(250, 500));
 	//TIMER_Set( self, "duck", -1 );
@@ -2392,6 +2693,17 @@ static int ST_ApproachEnemy(const gentity_t* self)
 	NPC_FreeCombatPoint(self->NPC->combatPoint);
 	//return the relevant combat point flags
 	return CP_CLEAR | CP_CLOSEST;
+}
+
+// Squad tactics: holders look for cover with a clear shot instead of the point closest to the enemy
+static int ST_ApproachEnemy(const gentity_t* self)
+{
+	const int cp_flags = ST_ApproachEnemy_Base(self);
+	if (Squad_MayAdvance(self) == qfalse)
+	{
+		return CP_CLEAR | CP_COVER;
+	}
+	return cp_flags;
 }
 
 static void ST_HuntEnemy(const gentity_t* self)
@@ -2463,7 +2775,7 @@ void ST_TransferMoveGoal(const gentity_t* self, const gentity_t* other)
 	TIMER_Set(self, "stand", Q_irand(1000, 3000));
 }
 
-static int ST_GetCPFlags()
+static int ST_GetCPFlags_Base()
 {
 	int cpFlags = 0;
 
@@ -2589,6 +2901,21 @@ static int ST_GetCPFlags()
 	return cpFlags;
 }
 
+// Squad tactics: holders don't pick combat points that approach the enemy; they take cover with a clear shot
+static int ST_GetCPFlags()
+{
+	int cp_flags = ST_GetCPFlags_Base();
+	if (NPC && Squad_MayAdvance(NPC) == qfalse)
+	{
+		cp_flags &= ~(CP_APPROACH_ENEMY | CP_CLOSEST);
+		if (!(cp_flags & (CP_FLEE | CP_RETREAT)))
+		{
+			cp_flags |= CP_COVER | CP_CLEAR;
+		}
+	}
+	return cp_flags;
+}
+
 /*
 -------------------------
 ST_Commander
@@ -2643,7 +2970,7 @@ static void ST_Commander(void)
 		for (i = 0; i < group->numGroup; i++)
 		{
 			const int entNum = group->member[i].number;
-			if (entNum < 0 || entNum >= level.num_entities)
+			if (entNum < 0 || entNum >= (g_squadTactics && g_squadTactics->integer ? globals.num_entities : level.num_entities)) // MD 8: g_squadTactics 0 keeps the old level.num_entities check (SP never sets it, so members were skipped)
 			{
 				continue;
 			}
@@ -2753,7 +3080,7 @@ static void ST_Commander(void)
 		avoid_dist = 0.0f;
 
 		const int entNum = group->member[i].number;
-		if (entNum < 0 || entNum >= level.num_entities)
+		if (entNum < 0 || entNum >= (g_squadTactics && g_squadTactics->integer ? globals.num_entities : level.num_entities)) // MD 8: g_squadTactics 0 keeps the old level.num_entities check (SP never sets it, so members were skipped)
 		{
 			continue;
 		}
@@ -4057,6 +4384,18 @@ void NPC_BSST_Attack(void)
 	else if (NPC->NPC->scriptFlags & SCF_NO_GROUPS)
 	{
 		NPCInfo->goalEntity = enemyLOS ? nullptr : NPC->enemy;
+	}
+
+	// Squad tactics: a holder that can see the enemy doesn't walk at him; it holds (and ducks) where it is
+	// (Moving to a combat point that isn't close to the enemy, e.g. cover the commander gave it, is still allowed.)
+	if (doMove && enemyLOS && NPCInfo->goalEntity
+		&& enemyDist > SQUAD_HOLD_MIN_DIST * SQUAD_HOLD_MIN_DIST && Squad_MayAdvance(NPC) == qfalse
+		&& !(NPCInfo->goalEntity == NPCInfo->tempGoal && NPCInfo->combatPoint >= 0 && NPCInfo->combatPoint < MAX_COMBAT_POINTS
+			&& DistanceSquared(level.combatPoints[NPCInfo->combatPoint].origin, NPC->enemy->currentOrigin)
+			>= SQUAD_HOLD_MIN_DIST * SQUAD_HOLD_MIN_DIST))
+	{
+		doMove = qfalse;
+		Squad_KeepApart();
 	}
 
 	if (NPC->client->fireDelay && NPC->s.weapon == WP_ROCKET_LAUNCHER)
@@ -5681,7 +6020,32 @@ static void Gunner_CombatDistance(const float enemy_dist)
 	const bool retreating = TIMER_Done(NPC, "gunnerRetreat") == qfalse;
 	const bool holding = TIMER_Done(NPC, "gunnerHold") == qfalse;
 
-	if (!advancing && !retreating && !holding)
+	// Squad tactics: a holder never pushes in. It backs off when the enemy gets close, else holds and strafes.
+	const bool squad_holder = Squad_MayAdvance(NPC) == qfalse;
+	if (squad_holder)
+	{
+		if (advancing)
+		{
+			TIMER_Set(NPC, "gunnerAdvance", 0);
+		}
+		if (!retreating && !holding)
+		{
+			if (enemy_dist < SQUAD_HOLD_MIN_DIST)
+			{
+				TIMER_Set(NPC, "gunnerRetreat", Q_irand(600, 1200));
+			}
+			else
+			{
+				TIMER_Set(NPC, "gunnerHold", Q_irand(700, 1500));
+			}
+		}
+		if (TIMER_Done(NPC, "gunnerRetreat") == qtrue)
+		{
+			Squad_KeepApart();
+		}
+	}
+
+	if (!squad_holder && !advancing && !retreating && !holding)
 	{
 		// Pick a new move. Aggressive NPCs (smart mode raises aggression during the fight) push in more.
 		const int aggression = NPCInfo->stats.aggression;
@@ -6108,6 +6472,7 @@ void NPC_BSST_Default()
 	}
 	else
 	{//have an enemy
+		Squad_Stamp(NPC);
 		if (NPC->enemy->client &&
 			(NPC->enemy->client->NPC_class == CLASS_UGNAUGHT || NPC->enemy->client->NPC_class == CLASS_JAWA) &&
 			NPC->enemy->enemy != NPC

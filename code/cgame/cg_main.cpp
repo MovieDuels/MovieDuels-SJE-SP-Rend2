@@ -839,6 +839,10 @@ void CG_UpdateCvars()
 			}
 		}
 	}
+	// cutscenes run with g_SerenityJediEngineMode 0 (the game side: g_active.cpp G_SetSJEModeScope); the string keeps
+	// the player's own setting, so it is back when the camera ends
+	cg_SerenityJediEngineMode.integer = in_camera ? 0 : atoi(cg_SerenityJediEngineMode.string);
+	cg_SerenityJediEngineMode.value = static_cast<float>(cg_SerenityJediEngineMode.integer);
 }
 
 int CG_CrosshairPlayer()

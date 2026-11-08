@@ -11567,6 +11567,82 @@ extern qboolean PM_GentCantJump(const gentity_t* gent);
 
 extern qboolean CG_MDWheel_BlocksButtons();
 
+// ----------------------------------------------------------------------------------------------------------------
+// Cutscenes and scripted events always run with g_SerenityJediEngineMode 0, whatever the player set (DH 2026-11-08).
+// The code reads the mode through the g_SerenityJediEngineMode pointer: while a camera cutscene runs, or while the
+// entity being run is in a scripted event, it points at a fixed "0" cvar; otherwise at the real cvar. The player's
+// own setting is never changed, so it is back as soon as the event ends.
+// Scripted event: an NPC in BS_CINEMATIC, a character with a script task running (navgoal, held anim, facing), or the
+// player locked by a script.
+// ----------------------------------------------------------------------------------------------------------------
+extern cvar_t* g_SerenityJediEngineMode;
+extern bool in_camera;
+extern qboolean player_locked;
+extern qboolean Q3_TaskIDPending(const gentity_t* ent, taskID_t taskType);
+
+static cvar_t* s_sjeModeReal = nullptr;
+static cvar_t s_sjeModeOff;
+
+void G_InitSJEModeScope()
+{
+	if (g_SerenityJediEngineMode != &s_sjeModeOff)
+	{
+		s_sjeModeReal = g_SerenityJediEngineMode;
+	}
+	if (s_sjeModeReal)
+	{
+		s_sjeModeOff = *s_sjeModeReal;
+		s_sjeModeOff.string = const_cast<char*>("0");
+		s_sjeModeOff.value = 0.0f;
+		s_sjeModeOff.integer = 0;
+	}
+}
+
+qboolean G_InScriptedEvent(const gentity_t* ent)
+{
+	if (!ent || !ent->client)
+	{
+		return qfalse;
+	}
+	if (ent->s.number == 0 && player_locked)
+	{
+		return qtrue;
+	}
+	if (ent->NPC && ent->NPC->behaviorState == BS_CINEMATIC)
+	{
+		return qtrue;
+	}
+	if (Q3_TaskIDPending(ent, TID_MOVE_NAV) || Q3_TaskIDPending(ent, TID_ANIM_BOTH)
+		|| Q3_TaskIDPending(ent, TID_ANIM_UPPER) || Q3_TaskIDPending(ent, TID_ANIM_LOWER)
+		|| Q3_TaskIDPending(ent, TID_ANGLE_FACE))
+	{
+		return qtrue;
+	}
+	return qfalse;
+}
+
+// ent: the entity being run now (nullptr between entities: only the camera counts)
+void G_SetSJEModeScope(const gentity_t* ent)
+{
+	if (!s_sjeModeReal)
+	{
+		return;
+	}
+	g_SerenityJediEngineMode = in_camera || G_InScriptedEvent(ent) ? &s_sjeModeOff : s_sjeModeReal;
+}
+
+namespace
+{
+	struct SJEModeScope
+	{
+		explicit SJEModeScope(const gentity_t* ent) : saved(g_SerenityJediEngineMode) { G_SetSJEModeScope(ent); }
+		~SJEModeScope() { g_SerenityJediEngineMode = saved; } // an NPC's ClientThink runs inside its G_RunFrame think
+		cvar_t* saved;
+		SJEModeScope(const SJEModeScope&) = delete;
+		SJEModeScope& operator=(const SJEModeScope&) = delete;
+	};
+}
+
 void ClientThink(const int clientNum, usercmd_t* ucmd)
 {
 	gentity_t* ent = g_entities + clientNum;
@@ -11574,6 +11650,7 @@ void ClientThink(const int clientNum, usercmd_t* ucmd)
 	{
 		return;
 	}
+	const SJEModeScope sje_mode_scope(ent); // cutscene / scripted event: g_SerenityJediEngineMode 0
 
 	// the radial weapon wheel (cgame, cg_main.cpp) has the player's attack buttons while it is open (they pick / toggle
 	// On Person there), and the press that closed it doesn't fire

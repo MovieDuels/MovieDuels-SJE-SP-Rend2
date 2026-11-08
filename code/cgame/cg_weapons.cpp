@@ -1787,10 +1787,10 @@ void CG_AddViewWeapon(playerState_t* ps)
 		return;
 	}
 
-	// Hide gun if disabled or using trueguns (the Z6's spinning barrel is drawn with the gun below)
-	if (!cg_drawGun.integer ||
-		cg.zoomMode ||
-		cg_trueguns.integer ||
+	// Hide gun if using trueguns (the Z6's spinning barrel is drawn with the gun below). Zoomed or cg_drawGun 0 goes
+	// on to the hidden-gun block further down, which still plays the muzzle flash: the muzzle effect carries the fire
+	// sound (the zoomed disruptor shot was silent, DH 2026-11-08)
+	if ((cg_trueguns.integer && !cg.zoomMode) ||
 		ps->weapon == WP_SABER ||
 		ps->weapon == WP_MELEE)
 	{

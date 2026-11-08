@@ -12428,7 +12428,18 @@ void PM_TorsoAnimation()
 						{
 							if (is_walking_and_blocking == qtrue)
 							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								if (pm->gent->client->NPC_class == CLASS_BATTLEDROID)
+								{// battle droids aim from the hip, as they fire (BOTH_ATTACK3 above), not from the shoulder (DH 2026-11-08)
+									if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1 && flags.isBattleDroid == qtrue)
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
+									}
+									else
+									{
+										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
+									}
+								}
+								else if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 								{
 									if (flags.isBattleDroid == qtrue)
 									{

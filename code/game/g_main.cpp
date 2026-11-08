@@ -274,6 +274,9 @@ cvar_t* g_update8firststartup;
 cvar_t* g_totgfirststartup;
 
 cvar_t* g_allowgunnerbash;
+cvar_t* g_squadTactics;
+cvar_t* g_squadAdvancers;
+cvar_t* g_squadDebug;
 
 cvar_t* g_noAutoFollow;
 
@@ -874,6 +877,8 @@ static void G_InitCvars()
 	g_noIgniteTwirl = gi.cvar("g_noIgniteTwirl", "1", CVAR_ARCHIVE); //if 1, don't do ignite twirl
 
 	g_SerenityJediEngineMode = gi.cvar("g_SerenityJediEngineMode", "0", CVAR_ARCHIVE); //Alternate saber combat system
+	extern void G_InitSJEModeScope();
+	G_InitSJEModeScope(); // cutscenes and scripted events run with mode 0 (g_active.cpp)
 
 	g_SaberPerfectBlockingTimerMissile = gi.cvar("g_SaberPerfectBlockingTimerMissile", "750", CVAR_ARCHIVE);
 	//Alternate saber combat system 3 sec
@@ -898,6 +903,10 @@ static void G_InitCvars()
 	g_totgfirststartup = gi.cvar("g_totgfirststartup", "1", 0);
 
 	g_allowgunnerbash = gi.cvar("g_allowgunnerbash", "0", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	// Squad tactics: only g_squadAdvancers gunners per target push in, the others hold position (AI_Stormtrooper.cpp)
+	g_squadTactics = gi.cvar("g_squadTactics", "1", CVAR_ARCHIVE);
+	g_squadAdvancers = gi.cvar("g_squadAdvancers", "2", CVAR_ARCHIVE);
+	g_squadDebug = gi.cvar("g_squadDebug", "0", 0); // 1: print each squad's roles once a second
 
 	g_noAutoFollow = gi.cvar("g_noAutoFollow", "0", CVAR_ARCHIVE);
 
@@ -2601,6 +2610,8 @@ static void G_ApplyPlayerAnimationStyle()
 	player_ent->client->animationstyle = static_cast<Animationstyles_t>(style);
 }
 
+extern void G_SetSJEModeScope(const gentity_t* ent);
+
 void G_RunFrame(const int level_time)
 {
 	G_EnforceUpdateSettings();
@@ -2651,6 +2662,7 @@ void G_RunFrame(const int level_time)
 			continue;
 		ents_inuse++;
 		ent = &g_entities[i];
+		G_SetSJEModeScope(ent); // cutscene / scripted event: g_SerenityJediEngineMode 0 while this entity runs
 
 		// clear events that are too old
 		if (level.time - ent->eventTime > EVENT_VALID_MSEC)
@@ -2932,6 +2944,7 @@ void G_RunFrame(const int level_time)
 		ClearNPCGlobals(); //	but these 2 funcs are ok
 		//UpdateTeamCounters( ent );	//	   to call anyway on a freed ent.
 	}
+	G_SetSJEModeScope(nullptr); // between entities only the cutscene camera counts
 
 	// holstered sabers make room for the holstered guns on the hips (wp_saber.cpp)
 	for (int i = 0; i < globals.num_entities; i++)
