@@ -7586,6 +7586,99 @@ static void jedi_debounce_direction_changes()
 	}
 }
 
+// 2026-11-10 (DH: "the npc should stop pressing forward at saberlength distance", videos: the NPC walked into the
+// player's body and the fight turned into a shoving match): once the enemy is inside the NPC's saber reach (the same
+// reach jedi_set_enemy_info uses for "in striking range": longest blade + 1.5 x body radius + 16), any movement
+// toward him is taken out. Strafing, circling and backing off stay. Item 300 made the advance code steer to the
+// enemy again, and the close-range "pressure" walk-in (jedi_combat_timers_update, forwardmove 48 every 1-2 s, held
+// at full speed for 0.5-2 s by jedi_debounce_direction_changes) never looked at the distance, so it pushed into him.
+// Left alone: cultist destroyers (they run in and blow up), stepping into an enemy kick / hilt bash / slap / A6
+// attack (base JKA "run into the kick"), the NPC's own kick or grab, and while in the air.
+static void Jedi_HoldAtSaberReach()
+{
+	if (!NPC || !NPC->client || !NPC->enemy || !NPC->enemy->client || NPC->enemy->health <= 0)
+	{
+		return;
+	}
+
+	playerState_t* ps = &NPC->client->ps;
+	const playerState_t* eps = &NPC->enemy->client->ps;
+
+	if (ps->weapon != WP_SABER || !ps->SaberActive() || ps->saberInFlight
+		|| ps->groundEntityNum == ENTITYNUM_NONE
+		|| jedi_cultist_destroyer(NPC)
+		|| PM_KickingAnim(ps->legsAnim) || ps->torsoAnim == BOTH_KYLE_GRAB
+		|| PM_KickingAnim(eps->legsAnim)
+		|| eps->torsoAnim == BOTH_A7_HILT || eps->torsoAnim == BOTH_SLAP_R || eps->torsoAnim == BOTH_SLAP_L
+		|| eps->torsoAnim == BOTH_A6_FB || eps->torsoAnim == BOTH_A6_LR)
+	{
+		return;
+	}
+
+	vec3_t to_enemy;
+	VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, to_enemy);
+	to_enemy[2] = 0;
+	const float dist = VectorNormalize(to_enemy);
+	const float reach = ps->SaberLengthMax() + NPC->maxs[0] * 1.5f + 16.0f;
+
+	if (dist > reach)
+	{
+		return;
+	}
+
+	qboolean held = qfalse;
+
+	// nav movement (NPC_MoveToGoal): pmove uses moveDir whenever it is set, whatever the ucmd says
+	if (!VectorCompare(ps->moveDir, vec3_origin))
+	{
+		const float toward = DotProduct(ps->moveDir, to_enemy);
+		if (toward > 0.0f)
+		{
+			VectorMA(ps->moveDir, -toward, to_enemy, ps->moveDir); // keep only the sideways part (slower, not renormalised)
+			if (VectorLengthSquared(ps->moveDir) < 0.01f)
+			{
+				VectorClear(ps->moveDir);
+			}
+			held = qtrue;
+		}
+	}
+
+	// ucmd movement
+	if (ucmd.forwardmove || ucmd.rightmove)
+	{
+		vec3_t yaw_angles, fwd, right, wish;
+		VectorSet(yaw_angles, 0, ps->viewangles[YAW], 0);
+		AngleVectors(yaw_angles, fwd, right, nullptr);
+		VectorScale(fwd, ucmd.forwardmove, wish);
+		VectorMA(wish, ucmd.rightmove, right, wish);
+		wish[2] = 0;
+
+		const float toward = DotProduct(wish, to_enemy);
+		if (toward > 0.0f)
+		{
+			VectorMA(wish, -toward, to_enemy, wish);
+			float fm = DotProduct(wish, fwd);
+			float rm = DotProduct(wish, right);
+			fm = fm > 127.0f ? 127.0f : (fm < -127.0f ? -127.0f : fm);
+			rm = rm > 127.0f ? 127.0f : (rm < -127.0f ? -127.0f : rm);
+			ucmd.forwardmove = static_cast<signed char>(fm);
+			ucmd.rightmove = static_cast<signed char>(rm);
+			held = qtrue;
+		}
+	}
+
+	if (held)
+	{
+		// end the "keep moving forward" hold of jedi_debounce_direction_changes too, or it pushes in again next frame
+		TIMER_Set(NPC, "moveforward", -level.time);
+		if ((d_JediAI->integer || g_DebugSaberCombat->integer) && TIMER_Done(NPC, "holdReachDebug"))
+		{
+			TIMER_Set(NPC, "holdReachDebug", 1000);
+			Com_Printf("Debug: %s holds at saber reach (%.0f of %.0f)\n", NPC->NPC_type, dist, reach);
+		}
+	}
+}
+
 void Jedi_TimersApply()
 {
 	//use careful anim/slower movement if not already moving
@@ -7632,6 +7725,7 @@ void Jedi_TimersApply()
 	}
 
 	jedi_debounce_direction_changes();
+	Jedi_HoldAtSaberReach(); // 2026-11-10: no pushing into the enemy once he is in saber reach
 
 	if (!TIMER_Done(NPC, "gripping"))
 	{
@@ -7793,8 +7887,10 @@ static void jedi_combat_timers_update(const int enemy_dist)
 						}
 					}
 				}
-				else
+				else if (enemy_dist > 0)
 				{//postpone any strafing for a while
+					// 2026-11-10 (DH): only walk in while he is still out of saber reach (enemy_dist <= 0 = in reach);
+					// this walk-in used to run at any distance, even with the NPC already in the enemy's body
 					ucmd.forwardmove = 48;
 				}
 			}
@@ -10965,10 +11061,21 @@ static void JediHandleSpacing(gentity_t* self)
 
 	float pSpeed = VectorLength(pvel);
 
+	// bug fix 2026-11-10: the checks below read pvel[0] / pvel[1], the WORLD x / y velocity, as if they were the
+	// enemy's motion toward / across the NPC, so "backing up" (forwardmove 127) fired whenever he walked toward world
+	// -x, even straight into the NPC. Now measured along the NPC -> enemy line and across it.
+	vec3_t to_enemy_dir, side_dir;
+	VectorSubtract(self->enemy->currentOrigin, self->currentOrigin, to_enemy_dir);
+	to_enemy_dir[2] = 0;
+	VectorNormalize(to_enemy_dir);
+	VectorSet(side_dir, to_enemy_dir[1], -to_enemy_dir[0], 0); // the NPC's right when it faces him
+	const float p_away = DotProduct(pvel, to_enemy_dir); // > 0: he moves away from the NPC
+	const float p_side = DotProduct(pvel, side_dir); // > 0: he moves to the NPC's right (his left)
+
 	if (pSpeed > 50.0f)
 	{
 		// Player strafing right
-		if (pvel[1] > 80)
+		if (p_side < -80)
 		{
 			ucmd.rightmove = -64;
 			ucmd.forwardmove = 48;
@@ -10978,7 +11085,7 @@ static void JediHandleSpacing(gentity_t* self)
 		}
 
 		// Player strafing left
-		if (pvel[1] < -80)
+		if (p_side > 80)
 		{
 			ucmd.rightmove = 64;
 			ucmd.forwardmove = 48;
@@ -10988,7 +11095,7 @@ static void JediHandleSpacing(gentity_t* self)
 		}
 
 		// Player backing up
-		if (pvel[0] < -80)
+		if (p_away > 80)
 		{
 			ucmd.forwardmove = 127;
 			Jedi_FaceEnemy(qtrue);
@@ -10997,7 +11104,7 @@ static void JediHandleSpacing(gentity_t* self)
 		}
 
 		// Player rushing forward
-		if (pvel[0] > 80)
+		if (p_away < -80)
 		{
 			ucmd.rightmove = (Q_irand(0, 1) ? 64 : -64);
 			Jedi_FaceEnemy(qtrue);
@@ -12161,6 +12268,9 @@ static void Jedi_Attack(void)
 	// =====================
 	// Otherwise: Raven fallback logic continues below
 	// =====================
+
+	// 2026-11-10 (DH): the cinematic spacing above runs after Jedi_TimersApply, so hold at saber reach again here
+	Jedi_HoldAtSaberReach();
 
 	// If NAV is not moving us but ucmds are, set movement speed manually
 	if (VectorCompare(NPC->client->ps.moveDir, vec3_origin) &&

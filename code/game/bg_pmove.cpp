@@ -9254,6 +9254,13 @@ static qboolean PM_CheckRollGetup()
 
 extern int G_MinGetUpTime(const gentity_t* ent);
 
+extern cvar_t* g_npcQuickGetUp;
+constexpr int QUICK_GETUP_MIN_DOWN_TIME = 1200; //item 319: least time in a knockdown before a quick getup (the fall)
+constexpr int QUICK_GETUP_MIN_FLOOR_TIME = 300; //item 319: least time left on the floor after the cut
+//item 319: Force powers that make an NPC a Force user. Force jump (levitation) and the saber skills don't count:
+//many gunner NPC files give force jump only so the AI can jump
+constexpr int QUICK_GETUP_FORCE_USER_POWERS = ~(1 << FP_LEVITATION | 1 << FP_SABER_OFFENSE | 1 << FP_SABER_DEFENSE | 1 << FP_SABERTHROW);
+
 qboolean PM_GettingUpFromKnockDown(const float standheight, const float crouchheight)
 {
 	const int legs_anim = pm->ps->legsAnim;
@@ -9271,6 +9278,60 @@ qboolean PM_GettingUpFromKnockDown(const float standheight, const float crouchhe
 	{
 		//in a knockdown
 		const int min_time_left = G_MinGetUpTime(pm->gent);
+
+		// Item 319 (DH 2026-11-10): gunners and other non-Force NPCs get up 1-2 s sooner after a knockdown (random
+		// each time), so they don't lie on the floor waiting. Cut once per knockdown, never into the fall: at least
+		// QUICK_GETUP_MIN_DOWN_TIME in the knockdown in all. Force users (any power but force jump / saber skills),
+		// saber users and the player keep the full knockdown. g_npcQuickGetUp 0 = old behaviour, 2 = debug print.
+		if (g_npcQuickGetUp && g_npcQuickGetUp->integer
+			&& pm->gent && pm->gent->client && pm->gent->NPC
+			&& pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()
+			&& (legs_anim == BOTH_KNOCKDOWN1
+				|| legs_anim == BOTH_KNOCKDOWN2
+				|| legs_anim == BOTH_KNOCKDOWN3
+				|| legs_anim == BOTH_KNOCKDOWN4
+				|| legs_anim == BOTH_KNOCKDOWN5
+				|| legs_anim == BOTH_SLAPDOWNRIGHT
+				|| legs_anim == BOTH_SLAPDOWNLEFT)
+			&& pm->ps->legsAnimTimer > 0
+			&& (!TIMER_Exists(pm->gent, "quickGetUp") || TIMER_Done2(pm->gent, "quickGetUp", qtrue)))
+		{
+			const int old_timer = pm->ps->legsAnimTimer;
+			const qboolean force_user = (pm->ps->weapon == WP_SABER
+				|| (pm->ps->forcePowersKnown & QUICK_GETUP_FORCE_USER_POWERS) != 0) ? qtrue : qfalse;
+
+			if (!force_user && pm->gent->health > 0)
+			{
+				const int anim_length = PM_AnimLength(pm->gent->client->clientInfo.animFileIndex, static_cast<animNumber_t>(legs_anim));
+				const int time_down = anim_length - old_timer;
+				int min_timer = QUICK_GETUP_MIN_DOWN_TIME - time_down;
+				if (min_timer < QUICK_GETUP_MIN_FLOOR_TIME)
+				{
+					min_timer = QUICK_GETUP_MIN_FLOOR_TIME;
+				}
+				int new_timer = old_timer - Q_irand(1000, 2000);
+				if (new_timer < min_timer)
+				{
+					new_timer = min_timer;
+				}
+				if (new_timer < old_timer)
+				{
+					if (pm->ps->torsoAnim == legs_anim)
+					{
+						pm->ps->torsoAnimTimer = new_timer;
+					}
+					pm->ps->legsAnimTimer = new_timer;
+				}
+			}
+			if (g_npcQuickGetUp->integer > 1)
+			{
+				gi.Printf("quick getup: %s anim %d timer %d -> %d (force user %d, powers 0x%x, weapon %d, on ground %d)\n",
+					pm->gent->NPC_type ? pm->gent->NPC_type : "?", legs_anim, old_timer, pm->ps->legsAnimTimer,
+					static_cast<int>(force_user), static_cast<unsigned>(pm->ps->forcePowersKnown), pm->ps->weapon, pm->ps->groundEntityNum != ENTITYNUM_NONE ? 1 : 0);
+			}
+			//don't look at this knockdown again
+			TIMER_Set(pm->gent, "quickGetUp", pm->ps->legsAnimTimer + 1000);
+		}
 
 		if (pm->ps->legsAnimTimer <= min_time_left)
 		{

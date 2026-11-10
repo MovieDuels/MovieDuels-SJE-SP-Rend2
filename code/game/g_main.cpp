@@ -314,6 +314,7 @@ cvar_t* g_remove_unused_weapons;
 
 cvar_t* g_allowcallout;
 cvar_t* g_allowslipping;
+cvar_t* g_npcQuickGetUp; //item 319: non-Force NPCs get up 1-2 s sooner after a knockdown
 
 cvar_t* g_RealisticBlockingMode;
 
@@ -957,6 +958,7 @@ static void G_InitCvars()
 	g_remove_unused_weapons = gi.cvar("g_removedroppedweapons", "0", CVAR_ARCHIVE);
 
 	g_allowslipping = gi.cvar("g_allowslipping", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_npcQuickGetUp = gi.cvar("g_npcQuickGetUp", "1", CVAR_ARCHIVE);
 
 	g_RealisticBlockingMode = gi.cvar("g_RealisticBlockingMode", "0", CVAR_ARCHIVE); //Alternate saber combat system
 
