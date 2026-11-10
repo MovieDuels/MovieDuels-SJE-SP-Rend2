@@ -19313,14 +19313,8 @@ int PM_ReadyPoseForSaberAnimLevel(void)
 		break;
 
 	case SS_MEDIUM:
-		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-		{
-			anim = BOTH_STAND2;
-		}
-		else
-		{
-			anim = BOTH_STAND2;
-		}
+		// 2026-11-10 (audit): "if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)" had the same code in both branches; kept one
+		anim = BOTH_STAND2;
 		break;
 
 	case SS_NONE:
@@ -22407,6 +22401,11 @@ void WP_SaberFatigueRegenerate(playerState_t* ps, const int override_amt)
 		{
 			ps->saberFatigueChainCount = MISHAPLEVEL_MAX;
 		}
+		// 2026-11-10 (audit): a 2-point regen from 1 left the meter at -1 (one free swing before fatigue counted)
+		if (ps->saberFatigueChainCount < MISHAPLEVEL_NONE)
+		{
+			ps->saberFatigueChainCount = MISHAPLEVEL_NONE;
+		}
 	}
 }
 
@@ -22713,6 +22712,13 @@ static int PM_ApplySaberAnimOverride(int anim, saberMoveName_t new_move, const a
 
 void PM_SetSaberMove(saberMoveName_t new_move)
 {
+	// 2026-11-10 (audit): range check moved up, saberMoveData[new_move] was read before it
+	if (new_move < LS_NONE || new_move >= LS_MOVE_MAX)
+	{
+		assert(0);
+		return;
+	}
+
 	unsigned int setflags = saberMoveData[new_move].animSetFlags;
 	int anim = saberMoveData[new_move].animToUse;
 	int parts = SETANIM_TORSO;
@@ -22721,12 +22727,6 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 
 	const qboolean is_holding_block_button = ((pm->ps->ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean is_walking_and_blocking = ((pm->cmd.buttons & BUTTON_WALKING) && (is_holding_block_button)) ? qtrue : qfalse;
-
-	if (new_move < LS_NONE || new_move >= LS_MOVE_MAX)
-	{
-		assert(0);
-		return;
-	}
 
 	if (pm->ps->eFlags & EF_HELD_BY_WAMPA)
 	{
@@ -22781,22 +22781,10 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 			//continuing with a kata, increment attack counter
 			pm->ps->saberAttackChainCount++;
 
-			if (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) //player
-			{// Only add fatigue every 2 swings (half as fast)
-				//if ((pm->ps->saberAttackChainCount & 1) == 0)  // even number
-				//{
-				if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
-				{
-					pm->ps->saberFatigueChainCount++;
-				}
-				//}
-			}
-			else
+			// 2026-11-10 (audit): "if (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer())" had the same code in both branches; kept one
+			if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
 			{
-				if (pm->ps->saberFatigueChainCount < MISHAPLEVEL_MAX)
-				{
-					pm->ps->saberFatigueChainCount++;
-				}
+				pm->ps->saberFatigueChainCount++;
 			}
 		}
 		else
@@ -23002,54 +22990,7 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 				anim = pm->ps->saber[1].readyAnim;
 			}
 		}
-		else if (pm->ps->saber[0].type == SABER_LANCE || pm->ps->saber[0].type == SABER_TRIDENT
-			|| (pm->ps->dualSabers && pm->ps->saber[1].Active()
-				|| (pm->ps->SaberStaff() && (!pm->ps->saber[0].singleBladeStyle
-					|| pm->ps->saber[0].blade[1].active)
-					|| pm->ps->saber[0].type == SABER_ARC)))
-		{
-			if (is_holding_block_button)
-			{
-				if (pm->ps->saberAnimLevel == SS_DUAL)
-				{
-					if (g_SerenityJediEngineMode->integer == 2)
-					{
-						anim = PM_BlockingPoseForSaberAnimLevelDualAMD();
-					}
-					else
-					{
-						anim = PM_BlockingPoseForSaberAnimLevelDualMD();
-					}
-				}
-				else if (pm->ps->saberAnimLevel == SS_STAFF)
-				{
-					if (g_SerenityJediEngineMode->integer == 2)
-					{
-						anim = PM_BlockingPoseForSaberAnimLevelStaffAMD();
-					}
-					else
-					{
-						anim = PM_BlockingPoseForSaberAnimLevelStaffMD();
-					}
-				}
-				else
-				{
-					if (g_SerenityJediEngineMode->integer == 2)
-					{
-						anim = PM_BlockingPoseForSaberAnimLevelSingleAMD();
-					}
-					else
-					{
-						anim = PM_BlockingPoseForSaberAnimLevelSingleMD();
-					}
-				}
-			}
-			else
-			{
-				anim = PM_ReadyPoseForSaberAnimLevel();
-			}
-		}
-		else
+		else // 2026-11-10 (audit): the "else if (pm->ps->saber[0].type == SABER_LANCE || pm->ps->saber[0].type == SABER_TRIDENT || (pm->...)" branch here was the same code; merged
 		{
 			if (is_holding_block_button)
 			{
@@ -24143,12 +24084,8 @@ void PM_SetSaberMove(saberMoveName_t new_move)
 				}
 			}
 			else if (PM_SaberInStart(new_move))
-			{//don't damage on the first few frames of a start anim because it may pop from one position to some drastically different one, killing the enemy without hitting them.
-				int damageDelay = 150;
-				if (pm->ps->torsoAnimTimer < damageDelay)
-				{
-					damageDelay = pm->ps->torsoAnimTimer;
-				}
+			{// 2026-11-10 (audit, harmless): removed the "start anim damage delay" stub here. It worked out a delay and then
+				// threw it away (the line that used it, saberDamageDebounceTime, was already commented out in base JKA).
 				if (pm->ps->saberAnimLevel == SS_STRONG)
 				{
 					WP_SaberSwingSound(pm->gent, 0, SWING_FAST);
@@ -29078,27 +29015,14 @@ static void PM_KataAnimationStyle(void)
 
 		case SS_STAFF:
 		{
-			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1) // permission for the new anims
+			// 2026-11-10 (audit): "if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)" had the same code in both branches; kept one
+			if (PM_CanDoSmashdown(pm) == qtrue)
 			{
-				if (PM_CanDoSmashdown(pm) == qtrue)
-				{
-					PM_SetSaberMove(LS_SMASHDOWN_STAFF); // If you have enough power and are level 3, you can do a smashdown attack.
-				}
-				else
-				{
-					PM_SetSaberMove(LS_STAFF_SOULCAL);
-				}
+				PM_SetSaberMove(LS_SMASHDOWN_STAFF);
 			}
 			else
 			{
-				if (PM_CanDoSmashdown(pm) == qtrue)
-				{
-					PM_SetSaberMove(LS_SMASHDOWN_STAFF);
-				}
-				else
-				{
-					PM_SetSaberMove(LS_STAFF_SOULCAL); // or just do this
-				}
+				PM_SetSaberMove(LS_STAFF_SOULCAL); // or just do this
 			}
 		}
 		break;
@@ -29865,10 +29789,7 @@ static void PM_WeaponLightsaber(void)
 						}
 					}
 				}
-				else
-				{
-					PM_ReadyPoseForSaberAnimLevel();
-				}
+				// 2026-11-10 (audit): removed an "else PM_ReadyPoseForSaberAnimLevel();" here (it threw the pose away)
 			}
 		}
 		else
@@ -30714,46 +30635,8 @@ static void PM_WeaponLightsaber(void)
 				}
 				else
 				{
-					if (is_walking_and_blocking)
-					{
-						if (pm->ps->saberAnimLevel == SS_DUAL)
-						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								PM_BlockingPoseForSaberAnimLevelDualAMD();
-							}
-							else
-							{
-								PM_BlockingPoseForSaberAnimLevelDualMD();
-							}
-						}
-						else if (pm->ps->saberAnimLevel == SS_STAFF)
-						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								PM_BlockingPoseForSaberAnimLevelStaffAMD();
-							}
-							else
-							{
-								PM_BlockingPoseForSaberAnimLevelStaffMD();
-							}
-						}
-						else
-						{
-							if (g_SerenityJediEngineMode->integer == 2)
-							{
-								PM_BlockingPoseForSaberAnimLevelSingleAMD();
-							}
-							else
-							{
-								PM_BlockingPoseForSaberAnimLevelSingleMD();
-							}
-						}
-					}
-					else
-					{
-						PM_ReadyPoseForSaberAnimLevel();
-					}
+					// 2026-11-10 (audit): holding block. The blocking code sets the pose. The calls that were here worked out a
+					// blocking / ready pose and threw the result away.
 				}
 
 				newmove = LS_READY;
@@ -31556,11 +31439,7 @@ void PM_SetMeleeBlock()
 					{
 						anim = pm->ps->torsoAnim;
 					}
-					else if (Q_irand(0, 1))
-					{
-						anim = MELEE_STANCE_T;
-					}
-					else
+					else // 2026-11-10 (audit): the "else if (Q_irand(0, 1))" branch here was the same code; merged
 					{
 						anim = MELEE_STANCE_T;
 					}
@@ -31574,11 +31453,7 @@ void PM_SetMeleeBlock()
 					{
 						anim = pm->ps->torsoAnim;
 					}
-					else if (Q_irand(0, 1))
-					{
-						anim = MELEE_STANCE_B;
-					}
-					else
+					else // 2026-11-10 (audit): the "else if (Q_irand(0, 1))" branch here was the same code; merged
 					{
 						anim = MELEE_STANCE_B;
 					}

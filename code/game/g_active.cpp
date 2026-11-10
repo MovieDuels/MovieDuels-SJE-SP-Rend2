@@ -2203,9 +2203,10 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 				}
 				else
 				{
-					// Half-speed regeneration:
-					// Regenerate 1 point every 2 frames instead of every frame.
-					if ((level.time & 1) == 0)  // even frame → regen
+					// Half-speed regeneration: this runs once a second (ClientTimerActions), so regenerate every 2nd second.
+					// 2026-11-10 (audit): was (level.time & 1), but level.time moves in whole frames (50 ms), so it was always
+					// even (full speed) or, on an MP server with odd frame times, never regenerated at all.
+					if (((level.time / 1000) & 1) == 0)
 					{
 						WP_SaberFatigueRegenerate(&client->ps, 1);
 					}
@@ -2256,9 +2257,10 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 						&& !PM_SaberInBrokenParry(client->ps.saberMove)
 						&& client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
 					{
-						// Half-speed regeneration:
-						// Regenerate 1 point every 2 frames instead of every frame.
-						if ((level.time & 1) == 0)  // even frame → regen
+						// Half-speed regeneration: this runs once a second (ClientTimerActions), so regenerate every 2nd second.
+						// 2026-11-10 (audit): was (level.time & 1), but level.time moves in whole frames (50 ms), so it was always
+						// even (full speed) or, on an MP server with odd frame times, never regenerated at all.
+						if (((level.time / 1000) & 1) == 0)
 						{
 							client->ps.blockPoints++;
 						}
@@ -2277,7 +2279,7 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 			{// only regenerate force if not holding down block, otherwise you can just hold down block and never have to worry about force
 				if (ent->flags & FL_FORCEMODE)
 				{
-					client->ps.forcePower = BLOCK_POINTS_MAX;
+					client->ps.forcePower = client->ps.forcePowerMax; // 2026-11-10 (audit): was BLOCK_POINTS_MAX
 				}
 				else
 				{
@@ -2287,9 +2289,10 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 						&& !PM_SaberInBrokenParry(client->ps.saberMove)
 						&& client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
 					{
-						// Half-speed regeneration:
-						// Regenerate 1 point every 2 frames instead of every frame.
-						if ((level.time & 1) == 0)  // even frame → regen
+						// Half-speed regeneration: this runs once a second (ClientTimerActions), so regenerate every 2nd second.
+						// 2026-11-10 (audit): was (level.time & 1), but level.time moves in whole frames (50 ms), so it was always
+						// even (full speed) or, on an MP server with odd frame times, never regenerated at all.
+						if (((level.time / 1000) & 1) == 0)
 						{
 							client->ps.forcePower++;
 						}
@@ -3325,15 +3328,7 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 						{
 							G_Sound(ent, G_SoundIndex("sound/movers/objects/saber_slam"));
 						}
-						else if (ent->client->ps.torsoAnim == BOTH_SLAP_L ||
-							ent->client->ps.torsoAnim == BOTH_SLAP_R ||
-							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_R || ent->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
-							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
-						{
-							G_Sound(ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-							G_PlayEffect(G_EffectIndex("melee/kick_impact.efx"), trace.endpos, trace.plane.normal);
-						}
-						else
+						else // 2026-11-10 (audit): the "else if (ent->client->ps.torsoAnim == BOTH_SLAP_L || ent->client->ps.torsoAnim == BOTH_SLAP_R ||...)" branch here was the same code; merged
 						{
 							G_Sound(ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
 							G_PlayEffect(G_EffectIndex("melee/kick_impact.efx"), trace.endpos, trace.plane.normal);

@@ -1228,7 +1228,8 @@ void WP_SaberAddHolsteredG2SaberModels(gentity_t* ent, const int specific_saber_
 				continue;
 			}
 		}
-		else if (ent->client->ps.saber[saberNum].holsterPlace == HOLSTER_NONE)
+		// bug fix 2026-11-10: this was an "else if" after the saberNum > 0 / saberNum == 0 tests, so it never ran
+		if (ent->client->ps.saber[saberNum].holsterPlace == HOLSTER_NONE)
 		{
 			continue;
 		}
@@ -2037,6 +2038,12 @@ void WP_SaberSwingSound(const gentity_t* ent, const int saberNum, const swingTyp
 
 static void WP_SaberHitSound(const gentity_t* ent, const int saberNum, const int bladeNum)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!ent || !ent->client)
+	{
+		return;
+	}
+
 	const qboolean saber_in_stab_down = PM_StabDownAnim(ent->client->ps.torsoAnim);
 	const qboolean saber_in_special = PM_SaberInKillAttack(ent->client->ps.torsoAnim);
 	const qboolean saber_in_over_head_attack = PM_SaberInOverHeadSlash(
@@ -2047,10 +2054,6 @@ static void WP_SaberHitSound(const gentity_t* ent, const int saberNum, const int
 	const qboolean saber_in_lunge_attack = PM_LungRollAnim(ent->client->ps.torsoAnim);
 	const qboolean saber_in_roll_stab = PM_SaberInRollStab(static_cast<saberMoveName_t>(ent->client->ps.saberMove));
 
-	if (!ent || !ent->client)
-	{
-		return;
-	}
 
 	const int index = Q_irand(1, 3);
 	const int index_stab = Q_irand(1, 11);
@@ -3571,160 +3574,80 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 
 					if (!saber_in_special) // not doing a special move
 					{
-						if (victim->s.weapon != WP_SABER || !Q_stricmp("func_breakable", victim->classname))
+						// 2026-11-10 (audit): "if (victim->s.weapon != WP_SABER || !Q_stricmp("func_breakable", victim->classname))" had the same code in both branches; kept one
+						// my enemy has a saber
+						if (g_saberRealisticCombat->integer < 3)
 						{
-							// my enemy has a gun
-							if (g_saberRealisticCombat->integer < 3)
+							// enemy has more than 30hp
+							if (g_saberRealisticCombat->integer == 2 && victim->NPC && victim->health >= 30)
 							{
-								// enemy has more than 30hp
-								if (g_saberRealisticCombat->integer == 2 && victim->NPC && victim->health >= 30)
-								{
-									dflags |= DAMAGE_NO_KILL;
-									totalDmg[i] = 30;
-								}
-								else if (g_saberRealisticCombat->integer == 1 && victim->NPC && victim->health >=
-									30)
-								{
-									dflags |= DAMAGE_NO_KILL;
-									totalDmg[i] = 25;
-								}
-								else if (g_saberRealisticCombat->integer == 0 && victim->NPC && victim->health >=
-									30)
-								{
-									dflags |= DAMAGE_NO_KILL;
-									totalDmg[i] = 10;
-								}
-								else
-								{
-									// enemy has less than 30 hp
-									if (g_saberRealisticCombat->integer == 2)
-									{
-										if (totalDmg[i] < 35)
-										{
-											totalDmg[i] = 35;
-										}
-										if (totalDmg[i] > 35)
-										{
-											//clamp using same adjustment as in NPC_Begin
-											totalDmg[i] = 35;
-										}
-									}
-									else if (g_saberRealisticCombat->integer == 1)
-									{
-										if (totalDmg[i] < 15)
-										{
-											totalDmg[i] = 15;
-										}
-										if (totalDmg[i] > 15)
-										{
-											//clamp using same adjustment as in NPC_Begin
-											totalDmg[i] = 15;
-										}
-									}
-									else if (g_saberRealisticCombat->integer == 0)
-									{
-										if (totalDmg[i] < 5)
-										{
-											totalDmg[i] = 5;
-										}
-										if (totalDmg[i] > 5)
-										{
-											//clamp using same adjustment as in NPC_Begin
-											totalDmg[i] = 5;
-										}
-									}
-								}
+								dflags |= DAMAGE_NO_KILL;
+								totalDmg[i] = 30;
+							}
+							else if (g_saberRealisticCombat->integer == 1 && victim->NPC && victim->health >=
+								30)
+							{
+								dflags |= DAMAGE_NO_KILL;
+								totalDmg[i] = 25;
+							}
+							else if (g_saberRealisticCombat->integer == 0 && victim->NPC && victim->health >=
+								30)
+							{
+								dflags |= DAMAGE_NO_KILL;
+								totalDmg[i] = 10;
 							}
 							else
 							{
-								// need to add better damage control here for saber v gunner at high damage
-								if (totalDmg[i] < 50)
+								// enemy has less than 30 hp
+								if (g_saberRealisticCombat->integer == 2)
 								{
-									totalDmg[i] = 50;
+									if (totalDmg[i] < 35)
+									{
+										totalDmg[i] = 35;
+									}
+									if (totalDmg[i] > 35)
+									{
+										//clamp using same adjustment as in NPC_Begin
+										totalDmg[i] = 35;
+									}
 								}
-								if (totalDmg[i] > 100)
+								else if (g_saberRealisticCombat->integer == 1)
 								{
-									//clamp using same adjustment as in NPC_Begin
-									totalDmg[i] = 100;
+									if (totalDmg[i] < 15)
+									{
+										totalDmg[i] = 15;
+									}
+									if (totalDmg[i] > 15)
+									{
+										//clamp using same adjustment as in NPC_Begin
+										totalDmg[i] = 15;
+									}
+								}
+								else if (g_saberRealisticCombat->integer == 0)
+								{
+									if (totalDmg[i] < 5)
+									{
+										totalDmg[i] = 5;
+									}
+									if (totalDmg[i] > 5)
+									{
+										//clamp using same adjustment as in NPC_Begin
+										totalDmg[i] = 5;
+									}
 								}
 							}
 						}
 						else
 						{
-							// my enemy has a saber
-							if (g_saberRealisticCombat->integer < 3)
+							// need to add better damage control here for saber v gunner at high damage
+							if (totalDmg[i] < 50)
 							{
-								// enemy has more than 30hp
-								if (g_saberRealisticCombat->integer == 2 && victim->NPC && victim->health >= 30)
-								{
-									dflags |= DAMAGE_NO_KILL;
-									totalDmg[i] = 30;
-								}
-								else if (g_saberRealisticCombat->integer == 1 && victim->NPC && victim->health >=
-									30)
-								{
-									dflags |= DAMAGE_NO_KILL;
-									totalDmg[i] = 25;
-								}
-								else if (g_saberRealisticCombat->integer == 0 && victim->NPC && victim->health >=
-									30)
-								{
-									dflags |= DAMAGE_NO_KILL;
-									totalDmg[i] = 10;
-								}
-								else
-								{
-									// enemy has less than 30 hp
-									if (g_saberRealisticCombat->integer == 2)
-									{
-										if (totalDmg[i] < 35)
-										{
-											totalDmg[i] = 35;
-										}
-										if (totalDmg[i] > 35)
-										{
-											//clamp using same adjustment as in NPC_Begin
-											totalDmg[i] = 35;
-										}
-									}
-									else if (g_saberRealisticCombat->integer == 1)
-									{
-										if (totalDmg[i] < 15)
-										{
-											totalDmg[i] = 15;
-										}
-										if (totalDmg[i] > 15)
-										{
-											//clamp using same adjustment as in NPC_Begin
-											totalDmg[i] = 15;
-										}
-									}
-									else if (g_saberRealisticCombat->integer == 0)
-									{
-										if (totalDmg[i] < 5)
-										{
-											totalDmg[i] = 5;
-										}
-										if (totalDmg[i] > 5)
-										{
-											//clamp using same adjustment as in NPC_Begin
-											totalDmg[i] = 5;
-										}
-									}
-								}
+								totalDmg[i] = 50;
 							}
-							else
+							if (totalDmg[i] > 100)
 							{
-								// need to add better damage control here for saber v gunner at high damage
-								if (totalDmg[i] < 50)
-								{
-									totalDmg[i] = 50;
-								}
-								if (totalDmg[i] > 100)
-								{
-									//clamp using same adjustment as in NPC_Begin
-									totalDmg[i] = 100;
-								}
+								//clamp using same adjustment as in NPC_Begin
+								totalDmg[i] = 100;
 							}
 						}
 					}
@@ -6817,15 +6740,17 @@ qboolean WP_SabersCheckLock(gentity_t* ent1, gentity_t* ent2)
 
 qboolean WP_SaberParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!victim || !victim->client || !attacker)
+	{
+		return qfalse;
+	}
+
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (!victim || !victim->client || !attacker)
-	{
-		return qfalse;
-	}
 	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
@@ -6949,15 +6874,17 @@ qboolean WP_SaberBlockedBounceBlock(gentity_t* victim, gentity_t* attacker, cons
 
 qboolean WP_SaberNPCParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!victim || !victim->client || !attacker)
+	{
+		return qfalse;
+	}
+
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (!victim || !victim->client || !attacker)
-	{
-		return qfalse;
-	}
 	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
@@ -7011,15 +6938,17 @@ qboolean WP_SaberNPCParry(gentity_t* victim, gentity_t* attacker, const int sabe
 
 qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!victim || !victim->client || !attacker)
+	{
+		return qfalse;
+	}
+
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (!victim || !victim->client || !attacker)
-	{
-		return qfalse;
-	}
 	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
@@ -7073,15 +7002,17 @@ qboolean WP_SaberMBlock(gentity_t* victim, gentity_t* attacker, const int saberN
 
 qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!victim || !victim->client || !attacker)
+	{
+		return qfalse;
+	}
+
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (!victim || !victim->client || !attacker)
-	{
-		return qfalse;
-	}
 	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
@@ -7135,15 +7066,17 @@ qboolean WP_SaberNPCMBlock(gentity_t* victim, gentity_t* attacker, const int sab
 
 qboolean WP_SaberNPCFatiguedParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!victim || !victim->client || !attacker)
+	{
+		return qfalse;
+	}
+
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (!victim || !victim->client || !attacker)
-	{
-		return qfalse;
-	}
 	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
@@ -7197,15 +7130,17 @@ qboolean WP_SaberNPCFatiguedParry(gentity_t* victim, gentity_t* attacker, const 
 
 qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!victim || !victim->client || !attacker)
+	{
+		return qfalse;
+	}
+
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (!victim || !victim->client || !attacker)
-	{
-		return qfalse;
-	}
 	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
@@ -7259,15 +7194,17 @@ qboolean WP_SaberSlowBounceBlock(gentity_t* victim, gentity_t* attacker, const i
 
 qboolean WP_SaberFatiguedParry(gentity_t* victim, gentity_t* attacker, const int saberNum, const int bladeNum, vec3_t hit_loc)
 {
+	// 2026-11-10 (audit): null check moved up, it came after the first use
+	if (!victim || !victim->client || !attacker)
+	{
+		return qfalse;
+	}
+
 	const qboolean npc_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_NPCBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean m_blocking = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_PERFECTBLOCKING)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((victim->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-	if (!victim || !victim->client || !attacker)
-	{
-		return qfalse;
-	}
 	if (Rosh_BeingHealed(victim))
 	{
 		return qfalse;
@@ -10884,13 +10821,13 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					//my saber is in hand
 					if (ent->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
 					{
-						if (PM_SaberInAttack(ent->client->ps.saberMove)
-							|| PM_SaberInSpecialAttack(ent->client->ps.torsoAnim)
+						if ((PM_SaberInAttack(ent->client->ps.saberMove)
+							|| PM_SaberInSpecialAttack(ent->client->ps.torsoAnim)) // bug fix 2026-11-10: brackets, the checks below applied to special attacks only
 							&& !PM_SaberInIdle(ent->client->ps.saberMove)
 							&& !PM_SaberInParry(ent->client->ps.saberMove)
 							&& !PM_SaberInReflect(ent->client->ps.saberMove)
 							&& !PM_SaberInBounce(ent->client->ps.saberMove)
-							&& !PM_SaberInMassiveBounce(ent->client->ps.saberMove))
+							&& !PM_SaberInMassiveBounce(ent->client->ps.torsoAnim))
 						{
 							//in the middle of attacking
 							if (hit_owner->health > 0)
@@ -10948,13 +10885,13 @@ static void wp_saber_damage_trace_amd(gentity_t* ent, int saberNum, int bladeNum
 					&& hit_owner->client->ps.saberLockTime < level.time)
 				{
 					//their saber is in hand
-					if (PM_SaberInAttack(hit_owner->client->ps.saberMove) || PM_SaberInSpecialAttack(
-						hit_owner->client->ps.torsoAnim)
+					if ((PM_SaberInAttack(hit_owner->client->ps.saberMove) || PM_SaberInSpecialAttack(
+						hit_owner->client->ps.torsoAnim)) // bug fix 2026-11-10: brackets, the checks below applied to special attacks only
 						&& !PM_SaberInIdle(hit_owner->client->ps.saberMove)
 						&& !PM_SaberInParry(hit_owner->client->ps.saberMove)
 						&& !PM_SaberInReflect(hit_owner->client->ps.saberMove)
 						&& !PM_SaberInBounce(hit_owner->client->ps.saberMove)
-						&& !PM_SaberInMassiveBounce(hit_owner->client->ps.saberMove))
+						&& !PM_SaberInMassiveBounce(hit_owner->client->ps.torsoAnim))
 					{
 						//in the middle of attacking
 						if (d_blockinfo->integer || g_DebugSaberCombat->integer)
@@ -12296,13 +12233,13 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					//my saber is in hand
 					if (ent->client->ps.saberBlocked != BLOCKED_PARRY_BROKEN)
 					{
-						if (PM_SaberInAttack(ent->client->ps.saberMove)
-							|| PM_SaberInSpecialAttack(ent->client->ps.torsoAnim)
+						if ((PM_SaberInAttack(ent->client->ps.saberMove)
+							|| PM_SaberInSpecialAttack(ent->client->ps.torsoAnim)) // bug fix 2026-11-10: brackets, the checks below applied to special attacks only
 							&& !PM_SaberInIdle(ent->client->ps.saberMove)
 							&& !PM_SaberInParry(ent->client->ps.saberMove)
 							&& !PM_SaberInReflect(ent->client->ps.saberMove)
 							&& !PM_SaberInBounce(ent->client->ps.saberMove)
-							&& !PM_SaberInMassiveBounce(ent->client->ps.saberMove))
+							&& !PM_SaberInMassiveBounce(ent->client->ps.torsoAnim))
 						{
 							//in the middle of attacking
 							if (hit_owner->health > 0)
@@ -12360,13 +12297,13 @@ static void WP_SaberDamageTrace_MD(gentity_t* ent, int saberNum, int bladeNum)
 					&& hit_owner->client->ps.saberLockTime < level.time)
 				{
 					//their saber is in hand
-					if (PM_SaberInAttack(hit_owner->client->ps.saberMove) || PM_SaberInSpecialAttack(
-						hit_owner->client->ps.torsoAnim)
+					if ((PM_SaberInAttack(hit_owner->client->ps.saberMove) || PM_SaberInSpecialAttack(
+						hit_owner->client->ps.torsoAnim)) // bug fix 2026-11-10: brackets, the checks below applied to special attacks only
 						&& !PM_SaberInIdle(hit_owner->client->ps.saberMove)
 						&& !PM_SaberInParry(hit_owner->client->ps.saberMove)
 						&& !PM_SaberInReflect(hit_owner->client->ps.saberMove)
 						&& !PM_SaberInBounce(hit_owner->client->ps.saberMove)
-						&& !PM_SaberInMassiveBounce(hit_owner->client->ps.saberMove))
+						&& !PM_SaberInMassiveBounce(hit_owner->client->ps.torsoAnim))
 					{
 						//in the middle of attacking
 						if (d_blockinfo->integer || g_DebugSaberCombat->integer)
@@ -16919,8 +16856,8 @@ qboolean Manual_NPCKickAbsorbing(const gentity_t* defender) //Is this guy blocki
 		|| PM_SaberInReturn(defender->client->ps.saberMove)
 		|| PM_SaberInKnockaway(defender->client->ps.saberMove)
 		|| PM_SaberInBrokenParry(defender->client->ps.saberMove)
-		|| PM_SaberInMassiveBounce(defender->client->ps.saberMove)
-		|| PM_SaberInBashedAnim(defender->client->ps.saberMove)
+		|| PM_SaberInMassiveBounce(defender->client->ps.torsoAnim)
+		|| PM_SaberInBashedAnim(defender->client->ps.torsoAnim)
 		|| defender->client->ps.groundEntityNum == ENTITYNUM_NONE
 		|| defender->client->ps.userInt3 & 1 << FLAG_FATIGUED)
 	{
@@ -23560,14 +23497,8 @@ void wp_saber_start_missile_block_check_md(gentity_t* self, const usercmd_t* ucm
 							ForceThrow_JKA(self, qfalse);
 						}
 
-						if (g_SerenityJediEngineMode->integer == 2)
-						{
-							PM_AddFatigue(&self->client->ps, FORCE_DEFLECT_PUSH);
-						}
-						else
-						{
-							PM_AddFatigue(&self->client->ps, FORCE_DEFLECT_PUSH);
-						}
+						// 2026-11-10 (audit): "if (g_SerenityJediEngineMode->integer == 2)" had the same code in both branches; kept one
+						PM_AddFatigue(&self->client->ps, FORCE_DEFLECT_PUSH);
 					}
 				}
 			}
@@ -26726,13 +26657,7 @@ void ForceThrow_JKA(gentity_t* self, qboolean pull, qboolean fake)
 							WP_ForceKnockdown(push_target[x], self, pull, static_cast<qboolean>(!pull && knockback > 150),
 								qfalse);
 						}
-						else if (push_target[x]->client->NPC_class == CLASS_GUARD || jedi_jedi_master_low(push_target[x]))
-						{
-							//do a knockdown hes a twat
-							WP_ForceKnockdown(push_target[x], self, pull, static_cast<qboolean>(!pull && knockback > 100),
-								qfalse);
-						}
-						else
+						else // 2026-11-10 (audit): the "else if (push_target[x]->client->NPC_class == CLASS_GUARD || jedi_jedi_master_low(push_target[x]))" branch here was the same code; merged
 						{
 							//NPC and force-push/pull at level 2 or higher
 							WP_ForceKnockdown(push_target[x], self, pull, static_cast<qboolean>(!pull && knockback > 100),
@@ -39564,13 +39489,15 @@ static void ForceShootLightning(gentity_t* self)
 
 void WP_DeactivateSaber(const gentity_t* self, const qboolean clear_length)
 {
-	const qboolean blocking = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
-	const qboolean is_holding_block_button_and_attack = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
-
+	// 2026-11-10 (audit): null check moved up, it came after the first use
 	if (!self || !self->client)
 	{
 		return;
 	}
+
+	const qboolean blocking = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+
 
 	if (blocking || is_holding_block_button_and_attack)
 	{
@@ -39595,13 +39522,15 @@ void WP_DeactivateSaber(const gentity_t* self, const qboolean clear_length)
 
 void WP_DeactivateLightSaber(const gentity_t* self, const qboolean clear_length)
 {
-	const qboolean blocking = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
-	const qboolean is_holding_block_button_and_attack = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
-
+	// 2026-11-10 (audit): null check moved up, it came after the first use
 	if (!self || !self->client)
 	{
 		return;
 	}
+
+	const qboolean blocking = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
+	const qboolean is_holding_block_button_and_attack = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
+
 
 	if (blocking || is_holding_block_button_and_attack)
 	{
@@ -47142,7 +47071,7 @@ void WP_ForcePowersUpdate(gentity_t* self, usercmd_t* ucmd)
 						self->client->ps.weaponTime <= 0 &&
 						self->client->ps.groundEntityNum != ENTITYNUM_NONE &&
 						!PM_SaberInBounce(self->client->ps.saberMove) &&
-						!PM_SaberInMassiveBounce(self->client->ps.saberMove) &&
+						!PM_SaberInMassiveBounce(self->client->ps.torsoAnim) &&
 						!(PM_StabAnim(self->client->ps.legsAnim) ||
 							PM_StabAnim(self->client->ps.torsoAnim)))
 					{
@@ -47208,7 +47137,7 @@ static void WP_BlockPointsUpdate_Base(const gentity_t* self)
 			&& !PM_SaberInReturn(self->client->ps.saberMove)
 			&& !PM_Saberinstab(self->client->ps.saberMove)
 			&& !PM_SaberInBounce(self->client->ps.saberMove)
-			&& !PM_SaberInMassiveBounce(self->client->ps.saberMove)
+			&& !PM_SaberInMassiveBounce(self->client->ps.torsoAnim)
 			&& !is_holding_block_button
 			&& !(self->client->buttons & BUTTON_BLOCK))
 		{
@@ -47330,7 +47259,7 @@ void WP_InitForcePowers(const gentity_t* ent)
 
 	if (!ent->client->ps.blockPointsMax)
 	{
-		ent->client->ps.blockPointsMax = FORCE_POWER_MAX;
+		ent->client->ps.blockPointsMax = BLOCK_POINTS_MAX; // 2026-11-10 (audit): was FORCE_POWER_MAX (same value 100, wrong constant)
 	}
 
 	if (!ent->client->ps.forcePowerRegenRate)
@@ -47722,16 +47651,9 @@ static void player_StopFreeze(gentity_t* self)
 {
 	if (self && self->client)
 	{
-		if (self->client->ps.PlayerEffectFlags & 1 << PEF_FREEZING)
-		{
-			//UnFreeze
-			self->client->ps.PlayerEffectFlags &= ~(1 << PEF_FREEZING);
-		}
-		else
-		{
-			//UnFreeze
-			self->client->ps.PlayerEffectFlags &= ~(1 << PEF_FREEZING);
-		}
+		// 2026-11-10 (audit): "if (self->client->ps.PlayerEffectFlags & 1 << PEF_FREEZING)" had the same code in both branches; kept one
+		//UnFreeze
+		self->client->ps.PlayerEffectFlags &= ~(1 << PEF_FREEZING);
 		self->s.loopSound = 0;
 	}
 }
@@ -47740,22 +47662,8 @@ void Player_CheckFreeze(gentity_t* self)
 {
 	if (self && self->client)
 	{
-		if (self->health <= 0 || self->painDebounceTime < level.time)
-		{
-			player_StopFreeze(self);
-		}
-		else if (PM_InRoll(&self->client->ps))
-		{
-			player_StopFreeze(self);
-		}
-		else if (TIMER_Done(self, "FreezeDebounce"))
-		{
-			player_StopFreeze(self);
-		}
-		else
-		{
-			player_StopFreeze(self);
-		}
+		// 2026-11-10 (audit): "if (self->health <= 0 || self->painDebounceTime < level.time)" had the same code in both branches; kept one
+		player_StopFreeze(self);
 	}
 }
 
@@ -47818,14 +47726,8 @@ void BG_ReduceSaberMishapLevel(playerState_t* ps)
 void BG_ReduceBlasterMishapLevelAdvanced(playerState_t* ps)
 {
 	//reduces a player's mishap meter by one level
-	if (ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_MIN)
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_NONE;
-	}
-	else
-	{
-		ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_NONE;
-	}
+	// 2026-11-10 (audit): "if (ps->BlasterAttackChainCount > BLASTERMISHAPLEVEL_MIN)" had the same code in both branches; kept one
+	ps->BlasterAttackChainCount = BLASTERMISHAPLEVEL_NONE;
 }
 
 qboolean BG_SaberInPartialDamageMove(gentity_t* self)
@@ -47876,57 +47778,18 @@ qboolean BG_SaberInPartialDamageMove(gentity_t* self)
 	case BOTH_FJSS_TR_BL:              return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
 	case BOTH_FJSS_TL_BR:              return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
 	case BOTH_FORCELEAP2_T__B_:
-		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-		{
-			if (W_Animationstyletable(self).isPalpatine == qtrue)
-			{
-				return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
-			}
-			else
-			{
-				return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
-			}
-		}
-		else
-		{
-			return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
-		}
+		// 2026-11-10 (audit): "if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)" had the same code in both branches; kept one
+		return static_cast<qboolean>(percent_complete < 0.50 || percent_complete > 0.75);
 	case BOTH_JUMPFLIPSTABDOWN:        return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
 	case BOTH_JUMPFLIPSLASHDOWN1:      return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);
 	case BOTH_ROLL_STAB:               return static_cast<qboolean>(percent_complete < 0.30 || percent_complete > 0.75);
 	case BOTH_JUMPATTACK6:
-		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-		{
-			if (W_Animationstyletable(self).isGrievous == qtrue)
-			{
-				return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			}
-			else
-			{
-				return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-			}
-		}
-		else
-		{
-			return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
-		}
+		// 2026-11-10 (audit): "if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)" had the same code in both branches; kept one
+		return static_cast<qboolean>(percent_complete < 0.25 || percent_complete > 0.90);
 	case BOTH_JUMPATTACK7:             return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.90);
 	case BOTH_SPINATTACK6:
-		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-		{
-			if (W_Animationstyletable(self).isGrievous == qtrue)
-			{
-				return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
-			}
-			else
-			{
-				return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
-			}
-		}
-		else
-		{
-			return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
-		}
+		// 2026-11-10 (audit): "if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)" had the same code in both branches; kept one
+		return static_cast<qboolean>(percent_complete < 0.35 || percent_complete > 0.80);
 	case BOTH_SPINATTACK7:             return static_cast<qboolean>(percent_complete < 0.45 || percent_complete > 0.85);
 	case BOTH_FORCEJUMPDASH_ATTACK:
 	case BOTH_FORCELONGLEAP_ATTACK:    return static_cast<qboolean>(percent_complete < 0.20 || percent_complete > 0.80);

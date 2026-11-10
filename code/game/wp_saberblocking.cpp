@@ -761,7 +761,9 @@ static void sab_beh_add_balance(const gentity_t* self, int amount)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker, const int saberNum)
+// 2026-11-10 (audit fix): this took one saberNum, the saber of the fighter that made the hit, and used it for both
+// fighters (disarm + mishap). Now each side gets its own: the hitter's saberNum and 0 (main saber) for the other one.
+static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker, const int attacker_saber, const int blocker_saber)
 {
 	// Safety guards
 	if (!attacker || !attacker->client || !blocker || !blocker->client)
@@ -835,7 +837,7 @@ static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker
 
 		if (blocker->client->ps.blockPoints < BLOCKPOINTS_TEN)
 		{
-			SabBeh_SaberShouldBeDisarmedBlocker(blocker, saberNum);
+			SabBeh_SaberShouldBeDisarmedBlocker(blocker, blocker_saber);
 			wp_block_points_regenerate_over_ride(blocker, BLOCKPOINTS_FATIGUE);
 		}
 		else
@@ -857,13 +859,13 @@ static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker
 
 		if (attacker->client->ps.blockPoints < BLOCKPOINTS_TEN)
 		{
-			sab_beh_saber_should_be_disarmed_attacker(attacker, saberNum);
+			sab_beh_saber_should_be_disarmed_attacker(attacker, attacker_saber);
 			wp_block_points_regenerate_over_ride(attacker, BLOCKPOINTS_FATIGUE);
 		}
 		else
 		{
 			G_Stagger(attacker);
-			PM_AddBlockFatigue(&attacker->client->ps, BLOCKPOINTS_TEN);
+			PM_AddBlockFatigue(&attacker->client->ps, WP_ClassBlockPointCost(attacker, BLOCKPOINTS_TEN, qfalse)); // 2026-11-10: class cost, as the other kata branch (was a flat 10)
 		}
 
 		return qtrue;
@@ -876,8 +878,8 @@ static qboolean sab_beh_attack_vs_attack(gentity_t* attacker, gentity_t* blocker
 	sab_beh_add_balance(attacker, MPCOST_PARRIED);
 	sab_beh_add_balance(blocker, MPCOST_PARRIED);
 
-	sab_beh_attack_blocked(attacker, blocker, saberNum, qtrue);
-	sab_beh_attack_blocked(blocker, attacker, saberNum, qtrue);
+	sab_beh_attack_blocked(attacker, blocker, attacker_saber, qtrue);
+	sab_beh_attack_blocked(blocker, attacker, blocker_saber, qtrue);
 
 	return qtrue;
 }
@@ -923,7 +925,7 @@ qboolean sab_beh_attack_vs_block(gentity_t* attacker, gentity_t* blocker, const 
 			gi.Printf(S_COLOR_YELLOW"Both Attacker and Blocker are now attacking\n");
 		}
 
-		sab_beh_attack_vs_attack(attacker, blocker, saberNum);
+		sab_beh_attack_vs_attack(attacker, blocker, saberNum, 0);
 	}
 	else if (PM_SuperBreakWinAnim(attacker->client->ps.torsoAnim))
 	{
@@ -1205,7 +1207,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
 							{
 								PM_AddBlockFatigue(&attacker->client->ps, BLOCKPOINTS_FATIGUE); //BP Punish Attacker
-								sab_beh_add_balance(attacker, BLOCKPOINTS_TEN); //SAC Punish attacker
+								sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker (bug fix 2026-11-10: was BLOCKPOINTS_TEN, a block point value: +10 of the 15 fatigue levels)
 							}
 							else
 							{
@@ -1561,7 +1563,7 @@ qboolean sab_beh_block_vs_attack(gentity_t* blocker, gentity_t* attacker, const 
 							if (attacker->NPC && !G_ControlledByPlayer(attacker)) //NPC only
 							{
 								PM_AddFatigue(&attacker->client->ps, BLOCKPOINTS_FATIGUE); //BP Punish Attacker
-								sab_beh_add_balance(attacker, BLOCKPOINTS_TEN); //SAC Punish attacker
+								sab_beh_add_balance(attacker, MPCOST_MBLOCKED); //SAC Punish attacker (bug fix 2026-11-10: was BLOCKPOINTS_TEN, a block point value: +10 of the 15 fatigue levels)
 							}
 							else
 							{

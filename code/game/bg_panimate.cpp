@@ -10977,101 +10977,34 @@ void PM_TorsoAnimation()
 						|| PM_SwimmingAnim(pm->ps->legsAnim))
 					{
 						//running sniper weapon uses normal ready
-						if (pm->ps->clientNum)
+						// 2026-11-10 (audit): "if (pm->ps->clientNum)" had the same code in both branches; kept one
+						// 2026-11-10 (audit): "if (cg.renderingThirdPerson)" had the same code in both branches; kept one
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							if (cg.renderingThirdPerson)
+							if (flags.isBattleDroid == qtrue)
 							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
 							}
 							else
 							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
 							}
 						}
 						else
 						{
-							if (cg.renderingThirdPerson)
-							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
-							}
-							else
-							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
-							}
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
 						}
 					}
 					else
 					{
 						if (pm->ps->clientNum)
 						{
-							if (cg.renderingThirdPerson)
+							// 2026-11-10 (audit): "if (cg.renderingThirdPerson)" had the same code in both branches; kept one
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								if (flags.isBattleDroid == qtrue)
 								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-									}
+									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 								}
 								else
 								{
@@ -11080,37 +11013,17 @@ void PM_TorsoAnimation()
 							}
 							else
 							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
 							}
 						}
 						else
 						{
-							if (cg.renderingThirdPerson)
+							// 2026-11-10 (audit): "if (cg.renderingThirdPerson)" had the same code in both branches; kept one
+							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+								if (flags.isBattleDroid == qtrue)
 								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-									}
+									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
 								}
 								else
 								{
@@ -11119,21 +11032,7 @@ void PM_TorsoAnimation()
 							}
 							else
 							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
 							}
 						}
 					}
@@ -11305,18 +11204,12 @@ void PM_TorsoAnimation()
 					}
 					else
 					{
-						if (cg.renderingThirdPerson)
+						// 2026-11-10 (audit): "if (cg.renderingThirdPerson)" had the same code in both branches; kept one
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							if (flags.isBattleDroid == qtrue)
 							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
 							}
 							else
 							{
@@ -11325,21 +11218,7 @@ void PM_TorsoAnimation()
 						}
 						else
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-								}
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-							}
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
 						}
 					}
 					break;
@@ -12853,118 +12732,56 @@ void PM_TorsoAnimation()
 					break;
 
 				case WP_TUSKEN_RIFLE:
-					if ((pm->ps->weaponstate != WEAPON_FIRING
-						&& pm->ps->weaponstate != WEAPON_CHARGING
-						&& pm->ps->weaponstate != WEAPON_CHARGING_ALT)
-						|| PM_RunningAnim(pm->ps->legsAnim)
-						|| PM_WalkingAnim(pm->ps->legsAnim)
-						|| PM_JumpingAnim(pm->ps->legsAnim)
-						|| PM_SwimmingAnim(pm->ps->legsAnim))
-					{//running sniper weapon uses normal ready
-						if (pm->ps->clientNum)
+					// 2026-11-10 (audit): "if ((pm->ps->weaponstate != WEAPON_FIRING && pm->ps->weaponstate != WEAPON_CHARGING && pm->...)" had the same code in both branches; kept one
+					if (pm->ps->clientNum)
+					{
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							if (flags.isBattleDroid == qtrue)
 							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
 							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-							}
-
-							if (cg.renderingThirdPerson)
-							{
-								if (is_walking_and_blocking == qtrue)
-								{
-									PM_HandleGunnerAim(is_walking_and_blocking);
-								}
-								else
-								{
-									if (pm->ps->communicatingflags & (1u << CF_AIMINGGUN))
-									{
-										PM_RemoveGunnerAimFlag(qtrue);
-									}
-								}
 							}
 						}
 						else
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
+						}
+
+						if (cg.renderingThirdPerson)
+						{
+							if (is_walking_and_blocking == qtrue)
 							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
+								PM_HandleGunnerAim(is_walking_and_blocking);
 							}
 							else
 							{
-								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
+								if (pm->ps->communicatingflags & (1u << CF_AIMINGGUN))
+								{
+									PM_RemoveGunnerAimFlag(qtrue);
+								}
 							}
 						}
 					}
 					else
 					{
-						if (pm->ps->clientNum)
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							if (flags.isBattleDroid == qtrue)
 							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
 							}
 							else
 							{
 								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-							}
-
-							if (cg.renderingThirdPerson)
-							{
-								if (is_walking_and_blocking == qtrue)
-								{
-									PM_HandleGunnerAim(is_walking_and_blocking);
-								}
-								else
-								{
-									if (pm->ps->communicatingflags & (1u << CF_AIMINGGUN))
-									{
-										PM_RemoveGunnerAimFlag(qtrue);
-									}
-								}
 							}
 						}
 						else
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-								}
-							}
-							else
-							{
-								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
-							}
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY4, SETANIM_FLAG_NORMAL);
 						}
 					}
 					break;
@@ -13091,18 +12908,13 @@ void PM_TorsoAnimation()
 					}
 					if (weaponBusy)
 					{
-						if (pm->gent->alt_fire)
+						// 2026-11-10 (audit): "if (pm->gent->alt_fire)" had the same code in both branches; kept one
+						// 2026-11-10 (audit): "if (cg.renderingThirdPerson)" had the same code in both branches; kept one
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							if (flags.isBattleDroid == qtrue)
 							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
 							}
 							else
 							{
@@ -13111,42 +12923,7 @@ void PM_TorsoAnimation()
 						}
 						else
 						{
-							if (cg.renderingThirdPerson)
-							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-								}
-							}
-							else
-							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
-								}
-							}
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY3, SETANIM_FLAG_NORMAL);
 						}
 					}
 					else if (PM_RunningAnim(pm->ps->legsAnim)
@@ -13160,18 +12937,13 @@ void PM_TorsoAnimation()
 					}
 					else
 					{
-						if (pm->gent->alt_fire)
+						// 2026-11-10 (audit): "if (pm->gent->alt_fire)" had the same code in both branches; kept one
+						// 2026-11-10 (audit): "if (cg.renderingThirdPerson)" had the same code in both branches; kept one
+						if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 						{
-							if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
+							if (flags.isBattleDroid == qtrue)
 							{
-								if (flags.isBattleDroid == qtrue)
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3_BDROID, SETANIM_FLAG_NORMAL);
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3, SETANIM_FLAG_NORMAL);
-								}
+								PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3_BDROID, SETANIM_FLAG_NORMAL);
 							}
 							else
 							{
@@ -13180,42 +12952,7 @@ void PM_TorsoAnimation()
 						}
 						else
 						{
-							if (cg.renderingThirdPerson)
-							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3, SETANIM_FLAG_NORMAL);
-								}
-							}
-							else
-							{
-								if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
-								{
-									if (flags.isBattleDroid == qtrue)
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3_BDROID, SETANIM_FLAG_NORMAL);
-									}
-									else
-									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3, SETANIM_FLAG_NORMAL);
-									}
-								}
-								else
-								{
-									PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3, SETANIM_FLAG_NORMAL);
-								}
-							}
+							PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONIDLE3, SETANIM_FLAG_NORMAL);
 						}
 					}
 					break;

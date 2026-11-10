@@ -1857,11 +1857,15 @@ Jedi_Move
 
 static qboolean Jedi_Move(gentity_t* goal, const qboolean retreat)
 {
-	const qboolean moved = NPC_MoveToGoal(qtrue);
 	navInfo_t info;
 
+	// bug fix 2026-11-10: the goal was set AFTER NPC_MoveToGoal (base JKA sets it first). One failed step (or bumping
+	// the enemy) runs jedi_hold_position, which clears the goal, and from then on every advance steered to no goal,
+	// failed and cleared it again: two NPCs further apart than the close-range walk-in just stood there taunting.
 	NPCInfo->combatMove = qtrue;
 	NPCInfo->goalEntity = goal;
+
+	const qboolean moved = NPC_MoveToGoal(qtrue);
 
 	if (retreat)
 	{
@@ -2131,93 +2135,47 @@ static void Jedi_AdjustSaberAnimLevel(const gentity_t* self, const int new_level
 		return;
 	}
 
-	if (self->client->playerTeam == TEAM_ENEMY)
+	// 2026-11-10 (audit): "if (self->client->playerTeam == TEAM_ENEMY)" had the same code in both branches; kept one
+	if (!Q_stricmp("cultist_saber_all", self->NPC_type)
+		|| !Q_stricmp("cultist_saber_all_throw", self->NPC_type)
+		|| !Q_stricmp("md_maul_tcw", self->NPC_type)
+		|| !Q_stricmp("md_maul_cyber_tcw", self->NPC_type))
 	{
-		if (!Q_stricmp("cultist_saber_all", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_all_throw", self->NPC_type)
-			|| !Q_stricmp("md_maul_tcw", self->NPC_type)
-			|| !Q_stricmp("md_maul_cyber_tcw", self->NPC_type))
-		{
-			//use any, regardless of rank, etc.
-		}
-		else if (!Q_stricmp("cultist_saber", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_throw", self->NPC_type))
-		{
-			//fast only
-			self->client->ps.saberAnimLevel = SS_FAST;
-		}
-		else if (!Q_stricmp("cultist_saber_med", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_med_throw", self->NPC_type))
-		{
-			//med only
-			self->client->ps.saberAnimLevel = SS_MEDIUM;
-		}
-		else if (!Q_stricmp("cultist_saber_strong", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_strong_throw", self->NPC_type))
-		{
-			//strong only
-			self->client->ps.saberAnimLevel = SS_STRONG;
-		}
-		else if (npc_is_dual_style(self))
-		{
-			//dual only (and stay: the random style picked below used to replace it)
-			self->client->ps.saberAnimLevel = SS_DUAL;
-			return;
-		}
-		else if (npc_is_staff_style(self))
-		{
-			//staff only (and stay: the random style picked below used to replace it)
-			self->client->ps.saberAnimLevel = SS_STAFF;
-			return;
-		}
-		else
-		{
-			//use any, regardless of rank, etc.
-		}
+		//use any, regardless of rank, etc.
+	}
+	else if (!Q_stricmp("cultist_saber", self->NPC_type)
+		|| !Q_stricmp("cultist_saber_throw", self->NPC_type))
+	{
+		//fast only
+		self->client->ps.saberAnimLevel = SS_FAST;
+	}
+	else if (!Q_stricmp("cultist_saber_med", self->NPC_type)
+		|| !Q_stricmp("cultist_saber_med_throw", self->NPC_type))
+	{
+		//med only
+		self->client->ps.saberAnimLevel = SS_MEDIUM;
+	}
+	else if (!Q_stricmp("cultist_saber_strong", self->NPC_type)
+		|| !Q_stricmp("cultist_saber_strong_throw", self->NPC_type))
+	{
+		//strong only
+		self->client->ps.saberAnimLevel = SS_STRONG;
+	}
+	else if (npc_is_dual_style(self))
+	{
+		//dual only (and stay: the random style picked below used to replace it)
+		self->client->ps.saberAnimLevel = SS_DUAL;
+		return;
+	}
+	else if (npc_is_staff_style(self))
+	{
+		//staff only (and stay: the random style picked below used to replace it)
+		self->client->ps.saberAnimLevel = SS_STAFF;
+		return;
 	}
 	else
 	{
-		if (!Q_stricmp("cultist_saber_all", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_all_throw", self->NPC_type)
-			|| !Q_stricmp("md_maul_tcw", self->NPC_type)
-			|| !Q_stricmp("md_maul_cyber_tcw", self->NPC_type))
-		{
-			//use any, regardless of rank, etc.
-		}
-		else if (!Q_stricmp("cultist_saber", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_throw", self->NPC_type))
-		{
-			//fast only
-			self->client->ps.saberAnimLevel = SS_FAST;
-		}
-		else if (!Q_stricmp("cultist_saber_med", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_med_throw", self->NPC_type))
-		{
-			//med only
-			self->client->ps.saberAnimLevel = SS_MEDIUM;
-		}
-		else if (!Q_stricmp("cultist_saber_strong", self->NPC_type)
-			|| !Q_stricmp("cultist_saber_strong_throw", self->NPC_type))
-		{
-			//strong only
-			self->client->ps.saberAnimLevel = SS_STRONG;
-		}
-		else if (npc_is_dual_style(self))
-		{
-			//dual only (and stay: the random style picked below used to replace it)
-			self->client->ps.saberAnimLevel = SS_DUAL;
-			return;
-		}
-		else if (npc_is_staff_style(self))
-		{
-			//staff only (and stay: the random style picked below used to replace it)
-			self->client->ps.saberAnimLevel = SS_STAFF;
-			return;
-		}
-		else
-		{
-			//use any, regardless of rank, etc.
-		}
+		//use any, regardless of rank, etc.
 	}
 	if (new_level < SS_FAST)
 	{
@@ -2753,7 +2711,7 @@ static void Jedi_CombatDistance(const int enemy_dist)
 		ps->weapon == WP_SABER &&
 		enemy->s.weapon == WP_SABER &&
 		!PM_SaberInMassiveBounce(ps->torsoAnim) &&
-		!PM_SaberInBounce(ps->torsoAnim) &&
+		!PM_SaberInBounce(ps->saberMove) && // bug fix 2026-11-10: was ps->torsoAnim (an anim in a saber-move check, never true)
 		!PM_SaberInBashedAnim(ps->torsoAnim) &&
 		!PM_InKnockDown(&NPC->client->ps) &&
 		InFront(enemy->currentOrigin, NPC->currentOrigin, ps->viewangles, 0.7f) &&
