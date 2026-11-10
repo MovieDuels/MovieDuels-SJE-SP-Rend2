@@ -7333,12 +7333,13 @@ qboolean WP_BoltBlockVictimFatigued(gentity_t* victim)
 		return qfalse;
 	}
 
+	// the pool this mode blocks with: block points in mode 2, the force pool otherwise. (Both were checked, so in
+	// mode 2 a low force pool - after using force powers - knocked the saber out of your hand on a bolt block.)
+	const int block_pool = (g_SerenityJediEngineMode->integer == 2) ? victim->client->ps.blockPoints : victim->client->ps.forcePower;
+
 	if (victim->s.weapon == WP_SABER &&
 		victim->client->ps.SaberActive() &&
-		victim->client->ps.blockPoints <= BLOCKPOINTS_TEN ||
-		victim->s.weapon == WP_SABER &&
-		victim->client->ps.SaberActive() &&
-		victim->client->ps.forcePower <= BLOCKPOINTS_TEN)
+		block_pool <= BLOCKPOINTS_TEN)
 	{
 		//knock their asses down!!
 		WP_BoltBlockStaggerOrStumble(victim);
@@ -17192,12 +17193,13 @@ static int BasicSaberBlockCost(const int attacker_style)
 
 static qboolean IsMoving(const gentity_t* ent)
 {
+	// SP keeps the movement input in client->usercmd: pers.cmd is never filled in SP, so this always said "not moving".
 	if (!ent || !ent->client)
 		return qfalse;
 
-	if (ent->client->pers.cmd.upmove == 0
-		&& ent->client->pers.cmd.forwardmove == 0
-		&& ent->client->pers.cmd.rightmove == 0)
+	if (ent->client->usercmd.upmove == 0
+		&& ent->client->usercmd.forwardmove == 0
+		&& ent->client->usercmd.rightmove == 0)
 		return qfalse;
 
 	return qtrue;
@@ -17599,17 +17601,13 @@ int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, const qboolean 
 
 	if (!(self->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK))
 	{
-		if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
+		if (!(self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self) && self->client->ps.SaberActive()))
 		{
-			//bots just randomly parry to make up for them not intelligently parrying.
-			if (self->client->ps.weapon == WP_SABER && self->client->ps.SaberActive() && !self->client->ps.
-				saberInFlight)
-			{
-				return 1;
-			}
 			return 0;
 		}
-		return 0;
+		// an NPC blocks bolts without the block button, but like the player he has to stand, not run in force speed,
+		// face the bolt and have the points for it (checked below). This returned 1 here for every bolt: NPCs blocked
+		// bolts from behind, knocked down or in force speed.
 	}
 
 	if (PM_SaberInBrokenParry(self->client->ps.saberMove))
@@ -17644,17 +17642,7 @@ int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, const qboolean 
 
 	if (self->client->ps.weaponstate == WEAPON_RAISING)
 	{
-		if (self->s.number >= MAX_CLIENTS && !G_ControlledByPlayer(self))
-		{
-			//bots just randomly parry to make up for them not intelligently parrying.
-			if (self->client->ps.weapon == WP_SABER && self->client->ps.SaberActive() && !self->client->ps.
-				saberInFlight)
-			{
-				return 1;
-			}
-			return 0;
-		}
-		return 0;
+		return 0; // (NPCs too: they blocked here regardless)
 	}
 
 	if (!WalkCheck(self) && self->client->ps.forcePowersActive & 1 << FP_SPEED)
@@ -17667,6 +17655,18 @@ int WP_SaberMustBoltBlock(gentity_t* self, const gentity_t* atk, const qboolean 
 	{
 		//can't block while knocked down or getting up from knockdown.
 		return 0;
+	}
+
+	if (atk->s.eType == ET_MISSILE)
+	{
+		// Jedi cannot block shots from behind (the cone of a bolt that hits the blade). A bolt hitting the body was
+		// blocked from any direction.
+		vec3_t bolt_org;
+		VectorCopy(atk->currentOrigin, bolt_org);
+		if (!InFront(bolt_org, self->currentOrigin, self->client->ps.viewangles, SABER_REFLECT_MISSILE_CONE))
+		{
+			return 0;
+		}
 	}
 
 	if (atk && atk->client && atk->client->ps.weapon == WP_SABER)
@@ -33244,10 +33244,11 @@ extern qboolean char_is_force_user_attacker(const gentity_t* self);
 //Dash stuff
 int IsPressingDashButton(const gentity_t* self)
 {
+	// usercmd, not pers.cmd (never filled in SP): the "not jumping/crouching" check never worked.
 	if (PM_RunningAnim(self->client->ps.legsAnim)
 		&& !PM_SaberInAttack(self->client->ps.saberMove)
 		&& !PM_KickMove(self->client->ps.saberMove)
-		&& self->client->pers.cmd.upmove == 0
+		&& self->client->usercmd.upmove == 0
 		&& !self->client->hookhasbeenfired
 		&& self->client->ps.Dash_Count < 3
 		&& (!(self->client->buttons & BUTTON_KICK))
@@ -33275,15 +33276,15 @@ static void ForceHopAnim(gentity_t* self)
 {
 	constexpr int setAnimOverride = SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD;
 
-	if (self->client->pers.cmd.rightmove > 0)
+	if (self->client->usercmd.rightmove > 0)
 	{
 		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_R, setAnimOverride);
 	}
-	else if (self->client->pers.cmd.rightmove < 0)
+	else if (self->client->usercmd.rightmove < 0)
 	{
 		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_L, setAnimOverride);
 	}
-	else if (self->client->pers.cmd.forwardmove < 0)
+	else if (self->client->usercmd.forwardmove < 0)
 	{
 		NPC_SetAnim(self, SETANIM_BOTH, BOTH_HOP_B, setAnimOverride);
 	}
@@ -33295,9 +33296,10 @@ static void ForceHopAnim(gentity_t* self)
 
 void ForceDashAnimDash(gentity_t* self)
 {
+	// Direction from usercmd (pers.cmd is never filled in SP, so the player always got the forward dash anim).
 	constexpr int setAnimOverride = SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD;
 
-	if (self->client->pers.cmd.rightmove > 0)
+	if (self->client->usercmd.rightmove > 0)
 	{
 		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 		{
@@ -33315,7 +33317,7 @@ void ForceDashAnimDash(gentity_t* self)
 			NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_R, setAnimOverride);
 		}
 	}
-	else if (self->client->pers.cmd.rightmove < 0)
+	else if (self->client->usercmd.rightmove < 0)
 	{
 		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 		{
@@ -33333,7 +33335,7 @@ void ForceDashAnimDash(gentity_t* self)
 			NPC_SetAnim(self, SETANIM_BOTH, BOTH_DASH_L, setAnimOverride);
 		}
 	}
-	else if (self->client->pers.cmd.forwardmove < 0)
+	else if (self->client->usercmd.forwardmove < 0)
 	{
 		if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
 		{
@@ -47519,10 +47521,10 @@ qboolean g_accurate_blocking(const gentity_t* blocker, const gentity_t* attacker
 	hit_flat[2] = hit_pos[2] - (attacker->client->ps.viewheight * 0.25f);
 	VectorNormalize(hit_flat);
 
-	// Player's intended parry direction
+	// Player's intended parry direction (usercmd: pers.cmd is never filled in SP, so the player never got a directional parry)
 	parrier_move[0] = 0;
-	parrier_move[1] = blocker->client->pers.cmd.rightmove;
-	parrier_move[2] = -blocker->client->pers.cmd.forwardmove;
+	parrier_move[1] = blocker->client->usercmd.rightmove;
+	parrier_move[2] = -blocker->client->usercmd.forwardmove;
 
 	if (VectorLength(parrier_move) < 0.1f)
 		return qfalse; // no directional input → no parry

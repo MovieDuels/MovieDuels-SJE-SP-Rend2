@@ -1998,10 +1998,10 @@ static void JediDirectionalDashDodge(gentity_t* NPC, gentity_t* enemy)
 		// DASH ANIMATION + SOUND
 		// -------------------------------------------------
 
-		NPC->client->pers.cmd.rightmove = ucmd.rightmove;
-		NPC->client->pers.cmd.forwardmove = ucmd.forwardmove;
+		NPC->client->usercmd.rightmove = ucmd.rightmove;
+		NPC->client->usercmd.forwardmove = ucmd.forwardmove;
 
-		// play dash anim (reads pers.cmd)
+		// play dash anim (reads usercmd, like the player's dash)
 		ForceDashAnimDash(NPC);
 		G_SoundOnEnt(NPC, CHAN_BODY, "sound/weapons/force/dash.mp3");
 
@@ -2052,8 +2052,8 @@ static void JediDirectionalDashAttack(gentity_t* NPC, gentity_t* enemy)
 		// -------------------------------------------------
 		// DASH ANIMATION + SOUND
 		// -------------------------------------------------
-		NPC->client->pers.cmd.forwardmove = ucmd.forwardmove;
-		NPC->client->pers.cmd.rightmove = ucmd.rightmove;
+		NPC->client->usercmd.forwardmove = ucmd.forwardmove;
+		NPC->client->usercmd.rightmove = ucmd.rightmove;
 
 		ForceDashAnimDash(NPC);
 		G_SoundOnEnt(NPC, CHAN_BODY, "sound/weapons/force/dash.mp3");

@@ -2838,10 +2838,10 @@ void G_RunFrame(const int level_time)
 					//using jetpack, drain fuel
 					if (ent->client->jetPackDebReduce < level.time)
 					{
-						if ((ent->client->pers.cmd.forwardmove || ent->client->pers.cmd.upmove || ent->client->pers.cmd.
+						if ((ent->client->usercmd.forwardmove || ent->client->usercmd.upmove || ent->client->usercmd.
 							rightmove) && ent->client->jetPackOn)
 						{
-							//take more if they're thrusting
+							//take more if they're thrusting (usercmd: pers.cmd is never filled in SP)
 							ent->client->ps.jetpackFuel -= 10;
 						}
 						else if (ent->client->flamethrowerOn && ent->client->jetPackOn)

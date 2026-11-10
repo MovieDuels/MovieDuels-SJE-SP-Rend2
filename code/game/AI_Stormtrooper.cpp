@@ -4666,21 +4666,6 @@ void NPC_BSST_Attack(void)
 				}
 				return;
 			}
-			if (NPC->client)
-			{
-				// guardians have a different way to find enemies. He tries to find the quest player and his allies
-				for (int sje_it = 0; sje_it < level.maxclients; sje_it++)
-				{
-					gentity_t* allied_player = &g_entities[sje_it];
-
-					if (allied_player && allied_player->client &&
-						NPC_ClearLOS(allied_player))
-					{
-						// the quest player or one of his allies. If one of them is in line of sight, choose him as enemy
-						NPC->enemy = allied_player;
-					}
-				}
-			}
 		}
 	}
 
