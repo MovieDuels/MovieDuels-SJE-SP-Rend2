@@ -3313,6 +3313,9 @@ static qboolean WP_SaberApplyDamageJKA(gentity_t* ent, const float base_damage, 
 static constexpr int MAX_SWING_VICTIMS = 32;
 static short swingVictims[MAX_GENTITIES][MAX_SWING_VICTIMS];
 static unsigned char swingVictimCount[MAX_GENTITIES];
+// The saber move each attacker had at its last damage trace. A change to an attack, start or transition move begins
+// a new swing (bug fix 2026-11-10, see WP_SabersDamageTrace). Not saved: after a load the next new move resets.
+static short swingLastMove[MAX_GENTITIES];
 
 static void WP_SwingHitsReset(const gentity_t* ent)
 {
@@ -12758,7 +12761,15 @@ void WP_SabersDamageTrace(gentity_t* ent, const qboolean no_effects)
 			!PM_SaberInKillMove(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) &&
 			ent->client->ps.saberLockTime < level.time)
 		{// If we already hit this entity, and we're not in a kata or kill move, don't hit again
-			if (ent->client->ps.saberAttackSequence != ent->client->saberLastAttackSequence)
+			// Bug fix 2026-11-10: a new swing also begins when the attacker goes into a new attack, start or transition move.
+			// saberAttackSequence (the torso anim) is only saved on the WEAPON_FIRING path of PM_WeaponLightsaber, and never
+			// while the block button is held. Moves set before that path returns (spin, leap, jump-dash, roll-stab and pull
+			// attacks, the queued saberMoveNext move, the chain on attack release) kept the old sequence, so the new swing kept
+			// the old swing's victim list and did no damage to an enemy the old swing had already hit.
+			const int swing_move = ent->client->ps.saberMove;
+			const qboolean new_swing_move = swing_move != swingLastMove[ent->s.number]
+				&& (PM_SaberInAttack(swing_move) || PM_SaberInStart(swing_move) || PM_SaberInTransition(swing_move)) ? qtrue : qfalse;
+			if (ent->client->ps.saberAttackSequence != ent->client->saberLastAttackSequence || new_swing_move)
 			{
 				if (g_HitTracking->integer && (ent->s.number < MAX_CLIENTS || G_ControlledByPlayer(ent)))
 				{
@@ -12769,6 +12780,7 @@ void WP_SabersDamageTrace(gentity_t* ent, const qboolean no_effects)
 			}
 		}
 	}
+	swingLastMove[ent->s.number] = static_cast<short>(ent->client->ps.saberMove);
 	// Saber 1.
 	g_saberNoEffects = no_effects;
 	for (int i = 0; i < ent->client->ps.saber[0].numBlades; i++)
@@ -16741,14 +16753,14 @@ int PlayerCanAbsorbKick(const gentity_t* defender, const vec3_t push_dir) //Can 
 {
 	vec3_t p_l_angles, p_l_fwd;
 
-	const qboolean is_holding_block_button = defender->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ? qtrue : qfalse;
-	//Normal Blocking
-
 	if (!defender || !defender->client)
 	{
 		//non-humanoids can't absorb kicks.
 		return qfalse;
 	}
+
+	const qboolean is_holding_block_button = defender->client->ps.ManualBlockingFlags & 1 << MBF_HOLDINGBLOCK ? qtrue : qfalse;
+	//Normal Blocking (bug fix 2026-11-09: read after the null check, it dereferenced defender first)
 
 	if (g_SerenityJediEngineMode->integer) // (MD Mode and AMD mode)
 	{
@@ -16818,13 +16830,14 @@ int BotCanAbsorbKick(const gentity_t* defender, const vec3_t push_dir) //Can the
 {
 	vec3_t p_l_angles, p_l_fwd;
 
-	const qboolean npc_blocking = defender->client->ps.ManualBlockingFlags & 1 << MBF_NPCKICKBLOCK ? qtrue : qfalse;	//NPC Blocking
-
 	if (!defender || !defender->client)
 	{
 		//non-humanoids can't absorb kicks.
 		return qfalse;
 	}
+
+	// read after the null check (it dereferenced defender first, 2026-11-09)
+	const qboolean npc_blocking = defender->client->ps.ManualBlockingFlags & 1 << MBF_NPCKICKBLOCK ? qtrue : qfalse;	//NPC Blocking
 
 	if (in_camera)
 	{
@@ -47440,7 +47453,7 @@ void G_SaberBounce(const gentity_t* self, gentity_t* other)
 		return;
 	}
 
-	if (self->client->ps.saberFatigueChainCount < MISHAPLEVEL_HEAVY)
+	if (self->client->ps.saberFatigueChainCount < MISHAPLEVEL_HUDFLASH)
 	{
 		return;
 	}

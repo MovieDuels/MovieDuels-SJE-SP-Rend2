@@ -24526,7 +24526,7 @@ saberMoveName_t PM_NPCSaberAttackFromQuad(const int quad)
 						}
 						break;
 					case 1:
-						newmove = PM_DoAI_Fake(qtrue);
+						newmove = PM_DoAI_Fake(pm->ps->saberMove); // bug fix 2026-11-10 (as MD 9): was PM_DoAI_Fake(qtrue), i.e. move 1
 
 						if (d_attackinfo->integer)
 						{
@@ -29302,6 +29302,7 @@ static void PM_WeaponLightsaber(void)
 		anim_level_overridden = qtrue;
 	}
 	else if (pm->gent
+		&& (pm->ps->clientNum < MAX_CLIENTS || PM_ControlledByPlayer()) // bug fix 2026-11-10: cg.saberAnimLevelPending is the player's style; for NPCs it skipped the checks below, so a dual / staff NPC kept a single-saber style (e.g. fast) whenever the player used dual or staff
 		&& cg.saberAnimLevelPending != pm->ps->saberAnimLevel
 		&& WP_SaberStyleValidForSaber(pm->gent, cg.saberAnimLevelPending))
 	{
@@ -30035,11 +30036,17 @@ static void PM_WeaponLightsaber(void)
 			// Check for finishing an animation if necessary.
 			// ------------------------------------------------------------------
 
+			// g_SerenityJediEngineMode 0 = base JKA (2026-11-10, DH; as OpenJK, same as MD 9): a tap of attack is a full
+			// swing, so when the player lets go of attack (and isn't blocking) he follows through like an NPC in cases 1
+			// and 3 below. Modes 1 and 2 (hold to attack): letting go in the wind-up or a transition is an attack fake.
+			const qboolean jka_follow_through = g_SerenityJediEngineMode->integer == 0
+				&& !is_holding_block_button && !is_holding_block_button_and_attack ? qtrue : qfalse;
+
 			// Case 1: We started a swing (LS_S_*), must continue from here.
 			if (curmove >= LS_S_TL2BR && curmove <= LS_S_T2B)
 			{
 				// NPCs never do attack fakes, they always follow through.
-				if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
+				if ((pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) || jka_follow_through)
 				{
 					// NPC: convert start-swing to actual attack swing.
 					newmove = LS_A_TL2BR + (curmove - LS_S_TL2BR);
@@ -30060,7 +30067,7 @@ static void PM_WeaponLightsaber(void)
 			else if (PM_SaberInTransition(curmove))
 			{
 				// In a transition, must play sequential attack or exit.
-				if (pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer())
+				if ((pm->ps->clientNum >= MAX_CLIENTS && !PM_ControlledByPlayer()) || jka_follow_through)
 				{
 					// NPCs never stop attacking mid-attack, just follow through.
 					newmove = saberMoveData[curmove].chain_attack;

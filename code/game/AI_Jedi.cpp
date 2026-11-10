@@ -2493,6 +2493,21 @@ static qboolean kyle_can_do_grab()
 
 extern qboolean PM_CrouchAnim(const int anim);
 constexpr auto MELEE_DIST_SQUARED = 6400;
+
+// real reach (origin to origin, about the same height); the AI's enemy_dist is a straight distance minus the saber
+// length, so it can't be used for fists and feet (2026-11-10, slap range bug fix as MD 9)
+static qboolean Jedi_MeleeTargetInReach(const gentity_t* self, const gentity_t* enemy, const float reach)
+{
+	if (!self || !enemy)
+	{
+		return qfalse;
+	}
+	if (fabs(enemy->currentOrigin[2] - self->currentOrigin[2]) > 48.0f)
+	{
+		return qfalse;
+	}
+	return DistanceSquared(self->currentOrigin, enemy->currentOrigin) <= reach * reach ? qtrue : qfalse;
+}
 qboolean jedi_saber_busy(const gentity_t* self);
 extern void AddNPCBlockPointBonus(const gentity_t* self);
 extern void WP_BlockPointsDrain(const gentity_t* self, int fatigue);
@@ -2515,8 +2530,14 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 		return qfalse;
 	}
 
+	// 2026-11-09 (bug, every mode that slaps, DH): enemyDist is a straight distance minus the saber length, but it was
+	// compared with MELEE_DIST_SQUARED (6400, a squared value), so NPCs started slaps - and landed them, knockdown
+	// included - from up to 6400 units away. Use the real distance: within 80 units and about the same height.
+	(void)enemyDist;
+	const qboolean in_reach = Jedi_MeleeTargetInReach(NPC, enemy, 80.0f);
+
 	qboolean in_melee_range = (qboolean)
-		((enemyDist <= MELEE_DIST_SQUARED) &&
+		(in_reach &&
 			(ps->weaponTime == 0) &&
 			(PM_InKnockDown(ps) == qfalse));
 
@@ -2527,8 +2548,60 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 		(!enemy_in_front &&
 			!InFront(enemy->currentOrigin, NPC->currentOrigin, ps->viewangles, 0.25f));
 
+	int anim = ps->torsoAnim;
+
+	qboolean in_slap_anim = (qboolean)
+		((anim == BOTH_A7_SLAP_R || anim == BOTH_A7_SLAP_R_GALEN) ||
+			(anim == BOTH_A7_SLAP_L || anim == BOTH_A7_SLAP_L_GALEN) ||
+			anim == BOTH_A7_KICK_B ||
+			(anim == BOTH_SWEEP_KICK || anim == BOTH_SWEEP_KICK_GALEN) ||
+			anim == BOTH_A7_HILT);
+
 	// ------------------------------------------------------------
-	// 3. can_slap
+	// 1. In a slap/kick this function started: handle the hit every frame (bug, 2026-11-09: it sat behind the 1-in-4
+	//    roll of can_slap, so the hit landed late or not at all). Only when he is really in reach and in front, not
+	//    already knocked down, and once per swing (the kick trace in g_active can hit with the same anim)
+	// ------------------------------------------------------------
+	if (in_slap_anim == qtrue && TIMER_Done(NPC, "slapHitWindow") == qfalse)
+	{
+		if (TIMER_Done(NPC, "smackTime") == qtrue &&
+			NPCInfo->blockedDebounceTime == 0)
+		{
+			if (in_reach == qtrue && enemy_in_front == qtrue
+				&& enemy->client
+				&& !PM_InKnockDown(&enemy->client->ps)
+				&& TIMER_Done(enemy, "kickedDebounce"))
+			{
+				vec3_t smack_dir;
+				VectorSubtract(enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+				smack_dir[2] += 20;
+				VectorNormalize(smack_dir);
+
+				// Punch sound
+				G_Sound(enemy,
+					G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+
+				// Pain sound
+				G_Sound(enemy,
+					G_SoundIndex(va("sound/chars/%s/misc/pain0%d",
+						enemy->NPC_type, Q_irand(1, 3))));
+
+				G_Damage(enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+					(g_spskill->integer + 1) * Q_irand(2, 5),
+					DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+				WP_AbsorbKick(enemy, NPC, smack_dir);
+				TIMER_Set(enemy, "kickedDebounce", 500);
+
+				NPCInfo->blockedDebounceTime = 1;
+			}
+		}
+
+		return qtrue;
+	}
+
+	// ------------------------------------------------------------
+	// 2. can_slap
 	// ------------------------------------------------------------
 	qboolean can_slap = (qboolean)
 		(g_spskill->integer > 1 &&
@@ -2552,54 +2625,14 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 		return qfalse;
 	}
 
-	// ------------------------------------------------------------
-	// 4. Already in slap/kick animation? Handle hit timing
-	// ------------------------------------------------------------
-	int anim = ps->torsoAnim;
-
-	qboolean in_slap_anim = (qboolean)
-		((anim == BOTH_A7_SLAP_R || anim == BOTH_A7_SLAP_R_GALEN) ||
-			(anim == BOTH_A7_SLAP_L || anim == BOTH_A7_SLAP_L_GALEN) ||
-			anim == BOTH_A7_KICK_B ||
-			(anim == BOTH_SWEEP_KICK || anim == BOTH_SWEEP_KICK_GALEN) ||
-			anim == BOTH_A7_HILT);
-
 	if (in_slap_anim == qtrue)
 	{
-		if (TIMER_Done(NPC, "smackTime") == qtrue &&
-			NPCInfo->blockedDebounceTime == 0)
-		{
-			if (in_melee_range == qtrue && enemy_in_front == qtrue)
-			{
-				vec3_t smack_dir;
-				VectorSubtract(enemy->currentOrigin, NPC->currentOrigin, smack_dir);
-				smack_dir[2] += 20;
-				VectorNormalize(smack_dir);
-
-				// Punch sound
-				G_Sound(enemy,
-					G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-
-				// Pain sound
-				G_Sound(enemy,
-					G_SoundIndex(va("sound/chars/%s/misc/pain0%d",
-						enemy->NPC_type, Q_irand(1, 3))));
-
-				G_Damage(enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
-					(g_spskill->integer + 1) * Q_irand(2, 5),
-					DAMAGE_NO_KNOCKBACK, MOD_MELEE);
-
-				WP_AbsorbKick(enemy, NPC, smack_dir);
-
-				NPCInfo->blockedDebounceTime = 1;
-			}
-		}
-
+		// a slap/kick anim started elsewhere: let it play
 		return qtrue;
 	}
 
 	// ------------------------------------------------------------
-	// 5. Not in slap anim — decide which melee attack to start
+	// 3. Not in slap anim - decide which melee attack to start
 	// ------------------------------------------------------------
 	if (in_melee_range == qfalse)
 	{
@@ -2635,6 +2668,7 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 			}
 
 			TIMER_Set(NPC, "smackTime", 300);
+			TIMER_Set(NPC, "slapHitWindow", ps->torsoAnimTimer);
 			NPCInfo->blockedDebounceTime = 0;
 
 			return qtrue;
@@ -2666,6 +2700,7 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 			}
 
 			TIMER_Set(NPC, "smackTime", 300);
+			TIMER_Set(NPC, "slapHitWindow", ps->torsoAnimTimer);
 			NPCInfo->blockedDebounceTime = 0;
 
 			return qtrue;
@@ -7707,11 +7742,10 @@ static void jedi_combat_timers_update(const int enemy_dist)
 					// Enemy is standing around with saber off: charge harder
 					jedi_aggression(NPC, 3);
 				}
-				else
-				{
-					// Saber on: moderate aggression
-					jedi_aggression(NPC, 2);
-				}
+				// 2026-11-09 (bug, all modes, DH): this added +2 aggression every 2-5 s against an enemy with his saber
+				// on, so in any saber duel aggression climbed to the cap within seconds and stayed there. At that level
+				// Jedi_EvasionSaber never defends (NPCs never block, just swing). Base JKA doesn't do this: aggression
+				// against a saber user only moves with what happens in the fight (hits, parries, pain).
 				break;
 
 			case WP_BLASTER:
@@ -7871,7 +7905,7 @@ static void jedi_combat_timers_update(const int enemy_dist)
 			if (d_JediAI->integer != 0 || d_combatinfo->integer != 0 || g_DebugSaberCombat->integer != 0)
 			{
 				gi.Printf("(%d) PARRY: aggression %d, no parry until %d\n",
-					level.time, NPCInfo->stats.aggression, level.time + 100);
+					level.time, NPCInfo->stats.aggression, NPC->client->ps.forcePowerDebounce[FP_SABER_DEFENSE]); // the real re-parry time (2026-11-09)
 			}
 
 			newFlags &= ~SEF_PARRIED;
@@ -9457,27 +9491,10 @@ static void jedi_combat()
 
 						NPC->next_kick_time = level.time + 15000;
 
-						if (NPC_IsAlive(NPC, NPC->enemy) && irand(0, 100) <= 25)
-						{// 25% of the time, knock them over...
-							vec3_t	smackDir;
-							VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smackDir);
-							smackDir[2] += 30;
-							VectorNormalize(smackDir);
-
-							//hurt them
-							G_Sound(NPC->enemy, G_SoundIndex("sound/chars/%s/misc/pain0%d"));
-
-							//throw them
-							G_Throw(NPC->enemy, smackDir, Q_flrand(10, 20));
-
-							WP_AbsorbKick(NPC->enemy, NPC, smackDir);
-							//done with the damage
-							NPCInfo->blockedDebounceTime = 1;
-							if (d_JediAI->integer || g_DebugSaberCombat->integer)
-							{
-								Com_Printf(S_COLOR_RED"Debug: NPC kicking yeet...\n");
-							}
-						}
+						// 2026-11-09 (bug): removed the instant "25% knock them over" here. It threw him and ran
+						// WP_AbsorbKick the moment the anim started, before the foot or hand got there, and the kick trace
+						// in g_active hits again with the same anim when it really lands (its pain sound path was also
+						// never formatted: "sound/chars/%s/misc/pain0%d")
 
 						attacked = qtrue;
 					}
@@ -9651,7 +9668,7 @@ void NPC_Jedi_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, c
 		if (d_JediAI->integer || d_combatinfo->integer || g_DebugSaberCombat->integer)
 		{
 			gi.Printf("(%d) PAIN: aggression %d, no parry until %d\n", level.time, self->NPC->stats.aggression,
-				level.time + 500);
+				self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE]); // the real re-parry time (2026-11-09)
 		}
 		//for testing only
 		// Figure out what quadrant the hit was in.
