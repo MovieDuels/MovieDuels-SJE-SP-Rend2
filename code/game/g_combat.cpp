@@ -3094,6 +3094,12 @@ static qboolean G_DoGunDismemberment(gentity_t* self, vec3_t point, const int mo
 		|| mod == MOD_BOWCASTER
 		|| mod == MOD_BOWCASTER_ALT
 		|| mod == MOD_REPEATER
+		|| mod == MOD_REPEATER_ALT // the clone rifle, repeater alt, disruptor main shot and concussion (2026-11-09)
+		|| mod == MOD_CLONERIFLE
+		|| mod == MOD_CLONERIFLE_ALT
+		|| mod == MOD_DISRUPTOR
+		|| mod == MOD_CONC
+		|| mod == MOD_CONC_ALT
 		|| mod == MOD_FLECHETTE
 		|| mod == MOD_BRYAR_ALT
 		|| mod == MOD_BRYAR
@@ -4477,6 +4483,13 @@ static qboolean G_IsGunMOD(const int mod)
 	case MOD_BOWCASTER:
 	case MOD_BOWCASTER_ALT:
 	case MOD_REPEATER:
+	case MOD_REPEATER_ALT: // the clone rifle, Z-6, repeater alt, disruptor main shot and concussion (2026-11-09)
+	case MOD_CLONERIFLE:
+	case MOD_CLONERIFLE_ALT:
+	case MOD_Z6_ROTARY_CANNON:
+	case MOD_DISRUPTOR:
+	case MOD_CONC:
+	case MOD_CONC_ALT:
 	case MOD_FLECHETTE:
 	case MOD_FLECHETTE_ALT:
 	case MOD_EMPLACED:
@@ -4617,6 +4630,12 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker,
 					|| means_of_death == MOD_BOWCASTER
 					|| means_of_death == MOD_BOWCASTER_ALT
 					|| means_of_death == MOD_REPEATER
+					|| means_of_death == MOD_REPEATER_ALT // (2026-11-09)
+					|| means_of_death == MOD_CLONERIFLE
+					|| means_of_death == MOD_CLONERIFLE_ALT
+					|| means_of_death == MOD_DISRUPTOR
+					|| means_of_death == MOD_CONC
+					|| means_of_death == MOD_CONC_ALT
 					|| means_of_death == MOD_FLECHETTE
 					|| means_of_death == MOD_BRYAR_ALT
 					|| means_of_death == MOD_BRYAR
@@ -9185,7 +9204,13 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			|| inflictor->s.weapon == WP_BOBA
 			|| inflictor->s.weapon == WP_CLONEPISTOL
 			|| inflictor->s.weapon == WP_DROIDEKA
-			|| inflictor->s.weapon == WP_JAWA)
+			|| inflictor->s.weapon == WP_JAWA
+			|| inflictor->s.weapon == WP_REPEATER // these were missing (2026-11-09)
+			|| inflictor->s.weapon == WP_DISRUPTOR
+			|| inflictor->s.weapon == WP_CONCUSSION
+			|| inflictor->s.weapon == WP_CLONERIFLE
+			|| inflictor->s.weapon == WP_REBELRIFLE
+			|| inflictor->s.weapon == WP_Z6_ROTARY_CANNON)
 		{
 			float targ_maxs2 = 0.0f;
 			int height = 0;
@@ -9207,28 +9232,15 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, const 
 			z_rel = point[2] - targ->currentOrigin[2] + fabs(targ->mins[2]);
 			z_ratio = z_rel / height;
 
-			// -----------------------------------------
-			// HEALTH RESTRICTION FOR DISMEMBERMENT
-			// -----------------------------------------
-			const int maxHP = targ->client->ps.stats[STAT_MAX_HEALTH];
-			const int hp = targ->health;
-
-			if (hp > (maxHP * 0.25f))
+			// gun_shot is only used by player_die, so it only cuts when this shot kills. The old "only below 25% health
+			// before the shot" rule stopped every one-shot kill from cutting (2026-11-09).
+			if (z_ratio > 0.90f)
 			{
-				// Too healthy → no head/body dismemberment
-				targ->client->lasthurt_location = LOCATION_NONE;
+				gun_shot = GUN_SHOT_HEAD;
 			}
 			else
 			{
-				// Existing logic
-				if (z_ratio > 0.90f)
-				{
-					gun_shot = GUN_SHOT_HEAD;
-				}
-				else
-				{
-					gun_shot = GUN_SHOT_BODY;
-				}
+				gun_shot = GUN_SHOT_BODY;
 			}
 		}
 	}

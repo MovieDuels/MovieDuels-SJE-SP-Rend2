@@ -2940,6 +2940,17 @@ void G_ChangePlayerModel(gentity_t* ent, const char* new_model)
 		}
 	}
 
+	// The armour flags and the MD character attributes belong to the old character: drop them here. Only the
+	// NPC file branch below sets them again (NPC_ParseParms + the Mando / Boba checks), so a character
+	// without beskar (or a model|skin pick from the menu) no longer keeps the old one's bolt deflect.
+	ent->flags &= ~(FL_DINDJARIN | FL_BOBAFETT | FL_SABERDAMAGE_RESIST);
+	ent->client->charDualPistols = 0;
+	ent->client->charForceUser = 0;
+	ent->client->charNoKnockback = 0;
+	ent->client->charBeskar = 0;
+	ent->client->charGunBash = 0;
+	ent->client->charKOTORWeapons = 0;
+
 	if (ent->client->ps.groundEntityNum == ENTITYNUM_NONE && PM_InLedgeMove(ent->client->ps.legsAnim))
 	{
 		ent->client->ps.pm_flags &= ~PMF_STUCK_TO_WALL;

@@ -1271,7 +1271,10 @@ int G_ParseAnimFileSet(const char* skeletonName, const char* model_name = nullpt
 			G_ParseAnimationEvtFile(0, skeletonName, file_index, normalGLAIndex, qfalse);
 
 			// Precache the map‑specific cinematic GLA (optional)
-			const int cineGLAIndex = gi.G2API_PrecacheGhoul2Model(va("models/players/%s/%s.gla", skeletonMapName, skeletonMapName));
+			// Its path can only be a file if it fits in MAX_QPATH, so for long map names (duel_tradefed: 66 chars)
+			// skip the probe instead of the renderer warning on every map load.
+			const char* cine_gla_path = va("models/players/%s/%s.gla", skeletonMapName, skeletonMapName);
+			const int cineGLAIndex = strlen(cine_gla_path) < MAX_QPATH ? gi.G2API_PrecacheGhoul2Model(cine_gla_path) : 0;
 
 			if (cineGLAIndex)
 			{

@@ -278,6 +278,8 @@ cvar_t* g_allowgunnerbash;
 cvar_t* g_squadTactics;
 cvar_t* g_squadAdvancers;
 cvar_t* g_squadDebug;
+cvar_t* g_squadCommandCooldown;
+cvar_t* g_squadWoundedHealth;
 
 cvar_t* g_noAutoFollow;
 
@@ -312,6 +314,7 @@ cvar_t* g_remove_unused_weapons;
 
 cvar_t* g_allowcallout;
 cvar_t* g_allowslipping;
+cvar_t* g_npcQuickGetUp; //item 319: non-Force NPCs get up 1-2 s sooner after a knockdown
 
 cvar_t* g_RealisticBlockingMode;
 
@@ -909,6 +912,8 @@ static void G_InitCvars()
 	g_squadTactics = gi.cvar("g_squadTactics", "1", CVAR_ARCHIVE);
 	g_squadAdvancers = gi.cvar("g_squadAdvancers", "2", CVAR_ARCHIVE);
 	g_squadDebug = gi.cvar("g_squadDebug", "0", 0); // 1: print each squad's roles once a second
+	g_squadCommandCooldown = gi.cvar("g_squadCommandCooldown", "60", CVAR_ARCHIVE); // seconds between two orders on the same target
+	g_squadWoundedHealth = gi.cvar("g_squadWoundedHealth", "20", CVAR_ARCHIVE); // percent health at which an enemy keeps a safe distance (0 = off)
 
 	g_noAutoFollow = gi.cvar("g_noAutoFollow", "0", CVAR_ARCHIVE);
 
@@ -953,6 +958,7 @@ static void G_InitCvars()
 	g_remove_unused_weapons = gi.cvar("g_removedroppedweapons", "0", CVAR_ARCHIVE);
 
 	g_allowslipping = gi.cvar("g_allowslipping", "1", CVAR_ARCHIVE | CVAR_SAVEGAME | CVAR_NORESTART);
+	g_npcQuickGetUp = gi.cvar("g_npcQuickGetUp", "1", CVAR_ARCHIVE);
 
 	g_RealisticBlockingMode = gi.cvar("g_RealisticBlockingMode", "0", CVAR_ARCHIVE); //Alternate saber combat system
 
@@ -2390,6 +2396,7 @@ extern void Boba_StopFlameThrower(const gentity_t* self);
 constexpr auto SPRINT_DEFUEL_RATE = 150;
 constexpr auto JETPACK_DEFUEL_RATE = 200; //approx. 20 seconds of idle use from a fully charged fuel amt;
 constexpr auto JETPACK_REFUEL_RATE = 150; //seems fair;
+constexpr auto JETPACK_RECHARGE_RATE = 40; //jetpack refill only: one fuel point every 50 ms server frame, full tank in about 5 s (was 150 = 20 s)
 constexpr auto ENHANCED_REFUEL_RATE = 75; //seems fair;
 constexpr auto SPRINT_SLOW_REFUEL_RATE = 250;
 
@@ -2735,7 +2742,7 @@ void G_RunFrame(const int level_time)
 		}
 
 		//The player
-		if (i == 0)
+		if (i == 0 && ent->client) // the player (entity 0 always has a client; the check is for code analysis, C6011)
 		{
 			if (ent->client->ps.powerups[PW_CLOAKED])
 			{
@@ -2834,11 +2841,13 @@ void G_RunFrame(const int level_time)
 					//using jetpack, drain fuel
 					if (ent->client->jetPackDebReduce < level.time)
 					{
-						if ((ent->client->pers.cmd.forwardmove || ent->client->pers.cmd.upmove || ent->client->pers.cmd.
-							rightmove) && ent->client->jetPackOn)
+						if ((ent->client->usercmd.forwardmove || ent->client->usercmd.upmove || ent->client->usercmd.
+							rightmove) && ent->client->jetPackOn && !ent->client->flamethrowerOn)
 						{
-							//take more if they're thrusting
-							ent->client->ps.jetpackFuel -= 10;
+							//take more if they're thrusting (usercmd: pers.cmd is never filled in SP)
+							//2, not 10: since the usercmd fix (item 307) this really applies, and 10 emptied the tank in
+							//about 2.5 s of flight. 2 = about 12.5 s of thrust. Flamethrower in flight keeps its 4 (below).
+							ent->client->ps.jetpackFuel -= 2;
 						}
 						else if (ent->client->flamethrowerOn && ent->client->jetPackOn)
 						{
@@ -2875,7 +2884,7 @@ void G_RunFrame(const int level_time)
 						jetPackOn)
 					{
 						ent->client->ps.jetpackFuel++;
-						ent->client->jetPackDebRecharge = level.time + JETPACK_REFUEL_RATE;
+						ent->client->jetPackDebRecharge = level.time + JETPACK_RECHARGE_RATE;
 					}
 				}
 			}

@@ -2203,9 +2203,10 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 				}
 				else
 				{
-					// Half-speed regeneration:
-					// Regenerate 1 point every 2 frames instead of every frame.
-					if ((level.time & 1) == 0)  // even frame → regen
+					// Half-speed regeneration: this runs once a second (ClientTimerActions), so regenerate every 2nd second.
+					// 2026-11-10 (audit): was (level.time & 1), but level.time moves in whole frames (50 ms), so it was always
+					// even (full speed) or, on an MP server with odd frame times, never regenerated at all.
+					if (((level.time / 1000) & 1) == 0)
 					{
 						WP_SaberFatigueRegenerate(&client->ps, 1);
 					}
@@ -2256,9 +2257,10 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 						&& !PM_SaberInBrokenParry(client->ps.saberMove)
 						&& client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
 					{
-						// Half-speed regeneration:
-						// Regenerate 1 point every 2 frames instead of every frame.
-						if ((level.time & 1) == 0)  // even frame → regen
+						// Half-speed regeneration: this runs once a second (ClientTimerActions), so regenerate every 2nd second.
+						// 2026-11-10 (audit): was (level.time & 1), but level.time moves in whole frames (50 ms), so it was always
+						// even (full speed) or, on an MP server with odd frame times, never regenerated at all.
+						if (((level.time / 1000) & 1) == 0)
 						{
 							client->ps.blockPoints++;
 						}
@@ -2277,7 +2279,7 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 			{// only regenerate force if not holding down block, otherwise you can just hold down block and never have to worry about force
 				if (ent->flags & FL_FORCEMODE)
 				{
-					client->ps.forcePower = BLOCK_POINTS_MAX;
+					client->ps.forcePower = client->ps.forcePowerMax; // 2026-11-10 (audit): was BLOCK_POINTS_MAX
 				}
 				else
 				{
@@ -2287,9 +2289,10 @@ static void ClientTimerActions(gentity_t* ent, const int msec)
 						&& !PM_SaberInBrokenParry(client->ps.saberMove)
 						&& client->ps.saberBlockingTime < level.time) // npc, dont auto regen bp if doing this
 					{
-						// Half-speed regeneration:
-						// Regenerate 1 point every 2 frames instead of every frame.
-						if ((level.time & 1) == 0)  // even frame → regen
+						// Half-speed regeneration: this runs once a second (ClientTimerActions), so regenerate every 2nd second.
+						// 2026-11-10 (audit): was (level.time & 1), but level.time moves in whole frames (50 ms), so it was always
+						// even (full speed) or, on an MP server with odd frame times, never regenerated at all.
+						if (((level.time / 1000) & 1) == 0)
 						{
 							client->ps.forcePower++;
 						}
@@ -2790,20 +2793,31 @@ qboolean WP_AbsorbKick(gentity_t* hitEnt, gentity_t* pusher, const vec3_t push_d
 			// MD / AMD
 			if (isAMD)
 			{
-				if (hitEnt->client->ps.blockPoints > 50 || kickResistant)
-				{
-					G_Stagger(hitEnt);
-					DRAIN_BLOCKPOINTS(hitEnt, FATIGUE_BP_ABSORB);
+				// 2026-11-09 (same as SJE, mode 2 only): it was the wrong way round. A fresh NPC (BP > 50) staggered
+				// and could switch its saber off, a tired one backflipped, and the flip was played standing on the
+				// floor with no lift. Now a fresh NPC (BP and FP > 50) backflips out of it as a real jump, a tired one
+				// (or a kick resistant one) only staggers, and the saber stays on. Sabers with SFL_NO_FLIPS stagger.
+				const qboolean can_flip = (qboolean)(!(hitEnt->client->ps.saber[0].saberFlags & SFL_NO_FLIPS)
+					&& (!hitEnt->client->ps.dualSabers || !(hitEnt->client->ps.saber[1].saberFlags & SFL_NO_FLIPS)));
 
-					MAYBE_DEACTIVATE_SABER(hitEnt);
-					if (kickResistant) jedi_play_blocked_push_sound(hitEnt);
+				if (hitEnt->client->ps.blockPoints > 50
+					&& hitEnt->client->ps.forcePower > 50
+					&& can_flip
+					&& !kickResistant)
+				{
+					NPC_SetAnim(hitEnt, SETANIM_BOTH, Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK3), SETANIM_AFLAG_PACE);
+					hitEnt->client->ps.pm_flags |= PMF_JUMP_HELD;
+					hitEnt->client->ps.groundEntityNum = ENTITYNUM_NONE;
+					hitEnt->client->ps.jumpZStart = hitEnt->currentOrigin[2];
+					hitEnt->client->ps.velocity[2] = JUMP_VELOCITY;
+					G_AddEvent(hitEnt, EV_JUMP, 0);
+					DRAIN_BLOCKPOINTS(hitEnt, FATIGUE_BP_ABSORB);
 				}
 				else
 				{
-					NPC_SetAnim(hitEnt, SETANIM_BOTH,
-						Q_irand(BOTH_FLIP_BACK1, BOTH_FLIP_BACK2),
-						SETANIM_AFLAG_PACE);
+					G_Stagger(hitEnt);
 					DRAIN_BLOCKPOINTS(hitEnt, FATIGUE_BP_ABSORB);
+					if (kickResistant) jedi_play_blocked_push_sound(hitEnt);
 				}
 			}
 			else
@@ -3314,15 +3328,7 @@ static gentity_t* G_KickTrace(gentity_t* ent, vec3_t kick_dir, const float kick_
 						{
 							G_Sound(ent, G_SoundIndex("sound/movers/objects/saber_slam"));
 						}
-						else if (ent->client->ps.torsoAnim == BOTH_SLAP_L ||
-							ent->client->ps.torsoAnim == BOTH_SLAP_R ||
-							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_R || ent->client->ps.torsoAnim == BOTH_A7_SLAP_R_GALEN) ||
-							(ent->client->ps.torsoAnim == BOTH_A7_SLAP_L || ent->client->ps.torsoAnim == BOTH_A7_SLAP_L_GALEN))
-						{
-							G_Sound(ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-							G_PlayEffect(G_EffectIndex("melee/kick_impact.efx"), trace.endpos, trace.plane.normal);
-						}
-						else
+						else // 2026-11-10 (audit): the "else if (ent->client->ps.torsoAnim == BOTH_SLAP_L || ent->client->ps.torsoAnim == BOTH_SLAP_R ||...)" branch here was the same code; merged
 						{
 							G_Sound(ent, G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
 							G_PlayEffect(G_EffectIndex("melee/kick_impact.efx"), trace.endpos, trace.plane.normal);
@@ -8053,11 +8059,16 @@ static void CommandNPCtoAttack(gentity_t* caller, gentity_t* ourFriend)
 	}
 	else
 	{// if the enemy is close, use a short range callout
-		vec3_t dir;
-		VectorSubtract(ourFriend->currentOrigin, tracedEnemy->currentOrigin, dir);
-		const vec_t angle = DotProduct(ourFriend->currentAngles, dir);
-
-		if (angle >= 0.2 && angle <= 1.0)
+		// ally -> enemy direction against the ally's facing (was a dot product with the view angles,
+		// so front/behind was close to random)
+		vec3_t dir, friend_fwd;
+		VectorSubtract(tracedEnemy->currentOrigin, ourFriend->currentOrigin, dir);
+		dir[2] = 0.0f;
+		VectorNormalize(dir);
+		const vec3_t friend_yaw = { 0.0f, ourFriend->currentAngles[YAW], 0.0f };
+		AngleVectors(friend_yaw, friend_fwd, nullptr, nullptr);
+		const vec_t angle = DotProduct(friend_fwd, dir); // 1 = straight ahead, -1 = behind
+		if (angle >= 0.2f)
 		{// enemy is in front of us, use a front callout
 			G_AddEvent(caller, Q_irand(EV_ANGER1, EV_ANGER3), 0);
 			if (g_ActivateAnimationStyle && g_ActivateAnimationStyle->integer == 1)
@@ -10636,6 +10647,12 @@ static void ClientThink_real(gentity_t* ent, usercmd_t* ucmd)
 				}
 			}
 		}
+	}
+	else if (ent->NPC || (ent->s.clientNum >= MAX_CLIENTS && !G_ControlledByPlayer(ent)))
+	{
+		// saber off, thrown or bashed: no kick absorb. The flag used to stay set from the last frame the saber was
+		// on (for up to 5 s), so an NPC could keep absorbing kicks with its saber off (2026-11-09, all modes)
+		client->ps.ManualBlockingFlags &= ~(1 << MBF_NPCKICKBLOCK);
 	}
 
 	if (g_SerenityJediEngineMode->integer <= 1
