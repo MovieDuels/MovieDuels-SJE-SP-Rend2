@@ -1857,15 +1857,11 @@ Jedi_Move
 
 static qboolean Jedi_Move(gentity_t* goal, const qboolean retreat)
 {
+	const qboolean moved = NPC_MoveToGoal(qtrue);
 	navInfo_t info;
 
-	// bug fix 2026-11-10: the goal was set AFTER NPC_MoveToGoal (base JKA sets it first). One failed step (or bumping
-	// the enemy) runs jedi_hold_position, which clears the goal, and from then on every advance steered to no goal,
-	// failed and cleared it again: two NPCs further apart than the close-range walk-in just stood there taunting.
 	NPCInfo->combatMove = qtrue;
 	NPCInfo->goalEntity = goal;
-
-	const qboolean moved = NPC_MoveToGoal(qtrue);
 
 	if (retreat)
 	{
@@ -1998,10 +1994,10 @@ static void JediDirectionalDashDodge(gentity_t* NPC, gentity_t* enemy)
 		// DASH ANIMATION + SOUND
 		// -------------------------------------------------
 
-		NPC->client->usercmd.rightmove = ucmd.rightmove;
-		NPC->client->usercmd.forwardmove = ucmd.forwardmove;
+		NPC->client->pers.cmd.rightmove = ucmd.rightmove;
+		NPC->client->pers.cmd.forwardmove = ucmd.forwardmove;
 
-		// play dash anim (reads usercmd, like the player's dash)
+		// play dash anim (reads pers.cmd)
 		ForceDashAnimDash(NPC);
 		G_SoundOnEnt(NPC, CHAN_BODY, "sound/weapons/force/dash.mp3");
 
@@ -2052,8 +2048,8 @@ static void JediDirectionalDashAttack(gentity_t* NPC, gentity_t* enemy)
 		// -------------------------------------------------
 		// DASH ANIMATION + SOUND
 		// -------------------------------------------------
-		NPC->client->usercmd.forwardmove = ucmd.forwardmove;
-		NPC->client->usercmd.rightmove = ucmd.rightmove;
+		NPC->client->pers.cmd.forwardmove = ucmd.forwardmove;
+		NPC->client->pers.cmd.rightmove = ucmd.rightmove;
 
 		ForceDashAnimDash(NPC);
 		G_SoundOnEnt(NPC, CHAN_BODY, "sound/weapons/force/dash.mp3");
@@ -2135,47 +2131,93 @@ static void Jedi_AdjustSaberAnimLevel(const gentity_t* self, const int new_level
 		return;
 	}
 
-	// 2026-11-10 (audit): "if (self->client->playerTeam == TEAM_ENEMY)" had the same code in both branches; kept one
-	if (!Q_stricmp("cultist_saber_all", self->NPC_type)
-		|| !Q_stricmp("cultist_saber_all_throw", self->NPC_type)
-		|| !Q_stricmp("md_maul_tcw", self->NPC_type)
-		|| !Q_stricmp("md_maul_cyber_tcw", self->NPC_type))
+	if (self->client->playerTeam == TEAM_ENEMY)
 	{
-		//use any, regardless of rank, etc.
-	}
-	else if (!Q_stricmp("cultist_saber", self->NPC_type)
-		|| !Q_stricmp("cultist_saber_throw", self->NPC_type))
-	{
-		//fast only
-		self->client->ps.saberAnimLevel = SS_FAST;
-	}
-	else if (!Q_stricmp("cultist_saber_med", self->NPC_type)
-		|| !Q_stricmp("cultist_saber_med_throw", self->NPC_type))
-	{
-		//med only
-		self->client->ps.saberAnimLevel = SS_MEDIUM;
-	}
-	else if (!Q_stricmp("cultist_saber_strong", self->NPC_type)
-		|| !Q_stricmp("cultist_saber_strong_throw", self->NPC_type))
-	{
-		//strong only
-		self->client->ps.saberAnimLevel = SS_STRONG;
-	}
-	else if (npc_is_dual_style(self))
-	{
-		//dual only (and stay: the random style picked below used to replace it)
-		self->client->ps.saberAnimLevel = SS_DUAL;
-		return;
-	}
-	else if (npc_is_staff_style(self))
-	{
-		//staff only (and stay: the random style picked below used to replace it)
-		self->client->ps.saberAnimLevel = SS_STAFF;
-		return;
+		if (!Q_stricmp("cultist_saber_all", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_all_throw", self->NPC_type)
+			|| !Q_stricmp("md_maul_tcw", self->NPC_type)
+			|| !Q_stricmp("md_maul_cyber_tcw", self->NPC_type))
+		{
+			//use any, regardless of rank, etc.
+		}
+		else if (!Q_stricmp("cultist_saber", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_throw", self->NPC_type))
+		{
+			//fast only
+			self->client->ps.saberAnimLevel = SS_FAST;
+		}
+		else if (!Q_stricmp("cultist_saber_med", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_med_throw", self->NPC_type))
+		{
+			//med only
+			self->client->ps.saberAnimLevel = SS_MEDIUM;
+		}
+		else if (!Q_stricmp("cultist_saber_strong", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_strong_throw", self->NPC_type))
+		{
+			//strong only
+			self->client->ps.saberAnimLevel = SS_STRONG;
+		}
+		else if (npc_is_dual_style(self))
+		{
+			//dual only (and stay: the random style picked below used to replace it)
+			self->client->ps.saberAnimLevel = SS_DUAL;
+			return;
+		}
+		else if (npc_is_staff_style(self))
+		{
+			//staff only (and stay: the random style picked below used to replace it)
+			self->client->ps.saberAnimLevel = SS_STAFF;
+			return;
+		}
+		else
+		{
+			//use any, regardless of rank, etc.
+		}
 	}
 	else
 	{
-		//use any, regardless of rank, etc.
+		if (!Q_stricmp("cultist_saber_all", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_all_throw", self->NPC_type)
+			|| !Q_stricmp("md_maul_tcw", self->NPC_type)
+			|| !Q_stricmp("md_maul_cyber_tcw", self->NPC_type))
+		{
+			//use any, regardless of rank, etc.
+		}
+		else if (!Q_stricmp("cultist_saber", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_throw", self->NPC_type))
+		{
+			//fast only
+			self->client->ps.saberAnimLevel = SS_FAST;
+		}
+		else if (!Q_stricmp("cultist_saber_med", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_med_throw", self->NPC_type))
+		{
+			//med only
+			self->client->ps.saberAnimLevel = SS_MEDIUM;
+		}
+		else if (!Q_stricmp("cultist_saber_strong", self->NPC_type)
+			|| !Q_stricmp("cultist_saber_strong_throw", self->NPC_type))
+		{
+			//strong only
+			self->client->ps.saberAnimLevel = SS_STRONG;
+		}
+		else if (npc_is_dual_style(self))
+		{
+			//dual only (and stay: the random style picked below used to replace it)
+			self->client->ps.saberAnimLevel = SS_DUAL;
+			return;
+		}
+		else if (npc_is_staff_style(self))
+		{
+			//staff only (and stay: the random style picked below used to replace it)
+			self->client->ps.saberAnimLevel = SS_STAFF;
+			return;
+		}
+		else
+		{
+			//use any, regardless of rank, etc.
+		}
 	}
 	if (new_level < SS_FAST)
 	{
@@ -2451,21 +2493,6 @@ static qboolean kyle_can_do_grab()
 
 extern qboolean PM_CrouchAnim(const int anim);
 constexpr auto MELEE_DIST_SQUARED = 6400;
-
-// real reach (origin to origin, about the same height); the AI's enemy_dist is a straight distance minus the saber
-// length, so it can't be used for fists and feet (2026-11-10, slap range bug fix as MD 9)
-static qboolean Jedi_MeleeTargetInReach(const gentity_t* self, const gentity_t* enemy, const float reach)
-{
-	if (!self || !enemy)
-	{
-		return qfalse;
-	}
-	if (fabs(enemy->currentOrigin[2] - self->currentOrigin[2]) > 48.0f)
-	{
-		return qfalse;
-	}
-	return DistanceSquared(self->currentOrigin, enemy->currentOrigin) <= reach * reach ? qtrue : qfalse;
-}
 qboolean jedi_saber_busy(const gentity_t* self);
 extern void AddNPCBlockPointBonus(const gentity_t* self);
 extern void WP_BlockPointsDrain(const gentity_t* self, int fatigue);
@@ -2488,14 +2515,8 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 		return qfalse;
 	}
 
-	// 2026-11-09 (bug, every mode that slaps, DH): enemyDist is a straight distance minus the saber length, but it was
-	// compared with MELEE_DIST_SQUARED (6400, a squared value), so NPCs started slaps - and landed them, knockdown
-	// included - from up to 6400 units away. Use the real distance: within 80 units and about the same height.
-	(void)enemyDist;
-	const qboolean in_reach = Jedi_MeleeTargetInReach(NPC, enemy, 80.0f);
-
 	qboolean in_melee_range = (qboolean)
-		(in_reach &&
+		((enemyDist <= MELEE_DIST_SQUARED) &&
 			(ps->weaponTime == 0) &&
 			(PM_InKnockDown(ps) == qfalse));
 
@@ -2506,60 +2527,8 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 		(!enemy_in_front &&
 			!InFront(enemy->currentOrigin, NPC->currentOrigin, ps->viewangles, 0.25f));
 
-	int anim = ps->torsoAnim;
-
-	qboolean in_slap_anim = (qboolean)
-		((anim == BOTH_A7_SLAP_R || anim == BOTH_A7_SLAP_R_GALEN) ||
-			(anim == BOTH_A7_SLAP_L || anim == BOTH_A7_SLAP_L_GALEN) ||
-			anim == BOTH_A7_KICK_B ||
-			(anim == BOTH_SWEEP_KICK || anim == BOTH_SWEEP_KICK_GALEN) ||
-			anim == BOTH_A7_HILT);
-
 	// ------------------------------------------------------------
-	// 1. In a slap/kick this function started: handle the hit every frame (bug, 2026-11-09: it sat behind the 1-in-4
-	//    roll of can_slap, so the hit landed late or not at all). Only when he is really in reach and in front, not
-	//    already knocked down, and once per swing (the kick trace in g_active can hit with the same anim)
-	// ------------------------------------------------------------
-	if (in_slap_anim == qtrue && TIMER_Done(NPC, "slapHitWindow") == qfalse)
-	{
-		if (TIMER_Done(NPC, "smackTime") == qtrue &&
-			NPCInfo->blockedDebounceTime == 0)
-		{
-			if (in_reach == qtrue && enemy_in_front == qtrue
-				&& enemy->client
-				&& !PM_InKnockDown(&enemy->client->ps)
-				&& TIMER_Done(enemy, "kickedDebounce"))
-			{
-				vec3_t smack_dir;
-				VectorSubtract(enemy->currentOrigin, NPC->currentOrigin, smack_dir);
-				smack_dir[2] += 20;
-				VectorNormalize(smack_dir);
-
-				// Punch sound
-				G_Sound(enemy,
-					G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
-
-				// Pain sound
-				G_Sound(enemy,
-					G_SoundIndex(va("sound/chars/%s/misc/pain0%d",
-						enemy->NPC_type, Q_irand(1, 3))));
-
-				G_Damage(enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
-					(g_spskill->integer + 1) * Q_irand(2, 5),
-					DAMAGE_NO_KNOCKBACK, MOD_MELEE);
-
-				WP_AbsorbKick(enemy, NPC, smack_dir);
-				TIMER_Set(enemy, "kickedDebounce", 500);
-
-				NPCInfo->blockedDebounceTime = 1;
-			}
-		}
-
-		return qtrue;
-	}
-
-	// ------------------------------------------------------------
-	// 2. can_slap
+	// 3. can_slap
 	// ------------------------------------------------------------
 	qboolean can_slap = (qboolean)
 		(g_spskill->integer > 1 &&
@@ -2583,14 +2552,54 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 		return qfalse;
 	}
 
+	// ------------------------------------------------------------
+	// 4. Already in slap/kick animation? Handle hit timing
+	// ------------------------------------------------------------
+	int anim = ps->torsoAnim;
+
+	qboolean in_slap_anim = (qboolean)
+		((anim == BOTH_A7_SLAP_R || anim == BOTH_A7_SLAP_R_GALEN) ||
+			(anim == BOTH_A7_SLAP_L || anim == BOTH_A7_SLAP_L_GALEN) ||
+			anim == BOTH_A7_KICK_B ||
+			(anim == BOTH_SWEEP_KICK || anim == BOTH_SWEEP_KICK_GALEN) ||
+			anim == BOTH_A7_HILT);
+
 	if (in_slap_anim == qtrue)
 	{
-		// a slap/kick anim started elsewhere: let it play
+		if (TIMER_Done(NPC, "smackTime") == qtrue &&
+			NPCInfo->blockedDebounceTime == 0)
+		{
+			if (in_melee_range == qtrue && enemy_in_front == qtrue)
+			{
+				vec3_t smack_dir;
+				VectorSubtract(enemy->currentOrigin, NPC->currentOrigin, smack_dir);
+				smack_dir[2] += 20;
+				VectorNormalize(smack_dir);
+
+				// Punch sound
+				G_Sound(enemy,
+					G_SoundIndex(va("sound/weapons/melee/punch%d", Q_irand(1, 4))));
+
+				// Pain sound
+				G_Sound(enemy,
+					G_SoundIndex(va("sound/chars/%s/misc/pain0%d",
+						enemy->NPC_type, Q_irand(1, 3))));
+
+				G_Damage(enemy, NPC, NPC, smack_dir, NPC->currentOrigin,
+					(g_spskill->integer + 1) * Q_irand(2, 5),
+					DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+
+				WP_AbsorbKick(enemy, NPC, smack_dir);
+
+				NPCInfo->blockedDebounceTime = 1;
+			}
+		}
+
 		return qtrue;
 	}
 
 	// ------------------------------------------------------------
-	// 3. Not in slap anim - decide which melee attack to start
+	// 5. Not in slap anim — decide which melee attack to start
 	// ------------------------------------------------------------
 	if (in_melee_range == qfalse)
 	{
@@ -2626,7 +2635,6 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 			}
 
 			TIMER_Set(NPC, "smackTime", 300);
-			TIMER_Set(NPC, "slapHitWindow", ps->torsoAnimTimer);
 			NPCInfo->blockedDebounceTime = 0;
 
 			return qtrue;
@@ -2658,7 +2666,6 @@ static qboolean NPC_HandleSlapMelee(gentity_t* NPC, gentity_t* enemy, int enemyD
 			}
 
 			TIMER_Set(NPC, "smackTime", 300);
-			TIMER_Set(NPC, "slapHitWindow", ps->torsoAnimTimer);
 			NPCInfo->blockedDebounceTime = 0;
 
 			return qtrue;
@@ -2711,7 +2718,7 @@ static void Jedi_CombatDistance(const int enemy_dist)
 		ps->weapon == WP_SABER &&
 		enemy->s.weapon == WP_SABER &&
 		!PM_SaberInMassiveBounce(ps->torsoAnim) &&
-		!PM_SaberInBounce(ps->saberMove) && // bug fix 2026-11-10: was ps->torsoAnim (an anim in a saber-move check, never true)
+		!PM_SaberInBounce(ps->torsoAnim) &&
 		!PM_SaberInBashedAnim(ps->torsoAnim) &&
 		!PM_InKnockDown(&NPC->client->ps) &&
 		InFront(enemy->currentOrigin, NPC->currentOrigin, ps->viewangles, 0.7f) &&
@@ -7586,99 +7593,6 @@ static void jedi_debounce_direction_changes()
 	}
 }
 
-// 2026-11-10 (DH: "the npc should stop pressing forward at saberlength distance", videos: the NPC walked into the
-// player's body and the fight turned into a shoving match): once the enemy is inside the NPC's saber reach (the same
-// reach jedi_set_enemy_info uses for "in striking range": longest blade + 1.5 x body radius + 16), any movement
-// toward him is taken out. Strafing, circling and backing off stay. Item 300 made the advance code steer to the
-// enemy again, and the close-range "pressure" walk-in (jedi_combat_timers_update, forwardmove 48 every 1-2 s, held
-// at full speed for 0.5-2 s by jedi_debounce_direction_changes) never looked at the distance, so it pushed into him.
-// Left alone: cultist destroyers (they run in and blow up), stepping into an enemy kick / hilt bash / slap / A6
-// attack (base JKA "run into the kick"), the NPC's own kick or grab, and while in the air.
-static void Jedi_HoldAtSaberReach()
-{
-	if (!NPC || !NPC->client || !NPC->enemy || !NPC->enemy->client || NPC->enemy->health <= 0)
-	{
-		return;
-	}
-
-	playerState_t* ps = &NPC->client->ps;
-	const playerState_t* eps = &NPC->enemy->client->ps;
-
-	if (ps->weapon != WP_SABER || !ps->SaberActive() || ps->saberInFlight
-		|| ps->groundEntityNum == ENTITYNUM_NONE
-		|| jedi_cultist_destroyer(NPC)
-		|| PM_KickingAnim(ps->legsAnim) || ps->torsoAnim == BOTH_KYLE_GRAB
-		|| PM_KickingAnim(eps->legsAnim)
-		|| eps->torsoAnim == BOTH_A7_HILT || eps->torsoAnim == BOTH_SLAP_R || eps->torsoAnim == BOTH_SLAP_L
-		|| eps->torsoAnim == BOTH_A6_FB || eps->torsoAnim == BOTH_A6_LR)
-	{
-		return;
-	}
-
-	vec3_t to_enemy;
-	VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, to_enemy);
-	to_enemy[2] = 0;
-	const float dist = VectorNormalize(to_enemy);
-	const float reach = ps->SaberLengthMax() + NPC->maxs[0] * 1.5f + 16.0f;
-
-	if (dist > reach)
-	{
-		return;
-	}
-
-	qboolean held = qfalse;
-
-	// nav movement (NPC_MoveToGoal): pmove uses moveDir whenever it is set, whatever the ucmd says
-	if (!VectorCompare(ps->moveDir, vec3_origin))
-	{
-		const float toward = DotProduct(ps->moveDir, to_enemy);
-		if (toward > 0.0f)
-		{
-			VectorMA(ps->moveDir, -toward, to_enemy, ps->moveDir); // keep only the sideways part (slower, not renormalised)
-			if (VectorLengthSquared(ps->moveDir) < 0.01f)
-			{
-				VectorClear(ps->moveDir);
-			}
-			held = qtrue;
-		}
-	}
-
-	// ucmd movement
-	if (ucmd.forwardmove || ucmd.rightmove)
-	{
-		vec3_t yaw_angles, fwd, right, wish;
-		VectorSet(yaw_angles, 0, ps->viewangles[YAW], 0);
-		AngleVectors(yaw_angles, fwd, right, nullptr);
-		VectorScale(fwd, ucmd.forwardmove, wish);
-		VectorMA(wish, ucmd.rightmove, right, wish);
-		wish[2] = 0;
-
-		const float toward = DotProduct(wish, to_enemy);
-		if (toward > 0.0f)
-		{
-			VectorMA(wish, -toward, to_enemy, wish);
-			float fm = DotProduct(wish, fwd);
-			float rm = DotProduct(wish, right);
-			fm = fm > 127.0f ? 127.0f : (fm < -127.0f ? -127.0f : fm);
-			rm = rm > 127.0f ? 127.0f : (rm < -127.0f ? -127.0f : rm);
-			ucmd.forwardmove = static_cast<signed char>(fm);
-			ucmd.rightmove = static_cast<signed char>(rm);
-			held = qtrue;
-		}
-	}
-
-	if (held)
-	{
-		// end the "keep moving forward" hold of jedi_debounce_direction_changes too, or it pushes in again next frame
-		TIMER_Set(NPC, "moveforward", -level.time);
-		if ((d_JediAI->integer || g_DebugSaberCombat->integer) && TIMER_Done(NPC, "holdReachDebug"))
-		{
-			TIMER_Set(NPC, "holdReachDebug", 1000);
-			Com_Printf("Debug: %s holds at saber reach (%.0f of %.0f)\n", NPC->NPC_type, dist, reach);
-		}
-	}
-}
-
 void Jedi_TimersApply()
 {
 	//use careful anim/slower movement if not already moving
@@ -7725,7 +7639,6 @@ void Jedi_TimersApply()
 	}
 
 	jedi_debounce_direction_changes();
-	Jedi_HoldAtSaberReach(); // 2026-11-10: no pushing into the enemy once he is in saber reach
 
 	if (!TIMER_Done(NPC, "gripping"))
 	{
@@ -7794,10 +7707,11 @@ static void jedi_combat_timers_update(const int enemy_dist)
 					// Enemy is standing around with saber off: charge harder
 					jedi_aggression(NPC, 3);
 				}
-				// 2026-11-09 (bug, all modes, DH): this added +2 aggression every 2-5 s against an enemy with his saber
-				// on, so in any saber duel aggression climbed to the cap within seconds and stayed there. At that level
-				// Jedi_EvasionSaber never defends (NPCs never block, just swing). Base JKA doesn't do this: aggression
-				// against a saber user only moves with what happens in the fight (hits, parries, pain).
+				else
+				{
+					// Saber on: moderate aggression
+					jedi_aggression(NPC, 2);
+				}
 				break;
 
 			case WP_BLASTER:
@@ -7887,10 +7801,8 @@ static void jedi_combat_timers_update(const int enemy_dist)
 						}
 					}
 				}
-				else if (enemy_dist > 0)
+				else
 				{//postpone any strafing for a while
-					// 2026-11-10 (DH): only walk in while he is still out of saber reach (enemy_dist <= 0 = in reach);
-					// this walk-in used to run at any distance, even with the NPC already in the enemy's body
 					ucmd.forwardmove = 48;
 				}
 			}
@@ -7959,7 +7871,7 @@ static void jedi_combat_timers_update(const int enemy_dist)
 			if (d_JediAI->integer != 0 || d_combatinfo->integer != 0 || g_DebugSaberCombat->integer != 0)
 			{
 				gi.Printf("(%d) PARRY: aggression %d, no parry until %d\n",
-					level.time, NPCInfo->stats.aggression, NPC->client->ps.forcePowerDebounce[FP_SABER_DEFENSE]); // the real re-parry time (2026-11-09)
+					level.time, NPCInfo->stats.aggression, level.time + 100);
 			}
 
 			newFlags &= ~SEF_PARRIED;
@@ -9545,10 +9457,27 @@ static void jedi_combat()
 
 						NPC->next_kick_time = level.time + 15000;
 
-						// 2026-11-09 (bug): removed the instant "25% knock them over" here. It threw him and ran
-						// WP_AbsorbKick the moment the anim started, before the foot or hand got there, and the kick trace
-						// in g_active hits again with the same anim when it really lands (its pain sound path was also
-						// never formatted: "sound/chars/%s/misc/pain0%d")
+						if (NPC_IsAlive(NPC, NPC->enemy) && irand(0, 100) <= 25)
+						{// 25% of the time, knock them over...
+							vec3_t	smackDir;
+							VectorSubtract(NPC->enemy->currentOrigin, NPC->currentOrigin, smackDir);
+							smackDir[2] += 30;
+							VectorNormalize(smackDir);
+
+							//hurt them
+							G_Sound(NPC->enemy, G_SoundIndex("sound/chars/%s/misc/pain0%d"));
+
+							//throw them
+							G_Throw(NPC->enemy, smackDir, Q_flrand(10, 20));
+
+							WP_AbsorbKick(NPC->enemy, NPC, smackDir);
+							//done with the damage
+							NPCInfo->blockedDebounceTime = 1;
+							if (d_JediAI->integer || g_DebugSaberCombat->integer)
+							{
+								Com_Printf(S_COLOR_RED"Debug: NPC kicking yeet...\n");
+							}
+						}
 
 						attacked = qtrue;
 					}
@@ -9722,7 +9651,7 @@ void NPC_Jedi_Pain(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, c
 		if (d_JediAI->integer || d_combatinfo->integer || g_DebugSaberCombat->integer)
 		{
 			gi.Printf("(%d) PAIN: aggression %d, no parry until %d\n", level.time, self->NPC->stats.aggression,
-				self->client->ps.forcePowerDebounce[FP_SABER_DEFENSE]); // the real re-parry time (2026-11-09)
+				level.time + 500);
 		}
 		//for testing only
 		// Figure out what quadrant the hit was in.
@@ -11061,21 +10990,10 @@ static void JediHandleSpacing(gentity_t* self)
 
 	float pSpeed = VectorLength(pvel);
 
-	// bug fix 2026-11-10: the checks below read pvel[0] / pvel[1], the WORLD x / y velocity, as if they were the
-	// enemy's motion toward / across the NPC, so "backing up" (forwardmove 127) fired whenever he walked toward world
-	// -x, even straight into the NPC. Now measured along the NPC -> enemy line and across it.
-	vec3_t to_enemy_dir, side_dir;
-	VectorSubtract(self->enemy->currentOrigin, self->currentOrigin, to_enemy_dir);
-	to_enemy_dir[2] = 0;
-	VectorNormalize(to_enemy_dir);
-	VectorSet(side_dir, to_enemy_dir[1], -to_enemy_dir[0], 0); // the NPC's right when it faces him
-	const float p_away = DotProduct(pvel, to_enemy_dir); // > 0: he moves away from the NPC
-	const float p_side = DotProduct(pvel, side_dir); // > 0: he moves to the NPC's right (his left)
-
 	if (pSpeed > 50.0f)
 	{
 		// Player strafing right
-		if (p_side < -80)
+		if (pvel[1] > 80)
 		{
 			ucmd.rightmove = -64;
 			ucmd.forwardmove = 48;
@@ -11085,7 +11003,7 @@ static void JediHandleSpacing(gentity_t* self)
 		}
 
 		// Player strafing left
-		if (p_side > 80)
+		if (pvel[1] < -80)
 		{
 			ucmd.rightmove = 64;
 			ucmd.forwardmove = 48;
@@ -11095,7 +11013,7 @@ static void JediHandleSpacing(gentity_t* self)
 		}
 
 		// Player backing up
-		if (p_away > 80)
+		if (pvel[0] < -80)
 		{
 			ucmd.forwardmove = 127;
 			Jedi_FaceEnemy(qtrue);
@@ -11104,7 +11022,7 @@ static void JediHandleSpacing(gentity_t* self)
 		}
 
 		// Player rushing forward
-		if (p_away < -80)
+		if (pvel[0] > 80)
 		{
 			ucmd.rightmove = (Q_irand(0, 1) ? 64 : -64);
 			Jedi_FaceEnemy(qtrue);
@@ -12268,9 +12186,6 @@ static void Jedi_Attack(void)
 	// =====================
 	// Otherwise: Raven fallback logic continues below
 	// =====================
-
-	// 2026-11-10 (DH): the cinematic spacing above runs after Jedi_TimersApply, so hold at saber reach again here
-	Jedi_HoldAtSaberReach();
 
 	// If NAV is not moving us but ucmds are, set movement speed manually
 	if (VectorCompare(NPC->client->ps.moveDir, vec3_origin) &&

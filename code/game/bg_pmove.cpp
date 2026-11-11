@@ -3878,8 +3878,7 @@ static void PM_CheckAirDash()
 		|| PM_KickMove(pm->ps->saberMove)
 		|| (pm->cmd.forwardmove < 0
 			|| pm->cmd.rightmove > 0
-			|| pm->cmd.rightmove < 0
-			|| (g_SerenityJediEngineMode->integer < 2)))
+			|| pm->cmd.rightmove < 0)) // every g_SerenityJediEngineMode (was mode 2 only; DH 2026-11-11)
 	{
 		return;
 	}
@@ -3949,8 +3948,7 @@ static void PM_CheckDoubleJump(const int legs_anim_before)
 		|| PM_InKnockDown(pm->ps)
 		|| PM_InRoll(pm->ps)
 		|| PM_InLedgeMove(pm->ps->legsAnim)
-		|| PM_InSpecialJump(pm->ps->legsAnim)
-		|| (g_SerenityJediEngineMode->integer < 2)) // flips, wall-runs, wall-flips...
+		|| PM_InSpecialJump(pm->ps->legsAnim)) // flips, wall-runs, wall-flips... (every g_SerenityJediEngineMode, was mode 2 only; DH 2026-11-11)
 	{
 		return;
 	}
