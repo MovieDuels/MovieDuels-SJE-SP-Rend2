@@ -2396,6 +2396,7 @@ extern void Boba_StopFlameThrower(const gentity_t* self);
 constexpr auto SPRINT_DEFUEL_RATE = 150;
 constexpr auto JETPACK_DEFUEL_RATE = 200; //approx. 20 seconds of idle use from a fully charged fuel amt;
 constexpr auto JETPACK_REFUEL_RATE = 150; //seems fair;
+constexpr auto JETPACK_RECHARGE_RATE = 40; //jetpack refill only: one fuel point every 50 ms server frame, full tank in about 5 s (was 150 = 20 s)
 constexpr auto ENHANCED_REFUEL_RATE = 75; //seems fair;
 constexpr auto SPRINT_SLOW_REFUEL_RATE = 250;
 
@@ -2841,10 +2842,12 @@ void G_RunFrame(const int level_time)
 					if (ent->client->jetPackDebReduce < level.time)
 					{
 						if ((ent->client->usercmd.forwardmove || ent->client->usercmd.upmove || ent->client->usercmd.
-							rightmove) && ent->client->jetPackOn)
+							rightmove) && ent->client->jetPackOn && !ent->client->flamethrowerOn)
 						{
 							//take more if they're thrusting (usercmd: pers.cmd is never filled in SP)
-							ent->client->ps.jetpackFuel -= 10;
+							//2, not 10: since the usercmd fix (item 307) this really applies, and 10 emptied the tank in
+							//about 2.5 s of flight. 2 = about 12.5 s of thrust. Flamethrower in flight keeps its 4 (below).
+							ent->client->ps.jetpackFuel -= 2;
 						}
 						else if (ent->client->flamethrowerOn && ent->client->jetPackOn)
 						{
@@ -2881,7 +2884,7 @@ void G_RunFrame(const int level_time)
 						jetPackOn)
 					{
 						ent->client->ps.jetpackFuel++;
-						ent->client->jetPackDebRecharge = level.time + JETPACK_REFUEL_RATE;
+						ent->client->jetPackDebRecharge = level.time + JETPACK_RECHARGE_RATE;
 					}
 				}
 			}

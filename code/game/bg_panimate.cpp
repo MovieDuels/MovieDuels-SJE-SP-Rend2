@@ -11554,24 +11554,24 @@ void PM_TorsoAnimation()
 									{
 										if (flags.isJango == qtrue)
 										{
-											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREST2_JANGO, SETANIM_FLAG_NORMAL);
+											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY2_JANGO, SETANIM_FLAG_NORMAL);
 										}
 										else if (flags.isCloneTrooper == qtrue)
 										{
-											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREST2_CLO, SETANIM_FLAG_NORMAL);
+											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY2_CLO, SETANIM_FLAG_NORMAL);
 										}
 										else if (flags.isRebels == qtrue)
 										{
-											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREST2_REB, SETANIM_FLAG_NORMAL);
+											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY2_REB, SETANIM_FLAG_NORMAL);
 										}
 										else
 										{
-											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREST2, SETANIM_FLAG_NORMAL);
+											PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY2, SETANIM_FLAG_NORMAL);
 										}
 									}
 									else
 									{
-										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREST2, SETANIM_FLAG_NORMAL);
+										PM_SetAnim(pm, SETANIM_TORSO, TORSO_WEAPONREADY2, SETANIM_FLAG_NORMAL);
 									}
 
 									PM_HandleGunnerAim(is_walking_and_blocking);
