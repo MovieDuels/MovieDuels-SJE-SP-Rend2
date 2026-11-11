@@ -3426,7 +3426,10 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 				// Checked first: the parry, hit-confirm and interrupt rules below must happen once per victim
 				// per swing. They ran before this check, i.e. on every frame of contact, so the hit-confirm
 				// halved weaponTime frame after frame down to its 50 ms minimum.
-				if (WP_SwingAlreadyHit(ent, victim))
+				// not the wampa holding me: its hang attack (BOTH_HANG_ATTACK) never starts a new swing (saberMove stays
+				// LS_READY), so after the first touch every later hang attack skipped it and the wampa could not be hurt
+				if (WP_SwingAlreadyHit(ent, victim)
+					&& !(ent->client->ps.eFlags & EF_HELD_BY_WAMPA && victim == ent->activator))
 				{
 					if (!PM_SaberInKata(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) &&
 						!PM_SaberInKillMove(static_cast<saberMoveName_t>(ent->client->ps.saberMove)) &&
@@ -3469,9 +3472,7 @@ static qboolean WP_SaberApplyDamageMD(gentity_t* ent, const float base_damage, c
 					ent->client->ps.saberAttackChainCount = 0;
 					ent->client->ps.saberMove = LS_READY;
 					// deduct armor from attacker
-					ent->client->ps.stats[STAT_ARMOR] -= 10;
-					if (ent->client->ps.stats[STAT_ARMOR] < 0)
-						ent->client->ps.stats[STAT_ARMOR] = 0;
+					PM_AddBlockFatigue(&ent->client->ps, BLOCKPOINTS_FIVE); //BP Punish Attacker
 					// grant defender riposte window for 500ms
 					victim->client->ps.saberRiposteTime = level.time + 500;
 				}

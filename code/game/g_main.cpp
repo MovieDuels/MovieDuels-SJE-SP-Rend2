@@ -2741,7 +2741,7 @@ void G_RunFrame(const int level_time)
 		}
 
 		//The player
-		if (i == 0)
+		if (i == 0 && ent->client) // the player (entity 0 always has a client; the check is for code analysis, C6011)
 		{
 			if (ent->client->ps.powerups[PW_CLOAKED])
 			{

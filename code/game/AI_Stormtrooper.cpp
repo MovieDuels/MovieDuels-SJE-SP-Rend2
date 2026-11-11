@@ -1032,7 +1032,7 @@ static void Squad_KeepApart()
 		mins[k] = NPC->currentOrigin[k] - SQUAD_SPREAD_DIST;
 		maxs[k] = NPC->currentOrigin[k] + SQUAD_SPREAD_DIST;
 	}
-	gentity_t* list[MAX_GENTITIES];
+	static gentity_t* list[MAX_GENTITIES]; // 32 KB: static, not on the stack (C6262); the game runs on one thread
 	const int count = gi.EntitiesInBox(mins, maxs, list, MAX_GENTITIES);
 	const gentity_t* closest = nullptr;
 	float closest_dist = SQUAD_SPREAD_DIST * SQUAD_SPREAD_DIST;

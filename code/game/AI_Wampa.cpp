@@ -192,6 +192,38 @@ extern void G_Knockdown(gentity_t* self, gentity_t* attacker, const vec3_t push_
 extern qboolean G_DoDismemberment(gentity_t* self, vec3_t point, int mod, int hit_loc, qboolean force = qfalse);
 extern int NPC_GetEntsNearBolt(gentity_t** radius_ents, float radius, int bolt_index, vec3_t bolt_org);
 
+// blood marks on the body where a wampa claw hit, dark blood smoke, blood drops and an impact sound
+// (effects/md/wampa_claw_hit.efx; DH 2026-11-11). Played from 16 units outside the victim's chest on the wampa's
+// side, pointing in, so the effect's ghoul2 decals trace onto the body.
+extern void G_GetBoltPosition(gentity_t* self, int bolt_index, vec3_t pos, int modelIndex);
+extern cvar_t* g_Bloodmist;
+static void Wampa_ClawHitEffect(gentity_t* victim)
+{
+	if (!victim || !victim->client || !NPC || !g_Bloodmist || g_Bloodmist->integer != 1)
+	{
+		return; // the blood effect only with g_Bloodmist 1 (DH), like the dismemberment blood in g_combat.cpp
+	}
+	vec3_t center, dir, org;
+	// the chest bone where the model has one (a held victim hangs head down from the hand, so its box says little)
+	if (victim->chestBolt != -1 && victim->ghoul2.size() && victim->playerModel >= 0)
+	{
+		G_GetBoltPosition(victim, victim->chestBolt, center, victim->playerModel);
+	}
+	else
+	{
+		VectorCopy(victim->currentOrigin, center);
+		center[2] = (victim->absmin[2] + victim->absmax[2]) * 0.5f + 8.0f;
+	}
+	VectorSubtract(center, NPC->currentOrigin, dir);
+	dir[2] = 0.0f;
+	if (VectorNormalize(dir) < 1.0f)
+	{
+		AngleVectors(NPC->currentAngles, dir, nullptr, nullptr);
+	}
+	VectorMA(center, -16.0f, dir, org); // just outside the chest: the smoke and drops start on the body
+	G_PlayEffect(G_EffectIndex("md/wampa_claw_hit"), org, dir);
+}
+
 static void Wampa_Slash(const int bolt_index, const qboolean backhand)
 {
 	gentity_t* radius_ents[128];
@@ -224,8 +256,26 @@ static void Wampa_Slash(const int bolt_index, const qboolean backhand)
 		if (DistanceSquared(radius_ents[i]->currentOrigin, bolt_org) <= radius_squared)
 		{
 			//smack
+			// health + armour: a hit the armour soaks up is still a hit (DH saw only the armour go down)
+			const int health_before = radius_ents[i]->health + radius_ents[i]->client->ps.stats[STAT_ARMOR];
 			G_Damage(radius_ents[i], NPC, NPC, vec3_origin, radius_ents[i]->currentOrigin, damage,
 				backhand ? 0 : DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+			const int health_after = radius_ents[i]->health + radius_ents[i]->client->ps.stats[STAT_ARMOR];
+			if (health_after < health_before)
+			{
+				Wampa_ClawHitEffect(radius_ents[i]);
+			}
+			// every swing that hits and does damage knocks the victim down (DH 2026-11-11). Strength 300: G_Knockdown
+			// only knocks the player down from 300 up, so the old 35 (1 in 4 normal hits) and the 50% on backhands
+			// never or seldom floored the player. Not the one in my hand, not big creatures, not FL_NO_KNOCKBACK.
+			const qboolean wampa_knockdown = radius_ents[i]->health > 0
+				&& health_after < health_before
+				&& radius_ents[i] != NPC->activator
+				&& !(radius_ents[i]->client->ps.eFlags & (EF_HELD_BY_WAMPA | EF_HELD_BY_RANCOR | EF_HELD_BY_SAND_CREATURE))
+				&& radius_ents[i]->client->NPC_class != CLASS_WAMPA
+				&& radius_ents[i]->client->NPC_class != CLASS_RANCOR
+				&& radius_ents[i]->client->NPC_class != CLASS_ATST
+				&& !(radius_ents[i]->flags & FL_NO_KNOCKBACK) ? qtrue : qfalse;
 			if (backhand)
 			{
 				//actually push the enemy
@@ -241,7 +291,7 @@ static void Wampa_Slash(const int bolt_index, const qboolean backhand)
 					&& !(radius_ents[i]->flags & FL_NO_KNOCKBACK))
 				{
 					G_Throw(radius_ents[i], push_dir, 65);
-					if (radius_ents[i]->health > 0 && Q_irand(0, 1))
+					if (wampa_knockdown)
 					{
 						//do pain on enemy
 						G_Knockdown(radius_ents[i], NPC, push_dir, 300, qtrue);
@@ -278,16 +328,16 @@ static void Wampa_Slash(const int bolt_index, const qboolean backhand)
 					G_DoDismemberment(radius_ents[i], radius_ents[i]->currentOrigin, MOD_SABER, hit_loc, qtrue);
 				}
 			}
-			else if (!Q_irand(0, 3) && radius_ents[i]->health > 0)
+			else if (wampa_knockdown)
 			{
-				//one out of every 4 normal hits does a knockdown, too
+				//a normal hit that did damage knocks down too
 				vec3_t push_dir;
 				vec3_t angs;
 				VectorCopy(NPC->client->ps.viewangles, angs);
 				angs[YAW] += Q_flrand(25, 50);
 				angs[PITCH] = Q_flrand(-25, -15);
 				AngleVectors(angs, push_dir, nullptr, nullptr);
-				G_Knockdown(radius_ents[i], NPC, push_dir, 35, qtrue);
+				G_Knockdown(radius_ents[i], NPC, push_dir, 300, qtrue);
 			}
 			G_Sound(radius_ents[i], G_SoundIndex("sound/chars/rancor/swipehit.wav"));
 		}
@@ -865,8 +915,13 @@ void NPC_BSWampa_Default()
 							if (TIMER_Done2(NPC, "grabAttackDamage", qtrue))
 							{
 								G_Sound(NPC->activator, G_SoundIndex("sound/chars/rancor/swipehit.wav"));
+								const int held_health_before = NPC->activator->health + NPC->activator->client->ps.stats[STAT_ARMOR];
 								G_Damage(NPC->activator, NPC, NPC, vec3_origin, NPC->activator->currentOrigin,
 									Q_irand(25, 40), DAMAGE_NO_KNOCKBACK | DAMAGE_NO_ARMOR, MOD_MELEE);
+								if (NPC->activator->health + NPC->activator->client->ps.stats[STAT_ARMOR] < held_health_before)
+								{
+									Wampa_ClawHitEffect(NPC->activator);
+								}
 								if (NPC->activator->health <= 0)
 								{
 									//killed them, chance of dismembering
