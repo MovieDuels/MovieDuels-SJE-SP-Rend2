@@ -2054,7 +2054,6 @@ static void WP_SaberHitSound(const gentity_t* ent, const int saberNum, const int
 	const qboolean saber_in_lunge_attack = PM_LungRollAnim(ent->client->ps.torsoAnim);
 	const qboolean saber_in_roll_stab = PM_SaberInRollStab(static_cast<saberMoveName_t>(ent->client->ps.saberMove));
 
-
 	const int index = Q_irand(1, 3);
 	const int index_stab = Q_irand(1, 11);
 	const int index_kill = Q_irand(1, 17);
@@ -39501,7 +39500,6 @@ void WP_DeactivateSaber(const gentity_t* self, const qboolean clear_length)
 	const qboolean blocking = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
 
-
 	if (blocking || is_holding_block_button_and_attack)
 	{
 		return;
@@ -39533,7 +39531,6 @@ void WP_DeactivateLightSaber(const gentity_t* self, const qboolean clear_length)
 
 	const qboolean blocking = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCK)) != 0) ? qtrue : qfalse;
 	const qboolean is_holding_block_button_and_attack = ((self->client->ps.ManualBlockingFlags & (1 << MBF_HOLDINGBLOCKANDATTACK)) != 0) ? qtrue : qfalse;
-
 
 	if (blocking || is_holding_block_button_and_attack)
 	{
