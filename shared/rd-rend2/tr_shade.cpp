@@ -2185,6 +2185,11 @@ void RB_StageIteratorGeneric(void)
 	{
 		RB_DeformTessGeometry();
 		RB_UpdateVBOs(vertexAttribs);
+		if (!input->numIndexes)
+		{
+			// the dynamic vertex buffer was full and RB_UpdateVBOs dropped this batch (changelog 351)
+			return;
+		}
 	}
 	else
 	{

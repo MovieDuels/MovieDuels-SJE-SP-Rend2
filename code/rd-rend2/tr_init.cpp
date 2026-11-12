@@ -36,8 +36,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static size_t STATIC_UNIFORM_BUFFER_SIZE = 1 * 1024 * 1024;
 static size_t FRAME_UNIFORM_BUFFER_SIZE = 8 * 1024 * 1024;
 static size_t FRAME_SCENE_UNIFORM_BUFFER_SIZE = 1 * 1024 * 1024;
-static size_t FRAME_VERTEX_BUFFER_SIZE = 12 * 1024 * 1024;
-static size_t FRAME_INDEX_BUFFER_SIZE = 4 * 1024 * 1024;
+static size_t FRAME_VERTEX_BUFFER_SIZE = 32 * 1024 * 1024; // was 12 MB (changelog 351)
+static size_t FRAME_INDEX_BUFFER_SIZE = 8 * 1024 * 1024; // was 4 MB (changelog 351)
 
 #if defined(_WIN32)
 extern "C" {

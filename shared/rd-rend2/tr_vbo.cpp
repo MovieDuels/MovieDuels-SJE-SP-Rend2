@@ -609,18 +609,23 @@ void RB_UpdateVBOs(unsigned int attribBits)
 	VBO_t* frameVbo = currentFrame->dynamicVbo;
 	IBO_t* frameIbo = currentFrame->dynamicIbo;
 
-	// Exceeding dynamic surface buffer, do a full frame sync
+	// Exceeding the dynamic surface buffer (changelog 351): drop this batch for this frame.
+	// The old fallback (R_NewFrameSync + RE_BeginFrame) started a new frame in the middle of a render pass:
+	// it reset the per-frame memory that holds the pass being built (its draw items and uniform data) and
+	// swapped the frame buffers, so the pass then drew from overwritten memory and the game crashed
+	// (two force lightning users fighting each other filled the buffer). The buffers are also bigger now.
 	if (((currentFrame->dynamicVboWriteOffset + totalVertexDataSize) > frameVbo->vertexesSize) ||
 		((currentFrame->dynamicIboWriteOffset + totalIndexDataSize) > frameIbo->indexesSize))
 	{
-		R_NewFrameSync();
-		RE_BeginFrame(tr.refdef.stereoFrame);
-
-		// RE_BeginFrame switched backEndData->currentFrame to a fresh frame; use its (now empty) buffers.
-		// Keeping the old frame here re-tested the full buffer, asserted and dropped the geometry.
-		currentFrame = backEndData->currentFrame;
-		frameVbo = currentFrame->dynamicVbo;
-		frameIbo = currentFrame->dynamicIbo;
+		static unsigned lastWarnedFrame = ~0u;
+		if (lastWarnedFrame != backEndData->realFrameNumber)
+		{
+			lastWarnedFrame = backEndData->realFrameNumber;
+			ri.Printf(PRINT_DEVELOPER, "^3WARNING: dynamic vertex buffer full, skipping %d vertexes this frame\n", numVertexes);
+		}
+		tess.numVertexes = 0;
+		tess.numIndexes = 0;
+		return;
 	}
 
 	// update the default VBO
