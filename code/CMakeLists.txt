@@ -445,10 +445,6 @@ if(BuildSPEngine OR BuildJK2SPEngine)
 		# Hide symbols not explicitly marked public.
 		set_property(TARGET ${ProjectName} APPEND PROPERTY COMPILE_OPTIONS ${OPENJK_VISIBILITY_FLAGS})
 
-		# Export symbols needed for internal linking and dlopen'd modules
-		if(UNIX AND NOT APPLE)
-			set_target_properties(${ProjectName} PROPERTIES LINK_FLAGS "-rdynamic")
-		endif()
 
 		set_target_properties(${ProjectName} PROPERTIES INCLUDE_DIRECTORIES "${SPEngineIncludeDirectories}")
 		set_target_properties(${ProjectName} PROPERTIES PROJECT_LABEL ${Label})
