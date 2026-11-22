@@ -390,6 +390,12 @@ add_library(${SPGame} SHARED ${SPGameFiles})
 # Hide symbols not explicitly marked public.
 set_property(TARGET ${SPGame} APPEND PROPERTY COMPILE_OPTIONS ${OPENJK_VISIBILITY_FLAGS})
 
+# The SP game module is intentionally unloaded/reloaded between maps/saves.
+# GNU-unique C++ symbols can cause glibc to mark the DSO NODELETE.
+if(UNIX AND NOT APPLE AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_compile_options(${SPGame} PRIVATE -fno-gnu-unique)
+endif()
+
 if(NOT MSVC)
 	# remove "lib" prefix for .so/.dylib files
 	set_target_properties(${SPGame} PROPERTIES PREFIX "")

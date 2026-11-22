@@ -226,7 +226,7 @@ static gentity_t* Fighter_SpawnPilot(const team_t team, const vec3_t pos, const 
 		return nullptr;
 	}
 	spawner_ent->classname = "NPC_spawner";
-	spawner_ent->NPC_type = team == TEAM_PLAYER ? "Rebel_Pilot" : "StormPilot";
+	spawner_ent->NPC_type = const_cast<char*>(team == TEAM_PLAYER ? "Rebel_Pilot" : "StormPilot");
 	spawner_ent->count = 1;
 	spawner_ent->spawnflags = spawnflags;
 	VectorCopy(pos, spawner_ent->s.origin);
